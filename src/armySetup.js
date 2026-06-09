@@ -243,6 +243,10 @@ function attributeAllBudgets(saveBuf, modDataDir, playerHint) {
       taxes: d && d.income ? d.income.taxes : null,
       income: d && d.income ? d.income.total : null,
       armyUpkeep: d && d.expenditure ? d.expenditure.army_upkeep : null,
+      // full itemized breakdown (Financial-Overview lines) — the static income
+      // model is cracked/validated component-by-component against these.
+      incomeBreakdown: d && d.income ? { farming: d.income.farming, taxes: d.income.taxes, mining: d.income.mining, trade: d.income.trade, other: d.income.other } : null,
+      expenditureBreakdown: d && d.expenditure ? { wages: d.expenditure.wages, army_upkeep: d.expenditure.army_upkeep, other: d.expenditure.other } : null,
     };
   });
   // descr_strat faction order + denari + descr_strat army upkeep
@@ -299,7 +303,7 @@ function attributeAllBudgets(saveBuf, modDataDir, playerHint) {
     let rec = i;
     if (P >= 0) { if (i === 0) rec = P; else if (i === P) rec = 0; }
     const r = R[rec];
-    if (r) byFaction[facs[i]] = { net: r.net, fullNet: r.fullNet, treasury: r.treasury, armyUpkeep: r.armyUpkeep, armyUpkeepGT: auF[facs[i]], income: { total: r.income, taxes: r.taxes } };
+    if (r) byFaction[facs[i]] = { net: r.net, fullNet: r.fullNet, treasury: r.treasury, armyUpkeep: r.armyUpkeep, armyUpkeepGT: auF[facs[i]], income: { total: r.income, taxes: r.taxes, ...(r.incomeBreakdown || {}) }, expenditure: r.expenditureBreakdown || null };
   }
   // Per-faction verification: a mapping is trustworthy if the block treasury
   // equals the faction's starting denari (EXACT key) OR the block army-upkeep is

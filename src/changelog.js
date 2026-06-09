@@ -8,6 +8,92 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1002",
+    date: "2026-06-09",
+    items: [
+      { type: "feature", text: "**Army Setup: Turn-1 Budget @ Optimal Taxes — works with no save loaded.** Pick any faction and the panel now shows its full projected turn-1 economy at the optimal tax plan, computed entirely from the mod files: per-settlement tax income, farming, mining, trade, minus character wages and corruption, ending in the **sustainable army-upkeep budget** (auto-filled into the Budget box). Per-settlement table shows population, estimated growth, the recommended tax bracket, tax income, farming income, and distance to the capital (the corruption driver)." },
+      { type: "feature", text: "**The RIS turn-1 income model — cracked from the game files and validated against a 10-faction save corpus (median budget error 7%).** What the data showed: tax income is a flat ~713/town × the EDB `taxable_income_bonus` percentages × the tax-bracket multiplier — **independent of population**; the empire-size tax modifiers (size1–size10 events, settlement-count brackets) are *not yet active* in the turn-1 economy; farming = 73.5 × (region fertility + farm level); wages = exactly 200 per general + 50 per admiral; and the mystery 'Other' expenditure is **corruption ≈ 6.4 × tile-distance to the capital** per settlement (Seleucid's sprawl costs it 88k/turn — predicted within 0.6%). Trade (sea/land resource flows) is the one weak term (±30%) and is flagged as such." },
+      { type: "improvement", text: "Itemized income/expenditure breakdown (farming/taxes/mining/trade · wages/army/other) now exposed from every loaded save's faction economy blocks, for all factions." },
+    ],
+  },
+  {
+    version: "0.9.1001",
+    date: "2026-06-09",
+    items: [
+      { type: "fix", text: "**Squalor now switches on at population 1150, not 1500 — verified live in-game.** A controlled test (editing a settlement's population one at a time) pinned the first squalor point to the exact person: 1149 → 0%, 1150 → −0.5%. So the growth-squalor rule is `floor((pop + 350)/1500) × 0.5%` — a fixed +350 offset, then one point every 1500. The old `floor(pop/1500)` started squalor 350 population too late, under-counting every town in the 1150–1499 band (and similar bands higher up) by 0.5% — which had been pushing a batch of small towns one tax bracket too high. Cross-checked against live reads at pop 1800/3000/5000/9000 — all exact." },
+      { type: "fix", text: "**Coastal port growth bonus no longer counted in base growth.** The shipwright/port `+1 growth (with fish)` is a *seasonal* bonus the in-game base-growth scroll excludes — confirmed at Pantikapaion (summer start, has fish, yet the scroll shows no port growth). It was wrongly credited year-round, pushing coastal capitals one bracket too high. Now excluded, matching the in-game scroll exactly (Pantikapaion → Normal)." },
+      { type: "improvement", text: "**Confirmed there is no empire-size growth or squalor penalty in RIS**, and no real settlement is ever overcrowded at game start (0 of 1304) — so the per-tier overcrowding doubling never affects a start-state tax plan. The squalor model is now verified end-to-end against the live game: population curve, governor Estates (both worsening and relieving), and seasonal exclusions." },
+    ],
+  },
+  {
+    version: "0.9.1000",
+    date: "2026-06-09",
+    items: [
+      { type: "improvement", text: "**No-save growth is now a pure deterministic formula — no statistical regression.** Every term is a documented RTW mechanic read straight from the game files: growth = 0.5×(farming + health + building bonuses) − government damper − squalor, with squalor from the exact `descr_cultures.txt` population thresholds and the EDB government-tier damper (villa/palace/proconsuls/imperial). This *beat* the old calibrated regression on the 14-faction / 308-settlement test corpus — **89% land on the exact tax bracket** (up from ~86%) — while needing zero coefficients and zero fitting. Each growth line is now fully explainable and matches the in-game Settlement Details scroll. (The remaining misses are tiny towns sitting exactly on a 0.5% rounding edge — only a loaded save's stored development value can call those, which is why the save-backed plan stays ~98%.)" },
+      { type: "fix", text: "**Fixed culture / faction-group resolution in building growth rules.** Many EDB growth bonuses are gated by *culture group* (e.g. brewery gives +2 growth to Greek/Roman cultures but +1 to everyone else via the `beer_factions` rule; great-forum/curia market growth is culture-gated). The evaluator only matched the literal faction *name*, so `romans_julii` never matched the culture token `roman` and was mis-classified — giving the wrong brewery/market growth. Now resolves each faction's culture and faction-group tags from `descr_sm_factions.txt` and matches a clause against the name, the culture, *and* the group tags. Verified correct for all 14 factions tested." },
+    ],
+  },
+  {
+    version: "0.9.999",
+    date: "2026-06-09",
+    items: [
+      { type: "fix", text: "**Found a dropped growth term: additive farming bonuses.** Olive, wine and date buildings grant `farming_level bonus N` — an *additive* boost on top of the irrigation/farm chain. The parser was taking the max farm level instead of adding these, so settlements with olive/wine were under‑counted. Fixed → no‑save growth jumped to **~86% exact bracket** (from ~82%) with error (MAE) down to **0.13** and **~99% within 0.5%** of true growth. Found by correlating model residuals against every building type across 310 settlements." },
+    ],
+  },
+  {
+    version: "0.9.998",
+    date: "2026-06-09",
+    items: [
+      { type: "fix", text: "**Corrected a growth-model error: `Effect Fertility` is the *character's* personal fertility (chance of offspring), not settlement farming.** It was wrongly counted as a settlement growth catalyst. Now only `Effect Farming` (plus Health and Squalor) is treated as a settlement effect from governors/followers. With the fertility noise removed, the real Farming/Health catalysts could finally be applied — growth error (MAE) dropped from 0.21 to **0.19** and within‑0.5% accuracy rose to **~97%**, while exact‑bracket holds at ~82%." },
+    ],
+  },
+  {
+    version: "0.9.997",
+    date: "2026-06-09",
+    items: [
+      { type: "improvement", text: "**Governors' followers (ancillaries) now count toward growth.** A governor's retinue carries the same growth catalysts as traits — an architect or city-planner relieves squalor, a doctor/priest adds fertility/health, a farming advisor adds farming. The no-save model now reads each starting governor's `ancillaries` from descr_strat (174 followers with growth effects) and folds them in. No-save exact-bracket: ~82% → ~83%." },
+    ],
+  },
+  {
+    version: "0.9.996",
+    date: "2026-06-09",
+    items: [
+      { type: "fix", text: "**Starting governors of Greek-city / sub-faction settlements are now read.** descr_strat writes those generals with an extra field (`character, sub_faction athens, Eumedes, named character, …`) that the coordinate-based governor reader didn't parse — so ~30 settlements (Thurii, etc.) silently had no starting governor and missed their trait effects (e.g. Thurii's GoodBuilder governor = squalor relief = +0.5% growth). Now bound correctly by exact map tile; no-save coefficients re-synced." },
+    ],
+  },
+  {
+    version: "0.9.995",
+    date: "2026-06-09",
+    items: [
+      { type: "fix", text: "**Fixed governor reading from saves.** `govEffectByCityFromSave` was treating the cracked `characters` data as an array when it's an object (`{v1,…}`), so it silently returned nothing — every save-based governor lookup (growth breakdown, governor trait effects) was being ignored. Now correctly reads each settlement's governor from the save (753 governors on a turn-2 Julii save)." },
+      { type: "improvement", text: "**Identified the source of the no-save growth gap: accrued governor Fertility traits.** Tracing the undercounted towns to their governors showed traits like `Dalmatian_Carrot`, `Ionian_Basileus` and `ICERating` add +0.5–2% growth (e.g. Thurii's governor = +1%, exactly its missing amount). These are gained *during play*, so they're in the save but not in the mod files — which is precisely why the no-save estimate can't see them and the with-save/loaded plan (which reads real growth) is exact. No model change; the no-save model is confirmed complete for what the files contain." },
+    ],
+  },
+  {
+    version: "0.9.994",
+    date: "2026-06-09",
+    items: [
+      { type: "improvement", text: "**No‑save growth nudged to ~82% exact bracket.** Empirically derived (from 116 clean settlements) that squalor barely grows with population and actually *eases* in big cities — a single linear population term couldn't model that. Added a high‑population relief term, lifting the no‑save bracket 80.5% → 81.8% with lower error. Save‑aware stays 97.4%; the loaded‑faction plan stays exact." },
+    ],
+  },
+  {
+    version: "0.9.993",
+    date: "2026-06-09",
+    items: [
+      { type: "improvement", text: "**No‑save growth jumped to ~80% exact bracket (from ~73%).** The model now reads each settlement's STARTING governor straight from descr_strat — binding the general to his settlement by **exact map coordinates** (he stands on the town's tile), reading his Estates/squalor trait as a level (e.g. `Estates 3` = Large Estate = +2 squalor = −1% growth), and subtracting it. This was the term that was \"missing from the files\" — it's all there, no save needed. Validated against a hand‑set Julii save: 20/25 settlements match exactly (the rest are boundary towns within 0.5% of a bracket edge)." },
+      { type: "improvement", text: "**Loaded‑faction tax plan is exact (0 misses).** On the same hand‑set Julii save, the with‑save plan matched all 26/26 brackets — it reads each settlement's real growth and subtracts the known tax modifier, so for your own faction the auto‑set is exactly what you'd pick by hand (Larinum → low, Rome → very_high, etc.)." },
+    ],
+  },
+  {
+    version: "0.9.992",
+    date: "2026-06-09",
+    items: [
+      { type: "fix", text: "**Cracked the last growth mystery: governor squalor.** A governor's **Estates** trait (and any `Effect Squalor`) reduces *population growth*, not just public order — confirmed by a controlled in‑game test (Larinum: an Estates `large Estate` governor = −1.0% growth; remove him and squalor drops to the bare pop baseline). Each Effect‑Squalor point = exactly **0.5% growth**. The growth model was *reading* this governor effect and then **throwing it away** (an old, now‑disproven \"public‑order only\" assumption). It's now applied: when a save is loaded, each settlement's governor traits correctly lower its growth, and the breakdown shows a dedicated governor‑squalor line." },
+      { type: "improvement", text: "**Growth model recalibrated across 14 factions / 308 settlements** (added Seleucid, Ptolemaic, Arverni, Getae, Mauryan — eastern, Egyptian, Gallic, Dacian and Indian culture paths). Save‑aware now ~**97%** exact bracket (was ~94%); no‑save ~**73%** (was ~68%). A calibration‑harness bug was also fixed: mid‑turn `add_population` cheat saves produced 100%+ \"growth\" rows that were corrupting the fit." },
+      { type: "change", text: "The loaded‑faction tax plan is **exact for any tax setting**, not just all‑Normal — it reads each settlement's real growth and subtracts the known tax modifier. The remaining no‑save gap is per‑settlement governor‑trait squalor, which is in the save (and, at game start, in descr_strat)." },
+    ],
+  },
+  {
     version: "0.9.991",
     date: "2026-06-08",
     items: [

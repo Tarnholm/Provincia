@@ -22,13 +22,15 @@
 //                     base_growth + taxMod ≥ 0   (taxMod = +0.5/0/−0.5/−1.0)
 //
 // WHY it can't be exact from the strat (all verified 2026-06-08):
-//   1. GOVERNOR EFFECTS don't decompose. Every settlement has a governor whose
-//      traits/ancillaries shift growth. Trait `Effect Health` feeds the growth
-//      health-catalyst, and `Effect Squalor` feeds PUBLIC-ORDER squalor (NOT the
-//      growth-squalor — proven: a BadBuilder-6 governor = Effect Squalor +3 yet
-//      its town's growth-squalor is unchanged). The net per-town growth shift
-//      from governors does not reduce to the building/pop features → ±0.5-1.0%
-//      scatter that flips brackets.
+//   1. GOVERNOR EFFECTS need the governor. Every settlement has a governor whose
+//      traits shift growth: `Effect Farming`/`Fertility` → farm catalyst, `Effect
+//      Health` → health catalyst, and `Effect Squalor N` → −0.5×N% growth (CONFIRMED
+//      Larinum 2026-06-09: an Estates `large Estate` governor = Effect Squalor +2 →
+//      −1.0% growth; remove him → squalor falls to the pop baseline). These are now
+//      applied EXACTLY when the governor's traits are known (loaded save → traitEffects
+//      .govEffectByCityFromSave). They can't be read from descr_strat alone for the
+//      no-save preview (seeded generals aren't explicitly bound to a settlement), which
+//      is the main reason the no-save estimate still scatters ±0.5-1.0% on those towns.
 //   2. FERTILITY/OVERCROWDING COUPLING: base farming (+FarmN×0.5) is largely
 //      cancelled by an engine overcrowding penalty that also scales with the
 //      farming level, so FarmN's NET effect ≈ 0 (adding it explicitly made the

@@ -6420,6 +6420,20 @@ ipcMain.handle("get-strat-tax-plan", async (_event, modDataDir, faction, savePat
         if (!Object.keys(opts).length) opts = undefined;
       } catch (e) { _writeLog(`[strat-tax] save read failed (${e && e.message}); using no-save model`); }
     }
+    // NO-SAVE governor effects: when there's no loaded save (or its governor read
+    // yielded nothing), fall back to the STARTING governors seeded in descr_strat so
+    // governor-trait squalor (e.g. Estates) is still applied at game start.
+    if (!opts || !opts.govEffectByCity) {
+      try {
+        const te = require("./src/traitEffects.js");
+        const stratGov = te.govEffectByCityFromStrat(modDataDir, te.parseTraitEffects(modDataDir));
+        if (Object.keys(stratGov).length) {
+          opts = opts || {};
+          opts.govEffectByCity = stratGov;
+          _writeLog(`[strat-tax] ${Object.keys(stratGov).length} starting governors (descr_strat) with growth-affecting traits applied (no-save)`);
+        }
+      } catch (e) { _writeLog(`[strat-tax] strat-governor read failed: ${e && e.message}`); }
+    }
     const r = gm.computeStratTaxPlan(modDataDir, faction, opts);
     if (r && r.byFaction) {
       const ns = Object.values(r.byFaction).reduce((s, f) => s + (f.settlements ? f.settlements.length : 0), 0);
@@ -6428,6 +6442,68 @@ ipcMain.handle("get-strat-tax-plan", async (_event, modDataDir, faction, savePat
     }
     return r;
   } catch (e) { _writeLog(`[strat-tax] failed: ${e && e.message}`); return { error: e && e.message ? e.message : String(e) }; }
+});
+
+// IPC: STATIC turn-1 budget @ optimal taxes (2026-06-09) — the no-save Army Setup
+// unit budget. Brackets come from the validated growth model (save-aware when a
+// save is supplied, pure no-save otherwise); income from src/incomeModel.js — the
+// turn-1 income model cracked from mod files (taxes 713/town ×(1+EDB taxable%)
+// ×bracketMult, farming 73.5×(farmN+farmLevel), mining 50×mine_resource, trade
+// land/sea fit, wages 200×named+50×admiral, corruption 6.43×Σdist-to-capital).
+// Validated vs the 10-faction turn-1 corpus: median |budget err| 7%, worst 27%.
+// Returns computeTurn1Budget() + per-settlement optimalBracket/growth merged in.
+ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath) => {
+  try {
+    if (!modDataDir || !faction) return { error: "modDataDir + faction required" };
+    const gm = require("./src/growthModel.js");
+    const te = require("./src/traitEffects.js");
+    const im = require("./src/incomeModel.js");
+    // 1. optimal brackets from the growth model (same path as get-strat-tax-plan)
+    let opts;
+    if (savePath && fs.existsSync(savePath)) {
+      try {
+        const { crackSave } = require("./src/saveCracker.js");
+        const cr = crackSave(fs.readFileSync(savePath), modDataDir);
+        const growthDevByCity = {};
+        const sf = (cr && cr.settlementFields) || {};
+        for (const c of Object.keys(sf)) { const g = sf[c].growthDevValue; if (g != null) growthDevByCity[c] = { v1528: g, v1556: sf[c].growthDevValue2 }; }
+        let govEffectByCity = {};
+        try { govEffectByCity = te.govEffectByCityFromSave(cr, te.parseTraitEffects(modDataDir)); } catch {}
+        opts = {};
+        if (Object.keys(growthDevByCity).length) opts.growthDevByCity = growthDevByCity;
+        if (Object.keys(govEffectByCity).length) opts.govEffectByCity = govEffectByCity;
+        if (!Object.keys(opts).length) opts = undefined;
+      } catch (e) { _writeLog(`[turn1-budget] save read failed (${e && e.message}); using no-save model`); }
+    }
+    if (!opts || !opts.govEffectByCity) {
+      try {
+        const stratGov = te.govEffectByCityFromStrat(modDataDir, te.parseTraitEffects(modDataDir));
+        if (Object.keys(stratGov).length) { opts = opts || {}; opts.govEffectByCity = stratGov; }
+      } catch {}
+    }
+    const plan = gm.computeStratTaxPlan(modDataDir, faction, opts);
+    const pf = plan && plan.byFaction && plan.byFaction[String(faction).toLowerCase()];
+    const bracketByCity = {};
+    const growthBySettlement = {};
+    if (pf && pf.settlements) for (const s of pf.settlements) {
+      const key = s.settlement || s.region;
+      if (key && s.optimalBracket) bracketByCity[key] = s.optimalBracket;
+      growthBySettlement[key] = { optimalBracket: s.optimalBracket, baseGrowthEst: s.baseGrowthEst, borderline: s.borderline };
+    }
+    // 2. static income model at those brackets
+    const budget = im.computeTurn1Budget(modDataDir, faction, bracketByCity);
+    if (budget && !budget.error) {
+      for (const s of budget.settlements) {
+        const g = growthBySettlement[s.settlement] || growthBySettlement[s.region];
+        if (g) { s.optimalBracket = g.optimalBracket; s.baseGrowthEst = g.baseGrowthEst; s.borderline = g.borderline; }
+      }
+      budget.saveAware = !!(plan && plan.saveAware);
+      budget.growthAccuracy = plan && plan.accuracy;
+      const t = budget.totals;
+      _writeLog(`[turn1-budget] ${faction}: ${budget.settlements.length} towns tier=${budget.tier} ${budget.saveAware ? "SAVE-AWARE" : "no-save"} | taxes=${t.taxes} farm=${t.farming} mine=${t.mining} trade=${t.trade} → income=${t.income} − wages=${t.wages} − corruption=${t.corruption} = armyBudget=${t.armyBudget}`);
+    } else _writeLog(`[turn1-budget] ${faction}: FAILED ${budget && budget.error}`);
+    return budget;
+  } catch (e) { _writeLog(`[turn1-budget] failed: ${e && e.message}`); return { error: e && e.message ? e.message : String(e) }; }
 });
 
 // IPC: mercenary pools from descr_mercenaries.txt (2026-06-08) — for the

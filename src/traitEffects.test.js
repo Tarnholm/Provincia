@@ -36,11 +36,11 @@ describe("growthEffectOfTraits", () => {
     expect(growthEffectOfTraits([{ name: "BadFarmer", level: 8 }], PARSED).farm).toBe(-3);
   });
 
-  test("growthFarm sums Farming + Fertility (both feed the farm catalyst)", () => {
+  test("growthFarm = Farming only; Fertility is the character's stat, not settlement growth", () => {
     const e = growthEffectOfTraits([{ name: "GoodFarmer", level: 5 }, { name: "Fertile", level: 1 }], PARSED);
     expect(e.farm).toBe(2);
-    expect(e.fert).toBe(2);
-    expect(e.growthFarm).toBe(4);
+    expect(e.fert).toBe(2);          // still tracked (character fertility)
+    expect(e.growthFarm).toBe(2);    // but only Farming feeds settlement growth (user 2026-06-09)
   });
 
   test("unknown / non-growth traits contribute nothing", () => {
