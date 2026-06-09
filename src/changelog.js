@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1010",
+    date: "2026-06-10",
+    items: [
+      { type: "fix", text: "**Reverted the v0.9.1009 governor distance-snap — governors bind by exact coordinates only.** Live Cyrene testing caught the snap assigning a deliberately-outside general (Apellas, 2 tiles from Kyrene) as a phantom governor, wrongly adding his BadBuilder squalor. With coordinate-only binding the whole live-verified Cyrene table is exact: Kyrene +3% (V.High), Euesperides −0.5% (Low), Automala −0.5% (Low) — and the earlier 'corpus misses' at all three turned out to be bad save data, not model errors." },
+    ],
+  },
+  {
     version: "0.9.1009",
     date: "2026-06-10",
     items: [
