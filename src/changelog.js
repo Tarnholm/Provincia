@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1003",
+    date: "2026-06-09",
+    items: [
+      { type: "improvement", text: "**Tax plan tables now show settlement names** (e.g. Pantikapaion) instead of region names (Kimmerikos Bosporos) — hover for the region." },
+      { type: "improvement", text: "**Added a \"Growth @ set\" column** to the no-save tax plan and the Turn-1 Budget table: the growth the in-game scroll should read *once you set the recommended bracket* (base growth + the bracket's flat modifier) — what you actually verify in-game. The base-growth column stays for reference (hover for the full per-line breakdown)." },
+    ],
+  },
+  {
     version: "0.9.1002",
     date: "2026-06-09",
     items: [

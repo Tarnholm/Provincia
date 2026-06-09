@@ -22799,20 +22799,23 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         </div>
                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.74rem", marginTop: 6 }}>
                           <thead><tr style={{ color: "#8aa", textAlign: "left" }}>
-                            <th style={{ fontWeight: 600, padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Growth</th><th>→ Tax</th><th>Tax income</th><th>Farm</th><th>Dist→cap</th>
+                            <th style={{ fontWeight: 600, padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Growth @ set</th><th>→ Tax</th><th>Tax income</th><th>Farm</th><th>Dist→cap</th>
                           </tr></thead>
                           <tbody>
-                            {armyT1Budget.settlements.map((s, si) => (
+                            {armyT1Budget.settlements.map((s, si) => {
+                              const GMOD = { low: 0.5, normal: 0, high: -0.5, very_high: -1 };
+                              const atSet = (s.baseGrowthEst != null && s.bracket) ? Math.round((s.baseGrowthEst + (GMOD[s.bracket] || 0)) * 10) / 10 : null;
+                              return (
                               <tr key={si} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                                 <td style={{ padding: "1px 6px", color: "#dde" }}>{(s.settlement || s.region || "").replace(/_/g, " ")}{s.capital ? " ★" : ""}</td>
                                 <td style={{ color: "#9aa" }}>{s.pop}</td>
-                                <td style={{ color: (s.baseGrowthEst != null && s.baseGrowthEst < 0) ? "#e8806a" : "#9aa" }}>{s.baseGrowthEst != null ? `${s.baseGrowthEst >= 0 ? "+" : ""}${s.baseGrowthEst}%` : "—"}</td>
+                                <td style={{ color: (atSet != null && atSet < 0) ? "#e8806a" : "#9aa" }} title={s.baseGrowthEst != null ? `Tax-neutral base growth ${s.baseGrowthEst >= 0 ? "+" : ""}${s.baseGrowthEst}% ${s.bracket ? `+ ${s.bracket} modifier` : ""} — this is what the in-game scroll should read at the recommended bracket.` : undefined}>{atSet != null ? `${atSet >= 0 ? "+" : ""}${atSet}%` : "—"}</td>
                                 <td style={{ color: BRC[s.bracket] || "#9aa", fontWeight: 600 }}>{BRB[s.bracket] || s.bracket}{s.borderline && <span title="Borderline growth estimate — could be one bracket off; verify in-game." style={{ color: "#e8b85a", marginLeft: 3, cursor: "help" }}>⚠</span>}</td>
                                 <td style={{ color: "#e8c873" }}>{s.taxes}</td>
                                 <td style={{ color: "#9fd37f" }}>{s.farming}</td>
                                 <td style={{ color: "#778" }}>{s.distToCapital != null ? s.distToCapital : "—"}</td>
                               </tr>
-                            ))}
+                            );})}
                           </tbody>
                         </table>
                         <div style={{ marginTop: 5, fontSize: "0.68rem", color: "#8aa" }}>
@@ -22852,21 +22855,25 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                     ⚠ ESTIMATE from the mod files (RIS growth model from descr_strat + EDB, including each starting governor's trait squalor bound by map coordinates): <b>~80% of settlements land on the exact tax bracket</b>. A <span style={{ color: "#e8b85a" }}>⚠</span> marks settlements close to a bracket boundary (the least‑certain calls — verify those or set one bracket lower). The remaining gap is boundary towns whose growth sits within 0.5% of a bracket edge — load any save to jump to ~97% exact, or a turn‑2 save of your faction for the <b>exact</b> plan.
                                   </div>}
                               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem", marginTop: 6 }}>
-                                <thead><tr style={{ color: "#8aa", textAlign: "left" }}><th style={{ padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Est. growth</th><th>→ Set to (rough)</th></tr></thead>
+                                <thead><tr style={{ color: "#8aa", textAlign: "left" }}><th style={{ padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Base growth</th><th>→ Set to (rough)</th><th>Growth @ set</th></tr></thead>
                                 <tbody>
-                                  {sp.settlements.map((s, i) => (
+                                  {sp.settlements.map((s, i) => {
+                                    const GMOD = { low: 0.5, normal: 0, high: -0.5, very_high: -1 };
+                                    const atSet = s.baseGrowthEst != null && s.optimalBracket ? Math.round((s.baseGrowthEst + GMOD[s.optimalBracket]) * 10) / 10 : null;
+                                    return (
                                     <tr key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                                      <td style={{ padding: "1px 6px", color: "#dde" }}>{(s.region || "").replace(/_/g, " ")}</td>
+                                      <td style={{ padding: "1px 6px", color: "#dde" }} title={s.settlement && s.region ? `region: ${s.region.replace(/_/g, " ")}` : undefined}>{((s.settlement || s.region) || "").replace(/_/g, " ")}</td>
                                       <td style={{ color: "#9aa" }}>{s.pop}</td>
                                       <td style={{ color: s.baseGrowthEst < 0 ? "#e8806a" : "#9aa", cursor: s.components ? "help" : "default" }}
-                                        title={s.components ? `Growth breakdown (matches the in‑game scroll):\nBase farming  ${s.components.base >= 0 ? "+" : ""}${s.components.base}%\nFarm upgrades ${s.components.farm >= 0 ? "+" : ""}${s.components.farm}%\nHealth        ${s.components.health >= 0 ? "+" : ""}${s.components.health}%\nBuildings     ${s.components.buildings >= 0 ? "+" : ""}${s.components.buildings}%\nSqualor       −${s.components.squalor}%\n= ${s.baseGrowthEst >= 0 ? "+" : ""}${s.baseGrowthEst}%` : undefined}>
+                                        title={s.components ? `TAX-NEUTRAL base growth (the in-game scroll at Normal tax):\nBase farming  ${s.components.base >= 0 ? "+" : ""}${s.components.base}%\nFarm upgrades ${s.components.farm >= 0 ? "+" : ""}${s.components.farm}%\nHealth        ${s.components.health >= 0 ? "+" : ""}${s.components.health}%\nBuildings     ${s.components.buildings >= 0 ? "+" : ""}${s.components.buildings}%\nSqualor       −${s.components.squalor}%\n= ${s.baseGrowthEst >= 0 ? "+" : ""}${s.baseGrowthEst}%` : undefined}>
                                         {s.baseGrowthEst >= 0 ? "+" : ""}{s.baseGrowthEst}%</td>
                                       <td style={{ color: BR_COL[s.optimalBracket], fontWeight: 600 }}>
                                         {BR[s.optimalBracket]}
                                         {s.borderline && <span title={`Borderline — estimated growth is only ${s.distToBoundary ?? "<0.2"}% from a bracket boundary, so this one could flip. Verify in‑game or set one bracket lower to be safe.`} style={{ color: "#e8b85a", marginLeft: 4, cursor: "help" }}>⚠</span>}
                                       </td>
+                                      <td style={{ color: atSet == null ? "#778" : atSet < 0 ? "#e8806a" : "#7fd17f" }} title="What the in-game growth scroll should read once you set this bracket (base growth + the bracket's flat growth modifier: Low +0.5 / Normal 0 / High −0.5 / V.High −1.0).">{atSet == null ? "—" : `${atSet >= 0 ? "+" : ""}${atSet}%`}</td>
                                     </tr>
-                                  ))}
+                                  );})}
                                 </tbody>
                               </table>
                             </>

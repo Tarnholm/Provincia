@@ -141,7 +141,7 @@ function computeStratTaxPlan(modDataDir, faction, opts) {
       return {
         estimated: true, accuracy: r.accuracy, saveAware: !!r.saveAware,
         byFaction: { [r.faction]: { settlements: r.settlements.map(s => ({
-          region: s.region, pop: s.pop, farmN: s.features && s.features.farmN,
+          region: s.region, settlement: s.settlement, pop: s.pop, farmN: s.features && s.features.farmN,
           baseGrowthEst: s.baseGrowthEst, optimalBracket: s.optimalBracket, savedDev: !!s.savedDev,
           borderline: !!s.borderline, distToBoundary: s.distToBoundary, components: s.components,
         })) } },
