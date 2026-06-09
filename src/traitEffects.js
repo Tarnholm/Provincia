@@ -185,16 +185,21 @@ function govEffectByCityFromStrat(modDataDir, parsed) {
   // collect every named character's coords + the traits AND ancillaries lines that follow it
   // (order in descr_strat: character → traits → [ancillaries] → army; finalize at next character)
   const generals = [];
-  let pending = null;
+  let pending = null, curFaction = null, curRegion = null;
+  const ownerByRegion = {};
   const finalize = () => { if (pending) generals.push(pending); pending = null; };
   for (const raw of lines) {
     const t = raw.includes(";") ? raw.slice(0, raw.indexOf(";")).trim() : raw.trim();
     if (!t) continue;
+    const fm = t.match(/^faction\s+([a-z_0-9]+)\s*,/i);
+    if (fm) { finalize(); curFaction = fm[1].toLowerCase(); continue; }
+    const rm = t.match(/^region\s+([\w-]+)/i);
+    if (rm && curFaction) { ownerByRegion[rm[1]] = curFaction; }
     // Tolerate the optional `sub_faction <name>,` field between `character` and the name —
     // Greek-city / sub-faction governors (e.g. Thurii: "character, sub_faction athens, Eumedes,
     // named character, …, x 327, y 372") were silently skipped without it. (Fixed 2026-06-09.)
     const m = t.match(/^character\s*,?\s*(?:sub_faction\s+\w+\s*,\s*)?[^,]+,\s*named character\b.*?\bx\s+(-?\d+)\s*,\s*y\s+(-?\d+)/i);
-    if (m) { finalize(); pending = { x: +m[1], y: +m[2], traitList: [], anc: [] }; continue; }
+    if (m) { finalize(); pending = { x: +m[1], y: +m[2], faction: curFaction, traitList: [], anc: [] }; continue; }
     if (!pending) continue;
     if (/^traits\b/i.test(t)) {
       pending.traitList = t.replace(/^traits\s+/i, "").split(",").map(s => {
@@ -205,11 +210,25 @@ function govEffectByCityFromStrat(modDataDir, parsed) {
     }
   }
   finalize();
-  // bind each general to the settlement tile it stands on (nearest within TILE_TOL)
+  // bind each general to the settlement tile it stands on (nearest within TILE_TOL),
+  // OR — engine snap, live-caught 2026-06-10 at Iasonion — a character seeded on open
+  // ground is garrisoned into the NEAREST OWN-FACTION settlement at campaign start
+  // (Deimachos, 15 tiles out in Margiane, governs Iasonion in-game; his GoodBuilder is
+  // the 1-pt squalor relief the exact-tile binder missed). Snap radius 16 tiles.
+  const SNAP_RADIUS = 16;
   for (const g of generals) {
     let best = null, bestD = Infinity;
     for (const s of sites) { const d = Math.abs(s.x - g.x) + Math.abs(s.y - g.y); if (d < bestD) { bestD = d; best = s; } }
-    if (!best || bestD > TILE_TOL) continue; // not standing in a settlement → not a governor
+    if (!best || bestD > TILE_TOL) {
+      // engine-snap path: nearest settlement OWNED BY the character's faction (euclidean)
+      best = null; let bestE = Infinity;
+      if (g.faction) for (const s of sites) {
+        if (ownerByRegion[s.region] !== g.faction) continue;
+        const e2 = Math.hypot(s.x - g.x, s.y - g.y);
+        if (e2 < bestE) { bestE = e2; best = s; }
+      }
+      if (!best || bestE > SNAP_RADIUS) continue; // truly in the field → not a governor
+    }
     const e = growthEffectOfTraits(g.traitList, parsed, { ordinal: true }); // descr_strat number = level index
     // fold in FOLLOWER (ancillary) effects — same growth catalysts as traits
     for (const a of g.anc) { const fx = ancFx[a]; if (!fx) continue; e.farm += fx.farm; e.fert += fx.fert; e.health += fx.health; e.squalor += fx.squalor; e.growthFarm += fx.farm; if (e.hits) e.hits.push("anc:" + a); } // growthFarm = Farming only; fert is character

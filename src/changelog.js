@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1009",
+    date: "2026-06-10",
+    items: [
+      { type: "fix", text: "**Governors seeded on open ground are garrisoned into the nearest friendly settlement at campaign start — now modeled.** The exact-tile governor binding missed characters the engine relocates: Iasonion's real governor (Deimachos, GoodBuilder = −0.5% squalor relief) was seeded 15 tiles away, and his relief was invisible to the model. Off-tile characters now snap to the nearest own-faction settlement (≤16 tiles). Live-verified twice, in both directions: Iasonion −0.5%→0% squalor with its governor, and Adramyttion reading exactly the predicted −2.5% with its Girls/Miserly governor (−1.0% without). Governor squalor effects now bind at 223 settlements (up from ~150)." },
+    ],
+  },
+  {
     version: "0.9.1008",
     date: "2026-06-10",
     items: [

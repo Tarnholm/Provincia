@@ -535,22 +535,29 @@ function buildRegionCoords(tgaBuf, rgbToRegion) {
   const dataOff = 18 + tgaBuf[0];
   const bottomLeft = (desc & 0x20) === 0;
   const px = (col, rowTop) => { const r = bottomLeft ? (H - 1 - rowTop) : rowTop; const o = dataOff + (r * W + col) * 3; return [tgaBuf[o + 2], tgaBuf[o + 1], tgaBuf[o]]; };
-  const out = {};
+  // MAJORITY-VOTE neighbour sampling (2026-06-10): the old first-neighbour-wins
+  // could assign a settlement pixel sitting on a region BORDER to the NEIGHBOURING
+  // region (then first-write-wins blocked the true pixel) — Iasonion's governor was
+  // bound to a general 15 tiles away because of this (live-caught: Deimachos, not
+  // BakisA, governs Iasonion). Now each black pixel votes over its 8-neighbourhood
+  // and a region keeps the candidate with the MOST matching neighbours.
+  const out = {}, score = {};
   for (let yTop = 0; yTop < H; yTop++) {
     for (let col = 0; col < W; col++) {
       const [r, g, b] = px(col, yTop);
       if (r !== 0 || g !== 0 || b !== 0) continue; // settlements are black
-      // sample neighbours for the region colour
-      let region = null;
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1]]) {
+      const votes = {};
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) {
         const nx = col + dx, ny = yTop + dy;
         if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
         const [nr, ng, nb] = px(nx, ny);
         if (nr === 0 && ng === 0 && nb === 0) continue;
         const reg = rgbToRegion[`${nr},${ng},${nb}`];
-        if (reg) { region = reg; break; }
+        if (reg) votes[reg] = (votes[reg] || 0) + 1;
       }
-      if (region && !out[region]) out[region] = { x: col, y: H - 1 - yTop };
+      let region = null, best = 0;
+      for (const [reg, v] of Object.entries(votes)) if (v > best) { best = v; region = reg; }
+      if (region && best > (score[region] || 0)) { score[region] = best; out[region] = { x: col, y: H - 1 - yTop }; }
     }
   }
   return out;
