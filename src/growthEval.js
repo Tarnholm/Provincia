@@ -61,7 +61,7 @@ const path = require("path");
 // (truth + 0.5×govSqualor), subtracted per-settlement at runtime (see computeFactionGrowth).
 const COEF = { intercept: 0.9564, farmN: -0.0105, farmLevel: 0.5101, healthSum: 0.4939, pgOther: 0.5037, popPer1000: -0.4177, hiPopRelief: 0.0893, govLevel: -0.7301, hasPort: -0.0426 };
 const ACCURACY = { withinHalf: 0.98, bracketMatch: 0.96, mae: 0.12, n: 308,
-  note: "no-save model (14 factions): pure RTW mechanics, NO regression. Every term verified against the live in-game growth scroll (squalor onset at pop 1150 then thresholds at plain 1500-multiples, governor Estates, granary penalties, summer fish-port bonus). ~96.4% land on the EXACT tax bracket on the 308-settlement corpus (97.1% scored against same-turn populations). (Exact-bracket is the only metric that matters.) Load your faction's save for the exact plan." };
+  note: "no-save model (14 factions): pure RTW mechanics, NO regression. Every term verified against the live in-game growth scroll (engine squalor formula: floor(effectivePop/1500) with citizens above 2x the tier base counting double; governor Estates; granary penalties; summer fish-port bonus). ~96.4% land on the EXACT tax bracket on the 308-settlement corpus (97.1% scored against same-turn populations). (Exact-bracket is the only metric that matters.) Load your faction's save for the exact plan." };
 
 // SAVE-AWARE model: adds the per-settlement development value stored at settlement
 // mechanics slot marker−1528 (settlementFields.growthDevValue) — the last hidden growth
@@ -369,16 +369,42 @@ const SQUALOR_DBL = { village: 1800, town: 6000, large_town: 9000, city: 17000, 
 // the corpus band scan (every town at 2400–2985 implies 1 pt, every town ≥3000 implies 2)
 // pinned the 2nd threshold at exactly 3000. This also matches the Rome-9000 → 6 pts (3.0%)
 // live read that the +350 curve missed (and we had wrongly dismissed as a hand-edit artifact).
-// LEVEL GATE (2026-06-10, two live pins pulling opposite ways): the EARLY 1150 onset
-// applies only to village/town tiers — Iasonion (town, pop 1400) reads −0.5% squalor
-// live, but Ninos (large_town, pop 1300) reads NO squalor line at all (and Aornos-
-// Baktria, large_town 1200, agrees in the corpus). large_town+ = plain floor(pop/1500).
-function squalorPts(pop, level) {
-  const early = (level === "village" || level === "town") && pop >= 1150 ? 1 : 0;
-  return Math.max(early, Math.floor((pop || 0) / 1500));
+// ENGINE SQUALOR FORMULA (2026-06-10, v0.9.1008 — the real RTW mechanism, documented by
+// the TWCenter population research and verified against every live pin of this session):
+//   squalor points = floor( effectivePop / 1500 )
+//   effectivePop   = pop + max(0, pop − 2×tierBase)   (citizens above 2× the tier's
+//                    descr_cultures "base" count DOUBLE)
+// The tier base is the PREVIOUS tier's descr_cultures "base" (in-game tier names are
+// offset one step from the descr_strat level keys): town→400 (village's), large_town→
+// 2000, city→4000, large_city→9000, huge_city→14000.
+// This reproduces, mechanically: the 1149→0% / 1150→−0.5% per-person onset (town: eff =
+// 2×1150−800 = 1500 exactly); live Iasonion 1400→1pt / Hierapolis 2250→2pts (town);
+// live Ninos 1300→0 / Thyateira 2800→1 / Gorgippia 3000→2 / Phanagoreia 4000→2 (large_town);
+// Pantikapaion 5000→3 (city); Rome 9000→6 (large_city); AND the controlled pop-edit data
+// (town 2000→2pts, 3000→3pts) that was wrongly rejected as a "force-edit artifact".
+const SQUALOR_BASE_FALLBACK = { village: 400, town: 400, large_town: 2000, city: 4000, large_city: 9000, huge_city: 14000 };
+const _cultureBaseCache = {};
+function squalorBases(modDataDir) {
+  if (!modDataDir) return SQUALOR_BASE_FALLBACK;
+  if (_cultureBaseCache[modDataDir]) return _cultureBaseCache[modDataDir];
+  let out = SQUALOR_BASE_FALLBACK;
+  try {
+    const txt = fs.readFileSync(path.join(modDataDir, "descr_cultures.txt"), "latin1");
+    const vals = [...txt.matchAll(/"base"\s*:\s*(\d+)/g)].map(m => +m[1]).slice(0, 6);
+    if (vals.length >= 6) {
+      // shift one tier down: each descr level uses the previous tier's base
+      out = { village: vals[0], town: vals[0], large_town: vals[1], city: vals[2], large_city: vals[3], huge_city: vals[4] };
+    }
+  } catch { /* fallback */ }
+  return (_cultureBaseCache[modDataDir] = out);
+}
+function squalorPts(pop, level, base) {
+  const B = base != null ? base : (SQUALOR_BASE_FALLBACK[level] != null ? SQUALOR_BASE_FALLBACK[level] : 2000);
+  const eff = (pop || 0) + Math.max(0, (pop || 0) - 2 * B);
+  return Math.floor(eff / 1500);
 }
 function rawGrowth(f) {
-  const squalor = 0.5 * squalorPts(f.pop || 0, f.level);
+  const squalor = 0.5 * squalorPts(f.pop || 0, f.level, f.squalorBase);
   return 0.5 * ((f.farmLevel || 0) + (f.healthSum || 0) + (f.pgOther || 0))
     - (GOVDAMP[f.govLevel] || 0) - squalor;
 }
@@ -439,6 +465,7 @@ function computeFactionGrowth(modDataDir, faction, opts) {
     const region = byRegion[s.region];
     if (!region || !region.farmN) continue;
     const feat = settlementFeatures(s, region, want, capIndex, chainLevels, resourcesByRegion, aliases, factionTokens);
+    feat.squalorBase = squalorBases(modDataDir)[feat.level]; // tier base for the engine squalor formula
     // Governor trait effects. Only the SQUALOR effect is applied to growth (below) — it's
     // large and exact (Estates etc.). The farm/health governor traits (Fertility/GoodFarmer)
     // were tried as features but HURT the no-save fit (binding + governance noise outweighs a
@@ -473,7 +500,7 @@ function computeFactionGrowth(modDataDir, faction, opts) {
     // Stymbara/Torone (pop ≤1100, 0 pop-squalor, GoodBuilder governors) all read +0.5
     // over truth without the clamp; clamping fixes them corpus-wide (93.5→94.5%).
     if (govSqualorPct && !savedDev) {
-      const popSqualorPct = 0.5 * squalorPts((feat && feat.pop) || 0, feat && feat.level);
+      const popSqualorPct = 0.5 * squalorPts((feat && feat.pop) || 0, feat && feat.level, feat && feat.squalorBase);
       raw = raw + popSqualorPct - Math.max(0, popSqualorPct + govSqualorPct);
     }
     baseGrowthEst = Math.round(raw * 2) / 2;

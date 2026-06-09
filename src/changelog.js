@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1008",
+    date: "2026-06-10",
+    items: [
+      { type: "fix", text: "**The real engine squalor formula, fully cracked.** Squalor = ⌊effective population / 1500⌋ × 0.5%, where every citizen above 2× the settlement tier's `descr_cultures` base counts **double** (tier bases read from the mod, one tier offset from the level keys). This single mechanism reproduces everything pinned this session: the to-the-person onset at pop 1150 (town: 2×1150−800 = exactly 1500), Hierapolis 2250 → −1.0% (governor-move test proved it wasn't his governor), Ninos 1300 → no squalor, Thyateira 2800 → −0.5%, Pantikapaion 5000 → −1.5%, Rome 9000 → −3.0% — and retro-validates the controlled population-edit experiments that had been wrongly dismissed as artifacts. Replaces all fitted squalor curves with the documented mechanic." },
+    ],
+  },
+  {
     version: "0.9.1007",
     date: "2026-06-10",
     items: [
