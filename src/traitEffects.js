@@ -176,6 +176,47 @@ function settlementSites(modDataDir) {
   } catch (e) { return []; }
 }
 
+// ---- ground-type map (map_ground_types.tga, RLE TGA, 2× the region-map scale) ----
+// Used for the ENGINE RELOCATION rule: a character seeded on impassable ground
+// (dense-forest color 0,128,128) is garrisoned into the nearest own-faction
+// settlement at campaign start. Live-proven 2026-06-10: Deimachos (seeded 15 tiles
+// out on 0,128,128 ground) governs Iasonion at age 40 with his GoodBuilder −1
+// (user-verified card: 0 retainers, squalor from trait); Apellas (seeded 2 tiles
+// from Kyrene on farmland) correctly stays OUTSIDE. Only ~9 characters map-wide
+// relocate under this rule — unlike the blunt 16-tile distance snap (reverted),
+// this models the engine's actual placement validation.
+const IMPASSABLE_GROUND = new Set(["0,128,128"]);
+const _groundCache = {};
+function dominantGroundAt(modDataDir, x, y) {
+  let g = _groundCache[modDataDir];
+  if (g === undefined) {
+    try {
+      const buf = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_ground_types.tga"));
+      const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), bytes = buf[16] / 8;
+      const pix = Buffer.alloc(W * H * bytes);
+      let i = 18 + buf[0], o = 0;
+      while (o < pix.length && i < buf.length) {
+        const h = buf[i++]; const n = (h & 0x7f) + 1;
+        if (h & 0x80) { for (let k = 0; k < n; k++) { buf.copy(pix, o, i, i + bytes); o += bytes; } i += bytes; }
+        else { buf.copy(pix, o, i, i + n * bytes); o += n * bytes; i += n * bytes; }
+      }
+      g = { pix, W, H, bytes, bottomLeft: (buf[17] & 0x20) === 0 };
+    } catch { g = null; }
+    _groundCache[modDataDir] = g;
+  }
+  if (!g) return null;
+  const cnt = {};
+  for (const gx of [2 * x, 2 * x + 1]) for (const gy of [2 * y, 2 * y + 1]) {
+    if (gx < 0 || gy < 0 || gx >= g.W || gy >= g.H) continue;
+    const row = g.bottomLeft ? gy : (g.H - 1 - gy);
+    const o = (row * g.W + gx) * g.bytes;
+    const c = g.pix[o + 2] + "," + g.pix[o + 1] + "," + g.pix[o];
+    cnt[c] = (cnt[c] || 0) + 1;
+  }
+  const top = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0];
+  return top ? top[0] : null;
+}
+
 // NO-SAVE governor effects: read the STARTING governors from descr_strat and bind each
 // to its settlement by EXACT COORDINATES (user 2026-06-09: a governing general stands on
 // the settlement's tile, and the general's x,y are exact — far more reliable than the
@@ -198,20 +239,26 @@ function govEffectByCityFromStrat(modDataDir, parsed) {
   // collect every named character's coords + the traits AND ancillaries lines that follow it
   // (order in descr_strat: character → traits → [ancillaries] → army; finalize at next character)
   // USER RULE (2026-06-10): bind ONLY by coordinates — never trust the descr_strat
-  // author comments (";CityName"/"(Field)"), and no distance-snapping (the 16-tile
-  // snap shipped briefly in v0.9.1009 created a phantom governor at Kyrene from a
-  // deliberately-outside general 2 tiles away; REVERTED).
+  // author comments (";CityName"/"(Field)"). No blind distance-snapping (the 16-tile
+  // snap created a phantom at Kyrene; reverted). The ONE relocation modeled is the
+  // engine's own: impassable-seeded characters garrison into the nearest own city
+  // (see dominantGroundAt above — live-proven Deimachos/Iasonion vs Apellas/Kyrene).
   const generals = [];
-  let pending = null;
+  let pending = null, curFaction = null;
+  const ownerByRegion = {};
   const finalize = () => { if (pending) generals.push(pending); pending = null; };
   for (const raw of lines) {
     const t = raw.includes(";") ? raw.slice(0, raw.indexOf(";")).trim() : raw.trim();
     if (!t) continue;
+    const fm = t.match(/^faction\s+([a-z_0-9]+)\s*,/i);
+    if (fm) { finalize(); curFaction = fm[1].toLowerCase(); continue; }
+    const rm = t.match(/^region\s+([\w-]+)/i);
+    if (rm && curFaction) ownerByRegion[rm[1]] = curFaction;
     // Tolerate the optional `sub_faction <name>,` field between `character` and the name —
     // Greek-city / sub-faction governors (e.g. Thurii: "character, sub_faction athens, Eumedes,
     // named character, …, x 327, y 372") were silently skipped without it. (Fixed 2026-06-09.)
     const m = t.match(/^character\s*,?\s*(?:sub_faction\s+\w+\s*,\s*)?[^,]+,\s*named character\b.*?\bx\s+(-?\d+)\s*,\s*y\s+(-?\d+)/i);
-    if (m) { finalize(); pending = { x: +m[1], y: +m[2], traitList: [], anc: [] }; continue; }
+    if (m) { finalize(); pending = { x: +m[1], y: +m[2], faction: curFaction, traitList: [], anc: [] }; continue; }
     // ANY other character line (admiral/diplomat/spy/character_record) ends the pending
     // named character — otherwise the AGENT's `traits` line CLOBBERS the governor's
     // (live-caught 2026-06-10: Miletos' governor TimarchosB lost his 26 traits incl
@@ -227,11 +274,22 @@ function govEffectByCityFromStrat(modDataDir, parsed) {
     }
   }
   finalize();
-  // bind each general to the settlement tile it stands on (nearest within TILE_TOL)
+  // bind each general to the settlement tile it stands on (nearest within TILE_TOL),
+  // or — engine relocation — to the nearest OWN-faction city when seeded on impassable ground
   for (const g of generals) {
     let best = null, bestD = Infinity;
     for (const s of sites) { const d = Math.abs(s.x - g.x) + Math.abs(s.y - g.y); if (d < bestD) { bestD = d; best = s; } }
-    if (!best || bestD > TILE_TOL) continue; // not standing in a settlement → not a governor
+    if (!best || bestD > TILE_TOL) {
+      const ground = dominantGroundAt(modDataDir, g.x, g.y);
+      if (!ground || !IMPASSABLE_GROUND.has(ground)) continue; // valid open ground → field army
+      best = null; let bestE = Infinity;
+      if (g.faction) for (const s of sites) {
+        if (ownerByRegion[s.region] !== g.faction) continue;
+        const e2 = Math.hypot(s.x - g.x, s.y - g.y);
+        if (e2 < bestE) { bestE = e2; best = s; }
+      }
+      if (!best || bestE > 30) continue;
+    }
     const e = growthEffectOfTraits(g.traitList, parsed, { ordinal: true }); // descr_strat number = level index
     // fold in FOLLOWER (ancillary) effects — same growth catalysts as traits
     for (const a of g.anc) { const fx = ancFx[a]; if (!fx) continue; e.farm += fx.farm; e.fert += fx.fert; e.health += fx.health; e.squalor += fx.squalor; e.growthFarm += fx.farm; if (e.hits) e.hits.push("anc:" + a); } // growthFarm = Farming only; fert is character

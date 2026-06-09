@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1013",
+    date: "2026-06-10",
+    items: [
+      { type: "fix", text: "**Characters seeded on impassable ground are relocated by the engine into the nearest own-faction city — now modeled (and the Iasonion mystery is solved).** Deimachos is seeded 15 tiles from Iasonion on impassable dense-forest ground; the engine garrisons him into the city (in-game cursor confirms him at Iasonion's exact tile, age 40, Superior Builder = the −0.5% squalor relief). Unlike the reverted distance-snap, this terrain-gated rule moves only ~9 characters map-wide and correctly leaves deliberately-placed field generals (like the one outside Kyrene) alone. Live-verified positively (Iasonion) and negatively (Kyrene). Corpus: 97.4% exact bracket." },
+    ],
+  },
+  {
     version: "0.9.1012",
     date: "2026-06-10",
     items: [
