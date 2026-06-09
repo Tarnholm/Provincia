@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1011",
+    date: "2026-06-10",
+    items: [
+      { type: "fix", text: "**Anti-traits now cancel governor trait levels — live-cracked at Thessalonike.** A seeded anti-trait reduces its opposite trait's effective level (Bokros: Prim 3 + Feck 1 → Prim level 2, whose squalor relief vanishes — his card shows only the architect's −1, and the governor move-out test matched the model to the half-percent on every line: health +0.5, squalor relief +0.5, bare population squalor −1.5% at pop 4500). Thessalonike now reads 0% → Normal, exactly as in-game." },
+    ],
+  },
+  {
     version: "0.9.1010",
     date: "2026-06-10",
     items: [

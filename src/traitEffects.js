@@ -55,10 +55,12 @@ function parseAncillaryEffects(modDataDir) {
   return out;
 }
 
-// → { traitName: [ { threshold, Farming, Fertility, Health, Squalor }, ... ] }  (levels asc by threshold)
+// → { traitName: [ { threshold, Farming, Fertility, Health, Squalor }, ... ] }  (levels asc by
+// threshold), plus traits._anti = { traitName: [antiTraitNames] } for anti-trait cancellation.
 function parseTraitEffects(modDataDir) {
   const p = findEDCT(modDataDir);
   const traits = {};
+  const anti = {};
   if (!p) return traits;
   const lines = fs.readFileSync(p, "latin1").split(/\r?\n/);
   let cur = null, lvl = null;
@@ -67,14 +69,17 @@ function parseTraitEffects(modDataDir) {
     let m;
     if ((m = ln.match(/^Trait\s+(\w+)/))) { cur = m[1]; traits[cur] = []; lvl = null; continue; }
     if (!cur) continue;
+    if ((m = ln.match(/^\s*AntiTraits\s+(.+)$/))) { anti[cur] = m[1].split(",").map(s => s.trim()).filter(Boolean); continue; }
     if ((m = ln.match(/^\s*Level\s+(\w+)/))) { lvl = { threshold: 1, Farming: 0, Fertility: 0, Health: 0, Squalor: 0 }; traits[cur].push(lvl); continue; }
     if (!lvl) continue;
     if ((m = ln.match(/^\s*Threshold\s+(-?\d+)/))) { lvl.threshold = +m[1]; continue; }
     if ((m = ln.match(/^\s*Effect\s+(Farming|Fertility|Health|Squalor)\s+(-?\d+)/))) lvl[m[1]] += +m[2];
   }
   for (const t of Object.keys(traits)) traits[t].sort((a, b) => a.threshold - b.threshold);
-  // drop traits with no growth effect at any level (keep the map small)
+  // drop traits with no growth effect at any level (keep the map small) — but KEEP the
+  // anti-trait map complete (a no-effect trait like Feck can still cancel Prim levels)
   for (const t of Object.keys(traits)) if (!traits[t].some(L => L.Farming || L.Fertility || L.Health || L.Squalor)) delete traits[t];
+  Object.defineProperty(traits, "_anti", { value: anti, enumerable: false });
   return traits;
 }
 
@@ -98,11 +103,19 @@ function growthEffectOfTraits(traitList, parsed, opts) {
   const ordinal = !!(opts && opts.ordinal);
   let farm = 0, fert = 0, health = 0, squalor = 0; const hits = [];
   if (!Array.isArray(traitList) || !parsed) return { farm, fert, health, squalor, growthFarm: 0, hits };
+  // ANTI-TRAIT CANCELLATION (live-cracked Thessalonike 2026-06-10): a seeded anti-trait
+  // reduces the trait's effective level (Bokros: Prim 3 + Feck 1 → Prim level 2 → NO
+  // squalor relief; his card shows only the architect −1, move-out test exact at ±0.5%).
+  const seededLevel = {};
+  for (const t of traitList) { const n = t && (t.name || t.trait); if (n) seededLevel[n] = (t.level != null ? t.level : t.points) | 0; }
+  const antiMap = (parsed && parsed._anti) || {};
   for (const t of traitList) {
     const name = t && (t.name || t.trait); if (!name) continue;
     if (BASELINE_TRAITS.has(name)) continue;
     const def = parsed[name]; if (!def || !def.length) continue;
-    const pts = (t.level != null ? t.level : (t.points != null ? t.points : 0)) | 0;
+    let pts = (t.level != null ? t.level : (t.points != null ? t.points : 0)) | 0;
+    if (ordinal) for (const a of (antiMap[name] || [])) if (seededLevel[a]) pts -= seededLevel[a];
+    if (pts <= 0) continue;
     let chosen = null;
     if (ordinal) { chosen = def[Math.max(0, Math.min(def.length - 1, pts - 1))] || null; } // Nth level (1-based)
     else { for (const L of def) if (L.threshold <= pts) chosen = L; } // highest threshold ≤ points
