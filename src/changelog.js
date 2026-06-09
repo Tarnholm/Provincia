@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1015",
+    date: "2026-06-10",
+    items: [
+      { type: "fix", text: "**Additive farming bonuses (olive/wine/dates) only apply on top of an existing farm chain — live-pinned at Fregellae**, whose olive grove adds nothing because the town has no farm building (its scroll shows no farm-upgrades line; Ninos' pastoralism+wine = level 6 confirms the with-chain case). Fregellae now reads 0% → Normal, matching in-game. **With this and Falerii's Estates governor verified, every settlement checked across six factions — Bosporan, Seleucid, Cyrene, Macedon, Ptolemy, Julii — now matches the in-game growth scroll line for line, with no save loaded.**" },
+    ],
+  },
+  {
     version: "0.9.1014",
     date: "2026-06-10",
     items: [

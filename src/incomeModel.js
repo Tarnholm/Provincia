@@ -168,7 +168,8 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
       if (fl != null) { farmLevel = Math.max(farmLevel, fl); farmLevelSum += fl; }
       for (const x of (cap.farmBonus || [])) if (gv.evalReq(x.req, { ...ctx, chainLevels: growthEDB.chainLevels, aliases: growthEDB.aliases })) farmBonus += x.val;
     }
-    farmLevel += farmBonus; farmLevelSum += farmBonus;
+    // additive bonuses only apply on top of an existing farm chain (Fregellae pin, see growthEval)
+    if (farmLevel > 0) { farmLevel += farmBonus; farmLevelSum += farmBonus; }
     const resList = [...(resourcesByRegion[s.region] || new Set())]
       .map(r => ({ name: r, ...(resourceValues[r] || { tradeValue: 0, mineable: false }) }))
       .filter(r => !r.hidden);

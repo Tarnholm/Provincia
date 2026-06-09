@@ -332,7 +332,11 @@ function settlementFeatures(s, region, faction, capIndex, chainLevels, resources
     for (const fb of (cap.farmBonus || [])) if (evalReq(fb.req, ctx)) farmBonus += fb.val; // olive/wine/dates: additive on top of chain level
     for (const h of cap.health) if (evalReq(h.req, ctx)) healthSum += h.bonus;
   }
-  farmLevel += farmBonus; // chain level (max) + additive bonuses
+  // Additive `farming_level bonus` (olive/wine/dates) only applies ON TOP of an existing
+  // farm chain — with no farming_level-granting building it adds NOTHING (live-pinned
+  // Fregellae 2026-06-10: olive_1 + no farm chain → scroll shows NO farm-upgrades line;
+  // Ninos: pastoralism 5 + wine 1 → scroll shows +3.0% = level 6 ✓).
+  if (farmLevel > 0) farmLevel += farmBonus;
   const govLevel = buildings.has("core_building") ? (buildings.get("core_building") + 1) : 0;
   // coastal settlements get a small extra growth (sea-trade/fishing) the EDB bonuses
   // don't fully capture — flag a port so the no-save model can credit it.
