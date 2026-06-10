@@ -6525,6 +6525,21 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath)
       }
       budget.saveAware = !!(plan && plan.saveAware);
       budget.growthAccuracy = plan && plan.accuracy;
+      // public-order risk ranking (linear model, ±20 — garrison-priority only)
+      try {
+        const po = require("./src/poModel.js").computeStartingPO(modDataDir, faction);
+        let flagged = 0;
+        for (const s of budget.settlements) {
+          const p = po[s.settlement] || po[s.region];
+          if (!p) continue;
+          const br = s.optimalBracket || "normal";
+          s.poAtSet = p.poAt[br] != null ? p.poAt[br] : p.poAt.normal;
+          s.poAtLow = p.poAt.low;
+          s.poRisk = s.poAtSet < 100 ? "red" : s.poAtSet <= 130 ? "yellow" : "green";
+          if (s.poRisk === "red") flagged++;
+        }
+        if (flagged) _writeLog(`[turn1-budget] ${faction}: PO model flags ${flagged} revolt-risk towns (po<100 at set bracket)`);
+      } catch (e) { _writeLog(`[turn1-budget] PO model failed (non-fatal): ${e && e.message}`); }
       budget.staleWarning = _modCopyWarning(modDataDir);
       if (budget.staleWarning) _writeLog(`[turn1-budget] STALE-MOD WARNING: ${budget.staleWarning}`);
       const t = budget.totals;

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1021",
+    date: "2026-06-10",
+    items: [
+      { type: "feature", text: "**Public-order risk column (\"PO @ set\") in the Turn-1 Budget.** Each settlement shows its estimated public order at the recommended tax bracket with a 🔴/🟡/🟢 risk tier, and a ⚔ marker when a town is estimated to be at revolt risk even at LOW tax (→ needs more garrison). This is a risk RANKING (±20), not the exact scroll value — built from happiness/law buildings, garrison size, squalor, religion mismatch, and distance to capital, all parsed from the mod files. Validated on a live campaign: it flagged all three settlements that were actually at revolt risk." },
+    ],
+  },
+  {
     version: "0.9.1020",
     date: "2026-06-10",
     items: [

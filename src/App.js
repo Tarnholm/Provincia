@@ -22777,7 +22777,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         })()}
                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.74rem", marginTop: 6 }}>
                           <thead><tr style={{ color: "#8aa", textAlign: "left" }}>
-                            <th style={{ fontWeight: 600, padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Growth @ set</th><th>→ Tax</th><th>Tax income</th><th>Farm</th><th>Dist→cap</th>
+                            <th style={{ fontWeight: 600, padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Growth @ set</th><th>→ Tax</th><th title="Estimated public order at the recommended bracket — risk RANKING (±20), not the exact in-game %. 🔴 likely revolt risk · 🟡 watch · 🟢 fine. Validated on live Julii: flagged all 3 actual revolt-risk towns.">PO @ set</th><th>Tax income</th><th>Farm</th><th>Dist→cap</th>
                           </tr></thead>
                           <tbody>
                             {armyT1Budget.settlements.slice().sort((a, b) => ((a.settlement || a.region) || "").localeCompare((b.settlement || b.region) || "")).map((s, si) => {
@@ -22789,6 +22789,10 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                 <td style={{ color: "#9aa" }}>{s.pop}</td>
                                 <td style={{ color: (atSet != null && atSet < 0) ? "#e8806a" : "#9aa" }} title={s.baseGrowthEst != null ? `Tax-neutral base growth ${s.baseGrowthEst >= 0 ? "+" : ""}${s.baseGrowthEst}% ${s.bracket ? `+ ${s.bracket} modifier` : ""} — this is what the in-game scroll should read at the recommended bracket.` : undefined}>{atSet != null ? `${atSet >= 0 ? "+" : ""}${atSet}%` : "—"}</td>
                                 <td style={{ color: BRC[s.bracket] || "#9aa", fontWeight: 600 }}>{BRB[s.bracket] || s.bracket}{s.borderline && <span title="Borderline growth estimate — could be one bracket off; verify in-game." style={{ color: "#e8b85a", marginLeft: 3, cursor: "help" }}>⚠</span>}</td>
+                                <td style={{ color: s.poRisk === "red" ? "#e8806a" : s.poRisk === "yellow" ? "#e8b85a" : "#7fd17f", cursor: "help" }}
+                                  title={s.poAtSet != null ? `Estimated public order ≈${s.poAtSet} at the recommended bracket (ranking model, ±20 — garrison-priority only, NOT the exact scroll value).${s.poAtLow != null ? `\nAt Low tax ≈${s.poAtLow}${s.poAtLow < 100 ? " — still risky even at Low → needs more garrison." : ""}` : ""}` : undefined}>
+                                  {s.poAtSet == null ? "—" : <>{s.poRisk === "red" ? "🔴" : s.poRisk === "yellow" ? "🟡" : "🟢"} {s.poAtSet}{s.poRisk === "red" && s.poAtLow != null && s.poAtLow < 100 ? <span style={{ color: "#e8705f", fontWeight: 700 }} title="Estimated to be at revolt risk even at LOW tax — add garrison."> ⚔</span> : null}</>}
+                                </td>
                                 <td style={{ color: "#e8c873" }}>{s.taxes}</td>
                                 <td style={{ color: "#9fd37f" }}>{s.farming}</td>
                                 <td style={{ color: "#778" }}>{s.distToCapital != null ? s.distToCapital : "—"}</td>
@@ -22797,7 +22801,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                           </tbody>
                         </table>
                         <div style={{ marginTop: 5, fontSize: "0.68rem", color: "#8aa" }}>
-                          Set each settlement's tax to the "→ Tax" bracket in-game (highest bracket keeping growth ≥ 0), and this is the projected turn-1 economy. Income model validated against the 10-faction turn-1 save corpus (median budget error 7%; trade is the weak term). Trade/mining are faction-level estimates — per-town columns show taxes + farming only.
+                          Set each settlement's tax to the "→ Tax" bracket in-game (highest bracket keeping growth ≥ 0), and this is the projected turn-1 economy. Income model validated against the 10-faction turn-1 save corpus (median budget error 7%; trade is the weak term). Trade/mining are faction-level estimates — per-town columns show taxes + farming only. "PO @ set" is a revolt-risk RANKING (±20) for garrison planning — 🔴 towns need garrison or lower tax; ⚔ means risky even at Low.
                         </div>
                         {armyT1Budget.staleWarning && (
                           <div style={{ marginTop: 5, padding: "4px 8px", borderRadius: 4, background: "rgba(232,90,90,0.18)", border: "1px solid rgba(232,90,90,0.55)", fontSize: "0.72rem", color: "#f0a0a0" }}>
