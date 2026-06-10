@@ -626,13 +626,26 @@ function emitCharacterRecord(c) {
 // ARMY EXTRACTION (units grouped by commander)
 // ─────────────────────────────────────────────────────────────────────────────
 function groupUnitsByCommander(buf) {
+  // ARMY MEMBERSHIP IS CONTIGUITY (cracked 2026-06-10, army-contig-test.js): only the
+  // commander's own bodyguard unit carries commanderUuid; the rest of his army are the
+  // UNTAGGED units that FOLLOW it in the save's unit array while the region matches.
+  // Validated 19/19 julii generals' army sizes == descr_strat on the turn-2 save
+  // (incl. a 20-unit stack). The old one-unit-per-commander join emitted bodyguards
+  // only (966 units); this recovers the full ~2,300-unit army roster. Untagged units
+  // with no open group are settlement garrisons (not attached to a character here).
   const units = findUnitRecords(buf);
   const byCommander = new Map();
+  let g = null;
+  const flush = () => { if (g) { byCommander.set(g.cmd, g.units); g = null; } };
   for (const u of units) {
-    if (!u.commanderUuid || u.commanderUuid === 0 || u.commanderUuid === 0xffffffff) continue;
-    if (!byCommander.has(u.commanderUuid)) byCommander.set(u.commanderUuid, []);
-    byCommander.get(u.commanderUuid).push(u);
+    const naval = /\bsea\b|\bocean\b/i.test(u.region || "");
+    if (naval) { flush(); continue; }
+    const cmd = u.commanderUuid && u.commanderUuid !== 0xffffffff ? (u.commanderUuid >>> 0) : null;
+    if (cmd) { flush(); g = { cmd, region: u.region, units: [u] }; continue; }
+    if (g && u.region === g.region) { g.units.push(u); continue; }
+    flush(); // untagged unit outside an open group = garrison/loose
   }
+  flush();
   return byCommander;
 }
 
@@ -1203,7 +1216,12 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
   // for 992 chars vs source's 3104 lines for the same 992 chars, a 35%
   // over-count. For T1 with no actions taken, source IS the truth. Later
   // turns will need a delta strategy (v1 for new chars + state changes).
-  const useSourceCharacters = sourceStratCharacters && sourceStratCharacters[facId] && sourceStratCharacters[facId].length > 0;
+  // --save-characters (2026-06-10): for turn>1 emit the CURRENT roster from the save
+  // (v1 named generals + commander-grouped unit records) so the reconstruction matches
+  // the played state — the cracked family path below already pairs with it. Without
+  // the flag, the historical source-verbatim behaviour is unchanged.
+  const wantSaveChars = !!global.__SAVE_CHARACTERS__ && turnNumber > 1;
+  const useSourceCharacters = !wantSaveChars && sourceStratCharacters && sourceStratCharacters[facId] && sourceStratCharacters[facId].length > 0;
   // Cracked CURRENT family for turn>1: emit the live roster (births/deaths
   // since T1) instead of the stale source family. Gated on turn>1 AND the
   // cracked parser resolving at least one family member for this faction;
@@ -1251,7 +1269,7 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
     }
   } else {
     for (const c of characters) {
-      const army = charArmies.get(c.secondaryUuid);
+      const army = charArmies.get((c.secondaryUuid || 0) >>> 0) || charArmies.get(c.secondaryUuid);
       const text = emitCharacter(c, army, fallbackPos, ancNames, eduUnits, factionBodyguard, substitutionLog, edctTraitNames, traitMaxLevels);
       if (text === null) { skippedCount++; continue; }
       lines.push(text);
@@ -1731,11 +1749,14 @@ function spliceBundledTemplate(bundledLines, newFactionBlocksText, headerComment
 async function main() {
   const argv = process.argv.slice(2);
   if (argv.length < 1) {
-    console.error("usage: node scripts/save-to-descr-strat.js <save-path> [output-path] [--deploy <dir>] [--mod-dir <dir>]");
+    console.error("usage: node scripts/save-to-descr-strat.js <save-path> [output-path] [--deploy <dir>] [--mod-dir <dir>] [--save-characters]");
     console.error("       --mod-dir  use <dir>/data as the reference mod (defaults to bundled-mod/data).");
     console.error("                  Use this when deploying to a specific installed mod whose");
     console.error("                  regions/EDU/EDB differ from the bundled fallback.");
     console.error("       --deploy   immediately copy the generated file into <target-campaign-dir>");
+    console.error("       --save-characters  turn>1: emit CURRENT characters+armies from the save");
+    console.error("                  (v1 generals + commander-grouped units) instead of the");
+    console.error("                  starting source characters — pairs with the cracked family.");
     process.exit(2);
   }
   const savePath = argv[0];
@@ -1755,6 +1776,7 @@ async function main() {
       continue;
     }
     if (argv[i] === "--mod-dir") { userModDir = argv[++i]; continue; }
+    if (argv[i] === "--save-characters") { global.__SAVE_CHARACTERS__ = true; continue; }
     positional.push(argv[i]);
   }
   const outPath = positional[0] || path.join(PROJECT_ROOT, "derived", path.basename(savePath, ".sav") + ".descr_strat.txt");

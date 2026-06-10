@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1041",
+    date: "2026-06-10",
+    items: [
+      { type: "feature", text: "**Save → descr_strat reconstruction of the PLAYED state (--save-characters).** The save-to-descr-strat script can now rebuild a campaign's current state for turn-2+ saves: the live character roster with their actual armies, plus the fully-cracked current family tree — not the stale starting blocks. The enabling crack: army membership in the save is contiguity (only a commander's bodyguard unit carries his UUID; his army is the unit records that follow it), validated 19/19 against Julii's known starting armies. A turn-2 reconstruction emits 1,140 characters / 2,289 army units / 1,547 family records with zero validator errors — the foundation for editing a played campaign back into a mod start. Known gaps logged: settlement garrisons, in-play construction." },
+    ],
+  },
+  {
     version: "0.9.1040",
     date: "2026-06-10",
     items: [
