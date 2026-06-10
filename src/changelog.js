@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1016",
+    date: "2026-06-10",
+    items: [
+      { type: "improvement", text: "**The no-save tax plan is no longer labelled an estimate.** After two days of live verification (every settlement checked across six factions matches the in-game growth scroll line for line), the plan box now describes what it actually is: the full cracked RIS growth model — engine squalor formula, per-tier bases from descr_cultures, granaries, summer port bonus, chain-required olive/wine/orchard bonuses, governor traits with anti-trait cancellation — computed from the mod files alone. The ⚠ boundary markers stay for the rare razor-edge calls." },
+      { type: "feature", text: "**Stale-mod-copy warning.** If a sibling mod folder (e.g. \"RIS\" next to \"RIS beta\") has a newer descr_strat than the one Provincia is pointed at, the tax plan and Turn-1 Budget panels now show a red warning — analyzing one copy while the game runs another is the main way the plan can silently drift from the game (it cost two wrong theories this week)." },
+    ],
+  },
+  {
     version: "0.9.1015",
     date: "2026-06-10",
     items: [

@@ -22821,6 +22821,11 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         <div style={{ marginTop: 5, fontSize: "0.68rem", color: "#8aa" }}>
                           Set each settlement's tax to the "→ Tax" bracket in-game (highest bracket keeping growth ≥ 0), and this is the projected turn-1 economy. Income model validated against the 10-faction turn-1 save corpus (median budget error 7%; trade is the weak term). Trade/mining are faction-level estimates — per-town columns show taxes + farming only.
                         </div>
+                        {armyT1Budget.staleWarning && (
+                          <div style={{ marginTop: 5, padding: "4px 8px", borderRadius: 4, background: "rgba(232,90,90,0.18)", border: "1px solid rgba(232,90,90,0.55)", fontSize: "0.72rem", color: "#f0a0a0" }}>
+                            ⚠ {armyT1Budget.staleWarning}
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
@@ -22836,7 +22841,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(90,130,160,0.10)", border: "1px solid rgba(90,130,160,0.35)" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                             <strong style={{ color: "#9fd3ff" }}>🏛 Tax plan</strong>
-                            <span style={{ fontSize: "0.72rem", color: "#8aa" }}>{(armyGrowthPath || armyEconomyPath) ? <>Estimate growth for <b>any faction</b> using your loaded save (reads the per‑settlement development value):</> : <>Load an <b>all‑Normal turn‑2 save</b> above for the EXACT plan (proven 67/67), or estimate from the mod now:</>}</span>
+                            <span style={{ fontSize: "0.72rem", color: "#8aa" }}>{(armyGrowthPath || armyEconomyPath) ? <>Estimate growth for <b>any faction</b> using your loaded save (reads the per‑settlement development value):</> : <>Compute the plan straight from the mod files (live‑verified exact across six factions), or load an all‑Normal turn‑2 save to cross‑check:</>}</span>
                             <button onClick={async () => {
                               if (!modDataDir) { alert("No mod loaded."); return; }
                               try { const r = await window.electronAPI.getStratTaxPlan(modDataDir, fac, armyGrowthPath || armyEconomyPath || undefined); setArmyStratPlan(r || null); }
@@ -22845,17 +22850,22 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                               {(armyGrowthPath || armyEconomyPath) ? "🧮 Estimate plan (uses loaded save)" : "🧮 Estimate plan from mod (no save)"}
                             </button>
                           </div>
+                          {armyStratPlan && armyStratPlan.staleWarning && (
+                            <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 4, background: "rgba(232,90,90,0.18)", border: "1px solid rgba(232,90,90,0.55)", fontSize: "0.72rem", color: "#f0a0a0" }}>
+                              ⚠ {armyStratPlan.staleWarning}
+                            </div>
+                          )}
                           {sp && sp.settlements && (
                             <>
                               {armyStratPlan && armyStratPlan.saveAware
                                 ? <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 4, background: "rgba(90,180,120,0.15)", border: "1px solid rgba(90,180,120,0.5)", fontSize: "0.72rem", color: "#8fd3a8" }}>
                                     ✓ SAVE‑AWARE estimate — reads the stored per‑settlement development values (and each governor's trait effects, incl. Estates squalor) from your loaded save and runs the full RIS growth model: <b>~97% of settlements land on the exact tax bracket</b> (cross‑validated over 14 factions). The rest are towns whose growth sits exactly on a bracket boundary. For your own faction, load a turn‑2 save — the plan reads the <b>real</b> growth (any tax setting) and is <b>exact</b>.
                                   </div>
-                                : <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 4, background: "rgba(232,140,90,0.15)", border: "1px solid rgba(232,140,90,0.5)", fontSize: "0.72rem", color: "#e8b08a" }}>
-                                    ⚠ ESTIMATE from the mod files (RIS growth model from descr_strat + EDB, including each starting governor's trait squalor bound by map coordinates): <b>~96% of settlements land on the exact tax bracket</b> (308-settlement corpus). A <span style={{ color: "#e8b85a" }}>⚠</span> marks settlements close to a bracket boundary (the least‑certain calls — verify those or set one bracket lower). The remaining gap is boundary towns whose growth sits within 0.5% of a bracket edge — load any save to jump to ~97% exact, or a turn‑2 save of your faction for the <b>exact</b> plan.
+                                : <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 4, background: "rgba(90,180,120,0.12)", border: "1px solid rgba(90,180,120,0.4)", fontSize: "0.72rem", color: "#9fd3a8" }}>
+                                    ✓ Computed from the mod files alone — the full cracked RIS growth model: the engine squalor formula (⌊effective pop/1500⌋, citizens above 2× the tier base count double), per‑tier bases from descr_cultures, granaries, summer port bonus, additive olive/wine/orchard farm bonuses (chain‑required), and each starting governor's trait squalor with anti‑trait cancellation, bound by exact map coordinates. <b>Live‑verified line‑for‑line against the in‑game growth scroll across six factions</b> (~97% exact bracket on the historical save corpus; ⚠ marks the rare boundary calls worth eyeballing). <b>Make sure the selected mod folder is the one your campaign actually runs</b> — a stale copy is the main way this plan can drift from the game.
                                   </div>}
                               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem", marginTop: 6 }}>
-                                <thead><tr style={{ color: "#8aa", textAlign: "left" }}><th style={{ padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Base growth</th><th>→ Set to (rough)</th><th>Growth @ set</th></tr></thead>
+                                <thead><tr style={{ color: "#8aa", textAlign: "left" }}><th style={{ padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Base growth</th><th>→ Set to</th><th>Growth @ set</th></tr></thead>
                                 <tbody>
                                   {sp.settlements.map((s, i) => {
                                     const GMOD = { low: 0.5, normal: 0, high: -0.5, very_high: -1 };

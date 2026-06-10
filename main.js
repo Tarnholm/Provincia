@@ -6439,10 +6439,36 @@ ipcMain.handle("get-strat-tax-plan", async (_event, modDataDir, faction, savePat
       const ns = Object.values(r.byFaction).reduce((s, f) => s + (f.settlements ? f.settlements.length : 0), 0);
       const mode = r.saveAware ? "SAVE-AWARE (marker−1528)" : "no-save EDB model";
       _writeLog(`[strat-tax] ${faction || "(all)"}: ${ns} settlements via ${mode}; est ~${Math.round((r.accuracy?.bracketMatch || 0) * 100)}% exact bracket`);
+      r.staleWarning = _modCopyWarning(modDataDir);
+      if (r.staleWarning) _writeLog(`[strat-tax] STALE-MOD WARNING: ${r.staleWarning}`);
     }
     return r;
   } catch (e) { _writeLog(`[strat-tax] failed: ${e && e.message}`); return { error: e && e.message ? e.message : String(e) }; }
 });
+
+// Stale-mod-copy guard (2026-06-10): the user keeps several RIS copies side by side
+// (My Mods/RIS, RIS beta, RIS Classic, …). Analyzing one copy while the game runs a
+// newer sibling produced phantom "mechanics" twice in one session. If any SIBLING mod
+// folder has a NEWER descr_strat than the selected one, surface a warning string.
+function _modCopyWarning(modDataDir) {
+  try {
+    const rel = path.join("world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
+    const mine = path.join(modDataDir, rel);
+    if (!fs.existsSync(mine)) return null;
+    const myTime = fs.statSync(mine).mtimeMs;
+    const modRoot = path.dirname(modDataDir);            // .../My Mods/RIS beta
+    const family = path.dirname(modRoot);                 // .../My Mods
+    const newer = [];
+    const me = path.resolve(modDataDir).toLowerCase();
+    for (const sib of fs.readdirSync(family)) {
+      const p = path.join(family, sib, "data", rel);
+      if (path.resolve(family, sib, "data").toLowerCase() === me || !fs.existsSync(p)) continue;
+      if (fs.statSync(p).mtimeMs > myTime + 60 * 1000) newer.push(sib);
+    }
+    if (!newer.length) return null;
+    return `Sibling mod folder(s) ${newer.join(", ")} have a NEWER descr_strat than the selected mod — if your campaign runs one of those, the plan is computed from stale files. Point Provincia at the copy the game actually loads.`;
+  } catch { return null; }
+}
 
 // IPC: STATIC turn-1 budget @ optimal taxes (2026-06-09) — the no-save Army Setup
 // unit budget. Brackets come from the validated growth model (save-aware when a
@@ -6499,6 +6525,8 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath)
       }
       budget.saveAware = !!(plan && plan.saveAware);
       budget.growthAccuracy = plan && plan.accuracy;
+      budget.staleWarning = _modCopyWarning(modDataDir);
+      if (budget.staleWarning) _writeLog(`[turn1-budget] STALE-MOD WARNING: ${budget.staleWarning}`);
       const t = budget.totals;
       _writeLog(`[turn1-budget] ${faction}: ${budget.settlements.length} towns tier=${budget.tier} ${budget.saveAware ? "SAVE-AWARE" : "no-save"} | taxes=${t.taxes} farm=${t.farming} mine=${t.mining} trade=${t.trade} → income=${t.income} − wages=${t.wages} − corruption=${t.corruption} = armyBudget=${t.armyBudget}`);
     } else _writeLog(`[turn1-budget] ${faction}: FAILED ${budget && budget.error}`);
