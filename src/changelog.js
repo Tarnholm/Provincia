@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1051",
+    date: "2026-06-11",
+    items: [
+      { type: "fix", text: "**Hotfix: v0.9.1050 shipped with a broken renderer source (unterminated string in the relocated copy-plan button) — skip 1050, this build is the working version of it.**" },
+    ],
+  },
+  {
     version: "0.9.1050",
     date: "2026-06-11",
     items: [

@@ -22842,8 +22842,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                               const text = armyT1Budget.settlements.slice()
                                 .sort((x, y) => ((x.settlement || x.region) || "").localeCompare((y.settlement || y.region) || ""))
                                 .map(x => `${((x.settlement || x.region) || "").replace(/_/g, " ")}: ${BRN[x.optimalBracket] || x.optimalBracket || "?"}${x.borderline ? " (verify)" : ""}`)
-                                .join("
-");
+                                .join("\n");
                               navigator.clipboard?.writeText(text).then(() => pushToast("Tax plan copied — paste it next to the game and set the brackets", "info", 4000)).catch(() => {});
                             }}
                             title="Copy the settlement → bracket list to the clipboard, for setting taxes in-game."
