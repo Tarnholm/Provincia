@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1031",
+    date: "2026-06-10",
+    items: [
+      { type: "improvement", text: "**Tax model rework: the population curve is in.** Per-town taxes now follow the engine's log curve — 400×(ln pop − 4.4) × bracket rate × building taxable% × governor % — with a ×0.554 multiplier for multi-town factions (five of ten player ledgers sit within 1% of it; city-states like Capua pay the full rate, matching the live four-bracket experiment exactly). Mean tax error drops 10.8% → 6.6%, total income error 8.8% → 4.1%, and per-town tax numbers finally respond correctly to population and bracket edits. Known deviants under investigation: Julii −23%, Getae −18%." },
+    ],
+  },
+  {
     version: "0.9.1030",
     date: "2026-06-10",
     items: [

@@ -265,11 +265,16 @@ function countCharacters(modDataDir, faction) {
 // ---- CRACKED CONSTANTS (2026-06-09, fit on the 10-faction turn-1 player corpus;
 // see rtw-sav-parser/income-*.js drivers + derived/income-truth.json) ----
 const CALIB = {
-  // taxes = taxBase × Σ_towns max(0, 1+(base%+winter%)/100) × bracketMult.
-  // POP-INDEPENDENT (proven: mauryan's 10500-pop towns and getae's 2500-pop towns
-  // imply the same per-town base). Empire-size (sizeN) lines are NOT active in the
-  // turn-1 economy (events fire later) — excluded. ±9% across factions.
-  taxBase: 713,
+  // TAXES (LOG-CURVE REWORK 2026-06-10, tax-log-model/fit.js): per town
+  //   T = K × 400·(ln pop − 4.4) × rate{0.8/1.0/1.2/1.5} × (1+taxable%/100) × govTax%
+  // K = 1 for SINGLE-TOWN factions (Capua live quartet exact: 1401/1752/2103/2629)
+  // and 0.5544 for multi-town factions — five of ten multi-town player rows sit at
+  // 0.554±0.01 (carthage −0.4%, ptolemaic +0.2%, seleucid −1.2%, bactria +0.7%,
+  // arverni +0.1%). The user's controlled live flips confirm the POP-DEPENDENT
+  // structure (Arretium +372 = W(4500)×Δrate0.5×0.55×f). Mean |err| 6.6% (was 10.8%
+  // flat-713). KNOWN DEVIANTS: julii −23%, getae −18%, mauryan +11% — whatever
+  // splits them from the 0.554 five is the next reading to take in-game.
+  taxLogK_multi: 0.5544, taxLogK_single: 1.0,
   // farming = farmPoint × Σ (region farmN + EDB farming_level incl additive bonuses
   // + governor Effect Farming points). EXACT 2026-06-10: 10/11 player factions at
   // ratio 0.999-1.001 (the uniform 1.001-1.002 residual at 73.5 was the constant —
@@ -506,7 +511,9 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const gTrading = gv0 ? Math.max(0, 1 + (gv0.trading || 0) / 100) : 1;
     const gMine = gv0 ? Math.max(0, 1 + (gv0.mining || 0) / 100) : 1;
     const f = Math.max(0, 1 + (s.taxPctParts.base + s.taxPctParts.winter) / 100);
-    const tTax = CALIB.taxBase * f * mult * gTax;
+    const wLog = Math.max(0, 400 * (Math.log(Math.max(400, s.pop)) - 4.4));
+    const kTax = F.settlements.length > 1 ? CALIB.taxLogK_multi : CALIB.taxLogK_single;
+    const tTax = kTax * wLog * f * mult * gTax;
     // governor Effect Farming = +1 farm level per point for INCOME (confirmed 2026-06-10,
     // gov-farm-income-test.js: 10/11 player factions land at ratio 1.000-1.002 with u=1 —
     // farming income is now exact; the lone seleucid +20% is a separate EDB underparse).
