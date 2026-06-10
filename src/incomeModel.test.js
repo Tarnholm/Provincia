@@ -40,8 +40,9 @@ describe("incomeModel — cracked constants", () => {
     expect(im.CALIB.minePoint).toBe(5);          // mining = 5×mine_resource×Σ(qty×tv), 5/6 exact
     expect(im.CALIB.taxLogK_single).toBe(1.0);   // Capua quartet
     expect(im.CALIB.taxLogK_multi).toBeCloseTo(0.5544, 4);
-    expect(im.CALIB.tradeLand).toBeCloseTo(6.23, 2);
-    expect(im.CALIB.tradeSea).toBeCloseTo(10.57, 2);
+    expect(im.CALIB.tradeLand).toBeCloseTo(4.75, 2);
+    expect(im.CALIB.tradeSea).toBeCloseTo(9.70, 2);
+    expect(im.CALIB.tradeBonusPct).toBe(10);     // documented: 10% per trade_base point
     expect(im.CALIB.corrD0).toBe(12);
   });
 

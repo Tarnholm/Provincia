@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1036",
+    date: "2026-06-10",
+    items: [
+      { type: "improvement", text: "**Trade bonus semantics corrected from the docs — total income error now 3.3%.** Feral's EDB guide documents trade_base_income_bonus at 10% per point (we had been treating points as 1%), and the empire-size-gated trade lines are inactive on turn 1 just like the tax ones. With both fixes the trade fit tightens and becomes more uniform across factions, and the whole-model total income error drops from 4.1% to 3.3% (Seleucid and Ptolemaic within 1%)." },
+    ],
+  },
+  {
     version: "0.9.1035",
     date: "2026-06-10",
     items: [

@@ -302,12 +302,13 @@ const CALIB = {
   // flat minePoint=50 was the arverni coincidence (its qtyVal happened to be 10).
   minePoint: 5,
   // trade = tradeLand×Σ_towns g·rv·(1+landPartners) + tradeSea×Σ_portTowns g·rv·√(seaPartners).
-  // g = 1+EDB trade%/100. landPartners = adjacent regions (map_regions pixel adjacency)
-  // owned by self/ally (≤199 = ally + trade agreement); seaPartners = self/ally PORT
-  // towns sharing a sea body (16 distinct 41,140,X sea zones in map_regions.tga).
-  // Refit 2026-06-10 evening (trade-crack6.js, 11 player rows): mean |err| 13.4%
-  // (julii 4%, ptolemaic 0%, seleucid 1%, arverni 1%; worst antigonid −24%, suebi tiny).
-  tradeLand: 6.23, tradeSea: 10.57,
+  // g = 1 + 10%×(trade_base_income_bonus points, base+winter buckets only) — the
+  // 10%/point unit is DOCUMENTED (Feral EDB.md: "adds 10% to base value of land trade
+  // & sea exports"); size-gated lines are inactive at turn 1 like taxes. landPartners =
+  // pixel-adjacent regions owned by self/ally (≤199 = trade agreement); seaPartners =
+  // self/ally PORT towns sharing a sea body. Refit 2026-06-10 (trade-qty-retest.js):
+  // mean |err| 13.1%, more uniform (ptolemaic 1%, seleucid 0%, most others ±10-15%).
+  tradeLand: 4.75, tradeSea: 9.70, tradeBonusPct: 10,
   // wages = 200×named character + 50×admiral (EXACT on fresh saves).
   wageNamed: 200, wageAdmiral: 50,
   // corruption ("other" expenditure) — REFIT 2026-06-10 (corruption-refit.js), now
@@ -584,7 +585,8 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const tMine = CALIB.minePoint * s.mineSum * (mineQty[s.region] || 0) * gMine;
     taxes += tTax; farming += tFarm; mining += tMine;
     const rv = s.resources.reduce((a, r) => a + (r.tradeValue || 0), 0);
-    const gTrade = Math.max(0, 1 + (s.tradePct || 0) / 100) * gTrading;
+    const tradePts = s.tradePctParts ? (s.tradePctParts.base + s.tradePctParts.winter) : (s.tradePct || 0);
+    const gTrade = Math.max(0, 1 + CALIB.tradeBonusPct * tradePts / 100) * gTrading;
     let nPartners = 0;
     for (const n of (adjacency[s.region] || [])) if (isPartner(ownerOfRegion[n])) nPartners++;
     tradeLandSum += gTrade * rv * (1 + nPartners);
