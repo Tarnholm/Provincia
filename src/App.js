@@ -9599,27 +9599,15 @@ function App() {
   const [showArmySetup, setShowArmySetup] = useState(false);
   const [armySetupData, setArmySetupData] = useState(null); // result of getArmySetup IPC
   const [armySetupBusy, setArmySetupBusy] = useState(false);
-  // Economy loaded via the panel's own "Load save" button (overrides the global
-  // live saveEconomy for the budget). { byFaction, savedFile } or null.
-  const [armySetupEconomy, setArmySetupEconomy] = useState(null);
   // Current campaign's faction roster (descr_strat faction lines) for the picker.
   const [armySetupFactions, setArmySetupFactions] = useState(null);
-  // User-entered projected income (the number the game shows at the current tax).
-  // The auto financial-overview attribution is unreliable at turn 1, so this is
-  // the source of truth for the budget headroom (matches the user's workflow).
+  // Editable projected income for the budget headroom — auto-filled from the
+  // mod-file income model (sustainable army budget − starting-army upkeep).
   const [armyProjIncome, setArmyProjIncome] = useState("");
   // Faction-picker search filter for the Army Setup panel.
   const [armyFacSearch, setArmyFacSearch] = useState("");
-  // Virtual tax-setter (2026-06-07): optimal per-settlement tax plan for ALL
-  // factions from one turn-2+ save. { player, turnReady, byFaction, counts } or null.
-  const [armyTaxPlan, setArmyTaxPlan] = useState(null);
-  // Two-save model (2026-06-08 USER RULE): turn-2 save = GROWTH only; turn-1 save =
-  // BUDGET/economy (the AI inflates the turn-2 economy). Track both paths/files.
-  const [armyGrowthPath, setArmyGrowthPath] = useState(null);
-  const [armyGrowthFile, setArmyGrowthFile] = useState(null);
-  const [armyEconomyPath, setArmyEconomyPath] = useState(null);
-  const [armyEconomyFile, setArmyEconomyFile] = useState(null);
-  // ROUGH strat-only tax plan (no save) — ~60% accurate, clearly flagged. v0.9.978.
+  // Tax plan computed from the mod files (live-verified exact; the save-based
+  // two-save flow was removed 2026-06-10 — the no-save model IS the planner).
   const [armyStratPlan, setArmyStratPlan] = useState(null);
   // STATIC turn-1 budget @ optimal taxes (2026-06-09): the no-save income model
   // (src/incomeModel.js — taxes/farming/mining/trade − wages − corruption) at the
@@ -22566,115 +22554,34 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
         const facQ = armyFacSearch.trim().toLowerCase();
         const facList = (armySetupFactions || []).filter(x => x && !SKIP_FAC.has(x))
           .filter(x => !facQ || x.replace(/_/g, " ").toLowerCase().includes(facQ) || ((factionDisplayNames && factionDisplayNames[x]) || "").toLowerCase().includes(facQ));
-        // BUDGET auto-fill = turn-1 income at optimal taxes (estNetAtOptimal, now
-        // computed from the TURN-1 economy save when one is loaded). The budget is
-        // accurate when sourced from turn-1 (budgetTurn1); if only a turn-2 save is
-        // loaded it falls back to the AI-inflated turn-2 economy (flagged in the UI).
-        const budgetTurn1 = !!armyEconomyFile; // a turn-1 economy save is loaded
-        // The economy save's PLAYER faction = YOUR exact economy at YOUR taxes
-        // (recs[0], validated). Use it verbatim — do NOT rescale to "optimal", since
-        // the auto tax-plan can't reliably predict per-bracket growth (confirmed
-        // against the user's save_Carthage: 2667 is exact). Non-player factions get
-        // the rough optimal-tax estimate (clearly flagged).
-        const econPlayer = (armySetupEconomy && armySetupEconomy.player) || null;
-        const budgetNetFor = (ff) => {
-          const e = armySetupEconomy && armySetupEconomy.byFaction && armySetupEconomy.byFaction[ff];
-          if (ff && ff === econPlayer && e && typeof e.net === "number") return e.net; // YOUR exact number
-          const pf = armyTaxPlan && armyTaxPlan.byFaction && armyTaxPlan.byFaction[ff];
-          if (pf && typeof pf.estNetAtOptimal === "number") return pf.estNetAtOptimal;
-          return e && typeof e.net === "number" ? e.net : null;
-        };
+        // NO-SAVE-ONLY (2026-06-10, user request): the save-loading flow (two-save model,
+        // save-based optimalTaxPlan, save-economy badges) is gone — the mod-files model is
+        // live-verified exact, so it IS the planner. Everything below computes from the
+        // mod files alone: tax plan (computeStratTaxPlan), turn-1 budget (incomeModel),
+        // and the budget auto-fill (sustainable army budget − starting-army upkeep).
         const fetchFor = async (ff) => {
           if (!ff || !modDataDir) return;
-          // auto-fill the budget = turn-1 projected income at OPTIMAL taxes (if loaded)
-          const bn = budgetNetFor(ff);
-          setArmyProjIncome(bn != null ? String(bn) : "");
-          setArmySetupBusy(true); setArmySetupData(null); setArmyT1Budget(null);
-          // STATIC turn-1 budget (no save needed): growth-model optimal brackets +
-          // the cracked income model. Fire alongside the army analysis; when no save
-          // gave a budget above, auto-fill from the static model (net after the
-          // faction's starting army, EDU-estimated).
-          const t1Promise = window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyGrowthPath || armyEconomyPath || undefined);
+          setArmyProjIncome("");
+          setArmySetupBusy(true); setArmySetupData(null); setArmyT1Budget(null); setArmyStratPlan(null);
+          const t1Promise = window.electronAPI.getTurn1Budget?.(modDataDir, ff, undefined);
+          // auto-compute the tax plan too (no button press needed)
+          const planPromise = window.electronAPI.getStratTaxPlan?.(modDataDir, ff, undefined);
           try {
             const r = await window.electronAPI.getArmySetup(ff, modDataDir, armyBudgetFloor);
             setArmySetupData(r || { error: "no result" });
             const t1 = await t1Promise;
             if (t1 && !t1.error && t1.totals) {
               setArmyT1Budget(t1);
-              if (bn == null && typeof t1.totals.armyBudget === "number" && r && typeof r.armyUpkeep === "number") {
+              if (typeof t1.totals.armyBudget === "number" && r && typeof r.armyUpkeep === "number") {
                 setArmyProjIncome(String(t1.totals.armyBudget - r.armyUpkeep));
               }
             }
+            const plan = await planPromise;
+            if (plan && !plan.error) setArmyStratPlan(plan);
           }
           catch (e) { setArmySetupData({ error: e?.message || String(e) }); }
           finally { setArmySetupBusy(false); }
         };
-        // Two-save model (USER RULE 2026-06-08): the TURN-2 save gives GROWTH only;
-        // the TURN-1 save gives the BUDGET/economy (the AI inflates the turn-2
-        // economy with very-high taxes + a turn of build-up). One "Load save" button
-        // auto-detects which a save is (growth present ⇒ turn-2) and slots it; load
-        // BOTH for an accurate plan. Budgets come from the turn-1 save; growth + the
-        // optimal-tax brackets from the turn-2 save; estNetAtOptimal rebases the
-        // turn-1 net onto the recommended taxes.
-        const refreshArmyData = async (gp, gf, ep, ef) => {
-          // budgets from turn-1 economy save if we have one, else from the growth save
-          const budgetPath = ep || gp;
-          if (budgetPath) {
-            const all = await window.electronAPI.getAllFactionBudgets(budgetPath, modDataDir);
-            if (all && all.byFaction) { all.savedFile = ef || gf; all.isTurn1 = !!ep; setArmySetupEconomy(all); }
-          }
-          // growth plan from the turn-2 save, with the turn-1 economy as budget source
-          if (gp) {
-            const plan = await window.electronAPI.getOptimalTaxes(gp, modDataDir, undefined, ep || undefined);
-            if (plan && plan.byFaction) setArmyTaxPlan(plan);
-            // auto-fill the viewed faction's budget at optimal taxes
-            const cur = armySetupData && armySetupData.faction;
-            if (cur && plan && plan.byFaction && plan.byFaction[cur] && typeof plan.byFaction[cur].estNetAtOptimal === "number") {
-              setArmyProjIncome(String(plan.byFaction[cur].estNetAtOptimal));
-            }
-          }
-        };
-        const loadSaveForBudget = async () => {
-          try {
-            const res = await window.electronAPI.selectSaveFile?.(liveSaveDir);
-            if (!res) return;
-            if (res.error) { alert(res.error); return; }
-            // probe: does this save carry growth? (turn-2+ ⇒ growth save, else turn-1)
-            const probe = await window.electronAPI.getOptimalTaxes(res.path, modDataDir);
-            const isGrowth = !!(probe && probe.turnReady);
-            let gp = armyGrowthPath, gf = armyGrowthFile, ep = armyEconomyPath, ef = armyEconomyFile;
-            if (isGrowth) { gp = res.path; gf = res.file; setArmyGrowthPath(res.path); setArmyGrowthFile(res.file); }
-            else { ep = res.path; ef = res.file; setArmyEconomyPath(res.path); setArmyEconomyFile(res.file); }
-            await refreshArmyData(gp, gf, ep, ef);
-            const need = !gp ? " — now load a TURN-2 save for the growth/tax plan." : (!ep ? " — now load a TURN-1 save for accurate budgets (this one's economy is the AI's inflated turn-2 numbers)." : " — both loaded; budgets are turn-1, growth is turn-2.");
-            pushToast(`Loaded ${res.file} as the ${isGrowth ? "GROWTH (turn-2)" : "ECONOMY (turn-1)"} save${need}`, (!gp || !ep) ? "warn" : "info", 8000);
-          } catch (e) { alert(e?.message || String(e)); }
-        };
-        // Budget projection from saveEconomy.byFaction[faction].
-        const econSrc = armySetupEconomy || saveEconomy;
-        let budget = null;
-        try {
-          const e = econSrc && econSrc.byFaction && fac ? econSrc.byFaction[fac] : null;
-          if (e && e.net != null && e.income && typeof e.income.taxes === "number") {
-            // current bracket = dominant taxRate over the faction's settlements
-            let cur = "normal";
-            try {
-              const counts = {};
-              const TB = { 0: "low", 1: "normal", 2: "high", 3: "very_high" };
-              for (const [city, sf] of Object.entries(saveSettlementFields || {})) {
-                const owner = (currentOwnerByCity && currentOwnerByCity[city]) || null;
-                if (owner !== fac) continue;
-                const b = TB[sf && sf.taxRate]; if (b) counts[b] = (counts[b] || 0) + 1;
-              }
-              const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-              if (top) cur = top[0];
-            } catch {}
-            const net = e.net, tax = e.income.taxes;
-            const proj = (b) => Math.round(net + tax * (MULT[b] / MULT[cur] - 1));
-            const byBracket = { low: proj("low"), normal: proj("normal"), high: proj("high"), very_high: proj("very_high") };
-            budget = { net, tax, cur, byBracket, headroomHigh: byBracket.high - armyBudgetFloor };
-          }
-        } catch {}
         const TAX_LBL = { low: "Low", normal: "Normal", high: "High", very_high: "V.High" };
         return createPortal(
           <div onClick={close} style={{ position: "fixed", inset: 0, zIndex: 9991, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -22683,18 +22590,10 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                 <span style={{ fontWeight: 700, fontSize: "1rem", color: "#cf8f6a" }}>⚔ Army Setup — {facLabel}</span>
                 <button onClick={close} style={{ background: "none", border: "none", color: "#bbb", fontSize: "1.1rem", cursor: "pointer" }}>✕</button>
               </div>
-              {/* Toolbar: load-save (for budget) + faction picker with icons */}
+              {/* Toolbar: faction picker with icons (everything computes from the mod files) */}
               <div style={{ padding: "6px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", gap: 6 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <button onClick={loadSaveForBudget}
-                    title="BEST: load an all-NORMAL turn-2 save of the faction you're setting up (start it, leave all taxes Normal, end one turn, save). That gives the EXACT tax plan (validated 67/67) + budget. Provincia auto-detects turn-1 vs turn-2; an all-Normal turn-2 save is marked EXACT."
-                    style={{ background: "rgba(60,60,60,0.7)", color: "#9fd3ff", border: "1px solid #5a8fb8", borderRadius: 5, padding: "2px 10px", cursor: "pointer", fontSize: "0.78rem" }}>
-                    📂 Load save…
-                  </button>
-                  <span style={{ fontSize: "0.72rem", color: "#8aa", display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <span style={{ color: armyEconomyFile ? "#7fd17f" : "#e8b85a" }}>💰 budget (turn 1): {armyEconomyFile || "— load a turn-1 save"}</span>
-                    <span style={{ color: armyGrowthFile ? "#7fd17f" : "#e8b85a" }}>📈 growth (turn 2): {armyGrowthFile || "— load a turn-2 save"}</span>
-                  </span>
+                  <span style={{ fontSize: "0.72rem", color: "#8aa" }}>Pick a faction — tax plan + turn-1 budget are computed from the mod files (no save needed).</span>
                   <input value={armyFacSearch} onChange={(e) => setArmyFacSearch(e.target.value)} placeholder="Search factions…"
                     style={{ marginLeft: "auto", width: 180, background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "3px 8px", fontSize: "0.78rem" }} />
                 </div>
@@ -22728,21 +22627,15 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                       <strong style={{ color: "#e7b88f" }}>Budget</strong>
                       <span style={{ fontSize: "0.78rem", color: armyProjIncome.trim() === "" ? "#e8c873" : "#bbb", fontWeight: armyProjIncome.trim() === "" ? 700 : 400 }}>turn-1 income @ optimal taxes (editable):</span>
-                      <input type="number" value={armyProjIncome} step={50} placeholder="load a turn-2 save"
+                      <input type="number" value={armyProjIncome} step={50} placeholder="computing…"
                         onChange={(ev) => setArmyProjIncome(ev.target.value)}
-                        title="Auto-filled with this faction's TURN-1 projected income computed AT THE OPTIMAL TAXES from the tax plan (the setup moment). It's an estimate — override with the game's exact number if you like. The swap/trim suggestions budget against it."
+                        title="Auto-filled from the mod-file income model: the sustainable army budget at the optimal tax plan, minus the starting army's estimated upkeep. Editable — override with the game's exact number if you like. The swap/trim suggestions budget against it."
                         style={{ width: 90, background: "rgba(0,0,0,0.4)", color: "#fff", borderRadius: 4, padding: "2px 6px", border: armyProjIncome.trim() === "" ? "2px solid #e8c873" : "1px solid rgba(255,255,255,0.2)" }} />
                       <span style={{ fontSize: "0.78rem", color: "#bbb" }}>floor:</span>
                       <input type="number" value={armyBudgetFloor} step={50}
                         onChange={(ev) => { const v = parseInt(ev.target.value, 10); if (Number.isFinite(v)) setArmyBudgetFloor(v); }}
                         style={{ width: 80, background: "rgba(0,0,0,0.4)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 4, padding: "2px 6px" }} />
                       <span style={{ fontSize: "0.72rem", color: "#8aa" }}>treasury {d.denari ?? "—"} · army upkeep {d.armyUpkeep}</span>
-                      {(() => {
-                        const me = armySetupEconomy && armySetupEconomy.byFaction && fac ? armySetupEconomy.byFaction[fac] : null;
-                        if (!me || me.net == null) return null;
-                        if (fac === econPlayer) return <span style={{ fontSize: "0.72rem", color: "#7fd17f" }} title="This save's PLAYER faction — this is YOUR exact economy at the taxes you set (net read straight from the save). The accurate way to budget a faction: load a save where you played it.">✓ YOUR exact economy at your taxes ({me.net})</span>;
-                        return <span style={{ fontSize: "0.72rem", color: "#e88a5a" }} title={`This is an AI faction in the loaded save — the app can't predict the exact taxes/growth you'd run (only YOU can, in-game). The number is a rough optimal-tax estimate and tends HIGH (the auto tax-plan over-recommends). For its real budget, play it, set taxes, save, and load THAT save. (Estimate here: ${(armyTaxPlan&&armyTaxPlan.byFaction&&armyTaxPlan.byFaction[fac]&&armyTaxPlan.byFaction[fac].estNetAtOptimal) ?? me.net}.)`}>≈ AI faction — rough estimate (tends high); load its own save for the exact number</span>;
-                      })()}
                     </div>
                     {(() => {
                       const proj = parseInt(armyProjIncome, 10);
@@ -22755,12 +22648,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                               Headroom to floor = <b>{head}</b> upkeep {head >= 0 ? "(room to add ~that much)" : "(over budget by " + (-head) + " — trim)"}
                             </div>
                           ) : (
-                            <div style={{ color: "#e8b85a" }}>Enter the game's projected income above to budget swaps (the auto-estimate is unreliable on some saves).</div>
-                          )}
-                          {budget && (
-                            <div style={{ marginTop: 3, fontSize: "0.7rem", color: "#889" }}>
-                              auto estimate (verify in game — can be wrong): net {["low","normal","high","very_high"].map(b => `${TAX_LBL[b]} ${budget.byBracket[b]}`).join(" · ")}
-                            </div>
+                            <div style={{ color: "#8aa" }}>The budget auto-fills from the mod-file model once the faction analysis finishes.</div>
                           )}
                         </div>
                       );
@@ -22829,124 +22717,52 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                       </div>
                     );
                   })()}
-                  {/* Virtual tax plan — optimal per-settlement bracket for this faction */}
+                  {/* Tax plan — optimal per-settlement bracket, computed from the mod files (auto) */}
                   {(() => {
-                    const plan = armyTaxPlan && armyTaxPlan.byFaction && fac ? armyTaxPlan.byFaction[fac] : null;
                     const BR = { low: "Low", normal: "Normal", high: "High", very_high: "V.High" };
                     const BR_COL = { low: "#9fd3ff", normal: "#cfcf8f", high: "#e8b85a", very_high: "#e8806a" };
-                    // NO SAVE LOADED → offer a ROUGH strat-only estimate (~60%), clearly flagged.
-                    if (!armyTaxPlan) {
-                      const sp = armyStratPlan && armyStratPlan.byFaction && fac ? armyStratPlan.byFaction[fac] : null;
-                      return (
-                        <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(90,130,160,0.10)", border: "1px solid rgba(90,130,160,0.35)" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                            <strong style={{ color: "#9fd3ff" }}>🏛 Tax plan</strong>
-                            <span style={{ fontSize: "0.72rem", color: "#8aa" }}>{(armyGrowthPath || armyEconomyPath) ? <>Estimate growth for <b>any faction</b> using your loaded save (reads the per‑settlement development value):</> : <>Compute the plan straight from the mod files (live‑verified exact across six factions), or load an all‑Normal turn‑2 save to cross‑check:</>}</span>
-                            <button onClick={async () => {
-                              if (!modDataDir) { alert("No mod loaded."); return; }
-                              try { const r = await window.electronAPI.getStratTaxPlan(modDataDir, fac, armyGrowthPath || armyEconomyPath || undefined); setArmyStratPlan(r || null); }
-                              catch (e) { alert(e?.message || String(e)); }
-                            }} style={{ marginLeft: "auto", background: "rgba(60,60,60,0.7)", color: "#9fd3ff", border: "1px solid #5a8fb8", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
-                              {(armyGrowthPath || armyEconomyPath) ? "🧮 Estimate plan (uses loaded save)" : "🧮 Estimate plan from mod (no save)"}
-                            </button>
-                          </div>
-                          {armyStratPlan && armyStratPlan.staleWarning && (
-                            <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 4, background: "rgba(232,90,90,0.18)", border: "1px solid rgba(232,90,90,0.55)", fontSize: "0.72rem", color: "#f0a0a0" }}>
-                              ⚠ {armyStratPlan.staleWarning}
-                            </div>
-                          )}
-                          {sp && sp.settlements && (
-                            <>
-                              {armyStratPlan && armyStratPlan.saveAware
-                                ? <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 4, background: "rgba(90,180,120,0.15)", border: "1px solid rgba(90,180,120,0.5)", fontSize: "0.72rem", color: "#8fd3a8" }}>
-                                    ✓ SAVE‑AWARE estimate — reads the stored per‑settlement development values (and each governor's trait effects, incl. Estates squalor) from your loaded save and runs the full RIS growth model: <b>~97% of settlements land on the exact tax bracket</b> (cross‑validated over 14 factions). The rest are towns whose growth sits exactly on a bracket boundary. For your own faction, load a turn‑2 save — the plan reads the <b>real</b> growth (any tax setting) and is <b>exact</b>.
-                                  </div>
-                                : <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 4, background: "rgba(90,180,120,0.12)", border: "1px solid rgba(90,180,120,0.4)", fontSize: "0.72rem", color: "#9fd3a8" }}>
-                                    ✓ Computed from the mod files alone — the full cracked RIS growth model: the engine squalor formula (⌊effective pop/1500⌋, citizens above 2× the tier base count double), per‑tier bases from descr_cultures, granaries, summer port bonus, additive olive/wine/orchard farm bonuses (chain‑required), and each starting governor's trait squalor with anti‑trait cancellation, bound by exact map coordinates. <b>Live‑verified line‑for‑line against the in‑game growth scroll across six factions</b> (~97% exact bracket on the historical save corpus; ⚠ marks the rare boundary calls worth eyeballing). <b>Make sure the selected mod folder is the one your campaign actually runs</b> — a stale copy is the main way this plan can drift from the game.
-                                  </div>}
-                              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem", marginTop: 6 }}>
-                                <thead><tr style={{ color: "#8aa", textAlign: "left" }}><th style={{ padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Base growth</th><th>→ Set to</th><th>Growth @ set</th></tr></thead>
-                                <tbody>
-                                  {sp.settlements.map((s, i) => {
-                                    const GMOD = { low: 0.5, normal: 0, high: -0.5, very_high: -1 };
-                                    const atSet = s.baseGrowthEst != null && s.optimalBracket ? Math.round((s.baseGrowthEst + GMOD[s.optimalBracket]) * 10) / 10 : null;
-                                    return (
-                                    <tr key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                                      <td style={{ padding: "1px 6px", color: "#dde" }} title={s.settlement && s.region ? `region: ${s.region.replace(/_/g, " ")}` : undefined}>{((s.settlement || s.region) || "").replace(/_/g, " ")}</td>
-                                      <td style={{ color: "#9aa" }}>{s.pop}</td>
-                                      <td style={{ color: s.baseGrowthEst < 0 ? "#e8806a" : "#9aa", cursor: s.components ? "help" : "default" }}
-                                        title={s.components ? `TAX-NEUTRAL base growth (the in-game scroll at Normal tax):\nBase farming  ${s.components.base >= 0 ? "+" : ""}${s.components.base}%\nFarm upgrades ${s.components.farm >= 0 ? "+" : ""}${s.components.farm}%\nHealth        ${s.components.health >= 0 ? "+" : ""}${s.components.health}%\nBuildings     ${s.components.buildings >= 0 ? "+" : ""}${s.components.buildings}%\nSqualor       −${s.components.squalor}%\n= ${s.baseGrowthEst >= 0 ? "+" : ""}${s.baseGrowthEst}%` : undefined}>
-                                        {s.baseGrowthEst >= 0 ? "+" : ""}{s.baseGrowthEst}%</td>
-                                      <td style={{ color: BR_COL[s.optimalBracket], fontWeight: 600 }}>
-                                        {BR[s.optimalBracket]}
-                                        {s.borderline && <span title={`Borderline — estimated growth is only ${s.distToBoundary ?? "<0.2"}% from a bracket boundary, so this one could flip. Verify in‑game or set one bracket lower to be safe.`} style={{ color: "#e8b85a", marginLeft: 4, cursor: "help" }}>⚠</span>}
-                                      </td>
-                                      <td style={{ color: atSet == null ? "#778" : atSet < 0 ? "#e8806a" : "#7fd17f" }} title="What the in-game growth scroll should read once you set this bracket (base growth + the bracket's flat growth modifier: Low +0.5 / Normal 0 / High −0.5 / V.High −1.0).">{atSet == null ? "—" : `${atSet >= 0 ? "+" : ""}${atSet}%`}</td>
-                                    </tr>
-                                  );})}
-                                </tbody>
-                              </table>
-                            </>
-                          )}
-                        </div>
-                      );
-                    }
-                    if (armyTaxPlan && !armyTaxPlan.turnReady) return (
-                      <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(232,184,90,0.10)", border: "1px solid rgba(232,184,90,0.35)", fontSize: "0.78rem", color: "#e8c88a" }}>
-                        Tax plan needs growth data — the loaded save is turn 1 (growth not yet computed). Load a <b>turn-2 or later</b> save.
-                      </div>
-                    );
-                    if (!plan || !plan.settlements || !plan.settlements.length) return null;
-                    const isPlayer = plan.isPlayer;
+                    const sp = armyStratPlan && armyStratPlan.byFaction && fac ? armyStratPlan.byFaction[fac] : null;
                     return (
-                      <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(90,155,136,0.10)", border: "1px solid rgba(90,155,136,0.35)" }}>
+                      <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(90,130,160,0.10)", border: "1px solid rgba(90,130,160,0.35)" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                          <strong style={{ color: "#8fd3b8" }}>🏛 Tax plan</strong>
-                          <span style={{ fontSize: "0.72rem", color: "#8aa" }}>highest bracket keeping growth ≥ 0 (RTW: Low +0.5% · Normal 0 · High −0.5% · V.High −1.0% growth)</span>
-                          {plan.allNormal
-                            ? <span style={{ fontSize: "0.7rem", color: "#7fd17f", fontWeight: 700 }} title="This is an all-Normal turn-2 save: every town is at Normal tax, so the stored growth IS the base growth and the bracket plan is EXACT — validated 67/67 against hand-tuned Carthage + Julii. This is the ideal calibration save.">✓ EXACT plan (all-Normal turn-2 — validated 67/67)</span>
-                            : isPlayer
-                            ? <span style={{ fontSize: "0.7rem", color: "#e8b85a" }} title="Player save, but taxes aren't all-Normal — the plan derives base growth from each town's current bracket (good, but for a guaranteed-exact plan use an all-NORMAL turn-2 save).">≈ player save (for EXACT, use an all-Normal turn-2 save)</span>
-                            : <span style={{ fontSize: "0.7rem", color: "#9fd3ff" }} title="AI faction — current tax read from the save (not validated). For an exact plan, load an all-Normal turn-2 save where you played this faction.">ℹ AI faction — load its own all-Normal turn-2 save for exact</span>}
-                          {plan.estNetAtOptimal != null && (
-                            <button onClick={() => setArmyProjIncome(String(plan.estNetAtOptimal))}
-                              title="Fill the budget's projected-income box with the ESTIMATED net once these recommended taxes are applied (estimate — verify in game)."
-                              style={{ marginLeft: "auto", background: "rgba(60,60,60,0.7)", color: "#9fd3ff", border: "1px solid #5a8fb8", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
-                              use est. net @ optimal: {plan.estNetAtOptimal}
-                            </button>
-                          )}
+                          <strong style={{ color: "#9fd3ff" }}>🏛 Tax plan</strong>
+                          <span style={{ fontSize: "0.72rem", color: "#8aa" }}>highest bracket keeping growth ≥ 0 (Low +0.5% · Normal 0 · High −0.5% · V.High −1.0%) — computed from the mod files, live‑verified exact across six factions</span>
                         </div>
-                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem", marginTop: 6 }}>
-                          <thead><tr style={{ color: "#8aa", textAlign: "left" }}>
-                            <th style={{ fontWeight: 600, padding: "0 6px" }}>Settlement</th>
-                            <th style={{ fontWeight: 600 }}>Pop</th>
-                            <th style={{ fontWeight: 600 }}>Growth now</th>
-                            <th style={{ fontWeight: 600 }}>Current tax</th>
-                            <th style={{ fontWeight: 600 }}>→ Set to</th>
-                            <th style={{ fontWeight: 600 }}>Growth @ set</th>
-                            <th style={{ fontWeight: 600 }}>Order now→@set</th>
-                          </tr></thead>
-                          <tbody>
-                            {plan.settlements.map((s, si) => {
-                              const change = s.currentBracket && s.currentBracket !== s.optimalBracket;
-                              const orderDrop = s.orderNow != null && s.orderAtOptimal != null && s.orderAtOptimal < s.orderNow;
-                              return (
-                                <tr key={si} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                                  <td style={{ padding: "1px 6px", color: "#dde" }}>{s.name}</td>
-                                  <td style={{ color: "#9aa" }}>{s.population}</td>
-                                  <td style={{ color: s.growthPct < 0 ? "#e8806a" : "#9aa" }}>{s.growthPct >= 0 ? "+" : ""}{s.growthPct}%</td>
-                                  <td style={{ color: s.currentBracket ? BR_COL[s.currentBracket] : "#778" }} title={s.currentBracket ? (s.bracketValidated ? "Your own setting (validated)" : "Read from the save (this faction's current setting)") : "no tax byte"}>{s.currentBracket ? BR[s.currentBracket] : "—"}{s.currentBracket && !s.bracketValidated ? "*" : ""}</td>
-                                  <td style={{ color: BR_COL[s.optimalBracket], fontWeight: change ? 700 : 400 }}>{change ? "➜ " : ""}{BR[s.optimalBracket]}</td>
-                                  <td style={{ color: s.growthAtOptimal < 0 ? "#e8806a" : "#7fd17f" }}>{s.growthAtOptimal >= 0 ? "+" : ""}{s.growthAtOptimal}%</td>
-                                  <td style={{ color: s.orderAtOptimal == null ? "#778" : (orderDrop ? "#e8b85a" : "#9aa") }} title="Public order (Economy-Audit scale) now → at the recommended tax (each bracket up ≈ −20 order; low→normal ≈ −30). Watch low values for unrest.">{s.orderNow == null ? "—" : `${s.orderNow}${s.orderAtOptimal != null && s.orderAtOptimal !== s.orderNow ? `→${s.orderAtOptimal}` : ""}`}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                        <div style={{ marginTop: 5, fontSize: "0.68rem", color: "#8aa" }}>
-                          Set each settlement's tax to the "Set to" bracket in-game. {plan.estNetAtOptimal != null && <>Est. net at these taxes ≈ <b style={{ color: plan.estNetAtOptimal >= armyBudgetFloor ? "#7fd17f" : "#e8806a" }}>{plan.estNetAtOptimal}</b> (estimate — verify in game).</>} Current tax marked <b>*</b> = read from the save (this faction's own setting), validated only for the played faction. Order is the marker−30 value (same as Economy Audit); higher tax lowers it (watch for unrest).
-                        </div>
+                        {armyStratPlan && armyStratPlan.staleWarning && (
+                          <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 4, background: "rgba(232,90,90,0.18)", border: "1px solid rgba(232,90,90,0.55)", fontSize: "0.72rem", color: "#f0a0a0" }}>
+                            ⚠ {armyStratPlan.staleWarning}
+                          </div>
+                        )}
+                        {!sp && <div style={{ marginTop: 6, fontSize: "0.74rem", color: "#9aa", fontStyle: "italic" }}>Computing…</div>}
+                        {sp && sp.settlements && (
+                          <>
+                            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem", marginTop: 6 }}>
+                              <thead><tr style={{ color: "#8aa", textAlign: "left" }}><th style={{ padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Base growth</th><th>→ Set to</th><th>Growth @ set</th></tr></thead>
+                              <tbody>
+                                {sp.settlements.map((s, i) => {
+                                  const GMOD = { low: 0.5, normal: 0, high: -0.5, very_high: -1 };
+                                  const atSet = s.baseGrowthEst != null && s.optimalBracket ? Math.round((s.baseGrowthEst + GMOD[s.optimalBracket]) * 10) / 10 : null;
+                                  return (
+                                  <tr key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                                    <td style={{ padding: "1px 6px", color: "#dde" }} title={s.settlement && s.region ? `region: ${s.region.replace(/_/g, " ")}` : undefined}>{((s.settlement || s.region) || "").replace(/_/g, " ")}</td>
+                                    <td style={{ color: "#9aa" }}>{s.pop}</td>
+                                    <td style={{ color: s.baseGrowthEst < 0 ? "#e8806a" : "#9aa", cursor: s.components ? "help" : "default" }}
+                                      title={s.components ? `TAX-NEUTRAL base growth (the in-game scroll at Normal tax):\nBase farming  ${s.components.base >= 0 ? "+" : ""}${s.components.base}%\nFarm upgrades ${s.components.farm >= 0 ? "+" : ""}${s.components.farm}%\nHealth        ${s.components.health >= 0 ? "+" : ""}${s.components.health}%\nBuildings     ${s.components.buildings >= 0 ? "+" : ""}${s.components.buildings}%\nSqualor       −${s.components.squalor}%\n= ${s.baseGrowthEst >= 0 ? "+" : ""}${s.baseGrowthEst}%` : undefined}>
+                                      {s.baseGrowthEst >= 0 ? "+" : ""}{s.baseGrowthEst}%</td>
+                                    <td style={{ color: BR_COL[s.optimalBracket], fontWeight: 600 }}>
+                                      {BR[s.optimalBracket]}
+                                      {s.borderline && <span title={`Borderline — estimated growth is only ${s.distToBoundary ?? "<0.2"}% from a bracket boundary, so this one could flip. Verify in‑game or set one bracket lower to be safe.`} style={{ color: "#e8b85a", marginLeft: 4, cursor: "help" }}>⚠</span>}
+                                    </td>
+                                    <td style={{ color: atSet == null ? "#778" : atSet < 0 ? "#e8806a" : "#7fd17f" }} title="What the in-game growth scroll should read once you set this bracket (base growth + the bracket's flat growth modifier: Low +0.5 / Normal 0 / High −0.5 / V.High −1.0).">{atSet == null ? "—" : `${atSet >= 0 ? "+" : ""}${atSet}%`}</td>
+                                  </tr>
+                                );})}
+                              </tbody>
+                            </table>
+                            <div style={{ marginTop: 5, fontSize: "0.68rem", color: "#8aa" }}>
+                              The full cracked RIS growth model: engine squalor formula (⌊effective pop/1500⌋, doubling above 2× the tier base), granaries, summer port bonus, chain‑required olive/wine/orchard bonuses, governor trait squalor with anti‑trait cancellation — all from descr_strat + EDB + descr_cultures. Hover a growth value for the per‑line breakdown (matches the in‑game scroll).
+                            </div>
+                          </>
+                        )}
                       </div>
                     );
                   })()}

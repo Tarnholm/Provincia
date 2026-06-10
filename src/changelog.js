@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1017",
+    date: "2026-06-10",
+    items: [
+      { type: "change", text: "**Army Setup is now fully save-free.** The two-save loading flow (Load save…, turn-1 economy / turn-2 growth slots, save-based tax plan, save-economy badges) is gone — the mod-file model it was there to back up is now live-verified exact, so it's the only path. Pick a faction and the tax plan + turn-1 budget compute automatically; the budget field auto-fills with the sustainable army budget minus the starting army's upkeep." },
+    ],
+  },
+  {
     version: "0.9.1016",
     date: "2026-06-10",
     items: [
