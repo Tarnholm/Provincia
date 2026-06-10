@@ -9613,6 +9613,11 @@ function App() {
   // the whole campaign's randomness for every faction.
   const [armyCalibSave, setArmyCalibSave] = useState(() => localStorage.getItem("armyCalibSave") || "");
   useEffect(() => { try { if (armyCalibSave) localStorage.setItem("armyCalibSave", armyCalibSave); else localStorage.removeItem("armyCalibSave"); } catch { } }, [armyCalibSave]);
+  // model perspective: 👤 human-player rules (H/H ×0.92 income) vs 🤖 AI rules
+  // (no human malus + the tiered empire-size income bonus) — the campaign reality
+  // for every faction except the one the tester actually plays.
+  const [armyAsAI, setArmyAsAI] = useState(() => localStorage.getItem("armyAsAI") === "1");
+  useEffect(() => { try { localStorage.setItem("armyAsAI", armyAsAI ? "1" : "0"); } catch { } }, [armyAsAI]);
   // Tax plan computed from the mod files (live-verified exact; the save-based
   // two-save flow was removed 2026-06-10 — the no-save model IS the planner).
   const [armyStratPlan, setArmyStratPlan] = useState(null);
@@ -22574,7 +22579,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           if (!ff || !modDataDir) return;
           setArmyProjIncome("");
           setArmySetupBusy(true); setArmySetupData(null); setArmyT1Budget(null); setArmyStratPlan(null);
-          const t1Promise = window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined);
+          const t1Promise = window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined, armyAsAI || undefined);
           // auto-compute the tax plan too (no button press needed)
           const planPromise = window.electronAPI.getStratTaxPlan?.(modDataDir, ff, armyCalibSave || undefined);
           try {
@@ -22609,7 +22614,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           const done = [];
           try {
             for (const ff of facList) {
-              const t1 = await window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined);
+              const t1 = await window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined, armyAsAI || undefined);
               if (t1 && !t1.error && t1.totals) {
                 const row = { fac: ff, ...t1.totals, towns: t1.settlements?.length || 0 };
                 done.push(row);
@@ -22639,6 +22644,14 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     ⚖ Balance overview{armyOverview && armyOverview.busy ? ` (${armyOverview.rows.length}/${facList.length}…)` : ""}
                   </button>
                   {armyOverview && !armyOverview.busy && <button onClick={() => setArmyOverview(null)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.2)", color: "#9aa", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>hide</button>}
+                  <button
+                    onClick={() => { const next = !armyAsAI; setArmyAsAI(next); pushToast(next ? "Modeling factions under AI rules (no human income malus + empire-size bonus)" : "Modeling factions under human-player rules (H/H ×0.92 income)", "info", 4500); if (fac) setTimeout(() => fetchFor(fac), 0); }}
+                    title={armyAsAI
+                      ? "Currently modeling every faction under AI RULES: no 0.92 human income malus, plus the tiered empire-size AI income bonus (≈×1.8 for city-states down to ×1.0 for big empires — cracked from 215 AI ledgers). Click for human-player rules."
+                      : "Currently modeling every faction under HUMAN-PLAYER rules (H/H: 92% tax+farm income, no AI bonus). Click to model them as the AI actually plays them — usually the right view for campaign balance, since all but one faction are AI."}
+                    style={{ background: armyAsAI ? "rgba(120,140,200,0.25)" : "rgba(60,60,60,0.7)", color: armyAsAI ? "#9fb6e8" : "#9ab", border: "1px solid " + (armyAsAI ? "#5a72b0" : "rgba(255,255,255,0.25)"), borderRadius: 5, padding: "2px 10px", cursor: "pointer", fontSize: "0.74rem" }}>
+                    {armyAsAI ? "🤖 AI rules" : "👤 player rules"}
+                  </button>
                   <button
                     onClick={async () => {
                       if (armyCalibSave) { setArmyCalibSave(""); pushToast("Calibration save cleared — back to descr_strat seeds", "info", 4000); if (fac) fetchFor(fac); return; }

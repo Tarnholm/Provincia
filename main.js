@@ -6478,7 +6478,7 @@ function _modCopyWarning(modDataDir) {
 // land/sea fit, wages 200×named+50×admiral, corruption 6.43×Σdist-to-capital).
 // Validated vs the 10-faction turn-1 corpus: median |budget err| 7%, worst 27%.
 // Returns computeTurn1Budget() + per-settlement optimalBracket/growth merged in.
-ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath) => {
+ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath, asAI) => {
   try {
     if (!modDataDir || !faction) return { error: "modDataDir + faction required" };
     const gm = require("./src/growthModel.js");
@@ -6521,7 +6521,8 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath)
     // the descr_strat seeds for income too — opts.govEffectByCity came from the
     // save-aware path above.
     const budget = im.computeTurn1Budget(modDataDir, faction, bracketByCity,
-      opts && opts.govEffectByCity ? { govEffectByCity: opts.govEffectByCity } : undefined);
+      { ...(opts && opts.govEffectByCity ? { govEffectByCity: opts.govEffectByCity } : {}), ...(asAI ? { asAI: true, isPlayer: false } : {}) });
+    if (budget && !budget.error) budget.asAI = !!asAI;
     if (budget && !budget.error) {
       for (const s of budget.settlements) {
         const g = growthBySettlement[s.settlement] || growthBySettlement[s.region];

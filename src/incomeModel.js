@@ -291,6 +291,11 @@ const CALIB = {
   // denarii per round and +2 order, and the AI an income bonus scaling to 120% by
   // region count — the AI tax-floor we measured.)
   difficultyIncome: 0.92,
+  // AI INCOME BONUS (hard; cracked empirically, ai-bonus-crack.js on 215 AI ledgers):
+  // tiered by empire size. The raw ratios vs our 0.92-baked model were ×1.97/1.49/
+  // 1.28/1.0; the AI does NOT pay the human 0.92 malus, so the pure AI bonus =
+  // ratio × 0.92 → ≈ ×1.81 (1 town) / ×1.37 (2-4) / ×1.18 (5-9) / ×0.96≈1.0 (10+).
+  aiBonusByTier: { 1: 1.81, 2: 1.37, 3: 1.18, 4: 1.08, 5: 1.0, 6: 1.0, 7: 1.0, 8: 1.0, 9: 1.0, 10: 1.0 },
   // farming = 80 × difficulty × Σ(region farmN + EDB farmLevel + governor Farming pts)
   // × Hanging-Gardens. THE ENGINE CONSTANT IS DOCUMENTED: EDB.md "farming_level: plus
   // 80 income (average harvest) per point" — our fitted 73.61 = 80 × 0.92 exactly.
@@ -615,10 +620,21 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       siegeTurns, plagueRiskPct: Math.round(plagueRiskPct * 10) / 10,
       govIncome: gv0 && (gv0.tax || gv0.trading || gv0.mining) ? { tax: gv0.tax || 0, trading: gv0.trading || 0, mining: gv0.mining || 0, hits: gv0.hits || [] } : null });
   }
-  const trade = Math.max(0, CALIB.tradeLand * tradeLandSum + CALIB.tradeSea * tradeSeaSum);
+  let trade = Math.max(0, CALIB.tradeLand * tradeLandSum + CALIB.tradeSea * tradeSeaSum);
   const ch = countCharacters(modDataDir, faction) || { named: 0, admiral: 0 };
   const wages = CALIB.wageNamed * ch.named + CALIB.wageAdmiral * ch.admiral;
-  const corruption = Math.max(0, Math.round(CALIB.corrK * corrSum));
+  let corruption = Math.max(0, Math.round(CALIB.corrK * corrSum));
+  // AI PERSPECTIVE (opts.asAI, cracked ai-bonus-crack.js): the AI doesn't pay the
+  // human 0.92 difficulty malus on taxes+farming, and gets the tiered empire-size
+  // income bonus on its whole economy. Validated against 215 AI ledgers.
+  if (opts && opts.asAI) {
+    const aiB = CALIB.aiBonusByTier[F.tier] != null ? CALIB.aiBonusByTier[F.tier] : 1.0;
+    taxes = taxes / CALIB.difficultyIncome * aiB;
+    farming = farming / CALIB.difficultyIncome * aiB;
+    mining *= aiB;
+    trade *= aiB;
+    corruption = Math.round(corruption / CALIB.difficultyIncome * aiB); // income-proportional
+  }
   const income = Math.round(taxes + farming + mining + trade);
   const army = armyUpkeepEDU(modDataDir, faction);
   const preNet = army ? (income - wages - corruption - army.upkeep) : null;

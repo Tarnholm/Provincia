@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1038",
+    date: "2026-06-10",
+    items: [
+      { type: "feature", text: "**👤/🤖 model perspective toggle.** The Army Setup can now model every faction under AI rules — no 0.92 human income malus, plus the tiered empire-size AI income bonus (≈×1.8 for city-states down to ×1.0 for big empires, cracked from 215 AI ledgers and validating at ±12%). Since all but one faction in any campaign are AI, this is usually the right lens for balance work; click the toggle and the budget, tax plan and ⚖ Balance overview all recompute. Persisted across sessions." },
+    ],
+  },
+  {
     version: "0.9.1037",
     date: "2026-06-10",
     items: [
