@@ -420,7 +420,12 @@ function optimalTaxPlan(saveBuf, modDataDir, cracked, playerHint, economyBudgets
     // AI brackets are the save's value but unvalidated.
     const bracketValidated = curBracket != null && fac === (player || "").toLowerCase();
     const effBracket = curBracket || "normal"; // assume normal only if truly null
-    const basePct = growthPct - TAX_GROWTH_MOD[effBracket];
+    // WINTER CREDIT (live julii 2026-06-11, user-confirmed on Arretium): winter turns
+    // (seasonIndex 1) carry a uniform −0.5% seasonal growth dip on every settlement.
+    // Bracket choice must use the ANNUAL base, not the winter tick — otherwise a
+    // winter save drags the whole empire to low taxes (all towns read −0.5 @ normal).
+    const winterCredit = (cracked && cracked.seasonIndex === 1) ? 0.5 : 0;
+    const basePct = growthPct - TAX_GROWTH_MOD[effBracket] + winterCredit;
     const optimalBracket = optimalBracketForBase(basePct);
     counts[optimalBracket] = (counts[optimalBracket] || 0) + 1;
     // project public order (marker−30, the Economy-Audit "PO%") at the optimal tax

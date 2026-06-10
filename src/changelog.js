@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1045",
+    date: "2026-06-11",
+    items: [
+      { type: "fix", text: "**Tax plan: winter saves no longer drag every settlement to low taxes.** Winter turns carry a uniform −0.5% seasonal growth dip on all settlements; the optimal-bracket rule (highest tax with non-negative growth) was reading that winter tick as real and recommending low everywhere. The planner now credits the seasonal dip back and chooses brackets on the annual base growth (live-confirmed on Arretium: normal = 0 growth)." },
+    ],
+  },
+  {
     version: "0.9.1044",
     date: "2026-06-11",
     items: [
