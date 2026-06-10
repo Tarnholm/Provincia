@@ -82,10 +82,10 @@ function parseTraitEffectsUncached(modDataDir) {
     if ((m = ln.match(/^Trait\s+(\w+)/))) { cur = m[1]; traits[cur] = []; lvl = null; continue; }
     if (!cur) continue;
     if ((m = ln.match(/^\s*AntiTraits\s+(.+)$/))) { anti[cur] = m[1].split(",").map(s => s.trim()).filter(Boolean); continue; }
-    if ((m = ln.match(/^\s*Level\s+(\w+)/))) { lvl = { threshold: 1, Farming: 0, Fertility: 0, Health: 0, Squalor: 0, TaxCollection: 0, Trading: 0, Mining: 0, Influence: 0, Law: 0, Unrest: 0, LocalPopularity: 0 }; traits[cur].push(lvl); continue; }
+    if ((m = ln.match(/^\s*Level\s+(\w+)/))) { lvl = { threshold: 1, Farming: 0, Fertility: 0, Health: 0, Squalor: 0, TaxCollection: 0, Trading: 0, Mining: 0, Influence: 0, Law: 0, Unrest: 0, LocalPopularity: 0, Management: 0 }; traits[cur].push(lvl); continue; }
     if (!lvl) continue;
     if ((m = ln.match(/^\s*Threshold\s+(-?\d+)/))) { lvl.threshold = +m[1]; continue; }
-    if ((m = ln.match(/^\s*Effect\s+(Farming|Fertility|Health|Squalor|TaxCollection|Trading|Mining|Influence|Law|Unrest|LocalPopularity)\s+(-?\d+)/))) lvl[m[1]] += +m[2];
+    if ((m = ln.match(/^\s*Effect\s+(Farming|Fertility|Health|Squalor|TaxCollection|Trading|Mining|Influence|Law|Unrest|LocalPopularity|Management)\s+(-?\d+)/))) lvl[m[1]] += +m[2];
   }
   for (const t of Object.keys(traits)) traits[t].sort((a, b) => a.threshold - b.threshold);
   // drop traits with no settlement effect at any level (keep the map small) — but KEEP the
@@ -113,8 +113,8 @@ const BASELINE_TRAITS = new Set(["TurnsAlive"]);
 // farming/growth; Health and Squalor are the other settlement effects. growthFarm = farm only.
 function growthEffectOfTraits(traitList, parsed, opts) {
   const ordinal = !!(opts && opts.ordinal);
-  let farm = 0, fert = 0, health = 0, squalor = 0, tax = 0, trading = 0, mining = 0, influence = 0, law = 0, unrest = 0, localPop = 0; const hits = [];
-  if (!Array.isArray(traitList) || !parsed) return { farm, fert, health, squalor, tax, trading, mining, influence, law, unrest, localPop, growthFarm: 0, hits };
+  let farm = 0, fert = 0, health = 0, squalor = 0, tax = 0, trading = 0, mining = 0, influence = 0, law = 0, unrest = 0, localPop = 0, mgmt = 0; const hits = [];
+  if (!Array.isArray(traitList) || !parsed) return { farm, fert, health, squalor, tax, trading, mining, influence, law, unrest, localPop, mgmt, growthFarm: 0, hits };
   // ANTI-TRAIT CANCELLATION (live-cracked Thessalonike 2026-06-10): a seeded anti-trait
   // reduces the trait's effective level (Bokros: Prim 3 + Feck 1 → Prim level 2 → NO
   // squalor relief; his card shows only the architect −1, move-out test exact at ±0.5%).
@@ -132,14 +132,15 @@ function growthEffectOfTraits(traitList, parsed, opts) {
     if (ordinal) { chosen = def[Math.max(0, Math.min(def.length - 1, pts - 1))] || null; } // Nth level (1-based)
     else { for (const L of def) if (L.threshold <= pts) chosen = L; } // highest threshold ≤ points
     if (!chosen) continue;
-    if (chosen.Farming || chosen.Fertility || chosen.Health || chosen.Squalor || chosen.TaxCollection || chosen.Trading || chosen.Mining || chosen.Influence || chosen.Law || chosen.Unrest || chosen.LocalPopularity) {
+    if (chosen.Farming || chosen.Fertility || chosen.Health || chosen.Squalor || chosen.TaxCollection || chosen.Trading || chosen.Mining || chosen.Influence || chosen.Law || chosen.Unrest || chosen.LocalPopularity || chosen.Management) {
       farm += chosen.Farming; fert += chosen.Fertility; health += chosen.Health; squalor += chosen.Squalor;
       tax += chosen.TaxCollection || 0; trading += chosen.Trading || 0; mining += chosen.Mining || 0;
       influence += chosen.Influence || 0; law += chosen.Law || 0; unrest += chosen.Unrest || 0; localPop += chosen.LocalPopularity || 0;
+      mgmt += chosen.Management || 0;
       hits.push(`${name}/${pts}`);
     }
   }
-  return { farm, fert, health, squalor, tax, trading, mining, influence, law, unrest, localPop, growthFarm: farm, hits }; // growthFarm = Farming only (Fertility is character, not settlement)
+  return { farm, fert, health, squalor, tax, trading, mining, influence, law, unrest, localPop, mgmt, growthFarm: farm, hits }; // growthFarm = Farming only (Fertility is character, not settlement)
 }
 
 // Convenience for callers holding a cracked save: build { [city]: {growthFarm, health, ...} }
@@ -264,7 +265,7 @@ function govEffectByCityFromStratUncached(modDataDir, parsed) {
     const e = growthEffectOfTraits(g.traitList, parsed, { ordinal: true }); // descr_strat number = level index
     // fold in FOLLOWER (ancillary) effects — same settlement catalysts as traits
     for (const a of g.anc) { const fx = ancFx[a]; if (!fx) continue; e.farm += fx.farm; e.fert += fx.fert; e.health += fx.health; e.squalor += fx.squalor; e.tax += fx.tax || 0; e.trading += fx.trading || 0; e.mining += fx.mining || 0; e.influence += fx.influence || 0; e.law += fx.law || 0; e.unrest += fx.unrest || 0; e.localPop += fx.localPop || 0; e.growthFarm += fx.farm; if (e.hits) e.hits.push("anc:" + a); } // growthFarm = Farming only; fert is character
-    if (!(e.growthFarm || e.health || e.squalor || e.tax || e.trading || e.mining || e.influence || e.law || e.unrest || e.localPop)) continue;
+    if (!(e.growthFarm || e.health || e.squalor || e.tax || e.trading || e.mining || e.influence || e.law || e.unrest || e.localPop || e.mgmt)) continue;
     const prev = out[best.city]; // if two land on one tile, keep the stronger-squalor governor
     if (!prev || Math.abs(e.squalor) > Math.abs(prev.squalor)) out[best.city] = e;
   }

@@ -22863,7 +22863,9 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                               const atSet = (s.baseGrowthEst != null && s.bracket) ? Math.round((s.baseGrowthEst + (GMOD[s.bracket] || 0)) * 10) / 10 : null;
                               return (
                               <tr key={si} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                                <td style={{ padding: "1px 6px", color: "#dde" }}>{(s.settlement || s.region || "").replace(/_/g, " ")}{s.capital ? " ★" : ""}</td>
+                                <td style={{ padding: "1px 6px", color: "#dde", cursor: "help" }}
+                                  title={`${(s.settlement || s.region || "").replace(/_/g, " ")}${s.siegeTurns != null ? `\n🏰 Can hold a siege ≈${s.siegeTurns} turns (engine formula: settlement size + walls + governor management).` : ""}${s.plagueRiskPct > 0 ? `\n☠ Random plague risk ≈${s.plagueRiskPct}%/turn (squalor pips > 3; engine formula).` : ""}`}>
+                                  {(s.settlement || s.region || "").replace(/_/g, " ")}{s.capital ? " ★" : ""}{s.plagueRiskPct > 0 ? <span style={{ color: "#c79be8" }} title={`Random plague risk ≈${s.plagueRiskPct}%/turn — squalor is over the safe threshold; health buildings reduce it.`}> ☠</span> : null}</td>
                                 <td style={{ color: "#9aa" }}>{s.pop}</td>
                                 <td style={{ color: (atSet != null && atSet < 0) ? "#e8806a" : "#9aa" }} title={s.baseGrowthEst != null ? `Tax-neutral base growth ${s.baseGrowthEst >= 0 ? "+" : ""}${s.baseGrowthEst}% ${s.bracket ? `+ ${s.bracket} modifier` : ""} — this is what the in-game scroll should read at the recommended bracket.` : undefined}>{atSet != null ? `${atSet >= 0 ? "+" : ""}${atSet}%` : "—"}</td>
                                 <td style={{ color: BRC[s.bracket] || "#9aa", fontWeight: 600 }}>{BRB[s.bracket] || s.bracket}{s.borderline && <span title="Borderline growth estimate — could be one bracket off; verify in-game." style={{ color: "#e8b85a", marginLeft: 3, cursor: "help" }}>⚠</span>}</td>

@@ -55,7 +55,7 @@ function parseEDBIncome(edbPath) {
   const add = (kind, obj) => {
     if (!curBuilding || !curLevel) return;
     const key = curBuilding + ":" + curLevel;
-    (capIndex[key] = capIndex[key] || { taxable: [], trade: [], tradeLvl: [], mine: [], fleet: [] })[kind].push(obj);
+    (capIndex[key] = capIndex[key] || { taxable: [], trade: [], tradeLvl: [], mine: [], fleet: [], walls: [], health: [] })[kind].push(obj);
   };
   for (const raw of lines) {
     const ln = raw.replace(/;.*$/, "");
@@ -76,6 +76,8 @@ function parseEDBIncome(edbPath) {
     if ((m = ln.match(/^\s*trade_level_bonus\s+bonus\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("tradeLvl", { val: +m[1], req: (m[2] || "").trim() }); continue; }
     if ((m = ln.match(/^\s*mine_resource\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("mine", { val: +m[1], req: (m[2] || "").trim() }); continue; }
     if ((m = ln.match(/^\s*trade_fleet\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("fleet", { val: +m[1], req: (m[2] || "").trim() }); continue; }
+    if ((m = ln.match(/^\s*wall_level\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("walls", { val: +m[1], req: (m[2] || "").trim() }); continue; }
+    if ((m = ln.match(/^\s*population_health_bonus\s+bonus\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("health", { val: +m[1], req: (m[2] || "").trim() }); continue; }
   }
   return { capIndex, chainLevels, aliases };
 }
@@ -144,7 +146,7 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
     // be active for the turn-1 econ block). Hierarchy: winter > size > base.
     const cat = (req) => /\bdisabling_in_winter\b/.test(req || "") ? "winter" : /\bsize\d+\b/.test(req || "") ? "size" : "base";
     const tax = { base: 0, size: 0, winter: 0 }, trade = { base: 0, size: 0, winter: 0 };
-    let tradeLvlSum = 0, mineSum = 0, fleetSum = 0;
+    let tradeLvlSum = 0, mineSum = 0, fleetSum = 0, wallLevel = -1, healthPips = 0;
     const explain = (opts && opts.explain) ? [] : null;
     for (const b of s.buildings) {
       const cap = inc.capIndex[b.chain + ":" + b.level];
@@ -154,6 +156,8 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
       for (const x of cap.tradeLvl) if (gv.evalReq(x.req, ctx)) tradeLvlSum += x.val;
       for (const x of cap.mine) if (gv.evalReq(x.req, ctx)) mineSum += x.val;
       for (const x of cap.fleet) if (gv.evalReq(x.req, ctx)) fleetSum += x.val;
+      for (const x of (cap.walls || [])) if (gv.evalReq(x.req, ctx)) wallLevel = Math.max(wallLevel, x.val);
+      for (const x of (cap.health || [])) if (gv.evalReq(x.req, ctx)) healthPips += x.val;
     }
     const taxablePct = tax.base + tax.size + tax.winter, tradePct = trade.base + trade.size + trade.winter;
     // farming level. GROWTH semantics = max across chains (validated); for INCOME the
@@ -178,6 +182,7 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
     out.push({
       region: s.region, settlement: region.settlement, pop: s.pop, level: s.level, capital: !!s.capital,
       taxablePct, tradePct, taxPctParts: tax, tradePctParts: trade, tradeLvlSum, mineSum, fleetSum, farmLevel, farmLevelSum, farmN: region.farmN || 0,
+      wallLevel, healthPips,
       resources: resList, portLevel, roadLevel,
       buildings: s.buildings.map(b => b.chain + ":" + b.level),
       ...(explain ? { taxableLines: explain } : {}),
@@ -587,9 +592,21 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     let dist = null;
     const c = coords[s.region];
     if (cap && c) { dist = Math.hypot(c.x - cap.x, c.y - cap.y); corrSum += Math.max(0, dist - CALIB.corrD0) * (tTax + tFarm + tMine); }
+    // DOCUMENTED engine formulas (Feral Battle_and_Campaign_Formulae.md):
+    // siege hold-out turns = base(by level) + wall_level+1 + floor(govManagement/3)
+    const SIEGE_BASE = { village: 2, town: 3, large_town: 4, city: 4, large_city: 5, huge_city: 5 };
+    const siegeTurns = (SIEGE_BASE[s.level] != null ? SIEGE_BASE[s.level] : 3)
+      + ((s.wallLevel != null && s.wallLevel >= 0 ? s.wallLevel : -1) + 1)
+      + Math.floor(Math.max(0, gv0 ? (gv0.mgmt || 0) : 0) / 3);
+    // random plague chance/turn = ((squalorPips−3) − 2×healthPips)/20 when squalor>3
+    const SQ_BASE = { village: 400, town: 400, large_town: 2000, city: 4000, large_city: 9000, huge_city: 14000 };
+    const effPop = s.pop + Math.max(0, s.pop - 2 * (SQ_BASE[s.level] != null ? SQ_BASE[s.level] : 2000));
+    const sqPips = Math.floor(effPop / 1500);
+    const plagueRiskPct = sqPips > 3 ? Math.max(0, ((sqPips - 3) - 2 * (s.healthPips || 0)) / 20) * 100 : 0;
     sets.push({ settlement: s.settlement, region: s.region, pop: s.pop, level: s.level, capital: s.capital,
       bracket, taxes: Math.round(tTax), farming: Math.round(tFarm), mining: Math.round(tMine),
       taxFactor: Math.round(f * 100) / 100, resourceValue: rv, port: !!s.portLevel, tradePartners: nPartners, distToCapital: dist != null ? Math.round(dist) : null,
+      siegeTurns, plagueRiskPct: Math.round(plagueRiskPct * 10) / 10,
       govIncome: gv0 && (gv0.tax || gv0.trading || gv0.mining) ? { tax: gv0.tax || 0, trading: gv0.trading || 0, mining: gv0.mining || 0, hits: gv0.hits || [] } : null });
   }
   const trade = Math.max(0, CALIB.tradeLand * tradeLandSum + CALIB.tradeSea * tradeSeaSum);

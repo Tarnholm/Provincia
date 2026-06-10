@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1034",
+    date: "2026-06-10",
+    items: [
+      { type: "feature", text: "**Siege hold-out + plague risk per settlement** — two engine formulas straight from the Feral docs, now computed from the mod files. Hover a settlement name in the Turn-1 Budget: 🏰 how many turns it can hold a siege (settlement size + walls + governor management) and ☠ its random-plague chance per turn when squalor crosses the threshold (health buildings reduce it). Useful for deciding which border towns actually need garrison cover vs which can sit tight behind walls." },
+    ],
+  },
+  {
     version: "0.9.1033",
     date: "2026-06-10",
     items: [
