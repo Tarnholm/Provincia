@@ -22683,14 +22683,24 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                           <span>− wages <b style={{ color: "#e8a07a" }}>{t.wages}</b></span>
                           <span>− corruption <b style={{ color: "#e8a07a" }}>{t.corruption}</b></span>
                           <span>= <b style={{ color: "#b8d38f", fontSize: "0.92rem" }}>{t.armyBudget}</b> <span style={{ color: "#8aa", fontSize: "0.7rem" }}>sustainable army upkeep</span></span>
-                          {netAfterArmy != null && <span style={{ color: "#8aa", fontSize: "0.72rem" }}>(current army ≈{d.armyUpkeep} → net ≈<b style={{ color: netAfterArmy >= 0 ? "#7fd17f" : "#e8806a" }}>{netAfterArmy}</b>)</span>}
                         </div>
+                        {netAfterArmy != null && (() => {
+                          const room = netAfterArmy - armyBudgetFloor; // floor is the allowed max deficit (e.g. −500)
+                          return (
+                            <div style={{ marginTop: 6, fontSize: "0.88rem", padding: "5px 8px", borderRadius: 4, background: "rgba(0,0,0,0.25)" }}
+                              title={`Sustainable army budget ${t.armyBudget} − current starting army ≈${d.armyUpkeep} (EDU estimate) = net ≈${netAfterArmy}. With your deficit floor of ${armyBudgetFloor}, you can add roughly ${room} more upkeep of NEW troops before crossing it.`}>
+                              <span style={{ color: "#cdc" }}>− current army ≈<b>{d.armyUpkeep}</b> = net ≈<b style={{ color: netAfterArmy >= 0 ? "#7fd17f" : "#e8806a" }}>{netAfterArmy}</b>/turn</span>
+                              <span style={{ marginLeft: 14, color: room >= 0 ? "#9fe89f" : "#e8806a", fontWeight: 700 }}>⚔ room for ≈{room} upkeep of new troops</span>
+                              <span style={{ marginLeft: 8, color: "#889", fontSize: "0.7rem" }}>(to the {armyBudgetFloor} floor)</span>
+                            </div>
+                          );
+                        })()}
                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.74rem", marginTop: 6 }}>
                           <thead><tr style={{ color: "#8aa", textAlign: "left" }}>
                             <th style={{ fontWeight: 600, padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Growth @ set</th><th>→ Tax</th><th>Tax income</th><th>Farm</th><th>Dist→cap</th>
                           </tr></thead>
                           <tbody>
-                            {armyT1Budget.settlements.map((s, si) => {
+                            {armyT1Budget.settlements.slice().sort((a, b) => ((a.settlement || a.region) || "").localeCompare((b.settlement || b.region) || "")).map((s, si) => {
                               const GMOD = { low: 0.5, normal: 0, high: -0.5, very_high: -1 };
                               const atSet = (s.baseGrowthEst != null && s.bracket) ? Math.round((s.baseGrowthEst + (GMOD[s.bracket] || 0)) * 10) / 10 : null;
                               return (
@@ -22739,7 +22749,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem", marginTop: 6 }}>
                               <thead><tr style={{ color: "#8aa", textAlign: "left" }}><th style={{ padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Base growth</th><th>→ Set to</th><th>Growth @ set</th></tr></thead>
                               <tbody>
-                                {sp.settlements.map((s, i) => {
+                                {sp.settlements.slice().sort((a, b) => ((a.settlement || a.region) || "").localeCompare((b.settlement || b.region) || "")).map((s, i) => {
                                   const GMOD = { low: 0.5, normal: 0, high: -0.5, very_high: -1 };
                                   const atSet = s.baseGrowthEst != null && s.optimalBracket ? Math.round((s.baseGrowthEst + GMOD[s.optimalBracket]) * 10) / 10 : null;
                                   return (

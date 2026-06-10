@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1018",
+    date: "2026-06-10",
+    items: [
+      { type: "improvement", text: "**The Turn-1 Budget now answers the real question: how many MORE troops can you afford.** A prominent line subtracts the starting army's upkeep and your deficit floor: \"− current army ≈X = net ≈Y/turn · ⚔ room for ≈Z upkeep of new troops\"." },
+      { type: "improvement", text: "Settlement tables (tax plan + budget) are now sorted alphabetically by settlement name." },
+    ],
+  },
+  {
     version: "0.9.1017",
     date: "2026-06-10",
     items: [
