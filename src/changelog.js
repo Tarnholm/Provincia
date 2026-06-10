@@ -8,6 +8,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1024",
+    date: "2026-06-10",
+    items: [
+      { type: "improvement", text: "**Army upkeep cracked — ±30% → ±3%.** The engine's army-upkeep charge is not the flat EDU sum: infantry counts ×0.976, cavalry ×1.186, and ships are excluded entirely (naval upkeep is a separate ledger line). Fit on 11 player ledgers — 9 of 11 within 2.5% of the engine's number (elephants still underweighted ~18%, one observation). Every budget and the Balance overview's net/turn verdicts are sharper for it." },
+      { type: "improvement", text: "**Corruption is now income-proportional**, matching live behaviour (lowering taxes lowers corruption): corruption = 0.0055 × Σ max(0, distance-to-capital − 12 tiles) × town income. Validated: Julii −4%, Seleucid +3%, Antigonid +5%." },
+      { type: "improvement", text: "**Balance overview ~20× faster.** All heavy file parsers (descr_strat, EDB, EDU, EDCT, regions) are now cached and re-read only when the file changes on disk — the full-campaign sweep drops from minutes to seconds, and editing a mod file still invalidates exactly the right caches." },
+      { type: "feature", text: "**⧉ copy report** on the Balance overview — exports the whole table as markdown (worst first, tribute marks included) for the mod-team Discord." },
+      { type: "feature", text: "**Garrison fix suggestions.** Hover a 🔴/🟡 PO value: the tooltip now says roughly how many extra soldiers of garrison the town needs to clear the risk threshold." },
+    ],
+  },
+  {
     version: "0.9.1023",
     date: "2026-06-10",
     items: [

@@ -22623,6 +22623,30 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     ⚖ Balance overview{armyOverview && armyOverview.busy ? ` (${armyOverview.rows.length}/${facList.length}…)` : ""}
                   </button>
                   {armyOverview && !armyOverview.busy && <button onClick={() => setArmyOverview(null)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.2)", color: "#9aa", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>hide</button>}
+                  {armyOverview && !armyOverview.busy && armyOverview.rows.length > 0 && (
+                    <button
+                      onClick={() => {
+                        const rows = armyOverview.rows.slice().sort((a, b) => ((a.netAfterTribute ?? a.net) ?? 0) - ((b.netAfterTribute ?? b.net) ?? 0));
+                        const name = f2 => ((factionDisplayNames && factionDisplayNames[f2]) || f2).replace(/_/g, " ");
+                        const md = [
+                          "# RIS balance overview — turn-1 economy @ optimal taxes vs starting army",
+                          "_" + new Date().toISOString().slice(0, 10) + " · Provincia mod-file model (no save). Net = army budget − starting-army upkeep ± protectorate tribute (50% of client profit, from turn 2). ♛ suzerain · ⚑ protectorate._",
+                          "",
+                          "| Faction | Towns | Income | Wages | Corruption | Army budget | Army upkeep | Net/turn | Verdict |",
+                          "|---|---|---|---|---|---|---|---|---|",
+                          ...rows.map(r => {
+                            const eff = r.netAfterTribute ?? r.net;
+                            const marks = (r.nClients > 0 ? " ♛" : "") + (r.suzerain ? " ⚑" : "");
+                            return `| ${name(r.fac)}${marks} | ${r.towns} | ${r.income} | ${r.wages} | ${r.corruption} | ${r.armyBudget} | ${r.armyUpkeep ?? "—"} | ${eff ?? "—"} | ${eff == null ? "—" : eff >= 0 ? "OK (+" + eff + ")" : "**OVER by " + (-eff) + "**"} |`;
+                          }),
+                        ].join("\n");
+                        navigator.clipboard?.writeText(md).then(() => pushToast("Balance report copied as markdown — paste into Discord/docs", "info", 4000)).catch(() => {});
+                      }}
+                      title="Copy the whole overview as a markdown table (worst first) for the mod-team Discord or docs."
+                      style={{ background: "none", border: "1px solid rgba(232,200,115,0.4)", color: "#e8c873", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
+                      ⧉ copy report
+                    </button>
+                  )}
                   <input value={armyFacSearch} onChange={(e) => setArmyFacSearch(e.target.value)} placeholder="Search factions…"
                     style={{ marginLeft: "auto", width: 180, background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "3px 8px", fontSize: "0.78rem" }} />
                 </div>
@@ -22806,7 +22830,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                 <td style={{ color: (atSet != null && atSet < 0) ? "#e8806a" : "#9aa" }} title={s.baseGrowthEst != null ? `Tax-neutral base growth ${s.baseGrowthEst >= 0 ? "+" : ""}${s.baseGrowthEst}% ${s.bracket ? `+ ${s.bracket} modifier` : ""} — this is what the in-game scroll should read at the recommended bracket.` : undefined}>{atSet != null ? `${atSet >= 0 ? "+" : ""}${atSet}%` : "—"}</td>
                                 <td style={{ color: BRC[s.bracket] || "#9aa", fontWeight: 600 }}>{BRB[s.bracket] || s.bracket}{s.borderline && <span title="Borderline growth estimate — could be one bracket off; verify in-game." style={{ color: "#e8b85a", marginLeft: 3, cursor: "help" }}>⚠</span>}</td>
                                 <td style={{ color: s.poRisk === "red" ? "#e8806a" : s.poRisk === "yellow" ? "#e8b85a" : "#7fd17f", cursor: "help" }}
-                                  title={s.poAtSet != null ? `Estimated public order ≈${s.poAtSet} at the recommended bracket (ranking model, ±20 — garrison-priority only, NOT the exact scroll value).${s.poAtLow != null ? `\nAt Low tax ≈${s.poAtLow}${s.poAtLow < 100 ? " — still risky even at Low → needs more garrison." : ""}` : ""}` : undefined}>
+                                  title={s.poAtSet != null ? `Estimated public order ≈${s.poAtSet} at the recommended bracket (ranking model, ±20 — garrison-priority only, NOT the exact scroll value).${s.poAtLow != null ? `\nAt Low tax ≈${s.poAtLow}${s.poAtLow < 100 ? " — still risky even at Low → needs more garrison." : ""}` : ""}${s.poAtSet < 130 && s.pop ? `\n⚔ Garrison fix: ≈${Math.max(40, Math.ceil((130 - s.poAtSet) / 272.2 * s.pop / 10) * 10)} extra soldiers in town ≈ +${130 - s.poAtSet} PO (model garrison coefficient).` : ""}` : undefined}>
                                   {s.poAtSet == null ? "—" : <>{s.poRisk === "red" ? "🔴" : s.poRisk === "yellow" ? "🟡" : "🟢"} {s.poAtSet}{s.poRisk === "red" && s.poAtLow != null && s.poAtLow < 100 ? <span style={{ color: "#e8705f", fontWeight: 700 }} title="Estimated to be at revolt risk even at LOW tax — add garrison."> ⚔</span> : null}</>}
                                 </td>
                                 <td style={{ color: "#e8c873" }}>{s.taxes}</td>

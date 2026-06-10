@@ -93,8 +93,27 @@ function findEDB(modDataDir) {
   return fs.existsSync(p) ? p : null;
 }
 
+// ---- mtime-keyed parse cache (2026-06-10): the heavy parsers re-run only when the
+// source file changes on disk — the mod-team edit→recompute loop stays fresh while the
+// 200-faction balance overview stops re-parsing multi-MB files per faction. ----
+const _parseCache = new Map();
+function _memo(key, file, fn) {
+  let mt = 0;
+  try { mt = fs.statSync(file).mtimeMs; } catch { /* missing file: mt 0 */ }
+  const k = key + "|" + file;
+  const hit = _parseCache.get(k);
+  if (hit && hit.mt === mt) return hit.v;
+  const v = fn();
+  _parseCache.set(k, { mt, v });
+  return v;
+}
+
 // ---- descr_regions: region -> { farmN, hidden:Set, settlement } ----
 function parseRegions(modDataDir) {
+  const p0 = path.join(modDataDir, "world", "maps", "base", "descr_regions.txt");
+  return _memo("regions", p0, () => parseRegionsUncached(modDataDir));
+}
+function parseRegionsUncached(modDataDir) {
   const p = path.join(modDataDir, "world", "maps", "base", "descr_regions.txt");
   const byRegion = {}, bySettlement = {};
   if (!fs.existsSync(p)) return { byRegion, bySettlement };
@@ -124,6 +143,9 @@ function parseRegions(modDataDir) {
 
 // ---- descr_strat map resources: region(from trailing comment) -> Set of types ----
 function parseResources(stratPath) {
+  return _memo("resources", stratPath, () => parseResourcesUncached(stratPath));
+}
+function parseResourcesUncached(stratPath) {
   const byRegion = {};
   const lines = fs.readFileSync(stratPath, "latin1").split(/\r?\n/);
   for (const ln of lines) {
@@ -142,6 +164,9 @@ function parseResources(stratPath) {
 // or any of its fgroup TAGS. Without this, e.g. `beer_factions = not factions { greek, roman }`
 // wrongly fired for Rome (faction-name ≠ culture-name "roman"), giving the wrong brewery growth.
 function parseFactionGroups(modDataDir) {
+  return _memo("fgroups", path.join(modDataDir, "descr_sm_factions.txt"), () => parseFactionGroupsUncached(modDataDir));
+}
+function parseFactionGroupsUncached(modDataDir) {
   const p = path.join(modDataDir, "descr_sm_factions.txt");
   const out = {};
   if (!fs.existsSync(p)) return out;
@@ -168,6 +193,9 @@ function factionTokenSet(factionName, groups) {
 
 // ---- descr_strat: faction -> settlements [{region, level, pop, buildings:[{chain,level}], capital}] ----
 function parseStrat(stratPath) {
+  return _memo("strat", stratPath, () => parseStratUncached(stratPath));
+}
+function parseStratUncached(stratPath) {
   const lines = fs.readFileSync(stratPath, "latin1").split(/\r?\n/);
   const factions = {};
   let curFac = null, cur = null, inSettle = false, firstSettleOfFac = false;
@@ -195,6 +223,9 @@ function parseStrat(stratPath) {
 
 // ---- export_descr_buildings: capIndex["chain:level"] = {popGrowth,farming,health} ----
 function parseEDB(edbPath) {
+  return _memo("edb", edbPath, () => parseEDBUncached(edbPath));
+}
+function parseEDBUncached(edbPath) {
   const lines = fs.readFileSync(edbPath, "latin1").split(/\r?\n/);
   const capIndex = {}, chainLevels = {};
   let curBuilding = null, levelsList = [], curLevel = null;

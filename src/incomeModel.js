@@ -189,29 +189,55 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
 // ---- starting-army upkeep per faction (EDU stat_cost upkeep over descr_strat armies) ----
 // NOTE: the engine's actual charge can deviate from the EDU sum (known ±15% scatter,
 // see the income crack); this is the planning estimate the balance overview uses.
+// mtime-keyed descr_strat line cache (armyUpkeepEDU + countCharacters re-read the
+// 2 MB file per call — once per faction in the balance overview).
+const _stratLinesCache = new Map();
+function _stratLines(stratPath) {
+  let mt = 0;
+  try { mt = fs.statSync(stratPath).mtimeMs; } catch { }
+  const hit = _stratLinesCache.get(stratPath);
+  if (hit && hit.mt === mt) return hit.v;
+  const v = fs.readFileSync(stratPath, "latin1").split(/\r?\n/);
+  _stratLinesCache.set(stratPath, { mt, v });
+  return v;
+}
+
+// Engine army upkeep (econ slot f12) CRACKED 2026-06-10 (upkeep-crack.js): it is NOT
+// the flat EDU sum — per-category scaling, with SHIPS EXCLUDED (naval upkeep lives in
+// another slot): f12 ≈ 0.976×ΣEDU(infantry) + 1.186×ΣEDU(cavalry). Player-row fit:
+// mean |err| 2.8% (was ±30% flat); worst mauryan −18% (elephant units underweighted —
+// single observation, not separable).
+const UPKEEP_SCALE = { infantry: 0.9759, cavalry: 1.1857, ship: 0, other: 1.0 };
 function armyUpkeepEDU(modDataDir, faction) {
   const stratPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
   if (!fs.existsSync(stratPath)) return null;
   let us;
   try { us = require("./recruitPool.js").parseUnitStats(modDataDir); } catch { return null; }
   const want = String(faction || "").toLowerCase();
-  const lines = fs.readFileSync(stratPath, "latin1").split(/\r?\n/);
+  const lines = _stratLines(stratPath);
   let cur = null, inWanted = false, sum = 0, units = 0;
   for (const ln of lines) {
     const m = ln.match(/^faction\s+([a-z_0-9]+)\s*,/i);
     if (m) { cur = m[1].toLowerCase(); inWanted = cur === want; continue; }
     if (!inWanted) continue;
     const u = ln.match(/^unit\s+(.+?)\s+exp\b/);
-    if (u) { const st = us[u[1].trim().toLowerCase()]; sum += (st && st.upkeep) || 0; units++; }
+    if (u) {
+      const st = us[u[1].trim().toLowerCase()];
+      if (st && st.upkeep != null) {
+        const scale = UPKEEP_SCALE[st.category] != null ? UPKEEP_SCALE[st.category] : UPKEEP_SCALE.other;
+        sum += st.upkeep * scale;
+      }
+      units++;
+    }
   }
-  return { upkeep: sum, units };
+  return { upkeep: Math.round(sum), units };
 }
 
 // ---- characters per faction from descr_strat (for the WAGES crack) ----
 function countCharacters(modDataDir, faction) {
   const stratPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
   if (!fs.existsSync(stratPath)) return null;
-  const lines = fs.readFileSync(stratPath, "latin1").split(/\r?\n/);
+  const lines = _stratLines(stratPath);
   const want = String(faction || "").toLowerCase();
   let cur = null; const counts = { named: 0, general: 0, spy: 0, assassin: 0, diplomat: 0, merchant: 0, admiral: 0, princess: 0, family: 0 };
   let inWanted = false;
@@ -257,10 +283,11 @@ const CALIB = {
   tradeLand: 5.71, tradeSea: 58.46,
   // wages = 200×named character + 50×admiral (EXACT on fresh saves).
   wageNamed: 200, wageAdmiral: 50,
-  // corruption ("other" expenditure) = corrDist×Σ tileDist(town→capital) + corrTown×towns,
-  // clamped ≥0. seleucid +0.6%, julii +0.4%, ptolemaic −4% — distance to capital is the
-  // mechanism. (antigonid +48% worst — law bonuses unmodeled.)
-  corrDist: 6.43, corrTown: -47.9,
+  // corruption ("other" expenditure) — REFIT 2026-06-10 (corruption-refit.js), now
+  // INCOME-PROPORTIONAL (live-confirmed: julii corr/income identical across tax flips):
+  // corruption = corrK × Σ_towns max(0, distToCapital − corrD0) × townIncome(tax+farm+mine).
+  // Mean |err| 8.7% (julii −3.8%, seleucid +3.3%, antigonid +4.6%; ptolemaic −19% worst).
+  corrK: 5.4656e-3, corrD0: 12,
 };
 
 // region → {x,y} coords (map_regions.tga black settlement pixels), cached per mod dir.
@@ -364,7 +391,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   const facLow = F.faction;
   const allySet = allies[facLow] || new Set();
   const isPartner = (other) => other && (other === facLow || allySet.has(other));
-  let taxes = 0, farming = 0, mining = 0, tradeLandSum = 0, tradeSeaSum = 0, distSum = 0;
+  let taxes = 0, farming = 0, mining = 0, tradeLandSum = 0, tradeSeaSum = 0, corrSum = 0;
   const sets = [];
   for (const s of F.settlements) {
     const bracket = br[s.settlement] || br[s.region] || "normal";
@@ -381,7 +408,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     if (s.portLevel) tradeSeaSum += rv;
     let dist = null;
     const c = coords[s.region];
-    if (cap && c) { dist = Math.hypot(c.x - cap.x, c.y - cap.y); distSum += dist; }
+    if (cap && c) { dist = Math.hypot(c.x - cap.x, c.y - cap.y); corrSum += Math.max(0, dist - CALIB.corrD0) * (tTax + tFarm + tMine); }
     sets.push({ settlement: s.settlement, region: s.region, pop: s.pop, level: s.level, capital: s.capital,
       bracket, taxes: Math.round(tTax), farming: Math.round(tFarm), mining: Math.round(tMine),
       taxFactor: Math.round(f * 100) / 100, resourceValue: rv, port: !!s.portLevel, tradePartners: nPartners, distToCapital: dist != null ? Math.round(dist) : null });
@@ -389,7 +416,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   const trade = Math.max(0, CALIB.tradeLand * tradeLandSum + CALIB.tradeSea * tradeSeaSum);
   const ch = countCharacters(modDataDir, faction) || { named: 0, admiral: 0 };
   const wages = CALIB.wageNamed * ch.named + CALIB.wageAdmiral * ch.admiral;
-  const corruption = Math.max(0, Math.round(CALIB.corrDist * distSum + CALIB.corrTown * F.settlements.length));
+  const corruption = Math.max(0, Math.round(CALIB.corrK * corrSum));
   const income = Math.round(taxes + farming + mining + trade);
   const army = armyUpkeepEDU(modDataDir, faction);
   const preNet = army ? (income - wages - corruption - army.upkeep) : null;

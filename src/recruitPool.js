@@ -52,7 +52,20 @@ function parseRegionHiddenResources(modDataDir) {
 }
 
 // unit name (lowercase) → { upkeep, recruit, category, soldiers }
+// mtime-keyed cache: EDU is >1 MB and parseUnitStats is hit per faction by the
+// balance overview — re-parse only when export_descr_unit.txt changes on disk.
+const _unitStatsCache = new Map();
 function parseUnitStats(modDataDir) {
+  const p = require("path").join(modDataDir, "export_descr_unit.txt");
+  let mt = 0;
+  try { mt = require("fs").statSync(p).mtimeMs; } catch { }
+  const hit = _unitStatsCache.get(modDataDir);
+  if (hit && hit.mt === mt) return hit.v;
+  const v = parseUnitStatsUncached(modDataDir);
+  _unitStatsCache.set(modDataDir, { mt, v });
+  return v;
+}
+function parseUnitStatsUncached(modDataDir) {
   const txt = readMod(modDataDir, "export_descr_unit.txt");
   const out = {};
   if (!txt) return out;

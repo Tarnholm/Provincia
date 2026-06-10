@@ -57,7 +57,19 @@ function parseAncillaryEffects(modDataDir) {
 
 // → { traitName: [ { threshold, Farming, Fertility, Health, Squalor }, ... ] }  (levels asc by
 // threshold), plus traits._anti = { traitName: [antiTraitNames] } for anti-trait cancellation.
+// mtime-keyed cache — EDCT is large and this runs once per faction in the balance overview.
+const _edctCache = new Map();
 function parseTraitEffects(modDataDir) {
+  const p0 = findEDCT(modDataDir);
+  let mt = 0;
+  try { mt = fs.statSync(p0).mtimeMs; } catch { /* missing */ }
+  const hit = _edctCache.get(modDataDir);
+  if (hit && hit.mt === mt) return hit.v;
+  const v = parseTraitEffectsUncached(modDataDir);
+  _edctCache.set(modDataDir, { mt, v });
+  return v;
+}
+function parseTraitEffectsUncached(modDataDir) {
   const p = findEDCT(modDataDir);
   const traits = {};
   const anti = {};
