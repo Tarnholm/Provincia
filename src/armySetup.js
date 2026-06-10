@@ -398,6 +398,28 @@ function optimalTaxPlan(saveBuf, modDataDir, cracked, playerHint, economyBudgets
   let anyGrowth = false;
   const counts = { low: 0, normal: 0, high: 0, very_high: 0 };
 
+  // MODEL-GROWTH BASELINE for the player (2026-06-11): single-turn save snapshots embed
+  // that turn's HARVEST roll and transient dips (a julii turn with every town at −0.5%
+  // @normal dragged the whole plan to low taxes). The mod-file growth model is the
+  // harvest-free annual baseline (validated 26/26 vs live growth panels), with governor
+  // effects taken from the calibration save's real rolled traits when available.
+  let modelBase = null;
+  try {
+    if (player) {
+      const gvv = require("./growthEval.js");
+      const teff = require("./traitEffects.js");
+      let gov = null;
+      try { gov = cracked ? teff.govEffectByCityFromSave(cracked, teff.parseTraitEffects(modDataDir)) : null; } catch (e) { gov = null; }
+      const G = gvv.computeFactionGrowth(modDataDir, (player || "").toLowerCase(), gov ? { govEffectByCity: gov } : undefined);
+      if (G && !G.error && Array.isArray(G.settlements)) {
+        modelBase = {};
+        for (const s of G.settlements) {
+          if (s && s.settlement && typeof s.baseGrowthEst === "number") modelBase[s.settlement] = s.baseGrowthEst;
+        }
+      }
+    }
+  } catch (e) { modelBase = null; }
+
   for (const m of markers) {
     if (!m || m.offset == null || !m.name) continue;
     const fac = (owner[m.name] || "").toLowerCase();
@@ -420,12 +442,14 @@ function optimalTaxPlan(saveBuf, modDataDir, cracked, playerHint, economyBudgets
     // AI brackets are the save's value but unvalidated.
     const bracketValidated = curBracket != null && fac === (player || "").toLowerCase();
     const effBracket = curBracket || "normal"; // assume normal only if truly null
-    // WINTER CREDIT (live julii 2026-06-11, user-confirmed on Arretium): winter turns
-    // (seasonIndex 1) carry a uniform −0.5% seasonal growth dip on every settlement.
-    // Bracket choice must use the ANNUAL base, not the winter tick — otherwise a
-    // winter save drags the whole empire to low taxes (all towns read −0.5 @ normal).
-    const winterCredit = (cracked && cracked.seasonIndex === 1) ? 0.5 : 0;
-    const basePct = growthPct - TAX_GROWTH_MOD[effBracket] + winterCredit;
+    // Player towns: prefer the harvest-free MODEL baseline (see modelBase above); the
+    // raw save tick remains the fallback (and the AI factions' only source). RIS years
+    // are 3 summer + 1 winter turn (start = summer, winter = seasonIndex 3); the winter
+    // credit only matters on the fallback path.
+    const winterCredit = (cracked && cracked.seasonIndex === 3) ? 0.5 : 0;
+    const snapBase = growthPct - TAX_GROWTH_MOD[effBracket] + winterCredit;
+    const basePct = (modelBase && fac === (player || "").toLowerCase() && typeof modelBase[m.name] === "number")
+      ? modelBase[m.name] : snapBase;
     const optimalBracket = optimalBracketForBase(basePct);
     counts[optimalBracket] = (counts[optimalBracket] || 0) + 1;
     // project public order (marker−30, the Economy-Audit "PO%") at the optimal tax

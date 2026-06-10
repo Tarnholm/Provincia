@@ -6486,12 +6486,25 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
     const im = require("./src/incomeModel.js");
     // 1. optimal brackets from the growth model (same path as get-strat-tax-plan)
     let opts;
+    let poAnchorByCity = null; // { city: { po, bracket } } — EXACT stored PO from the calibration save
     if (savePath && fs.existsSync(savePath)) {
       try {
         const { crackSave } = require("./src/saveCracker.js");
         const cr = crackSave(fs.readFileSync(savePath), modDataDir);
         const growthDevByCity = {};
         const sf = (cr && cr.settlementFields) || {};
+        // PO anchor (live-verified 2026-06-11: the save's publicOrder field equals the
+        // in-game % exactly — Camerinum 125 / Croton 85 / Rome 210 vs panels). Project
+        // to other brackets with the verified tax-PO deltas (rel. to low: 0/−30/−50/−70).
+        const TB = { 0: "low", 1: "normal", 2: "high", 3: "very_high" };
+        poAnchorByCity = {};
+        for (const c of Object.keys(sf)) {
+          const p = sf[c].publicOrder;
+          if (typeof p === "number" && isFinite(p) && Math.abs(p) < 100000 && TB[sf[c].taxRate]) {
+            poAnchorByCity[c] = { po: Math.round(p), bracket: TB[sf[c].taxRate] };
+          }
+        }
+        if (!Object.keys(poAnchorByCity).length) poAnchorByCity = null;
         for (const c of Object.keys(sf)) { const g = sf[c].growthDevValue; if (g != null) growthDevByCity[c] = { v1528: g, v1556: sf[c].growthDevValue2 }; }
         let govEffectByCity = {};
         try { govEffectByCity = te.govEffectByCityFromSave(cr, te.parseTraitEffects(modDataDir)); } catch {}
@@ -6530,19 +6543,30 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
       }
       budget.saveAware = !!(plan && plan.saveAware);
       budget.growthAccuracy = plan && plan.accuracy;
-      // public-order risk ranking (linear model, ±20 — garrison-priority only)
+      // public-order: EXACT anchor from the calibration save when present (stored PO is
+      // the in-game % verbatim; bracket deltas rel. to low = 0/−30/−50/−70, live-verified
+      // on the Croton/Sena full sweeps 2026-06-11); ranking model (±20) as fallback.
       try {
         const po = require("./src/poModel.js").computeStartingPO(modDataDir, faction);
-        let flagged = 0;
+        const POD = { low: 0, normal: -30, high: -50, very_high: -70 };
+        let flagged = 0, exactN = 0;
         for (const s of budget.settlements) {
-          const p = po[s.settlement] || po[s.region];
-          if (!p) continue;
           const br = s.optimalBracket || "normal";
-          s.poAtSet = p.poAt[br] != null ? p.poAt[br] : p.poAt.normal;
-          s.poAtLow = p.poAt.low;
+          const a = poAnchorByCity && (poAnchorByCity[s.settlement] || poAnchorByCity[s.region]);
+          if (a) {
+            s.poAtSet = a.po - POD[a.bracket] + POD[br];
+            s.poAtLow = a.po - POD[a.bracket];
+            s.poExact = true; exactN++;
+          } else {
+            const p = po[s.settlement] || po[s.region];
+            if (!p) continue;
+            s.poAtSet = p.poAt[br] != null ? p.poAt[br] : p.poAt.normal;
+            s.poAtLow = p.poAt.low;
+          }
           s.poRisk = s.poAtSet < 100 ? "red" : s.poAtSet <= 130 ? "yellow" : "green";
           if (s.poRisk === "red") flagged++;
         }
+        if (exactN) _writeLog(`[turn1-budget] ${faction}: PO anchored EXACT from calibration save for ${exactN} towns`);
         if (flagged) _writeLog(`[turn1-budget] ${faction}: PO model flags ${flagged} revolt-risk towns (po<100 at set bracket)`);
       } catch (e) { _writeLog(`[turn1-budget] PO model failed (non-fatal): ${e && e.message}`); }
       budget.staleWarning = _modCopyWarning(modDataDir);

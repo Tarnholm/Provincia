@@ -22984,7 +22984,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                     </td>
                                     <td style={{ color: atSet == null ? "#778" : atSet < 0 ? "#e8806a" : "#7fd17f" }} title="What the in-game growth scroll should read once you set this bracket (base growth + the bracket's flat growth modifier: Low +0.5 / Normal 0 / High −0.5 / V.High −1.0).">{atSet == null ? "—" : `${atSet >= 0 ? "+" : ""}${atSet}%`}</td>
                                     <td style={{ color: !bset || bset.poAtSet == null ? "#778" : bset.poRisk === "red" ? "#e8806a" : bset.poRisk === "yellow" ? "#e8b85a" : "#7fd17f" }}
-                                      title={bset && bset.poAtSet != null ? `Estimated PO ≈${bset.poAtSet} at the recommended bracket (ranking model, ±20).${bset.poAtLow != null ? ` At Low ≈${bset.poAtLow}.` : ""}` : "PO computes with the Turn-1 Budget below."}>
+                                      title={bset && bset.poAtSet != null ? `${bset.poExact ? `PO ${bset.poAtSet} at the recommended bracket — EXACT from the calibration save's stored value (drifts only if garrisons/buildings change)` : `Estimated PO ≈${bset.poAtSet} at the recommended bracket (ranking model, ±20)`}.${bset.poAtLow != null ? ` At Low ≈${bset.poAtLow}.` : ""}` : "PO computes with the Turn-1 Budget below."}>
                                       {!bset || bset.poAtSet == null ? "—" : <>{bset.poRisk === "red" ? "🔴" : bset.poRisk === "yellow" ? "🟡" : "🟢"} {bset.poAtSet}</>}
                                     </td>
                                   </tr>

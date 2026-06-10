@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1046",
+    date: "2026-06-11",
+    items: [
+      { type: "improvement", text: "**Tax plan: harvest-proof brackets + exact PO from calibration saves.** Bracket recommendations now come from the mod-file growth model (the 26/26-validated one) instead of the loaded save's single-turn growth tick — a turn where every town happened to read −0.5% (harvest roll / seasonal dip) was dragging the entire empire to low taxes. And when a calibration save is set, the PO column is now EXACT: the save's stored public-order value (verified to match the in-game % verbatim) projected through the live-verified bracket deltas (low/normal/high/v.high = 0/−30/−50/−70), replacing the ±20 ranking estimate. Winter detection fixed to RIS's real calendar (3 summer turns + 1 winter; winter = 4th season slot)." },
+    ],
+  },
+  {
     version: "0.9.1045",
     date: "2026-06-11",
     items: [
