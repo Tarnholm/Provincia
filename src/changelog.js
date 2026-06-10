@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1032",
+    date: "2026-06-10",
+    items: [
+      { type: "improvement", text: "**Mining income cracked exact.** A mine's income is 5 × its EDB mine_resource value (the ore tier the mine line encodes: gold 12/20, silver 9/15, other 6/10) × the region's mineable resource quantity-value (quantities from the resource_quantity override, tile-resolved to regions). Five of six corpus factions match to the denarius — arverni 600, athens 600, kush 180, seleucid 480, antigonid 900. The old flat 50-per-point was a single-faction coincidence." },
+    ],
+  },
+  {
     version: "0.9.1031",
     date: "2026-06-10",
     items: [

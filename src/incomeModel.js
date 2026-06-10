@@ -280,8 +280,14 @@ const CALIB = {
   // ratio 0.999-1.001 (the uniform 1.001-1.002 residual at 73.5 was the constant —
   // snapped to 73.61). Lone outlier seleucid +20% (EDB irrigation-chain underparse).
   farmPoint: 73.61,
-  // mining = minePoint × Σ mine_resource (single corpus observation: arverni 600/12).
-  minePoint: 50,
+  // MINING CRACKED EXACT 2026-06-10 (mining-crack2.js): per mine town,
+  //   mining = 5 × mine_resource(EDB level value: gold 12/20, silver 9/15, other 6/10)
+  //              × Σ(quantity × tradeValue) of the region's MINEABLE resources
+  // (quantities from the resource_quantity override). 5/6 corpus factions EXACT to the
+  // denarius: arverni 600, athens 600, kush 180, seleucid 480, antigonid 900; oretani
+  // reads 2× (one border silver tile likely attributed to the wrong region). The old
+  // flat minePoint=50 was the arverni coincidence (its qtyVal happened to be 10).
+  minePoint: 5,
   // trade = tradeLand×Σ_towns g·rv·(1+landPartners) + tradeSea×Σ_portTowns g·rv·√(seaPartners).
   // g = 1+EDB trade%/100. landPartners = adjacent regions (map_regions pixel adjacency)
   // owned by self/ally (≤199 = ally + trade agreement); seaPartners = self/ally PORT
@@ -362,6 +368,49 @@ function regionSeaBodies(modDataDir) {
     for (const r of Object.keys(out)) out[r] = Object.keys(out[r]);
   } catch { /* no sea data → sea partners 0 */ }
   return (_seaCache[modDataDir] = out);
+}
+
+// ---- MINEABLE quantity-value per region (resource_quantity override) ----
+// `resource gold, 2, x, y` = quantity 2 at tile x,y; region resolved via map_regions
+// pixels. mineQtyVal = Σ quantity × tradeValue over MINEABLE resources — the exact
+// multiplier in the cracked mining formula.
+const _mineQtyCache = {};
+function mineQtyValByRegion(modDataDir) {
+  if (_mineQtyCache[modDataDir]) return _mineQtyCache[modDataDir];
+  const out = {};
+  try {
+    const dg = require("./descrStratGeneral.js");
+    const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
+    const buf = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga"));
+    const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), desc = buf[17];
+    const dataOff = 18 + buf[0];
+    const bottomLeft = (desc & 0x20) === 0;
+    const regionAt = (x, yGame) => {
+      const rowTop = H - 1 - yGame;
+      const r = bottomLeft ? (H - 1 - rowTop) : rowTop;
+      let reg = rgbToRegion[buf[dataOff + (r * W + x) * 3 + 2] + "," + buf[dataOff + (r * W + x) * 3 + 1] + "," + buf[dataOff + (r * W + x) * 3]];
+      if (reg) return reg;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const o = dataOff + ((r + dy) * W + (x + dx)) * 3;
+        reg = rgbToRegion[buf[o + 2] + "," + buf[o + 1] + "," + buf[o]];
+        if (reg) return reg;
+      }
+      return null;
+    };
+    const resVal = parseResourceValues(modDataDir);
+    const ovr = path.join(modDataDir, "original_overrides", "resource_quantity", "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
+    const src = fs.existsSync(ovr) ? ovr : path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
+    for (const raw of fs.readFileSync(src, "latin1").split(/\r?\n/)) {
+      const t = raw.includes(";") ? raw.slice(0, raw.indexOf(";")) : raw;
+      const m = t.match(/^resource\s+(\w+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+      if (!m) continue;
+      const e = resVal[m[1].toLowerCase()];
+      if (!e || !e.mineable || !e.tradeValue) continue;
+      const reg = regionAt(+m[3], +m[4]);
+      if (reg) out[reg] = (out[reg] || 0) + (+m[2]) * e.tradeValue;
+    }
+  } catch { /* no quantities → mining falls back to 0-value regions */ }
+  return (_mineQtyCache[modDataDir] = out);
 }
 
 // ---- WONDERS (descr_strat `landmark` lines, tile→region via map_regions pixels) ----
@@ -484,6 +533,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   if (opts && opts.govEffectByCity) govFx = opts.govEffectByCity;
   else { try { const te = require("./traitEffects.js"); govFx = te.govEffectByCityFromStrat(modDataDir, te.parseTraitEffects(modDataDir)) || {}; } catch { } }
   const wonders = wonderOwners(modDataDir);
+  const mineQty = mineQtyValByRegion(modDataDir);
   const { ownerOfRegion, allies, portTowns } = tradePartnerCtx(modDataDir);
   const facLow = F.faction;
   // Hanging Gardens: +20% farming income factionwide for the owner (validated exact).
@@ -518,7 +568,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // gov-farm-income-test.js: 10/11 player factions land at ratio 1.000-1.002 with u=1 —
     // farming income is now exact; the lone seleucid +20% is a separate EDB underparse).
     const tFarm = CALIB.farmPoint * (s.farmN + s.farmLevel + (gv0 ? (gv0.growthFarm || 0) : 0)) * gardensMult;
-    const tMine = CALIB.minePoint * s.mineSum * gMine;
+    const tMine = CALIB.minePoint * s.mineSum * (mineQty[s.region] || 0) * gMine;
     taxes += tTax; farming += tFarm; mining += tMine;
     const rv = s.resources.reduce((a, r) => a + (r.tradeValue || 0), 0);
     const gTrade = Math.max(0, 1 + (s.tradePct || 0) / 100) * gTrading;

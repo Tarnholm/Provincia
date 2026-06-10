@@ -31,6 +31,16 @@ describe("incomeModel — cracked constants", () => {
     expect(im.CALIB.wageAdmiral).toBe(50);
   });
 
+  test("cracked income constants (2026-06-10 session)", () => {
+    expect(im.CALIB.farmPoint).toBe(73.61);      // farming EXACT 11/11
+    expect(im.CALIB.minePoint).toBe(5);          // mining = 5×mine_resource×Σ(qty×tv), 5/6 exact
+    expect(im.CALIB.taxLogK_single).toBe(1.0);   // Capua quartet
+    expect(im.CALIB.taxLogK_multi).toBeCloseTo(0.5544, 4);
+    expect(im.CALIB.tradeLand).toBeCloseTo(6.23, 2);
+    expect(im.CALIB.tradeSea).toBeCloseTo(10.57, 2);
+    expect(im.CALIB.corrD0).toBe(12);
+  });
+
   test("empire-size tiers (settlement-count brackets from major_event scripts)", () => {
     expect(im.empireTier(1)).toBe(1);
     expect(im.empireTier(4)).toBe(2);
