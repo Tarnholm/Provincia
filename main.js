@@ -6509,7 +6509,13 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
         let govEffectByCity = {};
         try { govEffectByCity = te.govEffectByCityFromSave(cr, te.parseTraitEffects(modDataDir)); } catch {}
         opts = {};
-        if (Object.keys(growthDevByCity).length) opts.growthDevByCity = growthDevByCity;
+        // growthDevByCity (save-aware dev growth) is NOT passed for bracket planning:
+        // it reproduces THIS turn's growth tick, which embeds the harvest roll and
+        // seasonal/transient dips (live 2026-06-11: a julii turn with every town at
+        // −0.5% @normal dragged the whole plan to low). Brackets must come from the
+        // no-save model baseline (validated 26/26 vs live turn-1 panels); the
+        // calibration save contributes the rolled TRAITS (and the exact PO anchor).
+        void growthDevByCity;
         if (Object.keys(govEffectByCity).length) opts.govEffectByCity = govEffectByCity;
         if (!Object.keys(opts).length) opts = undefined;
       } catch (e) { _writeLog(`[turn1-budget] save read failed (${e && e.message}); using no-save model`); }

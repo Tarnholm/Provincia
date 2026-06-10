@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1047",
+    date: "2026-06-11",
+    items: [
+      { type: "fix", text: "**Tax plan: calibration saves no longer override the growth baseline.** The turn-1 budget path was still feeding the calibration save's per-turn growth values into bracket planning, reintroducing the harvest/seasonal dip (all-low plans). Calibration saves now contribute exactly what they are good for — the rolled governor traits and the exact stored public order — while bracket recommendations always come from the validated mod-file growth baseline." },
+    ],
+  },
+  {
     version: "0.9.1046",
     date: "2026-06-11",
     items: [
