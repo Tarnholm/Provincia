@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1039",
+    date: "2026-06-10",
+    items: [
+      { type: "fix", text: "**Unit suggestions no longer include reform-gated units.** RIS gates 3,449 recruit lines on mid-game reform events (marian_reforms, aor_reforms, suebi_reforms, thureophoroi reforms…) — the recruitable-pool engine ignored those conditions, so swap/trim suggestions and the per-settlement Recruitable lists could offer units a starting settlement can't actually make. major_event-gated lines are now excluded at campaign start (with a hook for fired-event sets later), and `not factions { … }` exclusion lists are honoured too (a faction no longer sees the AOR copy of its own native unit). Julii's Latium pool now reads exactly the early camillan roster." },
+    ],
+  },
+  {
     version: "0.9.1038",
     date: "2026-06-10",
     items: [

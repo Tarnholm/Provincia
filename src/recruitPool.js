@@ -99,10 +99,21 @@ function micTierFromBuildings(buildingNames) {
 }
 
 // Is a single recruit condition string satisfied for (faction, micTier, regionRes)?
-function conditionSatisfied(cond, faction, micTier, regionRes) {
+// opts.firedEvents: Set of major_event tokens that have fired. The harness models the
+// CAMPAIGN START, where no reform has fired — so by default every `major_event "x"`
+// gated line is NOT recruitable (USER RULE 2026-06-10: never suggest units gated by a
+// reform; RIS gates 3,449 recruit lines on reforms like marian_reforms / aor_reforms /
+// suebi_reforms — all mid-game progression events).
+function conditionSatisfied(cond, faction, micTier, regionRes, opts) {
   // mic tier gate
   const tier = cond.match(/mic_tier_(\d)/);
   if (tier && +tier[1] > micTier) return false;
+  // reform / major_event gates: require the event to have fired (none at start)
+  const fired = (opts && opts.firedEvents) || null;
+  for (const m of cond.matchAll(/(not\s+)?major_event\s+"([^"]+)"/g)) {
+    const has = fired ? fired.has(m[2].toLowerCase()) : false;
+    if (m[1] ? has : !has) return false; // `major_event` needs fired; `not major_event` needs not-fired
+  }
   // positive hidden_resource requirements (aor_/homeland_/etc.) must be present
   for (const m of cond.matchAll(/(?<!not )hidden_resource\s+(\w+)/g)) {
     if (!regionRes.has(m[1].toLowerCase())) return false;
@@ -110,6 +121,11 @@ function conditionSatisfied(cond, faction, micTier, regionRes) {
   // negative hidden_resource requirements must be absent
   for (const m of cond.matchAll(/not\s+hidden_resource\s+(\w+)/g)) {
     if (regionRes.has(m[1].toLowerCase())) return false;
+  }
+  // `not factions { ... }` exclusion list (e.g. the AOR variant of a unit excludes its
+  // HOME faction, which gets the native version instead)
+  for (const m of cond.matchAll(/not\s+factions\s*\{([^}]*)\}/g)) {
+    if (new RegExp("\\b" + String(faction).toLowerCase().replace(/[^a-z0-9_]/g, "") + "\\b").test(m[1].toLowerCase())) return false;
   }
   return true;
 }
