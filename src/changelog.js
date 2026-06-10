@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1040",
+    date: "2026-06-10",
+    items: [
+      { type: "fix", text: "**Recruit pools are now player-perspective.** The factions are set up for players, so the suggestion engine evaluates recruit lines as the human player: the 21,234 AI-only recruit lines (`not is_player`) no longer leak into the per-settlement Recruitable lists or swap suggestions. Together with yesterday's reform exclusion, a suggested unit is now exactly something the player could actually recruit there on turn 1." },
+    ],
+  },
+  {
     version: "0.9.1039",
     date: "2026-06-10",
     items: [

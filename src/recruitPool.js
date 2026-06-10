@@ -108,12 +108,17 @@ function conditionSatisfied(cond, faction, micTier, regionRes, opts) {
   // mic tier gate
   const tier = cond.match(/mic_tier_(\d)/);
   if (tier && +tier[1] > micTier) return false;
-  // reform / major_event gates: require the event to have fired (none at start)
+  // reform / major_event gates: require the event to have fired (none at start —
+  // USER-CONFIRMED 2026-06-10: "No reforms at the start")
   const fired = (opts && opts.firedEvents) || null;
   for (const m of cond.matchAll(/(not\s+)?major_event\s+"([^"]+)"/g)) {
     const has = fired ? fired.has(m[2].toLowerCase()) : false;
     if (m[1] ? has : !has) return false; // `major_event` needs fired; `not major_event` needs not-fired
   }
+  // PLAYER PERSPECTIVE ONLY (USER RULE 2026-06-10: "Only go for is_player options —
+  // we set up the factions for players"): AI-only lines (`not is_player`) are excluded;
+  // `is_player` lines pass since the pool models the human player's options.
+  if (/not\s+is_player\b/.test(cond)) return false;
   // positive hidden_resource requirements (aor_/homeland_/etc.) must be present
   for (const m of cond.matchAll(/(?<!not )hidden_resource\s+(\w+)/g)) {
     if (!regionRes.has(m[1].toLowerCase())) return false;
