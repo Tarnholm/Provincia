@@ -22653,6 +22653,30 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     style={{ background: armyCalibSave ? "rgba(143,180,110,0.25)" : "rgba(60,60,60,0.7)", color: armyCalibSave ? "#b8d38f" : "#9ab", border: "1px solid " + (armyCalibSave ? "#7a9a5a" : "rgba(255,255,255,0.25)"), borderRadius: 5, padding: "2px 10px", cursor: "pointer", fontSize: "0.74rem" }}>
                     🎯 {armyCalibSave ? "calibrated: " + armyCalibSave.split(/[\\/]/).pop().replace(/\.sav$/i, "").slice(0, 28) + " ✕" : "calibration save…"}
                   </button>
+                  <button
+                    onClick={() => {
+                      const txt = [
+                        "RIS MODEL-CALIBRATION CONSOLE SESSION (~20 min, RomeShell console; one quickstart)",
+                        "Goal: the readings that make taxes, PO and the last ledger line EXACT in Provincia.",
+                        "",
+                        "0. Quickstart any faction (H/H). Open the console. Type: disable_ai",
+                        "1. TAX POP-CURVE: read Taxes in the Financial Overview, then:",
+                        "     add_population <your capital> 1000   -> read Taxes again (repeat x3)",
+                        "2. WINTER GATE:  season winter  -> read Taxes + Farming  -> season summer",
+                        "3. THE x1/2:     control getae  -> read Taxes -> set Dourostoron one bracket up -> read again",
+                        "4. CITY-STATE:   control chios  -> read Taxes (then control arse -> read)",
+                        "5. PO TOOLTIPS:  control romans_julii -> screenshot the public-order tooltip breakdown for:",
+                        "     Rome, Paestum, Camerinum, Perusia   (the twin pair isolates the hidden term)",
+                        "6. LAST MYSTERY: hover the 'other' income row label in the Financial Overview - what does it say?",
+                        "",
+                        "Report the numbers/screens; the solvers (tax-reading-solve.js / po-tooltip-solve.js) do the rest.",
+                      ].join("\n");
+                      navigator.clipboard?.writeText(txt).then(() => pushToast("Console-session protocol copied — paste it somewhere visible and run it in-game", "info", 5000)).catch(() => {});
+                    }}
+                    title={"Copy the pending-experiments protocol: ONE in-game console session (disable_ai, add_population, season, control <faction>) that pins the remaining model unknowns — the tax pop-curve, the multi-town ×½, winter gating, city-state rates, the 4 PO tooltip breakdowns and the 'other' income row label."}
+                    style={{ background: "rgba(60,60,60,0.7)", color: "#c79be8", border: "1px solid #8a6aa0", borderRadius: 5, padding: "2px 10px", cursor: "pointer", fontSize: "0.74rem" }}>
+                    🧪 copy experiment protocol
+                  </button>
                   {armyOverview && !armyOverview.busy && armyOverview.rows.length > 0 && (
                     <button
                       onClick={() => {

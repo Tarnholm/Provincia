@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1035",
+    date: "2026-06-10",
+    items: [
+      { type: "feature", text: "**🧪 Copy experiment protocol** — the Army Setup toolbar now carries the full model-calibration console session as a copyable checklist: one quickstart with disable_ai, add_population for the tax pop-curve, season winter for the winter gate, control <faction> for the multi-town and city-state tax readings, the four public-order tooltip screenshots, and the 'other' income row hover. Twenty minutes in-game finishes the remaining model unknowns." },
+    ],
+  },
+  {
     version: "0.9.1034",
     date: "2026-06-10",
     items: [
