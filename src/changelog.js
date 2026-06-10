@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1029",
+    date: "2026-06-10",
+    items: [
+      { type: "improvement", text: "**Farming income is now EXACT — 11/11 factions at ratio 1.000.** The last 20% was the Hanging Gardens of Babylon: the wonder gives its owner +20% farming income across the whole faction (Seleucid owns Babylonia at start and sat at exactly ×1.202 until modeled). Wonders are parsed from descr_strat landmark lines and resolved to their owner via the region map — so moving Babylonia to another faction in a mod edit moves the bonus with it." },
+    ],
+  },
+  {
     version: "0.9.1028",
     date: "2026-06-10",
     items: [

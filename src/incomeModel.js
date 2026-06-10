@@ -359,6 +359,49 @@ function regionSeaBodies(modDataDir) {
   return (_seaCache[modDataDir] = out);
 }
 
+// ---- WONDERS (descr_strat `landmark` lines, tile→region via map_regions pixels) ----
+// CRACKED 2026-06-10: the Hanging Gardens give their owner +20% FARMING income
+// FACTIONWIDE — seleucid (owner) sat at exactly ratio 1.202 while all ten other
+// player factions fit 1.000-1.002; ×1.2 lands seleucid at 1.002 (wonder-check.js).
+// Other wonders show no measurable farming/trade effect in the corpus (ptolemaic owns
+// pyramids+pharos+mausoleum and fits 1.000) — only gardens is modeled.
+const _wonderCache = {};
+function wonderOwners(modDataDir) {
+  if (_wonderCache[modDataDir]) return _wonderCache[modDataDir];
+  const out = {};
+  try {
+    const dg = require("./descrStratGeneral.js");
+    const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
+    const buf = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga"));
+    const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), desc = buf[17];
+    const dataOff = 18 + buf[0];
+    const bottomLeft = (desc & 0x20) === 0;
+    const regionAt = (x, yGame) => {
+      const rowTop = H - 1 - yGame;
+      const r = bottomLeft ? (H - 1 - rowTop) : rowTop;
+      let reg = rgbToRegion[buf[dataOff + (r * W + x) * 3 + 2] + "," + buf[dataOff + (r * W + x) * 3 + 1] + "," + buf[dataOff + (r * W + x) * 3]];
+      if (reg) return reg;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) {
+        const o = dataOff + ((r + dy) * W + (x + dx)) * 3;
+        reg = rgbToRegion[buf[o + 2] + "," + buf[o + 1] + "," + buf[o]];
+        if (reg) return reg;
+      }
+      return null;
+    };
+    const stratPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
+    const strat = gv.parseStrat(stratPath);
+    const ownerOfRegion = {};
+    for (const [fac, f] of Object.entries(strat)) for (const sd of f.settlements) ownerOfRegion[sd.region] = fac;
+    for (const raw of _stratLines(stratPath)) {
+      const m = raw.match(/^landmark\s+(\w+)\s+(\d+)\s*,\s*(\d+)/);
+      if (!m) continue;
+      const reg = regionAt(+m[2], +m[3]);
+      out[m[1].toLowerCase()] = { region: reg, owner: reg ? (ownerOfRegion[reg] || null) : null };
+    }
+  } catch { /* no wonders */ }
+  return (_wonderCache[modDataDir] = out);
+}
+
 // ---- region ownership + starting allies (trade agreements) + all port towns ----
 const _tradeCtxCache = {};
 function tradePartnerCtx(modDataDir) {
@@ -429,8 +472,11 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   // "30% penalty"). 302 RIS towns have nonzero income governors at start.
   let govFx = {};
   try { const te = require("./traitEffects.js"); govFx = te.govEffectByCityFromStrat(modDataDir, te.parseTraitEffects(modDataDir)) || {}; } catch { }
+  const wonders = wonderOwners(modDataDir);
   const { ownerOfRegion, allies, portTowns } = tradePartnerCtx(modDataDir);
   const facLow = F.faction;
+  // Hanging Gardens: +20% farming income factionwide for the owner (validated exact).
+  const gardensMult = wonders.gardens && wonders.gardens.owner === facLow ? 1.2 : 1;
   const allySet = allies[facLow] || new Set();
   const isPartner = (other) => other && (other === facLow || allySet.has(other));
   const seaPartnersOf = (region) => {
@@ -458,7 +504,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // governor Effect Farming = +1 farm level per point for INCOME (confirmed 2026-06-10,
     // gov-farm-income-test.js: 10/11 player factions land at ratio 1.000-1.002 with u=1 —
     // farming income is now exact; the lone seleucid +20% is a separate EDB underparse).
-    const tFarm = CALIB.farmPoint * (s.farmN + s.farmLevel + (gv0 ? (gv0.growthFarm || 0) : 0));
+    const tFarm = CALIB.farmPoint * (s.farmN + s.farmLevel + (gv0 ? (gv0.growthFarm || 0) : 0)) * gardensMult;
     const tMine = CALIB.minePoint * s.mineSum * gMine;
     taxes += tTax; farming += tFarm; mining += tMine;
     const rv = s.resources.reduce((a, r) => a + (r.tradeValue || 0), 0);
