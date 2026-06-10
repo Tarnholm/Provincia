@@ -9609,6 +9609,10 @@ function App() {
   // Tax plan computed from the mod files (live-verified exact; the save-based
   // two-save flow was removed 2026-06-10 — the no-save model IS the planner).
   const [armyStratPlan, setArmyStratPlan] = useState(null);
+  // Balance overview (mod-team harness, 2026-06-10): every faction's turn-1 economy
+  // vs starting-army upkeep → over/under-budget verdicts. { busy, rows:[...] } | null.
+  const [armyOverview, setArmyOverview] = useState(null);
+  const armyOverviewRunning = useRef(false);
   // STATIC turn-1 budget @ optimal taxes (2026-06-09): the no-save income model
   // (src/incomeModel.js — taxes/farming/mining/trade − wages − corruption) at the
   // growth model's optimal brackets. { faction, settlements, totals:{armyBudget…} }.
@@ -22583,6 +22587,24 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           finally { setArmySetupBusy(false); }
         };
         const TAX_LBL = { low: "Low", normal: "Normal", high: "High", very_high: "V.High" };
+        // Balance overview: run the turn-1 budget for every campaign faction, progressive.
+        const runOverview = async () => {
+          if (armyOverviewRunning.current || !modDataDir) return;
+          armyOverviewRunning.current = true;
+          setArmyOverview({ busy: true, rows: [] });
+          try {
+            for (const ff of facList) {
+              const t1 = await window.electronAPI.getTurn1Budget?.(modDataDir, ff, undefined);
+              if (t1 && !t1.error && t1.totals) {
+                const row = { fac: ff, ...t1.totals, towns: t1.settlements?.length || 0 };
+                setArmyOverview(prev => ({ busy: true, rows: [...((prev && prev.rows) || []), row] }));
+              }
+            }
+          } finally {
+            armyOverviewRunning.current = false;
+            setArmyOverview(prev => prev ? { ...prev, busy: false } : prev);
+          }
+        };
         return createPortal(
           <div onClick={close} style={{ position: "fixed", inset: 0, zIndex: 9991, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div onClick={e => e.stopPropagation()} className="popover-pop-in" style={{ background: "rgba(26,22,18,0.98)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "12px 0", width: "min(860px, 96vw)", maxHeight: "86vh", boxShadow: "0 12px 40px rgba(0,0,0,0.6)", color: "#f4f4f4", display: "flex", flexDirection: "column" }}>
@@ -22594,6 +22616,12 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
               <div style={{ padding: "6px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", gap: 6 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   <span style={{ fontSize: "0.72rem", color: "#8aa" }}>Pick a faction — tax plan + turn-1 budget are computed from the mod files (no save needed).</span>
+                  <button onClick={runOverview} disabled={armyOverview && armyOverview.busy}
+                    title="Compute the turn-1 budget for EVERY campaign faction and list over/under-budget verdicts — the mod-balance overview. Takes ~1s per faction; rows appear as they finish."
+                    style={{ background: "rgba(60,60,60,0.7)", color: "#e8c873", border: "1px solid #a08a4a", borderRadius: 5, padding: "2px 10px", cursor: "pointer", fontSize: "0.74rem" }}>
+                    ⚖ Balance overview{armyOverview && armyOverview.busy ? ` (${armyOverview.rows.length}/${facList.length}…)` : ""}
+                  </button>
+                  {armyOverview && !armyOverview.busy && <button onClick={() => setArmyOverview(null)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.2)", color: "#9aa", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>hide</button>}
                   <input value={armyFacSearch} onChange={(e) => setArmyFacSearch(e.target.value)} placeholder="Search factions…"
                     style={{ marginLeft: "auto", width: 180, background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "3px 8px", fontSize: "0.78rem" }} />
                 </div>
@@ -22618,6 +22646,35 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                 </div>
               </div>
               <div style={{ overflow: "auto", padding: "8px 16px" }}>
+                {/* ⚖ Balance overview — every faction's verdict (mod-team harness) */}
+                {armyOverview && armyOverview.rows.length > 0 && (
+                  <div style={{ marginBottom: 12, padding: "8px 10px", borderRadius: 6, background: "rgba(232,200,115,0.07)", border: "1px solid rgba(232,200,115,0.3)" }}>
+                    <div style={{ fontWeight: 700, color: "#e8c873", marginBottom: 4 }}>⚖ Balance overview — turn-1 economy @ optimal taxes vs starting army{armyOverview.busy ? ` (computing ${armyOverview.rows.length}/${facList.length}…)` : ` (${armyOverview.rows.length} factions, worst first)`}</div>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.74rem" }}>
+                      <thead><tr style={{ color: "#8aa", textAlign: "left" }}>
+                        <th style={{ padding: "0 6px" }}>Faction</th><th>Towns</th><th>Income</th><th>Wages</th><th>Corr.</th><th>Army budget</th><th>Army upkeep</th><th>Net/turn</th><th>Verdict</th>
+                      </tr></thead>
+                      <tbody>
+                        {armyOverview.rows.slice().sort((a, b) => (a.net ?? 0) - (b.net ?? 0)).map((r, i) => (
+                          <tr key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.05)", cursor: "pointer" }} onClick={() => fetchFor(r.fac)} title="Click to open this faction's full setup">
+                            <td style={{ padding: "1px 6px", color: "#dde", textTransform: "capitalize" }}>{((factionDisplayNames && factionDisplayNames[r.fac]) || r.fac).replace(/_/g, " ")}</td>
+                            <td style={{ color: "#9aa" }}>{r.towns}</td>
+                            <td style={{ color: "#9aa" }}>{r.income}</td>
+                            <td style={{ color: "#9aa" }}>{r.wages}</td>
+                            <td style={{ color: "#9aa" }}>{r.corruption}</td>
+                            <td style={{ color: "#b8d38f" }}>{r.armyBudget}</td>
+                            <td style={{ color: "#cba" }}>{r.armyUpkeep ?? "—"}</td>
+                            <td style={{ color: r.net == null ? "#778" : r.net >= 0 ? "#7fd17f" : "#e8806a", fontWeight: 600 }}>{r.net ?? "—"}</td>
+                            <td>{r.net == null ? <span style={{ color: "#778" }}>—</span> : r.net >= 0
+                              ? <span style={{ color: "#7fd17f" }}>OK · room +{r.net}</span>
+                              : <span style={{ color: "#e8806a", fontWeight: 700 }}>OVER by {-r.net}</span>}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div style={{ marginTop: 4, fontSize: "0.66rem", color: "#8aa" }}>Income = mod-file model @ each faction's optimal tax plan. Army upkeep = EDU estimate of the seeded descr_strat army (engine charge can deviate ±15%). Click a row for the faction's full plan + trim suggestions.</div>
+                  </div>
+                )}
                 {armySetupBusy && <div style={{ color: "#9aa", fontStyle: "italic" }}>Analyzing…</div>}
                 {!d && !armySetupBusy && <div style={{ color: "#9aa", fontStyle: "italic" }}>Pick a faction above.</div>}
                 {d && d.error && <div style={{ color: "#e89060" }}>{d.error}</div>}
@@ -22686,12 +22743,35 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         </div>
                         {netAfterArmy != null && (() => {
                           const room = netAfterArmy - armyBudgetFloor; // floor is the allowed max deficit (e.g. −500)
+                          // ARMY-ONLY trim suggestions when over budget: greedily drop the
+                          // priciest non-general units until the deficit is covered.
+                          let trims = null;
+                          if (room < 0 && d.characters) {
+                            const units = [];
+                            for (const c of d.characters) for (const u of (c.army || [])) {
+                              if (/general/i.test(u.unit) || !u.upkeep) continue;
+                              units.push({ unit: u.unit, upkeep: u.upkeep, holder: c.name });
+                            }
+                            units.sort((a, b) => b.upkeep - a.upkeep);
+                            let need = -room, take = [];
+                            for (const u of units) { if (need <= 0) break; take.push(u); need -= u.upkeep; }
+                            const grouped = {};
+                            for (const u of take) { const k = u.unit; (grouped[k] = grouped[k] || { n: 0, upkeep: u.upkeep }).n++; }
+                            trims = { list: Object.entries(grouped), saves: take.reduce((a, u) => a + u.upkeep, 0), covered: need <= 0 };
+                          }
                           return (
                             <div style={{ marginTop: 6, fontSize: "0.88rem", padding: "5px 8px", borderRadius: 4, background: "rgba(0,0,0,0.25)" }}
                               title={`Sustainable army budget ${t.armyBudget} − current starting army ≈${d.armyUpkeep} (EDU estimate) = net ≈${netAfterArmy}. With your deficit floor of ${armyBudgetFloor}, you can add roughly ${room} more upkeep of NEW troops before crossing it.`}>
                               <span style={{ color: "#cdc" }}>− current army ≈<b>{d.armyUpkeep}</b> = net ≈<b style={{ color: netAfterArmy >= 0 ? "#7fd17f" : "#e8806a" }}>{netAfterArmy}</b>/turn</span>
-                              <span style={{ marginLeft: 14, color: room >= 0 ? "#9fe89f" : "#e8806a", fontWeight: 700 }}>⚔ room for ≈{room} upkeep of new troops</span>
-                              <span style={{ marginLeft: 8, color: "#889", fontSize: "0.7rem" }}>(to the {armyBudgetFloor} floor)</span>
+                              {room >= 0
+                                ? <span style={{ marginLeft: 14, color: "#9fe89f", fontWeight: 700 }}>⚔ room for ≈{room} upkeep of new troops <span style={{ color: "#889", fontSize: "0.7rem", fontWeight: 400 }}>(to the {armyBudgetFloor} floor)</span></span>
+                                : <span style={{ marginLeft: 14, color: "#e8806a", fontWeight: 700 }}>⚠ OVER BUDGET by {-room} <span style={{ color: "#889", fontSize: "0.7rem", fontWeight: 400 }}>(vs the {armyBudgetFloor} floor)</span></span>}
+                              {trims && trims.list.length > 0 && (
+                                <div style={{ marginTop: 4, fontSize: "0.76rem", color: "#e8b08a" }}
+                                  title="Greedy suggestion: removes the highest-upkeep non-general units first. Adjust to taste — the goal is the total saved, not these exact units.">
+                                  ✂ army-only fix: remove {trims.list.map(([u, g]) => `${g.n}× ${u} (${g.upkeep})`).join(", ")} → saves {trims.saves}/turn{trims.covered ? " ✓ back within budget" : " (still short — deeper cuts needed)"}
+                                </div>
+                              )}
                             </div>
                           );
                         })()}

@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1020",
+    date: "2026-06-10",
+    items: [
+      { type: "feature", text: "**⚖ Balance overview — the mod-team harness.** One click computes every campaign faction's turn-1 economy at optimal taxes vs its seeded starting army, and lists over/under-budget verdicts (worst first, rows appear as they compute, click a row to open the faction). Change a resource, move a province, tweak a building — rerun the overview and see who broke." },
+      { type: "feature", text: "**Army-only trim suggestions.** When a faction is over budget, the budget panel suggests which units to remove (highest-upkeep non-general units first) with the total saved and whether it gets you back inside the deficit floor." },
+    ],
+  },
+  {
     version: "0.9.1019",
     date: "2026-06-10",
     items: [

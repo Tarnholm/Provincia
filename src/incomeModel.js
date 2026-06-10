@@ -186,6 +186,27 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
   return { faction: want, isPlayer, tier, nSettlements: f.settlements.length, settlements: out };
 }
 
+// ---- starting-army upkeep per faction (EDU stat_cost upkeep over descr_strat armies) ----
+// NOTE: the engine's actual charge can deviate from the EDU sum (known ±15% scatter,
+// see the income crack); this is the planning estimate the balance overview uses.
+function armyUpkeepEDU(modDataDir, faction) {
+  const stratPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
+  if (!fs.existsSync(stratPath)) return null;
+  let us;
+  try { us = require("./recruitPool.js").parseUnitStats(modDataDir); } catch { return null; }
+  const want = String(faction || "").toLowerCase();
+  const lines = fs.readFileSync(stratPath, "latin1").split(/\r?\n/);
+  let cur = null, inWanted = false, sum = 0, units = 0;
+  for (const ln of lines) {
+    const m = ln.match(/^faction\s+([a-z_0-9]+)\s*,/i);
+    if (m) { cur = m[1].toLowerCase(); inWanted = cur === want; continue; }
+    if (!inWanted) continue;
+    const u = ln.match(/^unit\s+(.+?)\s+exp\b/);
+    if (u) { const st = us[u[1].trim().toLowerCase()]; sum += (st && st.upkeep) || 0; units++; }
+  }
+  return { upkeep: sum, units };
+}
+
 // ---- characters per faction from descr_strat (for the WAGES crack) ----
 function countCharacters(modDataDir, faction) {
   const stratPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
@@ -290,6 +311,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   const wages = CALIB.wageNamed * ch.named + CALIB.wageAdmiral * ch.admiral;
   const corruption = Math.max(0, Math.round(CALIB.corrDist * distSum + CALIB.corrTown * F.settlements.length));
   const income = Math.round(taxes + farming + mining + trade);
+  const army = armyUpkeepEDU(modDataDir, faction);
   return {
     faction: F.faction, tier: F.tier, nSettlements: F.nSettlements, settlements: sets,
     characters: ch,
@@ -297,10 +319,15 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       taxes: Math.round(taxes), farming: Math.round(farming), mining: Math.round(mining), trade: Math.round(trade),
       income, wages, corruption,
       armyBudget: income - wages - corruption,
+      // starting-army upkeep (EDU estimate) + the balance verdict the mod team needs:
+      // net = what's left each turn AFTER the seeded army. Negative = over budget.
+      armyUpkeep: army ? army.upkeep : null,
+      armyUnits: army ? army.units : null,
+      net: army ? (income - wages - corruption - army.upkeep) : null,
     },
     // honest accuracy notes for the UI (validated vs the 10-faction turn-1 corpus)
     accuracy: { taxes: "±9%", farming: "±5%", trade: "±30% (weak)", wages: "exact", corruption: "±10%", unmodeled: "diplomacy/'other' income (~1-4% of total)" },
   };
 }
 
-module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, CALIB };
+module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, CALIB };
