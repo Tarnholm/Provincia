@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1028",
+    date: "2026-06-10",
+    items: [
+      { type: "improvement", text: "**Farming income is now exact (±0.1%).** Governor Effect Farming points turn out to add one farm level each to the town's farming income — with that and a constant snap (73.5 → 73.61 per farm point), 10 of 11 player-faction ledgers match to within a couple of denarii per thousand. The one exception is Seleucid (+20%, a known irrigation-chain parse gap in their unique farm buildings)." },
+    ],
+  },
+  {
     version: "0.9.1027",
     date: "2026-06-10",
     items: [

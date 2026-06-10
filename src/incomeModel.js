@@ -270,9 +270,11 @@ const CALIB = {
   // imply the same per-town base). Empire-size (sizeN) lines are NOT active in the
   // turn-1 economy (events fire later) — excluded. ±9% across factions.
   taxBase: 713,
-  // farming = farmPoint × Σ (region farmN + EDB farming_level incl additive bonuses).
-  // 8/10 factions within ±1% (seleucid −17%: irrigation/dates underparse, julii +6%).
-  farmPoint: 73.5,
+  // farming = farmPoint × Σ (region farmN + EDB farming_level incl additive bonuses
+  // + governor Effect Farming points). EXACT 2026-06-10: 10/11 player factions at
+  // ratio 0.999-1.001 (the uniform 1.001-1.002 residual at 73.5 was the constant —
+  // snapped to 73.61). Lone outlier seleucid +20% (EDB irrigation-chain underparse).
+  farmPoint: 73.61,
   // mining = minePoint × Σ mine_resource (single corpus observation: arverni 600/12).
   minePoint: 50,
   // trade = tradeLand×Σ_towns g·rv·(1+landPartners) + tradeSea×Σ_portTowns g·rv·√(seaPartners).
@@ -453,7 +455,10 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const gMine = gv0 ? Math.max(0, 1 + (gv0.mining || 0) / 100) : 1;
     const f = Math.max(0, 1 + (s.taxPctParts.base + s.taxPctParts.winter) / 100);
     const tTax = CALIB.taxBase * f * mult * gTax;
-    const tFarm = CALIB.farmPoint * (s.farmN + s.farmLevel);
+    // governor Effect Farming = +1 farm level per point for INCOME (confirmed 2026-06-10,
+    // gov-farm-income-test.js: 10/11 player factions land at ratio 1.000-1.002 with u=1 —
+    // farming income is now exact; the lone seleucid +20% is a separate EDB underparse).
+    const tFarm = CALIB.farmPoint * (s.farmN + s.farmLevel + (gv0 ? (gv0.growthFarm || 0) : 0));
     const tMine = CALIB.minePoint * s.mineSum * gMine;
     taxes += tTax; farming += tFarm; mining += tMine;
     const rv = s.resources.reduce((a, r) => a + (r.tradeValue || 0), 0);
