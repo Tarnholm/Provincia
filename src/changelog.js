@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1023",
+    date: "2026-06-10",
+    items: [
+      { type: "improvement", text: "**Trade model refit — ±30% → ±19%.** Trade is now partner-aware: each settlement's resource value counts once per adjacent region owned by you or a starting ally (trade agreements), plus a sea term for port towns. Region adjacency is computed from map_regions.tga, ownership and alliances from descr_strat. The big economies land within 3–5% (Seleucid 3%, Ptolemaic 5%, Cyrene 4%), and the Suebi outlier the old model had to exclude is now handled." },
+      { type: "feature", text: "**⧉ Copy plan** button on the Tax plan — copies the settlement → bracket list to the clipboard for setting taxes in-game." },
+      { type: "feature", text: "**Settlement filter + PO in the Tax plan.** One search box filters both the Tax plan and Turn-1 Budget tables, and the Tax plan now shows the 🔴/🟡/🟢 public-order risk column alongside each recommendation." },
+    ],
+  },
+  {
     version: "0.9.1022",
     date: "2026-06-10",
     items: [

@@ -9606,6 +9606,7 @@ function App() {
   const [armyProjIncome, setArmyProjIncome] = useState("");
   // Faction-picker search filter for the Army Setup panel.
   const [armyFacSearch, setArmyFacSearch] = useState("");
+  const [armySetSearch, setArmySetSearch] = useState(""); // settlement filter for budget + tax plan tables
   // Tax plan computed from the mod files (live-verified exact; the save-based
   // two-save flow was removed 2026-06-10 — the no-save model IS the planner).
   const [armyStratPlan, setArmyStratPlan] = useState(null);
@@ -22729,9 +22730,11 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
                           <strong style={{ color: "#b8d38f" }}>💰 Turn-1 budget @ optimal taxes</strong>
                           <span style={{ fontSize: "0.7rem", color: "#8aa" }}>{armyT1Budget.saveAware ? "save-aware growth + mod-file income model" : "computed from the mod files alone (no save)"} · empire size {armyT1Budget.tier} · {armyT1Budget.settlements.length} settlements</span>
+                          <input value={armySetSearch} onChange={(e) => setArmySetSearch(e.target.value)} placeholder="Filter settlements…"
+                            style={{ marginLeft: "auto", width: 140, background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 5, padding: "2px 7px", fontSize: "0.72rem" }} />
                           <button onClick={() => setArmyProjIncome(String(netAfterArmy != null ? netAfterArmy : t.armyBudget))}
                             title="Fill the Budget box's income field with this estimate (net after the starting army's EDU-estimated upkeep when available, else the gross sustainable-upkeep budget)."
-                            style={{ marginLeft: "auto", background: "rgba(60,60,60,0.7)", color: "#b8d38f", border: "1px solid #7a9a5a", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
+                            style={{ background: "rgba(60,60,60,0.7)", color: "#b8d38f", border: "1px solid #7a9a5a", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
                             use as budget{netAfterArmy != null ? `: ${netAfterArmy}` : `: ${t.armyBudget}`}
                           </button>
                         </div>
@@ -22793,7 +22796,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                             <th style={{ fontWeight: 600, padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Growth @ set</th><th>→ Tax</th><th title="Estimated public order at the recommended bracket — risk RANKING (±20), not the exact in-game %. 🔴 likely revolt risk · 🟡 watch · 🟢 fine. Validated on live Julii: flagged all 3 actual revolt-risk towns.">PO @ set</th><th>Tax income</th><th>Farm</th><th>Dist→cap</th>
                           </tr></thead>
                           <tbody>
-                            {armyT1Budget.settlements.slice().sort((a, b) => ((a.settlement || a.region) || "").localeCompare((b.settlement || b.region) || "")).map((s, si) => {
+                            {armyT1Budget.settlements.slice().filter(s => !armySetSearch.trim() || ((s.settlement || s.region) || "").toLowerCase().includes(armySetSearch.trim().toLowerCase())).sort((a, b) => ((a.settlement || a.region) || "").localeCompare((b.settlement || b.region) || "")).map((s, si) => {
                               const GMOD = { low: 0.5, normal: 0, high: -0.5, very_high: -1 };
                               const atSet = (s.baseGrowthEst != null && s.bracket) ? Math.round((s.baseGrowthEst + (GMOD[s.bracket] || 0)) * 10) / 10 : null;
                               return (
@@ -22834,6 +22837,20 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                           <strong style={{ color: "#9fd3ff" }}>🏛 Tax plan</strong>
                           <span style={{ fontSize: "0.72rem", color: "#8aa" }}>highest bracket keeping growth ≥ 0 (Low +0.5% · Normal 0 · High −0.5% · V.High −1.0%) — computed from the mod files, live‑verified exact across six factions</span>
+                          {sp && sp.settlements && (
+                            <button
+                              onClick={() => {
+                                const text = sp.settlements.slice()
+                                  .sort((a, b) => ((a.settlement || a.region) || "").localeCompare((b.settlement || b.region) || ""))
+                                  .map(s => `${((s.settlement || s.region) || "").replace(/_/g, " ")}: ${BR[s.optimalBracket] || s.optimalBracket}${s.borderline ? " (verify)" : ""}`)
+                                  .join("\n");
+                                navigator.clipboard?.writeText(text).then(() => pushToast("Tax plan copied — paste it next to the game and set the brackets", "info", 4000)).catch(() => {});
+                              }}
+                              title="Copy the settlement → bracket list to the clipboard, for setting taxes in-game."
+                              style={{ marginLeft: "auto", background: "rgba(60,60,60,0.7)", color: "#9fd3ff", border: "1px solid #5a82a0", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
+                              ⧉ copy plan
+                            </button>
+                          )}
                         </div>
                         {armyStratPlan && armyStratPlan.staleWarning && (
                           <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 4, background: "rgba(232,90,90,0.18)", border: "1px solid rgba(232,90,90,0.55)", fontSize: "0.72rem", color: "#f0a0a0" }}>
@@ -22844,11 +22861,13 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         {sp && sp.settlements && (
                           <>
                             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem", marginTop: 6 }}>
-                              <thead><tr style={{ color: "#8aa", textAlign: "left" }}><th style={{ padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Base growth</th><th>→ Set to</th><th>Growth @ set</th></tr></thead>
+                              <thead><tr style={{ color: "#8aa", textAlign: "left" }}><th style={{ padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Base growth</th><th>→ Set to</th><th>Growth @ set</th><th title="Estimated public order at the recommended bracket — risk RANKING (±20). 🔴 revolt risk · 🟡 watch · 🟢 fine.">PO @ set</th></tr></thead>
                               <tbody>
-                                {sp.settlements.slice().sort((a, b) => ((a.settlement || a.region) || "").localeCompare((b.settlement || b.region) || "")).map((s, i) => {
+                                {sp.settlements.slice().filter(s => !armySetSearch.trim() || ((s.settlement || s.region) || "").toLowerCase().includes(armySetSearch.trim().toLowerCase())).sort((a, b) => ((a.settlement || a.region) || "").localeCompare((b.settlement || b.region) || "")).map((s, i) => {
                                   const GMOD = { low: 0.5, normal: 0, high: -0.5, very_high: -1 };
                                   const atSet = s.baseGrowthEst != null && s.optimalBracket ? Math.round((s.baseGrowthEst + GMOD[s.optimalBracket]) * 10) / 10 : null;
+                                  const bset = armyT1Budget && armyT1Budget.faction === fac && armyT1Budget.settlements
+                                    ? armyT1Budget.settlements.find(b2 => (b2.settlement || b2.region) === (s.settlement || s.region)) : null;
                                   return (
                                   <tr key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                                     <td style={{ padding: "1px 6px", color: "#dde" }} title={s.settlement && s.region ? `region: ${s.region.replace(/_/g, " ")}` : undefined}>{((s.settlement || s.region) || "").replace(/_/g, " ")}</td>
@@ -22861,6 +22880,10 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                       {s.borderline && <span title={`Borderline — estimated growth is only ${s.distToBoundary ?? "<0.2"}% from a bracket boundary, so this one could flip. Verify in‑game or set one bracket lower to be safe.`} style={{ color: "#e8b85a", marginLeft: 4, cursor: "help" }}>⚠</span>}
                                     </td>
                                     <td style={{ color: atSet == null ? "#778" : atSet < 0 ? "#e8806a" : "#7fd17f" }} title="What the in-game growth scroll should read once you set this bracket (base growth + the bracket's flat growth modifier: Low +0.5 / Normal 0 / High −0.5 / V.High −1.0).">{atSet == null ? "—" : `${atSet >= 0 ? "+" : ""}${atSet}%`}</td>
+                                    <td style={{ color: !bset || bset.poAtSet == null ? "#778" : bset.poRisk === "red" ? "#e8806a" : bset.poRisk === "yellow" ? "#e8b85a" : "#7fd17f" }}
+                                      title={bset && bset.poAtSet != null ? `Estimated PO ≈${bset.poAtSet} at the recommended bracket (ranking model, ±20).${bset.poAtLow != null ? ` At Low ≈${bset.poAtLow}.` : ""}` : "PO computes with the Turn-1 Budget below."}>
+                                      {!bset || bset.poAtSet == null ? "—" : <>{bset.poRisk === "red" ? "🔴" : bset.poRisk === "yellow" ? "🟡" : "🟢"} {bset.poAtSet}</>}
+                                    </td>
                                   </tr>
                                 );})}
                               </tbody>

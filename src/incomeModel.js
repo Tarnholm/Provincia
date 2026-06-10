@@ -249,10 +249,12 @@ const CALIB = {
   farmPoint: 73.5,
   // mining = minePoint × Σ mine_resource (single corpus observation: arverni 600/12).
   minePoint: 50,
-  // trade = tradeInland×Σrv(no port) + tradeCoast×Σrv(port) + tradePort×nPorts.
-  // THE WEAK COMPONENT (±30% on the slot — partner/adjacency unmodeled). rv = Σ
-  // resource "trade value" (descr_sm_resources).
-  tradeInland: 34.9, tradeCoast: 172.3, tradePort: -547.5,
+  // trade = tradeLand×Σ_towns rv·(1+landPartners) + tradeSea×Σ_portTowns rv.
+  // landPartners = adjacent regions (map_regions pixel adjacency) owned by self or a
+  // descr_strat ally (≤199 = ally + trade agreement). Refit 2026-06-10 on the 11
+  // player rows (trade-crack4/trade-final-fit.js): mean |err| 19% incl. suebi
+  // (old form was ±30% with suebi excluded); seleucid 3% / ptolemaic 5% / cyrene 4%.
+  tradeLand: 5.71, tradeSea: 58.46,
   // wages = 200×named character + 50×admiral (EXACT on fresh saves).
   wageNamed: 200, wageAdmiral: 50,
   // corruption ("other" expenditure) = corrDist×Σ tileDist(town→capital) + corrTown×towns,
@@ -274,6 +276,47 @@ function regionCoords(modDataDir) {
 }
 
 const BRACKET_MULT = { low: 0.8, normal: 1.0, high: 1.2, very_high: 1.5 };
+
+// ---- region adjacency from map_regions.tga (for land-trade partners) ----
+const _adjCache = {};
+function regionAdjacency(modDataDir) {
+  if (_adjCache[modDataDir]) return _adjCache[modDataDir];
+  const adj = {};
+  try {
+    const dg = require("./descrStratGeneral.js");
+    const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
+    const buf = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga"));
+    const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), desc = buf[17];
+    const dataOff = 18 + buf[0];
+    const bottomLeft = (desc & 0x20) === 0;
+    const key = (col, rowTop) => { const r = bottomLeft ? (H - 1 - rowTop) : rowTop; const o = dataOff + (r * W + col) * 3; return buf[o + 2] + "," + buf[o + 1] + "," + buf[o]; };
+    const add = (a, b) => { (adj[a] = adj[a] || new Set()).add(b); (adj[b] = adj[b] || new Set()).add(a); };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const k = key(x, y); const ra = rgbToRegion[k];
+      if (x + 1 < W) { const k2 = key(x + 1, y); if (k2 !== k) { const rb = rgbToRegion[k2]; if (ra && rb && ra !== rb) add(ra, rb); } }
+      if (y + 1 < H) { const k2 = key(x, y + 1); if (k2 !== k) { const rb = rgbToRegion[k2]; if (ra && rb && ra !== rb) add(ra, rb); } }
+    }
+  } catch { /* adjacency unavailable → land partners count 0 */ }
+  return (_adjCache[modDataDir] = adj);
+}
+
+// ---- region ownership + starting allies (trade agreements) from descr_strat ----
+const _tradeCtxCache = {};
+function tradePartnerCtx(modDataDir) {
+  if (_tradeCtxCache[modDataDir]) return _tradeCtxCache[modDataDir];
+  const ownerOfRegion = {}, allies = {};
+  try {
+    const stratPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
+    const strat = gv.parseStrat(stratPath);
+    for (const [fac, f] of Object.entries(strat)) for (const sd of f.settlements) ownerOfRegion[sd.region] = fac;
+    for (const raw of fs.readFileSync(stratPath, "latin1").split(/\r?\n/)) {
+      const t = raw.includes(";") ? raw.slice(0, raw.indexOf(";")) : raw;
+      const m = t.match(/^faction_relationships\s+(\w+)\s*,\s*(\d+)\s+(\w+)/);
+      if (m && +m[2] <= 199) (allies[m[1].toLowerCase()] = allies[m[1].toLowerCase()] || new Set()).add(m[3].toLowerCase());
+    }
+  } catch { /* none */ }
+  return (_tradeCtxCache[modDataDir] = { ownerOfRegion, allies });
+}
 
 // ---- protectorates (CRACKED 2026-06-10, tribute-rate-fit.js) ----
 // RIS seeds protectorates via `console_command become_protector <suzerain> <client>`
@@ -316,7 +359,12 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   const coords = regionCoords(modDataDir);
   const br = bracketByCity || {};
   const cap = F.settlements.length ? coords[F.settlements[0].region] : null;
-  let taxes = 0, farming = 0, mining = 0, rvIn = 0, rvCo = 0, ports = 0, distSum = 0;
+  const adjacency = regionAdjacency(modDataDir);
+  const { ownerOfRegion, allies } = tradePartnerCtx(modDataDir);
+  const facLow = F.faction;
+  const allySet = allies[facLow] || new Set();
+  const isPartner = (other) => other && (other === facLow || allySet.has(other));
+  let taxes = 0, farming = 0, mining = 0, tradeLandSum = 0, tradeSeaSum = 0, distSum = 0;
   const sets = [];
   for (const s of F.settlements) {
     const bracket = br[s.settlement] || br[s.region] || "normal";
@@ -327,15 +375,18 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const tMine = CALIB.minePoint * s.mineSum;
     taxes += tTax; farming += tFarm; mining += tMine;
     const rv = s.resources.reduce((a, r) => a + (r.tradeValue || 0), 0);
-    if (s.portLevel) { rvCo += rv; ports++; } else rvIn += rv;
+    let nPartners = 0;
+    for (const n of (adjacency[s.region] || [])) if (isPartner(ownerOfRegion[n])) nPartners++;
+    tradeLandSum += rv * (1 + nPartners);
+    if (s.portLevel) tradeSeaSum += rv;
     let dist = null;
     const c = coords[s.region];
     if (cap && c) { dist = Math.hypot(c.x - cap.x, c.y - cap.y); distSum += dist; }
     sets.push({ settlement: s.settlement, region: s.region, pop: s.pop, level: s.level, capital: s.capital,
       bracket, taxes: Math.round(tTax), farming: Math.round(tFarm), mining: Math.round(tMine),
-      taxFactor: Math.round(f * 100) / 100, resourceValue: rv, port: !!s.portLevel, distToCapital: dist != null ? Math.round(dist) : null });
+      taxFactor: Math.round(f * 100) / 100, resourceValue: rv, port: !!s.portLevel, tradePartners: nPartners, distToCapital: dist != null ? Math.round(dist) : null });
   }
-  const trade = Math.max(0, CALIB.tradeInland * rvIn + CALIB.tradeCoast * rvCo + CALIB.tradePort * ports);
+  const trade = Math.max(0, CALIB.tradeLand * tradeLandSum + CALIB.tradeSea * tradeSeaSum);
   const ch = countCharacters(modDataDir, faction) || { named: 0, admiral: 0 };
   const wages = CALIB.wageNamed * ch.named + CALIB.wageAdmiral * ch.admiral;
   const corruption = Math.max(0, Math.round(CALIB.corrDist * distSum + CALIB.corrTown * F.settlements.length));
@@ -390,7 +441,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     },
     protectorate: (clients || suzerain) ? { suzerain, clients } : null,
     // honest accuracy notes for the UI (validated vs the 10-faction turn-1 corpus)
-    accuracy: { taxes: "±9%", farming: "±5%", trade: "±30% (weak)", wages: "exact", corruption: "±10%", tribute: "50% of client net (exact rate; client nets modeled at Normal tax)", unmodeled: "'other' income (~1-4% of total)" },
+    accuracy: { taxes: "±9%", farming: "±5%", trade: "±19% (partner-aware refit)", wages: "exact", corruption: "±10%", tribute: "50% of client net (exact rate; client nets modeled at Normal tax)", unmodeled: "'other' income (~1-4% of total)" },
   };
 }
 
