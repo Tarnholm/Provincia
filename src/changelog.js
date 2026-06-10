@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1019",
+    date: "2026-06-10",
+    items: [
+      { type: "fix", text: "**The Turn-1 Budget was broken in installed builds** (\"computing…\" forever): the income model file was missing from the packaged app (build-files allowlist). Dev builds had it, releases didn't. Fixed — the budget, income breakdown, and \"room for new troops\" line now work in the installed app." },
+    ],
+  },
+  {
     version: "0.9.1018",
     date: "2026-06-10",
     items: [
