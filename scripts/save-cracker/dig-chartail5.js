@@ -8,7 +8,7 @@ const fs = require("fs");
 const path = require("path");
 const cp = require("../../src/characterParser.js");
 
-const MOD = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/Mods/My Mods/RIS beta/data";
+const MOD = "C:/RIS/RIS/data";
 const SAVES = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/saves";
 
 const nameLookup = fs.readFileSync(path.join(MOD, "descr_names_lookup.txt"), "utf8")

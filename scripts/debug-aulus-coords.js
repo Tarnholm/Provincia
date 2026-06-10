@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 const SAVE = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/saves/save_1.sav";
-const MOD = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/Mods/My Mods/RIS beta/data";
+const MOD = "C:/RIS/RIS/data";
 
 const { findCharacterRecords } = require("../src/characterParser.js");
 const { findUnitRecords } = require("../src/unitParser.js");

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1022",
+    date: "2026-06-10",
+    items: [
+      { type: "feature", text: "**Protectorate tribute cracked & wired into the balance harness.** RIS seeds 20 protectorates via the campaign script (become_protector); the engine takes **exactly 50% of each client's net profit every turn from turn 2** and pays it to the suzerain (verified to the denarius across two campaigns' save ledgers). The budget panel now shows ♛ suzerain tribute (per-client breakdown, conservative floor — not added to the validated army budget) and ⚑ protectorate status (\"pays half its profit to X\"); the ⚖ Balance overview marks both and ranks by net after tribute. Client factions like Capua, Taras or Bactria effectively run at half profit — that's now visible when balancing them." },
+    ],
+  },
+  {
     version: "0.9.1021",
     date: "2026-06-10",
     items: [

@@ -22655,24 +22655,29 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         <th style={{ padding: "0 6px" }}>Faction</th><th>Towns</th><th>Income</th><th>Wages</th><th>Corr.</th><th>Army budget</th><th>Army upkeep</th><th>Net/turn</th><th>Verdict</th>
                       </tr></thead>
                       <tbody>
-                        {armyOverview.rows.slice().sort((a, b) => (a.net ?? 0) - (b.net ?? 0)).map((r, i) => (
+                        {armyOverview.rows.slice().sort((a, b) => ((a.netAfterTribute ?? a.net) ?? 0) - ((b.netAfterTribute ?? b.net) ?? 0)).map((r, i) => {
+                          const eff = r.netAfterTribute ?? r.net;
+                          return (
                           <tr key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.05)", cursor: "pointer" }} onClick={() => fetchFor(r.fac)} title="Click to open this faction's full setup">
-                            <td style={{ padding: "1px 6px", color: "#dde", textTransform: "capitalize" }}>{((factionDisplayNames && factionDisplayNames[r.fac]) || r.fac).replace(/_/g, " ")}</td>
+                            <td style={{ padding: "1px 6px", color: "#dde", textTransform: "capitalize" }}>{((factionDisplayNames && factionDisplayNames[r.fac]) || r.fac).replace(/_/g, " ")}
+                              {r.nClients > 0 && <span title={`Suzerain of ${r.nClients} protectorate${r.nClients === 1 ? "" : "s"}: receives ≥${r.tributeIn}/turn tribute (50% of each client's profit, from turn 2; conservative floor) — counted in the net column, not in the army budget.`} style={{ color: "#d3a7e8", marginLeft: 4, cursor: "help" }}>♛</span>}
+                              {r.suzerain && <span title={`Protectorate of ${r.suzerain}: pays half its profit as tribute every turn from turn 2 (≈${r.tributeOut} at the modeled profit${r.tributeOut === 0 ? " — currently modeled at no profit, so 0" : ""}). Net shown after tribute.`} style={{ color: "#d3a7e8", marginLeft: 4, cursor: "help" }}>⚑</span>}
+                            </td>
                             <td style={{ color: "#9aa" }}>{r.towns}</td>
                             <td style={{ color: "#9aa" }}>{r.income}</td>
                             <td style={{ color: "#9aa" }}>{r.wages}</td>
                             <td style={{ color: "#9aa" }}>{r.corruption}</td>
                             <td style={{ color: "#b8d38f" }}>{r.armyBudget}</td>
                             <td style={{ color: "#cba" }}>{r.armyUpkeep ?? "—"}</td>
-                            <td style={{ color: r.net == null ? "#778" : r.net >= 0 ? "#7fd17f" : "#e8806a", fontWeight: 600 }}>{r.net ?? "—"}</td>
-                            <td>{r.net == null ? <span style={{ color: "#778" }}>—</span> : r.net >= 0
-                              ? <span style={{ color: "#7fd17f" }}>OK · room +{r.net}</span>
-                              : <span style={{ color: "#e8806a", fontWeight: 700 }}>OVER by {-r.net}</span>}</td>
+                            <td style={{ color: eff == null ? "#778" : eff >= 0 ? "#7fd17f" : "#e8806a", fontWeight: 600 }}>{eff ?? "—"}</td>
+                            <td>{eff == null ? <span style={{ color: "#778" }}>—</span> : eff >= 0
+                              ? <span style={{ color: "#7fd17f" }}>OK · room +{eff}</span>
+                              : <span style={{ color: "#e8806a", fontWeight: 700 }}>OVER by {-eff}</span>}</td>
                           </tr>
-                        ))}
+                        );})}
                       </tbody>
                     </table>
-                    <div style={{ marginTop: 4, fontSize: "0.66rem", color: "#8aa" }}>Income = mod-file model @ each faction's optimal tax plan. Army upkeep = EDU estimate of the seeded descr_strat army (engine charge can deviate ±15%). Click a row for the faction's full plan + trim suggestions.</div>
+                    <div style={{ marginTop: 4, fontSize: "0.66rem", color: "#8aa" }}>Income = mod-file model @ each faction's optimal tax plan. Army upkeep = EDU estimate of the seeded descr_strat army (engine charge can deviate ±15%). ♛ receives protectorate tribute · ⚑ pays tribute (50% of profit, from turn 2) — net is after tribute. Click a row for the faction's full plan + trim suggestions.</div>
                   </div>
                 )}
                 {armySetupBusy && <div style={{ color: "#9aa", fontStyle: "italic" }}>Analyzing…</div>}
@@ -22737,9 +22742,17 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                           {t.mining > 0 && <span>+ mining <b style={{ color: "#d3b67f" }}>{t.mining}</b></span>}
                           <span>+ trade <b style={{ color: "#9fc3d3" }}>{t.trade}</b><span style={{ color: "#889", fontSize: "0.68rem" }}>±30%</span></span>
                           <span>= income <b>{t.income}</b></span>
+                          {armyT1Budget.protectorate && armyT1Budget.protectorate.clients && (
+                            <span title={`Protectorate tribute: each client pays 50% of its net profit per turn (exact engine rate, cracked from save ledgers). Flows from TURN 2. The number shown is a CONSERVATIVE FLOOR (client profits modeled at Normal tax; the model currently underestimates small-faction incomes — live tribute runs higher) and is NOT included in the budget.\n${(armyT1Budget.protectorate.clients || []).map(c => `${c.faction}: modeled net ≈${c.net} → +${c.tribute}`).join("\n")}`}
+                              style={{ cursor: "help" }}>♛ + tribute ≥<b style={{ color: "#d3a7e8" }}>{t.tributeIn}</b><span style={{ color: "#889", fontSize: "0.68rem" }}>from turn 2, not in budget</span></span>
+                          )}
                           <span>− wages <b style={{ color: "#e8a07a" }}>{t.wages}</b></span>
                           <span>− corruption <b style={{ color: "#e8a07a" }}>{t.corruption}</b></span>
                           <span>= <b style={{ color: "#b8d38f", fontSize: "0.92rem" }}>{t.armyBudget}</b> <span style={{ color: "#8aa", fontSize: "0.7rem" }}>sustainable army upkeep</span></span>
+                          {armyT1Budget.protectorate && armyT1Budget.protectorate.suzerain && (
+                            <span title={`This faction is a PROTECTORATE of ${armyT1Budget.protectorate.suzerain} (set by the campaign script): it pays 50% of its net profit as tribute every turn from turn 2 (exact engine rate). Running a deficit pays nothing — but every denarius of profit is halved.`}
+                              style={{ cursor: "help", color: "#d3a7e8" }}>⚑ protectorate of {armyT1Budget.protectorate.suzerain}{t.tributeOut > 0 ? ` — pays ≈${t.tributeOut}` : ""} <span style={{ color: "#889", fontSize: "0.68rem" }}>(half its profit, from turn 2)</span></span>
+                          )}
                         </div>
                         {netAfterArmy != null && (() => {
                           const room = netAfterArmy - armyBudgetFloor; // floor is the allowed max deficit (e.g. −500)

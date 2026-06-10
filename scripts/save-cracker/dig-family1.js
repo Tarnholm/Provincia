@@ -22,7 +22,7 @@ const fs = require('fs');
 const path = require('path');
 const cp = require('C:/dev/Provincia/src/characterParser.js');
 
-const MOD = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/Mods/My Mods/RIS beta/data";
+const MOD = "C:/RIS/RIS/data";
 const nameLookup = fs.readFileSync(path.join(MOD, "descr_names_lookup.txt"), "utf8").split(/\r?\n/).map(s => s.trim());
 const traitNames = [];
 {

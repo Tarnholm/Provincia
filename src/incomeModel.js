@@ -275,6 +275,35 @@ function regionCoords(modDataDir) {
 
 const BRACKET_MULT = { low: 0.8, normal: 1.0, high: 1.2, very_high: 1.5 };
 
+// ---- protectorates (CRACKED 2026-06-10, tribute-rate-fit.js) ----
+// RIS seeds protectorates via `console_command become_protector <suzerain> <client>`
+// in the campaign script. Tribute = 50.0% of the client's pre-tribute NET PROFIT per
+// turn (verified to the denarius on 38 client rows across two turn-3 saves; client
+// econ-slot f19 → suzerain f8). Flows from turn 2 (turn 1 has no prior profit).
+const TRIBUTE_RATE = 0.5;
+const _protCache = {};
+function parseProtectorates(modDataDir) {
+  if (_protCache[modDataDir]) return _protCache[modDataDir];
+  const clientsOf = {}, suzerainOf = {};
+  try {
+    const dir = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign");
+    for (const f of fs.readdirSync(dir)) {
+      if (!/\.txt$/i.test(f) || /^descr_strat/i.test(f)) continue;
+      const text = fs.readFileSync(path.join(dir, f), "latin1");
+      if (!/become_protector/i.test(text)) continue;
+      for (const raw of text.split(/\r?\n/)) {
+        const t = raw.includes(";") ? raw.slice(0, raw.indexOf(";")) : raw;
+        const m = t.match(/console_command\s+become_protector\s+(\w+)\s+(\w+)/i);
+        if (!m) continue;
+        const suz = m[1].toLowerCase(), cli = m[2].toLowerCase();
+        (clientsOf[suz] = clientsOf[suz] || []).push(cli);
+        suzerainOf[cli] = suz;
+      }
+    }
+  } catch { /* no campaign script */ }
+  return (_protCache[modDataDir] = { clientsOf, suzerainOf });
+}
+
 // ---- the deliverable: STATIC turn-1 budget for a faction at given tax brackets ----
 // bracketByCity: { settlementName(or region): "low"|"normal"|"high"|"very_high" } —
 // typically the OPTIMAL brackets from growthEval.computeFactionGrowth. Missing → normal.
@@ -312,22 +341,57 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   const corruption = Math.max(0, Math.round(CALIB.corrDist * distSum + CALIB.corrTown * F.settlements.length));
   const income = Math.round(taxes + farming + mining + trade);
   const army = armyUpkeepEDU(modDataDir, faction);
+  const preNet = army ? (income - wages - corruption - army.upkeep) : null;
+  // ---- protectorate tribute (50% of client net profit, flows from turn 2) ----
+  // Suzerains: + half of each client's modeled net (client at all-Normal brackets —
+  // the AI's actual taxes vary, so this is a magnitude, not denarius-exact).
+  // Clients: − half of own profit (only when profitable; deficits pay nothing).
+  let tributeIn = 0, tributeOut = 0, suzerain = null, clients = null;
+  if (!(opts && opts._noTribute)) {
+    const prot = parseProtectorates(modDataDir);
+    const fac = F.faction;
+    if (prot.clientsOf[fac]) {
+      clients = [];
+      for (const c of prot.clientsOf[fac]) {
+        const cb = computeTurn1Budget(modDataDir, c, null, { isPlayer: false, _noTribute: true });
+        const cNet = cb && !cb.error && cb.totals ? cb.totals.net : null;
+        const t = cNet != null ? Math.round(TRIBUTE_RATE * Math.max(0, cNet)) : 0;
+        tributeIn += t;
+        clients.push({ faction: c, net: cNet, tribute: t });
+      }
+    }
+    if (prot.suzerainOf[fac]) {
+      suzerain = prot.suzerainOf[fac];
+      if (preNet != null && preNet > 0) tributeOut = Math.round(TRIBUTE_RATE * preNet);
+    }
+  }
   return {
     faction: F.faction, tier: F.tier, nSettlements: F.nSettlements, settlements: sets,
     characters: ch,
     totals: {
       taxes: Math.round(taxes), farming: Math.round(farming), mining: Math.round(mining), trade: Math.round(trade),
       income, wages, corruption,
+      // tributeIn is a CONSERVATIVE FLOOR (client profits are modeled at Normal tax
+      // and the income model currently underestimates small/city-state factions —
+      // live turn-3 tribute runs several × higher). Kept OUT of armyBudget so the
+      // validated budget number stays honest; netAfterTribute is the steady-state
+      // (turn-2+) view including it. tributeOut scales with own profit.
+      tributeIn: tributeIn || 0,
       armyBudget: income - wages - corruption,
       // starting-army upkeep (EDU estimate) + the balance verdict the mod team needs:
       // net = what's left each turn AFTER the seeded army. Negative = over budget.
       armyUpkeep: army ? army.upkeep : null,
       armyUnits: army ? army.units : null,
-      net: army ? (income - wages - corruption - army.upkeep) : null,
+      net: preNet,
+      tributeOut: tributeOut || 0,
+      netAfterTribute: preNet != null ? preNet + tributeIn - tributeOut : null,
+      suzerain,                       // set when this faction is a protectorate
+      nClients: clients ? clients.length : 0,
     },
+    protectorate: (clients || suzerain) ? { suzerain, clients } : null,
     // honest accuracy notes for the UI (validated vs the 10-faction turn-1 corpus)
-    accuracy: { taxes: "±9%", farming: "±5%", trade: "±30% (weak)", wages: "exact", corruption: "±10%", unmodeled: "diplomacy/'other' income (~1-4% of total)" },
+    accuracy: { taxes: "±9%", farming: "±5%", trade: "±30% (weak)", wages: "exact", corruption: "±10%", tribute: "50% of client net (exact rate; client nets modeled at Normal tax)", unmodeled: "'other' income (~1-4% of total)" },
   };
 }
 
-module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, CALIB };
+module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, parseProtectorates, TRIBUTE_RATE, CALIB };

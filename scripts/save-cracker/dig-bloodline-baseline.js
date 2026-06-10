@@ -22,7 +22,7 @@ const SAVES = "C:\\Users\\vtarn\\AppData\\Local\\Feral Interactive\\Total War RO
 // main.js loadModCharacterData (descr_names_lookup.txt + export_descr_character_traits.txt).
 const MOD_DIRS = [
   "C:\\RIS\\RIS\\data",
-  "C:\\Users\\vtarn\\AppData\\Local\\Feral Interactive\\Total War ROME REMASTERED\\Mods\\My Mods\\RIS beta\\data",
+  "C:\\RIS\\RIS\\data",
 ];
 function loadLookups() {
   let modDir = null;

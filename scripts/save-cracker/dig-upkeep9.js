@@ -99,7 +99,7 @@ for (let i = 0; i < 96; i += 16) {
 // Now: Do the Roman Julii's player armies / generals match these 12 coordinates?
 // Roman Julii's known characters at rome5 turn 5: cross-check with character parser
 const cp = require("../../src/characterParser.js");
-const MOD = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/Mods/My Mods/RIS beta/data";
+const MOD = "C:/RIS/RIS/data";
 const nameLookup = fs.readFileSync(path.join(MOD, "descr_names_lookup.txt"), "utf8").split(/\r?\n/).map(s => s.trim());
 const traitNames = [];
 for (const line of fs.readFileSync(path.join(MOD, "export_descr_character_traits.txt"), "utf8").split(/\r?\n/)) {

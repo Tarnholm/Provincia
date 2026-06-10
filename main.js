@@ -6543,7 +6543,7 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath)
       budget.staleWarning = _modCopyWarning(modDataDir);
       if (budget.staleWarning) _writeLog(`[turn1-budget] STALE-MOD WARNING: ${budget.staleWarning}`);
       const t = budget.totals;
-      _writeLog(`[turn1-budget] ${faction}: ${budget.settlements.length} towns tier=${budget.tier} ${budget.saveAware ? "SAVE-AWARE" : "no-save"} | taxes=${t.taxes} farm=${t.farming} mine=${t.mining} trade=${t.trade} → income=${t.income} − wages=${t.wages} − corruption=${t.corruption} = armyBudget=${t.armyBudget}`);
+      _writeLog(`[turn1-budget] ${faction}: ${budget.settlements.length} towns tier=${budget.tier} ${budget.saveAware ? "SAVE-AWARE" : "no-save"} | taxes=${t.taxes} farm=${t.farming} mine=${t.mining} trade=${t.trade} → income=${t.income}${t.tributeIn ? ` +tribute=${t.tributeIn}` : ""} − wages=${t.wages} − corruption=${t.corruption} = armyBudget=${t.armyBudget}${t.tributeOut ? ` | PAYS tribute=${t.tributeOut} to suzerain` : ""}`);
     } else _writeLog(`[turn1-budget] ${faction}: FAILED ${budget && budget.error}`);
     return budget;
   } catch (e) { _writeLog(`[turn1-budget] failed: ${e && e.message}`); return { error: e && e.message ? e.message : String(e) }; }

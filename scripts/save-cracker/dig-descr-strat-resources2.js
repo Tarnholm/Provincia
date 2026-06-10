@@ -10,7 +10,7 @@
 const fs = require('fs');
 
 const SAV = 'C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/saves/save_rome10.sav';
-const DS  = 'C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/Mods/My Mods/RIS beta/data/original_overrides/resource_quantity/world/maps/campaign/imperial_campaign/descr_strat.txt';
+const DS  = 'C:/RIS/RIS/data/original_overrides/resource_quantity/world/maps/campaign/imperial_campaign/descr_strat.txt';
 
 const ARR_START = 0xf8fd2;
 const STRIDE = 267;
