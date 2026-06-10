@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1025",
+    date: "2026-06-10",
+    items: [
+      { type: "feature", text: "**Before/after diff in the Balance overview (Δ prev column).** The overview remembers its last completed run per mod folder: run it, edit your mod files (resources, ownership, buildings, armies), run it again — the Δ column shows exactly which factions your changes moved and by how much per turn. This is the edit→verdict loop the harness was built for, and with the new parser caches a full re-run takes seconds." },
+    ],
+  },
+  {
     version: "0.9.1024",
     date: "2026-06-10",
     items: [

@@ -22592,17 +22592,27 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
         const runOverview = async () => {
           if (armyOverviewRunning.current || !modDataDir) return;
           armyOverviewRunning.current = true;
-          setArmyOverview({ busy: true, rows: [] });
+          // before/after diff: remember the LAST completed run per mod dir, so after a
+          // round of file edits the next run shows exactly which factions moved.
+          let prevByFac = {};
+          try {
+            const prev = JSON.parse(localStorage.getItem("armyOverviewPrev:" + modDataDir) || "null");
+            if (prev && Array.isArray(prev.rows)) for (const r of prev.rows) prevByFac[r.fac] = r;
+          } catch { }
+          setArmyOverview({ busy: true, rows: [], prevByFac, prevAt: (() => { try { return JSON.parse(localStorage.getItem("armyOverviewPrev:" + modDataDir) || "null")?.at || null; } catch { return null; } })() });
+          const done = [];
           try {
             for (const ff of facList) {
               const t1 = await window.electronAPI.getTurn1Budget?.(modDataDir, ff, undefined);
               if (t1 && !t1.error && t1.totals) {
                 const row = { fac: ff, ...t1.totals, towns: t1.settlements?.length || 0 };
-                setArmyOverview(prev => ({ busy: true, rows: [...((prev && prev.rows) || []), row] }));
+                done.push(row);
+                setArmyOverview(prev => ({ ...(prev || {}), busy: true, rows: [...((prev && prev.rows) || []), row] }));
               }
             }
           } finally {
             armyOverviewRunning.current = false;
+            try { localStorage.setItem("armyOverviewPrev:" + modDataDir, JSON.stringify({ at: new Date().toISOString(), rows: done.map(r => ({ fac: r.fac, net: r.net, netAfterTribute: r.netAfterTribute, income: r.income })) })); } catch { }
             setArmyOverview(prev => prev ? { ...prev, busy: false } : prev);
           }
         };
@@ -22677,7 +22687,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     <div style={{ fontWeight: 700, color: "#e8c873", marginBottom: 4 }}>⚖ Balance overview — turn-1 economy @ optimal taxes vs starting army{armyOverview.busy ? ` (computing ${armyOverview.rows.length}/${facList.length}…)` : ` (${armyOverview.rows.length} factions, worst first)`}</div>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.74rem" }}>
                       <thead><tr style={{ color: "#8aa", textAlign: "left" }}>
-                        <th style={{ padding: "0 6px" }}>Faction</th><th>Towns</th><th>Income</th><th>Wages</th><th>Corr.</th><th>Army budget</th><th>Army upkeep</th><th>Net/turn</th><th>Verdict</th>
+                        <th style={{ padding: "0 6px" }}>Faction</th><th>Towns</th><th>Income</th><th>Wages</th><th>Corr.</th><th>Army budget</th><th>Army upkeep</th><th>Net/turn</th><th title={armyOverview.prevAt ? `Change vs the previous overview run (${armyOverview.prevAt.slice(0, 16).replace("T", " ")}) — run, edit mod files, run again to see exactly which factions your changes moved.` : "Run the overview again after editing mod files to see per-faction changes here."}>Δ prev</th><th>Verdict</th>
                       </tr></thead>
                       <tbody>
                         {armyOverview.rows.slice().sort((a, b) => ((a.netAfterTribute ?? a.net) ?? 0) - ((b.netAfterTribute ?? b.net) ?? 0)).map((r, i) => {
@@ -22695,6 +22705,14 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                             <td style={{ color: "#b8d38f" }}>{r.armyBudget}</td>
                             <td style={{ color: "#cba" }}>{r.armyUpkeep ?? "—"}</td>
                             <td style={{ color: eff == null ? "#778" : eff >= 0 ? "#7fd17f" : "#e8806a", fontWeight: 600 }}>{eff ?? "—"}</td>
+                            <td>{(() => {
+                              const pv = armyOverview.prevByFac && armyOverview.prevByFac[r.fac];
+                              const prevEff = pv ? (pv.netAfterTribute ?? pv.net) : null;
+                              if (prevEff == null || eff == null) return <span style={{ color: "#667" }}>—</span>;
+                              const d = eff - prevEff;
+                              if (d === 0) return <span style={{ color: "#667" }}>=</span>;
+                              return <span style={{ color: d > 0 ? "#7fd17f" : "#e8806a", fontWeight: 600 }} title={`Previous run: ${prevEff} → now ${eff}`}>{d > 0 ? "+" : ""}{d}</span>;
+                            })()}</td>
                             <td>{eff == null ? <span style={{ color: "#778" }}>—</span> : eff >= 0
                               ? <span style={{ color: "#7fd17f" }}>OK · room +{eff}</span>
                               : <span style={{ color: "#e8806a", fontWeight: 700 }}>OVER by {-eff}</span>}</td>
