@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1049",
+    date: "2026-06-11",
+    items: [
+      { type: "change", text: "**Tax plan PO bands refined to the team'sfour-band scale: 0-74 red, 75-84 orange, 85-99 light green, 100+ dark green.**" },
+    ],
+  },
+  {
     version: "0.9.1048",
     date: "2026-06-11",
     items: [
