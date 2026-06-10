@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1027",
+    date: "2026-06-10",
+    items: [
+      { type: "feature", text: "**Governor income traits parsed into the budget.** Starting governors' TaxCollection / Trading / Mining trait and follower effects (302 settlements have one!) now modify their town's modeled income — the points are direct percentages, confirmed by the game's own trait descriptions (\"+10% bonus on tax income\"). Towns with an income governor show a 👤 marker on the tax column; hover for the per-trait breakdown (e.g. Corinth: GoodTaxman +20% tax, GoodTrader +15% trade; Larissa: BadTaxman −30%). Same exact-tile coordinate binding as the growth governors — comments are never trusted." },
+    ],
+  },
+  {
     version: "0.9.1026",
     date: "2026-06-10",
     items: [

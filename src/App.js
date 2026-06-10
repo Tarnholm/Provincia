@@ -22851,7 +22851,9 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                   title={s.poAtSet != null ? `Estimated public order ≈${s.poAtSet} at the recommended bracket (ranking model, ±20 — garrison-priority only, NOT the exact scroll value).${s.poAtLow != null ? `\nAt Low tax ≈${s.poAtLow}${s.poAtLow < 100 ? " — still risky even at Low → needs more garrison." : ""}` : ""}${s.poAtSet < 130 && s.pop ? `\n⚔ Garrison fix: ≈${Math.max(40, Math.ceil((130 - s.poAtSet) / 272.2 * s.pop / 10) * 10)} extra soldiers in town ≈ +${130 - s.poAtSet} PO (model garrison coefficient).` : ""}` : undefined}>
                                   {s.poAtSet == null ? "—" : <>{s.poRisk === "red" ? "🔴" : s.poRisk === "yellow" ? "🟡" : "🟢"} {s.poAtSet}{s.poRisk === "red" && s.poAtLow != null && s.poAtLow < 100 ? <span style={{ color: "#e8705f", fontWeight: 700 }} title="Estimated to be at revolt risk even at LOW tax — add garrison."> ⚔</span> : null}</>}
                                 </td>
-                                <td style={{ color: "#e8c873" }}>{s.taxes}</td>
+                                <td style={{ color: "#e8c873", cursor: s.govIncome ? "help" : "default" }}
+                                  title={s.govIncome ? `Governor income traits applied (parsed from descr_strat starting traits + ancillaries, exact-tile binding):${s.govIncome.tax ? `\n  tax ${s.govIncome.tax > 0 ? "+" : ""}${s.govIncome.tax}%` : ""}${s.govIncome.trading ? `\n  trade ${s.govIncome.trading > 0 ? "+" : ""}${s.govIncome.trading}%` : ""}${s.govIncome.mining ? `\n  mining ${s.govIncome.mining > 0 ? "+" : ""}${s.govIncome.mining}%` : ""}\nFrom: ${(s.govIncome.hits || []).join(", ")}` : undefined}>
+                                  {s.taxes}{s.govIncome ? <span style={{ color: s.govIncome.tax >= 0 ? "#9fd37f" : "#e8a07a", fontSize: "0.66rem" }}> 👤</span> : null}</td>
                                 <td style={{ color: "#9fd37f" }}>{s.farming}</td>
                                 <td style={{ color: "#778" }}>{s.distToCapital != null ? s.distToCapital : "—"}</td>
                               </tr>

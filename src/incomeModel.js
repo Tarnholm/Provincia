@@ -421,6 +421,12 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   const cap = F.settlements.length ? coords[F.settlements[0].region] : null;
   const adjacency = regionAdjacency(modDataDir);
   const seaOf = regionSeaBodies(modDataDir);
+  // GOVERNOR INCOME TRAITS (user lead 2026-06-10): seeded named characters standing on
+  // a settlement tile modify that town's income — EDCT Effect TaxCollection/Trading/
+  // Mining points are DIRECT PERCENTAGES (export_vnvs: "+10% bonus on tax income",
+  // "30% penalty"). 302 RIS towns have nonzero income governors at start.
+  let govFx = {};
+  try { const te = require("./traitEffects.js"); govFx = te.govEffectByCityFromStrat(modDataDir, te.parseTraitEffects(modDataDir)) || {}; } catch { }
   const { ownerOfRegion, allies, portTowns } = tradePartnerCtx(modDataDir);
   const facLow = F.faction;
   const allySet = allies[facLow] || new Set();
@@ -441,13 +447,17 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   for (const s of F.settlements) {
     const bracket = br[s.settlement] || br[s.region] || "normal";
     const mult = BRACKET_MULT[bracket] || 1;
+    const gv0 = govFx[s.settlement] || govFx[s.region] || null;
+    const gTax = gv0 ? Math.max(0, 1 + (gv0.tax || 0) / 100) : 1;
+    const gTrading = gv0 ? Math.max(0, 1 + (gv0.trading || 0) / 100) : 1;
+    const gMine = gv0 ? Math.max(0, 1 + (gv0.mining || 0) / 100) : 1;
     const f = Math.max(0, 1 + (s.taxPctParts.base + s.taxPctParts.winter) / 100);
-    const tTax = CALIB.taxBase * f * mult;
+    const tTax = CALIB.taxBase * f * mult * gTax;
     const tFarm = CALIB.farmPoint * (s.farmN + s.farmLevel);
-    const tMine = CALIB.minePoint * s.mineSum;
+    const tMine = CALIB.minePoint * s.mineSum * gMine;
     taxes += tTax; farming += tFarm; mining += tMine;
     const rv = s.resources.reduce((a, r) => a + (r.tradeValue || 0), 0);
-    const gTrade = Math.max(0, 1 + (s.tradePct || 0) / 100);
+    const gTrade = Math.max(0, 1 + (s.tradePct || 0) / 100) * gTrading;
     let nPartners = 0;
     for (const n of (adjacency[s.region] || [])) if (isPartner(ownerOfRegion[n])) nPartners++;
     tradeLandSum += gTrade * rv * (1 + nPartners);
@@ -457,7 +467,8 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     if (cap && c) { dist = Math.hypot(c.x - cap.x, c.y - cap.y); corrSum += Math.max(0, dist - CALIB.corrD0) * (tTax + tFarm + tMine); }
     sets.push({ settlement: s.settlement, region: s.region, pop: s.pop, level: s.level, capital: s.capital,
       bracket, taxes: Math.round(tTax), farming: Math.round(tFarm), mining: Math.round(tMine),
-      taxFactor: Math.round(f * 100) / 100, resourceValue: rv, port: !!s.portLevel, tradePartners: nPartners, distToCapital: dist != null ? Math.round(dist) : null });
+      taxFactor: Math.round(f * 100) / 100, resourceValue: rv, port: !!s.portLevel, tradePartners: nPartners, distToCapital: dist != null ? Math.round(dist) : null,
+      govIncome: gv0 && (gv0.tax || gv0.trading || gv0.mining) ? { tax: gv0.tax || 0, trading: gv0.trading || 0, mining: gv0.mining || 0, hits: gv0.hits || [] } : null });
   }
   const trade = Math.max(0, CALIB.tradeLand * tradeLandSum + CALIB.tradeSea * tradeSeaSum);
   const ch = countCharacters(modDataDir, faction) || { named: 0, admiral: 0 };
