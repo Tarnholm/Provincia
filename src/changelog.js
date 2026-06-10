@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1033",
+    date: "2026-06-10",
+    items: [
+      { type: "improvement", text: "**Difficulty is now explicit in the income model — and it confirms the farming crack from the engine's own docs.** Feral's formulae guide documents that the human player earns 92% tax and farm income on Hard (the team plays H/H), and the EDB guide documents farming at exactly 80 income per farm point: our fitted 73.61 was 80 × 0.92 all along. The model now stores the documented engine constants with the difficulty factor separated — Julii's farming now matches its ledger to the denarius (19,283)." },
+      { type: "improvement", text: "**Feral-docs mining (more finds wired into the notes):** the distance-to-capital unrest formula is documented exactly ((distance − 10) × culture multiplier, floored to 5s — RIS sets the multiplier to 0.2, which is why distance barely matters); happiness/law building bonuses are 5% public order per point; Hard gives +400 bonus denarii per round and +2 order; the AI income subsidy (up to 120% by region count) explains why AI ledgers can't calibrate taxes. A dormant engine feature was also found: public_order_bonuses (high-PO settlements earn up to +15% income) exists but is disabled in RIS — a balance lever the team could enable." },
+    ],
+  },
+  {
     version: "0.9.1032",
     date: "2026-06-10",
     items: [

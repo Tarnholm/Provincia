@@ -32,7 +32,11 @@ describe("incomeModel — cracked constants", () => {
   });
 
   test("cracked income constants (2026-06-10 session)", () => {
-    expect(im.CALIB.farmPoint).toBe(73.61);      // farming EXACT 11/11
+    // farming engine constant 80/pt is DOCUMENTED (Feral EDB.md); ×0.92 = the
+    // documented HARD-difficulty human income factor (the corpus is all H/H).
+    expect(im.CALIB.farmPointBase).toBe(80);
+    expect(im.CALIB.difficultyIncome).toBe(0.92);
+    expect(im.CALIB.farmPoint).toBeCloseTo(73.6, 5); // farming EXACT 11/11
     expect(im.CALIB.minePoint).toBe(5);          // mining = 5×mine_resource×Σ(qty×tv), 5/6 exact
     expect(im.CALIB.taxLogK_single).toBe(1.0);   // Capua quartet
     expect(im.CALIB.taxLogK_multi).toBeCloseTo(0.5544, 4);

@@ -275,11 +275,19 @@ const CALIB = {
   // flat-713). KNOWN DEVIANTS: julii −23%, getae −18%, mauryan +11% — whatever
   // splits them from the 0.554 five is the next reading to take in-game.
   taxLogK_multi: 0.5544, taxLogK_single: 1.0,
-  // farming = farmPoint × Σ (region farmN + EDB farming_level incl additive bonuses
-  // + governor Effect Farming points). EXACT 2026-06-10: 10/11 player factions at
-  // ratio 0.999-1.001 (the uniform 1.001-1.002 residual at 73.5 was the constant —
-  // snapped to 73.61). Lone outlier seleucid +20% (EDB irrigation-chain underparse).
-  farmPoint: 73.61,
+  // DIFFICULTY (Feral docs, Battle_and_Campaign_Formulae.md): the human player's tax
+  // and farm income scale by difficulty — Easy 1.20 / Normal 1.00 / HARD 0.92 /
+  // Extreme 0.85. The user/team plays H/H, and every constant below was fit on H/H
+  // ledgers, so 0.92 is baked in explicitly. (Hard also gives the human +400 bonus
+  // denarii per round and +2 order, and the AI an income bonus scaling to 120% by
+  // region count — the AI tax-floor we measured.)
+  difficultyIncome: 0.92,
+  // farming = 80 × difficulty × Σ(region farmN + EDB farmLevel + governor Farming pts)
+  // × Hanging-Gardens. THE ENGINE CONSTANT IS DOCUMENTED: EDB.md "farming_level: plus
+  // 80 income (average harvest) per point" — our fitted 73.61 = 80 × 0.92 exactly.
+  // EXACT 11/11 player factions at ratio 1.000 (mean |err| 0.01%).
+  farmPointBase: 80,
+  get farmPoint() { return this.farmPointBase * this.difficultyIncome; },
   // MINING CRACKED EXACT 2026-06-10 (mining-crack2.js): per mine town,
   //   mining = 5 × mine_resource(EDB level value: gold 12/20, silver 9/15, other 6/10)
   //              × Σ(quantity × tradeValue) of the region's MINEABLE resources
