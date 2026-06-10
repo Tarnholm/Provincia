@@ -470,8 +470,14 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   // a settlement tile modify that town's income — EDCT Effect TaxCollection/Trading/
   // Mining points are DIRECT PERCENTAGES (export_vnvs: "+10% bonus on tax income",
   // "30% penalty"). 302 RIS towns have nonzero income governors at start.
+  // opts.govEffectByCity: CALIBRATION override — a save-derived governor-effect map
+  // (govEffectByCityFromSave on a fresh turn-1 save) replaces the descr_strat seeds.
+  // The save carries the START-RANDOMIZED personality traits for all ~1000 world
+  // characters (798 governed settlements), so one turn-1 save calibrates the whole
+  // campaign's randomness — for every faction, not just the player.
   let govFx = {};
-  try { const te = require("./traitEffects.js"); govFx = te.govEffectByCityFromStrat(modDataDir, te.parseTraitEffects(modDataDir)) || {}; } catch { }
+  if (opts && opts.govEffectByCity) govFx = opts.govEffectByCity;
+  else { try { const te = require("./traitEffects.js"); govFx = te.govEffectByCityFromStrat(modDataDir, te.parseTraitEffects(modDataDir)) || {}; } catch { } }
   const wonders = wonderOwners(modDataDir);
   const { ownerOfRegion, allies, portTowns } = tradePartnerCtx(modDataDir);
   const facLow = F.faction;
@@ -539,7 +545,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     if (prot.clientsOf[fac]) {
       clients = [];
       for (const c of prot.clientsOf[fac]) {
-        const cb = computeTurn1Budget(modDataDir, c, null, { isPlayer: false, _noTribute: true });
+        const cb = computeTurn1Budget(modDataDir, c, null, { isPlayer: false, _noTribute: true, govEffectByCity: opts && opts.govEffectByCity });
         const cNet = cb && !cb.error && cb.totals ? cb.totals.net : null;
         const t = cNet != null ? Math.round(TRIBUTE_RATE * Math.max(0, cNet)) : 0;
         tributeIn += t;

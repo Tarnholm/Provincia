@@ -9607,6 +9607,12 @@ function App() {
   // Faction-picker search filter for the Army Setup panel.
   const [armyFacSearch, setArmyFacSearch] = useState("");
   const [armySetSearch, setArmySetSearch] = useState(""); // settlement filter for budget + tax plan tables
+  // CALIBRATION SAVE (optional): a fresh turn-1 save whose world-wide governor traits
+  // (incl. start-randomized personalities, ~1000 characters / 798 governed settlements)
+  // replace the descr_strat seeds in the growth + income models — one save calibrates
+  // the whole campaign's randomness for every faction.
+  const [armyCalibSave, setArmyCalibSave] = useState(() => localStorage.getItem("armyCalibSave") || "");
+  useEffect(() => { try { if (armyCalibSave) localStorage.setItem("armyCalibSave", armyCalibSave); else localStorage.removeItem("armyCalibSave"); } catch { } }, [armyCalibSave]);
   // Tax plan computed from the mod files (live-verified exact; the save-based
   // two-save flow was removed 2026-06-10 — the no-save model IS the planner).
   const [armyStratPlan, setArmyStratPlan] = useState(null);
@@ -22568,9 +22574,9 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           if (!ff || !modDataDir) return;
           setArmyProjIncome("");
           setArmySetupBusy(true); setArmySetupData(null); setArmyT1Budget(null); setArmyStratPlan(null);
-          const t1Promise = window.electronAPI.getTurn1Budget?.(modDataDir, ff, undefined);
+          const t1Promise = window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined);
           // auto-compute the tax plan too (no button press needed)
-          const planPromise = window.electronAPI.getStratTaxPlan?.(modDataDir, ff, undefined);
+          const planPromise = window.electronAPI.getStratTaxPlan?.(modDataDir, ff, armyCalibSave || undefined);
           try {
             const r = await window.electronAPI.getArmySetup(ff, modDataDir, armyBudgetFloor);
             setArmySetupData(r || { error: "no result" });
@@ -22603,7 +22609,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           const done = [];
           try {
             for (const ff of facList) {
-              const t1 = await window.electronAPI.getTurn1Budget?.(modDataDir, ff, undefined);
+              const t1 = await window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined);
               if (t1 && !t1.error && t1.totals) {
                 const row = { fac: ff, ...t1.totals, towns: t1.settlements?.length || 0 };
                 done.push(row);
@@ -22633,6 +22639,20 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     ⚖ Balance overview{armyOverview && armyOverview.busy ? ` (${armyOverview.rows.length}/${facList.length}…)` : ""}
                   </button>
                   {armyOverview && !armyOverview.busy && <button onClick={() => setArmyOverview(null)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.2)", color: "#9aa", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>hide</button>}
+                  <button
+                    onClick={async () => {
+                      if (armyCalibSave) { setArmyCalibSave(""); pushToast("Calibration save cleared — back to descr_strat seeds", "info", 4000); if (fac) fetchFor(fac); return; }
+                      try {
+                        const r = await window.electronAPI.selectSaveFile?.();
+                        if (r && r.path) { setArmyCalibSave(r.path); pushToast("Calibration save set — governor traits (incl. start-randomized personalities) now come from this save for ALL factions", "info", 6000); if (fac) fetchFor(fac); }
+                      } catch { }
+                    }}
+                    title={armyCalibSave
+                      ? `Calibration save active: ${armyCalibSave.split(/[\\/]/).pop()}\nThe save's world-wide governor traits (incl. the personality traits the engine randomizes at campaign start) replace the descr_strat seeds in the growth + income models, for every faction. Click to clear.`
+                      : "Pick a FRESH TURN-1 save as a calibration source: the engine randomizes personality traits (charisma/intelligence/energy) at campaign start, and the save records the actual roll for all ~1000 characters — one save pins the whole campaign's randomness for every faction."}
+                    style={{ background: armyCalibSave ? "rgba(143,180,110,0.25)" : "rgba(60,60,60,0.7)", color: armyCalibSave ? "#b8d38f" : "#9ab", border: "1px solid " + (armyCalibSave ? "#7a9a5a" : "rgba(255,255,255,0.25)"), borderRadius: 5, padding: "2px 10px", cursor: "pointer", fontSize: "0.74rem" }}>
+                    🎯 {armyCalibSave ? "calibrated: " + armyCalibSave.split(/[\\/]/).pop().replace(/\.sav$/i, "").slice(0, 28) + " ✕" : "calibration save…"}
+                  </button>
                   {armyOverview && !armyOverview.busy && armyOverview.rows.length > 0 && (
                     <button
                       onClick={() => {

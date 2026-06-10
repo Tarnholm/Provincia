@@ -168,7 +168,7 @@ function govEffectByCityFromSave(cracked, parsed) {
     const ch = byUuid[uuid >>> 0];
     if (!ch || !ch.traits) continue;
     const e = growthEffectOfTraits(ch.traits, parsed);
-    if (e.growthFarm || e.health || e.squalor) out[city] = e;
+    if (e.growthFarm || e.health || e.squalor || e.tax || e.trading || e.mining || e.influence || e.law || e.unrest || e.localPop) out[city] = e;
   }
   return out;
 }

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1030",
+    date: "2026-06-10",
+    items: [
+      { type: "feature", text: "**🎯 Calibration save.** The engine randomizes personality traits (charisma, intelligence, energy…) at every campaign start — invisible to the mod files, but recorded in any save for all ~1,000 world characters. The Army Setup toolbar now takes one optional FRESH TURN-1 SAVE as a calibration source: its world-wide governor traits (683 governed settlements vs 487 knowable from descr_strat) replace the seeds in the growth and income models, for every faction — one save pins the whole campaign's randomness. Click to set, click again to clear; persists across sessions." },
+    ],
+  },
+  {
     version: "0.9.1029",
     date: "2026-06-10",
     items: [

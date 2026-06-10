@@ -6516,8 +6516,12 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath)
       if (key && s.optimalBracket) bracketByCity[key] = s.optimalBracket;
       growthBySettlement[key] = { optimalBracket: s.optimalBracket, baseGrowthEst: s.baseGrowthEst, borderline: s.borderline };
     }
-    // 2. static income model at those brackets
-    const budget = im.computeTurn1Budget(modDataDir, faction, bracketByCity);
+    // 2. static income model at those brackets. When a CALIBRATION SAVE is provided,
+    // its world-wide governor traits (incl. start-randomized personalities) replace
+    // the descr_strat seeds for income too — opts.govEffectByCity came from the
+    // save-aware path above.
+    const budget = im.computeTurn1Budget(modDataDir, faction, bracketByCity,
+      opts && opts.govEffectByCity ? { govEffectByCity: opts.govEffectByCity } : undefined);
     if (budget && !budget.error) {
       for (const s of budget.settlements) {
         const g = growthBySettlement[s.settlement] || growthBySettlement[s.region];
