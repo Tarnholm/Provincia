@@ -557,7 +557,19 @@ describeIfT34("crackSave — current-treasury attribution keying (T34 Republic o
 // record sits at position 0 and romans_julii is displaced to the player's
 // natural descr_sm slot. The keying must swap them back. save_Carthage1 is the
 // canonical case (player=carthage; carthage starts with 25500, julii with 17500).
-const describeIfCarthage1 = (carthage1 && fs.existsSync(MOD_DATA)) ? describe : describe.skip;
+// VINTAGE GUARD (2026-06-10): the keying walks descr_sm_factions order from the
+// CURRENT mod files; when the mod is newer than the save (RIS is edited daily) the
+// order/treasuries can legitimately drift (carthage starting denari are 33700 in the
+// current descr_strat vs 25500 in this save's vintage). Skip on drift; re-crib with
+// a fresh save to re-enable.
+let carthage1Fresh = true;
+try {
+  const smMt = fs.statSync(`${MOD_DATA}\\descr_sm_factions.txt`).mtimeMs;
+  const stratMt = fs.statSync(`${MOD_DATA}\\world\\maps\\campaign\\imperial_campaign\\descr_strat.txt`).mtimeMs;
+  const savMt = fs.statSync(`${SAVE_DIR}\\save_Carthage1.sav`).mtimeMs;
+  if (Math.max(smMt, stratMt) > savMt) carthage1Fresh = false;
+} catch { }
+const describeIfCarthage1 = (carthage1 && fs.existsSync(MOD_DATA) && carthage1Fresh) ? describe : describe.skip;
 describeIfCarthage1("crackSave — player-swap treasury keying (Carthage T1)", () => {
   test("player carthage keeps 25500 and displaced romans_julii keeps 17500", () => {
     const { factions, playerFaction, turn } = crackSave(carthage1, MOD_DATA);

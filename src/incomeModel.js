@@ -275,12 +275,13 @@ const CALIB = {
   farmPoint: 73.5,
   // mining = minePoint × Σ mine_resource (single corpus observation: arverni 600/12).
   minePoint: 50,
-  // trade = tradeLand×Σ_towns rv·(1+landPartners) + tradeSea×Σ_portTowns rv.
-  // landPartners = adjacent regions (map_regions pixel adjacency) owned by self or a
-  // descr_strat ally (≤199 = ally + trade agreement). Refit 2026-06-10 on the 11
-  // player rows (trade-crack4/trade-final-fit.js): mean |err| 19% incl. suebi
-  // (old form was ±30% with suebi excluded); seleucid 3% / ptolemaic 5% / cyrene 4%.
-  tradeLand: 5.71, tradeSea: 58.46,
+  // trade = tradeLand×Σ_towns g·rv·(1+landPartners) + tradeSea×Σ_portTowns g·rv·√(seaPartners).
+  // g = 1+EDB trade%/100. landPartners = adjacent regions (map_regions pixel adjacency)
+  // owned by self/ally (≤199 = ally + trade agreement); seaPartners = self/ally PORT
+  // towns sharing a sea body (16 distinct 41,140,X sea zones in map_regions.tga).
+  // Refit 2026-06-10 evening (trade-crack6.js, 11 player rows): mean |err| 13.4%
+  // (julii 4%, ptolemaic 0%, seleucid 1%, arverni 1%; worst antigonid −24%, suebi tiny).
+  tradeLand: 6.23, tradeSea: 10.57,
   // wages = 200×named character + 50×admiral (EXACT on fresh saves).
   wageNamed: 200, wageAdmiral: 50,
   // corruption ("other" expenditure) — REFIT 2026-06-10 (corruption-refit.js), now
@@ -327,22 +328,54 @@ function regionAdjacency(modDataDir) {
   return (_adjCache[modDataDir] = adj);
 }
 
-// ---- region ownership + starting allies (trade agreements) from descr_strat ----
+// ---- region → adjacent SEA BODIES (map_regions.tga: 16 distinct 41,140,X sea colors
+// = named sea zones; ports sharing a body are sea-trade partners) ----
+const _seaCache = {};
+function regionSeaBodies(modDataDir) {
+  if (_seaCache[modDataDir]) return _seaCache[modDataDir];
+  const out = {};
+  try {
+    const dg = require("./descrStratGeneral.js");
+    const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
+    const buf = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga"));
+    const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), desc = buf[17];
+    const dataOff = 18 + buf[0];
+    const bottomLeft = (desc & 0x20) === 0;
+    const colorAt = (col, rowTop) => { const r = bottomLeft ? (H - 1 - rowTop) : rowTop; const o = dataOff + (r * W + col) * 3; return buf[o + 2] + "," + buf[o + 1] + "," + buf[o]; };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const reg = rgbToRegion[colorAt(x, y)];
+      if (!reg) continue;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        const k2 = colorAt(nx, ny);
+        if (k2.startsWith("41,140,")) (out[reg] = out[reg] || {})[k2] = 1;
+      }
+    }
+    for (const r of Object.keys(out)) out[r] = Object.keys(out[r]);
+  } catch { /* no sea data → sea partners 0 */ }
+  return (_seaCache[modDataDir] = out);
+}
+
+// ---- region ownership + starting allies (trade agreements) + all port towns ----
 const _tradeCtxCache = {};
 function tradePartnerCtx(modDataDir) {
   if (_tradeCtxCache[modDataDir]) return _tradeCtxCache[modDataDir];
-  const ownerOfRegion = {}, allies = {};
+  const ownerOfRegion = {}, allies = {}, portTowns = [];
   try {
     const stratPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
     const strat = gv.parseStrat(stratPath);
-    for (const [fac, f] of Object.entries(strat)) for (const sd of f.settlements) ownerOfRegion[sd.region] = fac;
+    for (const [fac, f] of Object.entries(strat)) for (const sd of f.settlements) {
+      ownerOfRegion[sd.region] = fac;
+      if (sd.buildings && sd.buildings.some(b => /port/i.test(b.chain))) portTowns.push({ region: sd.region, fac });
+    }
     for (const raw of fs.readFileSync(stratPath, "latin1").split(/\r?\n/)) {
       const t = raw.includes(";") ? raw.slice(0, raw.indexOf(";")) : raw;
       const m = t.match(/^faction_relationships\s+(\w+)\s*,\s*(\d+)\s+(\w+)/);
       if (m && +m[2] <= 199) (allies[m[1].toLowerCase()] = allies[m[1].toLowerCase()] || new Set()).add(m[3].toLowerCase());
     }
   } catch { /* none */ }
-  return (_tradeCtxCache[modDataDir] = { ownerOfRegion, allies });
+  return (_tradeCtxCache[modDataDir] = { ownerOfRegion, allies, portTowns });
 }
 
 // ---- protectorates (CRACKED 2026-06-10, tribute-rate-fit.js) ----
@@ -387,10 +420,22 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   const br = bracketByCity || {};
   const cap = F.settlements.length ? coords[F.settlements[0].region] : null;
   const adjacency = regionAdjacency(modDataDir);
-  const { ownerOfRegion, allies } = tradePartnerCtx(modDataDir);
+  const seaOf = regionSeaBodies(modDataDir);
+  const { ownerOfRegion, allies, portTowns } = tradePartnerCtx(modDataDir);
   const facLow = F.faction;
   const allySet = allies[facLow] || new Set();
   const isPartner = (other) => other && (other === facLow || allySet.has(other));
+  const seaPartnersOf = (region) => {
+    const bodies = seaOf[region];
+    if (!bodies || !bodies.length) return 0;
+    const bset = new Set(bodies);
+    let n = 0;
+    for (const pt of portTowns) {
+      if (pt.region === region || !isPartner(pt.fac)) continue;
+      if ((seaOf[pt.region] || []).some(b => bset.has(b))) n++;
+    }
+    return n;
+  };
   let taxes = 0, farming = 0, mining = 0, tradeLandSum = 0, tradeSeaSum = 0, corrSum = 0;
   const sets = [];
   for (const s of F.settlements) {
@@ -402,10 +447,11 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const tMine = CALIB.minePoint * s.mineSum;
     taxes += tTax; farming += tFarm; mining += tMine;
     const rv = s.resources.reduce((a, r) => a + (r.tradeValue || 0), 0);
+    const gTrade = Math.max(0, 1 + (s.tradePct || 0) / 100);
     let nPartners = 0;
     for (const n of (adjacency[s.region] || [])) if (isPartner(ownerOfRegion[n])) nPartners++;
-    tradeLandSum += rv * (1 + nPartners);
-    if (s.portLevel) tradeSeaSum += rv;
+    tradeLandSum += gTrade * rv * (1 + nPartners);
+    if (s.portLevel) tradeSeaSum += gTrade * rv * Math.sqrt(seaPartnersOf(s.region));
     let dist = null;
     const c = coords[s.region];
     if (cap && c) { dist = Math.hypot(c.x - cap.x, c.y - cap.y); corrSum += Math.max(0, dist - CALIB.corrD0) * (tTax + tFarm + tMine); }

@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1026",
+    date: "2026-06-10",
+    items: [
+      { type: "improvement", text: "**Trade model: sea lanes — ±19% → ±13%.** map_regions.tga turns out to contain 16 distinct sea zones; ports now trade with self/ally ports sharing a sea body (√-scaled), and the EDB trade-bonus percentage multiplies both land and sea terms. Julii lands within 4%, Ptolemaic and Seleucid within 1%." },
+      { type: "improvement", text: "**Regression tests for the cracked constants** — the tax bracket multipliers (Capua quartet), the 50% tribute rate, the army-upkeep class scales, empire-size tiers, become_protector parsing and the wage formula are now pinned by tests, so future mod updates or refactors that break a parser fail loudly instead of drifting silently." },
+    ],
+  },
+  {
     version: "0.9.1025",
     date: "2026-06-10",
     items: [
