@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1048",
+    date: "2026-06-11",
+    items: [
+      { type: "change", text: "**Tax plan PO thresholds simplified to the team rule:** above 100 = dark green (fine), exactly 100 = yellow (zero margin), below 100 = red (disorder risk). Previously 100-130 showed as a yellow watch band." },
+    ],
+  },
+  {
     version: "0.9.1047",
     date: "2026-06-11",
     items: [

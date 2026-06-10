@@ -6569,7 +6569,9 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
             s.poAtSet = p.poAt[br] != null ? p.poAt[br] : p.poAt.normal;
             s.poAtLow = p.poAt.low;
           }
-          s.poRisk = s.poAtSet < 100 ? "red" : s.poAtSet <= 130 ? "yellow" : "green";
+          // user rule 2026-06-11: anything above 100 is fine (dark green); exactly 100
+          // = zero margin (yellow); below 100 = disorder/revolt risk (red).
+          s.poRisk = s.poAtSet < 100 ? "red" : s.poAtSet === 100 ? "yellow" : "green";
           if (s.poRisk === "red") flagged++;
         }
         if (exactN) _writeLog(`[turn1-budget] ${faction}: PO anchored EXACT from calibration save for ${exactN} towns`);
