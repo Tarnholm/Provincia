@@ -22836,6 +22836,20 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                             style={{ background: "rgba(60,60,60,0.7)", color: "#b8d38f", border: "1px solid #7a9a5a", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
                             use as budget{netAfterArmy != null ? `: ${netAfterArmy}` : `: ${t.armyBudget}`}
                           </button>
+                          <button
+                            onClick={() => {
+                              const BRN = { low: "Low", normal: "Normal", high: "High", very_high: "V.High" };
+                              const text = armyT1Budget.settlements.slice()
+                                .sort((x, y) => ((x.settlement || x.region) || "").localeCompare((y.settlement || y.region) || ""))
+                                .map(x => `${((x.settlement || x.region) || "").replace(/_/g, " ")}: ${BRN[x.optimalBracket] || x.optimalBracket || "?"}${x.borderline ? " (verify)" : ""}`)
+                                .join("
+");
+                              navigator.clipboard?.writeText(text).then(() => pushToast("Tax plan copied — paste it next to the game and set the brackets", "info", 4000)).catch(() => {});
+                            }}
+                            title="Copy the settlement → bracket list to the clipboard, for setting taxes in-game."
+                            style={{ background: "rgba(60,60,60,0.7)", color: "#9fd3ff", border: "1px solid #5a82a0", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
+                            ⧉ copy plan
+                          </button>
                         </div>
                         <div style={{ marginTop: 6, fontSize: "0.8rem", color: "#cdc", display: "flex", gap: 14, flexWrap: "wrap" }}
                           title={`Income model cracked from RIS mod files (validated vs 10-faction turn-1 corpus, median budget error 7%):\n· taxes = 713/town × (1+EDB taxable%) × bracket (±9%)\n· farming = 73.5 × (fertility + farm level) (±5%)\n· mining = 50 × mine_resource\n· trade: land/sea resource fit (±30% — weakest part)\n· wages = 200×general + 50×admiral (exact)\n· corruption = 6.4 × Σ tile-distance to capital (±10%)`}>
@@ -22926,75 +22940,6 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                           <div style={{ marginTop: 5, padding: "4px 8px", borderRadius: 4, background: "rgba(232,90,90,0.18)", border: "1px solid rgba(232,90,90,0.55)", fontSize: "0.72rem", color: "#f0a0a0" }}>
                             ⚠ {armyT1Budget.staleWarning}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-                  {/* Tax plan — optimal per-settlement bracket, computed from the mod files (auto) */}
-                  {(() => {
-                    const BR = { low: "Low", normal: "Normal", high: "High", very_high: "V.High" };
-                    const BR_COL = { low: "#9fd3ff", normal: "#cfcf8f", high: "#e8b85a", very_high: "#e8806a" };
-                    const sp = armyStratPlan && armyStratPlan.byFaction && fac ? armyStratPlan.byFaction[fac] : null;
-                    return (
-                      <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(90,130,160,0.10)", border: "1px solid rgba(90,130,160,0.35)" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                          <strong style={{ color: "#9fd3ff" }}>🏛 Tax plan</strong>
-                          <span style={{ fontSize: "0.72rem", color: "#8aa" }}>highest bracket keeping growth ≥ 0 (Low +0.5% · Normal 0 · High −0.5% · V.High −1.0%) — computed from the mod files, live‑verified exact across six factions</span>
-                          {sp && sp.settlements && (
-                            <button
-                              onClick={() => {
-                                const text = sp.settlements.slice()
-                                  .sort((a, b) => ((a.settlement || a.region) || "").localeCompare((b.settlement || b.region) || ""))
-                                  .map(s => `${((s.settlement || s.region) || "").replace(/_/g, " ")}: ${BR[s.optimalBracket] || s.optimalBracket}${s.borderline ? " (verify)" : ""}`)
-                                  .join("\n");
-                                navigator.clipboard?.writeText(text).then(() => pushToast("Tax plan copied — paste it next to the game and set the brackets", "info", 4000)).catch(() => {});
-                              }}
-                              title="Copy the settlement → bracket list to the clipboard, for setting taxes in-game."
-                              style={{ marginLeft: "auto", background: "rgba(60,60,60,0.7)", color: "#9fd3ff", border: "1px solid #5a82a0", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
-                              ⧉ copy plan
-                            </button>
-                          )}
-                        </div>
-                        {armyStratPlan && armyStratPlan.staleWarning && (
-                          <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 4, background: "rgba(232,90,90,0.18)", border: "1px solid rgba(232,90,90,0.55)", fontSize: "0.72rem", color: "#f0a0a0" }}>
-                            ⚠ {armyStratPlan.staleWarning}
-                          </div>
-                        )}
-                        {!sp && <div style={{ marginTop: 6, fontSize: "0.74rem", color: "#9aa", fontStyle: "italic" }}>Computing…</div>}
-                        {sp && sp.settlements && (
-                          <>
-                            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem", marginTop: 6 }}>
-                              <thead><tr style={{ color: "#8aa", textAlign: "left" }}><th style={{ padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Base growth</th><th>→ Set to</th><th>Growth @ set</th><th title="Estimated public order at the recommended bracket — risk RANKING (±20). 🔴 revolt risk · 🟡 watch · 🟢 fine.">PO @ set</th></tr></thead>
-                              <tbody>
-                                {sp.settlements.slice().filter(s => !armySetSearch.trim() || ((s.settlement || s.region) || "").toLowerCase().includes(armySetSearch.trim().toLowerCase())).sort((a, b) => ((a.settlement || a.region) || "").localeCompare((b.settlement || b.region) || "")).map((s, i) => {
-                                  const GMOD = { low: 0.5, normal: 0, high: -0.5, very_high: -1 };
-                                  const atSet = s.baseGrowthEst != null && s.optimalBracket ? Math.round((s.baseGrowthEst + GMOD[s.optimalBracket]) * 10) / 10 : null;
-                                  const bset = armyT1Budget && armyT1Budget.faction === fac && armyT1Budget.settlements
-                                    ? armyT1Budget.settlements.find(b2 => (b2.settlement || b2.region) === (s.settlement || s.region)) : null;
-                                  return (
-                                  <tr key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                                    <td style={{ padding: "1px 6px", color: "#dde" }} title={s.settlement && s.region ? `region: ${s.region.replace(/_/g, " ")}` : undefined}>{((s.settlement || s.region) || "").replace(/_/g, " ")}</td>
-                                    <td style={{ color: "#9aa" }}>{s.pop}</td>
-                                    <td style={{ color: s.baseGrowthEst < 0 ? "#e8806a" : "#9aa", cursor: s.components ? "help" : "default" }}
-                                      title={s.components ? `TAX-NEUTRAL base growth (the in-game scroll at Normal tax):\nBase farming  ${s.components.base >= 0 ? "+" : ""}${s.components.base}%\nFarm upgrades ${s.components.farm >= 0 ? "+" : ""}${s.components.farm}%\nHealth        ${s.components.health >= 0 ? "+" : ""}${s.components.health}%\nBuildings     ${s.components.buildings >= 0 ? "+" : ""}${s.components.buildings}%\nSqualor       −${s.components.squalor}%\n= ${s.baseGrowthEst >= 0 ? "+" : ""}${s.baseGrowthEst}%` : undefined}>
-                                      {s.baseGrowthEst >= 0 ? "+" : ""}{s.baseGrowthEst}%</td>
-                                    <td style={{ color: BR_COL[s.optimalBracket], fontWeight: 600 }}>
-                                      {BR[s.optimalBracket]}
-                                      {s.borderline && <span title={`Borderline — estimated growth is only ${s.distToBoundary ?? "<0.2"}% from a bracket boundary, so this one could flip. Verify in‑game or set one bracket lower to be safe.`} style={{ color: "#e8b85a", marginLeft: 4, cursor: "help" }}>⚠</span>}
-                                    </td>
-                                    <td style={{ color: atSet == null ? "#778" : atSet < 0 ? "#e8806a" : "#7fd17f" }} title="What the in-game growth scroll should read once you set this bracket (base growth + the bracket's flat growth modifier: Low +0.5 / Normal 0 / High −0.5 / V.High −1.0).">{atSet == null ? "—" : `${atSet >= 0 ? "+" : ""}${atSet}%`}</td>
-                                    <td style={{ color: !bset || bset.poAtSet == null ? "#778" : ({ red: "#e8806a", orange: "#e8964a", yellow: "#e8964a", lightgreen: "#7fd17f" })[bset.poRisk] || "#2f9e44" }}
-                                      title={bset && bset.poAtSet != null ? `${bset.poExact ? `PO ${bset.poAtSet} at the recommended bracket — EXACT from the calibration save's stored value (drifts only if garrisons/buildings change)` : `Estimated PO ≈${bset.poAtSet} at the recommended bracket (ranking model, ±20)`}.${bset.poAtLow != null ? ` At Low ≈${bset.poAtLow}.` : ""}` : "PO computes with the Turn-1 Budget below."}>
-                                      {!bset || bset.poAtSet == null ? "—" : <>{bset.poRisk === "red" ? "🔴" : (bset.poRisk === "orange" || bset.poRisk === "yellow") ? "🟠" : "🟢"} {bset.poAtSet}</>}
-                                    </td>
-                                  </tr>
-                                );})}
-                              </tbody>
-                            </table>
-                            <div style={{ marginTop: 5, fontSize: "0.68rem", color: "#8aa" }}>
-                              The full cracked RIS growth model: engine squalor formula (⌊effective pop/1500⌋, doubling above 2× the tier base), granaries, summer port bonus, chain‑required olive/wine/orchard bonuses, governor trait squalor with anti‑trait cancellation — all from descr_strat + EDB + descr_cultures. Hover a growth value for the per‑line breakdown (matches the in‑game scroll).
-                            </div>
-                          </>
                         )}
                       </div>
                     );

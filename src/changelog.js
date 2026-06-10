@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1050",
+    date: "2026-06-11",
+    items: [
+      { type: "change", text: "**Army Setup decluttered: the standalone Tax plan section is gone** — it duplicated the Turn-1 budget table, which already shows every settlement's recommended bracket, growth and (exact, calibration-anchored) PO. The ⧉ copy-plan button moved into the budget header." },
+    ],
+  },
+  {
     version: "0.9.1049",
     date: "2026-06-11",
     items: [
