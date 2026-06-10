@@ -47,7 +47,10 @@ function findAllSettlementMarkers(buf) {
     const flag = buf[i];
     if (flag !== 0x01 && flag !== 0x00) continue;
     const nc = buf[i + 1];
-    if (nc < 3 || nc > 32 || buf[i + 2] !== 0) continue;
+    // nc >= 2 (was 3): the 2-char settlement "Is" (region Ankobaritis) was silently
+    // dropped, leaking its building chains into the previous settlement (audited
+    // 2026-06-10, building-state-audit.js — nc>=2 adds zero false positives).
+    if (nc < 2 || nc > 32 || buf[i + 2] !== 0) continue;
     const se = i + 3 + nc * 2;
     if (se + 4 > buf.length) continue;
     if (buf.readUInt32LE(se) > TERM_MAX) continue;

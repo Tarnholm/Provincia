@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1043",
+    date: "2026-06-10",
+    items: [
+      { type: "fix", text: "**Save building parsing: two fidelity fixes from the building-state audit.** The 2-character settlement \"Is\" (Ankobaritis) was silently dropped by a name-length gate, leaking its building chains into the neighbouring settlement; and the settlement parser ran without an EDB chain whitelist, letting wonder/event strings pollute Rome's building list. Both fixed — the audit now reads every settlement's current buildings with 100% coverage and 100% turn-1 accuracy (after accounting for RIS's own setup script, which deletes government/colony buildings in all AI settlements at campaign start — a finding worth knowing on its own)." },
+    ],
+  },
+  {
     version: "0.9.1042",
     date: "2026-06-10",
     items: [

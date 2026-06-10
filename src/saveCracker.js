@@ -200,7 +200,20 @@ function crackSave(saveBuf, modDataDir) {
   const header        = x.parseHeader(saveBuf);
   const treasuriesRaw = x.parseFactionTreasuries(saveBuf);
   const ownersOut     = resolveCurrentOwners(saveBuf, ownership.ownerByCity, regionToSettlement);
-  const settlements   = parseSettlements(saveBuf, null, null); // returns { settlements: [...], ... }
+  // EDB chain whitelist (audited 2026-06-10): without it, wonder/event chain strings
+  // (eruption_at_etna_* etc.) pollute the FIRST settlement's building list (Rome).
+  let edbChainSet = null, edbChainMax = null;
+  try {
+    const gvEDB = require("./growthEval.js");
+    const edbPath = path.join(modDataDir, "export_descr_buildings.txt");
+    if (fs.existsSync(edbPath)) {
+      const { chainLevels } = gvEDB.parseEDB(edbPath);
+      edbChainSet = new Set(Object.keys(chainLevels));
+      edbChainMax = {};
+      for (const [c, lv] of Object.entries(chainLevels)) edbChainMax[c] = lv.length - 1;
+    }
+  } catch (e) { /* whitelist optional — parse degrades to unfiltered */ }
+  const settlements   = parseSettlements(saveBuf, edbChainSet, edbChainMax); // returns { settlements: [...], ... }
   const diplomacy     = x.parseDiplomacyMatrix(saveBuf, diploOrder);
   const v2Chars       = x.parseCharacterExtras(saveBuf);
   // Attach extX/extY to v2 records so role-string agents (if any) can be named
