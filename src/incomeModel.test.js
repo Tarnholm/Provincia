@@ -39,7 +39,11 @@ describe("incomeModel — cracked constants", () => {
     expect(im.CALIB.farmPoint).toBeCloseTo(73.6, 5); // farming EXACT 11/11
     expect(im.CALIB.minePoint).toBe(5);          // mining = 5×mine_resource×Σ(qty×tv), 5/6 exact
     expect(im.CALIB.taxLogK_single).toBeCloseTo(1.2244, 4); // Capua quartet ABSOLUTE (=4/3×0.92)
-    expect(im.CALIB.taxLogK_multi).toBeCloseTo(0.5544, 4);
+    expect(im.CALIB.taxLogK_multi).toBeCloseTo(0.5544, 4); // legacy (unused for multi since flat law)
+    // EXACT TAX LAW (2026-06-11 live julii scroll sweeps): flat-points application,
+    // whole-ledger validation 9,583 vs 9,447 live (+1.4%).
+    expect(im.CALIB.taxBaseK).toBeCloseTo(0.4559, 4);
+    expect(im.CALIB.taxFlatPoint).toBeCloseTo(3.9, 2);
     expect(im.CALIB.tradeLand).toBeCloseTo(4.75, 2);
     expect(im.CALIB.tradeSea).toBeCloseTo(9.70, 2);
     expect(im.CALIB.tradeBonusPct).toBe(10);     // documented: 10% per trade_base point

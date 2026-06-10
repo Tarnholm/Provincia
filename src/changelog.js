@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1044",
+    date: "2026-06-11",
+    items: [
+      { type: "improvement", text: "**Tax model: the exact engine law, cracked live.** A full evening of in-game settlement-scroll sweeps (15 Julii towns × 4 tax brackets, governor-in/governor-out experiments) revealed the real formula: building tax modifiers (EDB taxable_income_bonus) apply as FLAT denarii (≈3.9 per point, rate-independent) — never as percentages — on top of a population base of 0.456×400×(ln pop − 4.4)×rate, all scaled by the governor's tax bonus. The old percentage multiplier and the multi-town K=0.5544 were artifacts of this misread. Whole-ledger validation on the live campaign: 9,583 modeled vs 9,447 actual (+1.4%, previously +23% for Julii). Single-settlement factions keep the Capua-calibrated path pending a live city-state sweep. Also identified this session (model wiring to follow): the 'other' income ledger row is governor Admin income (≈4-6% of town gross), corruption expenditure is a distance-scaled share of town gross that office-holding governors (Quaestor/Praetor/Propraetor) suppress to zero, and the farms line carries a per-region harvest roll each turn." },
+    ],
+  },
+  {
     version: "0.9.1043",
     date: "2026-06-10",
     items: [
