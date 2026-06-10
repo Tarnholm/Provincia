@@ -522,15 +522,16 @@ function extractPopulationByCity(buf, settlements) {
 function inferSettlementLevel(buildings) {
   const core = buildings.find(b => b.name === "core_building");
   if (!core || typeof core.level !== "number") return "town"; // sensible default
-  // RIS imperial mapping observed across the bundled descr_strat:
-  //   gov0 (governors_house)    → village
-  //   gov1 (governors_villa)    → town
-  //   gov2 (proconsuls_palace)  → large_town
-  //   gov3 (imperial_palace)    → city
-  //   gov4 (royal_palace)       → large_city
-  //   gov5+                     → huge_city
+  // RIS mapping AUDITED 2026-06-10 (level-pairing-audit.js, 1,304/1,304 settlements
+  // consistent — the old map was one tier low, emitting Rome as `city`):
+  //   governors_house (idx 0)   → town          ×715
+  //   governors_villa (idx 1)   → large_town    ×481
+  //   governors_palace (idx 2)  → city          ×89
+  //   proconsuls_palace (idx 3) → large_city    ×15
+  //   imperial_palace (idx 4)   → huge_city     ×4
+  // RIS uses no `village` tier at all.
   const tiers = ["village", "town", "large_town", "city", "large_city", "huge_city"];
-  return tiers[Math.min(core.level, tiers.length - 1)];
+  return tiers[Math.min(core.level + 1, tiers.length - 1)];
 }
 
 // Population heuristic by tier (the engine recomputes from level + buildings;
@@ -635,6 +636,12 @@ function groupUnitsByCommander(buf) {
   // with no open group are settlement garrisons (not attached to a character here).
   const units = findUnitRecords(buf);
   const byCommander = new Map();
+  // Leftover untagged LAND units (no open commander group) = settlement
+  // garrisons. Collected keyed by region name (unit records carry the
+  // descr_regions region name — verified 1841/1841 exact matches on the
+  // julii T2 save). Rides along as a non-enumerable property on the
+  // returned Map so existing call sites stay untouched.
+  const garrisons = new Map();
   let g = null;
   const flush = () => { if (g) { byCommander.set(g.cmd, g.units); g = null; } };
   for (const u of units) {
@@ -643,9 +650,15 @@ function groupUnitsByCommander(buf) {
     const cmd = u.commanderUuid && u.commanderUuid !== 0xffffffff ? (u.commanderUuid >>> 0) : null;
     if (cmd) { flush(); g = { cmd, region: u.region, units: [u] }; continue; }
     if (g && u.region === g.region) { g.units.push(u); continue; }
-    flush(); // untagged unit outside an open group = garrison/loose
+    flush(); // untagged unit outside an open group = settlement garrison
+    if (u.region) {
+      let arr = garrisons.get(u.region);
+      if (!arr) { arr = []; garrisons.set(u.region, arr); }
+      arr.push(u);
+    }
   }
   flush();
+  Object.defineProperty(byCommander, "__garrisons", { value: garrisons, enumerable: false });
   return byCommander;
 }
 
@@ -828,7 +841,7 @@ function loadSourceStratBuildings(stratPath) {
 function getSourceStratGarrisons() { return _sourceStratGarrisonsByRegion; }
 function getSourceStratLevelByRegion() { return _sourceStratLevelByRegion; }
 
-function emitSettlement(s, factionId, chainLevels, originalCreator, populationByCity, sourceBuildings) {
+function emitSettlement(s, factionId, chainLevels, originalCreator, populationByCity, sourceBuildings, skipSourceGarrison) {
   const lines = [];
   // Engine RULE: settlement_level_idx == core_building_level + 1. Source
   // descr_strat's level may be STALE for T20+ (settlements grew/shrank
@@ -868,7 +881,11 @@ function emitSettlement(s, factionId, chainLevels, originalCreator, populationBy
   // Source-strat fallback: garrisoned_army (settlement garrison units). The
   // save embeds these in the settlement record but our parser doesn't lift
   // them out yet. Copy source's verbatim for T1 round-trip parity.
-  const sourceGarrisons = getSourceStratGarrisons();
+  // skipSourceGarrison: set by emitFactionBlock on the --save-characters
+  // turn>1 path, where the save's CURRENT garrison is emitted after the
+  // closing `}` instead — keeping both would double-count (stale T1 source
+  // garrison + live save garrison).
+  const sourceGarrisons = skipSourceGarrison ? null : getSourceStratGarrisons();
   if (sourceGarrisons && s.region && sourceGarrisons[s.region] && sourceGarrisons[s.region].length > 0) {
     lines.push(`\tgarrisoned_army`);
     for (const u of sourceGarrisons[s.region]) lines.push(u);
@@ -1158,10 +1175,45 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
   const denari = Math.max(0, rawDenari);
   if (rawDenari < 0) substitutionLog.push({ kind: "denari_floored", from: facId, original: rawDenari });
   lines.push(`denari\t${denari}`);
+  // --save-characters garrisons (turn>1): descr_strat NATIVELY attaches unit
+  // lines that directly follow a settlement block's closing `}` to that
+  // settlement (RIS's own descr_strat has 844 such). Emit the save's CURRENT
+  // garrison (the leftover untagged land units from groupUnitsByCommander,
+  // keyed by region name) right after each settlement block. Lookup is an
+  // EXACT string match on s.region; consumed entries are DELETED from the
+  // map so every garrison unit is emitted at most once globally — whatever
+  // remains after the faction loop is logged by main() as unmatched (never
+  // guessed). The source garrisoned_army fallback inside emitSettlement is
+  // suppressed on this path (it's the stale T1 garrison; the save's is live).
+  // wantSaveChars is also reused below to gate the character-roster path.
+  const wantSaveChars = !!global.__SAVE_CHARACTERS__ && turnNumber > 1;
+  const saveGarrisons = wantSaveChars && charArmies ? charArmies.__garrisons : null;
+  let garrisonCount = 0, garrisonDropped = 0;
   for (const s of settlements) {
     const origCreator = creatorByCity ? creatorByCity[s.name] : null;
     const sourceBuildings = sourceStratBuildings ? sourceStratBuildings[s.region] : null;
-    lines.push(emitSettlement(s, facId, chainLevels, origCreator, populationByCity, sourceBuildings));
+    lines.push(emitSettlement(s, facId, chainLevels, origCreator, populationByCity, sourceBuildings, !!saveGarrisons));
+    if (saveGarrisons && s.region && saveGarrisons.has(s.region)) {
+      const gus = saveGarrisons.get(s.region);
+      saveGarrisons.delete(s.region); // at-most-once global emission
+      for (const u of gus) {
+        // EDU-aware: drop unit types the active mod doesn't know — same rule
+        // as emitCharacter's army block (no good substitute for a garrison
+        // unit; emitting an unknown type makes the engine reject the file).
+        if (eduUnits && !eduUnits.has(u.name)) {
+          if (substitutionLog) substitutionLog.push({ from: u.name, to: null, kind: "dropped" });
+          garrisonDropped++;
+          continue;
+        }
+        // Engine caps: exp 0..9, armour 0..3, weapon_lvl 0..3 (same clamps
+        // as the army-block emit in emitCharacter).
+        const exp = Math.max(0, Math.min(9, u.xp ?? 0));
+        const armour = Math.max(0, Math.min(3, u.armourUpgrade ?? 0));
+        const weapon = Math.max(0, Math.min(3, u.weaponUpgrade ?? 0));
+        lines.push(`unit\t\t${u.name}\t\texp ${exp} armour ${armour} weapon_lvl ${weapon}`);
+        garrisonCount++;
+      }
+    }
   }
   // Fallback position for characters whose own tileX/tileY is unset
   // (governors stuck in settlements, etc). Cascade:
@@ -1220,7 +1272,8 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
   // (v1 named generals + commander-grouped unit records) so the reconstruction matches
   // the played state — the cracked family path below already pairs with it. Without
   // the flag, the historical source-verbatim behaviour is unchanged.
-  const wantSaveChars = !!global.__SAVE_CHARACTERS__ && turnNumber > 1;
+  // (wantSaveChars is declared above the settlement loop — it also gates the
+  // save-garrison emission there.)
   const useSourceCharacters = !wantSaveChars && sourceStratCharacters && sourceStratCharacters[facId] && sourceStratCharacters[facId].length > 0;
   // Cracked CURRENT family for turn>1: emit the live roster (births/deaths
   // since T1) instead of the stale source family. Gated on turn>1 AND the
@@ -1428,7 +1481,7 @@ function emitFactionBlock(facId, decl, settlements, characters, charArmies, chai
       relativeCount++;
     }
   }
-  return { text: lines.join("\n"), emittedCount, skippedCount, recordCount, relativeCount };
+  return { text: lines.join("\n"), emittedCount, skippedCount, recordCount, relativeCount, garrisonCount, garrisonDropped };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2203,7 +2256,25 @@ async function main() {
   const zeroSettlementFactions = new Set(
     orderedFactions.filter(f => (byFactionSettlements[f] || []).length === 0)
   );
-  let stats = { factions: 0, settlements: 0, characters: 0, units: 0, skipped: 0, familyRecords: 0, relativeLines: 0, warPairs: 0, alliedPairs: 0, hostilePairs: 0, dedupedNames: 0, droppedDupes: 0 };
+  let stats = { factions: 0, settlements: 0, characters: 0, units: 0, skipped: 0, familyRecords: 0, relativeLines: 0, warPairs: 0, alliedPairs: 0, hostilePairs: 0, dedupedNames: 0, droppedDupes: 0, garrisonUnits: 0, garrisonDropped: 0 };
+  // FIX 2026-06-10: the war/allied/hostile counters were never incremented since the
+  // legacy `diplomatic_stance` emit was removed (the OVERLAY emission is correct — the
+  // stats line was dead). Count unique unordered pairs from the live matrix here.
+  if (diploMatrix) {
+    const seenPair = { war: new Set(), allied: new Set(), hostile: new Set() };
+    for (const [facA, rec] of Object.entries(diploMatrix)) {
+      if (facA === "_meta" || !rec) continue;
+      for (const kind of ["war", "allied", "hostile"]) {
+        for (const facB of (rec[kind] || [])) {
+          const key = facA < facB ? facA + "|" + facB : facB + "|" + facA;
+          seenPair[kind].add(key);
+        }
+      }
+    }
+    stats.warPairs = seenPair.war.size;
+    stats.alliedPairs = seenPair.allied.size;
+    stats.hostilePairs = seenPair.hostile.size;
+  }
   for (const facId of orderedFactions) {
     const decl = factionDecls[facId];
     if (!decl) { console.warn(`  WARNING: no declaration for ${facId} — skipping`); continue; }
@@ -2319,10 +2390,23 @@ async function main() {
     stats.skipped += block.skippedCount;
     stats.familyRecords += block.recordCount;
     stats.relativeLines += block.relativeCount;
+    stats.garrisonUnits += block.garrisonCount || 0;
+    stats.garrisonDropped += block.garrisonDropped || 0;
     for (const c of cs) {
       const army = charArmies.get(c.secondaryUuid);
       if (army) stats.units += army.length;
     }
+  }
+
+  // --save-characters: any garrison entries still in the map after the
+  // faction loop matched NO emitted settlement region — log + skip, never
+  // guess a region. (Consumed entries were deleted during emission.)
+  const leftoverGarrisons = charArmies.__garrisons;
+  if (global.__SAVE_CHARACTERS__ && turnNumber > 1 && leftoverGarrisons && leftoverGarrisons.size > 0) {
+    let leftoverUnits = 0;
+    for (const us of leftoverGarrisons.values()) leftoverUnits += us.length;
+    const sample = [...leftoverGarrisons.keys()].slice(0, 5).join(", ");
+    console.log(`[garrison] ${leftoverUnits} garrison unit(s) in ${leftoverGarrisons.size} region(s) matched no emitted settlement — skipped: ${sample}${leftoverGarrisons.size > 5 ? ", …" : ""}`);
   }
 
   // The legacy `diplomatic_stance` emit was REMOVED — that block format
@@ -2462,9 +2546,13 @@ async function main() {
   console.log(`  settlements:         ${stats.settlements}`);
   console.log(`  living characters:   ${stats.characters} emitted (+${stats.skipped} skipped no-pos)`);
   console.log(`  units in armies:     ${stats.units}`);
+  if (global.__SAVE_CHARACTERS__) {
+    console.log(`  garrison units:      ${stats.garrisonUnits} emitted after settlement blocks (${stats.garrisonDropped} dropped: unknown in EDU)`);
+  }
   console.log(`  family records:      ${stats.familyRecords} character_record lines`);
   console.log(`  family relationships: ${stats.relativeLines} relative lines`);
-  console.log(`  diplomatic stances:  ${stats.warPairs} wars, ${stats.alliedPairs} alliances, ${stats.hostilePairs} hostile`);
+  console.log(`  diplomatic stances:  ${stats.warPairs} wars, ${stats.alliedPairs} alliances, ${stats.hostilePairs} hostile (live matrix)`);
+  if (stats.coreAttitudesOverlaid != null) console.log(`  diplomacy overlay:   ${stats.coreAttitudesOverlaid} attitudes + ${stats.factionAgressionOverlaid} aggressions changed from source`);
   console.log(`  treasuries matched:  ${Object.keys(currentTreasuryByFaction).length} factions`);
   if (flooredDenari.length > 0) {
     const sorted = [...flooredDenari].sort((a, b) => a.original - b.original);

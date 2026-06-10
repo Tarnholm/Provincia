@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1042",
+    date: "2026-06-10",
+    items: [
+      { type: "improvement", text: "**Save→strat reconstruction: garrisons, correct settlement levels, live diplomacy stats.** Settlement garrisons (the ~1,800 commander-less units) now emit natively under their settlement blocks — 1,841/1,841 attached on the turn-2 test, with stale source garrisons suppressed to avoid double-counting. Settlement levels fixed (the core-building→level map was one tier low — Rome emitted as 'city'; audited 1,304/1,304 against the source). The 'diplomatic stances: 0 wars' line was dead counters from a removed code path — the emitted diplomacy overlay was always correct, and the stats now count the live matrix (268 wars / 138 alliances on the test save). Full played-state reconstruction validates with zero errors." },
+    ],
+  },
+  {
     version: "0.9.1041",
     date: "2026-06-10",
     items: [
