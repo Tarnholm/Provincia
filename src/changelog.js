@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1037",
+    date: "2026-06-10",
+    items: [
+      { type: "improvement", text: "**City-state taxes now match the live Capua experiment to the denarius.** The single-town tax constant is calibrated on the measured Capua quartet absolute (model now reads exactly 1,752 at Normal) — and it decomposes as a clean 4/3 city-state factor × the documented 0.92 hard-difficulty malus, mirroring the multi-town 0.6 × 0.92. All ~80 single-settlement factions' budgets in the Balance overview sharpen accordingly, and the protectorate tribute floors improved as client economies modeled better." },
+    ],
+  },
+  {
     version: "0.9.1036",
     date: "2026-06-10",
     items: [

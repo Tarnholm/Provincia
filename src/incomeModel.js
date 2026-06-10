@@ -279,7 +279,11 @@ const CALIB = {
   // structure (Arretium +372 = W(4500)×Δrate0.5×0.55×f). Mean |err| 6.6% (was 10.8%
   // flat-713). KNOWN DEVIANTS: julii −23%, getae −18%, mauryan +11% — whatever
   // splits them from the 0.554 five is the next reading to take in-game.
-  taxLogK_multi: 0.5544, taxLogK_single: 1.0,
+  // K_single calibrated on the live Capua quartet ABSOLUTE (W(6750)×f(0.81)×K = 1752
+  // → K = 1.2244 = 4/3 × 0.92 — the engine single-town factor is likely a clean 4/3
+  // city-state bonus under the documented hard-difficulty 0.92). K_multi 0.5544 =
+  // 0.6 × 0.92. Both ÷0.92 give clean engine constants (4/3 and 0.6).
+  taxLogK_multi: 0.5544, taxLogK_single: 1.2244,
   // DIFFICULTY (Feral docs, Battle_and_Campaign_Formulae.md): the human player's tax
   // and farm income scale by difficulty — Easy 1.20 / Normal 1.00 / HARD 0.92 /
   // Extreme 0.85. The user/team plays H/H, and every constant below was fit on H/H
