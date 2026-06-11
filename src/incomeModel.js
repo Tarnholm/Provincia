@@ -325,7 +325,13 @@ const CALIB = {
   // pixel-adjacent regions owned by self/ally (≤199 = trade agreement); seaPartners =
   // self/ally PORT towns sharing a sea body. Refit 2026-06-10 (trade-qty-retest.js):
   // mean |err| 13.1%, more uniform (ptolemaic 1%, seleucid 0%, most others ±10-15%).
-  tradeLand: 0.8656, tradeSea: 1.7676, // REFIT 2026-06-11 after the structural trade fixes
+  tradeLand: 0.8656, // legacy aggregate (unused for land since the per-route law)
+  // PER-ROUTE LAND LAW (2026-06-11, fit on 14 live scroll routes; A_X re-derived
+  // against THIS model's adjacency graph — R²log .96 on 6 measured towns):
+  // v(route) = K·popX^a·e^(p·tradePctX) × e^(r·roadY)·(rvX+rvY)^g·popY^−b
+  tradeRouteK: 2.7478, tradeRoutePopX: 0.488, tradeRoutePct: 0.1692,
+  tradeRouteRoad: 0.38, tradeRouteGoods: 0.30, tradeRoutePopY: -0.34,
+  tradeSea: 1.1169, // sea aggregate re-anchored: julii total = 4,610 live with the land law in place // REFIT 2026-06-11 after the structural trade fixes
   // (qty-weighted rv + not-at-war partners + symmetric ally parse) — anchored to the
   // live julii ledger trade 4,610 (clean t2), keeping the old land:sea ratio 2.042.
   // Old 4.75/9.70 were fit on the broken features (empty julii ally set, Set-based rv).
@@ -497,12 +503,14 @@ function wonderOwners(modDataDir) {
 const _tradeCtxCache = {};
 function tradePartnerCtx(modDataDir) {
   if (_tradeCtxCache[modDataDir]) return _tradeCtxCache[modDataDir];
-  const ownerOfRegion = {}, allies = {}, wars = {}, portTowns = [];
+  const ownerOfRegion = {}, allies = {}, wars = {}, portTowns = [], popOfRegion = {}, roadOfRegion = {};
   try {
     const stratPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
     const strat = gv.parseStrat(stratPath);
     for (const [fac, f] of Object.entries(strat)) for (const sd of f.settlements) {
       ownerOfRegion[sd.region] = fac;
+      popOfRegion[sd.region] = sd.pop || 400;
+      roadOfRegion[sd.region] = (sd.buildings || []).some(b => /hinterland_roads/.test(b.chain)) ? 1 : 0;
       if (sd.buildings && sd.buildings.some(b => /port/i.test(b.chain))) portTowns.push({ region: sd.region, fac });
     }
     // RELATIONSHIP CODES (descr_strat): 199 = alliance, 201 = at war. Both are listed
@@ -521,7 +529,7 @@ function tradePartnerCtx(modDataDir) {
       else if (+m[2] === 201) add(wars, m[1].toLowerCase(), m[3].toLowerCase());
     }
   } catch { /* none */ }
-  return (_tradeCtxCache[modDataDir] = { ownerOfRegion, allies, wars, portTowns });
+  return (_tradeCtxCache[modDataDir] = { ownerOfRegion, allies, wars, portTowns, popOfRegion, roadOfRegion });
 }
 
 // Quantity-weighted TRADE resource value per region: Σ qty × tradeValue over all
@@ -624,7 +632,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   else { try { const te = require("./traitEffects.js"); govFx = te.govEffectByCityFromStrat(modDataDir, te.parseTraitEffects(modDataDir)) || {}; } catch { } }
   const wonders = wonderOwners(modDataDir);
   const mineQty = mineQtyValByRegion(modDataDir);
-  const { ownerOfRegion, allies, wars, portTowns } = tradePartnerCtx(modDataDir);
+  const { ownerOfRegion, allies, wars, portTowns, popOfRegion, roadOfRegion } = tradePartnerCtx(modDataDir);
   const facLow = F.faction;
   // Hanging Gardens: +20% farming income factionwide for the owner (validated exact).
   const gardensMult = wonders.gardens && wonders.gardens.owner === facLow ? 1.2 : 1;
@@ -678,10 +686,24 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const tradePts = s.tradePctParts ? (s.tradePctParts.base + s.tradePctParts.winter) : (s.tradePct || 0);
     const gTrade = Math.max(0, 1 + CALIB.tradeBonusPct * tradePts / 100) * gTrading;
     let nPartners = 0;
-    for (const n of (adjacency[s.region] || [])) if (isPartner(ownerOfRegion[n])) nPartners++;
-    tradeLandSum += gTrade * rv * (1 + nPartners);
+    // LAND TRADE = PER-ROUTE LAW (live scroll routes 2026-06-11): exporter factor ×
+    // per-partner terms. Land rows merge both legs; value is pop/buildings-driven.
+    const aX = CALIB.tradeRouteK * Math.pow(Math.max(400, s.pop), CALIB.tradeRoutePopX)
+      * Math.exp(CALIB.tradeRoutePct * (s.tradePct || 0));
+    let landTrade = 0;
+    for (const n of (adjacency[s.region] || [])) {
+      if (!isPartner(ownerOfRegion[n])) continue;
+      nPartners++;
+      const exch = rv + (tradeQtyVal[n] || 0);
+      landTrade += aX * Math.exp(CALIB.tradeRouteRoad * (roadOfRegion[n] || 0))
+        * Math.pow(Math.max(1, exch), CALIB.tradeRouteGoods)
+        * Math.pow(Math.max(400, popOfRegion[n] || 400), CALIB.tradeRoutePopY);
+    }
+    tradeLandSum += landTrade;
+    // SEA stays aggregate pending the per-lane law (legs directional + exclusion-gated,
+    // icons-confirmed; lane values have an unidentified per-pair factor).
     if (s.portLevel) tradeSeaSum += gTrade * rv * Math.sqrt(seaPartnersOf(s.region));
-    const tTrade = CALIB.tradeLand * gTrade * rv * (1 + nPartners)
+    const tTrade = landTrade
       + (s.portLevel ? CALIB.tradeSea * gTrade * rv * Math.sqrt(seaPartnersOf(s.region)) : 0);
     // ADMIN income (the in-game scroll's 4th row, labeled "Governor" — ledger f9
     // 'other'): admin% × town gross, admin% fit on 13 live-measured governor
@@ -713,12 +735,12 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const sqPips = Math.floor(effPop / 1500);
     const plagueRiskPct = sqPips > 3 ? Math.max(0, ((sqPips - 3) - 2 * (s.healthPips || 0)) / 20) * 100 : 0;
     sets.push({ settlement: s.settlement, region: s.region, pop: s.pop, level: s.level, capital: s.capital,
-      bracket, taxes: Math.round(tTax), farming: Math.round(tFarm), mining: Math.round(tMine),
+      bracket, taxes: Math.round(tTax), farming: Math.round(tFarm), mining: Math.round(tMine), trade: Math.round(tTrade), admin: Math.round(tAdmin),
       taxFactor: Math.round(f * 100) / 100, resourceValue: rv, port: !!s.portLevel, tradePartners: nPartners, distToCapital: dist != null ? Math.round(dist) : null,
       siegeTurns, plagueRiskPct: Math.round(plagueRiskPct * 10) / 10,
       govIncome: gv0 && (gv0.tax || gv0.trading || gv0.mining) ? { tax: gv0.tax || 0, trading: gv0.trading || 0, mining: gv0.mining || 0, hits: gv0.hits || [] } : null });
   }
-  let trade = Math.max(0, CALIB.tradeLand * tradeLandSum + CALIB.tradeSea * tradeSeaSum);
+  let trade = Math.max(0, tradeLandSum + CALIB.tradeSea * tradeSeaSum);
   const ch = countCharacters(modDataDir, faction) || { named: 0, admiral: 0 };
   const wages = CALIB.wageNamed * ch.named + CALIB.wageAdmiral * ch.admiral;
   let corruption = Math.max(0, Math.round(corrSum));
@@ -789,4 +811,4 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   };
 }
 
-module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, parseProtectorates, TRIBUTE_RATE, CALIB };
+module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, tradePartnerCtx, tradeQtyValByRegion };

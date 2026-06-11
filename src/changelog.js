@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1054",
+    date: "2026-06-11",
+    items: [
+      { type: "improvement", text: "**Land trade is now per-route.** Each settlement's land trade is computed route-by-route from the law fit on the live per-partner scroll values: exporter factor (population^0.49 × e^(0.17·trade-building-%)) times per-partner terms (roads +46%, goods, partner-pop). Validated per-town against the live scrolls: Cosa 410 vs 419, Neapolis 245 vs 223, Camerinum/Perusia within 6 denarii; faction total stays exactly anchored (julii 4,610). Sea trade remains on the aggregate form — its per-lane law (directional, exclusion-gated legs, confirmed via the route cargo icons) awaits sea-leg readings from more ports. The budget table now shows per-settlement trade and admin columns." },
+    ],
+  },
+  {
     version: "0.9.1053",
     date: "2026-06-11",
     items: [
