@@ -691,7 +691,55 @@ function seaLanesByRegion(modDataDir) {
       const idx = portOrder.indexOf(pb.level);
       ports.push({ region: sd.region, fac, level: (idx >= 0 ? idx : 0) + 1 });
     }
-    // eligible pairs
+    // SEA-PATH distances between port tiles (coarse 4px BFS over sea pixels) —
+    // euclidean pairs ports across the peninsula (Neapolis↔Arpi bug); ships sail.
+    const ST = 4, GW = Math.ceil(W / ST), GH = Math.ceil(H / ST);
+    const seaGrid = new Uint8Array(GW * GH);
+    for (let gy = 0; gy < GH; gy++) for (let gx = 0; gx < GW; gx++) {
+      const x = Math.min(W - 1, gx * ST), y = Math.min(H - 1, gy * ST);
+      if (isSea(y * W + x)) seaGrid[gy * GW + gx] = 1;
+    }
+    const portCell = {};
+    for (const p of ports) {
+      const c = cent[p.region]; if (!c) continue;
+      let best = null, bd = 1e9;
+      const gx0 = Math.round(c[0] / ST), gy0 = Math.round(c[1] / ST);
+      for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
+        const gx = gx0 + dx, gy = gy0 + dy;
+        if (gx < 0 || gy < 0 || gx >= GW || gy >= GH || !seaGrid[gy * GW + gx]) continue;
+        const d = dx * dx + dy * dy;
+        if (d < bd) { bd = d; best = gy * GW + gx; }
+      }
+      if (best != null) portCell[p.region] = best;
+    }
+    const seaDist = {}; // region -> Map(otherRegion -> pathDist)
+    const cellPorts = {};
+    for (const p of ports) if (portCell[p.region] != null) (cellPorts[portCell[p.region]] = cellPorts[portCell[p.region]] || []).push(p.region);
+    for (const p of ports) {
+      const start = portCell[p.region]; if (start == null || seaDist[p.region]) continue;
+      const dist = new Int32Array(GW * GH).fill(-1);
+      dist[start] = 0;
+      let frontier = [start];
+      const found = new Map();
+      while (frontier.length) {
+        const next = [];
+        for (const c of frontier) {
+          if (cellPorts[c]) for (const r of cellPorts[c]) if (r !== p.region) found.set(r, dist[c] * ST);
+          const cx = c % GW, cy = (c / GW) | 0;
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const nx = cx + dx, ny = cy + dy;
+            if (nx < 0 || ny < 0 || nx >= GW || ny >= GH) continue;
+            const nc = ny * GW + nx;
+            if (!seaGrid[nc] || dist[nc] >= 0) continue;
+            dist[nc] = dist[c] + 1;
+            next.push(nc);
+          }
+        }
+        frontier = next;
+      }
+      seaDist[p.region] = found;
+    }
+    // eligible pairs (sea-path ordered)
     const pairs = [];
     for (let i = 0; i < ports.length; i++) for (let j = i + 1; j < ports.length; j++) {
       const a = ports[i], b = ports[j];
@@ -699,8 +747,9 @@ function seaLanesByRegion(modDataDir) {
       if (!sameSide) continue;
       const adjA = adjacency[a.region];
       if (adjA && (adjA.has ? adjA.has(b.region) : adjA.includes(b.region))) continue;
-      const ca = cent[a.region], cb = cent[b.region];
-      pairs.push({ a, b, d: Math.hypot(ca[0] - cb[0], ca[1] - cb[1]) });
+      const sd = seaDist[a.region] && seaDist[a.region].get(b.region);
+      if (sd == null) continue; // no sea path
+      pairs.push({ a, b, d: sd });
     }
     pairs.sort((x, y) => x.d - y.d);
     const used = {}; const slots = {};
