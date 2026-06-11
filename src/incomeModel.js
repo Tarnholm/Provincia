@@ -384,6 +384,7 @@ const CALIB = {
   // Mean |err| 8.7% (julii −3.8%, seleucid +3.3%, antigonid +4.6%; ptolemaic −19% worst).
   corrA: 0.2261, corrB: 0.0061, corrD0: 6,
   corrNegLawShift: 4, // tiles of effective distance per NEGATIVE law point (Pisae console probe + cyrene trio)
+  corrCap: 62, // far-distance saturation (live Egypt: d141/226/351 all read 59-64% — NOT the old 90% linear climb)
   seaLaneMaxDist: 40, // sea-path tiles; lanes are local (live: Kyrenaica forms NO Aegean lanes; Sena→Nesactium ~15 allowed)
   // strong flow: v = K·pop^exp·e^(pct·tradePct) — refit on 16 current-build flows
   // (full julii 26-scroll corpus + cyrene, 2026-06-11 evening; R²0.82, max ×1.61).
@@ -928,6 +929,10 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
         * Math.pow(Math.max(1, exch), CALIB.tradeRouteGoods)
         * Math.pow(Math.max(400, popOfRegion[n] || 400), CALIB.tradeRoutePopY);
     }
+    // GOVERNOR TRADING (console-proven, Alexandria GoodTrader probe 2026-06-11):
+    // Trading +10% scaled every land row ×1.074 — the trait multiplies the EXPORT
+    // component (~74% of a route's row value) and leaves imports unchanged.
+    landTrade *= Math.max(0, 1 + 0.74 * ((gv0 && gv0.trading) || 0) / 100);
     tradeLandSum += landTrade;
     // SEA = PER-LANE FLOWS (wired 2026-06-11 after the full cyrene scroll session):
     // lane sets from seaLanesByRegion now reproduce EVERY live lane set on both
@@ -984,7 +989,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       const X0 = 60;
       const quad = (v) => CALIB.corrA * v + CALIB.corrB * v * v;
       const raw = x <= X0 ? quad(x) : quad(X0) + (CALIB.corrA + 2 * CALIB.corrB * X0) * (x - X0);
-      corrPct = lawTot >= 4 ? 0 : Math.min(90, Math.max(0, raw)) / 100 * (lawTot === 3 ? 0.5 : 1);
+      corrPct = lawTot >= 4 ? 0 : Math.min(CALIB.corrCap, Math.max(0, raw)) / 100 * (lawTot === 3 ? 0.5 : 1);
       corrSum += corrPct * (tTax + tFarm + tMine + tTrade + tAdmin);
     }
     // DOCUMENTED engine formulas (Feral Battle_and_Campaign_Formulae.md):

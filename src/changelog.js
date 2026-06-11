@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1078",
+    date: "2026-06-11",
+    items: [
+      { type: "improvement", text: "**Egypt out-of-sample session** — fresh Ptolemaic campaign validated the cracked laws on 84 unseen towns: farming +0.3%, wages exact, army +0.6%, taxes +5.8%. Three new live-proven refinements: corruption saturates at ~62% at extreme distances (three Red Sea towns measured 59-64% where the old curve climbed to 90%); governor Trading multiplies only the EXPORT component of land routes (~74% of route value — Alexandria GoodTrader console probe); and the public-order distance row pins the culture multiplier at 0.2, verifying the model distances exactly." },
+    ],
+  },
+  {
     version: "0.9.1077",
     date: "2026-06-11",
     items: [
