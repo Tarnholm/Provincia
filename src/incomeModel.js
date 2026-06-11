@@ -380,6 +380,9 @@ const CALIB = {
   // Mean |err| 8.7% (julii −3.8%, seleucid +3.3%, antigonid +4.6%; ptolemaic −19% worst).
   corrA: 0.2261, corrB: 0.0061, corrD0: 6,
   corrLawShift: 6.5, // tiles of effective distance per settlement LAW point (live cyrene 7-town fit)
+  seaLaneMaxDist: 40, // sea-path tiles; lanes are local (live: Kyrenaica forms NO Aegean lanes; Sena→Nesactium ~15 allowed)
+  seaFlowK: 9.9, seaFlowPopExp: 0.375, seaFlowPct: 0.047, // strong flow: v = K·pop^exp·e^(pct·tradePct) (11 live flows, R²0.69, max ×1.38)
+  seaFlowWeak: 0.09, // weak-side export multiplier (geometric mean of the 3 live weak/strong ratios 0.21/0.05/0.07)
 };
 
 // region → {x,y} coords (map_regions.tga black settlement pixels), cached per mod dir.
@@ -693,11 +696,18 @@ function seaLanesByRegion(modDataDir) {
     const portOrder = inc.chainLevels["port_buildings"] || [];
     const strat = gv.parseStrat(path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"));
     const ports = [];
+    // region base_port_level (descr_regions hidden resource) — the FLOW-VALUE law was
+    // fit on this port definition; the slot count keeps using the built port chain.
+    const basePort = {};
+    {
+      const rtxt = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1");
+      for (const m of rtxt.matchAll(/^(\S+)[^]*?base_port_level_(\d)/gm)) basePort[m[1]] = +m[2];
+    }
     for (const [fac, f] of Object.entries(strat)) for (const sd of f.settlements) {
       const pb = (sd.buildings || []).find(b => /^port_buildings$/i.test(b.chain));
       if (!pb || !cent[sd.region]) continue;
       const idx = portOrder.indexOf(pb.level);
-      ports.push({ region: sd.region, fac, level: (idx >= 0 ? idx : 0) + 1 });
+      ports.push({ region: sd.region, fac, level: (idx >= 0 ? idx : 0) + 1, pop: sd.pop || 1500, basePort: basePort[sd.region] || 0 });
     }
     // SEA-PATH distances between port tiles (coarse 4px BFS over sea pixels) —
     // euclidean pairs ports across the peninsula (Neapolis↔Arpi bug); ships sail.
@@ -755,10 +765,15 @@ function seaLanesByRegion(modDataDir) {
       // Histria's Nesactium across the Adriatic rather than own far-away Pisae)
       if (a.fac !== b.fac && wars[a.fac] && wars[a.fac].has(b.fac)) continue;
       if (a.fac === "slave" || b.fac === "slave") continue;
+      // Land-adjacency exclusion RE-CONFIRMED live (2026-06-11 cyrene scrolls): the
+      // coastal chain Euesperidai–Taucheira–Barke–Kyrenaike lanes exactly as the rule
+      // predicts (Kyrene⇄Arsinoe and Euesperides⇄Ptolemais both SKIP their adjacent
+      // neighbor; no adjacent pair lanes).
       const adjA = adjacency[a.region];
       if (adjA && (adjA.has ? adjA.has(b.region) : adjA.includes(b.region))) continue;
       const sd = seaDist[a.region] && seaDist[a.region].get(b.region);
       if (sd == null) continue; // no sea path
+      if (sd > CALIB.seaLaneMaxDist) continue; // lanes are LOCAL (live: no Aegean lanes from Kyrenaica)
       pairs.push({ a, b, d: sd });
     }
     pairs.sort((x, y) => x.d - y.d);
@@ -771,8 +786,8 @@ function seaLanesByRegion(modDataDir) {
       // PER-SIDE strength: each direction is weak iff THAT side burned its LAST slot
       // (Rome→Volat absent = Rome's last; Volat→Rome weak = Volat's last; Cosa→Praen
       // strong = Cosa's first even though Praeneste's slots were busy elsewhere).
-      (out[A] = out[A] || []).push({ to: B, weak: used[A] === slots[A], inWeak: used[B] === slots[B] });
-      (out[B] = out[B] || []).push({ to: A, weak: used[B] === slots[B], inWeak: used[A] === slots[A] });
+      (out[A] = out[A] || []).push({ to: B, weak: used[A] === slots[A], inWeak: used[B] === slots[B], toPop: pr.b.pop, toPort: pr.b.basePort, ownPop: pr.a.pop, ownPort: pr.a.basePort });
+      (out[B] = out[B] || []).push({ to: A, weak: used[B] === slots[B], inWeak: used[A] === slots[A], toPop: pr.a.pop, toPort: pr.a.basePort, ownPop: pr.b.pop, ownPort: pr.b.basePort });
     }
   } catch { /* none */ }
   return (_seaLaneCache[modDataDir] = out);
@@ -845,6 +860,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   const warSet = (wars && wars[facLow]) || new Set();
   const isPartner = (other) => !!other && (other === facLow || !warSet.has(other));
   const tradeQtyVal = tradeQtyValByRegion(modDataDir);
+  const seaLanes = seaLanesByRegion(modDataDir);
   const seaPartnersOf = (region) => {
     const bodies = seaOf[region];
     if (!bodies || !bodies.length) return 0;
@@ -905,11 +921,24 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
         * Math.pow(Math.max(400, popOfRegion[n] || 400), CALIB.tradeRoutePopY);
     }
     tradeLandSum += landTrade;
-    // SEA stays aggregate pending the per-lane law (legs directional + exclusion-gated,
-    // icons-confirmed; lane values have an unidentified per-pair factor).
-    if (s.portLevel) tradeSeaSum += gTrade * rv * Math.sqrt(seaPartnersOf(s.region));
-    const tTrade = landTrade
-      + (s.portLevel ? CALIB.tradeSea * gTrade * rv * Math.sqrt(seaPartnersOf(s.region)) : 0);
+    // SEA = PER-LANE FLOWS (wired 2026-06-11 after the full cyrene scroll session):
+    // lane sets from seaLanesByRegion now reproduce EVERY live lane set on both
+    // factions (slots + not-at-war + land-adjacency exclusion + 40-tile cap + greedy
+    // nearest). Each lane carries two directional flows: the exporter earns
+    // v = seaFlowK · pop_exporter^seaFlowPopExp (×seaFlowWeak if that side is weak),
+    // and the importer earns EXACTLY v/5 (live law, 4 exact witnesses). Per-flow
+    // scatter ±40% (an unidentified per-pair factor remains); per-town ±15%.
+    let seaTrade = 0;
+    if (s.portLevel) {
+      const lanes = seaLanes[s.region] || [];
+      for (const ln of lanes) {
+        const expV = CALIB.seaFlowK * Math.pow(Math.max(400, s.pop), CALIB.seaFlowPopExp) * Math.exp(CALIB.seaFlowPct * (s.tradePct || 0)) * (ln.weak ? CALIB.seaFlowWeak : 1);
+        const impV = CALIB.seaFlowK * Math.pow(Math.max(400, ln.toPop || 1500), CALIB.seaFlowPopExp) * (ln.inWeak ? CALIB.seaFlowWeak : 1) / 5;
+        seaTrade += expV + impV;
+      }
+      tradeSeaSum += seaTrade;
+    }
+    const tTrade = landTrade + seaTrade;
     // ADMIN income (the in-game scroll's 4th row, labeled "Governor" — ledger f9
     // 'other'): admin% × town gross.
     // EXACT LAW (2026-06-11 live cyrene, 7/7 towns to the denarius): admin% =
@@ -968,7 +997,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       siegeTurns, plagueRiskPct: Math.round(plagueRiskPct * 10) / 10,
       govIncome: gv0 && (gv0.tax || gv0.trading || gv0.mining) ? { tax: gv0.tax || 0, trading: gv0.trading || 0, mining: gv0.mining || 0, hits: gv0.hits || [] } : null });
   }
-  let trade = Math.max(0, tradeLandSum + CALIB.tradeSea * tradeSeaSum);
+  let trade = Math.max(0, tradeLandSum + tradeSeaSum); // sea is per-lane (flow values), no aggregate scale
   const ch = countCharacters(modDataDir, faction) || { named: 0, admiral: 0 };
   const wages = CALIB.wageNamed * ch.named + CALIB.wageAdmiral * ch.admiral;
   let corruption = Math.max(0, Math.round(corrSum));

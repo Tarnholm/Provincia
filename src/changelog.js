@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1074",
+    date: "2026-06-11",
+    items: [
+      { type: "feature", text: "**Per-lane sea trade is wired in** — the aggregate estimate is gone. Lane formation now reproduces every live lane set on both tested factions exactly (port slots + not-at-war + land-adjacency exclusion + 40-tile locality cap + nearest-first matching — the Cyrenaican coastal chain proved the adjacency rule: Kyrene⇄Arsinoe and Euesperides⇄Ptolemais both skip their adjacent neighbor). Each lane carries two directional flows; the importing side earns exactly the exporter's value ÷ 5 (live law). Cyrene per-town trade now lands within ~10% of the settlement scrolls (was −24% with systematic per-town misses)." },
+      { type: "improvement", text: "Known caveat: the Julii faction-trade total runs ~20% above the old-vintage anchor — that anchor predates the current mod build, while today's flow law is calibrated on current-vintage readings. One Julii financial-overview screenshot on the current build will settle the recalibration." },
+    ],
+  },
+  {
     version: "0.9.1073",
     date: "2026-06-11",
     items: [
