@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1060",
+    date: "2026-06-11",
+    items: [
+      { type: "improvement", text: "**AI faction economies refit on current files (215 AI ledgers from one fresh turn-1 save)**: the AI farming/trade/mining bonus is a flat ×1.188 at every empire size (the old tiered table was vintage drift), and AI taxes get a measured tier correction (city-states earn ~2× the player formula — the long-standing single-town anomaly, now quantified). Median model-vs-ledger ratio after refit: exactly 1.000 on farming and taxes at every tier. This sharpens the ⚖ balance overview's AI rows — the numbers the team uses to judge faction seeding." },
+    ],
+  },
+  {
     version: "0.9.1059",
     date: "2026-06-11",
     items: [

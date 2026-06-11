@@ -303,7 +303,14 @@ const CALIB = {
   // tiered by empire size. The raw ratios vs our 0.92-baked model were ×1.97/1.49/
   // 1.28/1.0; the AI does NOT pay the human 0.92 malus, so the pure AI bonus =
   // ratio × 0.92 → ≈ ×1.81 (1 town) / ×1.37 (2-4) / ×1.18 (5-9) / ×0.96≈1.0 (10+).
-  aiBonusByTier: { 1: 1.81, 2: 1.37, 3: 1.18, 4: 1.08, 5: 1.0, 6: 1.0, 7: 1.0, 8: 1.0, 9: 1.0, 10: 1.0 },
+  aiBonusByTier: { 1: 1.81, 2: 1.37, 3: 1.18, 4: 1.08, 5: 1.0, 6: 1.0, 7: 1.0, 8: 1.0, 9: 1.0, 10: 1.0 }, // legacy (old vintage)
+  // AI REFIT 2026-06-11 on a CURRENT-vintage fresh turn-1 save (215 AI ledgers):
+  // farming bonus is FLAT 1.188 at every tier (medians 1.188 across tiers 1-8);
+  // taxes need a tier-indexed correction on top of the flat-points model (folds the
+  // AI hinterland lines' true response — tier-1 city-states earn ~2× modeled, the
+  // old K_single mystery): medians below, tier 5 interpolated (no sample).
+  aiFarmBonus: 1.188,
+  aiTaxFixByTier: { 1: 1.976, 2: 1.585, 3: 1.410, 4: 1.256, 5: 1.20, 6: 1.154, 7: 1.035, 8: 1.095, 9: 1.05, 10: 1.05 },
   // farming = 80 × difficulty × Σ(region farmN + EDB farmLevel + governor Farming pts)
   // × Hanging-Gardens. THE ENGINE CONSTANT IS DOCUMENTED: EDB.md "farming_level: plus
   // 80 income (average harvest) per point" — our fitted 73.61 = 80 × 0.92 exactly.
@@ -758,12 +765,12 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   // human 0.92 difficulty malus on taxes+farming, and gets the tiered empire-size
   // income bonus on its whole economy. Validated against 215 AI ledgers.
   if (opts && opts.asAI) {
-    const aiB = CALIB.aiBonusByTier[F.tier] != null ? CALIB.aiBonusByTier[F.tier] : 1.0;
-    taxes = taxes / CALIB.difficultyIncome * aiB;
-    farming = farming / CALIB.difficultyIncome * aiB;
-    mining *= aiB;
-    trade *= aiB;
-    corruption = Math.round(corruption / CALIB.difficultyIncome * aiB); // income-proportional
+    const taxFix = CALIB.aiTaxFixByTier[F.tier] != null ? CALIB.aiTaxFixByTier[F.tier] : 1.0;
+    taxes = taxes / CALIB.difficultyIncome * taxFix;
+    farming = farming / CALIB.difficultyIncome * CALIB.aiFarmBonus;
+    mining *= CALIB.aiFarmBonus;
+    trade *= CALIB.aiFarmBonus;
+    corruption = Math.round(corruption / CALIB.difficultyIncome * CALIB.aiFarmBonus); // income-proportional
   }
   admin = Math.round(admin);
   const income = Math.round(taxes + farming + mining + trade + admin);
