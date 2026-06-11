@@ -382,9 +382,9 @@ const CALIB = {
   // (tax+farm+mine+trade+admin), corr% = corrA·(d−corrD0) + corrB·(d−corrD0)² for
   // d>corrD0 (rmse 2.8 pts), ZERO for capital and office-holding governors.
   // Mean |err| 8.7% (julii −3.8%, seleucid +3.3%, antigonid +4.6%; ptolemaic −19% worst).
-  corrA: 0.58, corrB: 0.0015, corrD0: 10, corrLawPct: 3,
+  corrA: 0.68, corrB: 0.0005, corrD0: 12, corrLawPct: 3,
   corrNegLawShift: 4, // tiles of effective distance per NEGATIVE law point (Pisae console probe + cyrene trio)
-  corrCap: 61, // far-distance saturation (live Egypt: d141/226/351 all read 59-64% — NOT the old 90% linear climb)
+  corrCap: 60, // far-distance saturation (live Egypt: d141/226/351 all read 59-64% — NOT the old 90% linear climb)
   seaLaneMaxDist: 40, riverBodyMaxCells: 1500, seaFlowRiverMult: 1.95, // river flows run hotter (Nile live 713/605/519) // sea-path tiles; lanes are local (live: Kyrenaica forms NO Aegean lanes; Sena→Nesactium ~15 allowed)
   // strong flow: v = K·pop^exp·e^(pct·tradePct) — refit on 16 current-build flows
   // (full julii 26-scroll corpus + cyrene, 2026-06-11 evening; R²0.82, max ×1.61).

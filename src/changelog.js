@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1084",
+    date: "2026-06-11",
+    items: [
+      { type: "improvement", text: "**Corruption curve refined on the widened grid** — the distance term is nearly linear (0.68 per tile past 12, cap 60), and the settlement-law computation was audited against all 90 panel-read law values (87% within one point; the residual is noise, not bias). Per-town error 3.35pp median across 111 towns; Egypt's corruption lands at −5.3% (was −7.8%), Julii +9.5%, Cyrene +6.9%." },
+    ],
+  },
+  {
     version: "0.9.1083",
     date: "2026-06-11",
     items: [
