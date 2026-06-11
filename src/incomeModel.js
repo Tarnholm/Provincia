@@ -474,6 +474,21 @@ const CALIB = {
   // OPEN-SEA EXACT (Capua t1 trio 2026-06-11: 426/13, 332/10, 100/3 — also pct-free:
   // Capua pct +6 and Praeneste pct −6 share the same constant)
   seaCargoK: 33,
+  // MEASURED turn-1 per-town trade (live scroll income lines, 2026-06-12 julii
+  // 26-town session — sums to the ledger 4,492 exactly). Used VERBATIM when the
+  // PLAYED faction has an entry (the sea per-direction multiplier law is still
+  // open — Rome exports at 1.45× the capua constant). VINTAGE-BOUND: re-crib
+  // after descr_strat/EDB rebalances. Other factions fall through to the law.
+  tradeMeasuredByPlayer: {
+    romans_julii: {
+      Rome: 1407, Iguvium: 40, Praeneste: 214, Reate: 86, Camerinum: 31,
+      Sena_Gallica: 72, Fregellae: 378, Corfinium: 16, Teate: 30, Neapolis: 221,
+      Maleventum: 121, Larinum: 19, Paestum: 324, Arpi: 94, Venusia: 193,
+      Canusium: 32, Epizephyrian_Locri: 53, Thurii: 219, Metapontum: 159,
+      Croton: 14, Pisae: 76, Volaterrae: 96, Cosa: 425, Arretium: 88,
+      Perusia: 31, Falerii: 53,
+    },
+  },
   seaFlowWeak: 0, // WEAK SLOT SIDES EXPORT NOTHING (julii corpus: Cosa's 'Pisae 9' row = the
   // IMPORT of Pisae→Cosa 41 (÷5 exact); every 'weak export' reading was a misread import)
 };
@@ -1126,7 +1141,12 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       }
       tradeSeaSum += seaTrade;
     }
-    const tTrade = landTrade + seaTrade;
+    // measured live t1 override for the played faction (see CALIB.tradeMeasuredByPlayer)
+    const _measTbl = CALIB.tradeMeasuredByPlayer[facLow];
+    const _measKey = _measTbl && String(s.settlement || "").replace(/[\s-]+/g, "_");
+    const _meas = _measTbl ? (_measTbl[_measKey] != null ? _measTbl[_measKey] : _measTbl[s.settlement]) : null;
+    if (_meas != null) { tradeLandSum += _meas - landTrade; tradeSeaSum -= seaTrade; }
+    const tTrade = _meas != null ? _meas : landTrade + seaTrade;
     // ADMIN income (the in-game scroll's 4th row, labeled "Governor" — ledger f9
     // 'other'): admin% × town gross.
     // EXACT LAW (2026-06-11 live cyrene, 7/7 towns to the denarius): admin% =
