@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1070",
+    date: "2026-06-11",
+    items: [
+      { type: "fix", text: "**Protectorate tribute estimates are now realistic** — client-faction nets were computed under player rules instead of the AI economy (no subsidy floor, wrong difficulty scaling), starving the tribute floor: Julii's modeled tribute jumps from 1,034 to 5,434 vs the live ~7,048 at turn 3 (the remainder is genuine client growth across the first turns — the floor stays correctly conservative). Also measured tonight: AI factions pay full EDU army upkeep (median ratio 1.010, n=215) — no hidden AI upkeep discount exists." },
+    ],
+  },
+  {
     version: "0.9.1069",
     date: "2026-06-11",
     items: [

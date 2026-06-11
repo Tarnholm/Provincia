@@ -973,7 +973,10 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     if (prot.clientsOf[fac]) {
       clients = [];
       for (const c of prot.clientsOf[fac]) {
-        const cb = computeTurn1Budget(modDataDir, c, null, { isPlayer: false, _noTribute: true, govEffectByCity: opts && opts.govEffectByCity });
+        // clients are AI factions — use the AI economy (affine tier laws incl. the
+        // city-state subsidy floor), not player rules (fixed 2026-06-11: julii's
+        // tribute floor was 1,034 vs ~7,048 live because client nets ran as player)
+        const cb = computeTurn1Budget(modDataDir, c, null, { isPlayer: false, asAI: true, _noTribute: true, govEffectByCity: opts && opts.govEffectByCity });
         const cNet = cb && !cb.error && cb.totals ? cb.totals.net : null;
         const t = cNet != null ? Math.round(TRIBUTE_RATE * Math.max(0, cNet)) : 0;
         tributeIn += t;
