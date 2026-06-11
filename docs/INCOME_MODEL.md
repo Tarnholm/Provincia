@@ -27,8 +27,15 @@ gov    = 1 + governor TaxCollection% (trait-parsed; effect levels are noisy ±5%
 The flat term is rate-independent (verified on full bracket sweeps of 5 towns).
 Empire-size hinterland lines select by exact tier (`empire_sizeN` events, exclusive
 ranges by settlement count). The hard-difficulty human multiplier 0.92 is folded into
-the constants (H/H only). Capital towns: Rome reads ~13% above the law — unexplained
-(capital hinterland +50 line or the PO≥120 order_income bonus; needs another capital read).
+the constants (H/H only). Governor followers (ancillaries) carry the same effect set as
+traits (TaxCollection/Trading/Management/…) and DO apply — folding them halved the
+out-of-sample cyrene tax error (Kyrene's governor has a −5% tax follower).
+Rome's ~13% excess is NOT a capital mechanic: Kyrene (cyrene capital, PO 200) fits at
+±1% with no bonus — a generic capital bonus would overshoot +4.4%, and PO≥120
+order-income is excluded by the same witness. Influence/Management/Law tax multipliers
+are also dead (r≤0.17 across 15 julii towns). The two big residuals (Rome +15%,
+Neapolis +17% — not a capital) pattern with governor trait-EFFECT-level under-parse:
+the residual belongs to task #16 (trait level mapping), not to a settlement law.
 
 ### Admin income (= the financial overview's "other" row, econ slot f9)
 ```
@@ -95,4 +102,5 @@ End-turn rerolls 24/26 governors' traits — cross-save comparisons are invalid.
 1. **Sea lane formation** → partner-list scrolls from Pisae/Grumentum/Sena (task #15).
 2. **Trait effect levels** → ~10 governor cards vs their towns' tax/admin lines (task #16):
    displayed level = descr_strat seed ordinal, but income effects run hotter than seeds.
-3. **Rome capital bonus** → one capital tax read on a second faction.
+   This now also owns the Rome +15% / Neapolis +17% tax residuals — the "capital bonus"
+   was falsified against Kyrene (capital, PO 200, fits ±1% with no bonus).
