@@ -381,8 +381,12 @@ const CALIB = {
   corrA: 0.2261, corrB: 0.0061, corrD0: 6,
   corrLawShift: 6.5, // tiles of effective distance per settlement LAW point (live cyrene 7-town fit)
   seaLaneMaxDist: 40, // sea-path tiles; lanes are local (live: Kyrenaica forms NO Aegean lanes; Sena→Nesactium ~15 allowed)
-  seaFlowK: 9.9, seaFlowPopExp: 0.375, seaFlowPct: 0.047, // strong flow: v = K·pop^exp·e^(pct·tradePct) (11 live flows, R²0.69, max ×1.38)
-  seaFlowWeak: 0.09, // weak-side export multiplier (geometric mean of the 3 live weak/strong ratios 0.21/0.05/0.07)
+  // strong flow: v = K·pop^exp·e^(pct·tradePct) — refit on 16 current-build flows
+  // (full julii 26-scroll corpus + cyrene, 2026-06-11 evening; R²0.82, max ×1.61).
+  // The pct coefficient ≈ the historic 0.127 sea exponent; pop is nearly irrelevant.
+  seaFlowK: 63, seaFlowPopExp: 0.111, seaFlowPct: 0.133,
+  seaFlowWeak: 0, // WEAK SLOT SIDES EXPORT NOTHING (julii corpus: Cosa's 'Pisae 9' row = the
+  // IMPORT of Pisae→Cosa 41 (÷5 exact); every 'weak export' reading was a misread import)
 };
 
 // region → {x,y} coords (map_regions.tga black settlement pixels), cached per mod dir.

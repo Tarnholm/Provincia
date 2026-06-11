@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1075",
+    date: "2026-06-11",
+    items: [
+      { type: "feature", text: "**Sea-flow law recalibrated on the full Julii corpus** — all 26 settlement scrolls read against the live ledger (which the per-town numbers reproduce to the denarius). Faction trade now lands within 2% on Julii (4,565 vs 4,492) and ~5% on Cyrene simultaneously. Two structural finds: weak lane slots export NOTHING (every historic 'weak export' reading was a misread import row — e.g. Cosa's 'Pisae 9' is exactly Pisae→Cosa 41 ÷ 5), and the ÷5 import law verified across every two-row lane on both factions." },
+      { type: "improvement", text: "Known remaining gap: corruption — the Julii per-town corpus implies settlement Law barely shifts their curve while Cyrene's seven readings demand strong shifts; the reconciliation (terrain? path-distance? a per-culture multiplier?) is the next crack. Both per-town corruption tables are banked. Julii net models ~+900 high until then; Cyrene tracks live." },
+    ],
+  },
+  {
     version: "0.9.1074",
     date: "2026-06-11",
     items: [
