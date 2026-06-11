@@ -782,7 +782,8 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const taxFix = CALIB.aiTaxFixByTier[F.tier] != null ? CALIB.aiTaxFixByTier[F.tier] : 1.0;
     taxes = taxes / CALIB.difficultyIncome * taxFix;
     farming = farming / CALIB.difficultyIncome * CALIB.aiFarmBonus;
-    mining *= CALIB.aiFarmBonus;
+    // mining gets NO AI bonus (validated 2026-06-11: all 8 mining AI factions read
+    // exactly model/1.189 with the bonus applied — truth = the unscaled base law)
     trade *= CALIB.aiFarmBonus * (CALIB.aiTradeFixByTier[F.tier] != null ? CALIB.aiTradeFixByTier[F.tier] : 1.0);
     corruption = Math.round(corruption / CALIB.difficultyIncome * CALIB.aiFarmBonus * (CALIB.aiCorrFixByTier[F.tier] != null ? CALIB.aiCorrFixByTier[F.tier] : 1.0));
   }

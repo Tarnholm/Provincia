@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1066",
+    date: "2026-06-11",
+    items: [
+      { type: "fix", text: "**Mining is now exact for every mining faction (8/8 within 2%)** — the AI income bonus was wrongly applied to the mining line; the ledgers show mining pays the unscaled base law for AI and player alike." },
+      { type: "improvement", text: "**Sea-lane law 90% cracked** (research, model unchanged): each lane leg pays ≈20·e^(0.127·trade%)·cargo-value on the export direction and ≈7.2·cargo on the import direction, where cargo is exactly the exporter goods the partner lacks (matches the route icons verbatim) — distance barely matters; what remains is the lane-formation rule (two-way lanes strong, one-way crushed ~10×), which needs partner-list scrolls from other ports (Pisae or Grumentum ideal)." },
+    ],
+  },
+  {
     version: "0.9.1065",
     date: "2026-06-11",
     items: [
