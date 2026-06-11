@@ -320,7 +320,12 @@ const CALIB = {
   // rescaled 2026-06-11b after dropping the script-destroyed gov/colony buildings
   // from AI features (the causal fix shifts the baseline; tiers re-centered on the
   // same 215-ledger refit):
-  aiTaxFixByTier: { 1: 1.976, 2: 1.585, 3: 1.40, 4: 1.19, 5: 1.05, 6: 0.90, 7: 0.83, 8: 0.89, 9: 0.9, 10: 0.9 },
+  aiTaxFixByTier: { 1: 1.976, 2: 1.585, 3: 1.40, 4: 1.19, 5: 1.05, 6: 0.90, 7: 0.83, 8: 0.89, 9: 0.9, 10: 0.9 }, // legacy
+  // AFFINE AI tax corrections (2026-06-11c, regression on 215 current-vintage ledgers):
+  // truth = slope·modelNeutral + intercept per tier. Tier 1 is ~CONSTANT (the engine
+  // guarantees AI city-states ≈3.9k tax regardless of size — the subsidy floor,
+  // med|err| 1.7%); tier 2 R²=.83 med 6.7%; tiers 6-8 carry the multiplicative values.
+  aiTaxAffineByTier: { 1: [0.30, 3309], 2: [1.78, -415], 3: [1.14, 706], 4: [1.31, -919], 5: [1.05, 0], 6: [0.90, 0], 7: [0.83, 0], 8: [0.89, 0], 9: [0.9, 0], 10: [0.9, 0] },
   // trade + corruption per-tier corrections (same 215-ledger refit; ratios are truth/model
   // AFTER the flat 1.188, so these multiply on top of it):
   aiTradeFixByTier: { 1: 0.66, 2: 0.66, 3: 0.94, 4: 1.0, 5: 1.0, 6: 1.34, 7: 1.29, 8: 0.91, 9: 1.0, 10: 1.0 },
@@ -779,8 +784,8 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   // human 0.92 difficulty malus on taxes+farming, and gets the tiered empire-size
   // income bonus on its whole economy. Validated against 215 AI ledgers.
   if (opts && opts.asAI) {
-    const taxFix = CALIB.aiTaxFixByTier[F.tier] != null ? CALIB.aiTaxFixByTier[F.tier] : 1.0;
-    taxes = taxes / CALIB.difficultyIncome * taxFix;
+    const aff = CALIB.aiTaxAffineByTier[F.tier] || [1.0, 0];
+    taxes = Math.max(0, (taxes / CALIB.difficultyIncome) * aff[0] + aff[1]);
     farming = farming / CALIB.difficultyIncome * CALIB.aiFarmBonus;
     // mining gets NO AI bonus (validated 2026-06-11: all 8 mining AI factions read
     // exactly model/1.189 with the bonus applied — truth = the unscaled base law)

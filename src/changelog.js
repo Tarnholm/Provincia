@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1067",
+    date: "2026-06-11",
+    items: [
+      { type: "improvement", text: "**AI city-state subsidy discovered and modeled**: tier-1 AI factions receive a near-constant ~3.9k tax income regardless of size, population or brackets (R²=0.00 against every economic variable — an engine welfare floor). AI taxes now use per-tier affine corrections fit on the 215-ledger corpus: AI tax error med 4.8%, AI total income **median 3.7% (p90 11.3%)** — the ⚖ balance overview's AI side is now tighter than the player side was two days ago." },
+    ],
+  },
+  {
     version: "0.9.1066",
     date: "2026-06-11",
     items: [
