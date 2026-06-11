@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1076",
+    date: "2026-06-11",
+    items: [
+      { type: "fix", text: "**Corruption reconciled across both live corpora** — a joint fit over all 33 measured towns (26 Julii + 7 Cyrene) found the law composition: wall and terrain law count fully, governor law counts half, and garrison/palace law does not feed corruption at all (it still counts for public order). Julii corruption lands within 1.4% of the ledger (was 27% under); Cyrene carries a small +15% residual. Julii net error drops from ~830 to ~340." },
+    ],
+  },
+  {
     version: "0.9.1075",
     date: "2026-06-11",
     items: [

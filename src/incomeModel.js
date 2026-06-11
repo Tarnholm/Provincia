@@ -154,7 +154,7 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
     // be active for the turn-1 econ block). Hierarchy: winter > size > base.
     const cat = (req) => /\bdisabling_in_winter\b/.test(req || "") ? "winter" : /\bsize\d+\b/.test(req || "") ? "size" : "base";
     const tax = { base: 0, size: 0, winter: 0 }, trade = { base: 0, size: 0, winter: 0 };
-    let tradeLvlSum = 0, mineSum = 0, fleetSum = 0, wallLevel = -1, healthPips = 0, lawBonus = 0;
+    let tradeLvlSum = 0, mineSum = 0, fleetSum = 0, wallLevel = -1, healthPips = 0, lawBonus = 0, lawWalls = 0, lawTerrain = 0;
     const explain = (opts && opts.explain) ? [] : null;
     // Wall/defense law lines carry `is_toggled "settlement condition"` — live-verified
     // ACTIVE in peace (Arsinoe +1 palisade, Kyrene +1 stone wall, Ptolemais +1 wall;
@@ -171,7 +171,11 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
       for (const x of cap.fleet) if (gv.evalReq(x.req, ctx)) fleetSum += x.val;
       for (const x of (cap.walls || [])) if (gv.evalReq(x.req, ctx)) wallLevel = Math.max(wallLevel, x.val);
       for (const x of (cap.health || [])) if (gv.evalReq(x.req, ctx)) healthPips += x.val;
-      for (const x of (cap.law || [])) if (lawReqOk(x.req)) lawBonus += x.val;
+      for (const x of (cap.law || [])) if (lawReqOk(x.req)) {
+        lawBonus += x.val;
+        if (/^defenses$/i.test(b.chain)) lawWalls += x.val;
+        else if (/^hinterland_region$/i.test(b.chain)) lawTerrain += x.val;
+      }
     }
     const taxablePct = tax.base + tax.size + tax.winter, tradePct = trade.base + trade.size + trade.winter;
     // farming level. GROWTH semantics = max across chains (validated); for INCOME the
@@ -196,7 +200,7 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
     out.push({
       region: s.region, settlement: region.settlement, pop: s.pop, level: s.level, capital: !!s.capital,
       taxablePct, tradePct, taxPctParts: tax, tradePctParts: trade, tradeLvlSum, mineSum, fleetSum, farmLevel, farmLevelSum, farmN: region.farmN || 0,
-      wallLevel, healthPips, lawBonus,
+      wallLevel, healthPips, lawBonus, lawWalls, lawTerrain,
       resources: resList, portLevel, roadLevel,
       buildings: s.buildings.map(b => b.chain + ":" + b.level),
       ...(explain ? { taxableLines: explain } : {}),
@@ -379,7 +383,7 @@ const CALIB = {
   // d>corrD0 (rmse 2.8 pts), ZERO for capital and office-holding governors.
   // Mean |err| 8.7% (julii −3.8%, seleucid +3.3%, antigonid +4.6%; ptolemaic −19% worst).
   corrA: 0.2261, corrB: 0.0061, corrD0: 6,
-  corrLawShift: 6.5, // tiles of effective distance per settlement LAW point (live cyrene 7-town fit)
+  corrLawShift: 5.5, // tiles of effective distance per settlement LAW point (live cyrene 7-town fit)
   seaLaneMaxDist: 40, // sea-path tiles; lanes are local (live: Kyrenaica forms NO Aegean lanes; Sena→Nesactium ~15 allowed)
   // strong flow: v = K·pop^exp·e^(pct·tradePct) — refit on 16 current-build flows
   // (full julii 26-scroll corpus + cyrene, 2026-06-11 evening; R²0.82, max ×1.61).
@@ -969,7 +973,13 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // law+1 d17 → both live 0); negative law runs it hotter (three −2 towns ≈ +13
       // tiles, max residual 1.4pp). Paraitonion law 0 sits exactly on the base curve.
       const office = gv0 && gv0.hits && gv0.hits.some(h => OFFICE_RE.test(h));
-      const lawPts = (s.lawBonus || 0) + (gv0 ? (gv0.lawCorr != null ? gv0.lawCorr : (gv0.law || 0)) : 0);
+      // CORRUPTION LAW CHANNEL (joint grid fit on BOTH live corpora, 33 towns,
+      // 2026-06-11 evening): walls + terrain law count fully, governor law counts
+      // HALF, and other building law (garrison chains, palaces) does NOT count.
+      // julii Σ −1.4%, cyrene +18% (best joint balance; previous all-law shift was
+      // julii −27%). Floor: raw < 1.75% truncates to zero (Arsinoe/Ptolemais).
+      const lawPts = (s.lawWalls || 0) + (s.lawTerrain || 0)
+        + 0.5 * (gv0 ? (gv0.lawCorr != null ? gv0.lawCorr : (gv0.law || 0)) : 0);
       const x = Math.max(0, dist - CALIB.corrLawShift * lawPts - CALIB.corrD0);
       // The quadratic is calibrated on dist ≤ 66 (x ≤ 60); beyond that extend LINEARLY
       // at the curve's end slope and cap at 90% — the raw quadratic exceeded 100% of
@@ -980,7 +990,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       const raw = x <= X0 ? quad(x) : quad(X0) + (CALIB.corrA + 2 * CALIB.corrB * X0) * (x - X0);
       // FLOOR (live Arsinoe-Kyrenaike, law+1 d17): sub-1.5% corruption reads ZERO
       // in-game — the engine truncates trace corruption entirely.
-      corrPct = (office || raw < 1.5) ? 0 : Math.min(90, Math.max(0, raw)) / 100;
+      corrPct = (office || raw < 1.75) ? 0 : Math.min(90, Math.max(0, raw)) / 100;
       corrSum += corrPct * (tTax + tFarm + tMine + tTrade + tAdmin);
     }
     // DOCUMENTED engine formulas (Feral Battle_and_Campaign_Formulae.md):
