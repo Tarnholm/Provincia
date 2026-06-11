@@ -654,7 +654,7 @@ function seaLanesByRegion(modDataDir) {
   if (_seaLaneCache[modDataDir]) return _seaLaneCache[modDataDir];
   const out = {};
   try {
-    const { ownerOfRegion, allies } = tradePartnerCtx(modDataDir);
+    const { ownerOfRegion, allies, wars } = tradePartnerCtx(modDataDir);
     const adjacency = regionAdjacency(modDataDir);
     const dg = require("./descrStratGeneral.js");
     const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
@@ -743,8 +743,10 @@ function seaLanesByRegion(modDataDir) {
     const pairs = [];
     for (let i = 0; i < ports.length; i++) for (let j = i + 1; j < ports.length; j++) {
       const a = ports[i], b = ports[j];
-      const sameSide = a.fac === b.fac || (allies[a.fac] && allies[a.fac].has(b.fac));
-      if (!sameSide) continue;
+      // eligibility = NOT AT WAR (like land trade — Sena Gallica lanes with neutral
+      // Histria's Nesactium across the Adriatic rather than own far-away Pisae)
+      if (a.fac !== b.fac && wars[a.fac] && wars[a.fac].has(b.fac)) continue;
+      if (a.fac === "slave" || b.fac === "slave") continue;
       const adjA = adjacency[a.region];
       if (adjA && (adjA.has ? adjA.has(b.region) : adjA.includes(b.region))) continue;
       const sd = seaDist[a.region] && seaDist[a.region].get(b.region);
@@ -758,9 +760,11 @@ function seaLanesByRegion(modDataDir) {
       const A = pr.a.region, B = pr.b.region;
       if (used[A] >= slots[A] || used[B] >= slots[B]) continue;
       used[A]++; used[B]++;
-      const weak = used[A] === slots[A] || used[B] === slots[B];
-      (out[A] = out[A] || []).push({ to: B, weak });
-      (out[B] = out[B] || []).push({ to: A, weak });
+      // PER-SIDE strength: each direction is weak iff THAT side burned its LAST slot
+      // (Rome→Volat absent = Rome's last; Volat→Rome weak = Volat's last; Cosa→Praen
+      // strong = Cosa's first even though Praeneste's slots were busy elsewhere).
+      (out[A] = out[A] || []).push({ to: B, weak: used[A] === slots[A], inWeak: used[B] === slots[B] });
+      (out[B] = out[B] || []).push({ to: A, weak: used[B] === slots[B], inWeak: used[A] === slots[A] });
     }
   } catch { /* none */ }
   return (_seaLaneCache[modDataDir] = out);
