@@ -325,7 +325,11 @@ const CALIB = {
   // pixel-adjacent regions owned by self/ally (≤199 = trade agreement); seaPartners =
   // self/ally PORT towns sharing a sea body. Refit 2026-06-10 (trade-qty-retest.js):
   // mean |err| 13.1%, more uniform (ptolemaic 1%, seleucid 0%, most others ±10-15%).
-  tradeLand: 4.75, tradeSea: 9.70, tradeBonusPct: 10,
+  tradeLand: 0.8656, tradeSea: 1.7676, // REFIT 2026-06-11 after the structural trade fixes
+  // (qty-weighted rv + not-at-war partners + symmetric ally parse) — anchored to the
+  // live julii ledger trade 4,610 (clean t2), keeping the old land:sea ratio 2.042.
+  // Old 4.75/9.70 were fit on the broken features (empty julii ally set, Set-based rv).
+  tradeBonusPct: 10,
   // wages = 200×named character + 50×admiral (EXACT on fresh saves).
   wageNamed: 200, wageAdmiral: 50,
   // corruption ("other" expenditure) — REFIT 2026-06-10 (corruption-refit.js), now
@@ -491,7 +495,7 @@ function wonderOwners(modDataDir) {
 const _tradeCtxCache = {};
 function tradePartnerCtx(modDataDir) {
   if (_tradeCtxCache[modDataDir]) return _tradeCtxCache[modDataDir];
-  const ownerOfRegion = {}, allies = {}, portTowns = [];
+  const ownerOfRegion = {}, allies = {}, wars = {}, portTowns = [];
   try {
     const stratPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
     const strat = gv.parseStrat(stratPath);
@@ -499,13 +503,66 @@ function tradePartnerCtx(modDataDir) {
       ownerOfRegion[sd.region] = fac;
       if (sd.buildings && sd.buildings.some(b => /port/i.test(b.chain))) portTowns.push({ region: sd.region, fac });
     }
+    // RELATIONSHIP CODES (descr_strat): 199 = alliance, 201 = at war. Both are listed
+    // one-directionally with EITHER faction first (RIS lists client-first: "samnites,
+    // 199 romans_julii") — register BOTH directions or julii's ally set comes out
+    // empty (live-caught 2026-06-11: all client neighbours missing from trade).
+    const add = (map, a, b) => {
+      (map[a] = map[a] || new Set()).add(b);
+      (map[b] = map[b] || new Set()).add(a);
+    };
     for (const raw of fs.readFileSync(stratPath, "latin1").split(/\r?\n/)) {
       const t = raw.includes(";") ? raw.slice(0, raw.indexOf(";")) : raw;
       const m = t.match(/^faction_relationships\s+(\w+)\s*,\s*(\d+)\s+(\w+)/);
-      if (m && +m[2] <= 199) (allies[m[1].toLowerCase()] = allies[m[1].toLowerCase()] || new Set()).add(m[3].toLowerCase());
+      if (!m) continue;
+      if (+m[2] <= 199) add(allies, m[1].toLowerCase(), m[3].toLowerCase());
+      else if (+m[2] === 201) add(wars, m[1].toLowerCase(), m[3].toLowerCase());
     }
   } catch { /* none */ }
-  return (_tradeCtxCache[modDataDir] = { ownerOfRegion, allies, portTowns });
+  return (_tradeCtxCache[modDataDir] = { ownerOfRegion, allies, wars, portTowns });
+}
+
+// Quantity-weighted TRADE resource value per region: Σ qty × tradeValue over all
+// non-hidden resources (descr_strat resource lines carry an explicit quantity column
+// — "resource dyes, 2, x, y" — which the old per-settlement Set-based rv ignored;
+// live scroll session 2026-06-11). Same coord→region attribution as the mine parser.
+const _tradeQtyCache = {};
+function tradeQtyValByRegion(modDataDir) {
+  if (_tradeQtyCache[modDataDir]) return _tradeQtyCache[modDataDir];
+  const out = {};
+  try {
+    const dg = require("./descrStratGeneral.js");
+    const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
+    const buf = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga"));
+    const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), desc = buf[17];
+    const dataOff = 18 + buf[0];
+    const bottomLeft = (desc & 0x20) === 0;
+    const regionAt = (x, yGame) => {
+      const rowTop = H - 1 - yGame;
+      const r = bottomLeft ? (H - 1 - rowTop) : rowTop;
+      let reg = rgbToRegion[buf[dataOff + (r * W + x) * 3 + 2] + "," + buf[dataOff + (r * W + x) * 3 + 1] + "," + buf[dataOff + (r * W + x) * 3]];
+      if (reg) return reg;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const o = dataOff + ((r + dy) * W + (x + dx)) * 3;
+        reg = rgbToRegion[buf[o + 2] + "," + buf[o + 1] + "," + buf[o]];
+        if (reg) return reg;
+      }
+      return null;
+    };
+    const resVal = parseResourceValues(modDataDir);
+    const ovr = path.join(modDataDir, "original_overrides", "resource_quantity", "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
+    const src = fs.existsSync(ovr) ? ovr : path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
+    for (const raw of fs.readFileSync(src, "latin1").split(/\r?\n/)) {
+      const t = raw.includes(";") ? raw.slice(0, raw.indexOf(";")) : raw;
+      const m = t.match(/^resource\s+(\w+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+      if (!m) continue;
+      const e = resVal[m[1].toLowerCase()];
+      if (!e || e.hidden || !e.tradeValue) continue;
+      const reg = regionAt(+m[3], +m[4]);
+      if (reg) out[reg] = (out[reg] || 0) + (+m[2]) * e.tradeValue;
+    }
+  } catch { /* none */ }
+  return (_tradeQtyCache[modDataDir] = out);
 }
 
 // ---- protectorates (CRACKED 2026-06-10, tribute-rate-fit.js) ----
@@ -565,12 +622,16 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   else { try { const te = require("./traitEffects.js"); govFx = te.govEffectByCityFromStrat(modDataDir, te.parseTraitEffects(modDataDir)) || {}; } catch { } }
   const wonders = wonderOwners(modDataDir);
   const mineQty = mineQtyValByRegion(modDataDir);
-  const { ownerOfRegion, allies, portTowns } = tradePartnerCtx(modDataDir);
+  const { ownerOfRegion, allies, wars, portTowns } = tradePartnerCtx(modDataDir);
   const facLow = F.faction;
   // Hanging Gardens: +20% farming income factionwide for the owner (validated exact).
   const gardensMult = wonders.gardens && wonders.gardens.owner === facLow ? 1.2 : 1;
-  const allySet = allies[facLow] || new Set();
-  const isPartner = (other) => other && (other === facLow || allySet.has(other));
+  // Trade partner eligibility = NOT AT WAR (live-verified 2026-06-11: Sena Gallica
+  // trades with Histria's Nesactium — a neutral foreign faction; the old own/ally
+  // rule also dropped all client neighbours via the one-directional ally parse).
+  const warSet = (wars && wars[facLow]) || new Set();
+  const isPartner = (other) => !!other && (other === facLow || !warSet.has(other));
+  const tradeQtyVal = tradeQtyValByRegion(modDataDir);
   const seaPartnersOf = (region) => {
     const bodies = seaOf[region];
     if (!bodies || !bodies.length) return 0;
@@ -606,7 +667,8 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const tFarm = CALIB.farmPoint * (s.farmN + s.farmLevel + (gv0 ? (gv0.growthFarm || 0) : 0)) * gardensMult;
     const tMine = CALIB.minePoint * s.mineSum * (mineQty[s.region] || 0) * gMine;
     taxes += tTax; farming += tFarm; mining += tMine;
-    const rv = s.resources.reduce((a, r) => a + (r.tradeValue || 0), 0);
+    // quantity-weighted resource value (descr_strat qty column); Set-based fallback
+    const rv = tradeQtyVal[s.region] != null ? tradeQtyVal[s.region] : s.resources.reduce((a, r) => a + (r.tradeValue || 0), 0);
     const tradePts = s.tradePctParts ? (s.tradePctParts.base + s.tradePctParts.winter) : (s.tradePct || 0);
     const gTrade = Math.max(0, 1 + CALIB.tradeBonusPct * tradePts / 100) * gTrading;
     let nPartners = 0;

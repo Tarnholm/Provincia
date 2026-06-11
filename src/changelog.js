@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1052",
+    date: "2026-06-11",
+    items: [
+      { type: "improvement", text: "**Trade model: three structural fixes from the live per-route session.** (1) Resource values are now quantity-weighted — descr_strat resource lines carry an explicit quantity column (e.g. dyes ×2) that the model had been ignoring, roughly doubling many regions' true trade value. (2) Trade partner eligibility corrected to NOT-AT-WAR (verified live: Sena Gallica trades with Histria's Nesactium, Neapolis with the Samnites) instead of own/allied only. (3) The ally parse was one-directional and RIS lists alliances client-first, so the player's ally set came out empty — all client neighbours (Capua, Volsinii, the Samnite towns…) were missing from trade entirely. Constants refit to the live-verified julii ledger: model now reproduces it exactly (was +12%). The exact per-route law (23 routes measured: market levels, roads, exporter-pop scaling identified) continues as the next refinement." },
+    ],
+  },
+  {
     version: "0.9.1051",
     date: "2026-06-11",
     items: [

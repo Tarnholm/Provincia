@@ -44,8 +44,10 @@ describe("incomeModel — cracked constants", () => {
     // whole-ledger validation 9,583 vs 9,447 live (+1.4%).
     expect(im.CALIB.taxBaseK).toBeCloseTo(0.4559, 4);
     expect(im.CALIB.taxFlatPoint).toBeCloseTo(3.9, 2);
-    expect(im.CALIB.tradeLand).toBeCloseTo(4.75, 2);
-    expect(im.CALIB.tradeSea).toBeCloseTo(9.70, 2);
+    // refit 2026-06-11: qty-weighted rv + not-at-war partners + symmetric ally parse,
+    // anchored to the live julii ledger trade 4,610 (ratio 2.042 preserved)
+    expect(im.CALIB.tradeLand).toBeCloseTo(0.8656, 3);
+    expect(im.CALIB.tradeSea).toBeCloseTo(1.7676, 3);
     expect(im.CALIB.tradeBonusPct).toBe(10);     // documented: 10% per trade_base point
     expect(im.CALIB.corrD0).toBe(12);
   });
