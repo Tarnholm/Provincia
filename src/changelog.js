@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1082",
+    date: "2026-06-11",
+    items: [
+      { type: "fix", text: "**Region adjacency now includes diagonal touches** — the Nile proof: Alexandria land-trades Naukratis across a 1px river where the regions touch corner-to-corner, and that adjacency excludes the pair from sea lanes, freeing Alexandria's slots for its real river lanes (Sebennytos/Mendes — live-verified). Every Italian and Cyrenaican lane set stays exact. Egypt trade error improves from −33% to −27%; the remaining delta is river-port slot counts (Sebennytos holds 3 lanes on a level-0 port — slot rule under investigation)." },
+    ],
+  },
+  {
     version: "0.9.1081",
     date: "2026-06-11",
     items: [

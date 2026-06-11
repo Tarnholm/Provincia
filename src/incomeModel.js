@@ -422,10 +422,20 @@ function regionAdjacency(modDataDir) {
     const bottomLeft = (desc & 0x20) === 0;
     const key = (col, rowTop) => { const r = bottomLeft ? (H - 1 - rowTop) : rowTop; const o = dataOff + (r * W + col) * 3; return buf[o + 2] + "," + buf[o + 1] + "," + buf[o]; };
     const add = (a, b) => { (adj[a] = adj[a] || new Set()).add(b); (adj[b] = adj[b] || new Set()).add(a); };
+    // 8-NEIGHBORHOOD (2026-06-11, Nile-delta proof): regions touching only
+    // DIAGONALLY across a 1px river are land-adjacent in the engine (Alexandria
+    // land-trades Naukratis across the Nile; they touch corner-to-corner) — and
+    // that adjacency excludes them from sea lanes, freeing the port slots for the
+    // real river lanes (Alexandria⇄Sebennytos/Mendes/Tanis, all live-verified).
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const k = key(x, y); const ra = rgbToRegion[k];
-      if (x + 1 < W) { const k2 = key(x + 1, y); if (k2 !== k) { const rb = rgbToRegion[k2]; if (ra && rb && ra !== rb) add(ra, rb); } }
-      if (y + 1 < H) { const k2 = key(x, y + 1); if (k2 !== k) { const rb = rgbToRegion[k2]; if (ra && rb && ra !== rb) add(ra, rb); } }
+      if (!ra) continue;
+      for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [1, -1]]) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        const k2 = key(nx, ny); if (k2 === k) continue;
+        const rb = rgbToRegion[k2]; if (rb && rb !== ra) add(ra, rb);
+      }
     }
   } catch { /* adjacency unavailable → land partners count 0 */ }
   return (_adjCache[modDataDir] = adj);
@@ -716,6 +726,9 @@ function seaLanesByRegion(modDataDir) {
       const pb = (sd.buildings || []).find(b => /^port_buildings$/i.test(b.chain));
       if (!pb || !cent[sd.region]) continue;
       const idx = portOrder.indexOf(pb.level);
+      // SLOTS = 1 + the REGION'S base_port_level (2026-06-11 Nile-delta proof:
+      // Sebennytos/Tanis built port level 0 yet hold 3 live lanes; Rome base 2 → 3 ✓).
+      // The built chain level does NOT set lane capacity.
       ports.push({ region: sd.region, fac, level: (idx >= 0 ? idx : 0) + 1, pop: sd.pop || 1500, basePort: basePort[sd.region] || 0 });
     }
     // SEA-PATH distances between port tiles (coarse 4px BFS over sea pixels) —
