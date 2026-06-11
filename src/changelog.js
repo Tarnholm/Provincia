@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1068",
+    date: "2026-06-11",
+    items: [
+      { type: "change", text: "**docs/INCOME_MODEL.md** — the complete cracked income-law specification in one document: every formula, constant, validation table, the calibration-save methodology, and the three remaining unknowns with their ready-to-run experiments. Also verified tonight: no hidden +400/turn difficulty bonus exists (treasury deltas equal the ledger net exactly)." },
+    ],
+  },
+  {
     version: "0.9.1067",
     date: "2026-06-11",
     items: [
