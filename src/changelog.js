@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1065",
+    date: "2026-06-11",
+    items: [
+      { type: "improvement", text: "**Live-ledger regression guard**: a new test suite pins the income model against the real in-game Cyrene financial overview (taxes 5%, farming 1%, admin 10%, corruption 15%, army upkeep 3% tolerances) — future model changes can no longer silently regress the live-validated accuracy. Skips gracefully on machines without the calibration save." },
+    ],
+  },
+  {
     version: "0.9.1064",
     date: "2026-06-11",
     items: [
