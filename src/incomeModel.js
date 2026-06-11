@@ -709,7 +709,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // 'other'): admin% × town gross, admin% fit on 13 live-measured governor
     // marginals (rmse 1.15): 1.13 + 2.61·mgmt + 0.59·law⁺. No governor → no admin.
     const tAdmin = gv0
-      ? Math.max(0, (1.13 + 2.61 * Math.max(0, gv0.mgmt || 0) + 0.59 * Math.max(0, gv0.law || 0)) / 100) * (tTax + tFarm + tMine + tTrade)
+      ? Math.max(0, (1.13 + 2.61 * Math.min(3, Math.max(0, gv0.mgmt || 0)) + 0.59 * Math.min(4, Math.max(0, gv0.law || 0))) / 100) * (tTax + tFarm + tMine + tTrade)
       : 0;
     admin += tAdmin;
     let dist = null, corrPct = 0;

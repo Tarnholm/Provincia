@@ -15809,6 +15809,7 @@ function App() {
                         ["Namelists single-entry", nlSingle, "#fbbf24", "Single-entry namelists used by factions"],
                         ["descr_strat xref", stratXref, "#fbbf24", "descr_strat traits not in EDCT"],
                         ["Faction culture", facCult, "#f87171", "Factions referencing undefined cultures"],
+                        ["Chars sharing tile", (modExtraAudit?.charSharedCoords?.issues || []).length, "#f87171", "Characters sharing a map tile"],
                         ["descr_regions issues", drIssues, "#f87171", "descr_strat regions not in descr_regions"],
                       ],
                       [
@@ -15978,6 +15979,14 @@ function App() {
                               onClick={() => jumpTo(d.file, null, d.line)}
                             />
                           ))}
+                        </Section>
+                        <Section title="Characters sharing a map tile (engine shifts one at spawn — breaks governor binding)" count={(modExtraAudit.charSharedCoords?.issues || []).length} color="#f87171">
+                          {(modExtraAudit.charSharedCoords?.issues || []).slice(0, 100).map((d, i) => (
+                            <div key={i} style={{ padding: "2px 0", fontSize: "0.78rem", color: "#ccc" }}>
+                              <b style={{ color: "#f87171" }}>({d.xy})</b> {(d.characters || []).map(c => `${c.faction}: ${c.name} (${c.type})`).join("  ·  ")}
+                            </div>
+                          ))}
+                          {(modExtraAudit.charSharedCoords?.issues || []).length === 0 && <div style={{ color: "#7fd17f", fontSize: "0.78rem" }}>No shared tiles — all character coordinates unique.</div>}
                         </Section>
                         <Section title="descr_strat army units not in EDU (engine refuses to load)" count={(modExtraAudit.stratUnitRefs?.issues || []).length} color="#f87171">
                           {(modExtraAudit.stratUnitRefs?.issues || []).slice(0, 100).map((d, i) => (
@@ -22922,7 +22931,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                 <td style={{ color: BRC[s.bracket] || "#9aa", fontWeight: 600 }}>{BRB[s.bracket] || s.bracket}{s.borderline && <span title="Borderline growth estimate — could be one bracket off; verify in-game." style={{ color: "#e8b85a", marginLeft: 3, cursor: "help" }}>⚠</span>}</td>
                                 <td style={{ color: ({ red: "#e8806a", orange: "#e8964a", yellow: "#e8964a", lightgreen: "#7fd17f" })[s.poRisk] || "#2f9e44", cursor: "help" }}
                                   title={s.poAtSet != null ? `Estimated public order ≈${s.poAtSet} at the recommended bracket (ranking model, ±20 — garrison-priority only, NOT the exact scroll value).${s.poAtLow != null ? `\nAt Low tax ≈${s.poAtLow}${s.poAtLow < 100 ? " — still risky even at Low → needs more garrison." : ""}` : ""}${s.poAtSet < 130 && s.pop ? `\n⚔ Garrison fix: ≈${Math.max(40, Math.ceil((130 - s.poAtSet) / 272.2 * s.pop / 10) * 10)} extra soldiers in town ≈ +${130 - s.poAtSet} PO (model garrison coefficient).` : ""}` : undefined}>
-                                  {s.poAtSet == null ? "—" : <>{s.poRisk === "red" ? "🔴" : (s.poRisk === "orange" || s.poRisk === "yellow") ? "🟠" : "🟢"} {s.poAtSet}{s.poRisk === "red" && s.poAtLow != null && s.poAtLow < 100 ? <span style={{ color: "#e8705f", fontWeight: 700 }} title="Estimated to be at revolt risk even at LOW tax — add garrison."> ⚔</span> : null}</>}
+                                  {s.poAtSet == null ? "—" : <>{s.poRisk === "red" ? "🔴" : (s.poRisk === "orange" || s.poRisk === "yellow") ? "🟠" : "🟢"} {s.poAtSet}{s.garrisonFixMen ? <b style={{ color: "#e8806a", marginLeft: 4, cursor: "help" }} title={`Below the safe band — priority garrison fix: ≈${s.garrisonFixMen} extra soldiers brings PO to ~85. Pick the cheapest unit(s) from this settlement's recruit pool.`}>⚔+{s.garrisonFixMen}m</b> : s.poRisk === "red" && s.poAtLow != null && s.poAtLow < 100 ? <span style={{ color: "#e8705f", fontWeight: 700 }} title="Estimated to be at revolt risk even at LOW tax — add garrison."> ⚔</span> : null}</>}
                                 </td>
                                 <td style={{ color: "#e8c873", cursor: s.govIncome ? "help" : "default" }}
                                   title={s.govIncome ? `Governor income traits applied (parsed from descr_strat starting traits + ancillaries, exact-tile binding):${s.govIncome.tax ? `\n  tax ${s.govIncome.tax > 0 ? "+" : ""}${s.govIncome.tax}%` : ""}${s.govIncome.trading ? `\n  trade ${s.govIncome.trading > 0 ? "+" : ""}${s.govIncome.trading}%` : ""}${s.govIncome.mining ? `\n  mining ${s.govIncome.mining > 0 ? "+" : ""}${s.govIncome.mining}%` : ""}\nFrom: ${(s.govIncome.hits || []).join(", ")}` : undefined}>

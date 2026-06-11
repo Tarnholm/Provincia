@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1056",
+    date: "2026-06-11",
+    items: [
+      { type: "fix", text: "**Admin income no longer extrapolates beyond its calibration** — governors with management above the fitted range (live A/B on the new-files campaign: model 2,516 vs ledger 1,939) are capped at the measured response. Budget vs live net is now +1.5% (7,542 vs 7,429 on the fresh Julii A/B)." },
+      { type: "feature", text: "**Priority garrison suggestions**: settlements below the safe public-order band (red/orange) now show an inline ⚔+N fix in the tax-plan table — the extra soldiers needed to reach ~85% PO, sized by the PO model's garrison coefficient (user case: Neapolis under 75% at normal)." },
+      { type: "feature", text: "**New validator: characters sharing a map tile** — two descr_strat characters on the same x,y make the engine shift one at spawn, silently breaking governor bindings. New tile + section in the Validate dashboard (current RIS files: clean)." },
+    ],
+  },
+  {
     version: "0.9.1055",
     date: "2026-06-11",
     items: [

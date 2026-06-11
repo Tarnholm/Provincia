@@ -401,6 +401,7 @@ ipcMain.handle('sps:validate-mod-extra', async (_, dataDir) => {
     stratAncillaryRefs: { issues: [], error: null },
     stratUnitRefs: { issues: [], error: null },
     factionCulture: { issues: [], error: null },
+    charSharedCoords: { issues: [], error: null },
     error: null,
   };
   if (!dataDir) { out.error = 'no dataDir provided'; return out; }
@@ -614,6 +615,33 @@ ipcMain.handle('sps:validate-mod-extra', async (_, dataDir) => {
       out.factionCulture.error = 'descr_sm_factions.txt or descr_cultures.txt not found';
     }
   } catch (e) { out.factionCulture.error = e.message; }
+
+  // ── Characters sharing a map tile: two descr_strat characters at the same x,y
+  // make the engine shift one at spawn — breaking governor-by-coordinates binding
+  // and merging army stacks unpredictably. (User rule 2026-06-11.)
+  try {
+    const stratPath = path.join(dataDir, 'world', 'maps', 'campaign', 'imperial_campaign', 'descr_strat.txt');
+    let stratText = null;
+    try { stratText = fs.readFileSync(stratPath, 'latin1'); } catch { stratText = null; }
+    if (stratText) {
+      let fac = null;
+      const byXY = {};
+      for (const ln of stratText.split(/\r?\n/)) {
+        const fm = ln.match(/^faction\s+([a-z_0-9]+)\s*,/i);
+        if (fm) { fac = fm[1]; continue; }
+        if (!/^character,/.test(ln)) continue;
+        const xm = ln.match(/x\s+(\d+)/), ym = ln.match(/y\s+(\d+)/);
+        if (!xm || !ym) continue;
+        const parts = ln.split(',').map(t => t.trim());
+        const idx = /^sub_faction/.test(parts[1] || '') ? 2 : 1;
+        const key = xm[1] + ',' + ym[1];
+        (byXY[key] = byXY[key] || []).push({ faction: fac, name: parts[idx] || '?', type: (parts[idx + 1] || '').trim() });
+      }
+      for (const [xy, chars] of Object.entries(byXY)) {
+        if (chars.length > 1) out.charSharedCoords.issues.push({ xy, characters: chars });
+      }
+    } else out.charSharedCoords.error = 'descr_strat not found';
+  } catch (e) { out.charSharedCoords.error = String((e && e.message) || e); }
 
   return out;
 });

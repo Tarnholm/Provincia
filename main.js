@@ -6572,6 +6572,13 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
           // user bands 2026-06-11: 0-74 red, 75-84 orange, 85-99 light green, 100+ dark green.
           s.poRisk = s.poAtSet < 75 ? "red" : s.poAtSet < 85 ? "orange" : s.poAtSet < 100 ? "lightgreen" : "green";
           if (s.poRisk === "red") flagged++;
+          // PRIORITY GARRISON SUGGESTION (user 2026-06-11, Neapolis <75 case): red-band
+          // towns get a concrete "add ≈N soldiers" fix to reach the 85+ band, using the
+          // PO model's garrison coefficient (≈272.2 PO per garrison-fraction unit).
+          if ((s.poRisk === "red" || s.poRisk === "orange") && s.pop) {
+            const target = 85;
+            s.garrisonFixMen = Math.max(40, Math.ceil((target - s.poAtSet) / 272.2 * s.pop / 10) * 10);
+          }
         }
         if (exactN) _writeLog(`[turn1-budget] ${faction}: PO anchored EXACT from calibration save for ${exactN} towns`);
         if (flagged) _writeLog(`[turn1-budget] ${faction}: PO model flags ${flagged} revolt-risk towns (po<100 at set bracket)`);
