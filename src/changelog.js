@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1073",
+    date: "2026-06-11",
+    items: [
+      { type: "feature", text: "**Corruption law cracked: settlement Law shifts the curve** — live session, 7 settlement-details scrolls: each point of settlement Law (terrain steppe −2/desert −4, garrison chains, walls, governor traits) moves the effective distance-to-capital by ~6.5 tiles. High-law towns floor to zero corruption well inside the curve (Ptolemais Law+5 and Arsinoe Law+1 both read 0 live); negative-law desert towns run ~13 tiles hotter — exactly matching all seven live readings, with the law-0 control town (Paraitonion, d=69) staying dead on the base curve. Sub-1.5% trace corruption truncates to zero (live-verified). Per-town corruption now shows in budget rows." },
+      { type: "improvement", text: "Trait L1 floor, card-verified: holding a trait at any points activates at least level 1 even below its EDCT threshold (a governor's Lenient at 6 points showed Taxes −10 / Law −2 on his card exactly as level 1 prescribes). Fixes systematic governor effect under-parse — Arsinoe's taxes land within 1.6% (was 9.3% off). New per-town live regression guard pins the admin and corruption laws against the morning's scroll readings." },
+    ],
+  },
+  {
     version: "0.9.1072",
     date: "2026-06-11",
     items: [

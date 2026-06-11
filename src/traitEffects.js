@@ -121,6 +121,7 @@ function growthEffectOfTraits(traitList, parsed, opts) {
   const seededLevel = {};
   for (const t of traitList) { const n = t && (t.name || t.trait); if (n) seededLevel[n] = (t.level != null ? t.level : t.points) | 0; }
   const antiMap = (parsed && parsed._anti) || {};
+  let lawCorr = 0; // LAW for the corruption shift — own level rule, see below
   for (const t of traitList) {
     const name = t && (t.name || t.trait); if (!name) continue;
     if (BASELINE_TRAITS.has(name)) continue;
@@ -130,7 +131,21 @@ function growthEffectOfTraits(traitList, parsed, opts) {
     if (pts <= 0) continue;
     let chosen = null;
     if (ordinal) { chosen = def[Math.max(0, Math.min(def.length - 1, pts - 1))] || null; } // Nth level (1-based)
-    else { for (const L of def) if (L.threshold <= pts) chosen = L; } // highest threshold ≤ points
+    else {
+      for (const L of def) if (L.threshold <= pts) chosen = L; // highest threshold ≤ points
+      // L1 FLOOR (live cyrene governor cards, 2026-06-11): holding a trait at ANY
+      // points ≥ 1 activates at least level 1 even below its threshold — verified on
+      // BOTH the law channel (Lenient pts6<thr10 → Law −2 ✓ Aristoteles card;
+      // HarshJustice pts1<thr2 → Law +2 ✓ Perseus card) and the tax channel
+      // (Lenient → Taxes −10 ✓ same card; fixes Arsinoe taxes 600→540 vs live 549).
+      if (!chosen) chosen = def[0] || null;
+    }
+    // CORRUPTION-LAW channel: same as the card Law total, except LoyaltyLevel's
+    // law lines do NOT apply (meta-trait; live-confirmed across the 7 governors).
+    if (name !== "LoyaltyLevel") {
+      const lc = chosen;
+      if (lc && lc.Law) lawCorr += lc.Law;
+    }
     if (!chosen) continue;
     if (chosen.Farming || chosen.Fertility || chosen.Health || chosen.Squalor || chosen.TaxCollection || chosen.Trading || chosen.Mining || chosen.Influence || chosen.Law || chosen.Unrest || chosen.LocalPopularity || chosen.Management) {
       farm += chosen.Farming; fert += chosen.Fertility; health += chosen.Health; squalor += chosen.Squalor;
@@ -149,7 +164,7 @@ function growthEffectOfTraits(traitList, parsed, opts) {
       hits.push(`${name}/${pts}`);
     }
   }
-  return { farm, fert, health, squalor, squalorEstates, tax, trading, mining, influence, law, unrest, localPop, mgmt, growthFarm: farm, hits }; // growthFarm = Farming only (Fertility is character, not settlement)
+  return { farm, fert, health, squalor, squalorEstates, tax, trading, mining, influence, law, unrest, localPop, mgmt, lawCorr, growthFarm: farm, hits }; // growthFarm = Farming only (Fertility is character, not settlement)
 }
 
 // Convenience for callers holding a cracked save: build { [city]: {growthFarm, health, ...} }
@@ -218,6 +233,7 @@ function govEffectByCityFromSave(cracked, parsed, modDataDir) {
       e.tax += fx.tax || 0; e.trading += fx.trading || 0; e.mining += fx.mining || 0;
       e.influence += fx.influence || 0; e.law += fx.law || 0; e.unrest += fx.unrest || 0;
       e.localPop += fx.localPop || 0; e.growthFarm += fx.farm; e.mgmt += fx.mgmt || 0;
+      e.lawCorr = (e.lawCorr || 0) + (fx.law || 0);
       if (e.hits) e.hits.push("anc:" + a);
     }
     // COMPUTED CARD STATS (2026-06-11): the save stores the governor's displayed

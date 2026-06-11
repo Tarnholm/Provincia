@@ -55,7 +55,7 @@ function parseEDBIncome(edbPath) {
   const add = (kind, obj) => {
     if (!curBuilding || !curLevel) return;
     const key = curBuilding + ":" + curLevel;
-    (capIndex[key] = capIndex[key] || { taxable: [], trade: [], tradeLvl: [], mine: [], fleet: [], walls: [], health: [] })[kind].push(obj);
+    (capIndex[key] = capIndex[key] || { taxable: [], trade: [], tradeLvl: [], mine: [], fleet: [], walls: [], health: [], law: [] })[kind].push(obj);
   };
   for (const raw of lines) {
     const ln = raw.replace(/;.*$/, "");
@@ -78,6 +78,7 @@ function parseEDBIncome(edbPath) {
     if ((m = ln.match(/^\s*trade_fleet\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("fleet", { val: +m[1], req: (m[2] || "").trim() }); continue; }
     if ((m = ln.match(/^\s*wall_level\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("walls", { val: +m[1], req: (m[2] || "").trim() }); continue; }
     if ((m = ln.match(/^\s*population_health_bonus\s+bonus\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("health", { val: +m[1], req: (m[2] || "").trim() }); continue; }
+    if ((m = ln.match(/^\s*law_bonus\s+bonus\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("law", { val: +m[1], req: (m[2] || "").trim() }); continue; }
   }
   return { capIndex, chainLevels, aliases };
 }
@@ -153,8 +154,13 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
     // be active for the turn-1 econ block). Hierarchy: winter > size > base.
     const cat = (req) => /\bdisabling_in_winter\b/.test(req || "") ? "winter" : /\bsize\d+\b/.test(req || "") ? "size" : "base";
     const tax = { base: 0, size: 0, winter: 0 }, trade = { base: 0, size: 0, winter: 0 };
-    let tradeLvlSum = 0, mineSum = 0, fleetSum = 0, wallLevel = -1, healthPips = 0;
+    let tradeLvlSum = 0, mineSum = 0, fleetSum = 0, wallLevel = -1, healthPips = 0, lawBonus = 0;
     const explain = (opts && opts.explain) ? [] : null;
+    // Wall/defense law lines carry `is_toggled "settlement condition"` — live-verified
+    // ACTIVE in peace (Arsinoe +1 palisade, Kyrene +1 stone wall, Ptolemais +1 wall;
+    // settlement-details law% reconciles only with them counted).
+    const lawCtx = { ...ctx, aliases: { ...(ctx.aliases || {}) } };
+    const lawReqOk = (req) => gv.evalReq((req || "").replace(/is_toggled\s+"[^"]*"/g, "factionwide"), lawCtx);
     for (const b of aiDropped) {
       const cap = inc.capIndex[b.chain + ":" + b.level];
       if (!cap) continue;
@@ -165,6 +171,7 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
       for (const x of cap.fleet) if (gv.evalReq(x.req, ctx)) fleetSum += x.val;
       for (const x of (cap.walls || [])) if (gv.evalReq(x.req, ctx)) wallLevel = Math.max(wallLevel, x.val);
       for (const x of (cap.health || [])) if (gv.evalReq(x.req, ctx)) healthPips += x.val;
+      for (const x of (cap.law || [])) if (lawReqOk(x.req)) lawBonus += x.val;
     }
     const taxablePct = tax.base + tax.size + tax.winter, tradePct = trade.base + trade.size + trade.winter;
     // farming level. GROWTH semantics = max across chains (validated); for INCOME the
@@ -189,7 +196,7 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
     out.push({
       region: s.region, settlement: region.settlement, pop: s.pop, level: s.level, capital: !!s.capital,
       taxablePct, tradePct, taxPctParts: tax, tradePctParts: trade, tradeLvlSum, mineSum, fleetSum, farmLevel, farmLevelSum, farmN: region.farmN || 0,
-      wallLevel, healthPips,
+      wallLevel, healthPips, lawBonus,
       resources: resList, portLevel, roadLevel,
       buildings: s.buildings.map(b => b.chain + ":" + b.level),
       ...(explain ? { taxableLines: explain } : {}),
@@ -372,6 +379,7 @@ const CALIB = {
   // d>corrD0 (rmse 2.8 pts), ZERO for capital and office-holding governors.
   // Mean |err| 8.7% (julii −3.8%, seleucid +3.3%, antigonid +4.6%; ptolemaic −19% worst).
   corrA: 0.2261, corrB: 0.0061, corrD0: 6,
+  corrLawShift: 6.5, // tiles of effective distance per settlement LAW point (live cyrene 7-town fit)
 };
 
 // region → {x,y} coords (map_regions.tga black settlement pixels), cached per mod dir.
@@ -921,8 +929,15 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       dist = Math.hypot(c.x - cap.x, c.y - cap.y);
       // CORRUPTION (live-cracked 2026-06-11, 11-town ladder): per-town % of GROSS
       // (incl. admin), quadratic in distance past d0=6, zero for office governors.
+      // LAW SHIFT (live cyrene settlement-details, 7 towns): settlement LAW moves the
+      // EFFECTIVE distance by ~6.5 tiles/point — law = EDB building law (terrain
+      // steppe−2/desert−4, garrison chains, walls) + governor trait law. Positive law
+      // floors corruption to 0 well inside the curve (Ptolemais law+5 d12, Arsinoe
+      // law+1 d17 → both live 0); negative law runs it hotter (three −2 towns ≈ +13
+      // tiles, max residual 1.4pp). Paraitonion law 0 sits exactly on the base curve.
       const office = gv0 && gv0.hits && gv0.hits.some(h => OFFICE_RE.test(h));
-      const x = Math.max(0, dist - CALIB.corrD0);
+      const lawPts = (s.lawBonus || 0) + (gv0 ? (gv0.lawCorr != null ? gv0.lawCorr : (gv0.law || 0)) : 0);
+      const x = Math.max(0, dist - CALIB.corrLawShift * lawPts - CALIB.corrD0);
       // The quadratic is calibrated on dist ≤ 66 (x ≤ 60); beyond that extend LINEARLY
       // at the curve's end slope and cap at 90% — the raw quadratic exceeded 100% of
       // town income for far-east mega-empires (seleucid corruption read 214k on 152k
@@ -930,7 +945,9 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       const X0 = 60;
       const quad = (v) => CALIB.corrA * v + CALIB.corrB * v * v;
       const raw = x <= X0 ? quad(x) : quad(X0) + (CALIB.corrA + 2 * CALIB.corrB * X0) * (x - X0);
-      corrPct = office ? 0 : Math.min(90, Math.max(0, raw)) / 100;
+      // FLOOR (live Arsinoe-Kyrenaike, law+1 d17): sub-1.5% corruption reads ZERO
+      // in-game — the engine truncates trace corruption entirely.
+      corrPct = (office || raw < 1.5) ? 0 : Math.min(90, Math.max(0, raw)) / 100;
       corrSum += corrPct * (tTax + tFarm + tMine + tTrade + tAdmin);
     }
     // DOCUMENTED engine formulas (Feral Battle_and_Campaign_Formulae.md):
@@ -946,6 +963,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const plagueRiskPct = sqPips > 3 ? Math.max(0, ((sqPips - 3) - 2 * (s.healthPips || 0)) / 20) * 100 : 0;
     sets.push({ settlement: s.settlement, region: s.region, pop: s.pop, level: s.level, capital: s.capital,
       bracket, taxes: Math.round(tTax), farming: Math.round(tFarm), mining: Math.round(tMine), trade: Math.round(tTrade), admin: Math.round(tAdmin),
+      corruption: Math.round(corrPct * (tTax + tFarm + tMine + tTrade + tAdmin)),
       taxFactor: Math.round(f * 100) / 100, resourceValue: rv, port: !!s.portLevel, tradePartners: nPartners, distToCapital: dist != null ? Math.round(dist) : null,
       siegeTurns, plagueRiskPct: Math.round(plagueRiskPct * 10) / 10,
       govIncome: gv0 && (gv0.tax || gv0.trading || gv0.mining) ? { tax: gv0.tax || 0, trading: gv0.trading || 0, mining: gv0.mining || 0, hits: gv0.hits || [] } : null });
