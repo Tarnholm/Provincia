@@ -463,7 +463,10 @@ const CALIB = {
   // strong flow: v = K·pop^exp·e^(pct·tradePct) — refit on 16 current-build flows
   // (full julii 26-scroll corpus + cyrene, 2026-06-11 evening; R²0.82, max ×1.61).
   // The pct coefficient ≈ the historic 0.127 sea exponent; pop is nearly irrelevant.
-  seaFlowK: 63, seaFlowPopExp: 0.111, seaFlowPct: 0.133,
+  seaFlowK: 63, seaFlowPopExp: 0.111, seaFlowPct: 0.133, // river lanes only (Nile fit)
+  // OPEN-SEA EXACT (Capua t1 trio 2026-06-11: 426/13, 332/10, 100/3 — also pct-free:
+  // Capua pct +6 and Praeneste pct −6 share the same constant)
+  seaCargoK: 33,
   seaFlowWeak: 0, // WEAK SLOT SIDES EXPORT NOTHING (julii corpus: Cosa's 'Pisae 9' row = the
   // IMPORT of Pisae→Cosa 41 (÷5 exact); every 'weak export' reading was a misread import)
 };
@@ -708,7 +711,9 @@ function tradeQtyValByRegion(modDataDir) {
 
 // Per-resource goods map per region: { region: { resource: qty×tradeValue } } — the
 // cargo basis for the sea-lane law (exclusion rule: a leg ships exactly the exporter
-// goods the importer lacks; icon-verified 2026-06-11).
+// goods the importer lacks; icon-verified 2026-06-11). ZERO-trade-value resources
+// (stone/hemp/flax/pitch) COUNT AT VALUE 1 (Capua probe 2026-06-11 night: the whole
+// Praeneste→Capua flow = its stone 3 × 33 = 99 → /5 = the live 20 import row).
 const _tradeGoodsCache = {};
 function tradeGoodsByRegion(modDataDir) {
   if (_tradeGoodsCache[modDataDir]) return _tradeGoodsCache[modDataDir];
@@ -739,9 +744,9 @@ function tradeGoodsByRegion(modDataDir) {
       const m = t.match(/^resource\s+(\w+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
       if (!m) continue;
       const e = resVal[m[1].toLowerCase()];
-      if (!e || e.hidden || !e.tradeValue) continue;
+      if (!e || e.hidden) continue;
       const reg = regionAt(+m[3], +m[4]);
-      if (reg) (out[reg] = out[reg] || {})[m[1].toLowerCase()] = (out[reg][m[1].toLowerCase()] || 0) + (+m[2]) * e.tradeValue;
+      if (reg) (out[reg] = out[reg] || {})[m[1].toLowerCase()] = (out[reg][m[1].toLowerCase()] || 0) + (+m[2]) * Math.max(1, e.tradeValue || 0);
     }
   } catch { /* none */ }
   return (_tradeGoodsCache[modDataDir] = out);
@@ -902,8 +907,8 @@ function seaLanesByRegion(modDataDir) {
     for (const pr of pairs) {
       const A = pr.a.region, B = pr.b.region;
       if (pr.river) {
-        (out[A] = out[A] || []).push({ to: B, weak: false, inWeak: false, toPop: pr.b.pop, toPort: pr.b.basePort, ownPop: pr.a.pop, ownPort: pr.a.basePort, river: true });
-        (out[B] = out[B] || []).push({ to: A, weak: false, inWeak: false, toPop: pr.a.pop, toPort: pr.a.basePort, ownPop: pr.b.pop, ownPort: pr.b.basePort, river: true });
+        (out[A] = out[A] || []).push({ to: B, weak: false, inWeak: false, toPop: pr.b.pop, toPort: pr.b.basePort, ownPop: pr.a.pop, ownPort: pr.a.basePort, river: true, d: pr.d });
+        (out[B] = out[B] || []).push({ to: A, weak: false, inWeak: false, toPop: pr.a.pop, toPort: pr.a.basePort, ownPop: pr.b.pop, ownPort: pr.b.basePort, river: true, d: pr.d });
         continue;
       }
       if (used[A] >= slots[A] || used[B] >= slots[B]) continue;
@@ -911,9 +916,20 @@ function seaLanesByRegion(modDataDir) {
       // PER-SIDE strength: each direction is weak iff THAT side burned its LAST slot
       // (Rome→Volat absent = Rome's last; Volat→Rome weak = Volat's last; Cosa→Praen
       // strong = Cosa's first even though Praeneste's slots were busy elsewhere).
-      (out[A] = out[A] || []).push({ to: B, weak: used[A] === slots[A], inWeak: used[B] === slots[B], toPop: pr.b.pop, toPort: pr.b.basePort, ownPop: pr.a.pop, ownPort: pr.a.basePort });
-      (out[B] = out[B] || []).push({ to: A, weak: used[B] === slots[B], inWeak: used[A] === slots[A], toPop: pr.a.pop, toPort: pr.a.basePort, ownPop: pr.b.pop, ownPort: pr.b.basePort });
+      (out[A] = out[A] || []).push({ to: B, weak: used[A] === slots[A], inWeak: used[B] === slots[B], toPop: pr.b.pop, toPort: pr.b.basePort, ownPop: pr.a.pop, ownPort: pr.a.basePort, d: pr.d });
+      (out[B] = out[B] || []).push({ to: A, weak: used[B] === slots[B], inWeak: used[A] === slots[A], toPop: pr.a.pop, toPort: pr.a.basePort, ownPop: pr.b.pop, ownPort: pr.b.basePort, d: pr.d });
     }
+    // TURN-1 ACTIVATION (Capua t1/t2 probe 2026-06-11 night): a partner's REVERSE flow
+    // is live at turn 1 only if our port is that partner's NEAREST open-sea lane
+    // (Praeneste→Capua live at t1 — Capua is its lane #1; Rome→Capua appears at t2 —
+    // Capua is Rome's lane #2). toNearest = this lane is the PARTNER's nearest lane.
+    const nearestOf = {};
+    for (const r of Object.keys(out)) {
+      let best = null;
+      for (const l of out[r]) if (!l.river && (best == null || l.d < best.d)) best = l;
+      if (best) nearestOf[r] = best.to;
+    }
+    for (const r of Object.keys(out)) for (const l of out[r]) l.toNearest = nearestOf[l.to] === r;
   } catch { /* none */ }
   return (_seaLaneCache[modDataDir] = out);
 }
@@ -1060,22 +1076,35 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // component (~74% of a route's row value) and leaves imports unchanged.
     landTrade *= Math.max(0, 1 + 0.74 * ((gv0 && gv0.trading) || 0) / 100);
     tradeLandSum += landTrade;
-    // SEA = PER-LANE FLOWS (wired 2026-06-11 after the full cyrene scroll session):
-    // lane sets from seaLanesByRegion now reproduce EVERY live lane set on both
-    // factions (slots + not-at-war + land-adjacency exclusion + 40-tile cap + greedy
-    // nearest). Each lane carries two directional flows: the exporter earns
-    // v = seaFlowK · pop_exporter^seaFlowPopExp (×seaFlowWeak if that side is weak),
-    // and the importer earns EXACTLY v/5 (live law, 4 exact witnesses). Per-flow
-    // scatter ±40% (an unidentified per-pair factor remains); per-town ±15%.
+    // SEA = PER-LANE FLOWS. OPEN-SEA LAW EXACT (Capua t1/t2 probes 2026-06-11 night,
+    // three flows at 33.0/33.2/33.3 incl. pct +6 AND −6 → NO pct term):
+    //   strong export flow = seaCargoK × exclusion-cargo(X→Y)   (goods Y lacks,
+    //   zero-value resources floored to 1 — Latium stone3 IS the Praeneste flow);
+    //   importer earns exporter's flow / 5 (live /5 law, Delos/Naxos exact);
+    //   TURN-1 RULE: a partner's reverse flow is live only if we are that partner's
+    //   NEAREST lane (Praeneste→Capua live t1; Rome→Capua appears only at t2).
+    //   Weak slot sides export nothing (unchanged).
+    // RIVER lanes (Nile) keep the pop-law fit (713/605/519 validated, ×1.95).
     let seaTrade = 0;
     if (s.portLevel) {
       const lanes = seaLanes[s.region] || [];
+      const goods = tradeGoodsByRegion(modDataDir);
+      const cargoOf = (X, Y) => {
+        const gx = goods[X] || {}, gy = goods[Y] || {};
+        let v = 0;
+        for (const r of Object.keys(gx)) if (!(r in gy)) v += gx[r];
+        return v;
+      };
       for (const ln of lanes) {
-        // river lanes (small sea bodies, e.g. the Nile) run a multiple of the
-        // open-sea flow value — live delta flows (713/605/519) vs open-sea peers.
-        const rm = ln.river ? CALIB.seaFlowRiverMult : 1;
-        const expV = rm * CALIB.seaFlowK * Math.pow(Math.max(400, s.pop), CALIB.seaFlowPopExp) * Math.exp(CALIB.seaFlowPct * (s.tradePct || 0)) * (ln.weak ? CALIB.seaFlowWeak : 1);
-        const impV = rm * CALIB.seaFlowK * Math.pow(Math.max(400, ln.toPop || 1500), CALIB.seaFlowPopExp) * (ln.inWeak ? CALIB.seaFlowWeak : 1) / 5;
+        let expV, impV;
+        if (ln.river) {
+          const rm = CALIB.seaFlowRiverMult;
+          expV = rm * CALIB.seaFlowK * Math.pow(Math.max(400, s.pop), CALIB.seaFlowPopExp) * Math.exp(CALIB.seaFlowPct * (s.tradePct || 0));
+          impV = rm * CALIB.seaFlowK * Math.pow(Math.max(400, ln.toPop || 1500), CALIB.seaFlowPopExp) / 5;
+        } else {
+          expV = ln.weak ? 0 : CALIB.seaCargoK * cargoOf(s.region, ln.to);
+          impV = (ln.inWeak || !ln.toNearest) ? 0 : CALIB.seaCargoK * cargoOf(ln.to, s.region) / 5;
+        }
         seaTrade += expV + impV;
       }
       tradeSeaSum += seaTrade;
