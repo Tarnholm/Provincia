@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1071",
+    date: "2026-06-11",
+    items: [
+      { type: "fix", text: "**Governor followers (ancillaries) now count in the budget** — the save-backed income path silently dropped every follower's effects (scribes, advisors, doctors…). Followers never reroll at campaign start, so the descr_strat seed stays valid on turn-1 calibration saves and their TaxCollection/Trading/Management effects now fold into each governor's totals. Out-of-sample check on the live Cyrene ledger: tax error halves from +0.94% to −0.40% (Kyrene's governor carries a −5% tax follower the model was missing)." },
+      { type: "improvement", text: "Three tax-law hypotheses put to rest with existing data: Rome's +13% excess is NOT a capital mechanic (Kyrene — also a capital, public order 200 — fits within ±1% with no bonus), NOT a high-public-order income bonus, and NOT an Influence/Management/Law multiplier (r ≤ 0.17 across the 15 measured Julii towns). The residual patterns with governor trait effect-level under-parse — the morning governor-card readings will close it." },
+    ],
+  },
+  {
     version: "0.9.1070",
     date: "2026-06-11",
     items: [
