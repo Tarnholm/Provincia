@@ -118,12 +118,12 @@ describe("incomeModel — fixture mod", () => {
   });
   afterAll(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch { } });
 
-  test("armyUpkeepEDU: inf×0.976 + cav×1.186, ship excluded", () => {
+  test("armyUpkeepEDU: raw EDU upkeep ×1.0122, leader/heir bodyguard doubled", () => {
+    // RAW EDU LAW (2026-06-11 night, four-faction validation ±0.11%): the ledger
+    // charges stat_cost[2] directly; no category scales; ships count like the rest.
     const r = im.armyUpkeepEDU(dir, "testfac");
-    // EDU upkeep field = stat_cost[2]: inf 100, cav 200, ship 300.
-    const expected = Math.round(100 * 0.9759 + 200 * 1.1857);
     expect(r.units).toBe(3);
-    expect(r.upkeep).toBe(expected);
+    expect(r.upkeep).toBe(Math.round((100 + 200 + 300) * 1.0122));
   });
 
   test("parseProtectorates reads become_protector pairs from the campaign script", () => {

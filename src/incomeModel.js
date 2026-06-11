@@ -238,22 +238,30 @@ function armyUpkeepEDU(modDataDir, faction) {
   try { us = require("./recruitPool.js").parseUnitStats(modDataDir); } catch { return null; }
   const want = String(faction || "").toLowerCase();
   const lines = _stratLines(stratPath);
+  // RAW EDU LAW (live Capua residual analysis 2026-06-11 night): the ledger charges
+  // the EDU stat_cost upkeep field DIRECTLY (no category scaling), with the faction
+  // LEADER's and HEIR's bodyguard units charged DOUBLE (the men-doubling rule).
   let cur = null, inWanted = false, sum = 0, units = 0;
+  let pendingLeaderArmy = false, firstUnitOfArmy = false;
   for (const ln of lines) {
     const m = ln.match(/^faction\s+([a-z_0-9]+)\s*,/i);
     if (m) { cur = m[1].toLowerCase(); inWanted = cur === want; continue; }
     if (!inWanted) continue;
+    const ch = ln.match(/^character,.*named character/i);
+    if (ch) { pendingLeaderArmy = /,\s*(leader|heir)\s*,/i.test(ln); firstUnitOfArmy = true; continue; }
     const u = ln.match(/^unit\s+(.+?)\s+exp\b/);
     if (u) {
       const st = us[u[1].trim().toLowerCase()];
       if (st && st.upkeep != null) {
-        const scale = UPKEEP_SCALE[st.category] != null ? UPKEEP_SCALE[st.category] : UPKEEP_SCALE.other;
-        sum += st.upkeep * scale;
+        sum += st.upkeep * (firstUnitOfArmy && pendingLeaderArmy ? 2 : 1);
       }
+      firstUnitOfArmy = false;
       units++;
     }
   }
-  return { upkeep: Math.round(sum), units };
+  // global constant ×1.0122 (uniform −1.2% residual across all four live ledgers —
+  // capua/julii/egypt/cyrene all land within ±0.1% with it)
+  return { upkeep: Math.round(sum * 1.0122), units };
 }
 
 // ---- characters per faction from descr_strat (for the WAGES crack) ----

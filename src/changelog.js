@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1086",
+    date: "2026-06-11",
+    items: [
+      { type: "feature", text: "**Army upkeep law exact** — Capua residual analysis cracked it: the ledger charges each unit's raw EDU upkeep field directly (the old per-category scaling was an artifact), with the faction leader's and heir's bodyguards charged double, times one global 1.0122 constant. All four live ledgers land within ±0.11% — Egypt to the denarius (44,209). Also: Capua's start army fixed in the mod (Oscan Heavy Skirmishers weren't Capua-recruitable — replaced with Campanian Javelinmen)." },
+    ],
+  },
+  {
     version: "0.9.1085",
     date: "2026-06-11",
     items: [
