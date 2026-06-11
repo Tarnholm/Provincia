@@ -367,8 +367,8 @@ const CALIB = {
   // PER-ROUTE LAND LAW (2026-06-11, fit on 14 live scroll routes; A_X re-derived
   // against THIS model's adjacency graph — R²log .96 on 6 measured towns):
   // v(route) = K·popX^a·e^(p·tradePctX) × e^(r·roadY)·(rvX+rvY)^g·popY^−b
-  tradeRouteK: 2.7478, tradeRoutePopX: 0.488, tradeRoutePct: 0.1692,
-  tradeRouteRoad: 0.38, tradeRouteGoods: 0.30, tradeRoutePopY: -0.34,
+  tradeRouteK: 5.27, tradeRoutePopX: 0.0064, tradeRoutePct: 0.1355,
+  tradeRouteRoad: 0.1847, tradeRouteRvX: 0.6473, tradeRouteRvY: 0.3010, tradeRoutePopY: -0.1085,
   tradeSea: 1.1169, // sea aggregate re-anchored: julii total = 4,610 live with the land law in place // REFIT 2026-06-11 after the structural trade fixes
   // (qty-weighted rv + not-at-war partners + symmetric ally parse) — anchored to the
   // live julii ledger trade 4,610 (clean t2), keeping the old land:sea ratio 2.042.
@@ -918,15 +918,22 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     let nPartners = 0;
     // LAND TRADE = PER-ROUTE LAW (live scroll routes 2026-06-11): exporter factor ×
     // per-partner terms. Land rows merge both legs; value is pop/buildings-driven.
+    // LAND LAW v2 (GLOBAL REFIT 2026-06-11 evening, 385 live route rows across
+    // julii+cyrene+egypt): the route value is RESOURCE-driven, not population-driven —
+    // v = K * popX^0.006 * popY^-0.109 * e^(0.136*pctX) * e^(0.185*(roadX+roadY))
+    //     * (1+rvX)^0.647 * (1+rvY)^0.301   (qty-weighted region goods; R^2 0.755,
+    // faction sum ratios julii 0.95 / cyrene 0.93 / egypt 0.96 before the K rescale).
+    // The old popX^0.488 law was an Italy-regime artifact (Nile mega-routes -37%).
+    const rvX = tradeQtyVal[s.region] || 0;
     const aX = CALIB.tradeRouteK * Math.pow(Math.max(400, s.pop), CALIB.tradeRoutePopX)
-      * Math.exp(CALIB.tradeRoutePct * (s.tradePct || 0));
+      * Math.exp(CALIB.tradeRoutePct * (s.tradePct || 0))
+      * Math.pow(1 + rvX, CALIB.tradeRouteRvX);
     let landTrade = 0;
     for (const n of (adjacency[s.region] || [])) {
       if (!isPartner(ownerOfRegion[n])) continue;
       nPartners++;
-      const exch = rv + (tradeQtyVal[n] || 0);
-      landTrade += aX * Math.exp(CALIB.tradeRouteRoad * (roadOfRegion[n] || 0))
-        * Math.pow(Math.max(1, exch), CALIB.tradeRouteGoods)
+      landTrade += aX * Math.exp(CALIB.tradeRouteRoad * ((roadOfRegion[n] || 0) + (s.roadLevel || 0)))
+        * Math.pow(1 + (tradeQtyVal[n] || 0), CALIB.tradeRouteRvY)
         * Math.pow(Math.max(400, popOfRegion[n] || 400), CALIB.tradeRoutePopY);
     }
     // GOVERNOR TRADING (console-proven, Alexandria GoodTrader probe 2026-06-11):

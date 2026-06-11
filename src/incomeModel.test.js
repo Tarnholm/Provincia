@@ -49,8 +49,8 @@ describe("incomeModel — cracked constants", () => {
     expect(im.CALIB.tradeLand).toBeCloseTo(0.8656, 3);
     expect(im.CALIB.tradeSea).toBeCloseTo(1.1169, 3); // re-anchored with the per-route land law
     // per-route land law (2026-06-11, fit on live scroll routes vs this model's adjacency)
-    expect(im.CALIB.tradeRouteK).toBeCloseTo(2.7478, 3);
-    expect(im.CALIB.tradeRoutePopX).toBeCloseTo(0.488, 3);
+    expect(im.CALIB.tradeRouteK).toBeCloseTo(5.27, 2); // land law v2 (385-row 3-faction refit)
+    expect(im.CALIB.tradeRoutePopX).toBeCloseTo(0.0064, 4); // resource-driven, pop ~irrelevant
     expect(im.CALIB.tradeBonusPct).toBe(10);     // documented: 10% per trade_base point
     // corruption refit 2026-06-11 (live 11-town ladder): quadratic % of gross past d0=6,
     // zero for capital + office-holding governors (julii: 2,626 model vs 2,641 live)

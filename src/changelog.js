@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1081",
+    date: "2026-06-11",
+    items: [
+      { type: "feature", text: "**Land trade law v2 — resource-driven, fit on 385 live routes across three factions.** The old population-based law was an Italy artifact; route value actually follows the two regions' goods stocks ((1+rv)^0.65 own side, ^0.30 partner), trade-percent and roads, with population nearly irrelevant. Julii lands at −1.5%, Cyrene −5.4%. Also identified from the route corpus: the Nile delta's big routes are SEA lanes along the river (the agents' anchor markers proved it) — the lane matcher under-slots river ports, which is the remaining Egypt trade gap (next up)." },
+    ],
+  },
+  {
     version: "0.9.1080",
     date: "2026-06-11",
     items: [
