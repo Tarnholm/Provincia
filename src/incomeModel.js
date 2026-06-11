@@ -720,7 +720,14 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // (incl. admin), quadratic in distance past d0=6, zero for office governors.
       const office = gv0 && gv0.hits && gv0.hits.some(h => OFFICE_RE.test(h));
       const x = Math.max(0, dist - CALIB.corrD0);
-      corrPct = office ? 0 : Math.max(0, CALIB.corrA * x + CALIB.corrB * x * x) / 100;
+      // The quadratic is calibrated on dist ≤ 66 (x ≤ 60); beyond that extend LINEARLY
+      // at the curve's end slope and cap at 90% — the raw quadratic exceeded 100% of
+      // town income for far-east mega-empires (seleucid corruption read 214k on 152k
+      // income, live-caught 2026-06-11). Far-range curve needs eastern-faction readings.
+      const X0 = 60;
+      const quad = (v) => CALIB.corrA * v + CALIB.corrB * v * v;
+      const raw = x <= X0 ? quad(x) : quad(X0) + (CALIB.corrA + 2 * CALIB.corrB * X0) * (x - X0);
+      corrPct = office ? 0 : Math.min(90, Math.max(0, raw)) / 100;
       corrSum += corrPct * (tTax + tFarm + tMine + tTrade + tAdmin);
     }
     // DOCUMENTED engine formulas (Feral Battle_and_Campaign_Formulae.md):

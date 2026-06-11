@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1057",
+    date: "2026-06-11",
+    items: [
+      { type: "fix", text: "**Corruption no longer explodes for mega-empires**: the distance curve is calibrated on ≤66 tiles and was extrapolating quadratically past 100% of town income for far-flung eastern towns (Seleucid corruption modeled at 214k on 152k income). Beyond the calibrated range it now extends linearly and caps at 90% — Seleucid net went from a nonsense −141k to −21.8k. Far-east readings will refine the tail." },
+      { type: "change", text: "Borderline-growth ⚠ tooltip now says the truth: the flip can go EITHER way (live case: Arsinoe-Kyrenaike reads 0% at high, one step above the model's pick) — check the in-game scroll and take the highest bracket holding ≥0%." },
+      { type: "improvement", text: "Cross-faction validation: Cyrene live A/B (first non-Julii faction) — taxes +0.9%, farming exact, army upkeep +1.7%, total income within 4.3%, all residual in the known-weak sea-trade and admin lines, biased conservative." },
+    ],
+  },
+  {
     version: "0.9.1056",
     date: "2026-06-11",
     items: [
