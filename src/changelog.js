@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1083",
+    date: "2026-06-11",
+    items: [
+      { type: "feature", text: "**River trade cracked — the Nile runs as its own sea.** The map's water colors are separate sea BODIES, and the Nile delta's water is its own small body: ports on a river body lane with every other river port (no slot limit — Sebennytos holds 3 lanes on an unbuilt port), at roughly double open-sea flow values. Alexandria and Sebennytos now reproduce their live lane sets exactly. Faction trade totals: Julii +1.7%, Cyrene −4.9%, Egypt +1.1% (was −37%). Every Mediterranean lane set stays exact." },
+    ],
+  },
+  {
     version: "0.9.1082",
     date: "2026-06-11",
     items: [

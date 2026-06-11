@@ -385,7 +385,7 @@ const CALIB = {
   corrA: 0.58, corrB: 0.0015, corrD0: 10, corrLawPct: 3,
   corrNegLawShift: 4, // tiles of effective distance per NEGATIVE law point (Pisae console probe + cyrene trio)
   corrCap: 61, // far-distance saturation (live Egypt: d141/226/351 all read 59-64% — NOT the old 90% linear climb)
-  seaLaneMaxDist: 40, // sea-path tiles; lanes are local (live: Kyrenaica forms NO Aegean lanes; Sena→Nesactium ~15 allowed)
+  seaLaneMaxDist: 40, riverBodyMaxCells: 1500, seaFlowRiverMult: 1.95, // river flows run hotter (Nile live 713/605/519) // sea-path tiles; lanes are local (live: Kyrenaica forms NO Aegean lanes; Sena→Nesactium ~15 allowed)
   // strong flow: v = K·pop^exp·e^(pct·tradePct) — refit on 16 current-build flows
   // (full julii 26-scroll corpus + cyrene, 2026-06-11 evening; R²0.82, max ×1.61).
   // The pct coefficient ≈ the historic 0.127 sea exponent; pop is nearly irrelevant.
@@ -731,13 +731,31 @@ function seaLanesByRegion(modDataDir) {
       // The built chain level does NOT set lane capacity.
       ports.push({ region: sd.region, fac, level: (idx >= 0 ? idx : 0) + 1, pop: sd.pop || 1500, basePort: basePort[sd.region] || 0 });
     }
+    // sea-body membership per region + body pixel sizes (full-res) for river detection
+    const bodiesOf = {}, bodySize = {};
+    for (let y = 0; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+      const o = y * W + x;
+      if (!isSea(o)) continue;
+      const bid = buf[dataOff + o * 3];
+      bodySize[bid] = (bodySize[bid] || 0) + 1;
+      for (const no of [o + 1, o - 1, o + W, o - W]) {
+        if (isSea(no)) continue;
+        const reg = rgbToRegion[buf[dataOff + no * 3 + 2] + "," + buf[dataOff + no * 3 + 1] + "," + buf[dataOff + no * 3]];
+        if (reg) { const l = (bodiesOf[reg] = bodiesOf[reg] || []); if (!l.includes(bid)) l.push(bid); }
+      }
+    }
     // SEA-PATH distances between port tiles (coarse 4px BFS over sea pixels) —
     // euclidean pairs ports across the peninsula (Neapolis↔Arpi bug); ships sail.
+    // PER SEA BODY (2026-06-11, Nile crack): map_regions' 16 sea colors are separate
+    // BODIES (Nile delta water 41,140,235 vs Mediterranean 41,140,236). Lanes form
+    // WITHIN one body — the BFS only connects same-body cells. This both forms the
+    // Nile river-lane network and severs cross-body strait phantoms (Locri⇄Messana).
     const ST = 4, GW = Math.ceil(W / ST), GH = Math.ceil(H / ST);
-    const seaGrid = new Uint8Array(GW * GH);
+    const seaGrid = new Uint8Array(GW * GH); // 0 = land, else body id (B value + 1)
     for (let gy = 0; gy < GH; gy++) for (let gx = 0; gx < GW; gx++) {
       const x = Math.min(W - 1, gx * ST), y = Math.min(H - 1, gy * ST);
-      if (isSea(y * W + x)) seaGrid[gy * GW + gx] = 1;
+      const o = (y * W + x) * 3;
+      if (buf[dataOff + o + 2] === 41 && buf[dataOff + o + 1] === 140) seaGrid[gy * GW + gx] = 1 + buf[dataOff + o];
     }
     const portCell = {};
     for (const p of ports) {
@@ -796,13 +814,24 @@ function seaLanesByRegion(modDataDir) {
       const sd = seaDist[a.region] && seaDist[a.region].get(b.region);
       if (sd == null) continue; // no sea path
       if (sd > CALIB.seaLaneMaxDist) continue; // lanes are LOCAL (live: no Aegean lanes from Kyrenaica)
-      pairs.push({ a, b, d: sd });
+      // RIVER LANES (2026-06-11 Nile crack): the Nile is its own small sea body
+      // (41,140,235); river ports lane near-all-pairs without consuming sea slots
+      // (Sebennytos holds 3 lanes on a level-0 port). Pairs sharing a SMALL body
+      // (< riverBodyMaxCells at 4px) lane unconditionally.
+      const shared = (bodiesOf[a.region] || []).filter(x => (bodiesOf[b.region] || []).includes(x));
+      const river = shared.some(bid => (bodySize[bid] || 1e9) < CALIB.riverBodyMaxCells);
+      pairs.push({ a, b, d: sd, river });
     }
     pairs.sort((x, y) => x.d - y.d);
     const used = {}; const slots = {};
     for (const p of ports) { slots[p.region] = 1 + p.level; used[p.region] = 0; }
     for (const pr of pairs) {
       const A = pr.a.region, B = pr.b.region;
+      if (pr.river) {
+        (out[A] = out[A] || []).push({ to: B, weak: false, inWeak: false, toPop: pr.b.pop, toPort: pr.b.basePort, ownPop: pr.a.pop, ownPort: pr.a.basePort, river: true });
+        (out[B] = out[B] || []).push({ to: A, weak: false, inWeak: false, toPop: pr.a.pop, toPort: pr.a.basePort, ownPop: pr.b.pop, ownPort: pr.b.basePort, river: true });
+        continue;
+      }
       if (used[A] >= slots[A] || used[B] >= slots[B]) continue;
       used[A]++; used[B]++;
       // PER-SIDE strength: each direction is weak iff THAT side burned its LAST slot
@@ -965,8 +994,11 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     if (s.portLevel) {
       const lanes = seaLanes[s.region] || [];
       for (const ln of lanes) {
-        const expV = CALIB.seaFlowK * Math.pow(Math.max(400, s.pop), CALIB.seaFlowPopExp) * Math.exp(CALIB.seaFlowPct * (s.tradePct || 0)) * (ln.weak ? CALIB.seaFlowWeak : 1);
-        const impV = CALIB.seaFlowK * Math.pow(Math.max(400, ln.toPop || 1500), CALIB.seaFlowPopExp) * (ln.inWeak ? CALIB.seaFlowWeak : 1) / 5;
+        // river lanes (small sea bodies, e.g. the Nile) run a multiple of the
+        // open-sea flow value — live delta flows (713/605/519) vs open-sea peers.
+        const rm = ln.river ? CALIB.seaFlowRiverMult : 1;
+        const expV = rm * CALIB.seaFlowK * Math.pow(Math.max(400, s.pop), CALIB.seaFlowPopExp) * Math.exp(CALIB.seaFlowPct * (s.tradePct || 0)) * (ln.weak ? CALIB.seaFlowWeak : 1);
+        const impV = rm * CALIB.seaFlowK * Math.pow(Math.max(400, ln.toPop || 1500), CALIB.seaFlowPopExp) * (ln.inWeak ? CALIB.seaFlowWeak : 1) / 5;
         seaTrade += expV + impV;
       }
       tradeSeaSum += seaTrade;
