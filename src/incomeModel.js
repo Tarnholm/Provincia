@@ -661,18 +661,25 @@ function seaLanesByRegion(modDataDir) {
     const buf = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga"));
     const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), dataOff = 18 + buf[0];
     const isSea = (o) => buf[dataOff + o * 3 + 2] === 41 && buf[dataOff + o * 3 + 1] === 140;
-    // coastal centroid per region (top-row pixel space; ordering-only approximation)
-    const cent = {}, cnt = {};
-    for (let y = 0; y < H - 1; y++) for (let x = 0; x < W - 1; x++) {
+    // PORT TILE per region = the coastal pixel nearest the CITY tile (the engine
+    // anchors the port structure there; near-tie lane ordering depends on it —
+    // Cosa→Praeneste vs →Pisae differ by ~0.1 tile and flip the strength assignment).
+    const cityPx = {};
+    {
+      const sites = dg.buildRegionCoords(buf, rgbToRegion); // city black pixels (top-row space y-flipped)
+      for (const r of Object.keys(sites)) cityPx[r] = [sites[r].x, H - 1 - sites[r].y];
+    }
+    const cent = {}, bestD = {};
+    for (let y = 0; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
       const o = y * W + x;
       if (isSea(o)) continue;
       const reg = rgbToRegion[buf[dataOff + o * 3 + 2] + "," + buf[dataOff + o * 3 + 1] + "," + buf[dataOff + o * 3]];
-      if (!reg) continue;
+      if (!reg || !cityPx[reg]) continue;
       if (isSea(o + 1) || isSea(o - 1) || isSea(o + W) || isSea(o - W)) {
-        const c = (cent[reg] = cent[reg] || [0, 0]); c[0] += x; c[1] += y; cnt[reg] = (cnt[reg] || 0) + 1;
+        const d = Math.hypot(x - cityPx[reg][0], y - cityPx[reg][1]);
+        if (bestD[reg] == null || d < bestD[reg]) { bestD[reg] = d; cent[reg] = [x, y]; }
       }
     }
-    for (const r of Object.keys(cent)) { cent[r][0] /= cnt[r]; cent[r][1] /= cnt[r]; }
     // port list with levels from descr_strat building level names ordered by EDB
     const inc = parseEDBIncome(path.join(modDataDir, "export_descr_buildings.txt"));
     const portOrder = inc.chainLevels["port_buildings"] || [];
