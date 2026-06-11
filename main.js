@@ -6407,6 +6407,10 @@ ipcMain.handle("get-strat-tax-plan", async (_event, modDataDir, faction, savePat
         const cr = crackSave(fs.readFileSync(savePath), modDataDir);
         const growthDevByCity = {};
         const sf = (cr && cr.settlementFields) || {};
+        // committed pops from the calibration save → the tax base tracks the actual
+        // campaign state (turn-1 saves equal descr_strat; mid-campaign saves diverge).
+        const popByCity = {};
+        for (const c of Object.keys(sf)) { const pv = sf[c].committedPopulation; if (pv > 0) popByCity[c] = pv; }
         for (const c of Object.keys(sf)) { const g = sf[c].growthDevValue; if (g != null) growthDevByCity[c] = { v1528: g, v1556: sf[c].growthDevValue2 }; }
         // governor trait growth effects (Farming/Fertility/Health) per settlement
         let govEffectByCity = {};
@@ -6493,6 +6497,10 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
         const cr = crackSave(fs.readFileSync(savePath), modDataDir);
         const growthDevByCity = {};
         const sf = (cr && cr.settlementFields) || {};
+        // committed pops from the calibration save → the tax base tracks the actual
+        // campaign state (turn-1 saves equal descr_strat; mid-campaign saves diverge).
+        const popByCity = {};
+        for (const c of Object.keys(sf)) { const pv = sf[c].committedPopulation; if (pv > 0) popByCity[c] = pv; }
         // PO anchor (live-verified 2026-06-11: the save's publicOrder field equals the
         // in-game % exactly — Camerinum 125 / Croton 85 / Rome 210 vs panels). Project
         // to other brackets with the verified tax-PO deltas (rel. to low: 0/−30/−50/−70).
@@ -6517,6 +6525,7 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
         // calibration save contributes the rolled TRAITS (and the exact PO anchor).
         void growthDevByCity;
         if (Object.keys(govEffectByCity).length) opts.govEffectByCity = govEffectByCity;
+        if (Object.keys(popByCity).length) opts.popByCity = popByCity;
         if (!Object.keys(opts).length) opts = undefined;
       } catch (e) { _writeLog(`[turn1-budget] save read failed (${e && e.message}); using no-save model`); }
     }
@@ -6540,7 +6549,9 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
     // the descr_strat seeds for income too — opts.govEffectByCity came from the
     // save-aware path above.
     const budget = im.computeTurn1Budget(modDataDir, faction, bracketByCity,
-      { ...(opts && opts.govEffectByCity ? { govEffectByCity: opts.govEffectByCity } : {}), ...(asAI ? { asAI: true, isPlayer: false } : {}) });
+      { ...(opts && opts.govEffectByCity ? { govEffectByCity: opts.govEffectByCity } : {}),
+        ...(opts && opts.popByCity ? { popByCity: opts.popByCity } : {}),
+        ...(asAI ? { asAI: true, isPlayer: false } : {}) });
     if (budget && !budget.error) budget.asAI = !!asAI;
     if (budget && !budget.error) {
       for (const s of budget.settlements) {

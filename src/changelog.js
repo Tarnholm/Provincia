@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1063",
+    date: "2026-06-11",
+    items: [
+      { type: "feature", text: "**Budgets now use the calibration save's committed populations** for the tax base — identical for turn-1 saves (pops match descr_strat), but a mid-campaign calibration save now produces a budget that tracks the actual campaign state instead of the start." },
+    ],
+  },
+  {
     version: "0.9.1062",
     date: "2026-06-11",
     items: [
