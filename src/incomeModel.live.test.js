@@ -20,7 +20,7 @@ d("income model — live Cyrene ledger regression (cracked laws guard)", () => {
     const te = await import("./traitEffects.js");
     const im = await import("./incomeModel.js");
     const cr = crackSave(fs.readFileSync(CYR_CALIB), MOD);
-    const gov = te.govEffectByCityFromSave(cr, te.parseTraitEffects(MOD));
+    const gov = te.govEffectByCityFromSave(cr, te.parseTraitEffects(MOD), MOD);
     const B = im.computeTurn1Budget(MOD, "cyrene", BR, { govEffectByCity: gov });
     expect(B.error).toBeFalsy();
     totals = B.totals;

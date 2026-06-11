@@ -6416,7 +6416,7 @@ ipcMain.handle("get-strat-tax-plan", async (_event, modDataDir, faction, savePat
         let govEffectByCity = {};
         try {
           const te = require("./src/traitEffects.js");
-          govEffectByCity = te.govEffectByCityFromSave(cr, te.parseTraitEffects(modDataDir));
+          govEffectByCity = te.govEffectByCityFromSave(cr, te.parseTraitEffects(modDataDir), modDataDir);
         } catch (e) { _writeLog(`[strat-tax] governor-trait read failed: ${e && e.message}`); }
         opts = {};
         if (Object.keys(growthDevByCity).length) opts.growthDevByCity = growthDevByCity;
@@ -6515,7 +6515,7 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
         if (!Object.keys(poAnchorByCity).length) poAnchorByCity = null;
         for (const c of Object.keys(sf)) { const g = sf[c].growthDevValue; if (g != null) growthDevByCity[c] = { v1528: g, v1556: sf[c].growthDevValue2 }; }
         let govEffectByCity = {};
-        try { govEffectByCity = te.govEffectByCityFromSave(cr, te.parseTraitEffects(modDataDir)); } catch {}
+        try { govEffectByCity = te.govEffectByCityFromSave(cr, te.parseTraitEffects(modDataDir), modDataDir); } catch {}
         opts = {};
         // growthDevByCity (save-aware dev growth) is NOT passed for bracket planning:
         // it reproduces THIS turn's growth tick, which embeds the harvest roll and

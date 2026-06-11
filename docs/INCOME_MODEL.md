@@ -60,8 +60,15 @@ the relationship lines appear in either order, parse symmetrically). rv = Σ qty
 Sea (aggregate, julii-anchored): `1.1169 · Σ_ports gTrade·rv·√(seaPartners)`.
 Sea per-LEG law (researched, not yet wired): two directional legs per lane;
 `v_leg ≈ k · e^(0.127·pctX) · cargo`, cargo = exporter's qty-goods the partner LACKS
-(exclusion rule, icon-verified), k_export ≈ 17-24, k_import ≈ 7.2, distance irrelevant.
-UNKNOWN: lane formation (one-way lanes are ~10× weaker; needs port partner-list scrolls).
+(exclusion rule, icon-verified), k_export ≈ 17-27, k_import ≈ 7.2 (NO pct modulation —
+applying the exporter's real tradePct scatters imports 3.3-8.4, falsified), weak legs
+k ≈ 0.7-6.4; distance irrelevant (Capua strong / Grumentum weak at identical sea-path
+d=17). Three distinct leg classes (export/import/weak) confirmed; the single-k unification
+hypothesis is dead. Lane formation IS solved (seaLanesByRegion, unwired): slots=1+portLevel,
+eligible = not-at-war ports not land-adjacent, greedy nearest-pair by sea-path BFS,
+weak iff the leg uses its own side's LAST slot — reproduces all observed lane sets and
+strengths. Wiring blocked only on weak-lane economics: one small-port partner-list scroll
+(Sena Gallica or Kyrene) calibrates k_weak (morning-sea-calibrate.js is staged).
 
 ### Wages & army upkeep
 ```

@@ -416,7 +416,7 @@ function optimalTaxPlan(saveBuf, modDataDir, cracked, playerHint, economyBudgets
       const gvv = require("./growthEval.js");
       const teff = require("./traitEffects.js");
       let gov = null;
-      try { gov = cracked ? teff.govEffectByCityFromSave(cracked, teff.parseTraitEffects(modDataDir)) : null; } catch (e) { gov = null; }
+      try { gov = cracked ? teff.govEffectByCityFromSave(cracked, teff.parseTraitEffects(modDataDir), modDataDir) : null; } catch (e) { gov = null; }
       const G = gvv.computeFactionGrowth(modDataDir, (player || "").toLowerCase(), gov ? { govEffectByCity: gov } : undefined);
       if (G && !G.error && Array.isArray(G.settlements)) {
         modelBase = {};

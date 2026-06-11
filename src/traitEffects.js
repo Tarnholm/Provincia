@@ -44,14 +44,14 @@ function parseAncillaryEffects(modDataDir) {
   for (const raw of lines) {
     const ln = raw.replace(/;.*$/, "");
     let m;
-    if ((m = ln.match(/^Ancillary\s+(\w+)/))) { cur = m[1]; out[cur] = { farm: 0, fert: 0, health: 0, squalor: 0, tax: 0, trading: 0, mining: 0, influence: 0, law: 0, unrest: 0, localPop: 0 }; continue; }
+    if ((m = ln.match(/^Ancillary\s+(\w+)/))) { cur = m[1]; out[cur] = { farm: 0, fert: 0, health: 0, squalor: 0, tax: 0, trading: 0, mining: 0, influence: 0, law: 0, unrest: 0, localPop: 0, mgmt: 0 }; continue; }
     if (!cur) continue;
-    if ((m = ln.match(/^\s*Effect\s+(Farming|Fertility|Health|Squalor|TaxCollection|Trading|Mining|Influence|Law|Unrest|LocalPopularity)\s+(-?\d+)/))) {
-      const k = { Farming: "farm", Fertility: "fert", Health: "health", Squalor: "squalor", TaxCollection: "tax", Trading: "trading", Mining: "mining", Influence: "influence", Law: "law", Unrest: "unrest", LocalPopularity: "localPop" }[m[1]];
+    if ((m = ln.match(/^\s*Effect\s+(Farming|Fertility|Health|Squalor|TaxCollection|Trading|Mining|Influence|Law|Unrest|LocalPopularity|Management)\s+(-?\d+)/))) {
+      const k = { Farming: "farm", Fertility: "fert", Health: "health", Squalor: "squalor", TaxCollection: "tax", Trading: "trading", Mining: "mining", Influence: "influence", Law: "law", Unrest: "unrest", LocalPopularity: "localPop", Management: "mgmt" }[m[1]];
       out[cur][k] += +m[2];
     }
   }
-  for (const k of Object.keys(out)) if (!(out[k].farm || out[k].fert || out[k].health || out[k].squalor || out[k].tax || out[k].trading || out[k].mining || out[k].influence || out[k].law || out[k].unrest || out[k].localPop)) delete out[k];
+  for (const k of Object.keys(out)) if (!(out[k].farm || out[k].fert || out[k].health || out[k].squalor || out[k].tax || out[k].trading || out[k].mining || out[k].influence || out[k].law || out[k].unrest || out[k].localPop || out[k].mgmt)) delete out[k];
   return out;
 }
 
@@ -177,6 +177,12 @@ function govEffectByCityFromSave(cracked, parsed, modDataDir) {
   // lookup of the save's points (start-randomization inflates points without leveling —
   // Cheapskate seeded 1 stays Frugal at 3 pts despite level 2's threshold being 3).
   // For traits NOT in the seed (accrued in play), threshold-on-points stays the estimate.
+  // The seeded-ordinal TRAIT switch regressed live econ (cyrene taxes 4321 vs 4487) and
+  // stays behind opts.seededOrdinals; passing modDataDir alone now folds only FOLLOWER
+  // (ancillary) effects — followers aren't in the cracked character records but never
+  // reroll at start, so the descr_strat seed stays valid on turn-1 calibration saves
+  // (Rome's scribe: Trading +10, Management +1 — was silently dropped).
+  const opts = arguments.length > 3 ? arguments[3] : null;
   const seedMap = modDataDir ? stratSeedByCity(modDataDir) : null;
   const ancFx = modDataDir ? parseAncillaryEffects(modDataDir) : null;
   for (const city of Object.keys(sf)) {
@@ -186,7 +192,7 @@ function govEffectByCityFromSave(cracked, parsed, modDataDir) {
     if (!ch || !ch.traits) continue;
     let e;
     const cs = seedMap && seedMap[city];
-    if (cs) {
+    if (cs && opts && opts.seededOrdinals) {
       // map each save trait to its effective ordinal level: seed level if seeded,
       // else highest-threshold-≤-points index
       const list = [];
@@ -202,17 +208,17 @@ function govEffectByCityFromSave(cracked, parsed, modDataDir) {
         if (idx > 0) list.push({ name, level: idx });
       }
       e = growthEffectOfTraits(list, parsed, { ordinal: true });
-      // follower (ancillary) effects from the seed — same catalysts as the strat path
-      if (ancFx) for (const a of (cs.anc || [])) {
-        const fx = ancFx[a]; if (!fx) continue;
-        e.farm += fx.farm; e.fert += fx.fert; e.health += fx.health; e.squalor += fx.squalor;
-        e.tax += fx.tax || 0; e.trading += fx.trading || 0; e.mining += fx.mining || 0;
-        e.influence += fx.influence || 0; e.law += fx.law || 0; e.unrest += fx.unrest || 0;
-        e.localPop += fx.localPop || 0; e.growthFarm += fx.farm;
-        if (e.hits) e.hits.push("anc:" + a);
-      }
     } else {
       e = growthEffectOfTraits(ch.traits, parsed);
+    }
+    // follower (ancillary) effects from the seed — same settlement catalysts as traits
+    if (ancFx && cs) for (const a of (cs.anc || [])) {
+      const fx = ancFx[a]; if (!fx) continue;
+      e.farm += fx.farm; e.fert += fx.fert; e.health += fx.health; e.squalor += fx.squalor;
+      e.tax += fx.tax || 0; e.trading += fx.trading || 0; e.mining += fx.mining || 0;
+      e.influence += fx.influence || 0; e.law += fx.law || 0; e.unrest += fx.unrest || 0;
+      e.localPop += fx.localPop || 0; e.growthFarm += fx.farm; e.mgmt += fx.mgmt || 0;
+      if (e.hits) e.hits.push("anc:" + a);
     }
     if (e.growthFarm || e.health || e.squalor || e.tax || e.trading || e.mining || e.influence || e.law || e.unrest || e.localPop || e.mgmt) out[city] = e;
   }
@@ -309,7 +315,7 @@ function govEffectByCityFromStratUncached(modDataDir, parsed) {
     if (!best || bestD > TILE_TOL) continue; // not standing in a settlement → not a governor
     const e = growthEffectOfTraits(g.traitList, parsed, { ordinal: true }); // descr_strat number = level index
     // fold in FOLLOWER (ancillary) effects — same settlement catalysts as traits
-    for (const a of g.anc) { const fx = ancFx[a]; if (!fx) continue; e.farm += fx.farm; e.fert += fx.fert; e.health += fx.health; e.squalor += fx.squalor; e.tax += fx.tax || 0; e.trading += fx.trading || 0; e.mining += fx.mining || 0; e.influence += fx.influence || 0; e.law += fx.law || 0; e.unrest += fx.unrest || 0; e.localPop += fx.localPop || 0; e.growthFarm += fx.farm; if (e.hits) e.hits.push("anc:" + a); } // growthFarm = Farming only; fert is character
+    for (const a of g.anc) { const fx = ancFx[a]; if (!fx) continue; e.farm += fx.farm; e.fert += fx.fert; e.health += fx.health; e.squalor += fx.squalor; e.tax += fx.tax || 0; e.trading += fx.trading || 0; e.mining += fx.mining || 0; e.influence += fx.influence || 0; e.law += fx.law || 0; e.unrest += fx.unrest || 0; e.localPop += fx.localPop || 0; e.growthFarm += fx.farm; e.mgmt += fx.mgmt || 0; if (e.hits) e.hits.push("anc:" + a); } // growthFarm = Farming only; fert is character
     if (!(e.growthFarm || e.health || e.squalor || e.tax || e.trading || e.mining || e.influence || e.law || e.unrest || e.localPop || e.mgmt)) continue;
     const prev = out[best.city]; // if two land on one tile, keep the stronger-squalor governor
     if (!prev || Math.abs(e.squalor) > Math.abs(prev.squalor)) out[best.city] = e;
