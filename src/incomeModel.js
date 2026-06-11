@@ -383,7 +383,7 @@ const CALIB = {
   // d>corrD0 (rmse 2.8 pts), ZERO for capital and office-holding governors.
   // Mean |err| 8.7% (julii −3.8%, seleucid +3.3%, antigonid +4.6%; ptolemaic −19% worst).
   corrA: 0.2261, corrB: 0.0061, corrD0: 6,
-  corrLawShift: 5.5, // tiles of effective distance per settlement LAW point (live cyrene 7-town fit)
+  corrNegLawShift: 4, // tiles of effective distance per NEGATIVE law point (Pisae console probe + cyrene trio)
   seaLaneMaxDist: 40, // sea-path tiles; lanes are local (live: Kyrenaica forms NO Aegean lanes; Sena→Nesactium ~15 allowed)
   // strong flow: v = K·pop^exp·e^(pct·tradePct) — refit on 16 current-build flows
   // (full julii 26-scroll corpus + cyrene, 2026-06-11 evening; R²0.82, max ×1.61).
@@ -965,32 +965,26 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     if (cap && c) {
       dist = Math.hypot(c.x - cap.x, c.y - cap.y);
       // CORRUPTION (live-cracked 2026-06-11, 11-town ladder): per-town % of GROSS
-      // (incl. admin), quadratic in distance past d0=6, zero for office governors.
-      // LAW SHIFT (live cyrene settlement-details, 7 towns): settlement LAW moves the
-      // EFFECTIVE distance by ~6.5 tiles/point — law = EDB building law (terrain
-      // steppe−2/desert−4, garrison chains, walls) + governor trait law. Positive law
-      // floors corruption to 0 well inside the curve (Ptolemais law+5 d12, Arsinoe
-      // law+1 d17 → both live 0); negative law runs it hotter (three −2 towns ≈ +13
-      // tiles, max residual 1.4pp). Paraitonion law 0 sits exactly on the base curve.
-      const office = gv0 && gv0.hits && gv0.hits.some(h => OFFICE_RE.test(h));
-      // CORRUPTION LAW CHANNEL (joint grid fit on BOTH live corpora, 33 towns,
-      // 2026-06-11 evening): walls + terrain law count fully, governor law counts
-      // HALF, and other building law (garrison chains, palaces) does NOT count.
-      // julii Σ −1.4%, cyrene +18% (best joint balance; previous all-law shift was
-      // julii −27%). Floor: raw < 1.75% truncates to zero (Arsinoe/Ptolemais).
-      const lawPts = (s.lawWalls || 0) + (s.lawTerrain || 0)
-        + 0.5 * (gv0 ? (gv0.lawCorr != null ? gv0.lawCorr : (gv0.law || 0)) : 0);
-      const x = Math.max(0, dist - CALIB.corrLawShift * lawPts - CALIB.corrD0);
-      // The quadratic is calibrated on dist ≤ 66 (x ≤ 60); beyond that extend LINEARLY
-      // at the curve's end slope and cap at 90% — the raw quadratic exceeded 100% of
-      // town income for far-east mega-empires (seleucid corruption read 214k on 152k
-      // income, live-caught 2026-06-11). Far-range curve needs eastern-faction readings.
+      // CORRUPTION — EXACT ENGINE LAW (live console experiments 2026-06-11 evening:
+      // give_trait probes on Larinum/Camerinum/Pisae + the 33-town two-faction corpus):
+      //   • corr% = q(distance) of gross — law has NO gradual effect (HarshJustice
+      //     law 1→3 on Larinum: corruption %% identical)
+      //   • settlement LAW ≥ 3 → corruption ZERO (hard threshold: Larinum law 3 → 0,
+      //     Arpi law 2 (live PO panel) → corrupt). Law = the PO panel's Law row:
+      //     building law (walls, garrison, terrain) + governor trait law.
+      //   • law < 0 → distance inflates ~4 tiles per negative point (Pisae law −2:
+      //     14.3%% → 20.2%%; matches the cyrene steppe/desert trio)
+      //   • capital 0; no display floor (Volaterrae shows 0.92%% live); the old
+      //     office-zero rule is SUBSUMED (office traits carry law ≥ 3).
+      // Model law parses with ±1 noise (trait levels, task #16) — at EXACTLY 3 the
+      // model half-weights the curve to absorb the boundary uncertainty.
+      // Validation: julii Σ2,544/2,496 (+1.9%%), cyrene Σ1,019/1,009 (+1.0%%).
+      const lawTot = (s.lawBonus || 0) + (gv0 ? (gv0.lawCorr != null ? gv0.lawCorr : (gv0.law || 0)) : 0);
+      const x = Math.max(0, dist + (lawTot < 0 ? CALIB.corrNegLawShift * -lawTot : 0) - CALIB.corrD0);
       const X0 = 60;
       const quad = (v) => CALIB.corrA * v + CALIB.corrB * v * v;
       const raw = x <= X0 ? quad(x) : quad(X0) + (CALIB.corrA + 2 * CALIB.corrB * X0) * (x - X0);
-      // FLOOR (live Arsinoe-Kyrenaike, law+1 d17): sub-1.5% corruption reads ZERO
-      // in-game — the engine truncates trace corruption entirely.
-      corrPct = (office || raw < 1.75) ? 0 : Math.min(90, Math.max(0, raw)) / 100;
+      corrPct = lawTot >= 4 ? 0 : Math.min(90, Math.max(0, raw)) / 100 * (lawTot === 3 ? 0.5 : 1);
       corrSum += corrPct * (tTax + tFarm + tMine + tTrade + tAdmin);
     }
     // DOCUMENTED engine formulas (Feral Battle_and_Campaign_Formulae.md):

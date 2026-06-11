@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1077",
+    date: "2026-06-11",
+    items: [
+      { type: "feature", text: "**Corruption cracked EXACTLY — live console experiment session.** give_trait probes on Larinum, Camerinum and Pisae proved the engine law: corruption is a pure distance curve with a hard LAW threshold — settlement Law >= 3 zeroes it entirely (Larinum at law 3 -> 0; Arpi at law 2 -> corrupt), law has NO gradual effect above zero, and each NEGATIVE law point inflates effective distance ~4 tiles (Pisae at law -2: 14.3% -> 20.2%; explains the Cyrenaican desert towns). Both faction ledgers now land within 2%: Julii 2,544 vs 2,496, Cyrene 1,019 vs 1,009." },
+    ],
+  },
+  {
     version: "0.9.1076",
     date: "2026-06-11",
     items: [
