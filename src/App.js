@@ -22585,13 +22585,14 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
         // live-verified exact, so it IS the planner. Everything below computes from the
         // mod files alone: tax plan (computeStratTaxPlan), turn-1 budget (incomeModel),
         // and the budget auto-fill (sustainable army budget − starting-army upkeep).
-        const fetchFor = async (ff) => {
+        const fetchFor = async (ff, calibOverride) => {
           if (!ff || !modDataDir) return;
+          const calib = calibOverride !== undefined ? calibOverride : armyCalibSave;
           setArmyProjIncome("");
           setArmySetupBusy(true); setArmySetupData(null); setArmyT1Budget(null); setArmyStratPlan(null);
-          const t1Promise = window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined, armyAsAI || undefined);
+          const t1Promise = window.electronAPI.getTurn1Budget?.(modDataDir, ff, calib || undefined, armyAsAI || undefined);
           // auto-compute the tax plan too (no button press needed)
-          const planPromise = window.electronAPI.getStratTaxPlan?.(modDataDir, ff, armyCalibSave || undefined);
+          const planPromise = window.electronAPI.getStratTaxPlan?.(modDataDir, ff, calib || undefined);
           try {
             const r = await window.electronAPI.getArmySetup(ff, modDataDir, armyBudgetFloor);
             setArmySetupData(r || { error: "no result" });
@@ -22624,7 +22625,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           const done = [];
           try {
             for (const ff of facList) {
-              const t1 = await window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined, armyAsAI || undefined);
+              const t1 = await window.electronAPI.getTurn1Budget?.(modDataDir, ff, calib || undefined, armyAsAI || undefined);
               if (t1 && !t1.error && t1.totals) {
                 const row = { fac: ff, ...t1.totals, towns: t1.settlements?.length || 0 };
                 done.push(row);
@@ -22664,10 +22665,10 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                   </button>
                   <button
                     onClick={async () => {
-                      if (armyCalibSave) { setArmyCalibSave(""); pushToast("Calibration save cleared — back to descr_strat seeds", "info", 4000); if (fac) fetchFor(fac); return; }
+                      if (armyCalibSave) { setArmyCalibSave(""); pushToast("Calibration save cleared — back to descr_strat seeds", "info", 4000); if (fac) fetchFor(fac, ""); return; }
                       try {
                         const r = await window.electronAPI.selectSaveFile?.();
-                        if (r && r.path) { setArmyCalibSave(r.path); pushToast("Calibration save set — governor traits (incl. start-randomized personalities) now come from this save for ALL factions", "info", 6000); if (fac) fetchFor(fac); }
+                        if (r && r.path) { setArmyCalibSave(r.path); pushToast("Calibration save set — governor traits (incl. start-randomized personalities) now come from this save for ALL factions", "info", 6000); if (fac) fetchFor(fac, r.path); }
                       } catch { }
                     }}
                     title={armyCalibSave

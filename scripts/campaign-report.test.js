@@ -27,9 +27,10 @@ try {
 } catch { }
 
 describe.skipIf(!haveFixtures)("campaign-report buildRows (save_julii1)", () => {
-  const buf = fs.readFileSync(SAVE);
-  const r = crackSave(buf, MOD);
-  const rows = buildRows(r, buf);
+  // lazy: the describe body runs even when skipped — don't touch the fixture then
+  const buf = haveFixtures ? fs.readFileSync(SAVE) : Buffer.alloc(0);
+  const r = haveFixtures ? crackSave(buf, MOD) : { factions: {} };
+  const rows = haveFixtures ? buildRows(r, buf) : [];
 
   it("produces one row per faction with no fabricated fields", () => {
     expect(rows.length).toBe(Object.keys(r.factions).length);
