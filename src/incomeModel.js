@@ -659,7 +659,9 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   // town's corruption to ZERO (live-verified 2026-06-11: Praeneste d3, Reate d8,
   // Cosa d16 and capital Rome all read corruption 0 while equal-distance towns pay).
   const OFFICE_RE = /\b(Quaestor|Aedile|Praetor|Propraetor|Consul|Proconsul|Censor)\b/i;
+  const popOv = (opts && opts.popByCity) || null; // committed-pop override (live-save budgets / corpus scoring)
   for (const s of F.settlements) {
+    if (popOv) { const pv = popOv[s.settlement] != null ? popOv[s.settlement] : popOv[s.region]; if (pv != null && pv > 0) s.pop = pv; }
     const bracket = br[s.settlement] || br[s.region] || "normal";
     const mult = BRACKET_MULT[bracket] || 1;
     const gv0 = govFx[s.settlement] || govFx[s.region] || null;
@@ -706,10 +708,11 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const tTrade = landTrade
       + (s.portLevel ? CALIB.tradeSea * gTrade * rv * Math.sqrt(seaPartnersOf(s.region)) : 0);
     // ADMIN income (the in-game scroll's 4th row, labeled "Governor" — ledger f9
-    // 'other'): admin% × town gross, admin% fit on 13 live-measured governor
-    // marginals (rmse 1.15): 1.13 + 2.61·mgmt + 0.59·law⁺. No governor → no admin.
+    // 'other'): admin% × town gross. JOINT REFIT 2026-06-11 on the two current-vintage
+    // faction ledgers (julii Σ1,939 → +3.1%, cyrene Σ538 → −2.2%) + 13 live marginals:
+    // 4 + 0.75·min(mgmt,3) + 0.25·law⁺. No governor → no admin.
     const tAdmin = gv0
-      ? Math.max(0, (1.13 + 2.61 * Math.min(3, Math.max(0, gv0.mgmt || 0)) + 0.59 * Math.min(4, Math.max(0, gv0.law || 0))) / 100) * (tTax + tFarm + tMine + tTrade)
+      ? Math.max(0, (4 + 0.75 * Math.min(3, Math.max(0, gv0.mgmt || 0)) + 0.25 * Math.max(0, gv0.law || 0)) / 100) * (tTax + tFarm + tMine + tTrade)
       : 0;
     admin += tAdmin;
     let dist = null, corrPct = 0;

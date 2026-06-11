@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1059",
+    date: "2026-06-11",
+    items: [
+      { type: "improvement", text: "**Admin income jointly refit on both live-validated factions** (4% + 0.75·management + 0.25·law of town gross): Julii 2,000 vs 1,939 ledger (+3.1%), Cyrene 526 vs 538 (−2.2%) — previously +14%/−23%. Also: settlement budgets accept committed-pop overrides (groundwork for mid-campaign budgets), and the corpus scorer confirmed farming/wages exact and army upkeep ±1% across seven historic faction saves." },
+    ],
+  },
+  {
     version: "0.9.1058",
     date: "2026-06-11",
     items: [
