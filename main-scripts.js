@@ -402,6 +402,7 @@ ipcMain.handle('sps:validate-mod-extra', async (_, dataDir) => {
     stratUnitRefs: { issues: [], error: null },
     factionCulture: { issues: [], error: null },
     charSharedCoords: { issues: [], error: null },
+    charNearCityTile: { issues: [], error: null },
     error: null,
   };
   if (!dataDir) { out.error = 'no dataDir provided'; return out; }
@@ -640,6 +641,34 @@ ipcMain.handle('sps:validate-mod-extra', async (_, dataDir) => {
       for (const [xy, chars] of Object.entries(byXY)) {
         if (chars.length > 1) out.charSharedCoords.issues.push({ xy, characters: chars });
       }
+      // MULTIPLE GENERALS IN ONE SETTLEMENT AT START (user rule 2026-06-11: a
+      // settlement may hold only ONE general at campaign start — a second one gets
+      // displaced by the engine and starts FLEEING, as seen with Armenia's Gorniai
+      // and Thospia governors). City tile = the descr_regions city pixel
+      // (buildRegionCoords, verified against ~800 rebel governors mod-wide).
+      // ERROR: ≥2 named characters on one city tile. WARNING: a second same-faction
+      // general within 1 tile of an occupied city tile (footprint collision risk).
+      try {
+        const dsg = require('./src/descrStratGeneral.js');
+        const rtxt = fs.readFileSync(path.join(dataDir, 'world', 'maps', 'base', 'descr_regions.txt'), 'latin1');
+        const { regionToCity, rgbToRegion } = dsg.parseDescrRegions(rtxt);
+        const coords = dsg.buildRegionCoords(fs.readFileSync(path.join(dataDir, 'world', 'maps', 'base', 'map_regions.tga')), rgbToRegion);
+        for (const r of Object.keys(coords)) {
+          const ct = { city: regionToCity[r], x: coords[r].x, y: coords[r].y };
+          const onTile = [], near = [];
+          for (const [xy, chars] of Object.entries(byXY)) {
+            const [cx, cy] = xy.split(',').map(Number);
+            const d = Math.max(Math.abs(cx - ct.x), Math.abs(cy - ct.y));
+            if (d === 0) onTile.push(...chars.map(c => ({ ...c, xy })));
+            else if (d === 1) near.push(...chars.map(c => ({ ...c, xy })));
+          }
+          if (onTile.length > 1) {
+            out.charNearCityTile.issues.push({ severity: 'error', city: ct.city, cityTile: ct.x + ',' + ct.y, characters: onTile, problem: onTile.length + ' generals inside at start (max 1 allowed — engine displaces the rest, they start FLEEING)' });
+          } else if (onTile.length === 1 && near.some(n => n.faction === onTile[0].faction)) {
+            out.charNearCityTile.issues.push({ severity: 'warning', city: ct.city, cityTile: ct.x + ',' + ct.y, characters: [...onTile, ...near.filter(n => n.faction === onTile[0].faction)], problem: 'second same-faction general adjacent to an occupied city tile' });
+          }
+        }
+      } catch (e) { out.charNearCityTile.error = String((e && e.message) || e); }
     } else out.charSharedCoords.error = 'descr_strat not found';
   } catch (e) { out.charSharedCoords.error = String((e && e.message) || e); }
 

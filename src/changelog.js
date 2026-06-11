@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1079",
+    date: "2026-06-11",
+    items: [
+      { type: "feature", text: "**Validator: multi-general settlements** — flags any settlement with more than one general at campaign start (the engine displaces the extras and they begin the game FLEEING, as with Armenia's Gorniai and Thospia governors), plus warns when a second same-faction general stands adjacent to an occupied city tile. New dashboard tile alongside the shared-tile check." },
+    ],
+  },
+  {
     version: "0.9.1078",
     date: "2026-06-11",
     items: [

@@ -15810,6 +15810,7 @@ function App() {
                         ["descr_strat xref", stratXref, "#fbbf24", "descr_strat traits not in EDCT"],
                         ["Faction culture", facCult, "#f87171", "Factions referencing undefined cultures"],
                         ["Chars sharing tile", (modExtraAudit?.charSharedCoords?.issues || []).length, "#f87171", "Characters sharing a map tile"],
+                        ["Multi-general towns", (modExtraAudit?.charNearCityTile?.issues || []).length, "#f87171", "Settlements with more than one general at campaign start (engine displaces extras - they start FLEEING)"],
                         ["descr_regions issues", drIssues, "#f87171", "descr_strat regions not in descr_regions"],
                       ],
                       [
