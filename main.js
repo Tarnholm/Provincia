@@ -6542,6 +6542,9 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
     if (pf && pf.settlements) for (const s of pf.settlements) {
       const key = s.settlement || s.region;
       if (key && s.optimalBracket) bracketByCity[key] = s.optimalBracket;
+      // NOTE (income-goal session): deliberately NO PO-based bracket downgrade here —
+      // the team's remedy for low-PO towns is garrison-first (keep the tax bracket,
+      // add units: the ⚔+N suggestion), per the live Neapolis decision 2026-06-11.
       growthBySettlement[key] = { optimalBracket: s.optimalBracket, baseGrowthEst: s.baseGrowthEst, borderline: s.borderline };
     }
     // 2. static income model at those brackets. When a CALIBRATION SAVE is provided,

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1069",
+    date: "2026-06-11",
+    items: [
+      { type: "improvement", text: "AI governor-admin income gets its measured tier corrections (small/medium AI factions); and a policy note codified in the planner: low public order never downgrades a recommended tax bracket — the team's remedy is garrison-first (the ⚔+N suggestion), matching the live Neapolis decision." },
+    ],
+  },
+  {
     version: "0.9.1068",
     date: "2026-06-11",
     items: [
