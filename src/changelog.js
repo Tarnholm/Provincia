@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1058",
+    date: "2026-06-11",
+    items: [
+      { type: "fix", text: "**Governor squalor no longer drags growth brackets for personality traits** — live Cyrene case: Tetrapyrgia's governor parses +2 squalor (Cheapskate) but his in-game effects net to zero, and the growth scroll shows population squalor only; the model recommended low where normal holds 0% growth. Growth now counts only Estates-family squalor (the Larinum controlled test stays exact). Tetrapyrgia and Arsinoe both now match the player's hand." },
+    ],
+  },
+  {
     version: "0.9.1057",
     date: "2026-06-11",
     items: [

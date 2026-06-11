@@ -528,7 +528,8 @@ function computeFactionGrowth(modDataDir, faction, opts) {
     // squalor (verified — adding it on top regressed save-aware 97→90%), so for a save-backed
     // estimate we leave it alone. No-save uses the descr_strat starting governors and was
     // recalibrated WITH this term (fit on truth+0.5×govSqualor, subtract per-settlement here).
-    const govSqualorPct = (ge && ge.squalor && !savedDev) ? 0.5 * ge.squalor : 0;
+    const govSq = ge ? (ge.squalorEstates != null ? ge.squalorEstates : ge.squalor) : 0; // Estates-family only (Tetrapyrgia live case)
+    const govSqualorPct = (govSq && !savedDev) ? 0.5 * govSq : 0;
     // TOTAL squalor (pop baseline + governor effect) clamps at 0 — a squalor-RELIEVING
     // governor (GoodBuilder/architect) in a town with no pop squalor cannot push squalor
     // negative (i.e. cannot ADD growth). Cracked from the corpus 2026-06-09: Karystos/

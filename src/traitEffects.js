@@ -113,8 +113,8 @@ const BASELINE_TRAITS = new Set(["TurnsAlive"]);
 // farming/growth; Health and Squalor are the other settlement effects. growthFarm = farm only.
 function growthEffectOfTraits(traitList, parsed, opts) {
   const ordinal = !!(opts && opts.ordinal);
-  let farm = 0, fert = 0, health = 0, squalor = 0, tax = 0, trading = 0, mining = 0, influence = 0, law = 0, unrest = 0, localPop = 0, mgmt = 0; const hits = [];
-  if (!Array.isArray(traitList) || !parsed) return { farm, fert, health, squalor, tax, trading, mining, influence, law, unrest, localPop, mgmt, growthFarm: 0, hits };
+  let farm = 0, fert = 0, health = 0, squalor = 0, squalorEstates = 0, tax = 0, trading = 0, mining = 0, influence = 0, law = 0, unrest = 0, localPop = 0, mgmt = 0; const hits = [];
+  if (!Array.isArray(traitList) || !parsed) return { farm, fert, health, squalor, squalorEstates, tax, trading, mining, influence, law, unrest, localPop, mgmt, growthFarm: 0, hits };
   // ANTI-TRAIT CANCELLATION (live-cracked Thessalonike 2026-06-10): a seeded anti-trait
   // reduces the trait's effective level (Bokros: Prim 3 + Feck 1 → Prim level 2 → NO
   // squalor relief; his card shows only the architect −1, move-out test exact at ±0.5%).
@@ -134,13 +134,22 @@ function growthEffectOfTraits(traitList, parsed, opts) {
     if (!chosen) continue;
     if (chosen.Farming || chosen.Fertility || chosen.Health || chosen.Squalor || chosen.TaxCollection || chosen.Trading || chosen.Mining || chosen.Influence || chosen.Law || chosen.Unrest || chosen.LocalPopularity || chosen.Management) {
       farm += chosen.Farming; fert += chosen.Fertility; health += chosen.Health; squalor += chosen.Squalor;
+      // GROWTH-SQUALOR WHITELIST (live 2026-06-11, Tetrapyrgia vs Larinum): only the
+      // Estates-family trait squalor (physical land holdings) moves settlement GROWTH;
+      // personality/finance squalor (Cheapskate +2 on the Tetrapyrgia governor) shows
+      // in EDCT but the in-game growth scroll reads pop-squalor only. Larinum's
+      // controlled Estates test (+2 → −1.0% growth) stays exact via this field.
+      // NOTE: the Tetrapyrgia governor's in-game card shows +1/−1 squalor (net 0), so
+      // the true engine mechanism may be level-mapping + an unattributed −1 relief
+      // rather than non-application; refine when a counterexample appears.
+      if (/^Estates/.test(name)) squalorEstates += chosen.Squalor;
       tax += chosen.TaxCollection || 0; trading += chosen.Trading || 0; mining += chosen.Mining || 0;
       influence += chosen.Influence || 0; law += chosen.Law || 0; unrest += chosen.Unrest || 0; localPop += chosen.LocalPopularity || 0;
       mgmt += chosen.Management || 0;
       hits.push(`${name}/${pts}`);
     }
   }
-  return { farm, fert, health, squalor, tax, trading, mining, influence, law, unrest, localPop, mgmt, growthFarm: farm, hits }; // growthFarm = Farming only (Fertility is character, not settlement)
+  return { farm, fert, health, squalor, squalorEstates, tax, trading, mining, influence, law, unrest, localPop, mgmt, growthFarm: farm, hits }; // growthFarm = Farming only (Fertility is character, not settlement)
 }
 
 // Convenience for callers holding a cracked save: build { [city]: {growthFarm, health, ...} }
