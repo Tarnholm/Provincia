@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1061",
+    date: "2026-06-11",
+    items: [
+      { type: "improvement", text: "**AI trade and corruption get measured per-tier corrections** (215-ledger refit): small AI factions trade ×0.66 of the raw model, big empires ×1.3; corruption runs hotter for mid-size AI. Bottom line for the ⚖ overview: AI total income now lands at median 5.2% (90th percentile 15.5%) across all 215 factions on current files." },
+    ],
+  },
+  {
     version: "0.9.1060",
     date: "2026-06-11",
     items: [

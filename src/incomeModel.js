@@ -311,6 +311,10 @@ const CALIB = {
   // old K_single mystery): medians below, tier 5 interpolated (no sample).
   aiFarmBonus: 1.188,
   aiTaxFixByTier: { 1: 1.976, 2: 1.585, 3: 1.410, 4: 1.256, 5: 1.20, 6: 1.154, 7: 1.035, 8: 1.095, 9: 1.05, 10: 1.05 },
+  // trade + corruption per-tier corrections (same 215-ledger refit; ratios are truth/model
+  // AFTER the flat 1.188, so these multiply on top of it):
+  aiTradeFixByTier: { 1: 0.66, 2: 0.66, 3: 0.94, 4: 1.0, 5: 1.0, 6: 1.34, 7: 1.29, 8: 0.91, 9: 1.0, 10: 1.0 },
+  aiCorrFixByTier: { 1: 1.0, 2: 1.81, 3: 1.34, 4: 1.52, 5: 1.2, 6: 1.07, 7: 0.89, 8: 0.71, 9: 1.0, 10: 1.0 },
   // farming = 80 × difficulty × Σ(region farmN + EDB farmLevel + governor Farming pts)
   // × Hanging-Gardens. THE ENGINE CONSTANT IS DOCUMENTED: EDB.md "farming_level: plus
   // 80 income (average harvest) per point" — our fitted 73.61 = 80 × 0.92 exactly.
@@ -769,8 +773,8 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     taxes = taxes / CALIB.difficultyIncome * taxFix;
     farming = farming / CALIB.difficultyIncome * CALIB.aiFarmBonus;
     mining *= CALIB.aiFarmBonus;
-    trade *= CALIB.aiFarmBonus;
-    corruption = Math.round(corruption / CALIB.difficultyIncome * CALIB.aiFarmBonus); // income-proportional
+    trade *= CALIB.aiFarmBonus * (CALIB.aiTradeFixByTier[F.tier] != null ? CALIB.aiTradeFixByTier[F.tier] : 1.0);
+    corruption = Math.round(corruption / CALIB.difficultyIncome * CALIB.aiFarmBonus * (CALIB.aiCorrFixByTier[F.tier] != null ? CALIB.aiCorrFixByTier[F.tier] : 1.0));
   }
   admin = Math.round(admin);
   const income = Math.round(taxes + farming + mining + trade + admin);
