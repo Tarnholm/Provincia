@@ -193,6 +193,13 @@ function analyzeFaction(modDataDir, faction, saveBuf, floor) {
   // already-loaded saveEconomy.byFaction[faction] + projectNet(), because locating
   // the faction's econ block reliably needs the renderer's faction attribution;
   // an army-upkeep heuristic here mis-matched (another faction shared the upkeep).
+  // STARTING-ARMY UPKEEP: prefer the income model's calibrated EDU estimator — it
+  // matches the engine charge to 0.1% (julii live 19,629 vs 19,616; the local Σ here
+  // undercounted by ~1,000 — caught live 2026-06-11, the "too much money" report).
+  try {
+    const edu = require("./incomeModel.js").armyUpkeepEDU(modDataDir, faction);
+    if (edu && typeof edu.upkeep === "number" && edu.upkeep > 0) armyUpkeep = edu.upkeep;
+  } catch { /* keep local sum */ }
   return {
     faction, denari: f.denari, armyUpkeep,
     characters, settlements, floor: FLOOR,

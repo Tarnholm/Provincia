@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1055",
+    date: "2026-06-11",
+    items: [
+      { type: "fix", text: "**Army Setup budget no longer over-promises: the starting-army upkeep it subtracts was undercounting by ~5%** (its local parser missed ~1,000 denarii of units on Julii). It now uses the income model's calibrated estimator, which matches the engine's charge to 0.1% (19,616 vs the live ledger's 19,629). Live A/B at the recommended brackets: the budget went from +710 optimistic to −290 conservative vs the actual in-game net — the safe side for adding troops." },
+    ],
+  },
+  {
     version: "0.9.1054",
     date: "2026-06-11",
     items: [
