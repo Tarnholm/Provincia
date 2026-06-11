@@ -60,7 +60,7 @@ describe("incomeModel — cracked constants", () => {
     // AI economy refit 2026-06-11 (215 current-vintage AI ledgers, median ratio 1.000/tier)
     expect(im.CALIB.aiFarmBonus).toBeCloseTo(1.188, 3);
     expect(im.CALIB.aiTaxFixByTier[1]).toBeCloseTo(1.976, 3);
-    expect(im.CALIB.aiTaxFixByTier[7]).toBeCloseTo(1.035, 3);
+    expect(im.CALIB.aiTaxFixByTier[7]).toBeCloseTo(0.83, 2); // rescaled after the AI gov-building causal fix
     expect(im.CALIB.aiTradeFixByTier[2]).toBeCloseTo(0.66, 2);
   });
 

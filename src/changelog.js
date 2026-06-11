@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1064",
+    date: "2026-06-11",
+    items: [
+      { type: "fix", text: "**AI settlements no longer count their government/colony buildings** — the RIS campaign script destroys them in every AI town at campaign start, but the model read them from descr_strat anyway (phantom −40-point tax penalties per town). The AI tax tier table is re-centered on the corrected baseline; per-town AI numbers now reflect the post-script state the game actually runs." },
+    ],
+  },
+  {
     version: "0.9.1063",
     date: "2026-06-11",
     items: [

@@ -127,8 +127,15 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
   for (const s of f.settlements) {
     const region = byRegion[s.region];
     if (!region) continue;
+    // AI PERSPECTIVE: the RIS campaign script DESTROYS government (gov1-4) and colony
+    // buildings in every AI settlement at campaign start (building-state audit
+    // 2026-06-10) — descr_strat lists them but the AI economy never has them. Drop
+    // them from AI features (taxable points, PO, trade) to model the post-script state.
+    const aiDropped = !isPlayer
+      ? s.buildings.filter(b => !/^government|^colony$/i.test(b.chain))
+      : s.buildings;
     const buildings = new Map();
-    for (const b of s.buildings) {
+    for (const b of aiDropped) {
       const order = inc.chainLevels[b.chain] || null;
       const idx = order ? order.indexOf(b.level) : 0;
       buildings.set(b.chain, idx < 0 ? 0 : idx);
@@ -148,7 +155,7 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
     const tax = { base: 0, size: 0, winter: 0 }, trade = { base: 0, size: 0, winter: 0 };
     let tradeLvlSum = 0, mineSum = 0, fleetSum = 0, wallLevel = -1, healthPips = 0;
     const explain = (opts && opts.explain) ? [] : null;
-    for (const b of s.buildings) {
+    for (const b of aiDropped) {
       const cap = inc.capIndex[b.chain + ":" + b.level];
       if (!cap) continue;
       for (const x of cap.taxable) if (gv.evalReq(x.req, ctx)) { tax[cat(x.req)] += x.val; if (explain) explain.push({ chain: b.chain + ":" + b.level, val: x.val, req: x.req }); }
@@ -310,7 +317,10 @@ const CALIB = {
   // AI hinterland lines' true response — tier-1 city-states earn ~2× modeled, the
   // old K_single mystery): medians below, tier 5 interpolated (no sample).
   aiFarmBonus: 1.188,
-  aiTaxFixByTier: { 1: 1.976, 2: 1.585, 3: 1.410, 4: 1.256, 5: 1.20, 6: 1.154, 7: 1.035, 8: 1.095, 9: 1.05, 10: 1.05 },
+  // rescaled 2026-06-11b after dropping the script-destroyed gov/colony buildings
+  // from AI features (the causal fix shifts the baseline; tiers re-centered on the
+  // same 215-ledger refit):
+  aiTaxFixByTier: { 1: 1.976, 2: 1.585, 3: 1.40, 4: 1.19, 5: 1.05, 6: 0.90, 7: 0.83, 8: 0.89, 9: 0.9, 10: 0.9 },
   // trade + corruption per-tier corrections (same 215-ledger refit; ratios are truth/model
   // AFTER the flat 1.188, so these multiply on top of it):
   aiTradeFixByTier: { 1: 0.66, 2: 0.66, 3: 0.94, 4: 1.0, 5: 1.0, 6: 1.34, 7: 1.29, 8: 0.91, 9: 1.0, 10: 1.0 },
