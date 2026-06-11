@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1085",
+    date: "2026-06-11",
+    items: [
+      { type: "feature", text: "**City-state tax law exact** — live Capua 4-bracket sweep: single-settlement factions tax at 0.8154·W·rate·gov − 43·gov (the population coefficient runs 1.79× the imperial law; building points collapse to ~0 — the player-side sibling of the AI tier-1 subsidy regime). Capua's taxes now match all four brackets to the denarius; its full budget lands within 56 of the live ledger (was 516 off). Also fixed: attaching a calibration save now recomputes the budget immediately (it previously used the stale no-save state)." },
+    ],
+  },
+  {
     version: "0.9.1084",
     date: "2026-06-11",
     items: [

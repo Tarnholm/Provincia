@@ -301,7 +301,7 @@ const CALIB = {
   // → K = 1.2244 = 4/3 × 0.92 — the engine single-town factor is likely a clean 4/3
   // city-state bonus under the documented hard-difficulty 0.92). K_multi 0.5544 =
   // 0.6 × 0.92. Both ÷0.92 give clean engine constants (4/3 and 0.6).
-  taxLogK_multi: 0.5544, taxLogK_single: 1.2244,
+  taxLogK_multi: 0.5544, taxLogK_single: 0.8154, taxFlatSingle: -43.2,
   // EXACT TAX LAW (live julii scroll session 2026-06-11, 15 towns × 4 brackets):
   // taxes_town = taxBaseK·W(pop)·rate·gov + taxFlatPoint·pts·gov, where pts =
   // taxPctParts.base+size+winter (EDB taxable_income_bonus values — they apply FLAT
@@ -940,13 +940,16 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const gMine = gv0 ? Math.max(0, 1 + (gv0.mining || 0) / 100) : 1;
     const f = Math.max(0, 1 + (s.taxPctParts.base + s.taxPctParts.winter) / 100);
     const wLog = Math.max(0, 400 * (Math.log(Math.max(400, s.pop)) - 4.4));
-    // multi-town factions: the cracked flat-points law (see CALIB.taxBaseK). Single-town
-    // factions keep the Capua-calibrated log path until a live city-state sweep validates
-    // the flat law there (its size1 hinterland line is a big POSITIVE bonus — unverified).
+    // multi-town factions: the cracked flat-points law (see CALIB.taxBaseK).
+    // SINGLE-TOWN factions: EXACT city-state law from the live Capua 4-bracket sweep
+    // (2026-06-11 evening; bottom-bar incomes 4137/4454/4771/5246 perfectly linear):
+    // taxes = 0.8154·W·rate·gov − 43.2·gov — the population coefficient runs 1.79×
+    // the imperial law and the flat building points collapse to ~0 (the player-side
+    // sibling of the AI tier-1 subsidy regime). Validated exact at all 4 brackets.
     const taxPts = s.taxPctParts.base + s.taxPctParts.size + s.taxPctParts.winter;
     const tTax = F.settlements.length > 1
       ? Math.max(0, CALIB.taxBaseK * wLog * mult * gTax + CALIB.taxFlatPoint * taxPts * gTax)
-      : CALIB.taxLogK_single * wLog * f * mult * gTax;
+      : Math.max(0, CALIB.taxLogK_single * wLog * mult * gTax + CALIB.taxFlatSingle * gTax);
     // governor Effect Farming = +1 farm level per point for INCOME (confirmed 2026-06-10,
     // gov-farm-income-test.js: 10/11 player factions land at ratio 1.000-1.002 with u=1 —
     // farming income is now exact; the lone seleucid +20% is a separate EDB underparse).
