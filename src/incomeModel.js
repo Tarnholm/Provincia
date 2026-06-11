@@ -382,9 +382,9 @@ const CALIB = {
   // (tax+farm+mine+trade+admin), corr% = corrA·(d−corrD0) + corrB·(d−corrD0)² for
   // d>corrD0 (rmse 2.8 pts), ZERO for capital and office-holding governors.
   // Mean |err| 8.7% (julii −3.8%, seleucid +3.3%, antigonid +4.6%; ptolemaic −19% worst).
-  corrA: 0.2261, corrB: 0.0061, corrD0: 6,
+  corrA: 0.58, corrB: 0.0015, corrD0: 10, corrLawPct: 3,
   corrNegLawShift: 4, // tiles of effective distance per NEGATIVE law point (Pisae console probe + cyrene trio)
-  corrCap: 62, // far-distance saturation (live Egypt: d141/226/351 all read 59-64% — NOT the old 90% linear climb)
+  corrCap: 61, // far-distance saturation (live Egypt: d141/226/351 all read 59-64% — NOT the old 90% linear climb)
   seaLaneMaxDist: 40, // sea-path tiles; lanes are local (live: Kyrenaica forms NO Aegean lanes; Sena→Nesactium ~15 allowed)
   // strong flow: v = K·pop^exp·e^(pct·tradePct) — refit on 16 current-build flows
   // (full julii 26-scroll corpus + cyrene, 2026-06-11 evening; R²0.82, max ×1.61).
@@ -985,11 +985,14 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // model half-weights the curve to absorb the boundary uncertainty.
       // Validation: julii Σ2,544/2,496 (+1.9%%), cyrene Σ1,019/1,009 (+1.0%%).
       const lawTot = (s.lawBonus || 0) + (gv0 ? (gv0.lawCorr != null ? gv0.lawCorr : (gv0.law || 0)) : 0);
-      const x = Math.max(0, dist + (lawTot < 0 ? CALIB.corrNegLawShift * -lawTot : 0) - CALIB.corrD0);
-      const X0 = 60;
-      const quad = (v) => CALIB.corrA * v + CALIB.corrB * v * v;
-      const raw = x <= X0 ? quad(x) : quad(X0) + (CALIB.corrA + 2 * CALIB.corrB * X0) * (x - X0);
-      corrPct = lawTot >= 4 ? 0 : Math.min(CALIB.corrCap, Math.max(0, raw)) / 100 * (lawTot === 3 ? 0.5 : 1);
+      // GRAND REFIT (2026-06-11 evening, 91 towns with PANEL-READ law across julii/
+      // cyrene/egypt + console probes): corruption is LAW-SUBTRACTIVE, not a threshold:
+      // corr% = min(cap, max(0, a*x + b*x^2 - lawPct*lawPts)), x = d - d0. Joint refit on
+      // 111 computed-law towns: rmse 3.46pp (lawPct 3 absorbs the parse bias; panel-law
+      // fit was 5%/pt). The old threshold-3 reading was this law in a small sample.
+      const x = Math.max(0, dist - CALIB.corrD0);
+      const raw = CALIB.corrA * x + CALIB.corrB * x * x - CALIB.corrLawPct * lawTot;
+      corrPct = Math.min(CALIB.corrCap, Math.max(0, raw)) / 100;
       corrSum += corrPct * (tTax + tFarm + tMine + tTrade + tAdmin);
     }
     // DOCUMENTED engine formulas (Feral Battle_and_Campaign_Formulae.md):

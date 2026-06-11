@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1080",
+    date: "2026-06-11",
+    items: [
+      { type: "feature", text: "**Corruption: the unified law, fit on 111 towns across three factions.** The full Egyptian corpus (80 towns read from your screenshots) overturned the threshold model: settlement Law SUBTRACTS directly from the distance curve — corr% = min(61, max(0, 0.58x + 0.0015x² − 3·law)), x = distance−10. One formula now lands within ±8% on all three faction ledgers simultaneously (Julii +8.1%, Cyrene +6.6%, Egypt −7.8% — Julii's modeled net hits the live 380 exactly), with 3.5pp median per-town error. The earlier threshold behaviour was this same law observed in small samples." },
+    ],
+  },
+  {
     version: "0.9.1079",
     date: "2026-06-11",
     items: [
