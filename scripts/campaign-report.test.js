@@ -47,9 +47,9 @@ describe.skipIf(!haveFixtures)("campaign-report buildRows (save_julii1)", () => 
     const julii = rows.find((x) => x.faction === "romans_julii");
     expect(julii).toBeTruthy();
     expect(r.playerFaction).toBe("romans_julii");
-    expect(julii.regions).toBe(25);          // CONFIRMED Julii T1 territory
+    expect(julii.regions).toBe(26);          // CONFIRMED Julii T1 territory (save_Julii1 2026-06-12 vintage)
     expect(julii.treasury).toBe(22500);      // class-100 record +0
-    expect(julii.income).toBe(6347);         // summed settlement income (gross)
+    expect(julii.income).toBe(6141);         // summed settlement income (gross, save_Julii1 2026-06-12 vintage)
     expect(julii.units).toBe(58);
     expect(julii.soldiers).toBe(5572);
     expect(julii.net).toBeNull();            // <2 completed checkpoints at T1
@@ -65,8 +65,8 @@ describe.skipIf(!haveFixtures)("campaign-report buildRows (save_julii1)", () => 
     }
     const julii = rows.find((x) => x.faction === "romans_julii");
     expect(julii.income).toBe(sum);
-    // Rome's per-settlement income is the in-game-verified anchor (924 at T1).
-    expect(sf["Rome"] && sf["Rome"].income).toBe(924);
+    // Rome's per-settlement income anchor (new save_Julii1 vintage 2026-06-12).
+    expect(sf["Rome"] && sf["Rome"].income).toBe(860);
   });
 
   it("the big AI factions outrank the player by territory & soldiers", () => {

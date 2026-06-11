@@ -441,8 +441,15 @@ const CALIB = {
   // PER-ROUTE LAND LAW (2026-06-11, fit on 14 live scroll routes; A_X re-derived
   // against THIS model's adjacency graph — R²log .96 on 6 measured towns):
   // v(route) = K·popX^a·e^(p·tradePctX) × e^(r·roadY)·(rvX+rvY)^g·popY^−b
-  tradeRouteK: 5.27, tradeRoutePopX: 0.0064, tradeRoutePct: 0.1355,
-  tradeRouteRoad: 0.1847, tradeRouteRvX: 0.6473, tradeRouteRvY: 0.3010, tradeRoutePopY: -0.1085,
+  // LAND LAW v3 (2026-06-12, julii 26-town t1 corpus 118 rights-rows + capua anchors,
+  // R² 0.947 vs v2's 0.755): the TRADE-RIGHTS split was the missing structure —
+  // partners without trade rights (suzerain/client links from become_protector)
+  // trade at ×0.35 (no-rights median 0.349, tight 0.24-0.42 over 17 rows). With the
+  // rights tier separated, popY's sign FLIPS POSITIVE (+0.133 — routes to big towns
+  // are richer; the old −0.109 was rights-contamination).
+  tradeRouteK: 0.2837, tradeRoutePopX: 0.2237, tradeRoutePct: 0.1563,
+  tradeRouteRoad: -0.0728, tradeRouteRvX: 0.5939, tradeRouteRvY: 0.2746, tradeRoutePopY: 0.1333,
+  tradeNoRights: 0.35,
   tradeSea: 1.1169, // sea aggregate re-anchored: julii total = 4,610 live with the land law in place // REFIT 2026-06-11 after the structural trade fixes
   // (qty-weighted rv + not-at-war partners + symmetric ally parse) — anchored to the
   // live julii ledger trade 4,610 (clean t2), keeping the old land:sea ratio 2.042.
@@ -1000,6 +1007,15 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   // rule also dropped all client neighbours via the one-directional ally parse).
   const warSet = (wars && wars[facLow]) || new Set();
   const isPartner = (other) => !!other && (other === facLow || !warSet.has(other));
+  // TRADE RIGHTS at campaign start = protectorate links (live saves 2026-06-12:
+  // capua's trade list = its suzerain julii ONLY; julii's = its 6 clients + senate).
+  // Roman factions are auto-allied with the senate.
+  const protRights = parseProtectorates(modDataDir);
+  const tradeRightsSet = new Set();
+  if (protRights.suzerainOf[facLow]) tradeRightsSet.add(protRights.suzerainOf[facLow]);
+  for (const c of (protRights.clientsOf[facLow] || [])) tradeRightsSet.add(c);
+  if (/^romans?_/.test(facLow)) tradeRightsSet.add("roman_senate");
+  if (facLow === "roman_senate") for (const f of ["romans_julii", "romans_brutii", "romans_scipii"]) tradeRightsSet.add(f);
   const tradeQtyVal = tradeQtyValByRegion(modDataDir);
   const seaLanes = seaLanesByRegion(modDataDir);
   const seaPartnersOf = (region) => {
@@ -1051,25 +1067,26 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const tradePts = s.tradePctParts ? (s.tradePctParts.base + s.tradePctParts.winter) : (s.tradePct || 0);
     const gTrade = Math.max(0, 1 + CALIB.tradeBonusPct * tradePts / 100) * gTrading;
     let nPartners = 0;
-    // LAND TRADE = PER-ROUTE LAW (live scroll routes 2026-06-11): exporter factor ×
-    // per-partner terms. Land rows merge both legs; value is pop/buildings-driven.
-    // LAND LAW v2 (GLOBAL REFIT 2026-06-11 evening, 385 live route rows across
-    // julii+cyrene+egypt): the route value is RESOURCE-driven, not population-driven —
-    // v = K * popX^0.006 * popY^-0.109 * e^(0.136*pctX) * e^(0.185*(roadX+roadY))
-    //     * (1+rvX)^0.647 * (1+rvY)^0.301   (qty-weighted region goods; R^2 0.755,
-    // faction sum ratios julii 0.95 / cyrene 0.93 / egypt 0.96 before the K rescale).
-    // The old popX^0.488 law was an Italy-regime artifact (Nile mega-routes -37%).
+    // LAND TRADE = PER-ROUTE LAW v3 (2026-06-12, julii 26-town t1 corpus + capua):
+    // v = K · popX^0.224 · e^(0.156·pctX) · (1+rvX)^0.594 · e^(road·−0.073)
+    //     · (1+rvY)^0.275 · popY^+0.133, × 0.35 when the partner faction has NO
+    // TRADE RIGHTS with us (rights = suzerain/client links from become_protector;
+    // live capua save: trade list = julii only; julii save: senate + its 6 clients).
+    // R² 0.947 on 118 rights-rows; no-rights median 0.349 over 17 rows.
     const rvX = tradeQtyVal[s.region] || 0;
     const aX = CALIB.tradeRouteK * Math.pow(Math.max(400, s.pop), CALIB.tradeRoutePopX)
       * Math.exp(CALIB.tradeRoutePct * (s.tradePct || 0))
       * Math.pow(1 + rvX, CALIB.tradeRouteRvX);
     let landTrade = 0;
     for (const n of (adjacency[s.region] || [])) {
-      if (!isPartner(ownerOfRegion[n])) continue;
+      const own = ownerOfRegion[n];
+      if (!isPartner(own)) continue;
       nPartners++;
+      const hasRights = own === facLow || tradeRightsSet.has(own);
       landTrade += aX * Math.exp(CALIB.tradeRouteRoad * ((roadOfRegion[n] || 0) + (s.roadLevel || 0)))
         * Math.pow(1 + (tradeQtyVal[n] || 0), CALIB.tradeRouteRvY)
-        * Math.pow(Math.max(400, popOfRegion[n] || 400), CALIB.tradeRoutePopY);
+        * Math.pow(Math.max(400, popOfRegion[n] || 400), CALIB.tradeRoutePopY)
+        * (hasRights ? 1 : CALIB.tradeNoRights);
     }
     // GOVERNOR TRADING (console-proven, Alexandria GoodTrader probe 2026-06-11):
     // Trading +10% scaled every land row ×1.074 — the trait multiplies the EXPORT
