@@ -57,6 +57,11 @@ describe("incomeModel — cracked constants", () => {
     expect(im.CALIB.corrD0).toBe(6);
     expect(im.CALIB.corrA).toBeCloseTo(0.2261, 4);
     expect(im.CALIB.corrB).toBeCloseTo(0.0061, 4);
+    // AI economy refit 2026-06-11 (215 current-vintage AI ledgers, median ratio 1.000/tier)
+    expect(im.CALIB.aiFarmBonus).toBeCloseTo(1.188, 3);
+    expect(im.CALIB.aiTaxFixByTier[1]).toBeCloseTo(1.976, 3);
+    expect(im.CALIB.aiTaxFixByTier[7]).toBeCloseTo(1.035, 3);
+    expect(im.CALIB.aiTradeFixByTier[2]).toBeCloseTo(0.66, 2);
   });
 
   test("empire-size tiers (settlement-count brackets from major_event scripts)", () => {

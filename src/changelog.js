@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1062",
+    date: "2026-06-11",
+    items: [
+      { type: "change", text: "**Income tooltip rewritten to the real cracked laws** (the budget header still described the pre-crack model) and the night's AI constants pinned in the test suite. Current validated accuracy: Julii ±1.5%, Cyrene −4%, AI factions median 5.2% across 215 ledgers — remaining known gaps are the sea-lane trade law (needs port scroll readings), governor trait effect-levels (needs in-game card readings), and Rome's capital tax bonus." },
+    ],
+  },
+  {
     version: "0.9.1061",
     date: "2026-06-11",
     items: [

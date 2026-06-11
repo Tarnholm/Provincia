@@ -22860,7 +22860,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                           </button>
                         </div>
                         <div style={{ marginTop: 6, fontSize: "0.8rem", color: "#cdc", display: "flex", gap: 14, flexWrap: "wrap" }}
-                          title={`Income model cracked from RIS mod files (validated vs 10-faction turn-1 corpus, median budget error 7%):\n· taxes = 713/town × (1+EDB taxable%) × bracket (±9%)\n· farming = 73.5 × (fertility + farm level) (±5%)\n· mining = 50 × mine_resource\n· trade: land/sea resource fit (±30% — weakest part)\n· wages = 200×general + 50×admiral (exact)\n· corruption = 6.4 × Σ tile-distance to capital (±10%)`}>
+                          title={`Income model — live-cracked engine laws (validated: julii ±1.5%, cyrene −4%, AI median 5.2% over 215 ledgers):\n· taxes = 0.456·400(ln pop − 4.4)·bracket·governor − 3.9·building-points·governor (julii +1.4%)\n· farming = 73.6 × (fertility + farm levels + governor) (exact)\n· admin = (4% + 0.75·mgmt + 0.25·law) × town gross (the ledger's "other" row)\n· trade: per-route land law + sea aggregate (weakest line — sea lanes uncracked)\n· corruption = distance-quadratic % of gross, zero for capital/office governors\n· wages = 200×general + 50×admiral (exact) · army upkeep = calibrated EDU (±1%)`}>
                           <span>taxes <b style={{ color: "#e8c873" }}>{t.taxes}</b></span>
                           <span>+ farming <b style={{ color: "#9fd37f" }}>{t.farming}</b></span>
                           {t.mining > 0 && <span>+ mining <b style={{ color: "#d3b67f" }}>{t.mining}</b></span>}
