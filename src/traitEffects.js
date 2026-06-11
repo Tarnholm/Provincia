@@ -220,7 +220,11 @@ function govEffectByCityFromSave(cracked, parsed, modDataDir) {
       e.localPop += fx.localPop || 0; e.growthFarm += fx.farm; e.mgmt += fx.mgmt || 0;
       if (e.hits) e.hits.push("anc:" + a);
     }
-    if (e.growthFarm || e.health || e.squalor || e.tax || e.trading || e.mining || e.influence || e.law || e.unrest || e.localPop || e.mgmt) out[city] = e;
+    // COMPUTED CARD STATS (2026-06-11): the save stores the governor's displayed
+    // Management/Command/Influence/Loyalty directly (signed) — no trait-level
+    // mapping needed. admin% = 2·max(0, mgmtStat) is exact (7/7 live cyrene towns).
+    if (ch.management != null) { e.mgmtStat = ch.management; e.influenceStat = ch.influence; e.commandStat = ch.command; }
+    if (e.growthFarm || e.health || e.squalor || e.tax || e.trading || e.mining || e.influence || e.law || e.unrest || e.localPop || e.mgmt || e.mgmtStat != null) out[city] = e;
   }
   return out;
 }

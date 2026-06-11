@@ -903,11 +903,16 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const tTrade = landTrade
       + (s.portLevel ? CALIB.tradeSea * gTrade * rv * Math.sqrt(seaPartnersOf(s.region)) : 0);
     // ADMIN income (the in-game scroll's 4th row, labeled "Governor" — ledger f9
-    // 'other'): admin% × town gross. JOINT REFIT 2026-06-11 on the two current-vintage
-    // faction ledgers (julii Σ1,939 → +3.1%, cyrene Σ538 → −2.2%) + 13 live marginals:
-    // 4 + 0.75·min(mgmt,3) + 0.25·law⁺. No governor → no admin.
+    // 'other'): admin% × town gross.
+    // EXACT LAW (2026-06-11 live cyrene, 7/7 towns to the denarius): admin% =
+    // 2 × the governor's DISPLAYED Management stat (clamped at 0, as the card does).
+    // The save stores the computed stat per character (mgmtStat via
+    // govEffectByCityFromSave) — when present, use it. Fallback (no save):
+    // the legacy joint-refit estimate 4 + 0.75·min(mgmt,3) + 0.25·law⁺.
     const tAdmin = gv0
-      ? Math.max(0, (4 + 0.75 * Math.min(3, Math.max(0, gv0.mgmt || 0)) + 0.25 * Math.max(0, gv0.law || 0)) / 100) * (tTax + tFarm + tMine + tTrade)
+      ? (gv0.mgmtStat != null
+        ? (2 * Math.max(0, gv0.mgmtStat)) / 100 * (tTax + tFarm + tMine + tTrade)
+        : Math.max(0, (4 + 0.75 * Math.min(3, Math.max(0, gv0.mgmt || 0)) + 0.25 * Math.max(0, gv0.law || 0)) / 100) * (tTax + tFarm + tMine + tTrade))
       : 0;
     admin += tAdmin;
     let dist = null, corrPct = 0;

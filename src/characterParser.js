@@ -402,13 +402,18 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
           buf.readUInt16LE(o - 2) === 23 && buf.readUInt32LE(o) === 50) { frameP = o; break; }
     }
     if (frameP >= 0 && frameP + 28 + 4 <= buf.length) {
-      command    = buf.readUInt32LE(frameP + 4);
-      influence  = buf.readUInt32LE(frameP + 8);
-      management = buf.readUInt32LE(frameP + 12);
-      loyalty    = buf.readUInt32LE(frameP + 28);
+      // SIGNED reads (2026-06-11, cyrene live cards): stats can be negative
+      // (Theodotos influence −1, Perseus −2 — stored as 0xFFFF… two's
+      // complement; the in-game card clamps the display at 0). The old
+      // unsigned read turned a −1 into 4.29e9, tripped the garbage gate, and
+      // nulled the whole cluster for any character with one negative stat.
+      command    = buf.readInt32LE(frameP + 4);
+      influence  = buf.readInt32LE(frameP + 8);
+      management = buf.readInt32LE(frameP + 12);
+      loyalty    = buf.readInt32LE(frameP + 28);
       // Sanity gate: legit veteran stats can exceed the base 0..10, but a
-      // garbage read lands in the 10^6+ range — filter those.
-      if (management > 30 || command > 30 || influence > 30 || loyalty > 30) {
+      // garbage read lands far outside ±30 — filter those.
+      if (Math.abs(management) > 30 || Math.abs(command) > 30 || Math.abs(influence) > 30 || Math.abs(loyalty) > 30) {
         management = command = influence = loyalty = null;
       }
     }

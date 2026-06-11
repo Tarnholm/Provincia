@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1072",
+    date: "2026-06-11",
+    items: [
+      { type: "feature", text: "**Admin income law cracked exactly** — live session with the Cyrene team: admin% = 2 × the governor's displayed Management stat, verified to the denarius on all seven settlements (0/0/1/2/3/4/5 Management → 0/0/2/4/6/8/10%). The save stores the computed card stats directly (signed — negative stats display as 0 in-game), so save-backed budgets now use the exact stat instead of the old trait-derived estimate. The character parser previously nulled the whole stat cluster for anyone with a single negative stat; fixed with signed reads." },
+      { type: "improvement", text: "Sea-trade law breakthrough from the same session: every lane row on the income scroll is one directional flow, and the importing side earns exactly the exporter's value ÷ 5 (four independent witnesses, all exact). Lane formation rewrite: your own land-adjacent coastal ports DO trade with each other — the matcher's adjacency exclusion is gone. Cargo composition is the one remaining sea unknown." },
+    ],
+  },
+  {
     version: "0.9.1071",
     date: "2026-06-11",
     items: [
