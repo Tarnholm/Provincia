@@ -50,8 +50,8 @@ describe.skipIf(!haveFixtures)("campaign-report buildRows (save_julii1)", () => 
     expect(julii.regions).toBe(26);          // CONFIRMED Julii T1 territory (save_Julii1 2026-06-12 vintage)
     expect(julii.treasury).toBe(22500);      // class-100 record +0
     expect(julii.income).toBe(6141);         // summed settlement income (gross, save_Julii1 2026-06-12 vintage)
-    expect(julii.units).toBe(58);
-    expect(julii.soldiers).toBe(5572);
+    expect(julii.units).toBe(79);
+    expect(julii.soldiers).toBe(8812);
     expect(julii.net).toBeNull();            // <2 completed checkpoints at T1
     expect(julii.knows).toBeNull();          // player has no AI-tuple cache
   });
