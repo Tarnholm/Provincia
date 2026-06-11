@@ -602,6 +602,114 @@ function tradeQtyValByRegion(modDataDir) {
   return (_tradeQtyCache[modDataDir] = out);
 }
 
+// Per-resource goods map per region: { region: { resource: qty×tradeValue } } — the
+// cargo basis for the sea-lane law (exclusion rule: a leg ships exactly the exporter
+// goods the importer lacks; icon-verified 2026-06-11).
+const _tradeGoodsCache = {};
+function tradeGoodsByRegion(modDataDir) {
+  if (_tradeGoodsCache[modDataDir]) return _tradeGoodsCache[modDataDir];
+  const out = {};
+  try {
+    const dg = require("./descrStratGeneral.js");
+    const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
+    const buf = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga"));
+    const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), desc = buf[17];
+    const dataOff = 18 + buf[0];
+    const bottomLeft = (desc & 0x20) === 0;
+    const regionAt = (x, yGame) => {
+      const rowTop = H - 1 - yGame;
+      const r = bottomLeft ? (H - 1 - rowTop) : rowTop;
+      let reg = rgbToRegion[buf[dataOff + (r * W + x) * 3 + 2] + "," + buf[dataOff + (r * W + x) * 3 + 1] + "," + buf[dataOff + (r * W + x) * 3]];
+      if (reg) return reg;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const o = dataOff + ((r + dy) * W + (x + dx)) * 3;
+        reg = rgbToRegion[buf[o + 2] + "," + buf[o + 1] + "," + buf[o]];
+        if (reg) return reg;
+      }
+      return null;
+    };
+    const resVal = parseResourceValues(modDataDir);
+    const src = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
+    for (const raw of fs.readFileSync(src, "latin1").split(/\r?\n/)) {
+      const t = raw.includes(";") ? raw.slice(0, raw.indexOf(";")) : raw;
+      const m = t.match(/^resource\s+(\w+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+      if (!m) continue;
+      const e = resVal[m[1].toLowerCase()];
+      if (!e || e.hidden || !e.tradeValue) continue;
+      const reg = regionAt(+m[3], +m[4]);
+      if (reg) (out[reg] = out[reg] || {})[m[1].toLowerCase()] = (out[reg][m[1].toLowerCase()] || 0) + (+m[2]) * e.tradeValue;
+    }
+  } catch { /* none */ }
+  return (_tradeGoodsCache[modDataDir] = out);
+}
+
+// SEA LANES — GLOBAL CAPACITY MATCHING (cracked 2026-06-11, task #15): every port has
+// (1+portLevel) lane slots; eligible counterpart ports = own/ally/trade-rights factions,
+// NOT land-adjacent (adjacency exclusion reproduces all observed lane sets). Pairs match
+// greedily by ascending port distance (coastal-centroid approximation); a lane is WEAK
+// when either side burns its LAST slot, else strong. Leg values (icon-verified exclusion
+// cargo): strong = 20·e^(0.127·pct)·cargoOut + 7.2·cargoIn; weak = 2.4·e^(0.127·pct)·cargoOut.
+const _seaLaneCache = {};
+function seaLanesByRegion(modDataDir) {
+  if (_seaLaneCache[modDataDir]) return _seaLaneCache[modDataDir];
+  const out = {};
+  try {
+    const { ownerOfRegion, allies } = tradePartnerCtx(modDataDir);
+    const adjacency = regionAdjacency(modDataDir);
+    const dg = require("./descrStratGeneral.js");
+    const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
+    const buf = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga"));
+    const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), dataOff = 18 + buf[0];
+    const isSea = (o) => buf[dataOff + o * 3 + 2] === 41 && buf[dataOff + o * 3 + 1] === 140;
+    // coastal centroid per region (top-row pixel space; ordering-only approximation)
+    const cent = {}, cnt = {};
+    for (let y = 0; y < H - 1; y++) for (let x = 0; x < W - 1; x++) {
+      const o = y * W + x;
+      if (isSea(o)) continue;
+      const reg = rgbToRegion[buf[dataOff + o * 3 + 2] + "," + buf[dataOff + o * 3 + 1] + "," + buf[dataOff + o * 3]];
+      if (!reg) continue;
+      if (isSea(o + 1) || isSea(o - 1) || isSea(o + W) || isSea(o - W)) {
+        const c = (cent[reg] = cent[reg] || [0, 0]); c[0] += x; c[1] += y; cnt[reg] = (cnt[reg] || 0) + 1;
+      }
+    }
+    for (const r of Object.keys(cent)) { cent[r][0] /= cnt[r]; cent[r][1] /= cnt[r]; }
+    // port list with levels from descr_strat building level names ordered by EDB
+    const inc = parseEDBIncome(path.join(modDataDir, "export_descr_buildings.txt"));
+    const portOrder = inc.chainLevels["port_buildings"] || [];
+    const strat = gv.parseStrat(path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"));
+    const ports = [];
+    for (const [fac, f] of Object.entries(strat)) for (const sd of f.settlements) {
+      const pb = (sd.buildings || []).find(b => /^port_buildings$/i.test(b.chain));
+      if (!pb || !cent[sd.region]) continue;
+      const idx = portOrder.indexOf(pb.level);
+      ports.push({ region: sd.region, fac, level: (idx >= 0 ? idx : 0) + 1 });
+    }
+    // eligible pairs
+    const pairs = [];
+    for (let i = 0; i < ports.length; i++) for (let j = i + 1; j < ports.length; j++) {
+      const a = ports[i], b = ports[j];
+      const sameSide = a.fac === b.fac || (allies[a.fac] && allies[a.fac].has(b.fac));
+      if (!sameSide) continue;
+      const adjA = adjacency[a.region];
+      if (adjA && (adjA.has ? adjA.has(b.region) : adjA.includes(b.region))) continue;
+      const ca = cent[a.region], cb = cent[b.region];
+      pairs.push({ a, b, d: Math.hypot(ca[0] - cb[0], ca[1] - cb[1]) });
+    }
+    pairs.sort((x, y) => x.d - y.d);
+    const used = {}; const slots = {};
+    for (const p of ports) { slots[p.region] = 1 + p.level; used[p.region] = 0; }
+    for (const pr of pairs) {
+      const A = pr.a.region, B = pr.b.region;
+      if (used[A] >= slots[A] || used[B] >= slots[B]) continue;
+      used[A]++; used[B]++;
+      const weak = used[A] === slots[A] || used[B] === slots[B];
+      (out[A] = out[A] || []).push({ to: B, weak });
+      (out[B] = out[B] || []).push({ to: A, weak });
+    }
+  } catch { /* none */ }
+  return (_seaLaneCache[modDataDir] = out);
+}
+
 // ---- protectorates (CRACKED 2026-06-10, tribute-rate-fit.js) ----
 // RIS seeds protectorates via `console_command become_protector <suzerain> <client>`
 // in the campaign script. Tribute = 50.0% of the client's pre-tribute NET PROFIT per
@@ -850,4 +958,4 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   };
 }
 
-module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, tradePartnerCtx, tradeQtyValByRegion };
+module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, tradePartnerCtx, tradeQtyValByRegion, tradeGoodsByRegion, seaLanesByRegion };
