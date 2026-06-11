@@ -49,7 +49,11 @@ describe("incomeModel — cracked constants", () => {
     expect(im.CALIB.tradeLand).toBeCloseTo(0.8656, 3);
     expect(im.CALIB.tradeSea).toBeCloseTo(1.7676, 3);
     expect(im.CALIB.tradeBonusPct).toBe(10);     // documented: 10% per trade_base point
-    expect(im.CALIB.corrD0).toBe(12);
+    // corruption refit 2026-06-11 (live 11-town ladder): quadratic % of gross past d0=6,
+    // zero for capital + office-holding governors (julii: 2,626 model vs 2,641 live)
+    expect(im.CALIB.corrD0).toBe(6);
+    expect(im.CALIB.corrA).toBeCloseTo(0.2261, 4);
+    expect(im.CALIB.corrB).toBeCloseTo(0.0061, 4);
   });
 
   test("empire-size tiers (settlement-count brackets from major_event scripts)", () => {

@@ -22855,7 +22855,8 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                           <span>taxes <b style={{ color: "#e8c873" }}>{t.taxes}</b></span>
                           <span>+ farming <b style={{ color: "#9fd37f" }}>{t.farming}</b></span>
                           {t.mining > 0 && <span>+ mining <b style={{ color: "#d3b67f" }}>{t.mining}</b></span>}
-                          <span>+ trade <b style={{ color: "#9fc3d3" }}>{t.trade}</b><span style={{ color: "#889", fontSize: "0.68rem" }}>±30%</span></span>
+                          <span>+ trade <b style={{ color: "#9fc3d3" }}>{t.trade}</b></span>
+                          {t.admin > 0 && <span title="Governor administration income (the settlement scroll's 'Admin' row = the ledger's 'other' income): admin% × town gross, admin% from the governor's management/law stats — live-cracked 2026-06-11 (julii: model 1,973 vs ledger 1,982).">+ admin <b style={{ color: "#d3c89f" }}>{t.admin}</b></span>}
                           <span>= income <b>{t.income}</b></span>
                           {armyT1Budget.protectorate && armyT1Budget.protectorate.clients && (
                             <span title={`Protectorate tribute: each client pays 50% of its net profit per turn (exact engine rate, cracked from save ledgers). Flows from TURN 2. The number shown is a CONSERVATIVE FLOOR (client profits modeled at Normal tax; the model currently underestimates small-faction incomes — live tribute runs higher) and is NOT included in the budget.\n${(armyT1Budget.protectorate.clients || []).map(c => `${c.faction}: modeled net ≈${c.net} → +${c.tribute}`).join("\n")}`}

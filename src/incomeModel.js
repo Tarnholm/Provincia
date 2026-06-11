@@ -334,9 +334,11 @@ const CALIB = {
   wageNamed: 200, wageAdmiral: 50,
   // corruption ("other" expenditure) — REFIT 2026-06-10 (corruption-refit.js), now
   // INCOME-PROPORTIONAL (live-confirmed: julii corr/income identical across tax flips):
-  // corruption = corrK × Σ_towns max(0, distToCapital − corrD0) × townIncome(tax+farm+mine).
+  // corruption (REFIT 2026-06-11, live 11-town ladder): per-town % of GROSS income
+  // (tax+farm+mine+trade+admin), corr% = corrA·(d−corrD0) + corrB·(d−corrD0)² for
+  // d>corrD0 (rmse 2.8 pts), ZERO for capital and office-holding governors.
   // Mean |err| 8.7% (julii −3.8%, seleucid +3.3%, antigonid +4.6%; ptolemaic −19% worst).
-  corrK: 5.4656e-3, corrD0: 12,
+  corrA: 0.2261, corrB: 0.0061, corrD0: 6,
 };
 
 // region → {x,y} coords (map_regions.tga black settlement pixels), cached per mod dir.
@@ -643,8 +645,12 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     }
     return n;
   };
-  let taxes = 0, farming = 0, mining = 0, tradeLandSum = 0, tradeSeaSum = 0, corrSum = 0;
+  let taxes = 0, farming = 0, mining = 0, tradeLandSum = 0, tradeSeaSum = 0, corrSum = 0, admin = 0;
   const sets = [];
+  // OFFICE-HOLDING governors (Quaestor/Praetor/Propraetor/Consul…) suppress their
+  // town's corruption to ZERO (live-verified 2026-06-11: Praeneste d3, Reate d8,
+  // Cosa d16 and capital Rome all read corruption 0 while equal-distance towns pay).
+  const OFFICE_RE = /\b(Quaestor|Aedile|Praetor|Propraetor|Consul|Proconsul|Censor)\b/i;
   for (const s of F.settlements) {
     const bracket = br[s.settlement] || br[s.region] || "normal";
     const mult = BRACKET_MULT[bracket] || 1;
@@ -675,9 +681,26 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     for (const n of (adjacency[s.region] || [])) if (isPartner(ownerOfRegion[n])) nPartners++;
     tradeLandSum += gTrade * rv * (1 + nPartners);
     if (s.portLevel) tradeSeaSum += gTrade * rv * Math.sqrt(seaPartnersOf(s.region));
-    let dist = null;
+    const tTrade = CALIB.tradeLand * gTrade * rv * (1 + nPartners)
+      + (s.portLevel ? CALIB.tradeSea * gTrade * rv * Math.sqrt(seaPartnersOf(s.region)) : 0);
+    // ADMIN income (the in-game scroll's 4th row, labeled "Governor" — ledger f9
+    // 'other'): admin% × town gross, admin% fit on 13 live-measured governor
+    // marginals (rmse 1.15): 1.13 + 2.61·mgmt + 0.59·law⁺. No governor → no admin.
+    const tAdmin = gv0
+      ? Math.max(0, (1.13 + 2.61 * Math.max(0, gv0.mgmt || 0) + 0.59 * Math.max(0, gv0.law || 0)) / 100) * (tTax + tFarm + tMine + tTrade)
+      : 0;
+    admin += tAdmin;
+    let dist = null, corrPct = 0;
     const c = coords[s.region];
-    if (cap && c) { dist = Math.hypot(c.x - cap.x, c.y - cap.y); corrSum += Math.max(0, dist - CALIB.corrD0) * (tTax + tFarm + tMine); }
+    if (cap && c) {
+      dist = Math.hypot(c.x - cap.x, c.y - cap.y);
+      // CORRUPTION (live-cracked 2026-06-11, 11-town ladder): per-town % of GROSS
+      // (incl. admin), quadratic in distance past d0=6, zero for office governors.
+      const office = gv0 && gv0.hits && gv0.hits.some(h => OFFICE_RE.test(h));
+      const x = Math.max(0, dist - CALIB.corrD0);
+      corrPct = office ? 0 : Math.max(0, CALIB.corrA * x + CALIB.corrB * x * x) / 100;
+      corrSum += corrPct * (tTax + tFarm + tMine + tTrade + tAdmin);
+    }
     // DOCUMENTED engine formulas (Feral Battle_and_Campaign_Formulae.md):
     // siege hold-out turns = base(by level) + wall_level+1 + floor(govManagement/3)
     const SIEGE_BASE = { village: 2, town: 3, large_town: 4, city: 4, large_city: 5, huge_city: 5 };
@@ -698,7 +721,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   let trade = Math.max(0, CALIB.tradeLand * tradeLandSum + CALIB.tradeSea * tradeSeaSum);
   const ch = countCharacters(modDataDir, faction) || { named: 0, admiral: 0 };
   const wages = CALIB.wageNamed * ch.named + CALIB.wageAdmiral * ch.admiral;
-  let corruption = Math.max(0, Math.round(CALIB.corrK * corrSum));
+  let corruption = Math.max(0, Math.round(corrSum));
   // AI PERSPECTIVE (opts.asAI, cracked ai-bonus-crack.js): the AI doesn't pay the
   // human 0.92 difficulty malus on taxes+farming, and gets the tiered empire-size
   // income bonus on its whole economy. Validated against 215 AI ledgers.
@@ -710,7 +733,8 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     trade *= aiB;
     corruption = Math.round(corruption / CALIB.difficultyIncome * aiB); // income-proportional
   }
-  const income = Math.round(taxes + farming + mining + trade);
+  admin = Math.round(admin);
+  const income = Math.round(taxes + farming + mining + trade + admin);
   const army = armyUpkeepEDU(modDataDir, faction);
   const preNet = army ? (income - wages - corruption - army.upkeep) : null;
   // ---- protectorate tribute (50% of client net profit, flows from turn 2) ----
@@ -741,7 +765,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     characters: ch,
     totals: {
       taxes: Math.round(taxes), farming: Math.round(farming), mining: Math.round(mining), trade: Math.round(trade),
-      income, wages, corruption,
+      admin, income, wages, corruption,
       // tributeIn is a CONSERVATIVE FLOOR (client profits are modeled at Normal tax
       // and the income model currently underestimates small/city-state factions —
       // live turn-3 tribute runs several × higher). Kept OUT of armyBudget so the

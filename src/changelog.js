@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1053",
+    date: "2026-06-11",
+    items: [
+      { type: "feature", text: "**Admin income modeled** — the settlement scroll's 'Governor' row (the ledger's mystery 'other' income) is now in the budget: admin% × town gross, with admin% fit from 13 live-measured governors (1.13 + 2.61·management + 0.59·law). Julii: 1,973 modeled vs 1,982 live (0.5%). Budgets gain ~6% income that was previously ignored." },
+      { type: "improvement", text: "**Corruption refit to the cracked law**: per-town percentage of gross income, quadratic in distance-to-capital past 6 tiles — and ZERO for the capital and for towns governed by an office holder (Quaestor/Praetor/Propraetor/Consul…, live-verified). Julii: 2,626 modeled vs 2,641 live (0.6%, was −18%)." },
+    ],
+  },
+  {
     version: "0.9.1052",
     date: "2026-06-11",
     items: [
