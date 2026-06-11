@@ -225,43 +225,109 @@ function _stratLines(stratPath) {
   return v;
 }
 
-// Engine army upkeep (econ slot f12) CRACKED 2026-06-10 (upkeep-crack.js): it is NOT
-// the flat EDU sum — per-category scaling, with SHIPS EXCLUDED (naval upkeep lives in
-// another slot): f12 ≈ 0.976×ΣEDU(infantry) + 1.186×ΣEDU(cavalry). Player-row fit:
-// mean |err| 2.8% (was ±30% flat); worst mauryan −18% (elephant units underweighted —
-// single observation, not separable).
-const UPKEEP_SCALE = { infantry: 0.9759, cavalry: 1.1857, ship: 0, other: 1.0 };
+// EDCT Command table: trait (lowercase) → [{threshold, command}] per level.
+// Cached by EDCT mtime (file is ~1 MB, hit per faction by the balance overview).
+const _edctCmdCache = new Map();
+function _commandTraitTable(modDataDir) {
+  const p = path.join(modDataDir, "export_descr_character_traits.txt");
+  let mt = 0;
+  try { mt = fs.statSync(p).mtimeMs; } catch { return {}; }
+  const hit = _edctCmdCache.get(p);
+  if (hit && hit.mt === mt) return hit.v;
+  const out = {};
+  let cur = null, lvl = null;
+  for (const raw of fs.readFileSync(p, "latin1").split(/\r?\n/)) {
+    const ln = raw.replace(/;.*/, "").trim();
+    let m = ln.match(/^Trait\s+(\S+)/i);
+    if (m) { cur = m[1].toLowerCase(); out[cur] = []; lvl = null; continue; }
+    if (!cur) continue;
+    if (/^Level\s/i.test(ln)) { lvl = { threshold: 1, command: 0 }; out[cur].push(lvl); continue; }
+    if (!lvl) continue;
+    m = ln.match(/^Threshold\s+(\d+)/i); if (m) { lvl.threshold = +m[1]; continue; }
+    m = ln.match(/^Effect\s+Command\s+(-?\d+)/i); if (m) { lvl.command = +m[1]; continue; }
+  }
+  _edctCmdCache.set(p, { mt, v: out });
+  return out;
+}
+// trait points → command stars (points-vs-threshold law; +L1 floor for ladders ≤3 levels)
+function _commandOfTraitsLine(traitsLine, table) {
+  let cmd = 0;
+  for (const t of traitsLine.split(",")) {
+    const m = t.trim().match(/^(\S+)\s+(\d+)/);
+    if (!m) continue;
+    const L = table[m[1].toLowerCase()];
+    if (!L || !L.length) continue;
+    const pts = +m[2];
+    let lev = 0;
+    for (let i = 0; i < L.length; i++) if (pts >= L[i].threshold) lev = i + 1;
+    if (lev === 0 && L.length <= 3 && pts > 0) lev = 1;
+    if (lev > 0) cmd += L[lev - 1].command;
+  }
+  return cmd;
+}
+
+// Engine army upkeep (ledger f12) EXACT LAW (Capua disband probe 2026-06-11: faction
+// reduced to leader+heir bodyguards alone → ledger 202 = 2 × 45×2.25):
+//   regular units:   raw EDU stat_cost upkeep (no scaling — Capua 11-unit army exact)
+//   bodyguard units: upkeep × men / (soldiers × sizeMult), where
+//     men = soldiers×sizeMult + officers + 2×command   (ordinary family member)
+//     men = 2 × (soldiers×sizeMult + officers)         (faction leader & heir — men doubling)
+//   sizeMult 4 = HUGE unit-size setting (recruit card shows 27 = 6×4+3 officers).
+//   Factions with no `heir` flag in descr_strat get an engine auto-heir at game start.
+// Validation vs live ledgers: capua +0.5, julii +6 (0.02%), egypt +28 (0.06%),
+// cyrene +13 (0.16%). Replaces the ×1.0122 global constant + leader/heir ×2 law.
+const UPKEEP_SIZE_MULT = 4; // huge
 function armyUpkeepEDU(modDataDir, faction) {
   const stratPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
   if (!fs.existsSync(stratPath)) return null;
   let us;
   try { us = require("./recruitPool.js").parseUnitStats(modDataDir); } catch { return null; }
+  const cmdTable = _commandTraitTable(modDataDir);
   const want = String(faction || "").toLowerCase();
   const lines = _stratLines(stratPath);
-  // RAW EDU LAW (live Capua residual analysis 2026-06-11 night): the ledger charges
-  // the EDU stat_cost upkeep field DIRECTLY (no category scaling), with the faction
-  // LEADER's and HEIR's bodyguard units charged DOUBLE (the men-doubling rule).
-  let cur = null, inWanted = false, sum = 0, units = 0;
-  let pendingLeaderArmy = false, firstUnitOfArmy = false;
+  let inWanted = false, regular = 0, units = 0;
+  let pendingNamed = false, pendingLH = false, pendingCmd = 0;
+  const bodyguards = []; // {upkeep, soldiers, officers, cmd, lh}
   for (const ln of lines) {
     const m = ln.match(/^faction\s+([a-z_0-9]+)\s*,/i);
-    if (m) { cur = m[1].toLowerCase(); inWanted = cur === want; continue; }
+    if (m) { inWanted = m[1].toLowerCase() === want; continue; }
     if (!inWanted) continue;
-    const ch = ln.match(/^character,.*named character/i);
-    if (ch) { pendingLeaderArmy = /,\s*(leader|heir)\s*,/i.test(ln); firstUnitOfArmy = true; continue; }
-    const u = ln.match(/^unit\s+(.+?)\s+exp\b/);
-    if (u) {
-      const st = us[u[1].trim().toLowerCase()];
-      if (st && st.upkeep != null) {
-        sum += st.upkeep * (firstUnitOfArmy && pendingLeaderArmy ? 2 : 1);
-      }
-      firstUnitOfArmy = false;
-      units++;
+    if (/^character,.*named character/i.test(ln)) {
+      pendingNamed = true;
+      pendingLH = /,\s*(leader|heir)\s*,/i.test(ln);
+      pendingCmd = 0;
+      continue;
     }
+    if (/^character[\s,]/i.test(ln)) { pendingNamed = false; continue; }
+    if (pendingNamed && /^\s*traits\s/i.test(ln)) {
+      pendingCmd = _commandOfTraitsLine(ln.replace(/^\s*traits\s+/i, ""), cmdTable);
+      continue;
+    }
+    const u = ln.match(/^unit\s+(.+?)\s+exp\b/);
+    if (!u) continue;
+    const st = us[u[1].trim().toLowerCase()];
+    units++;
+    if (st && st.upkeep != null) {
+      if (pendingNamed) bodyguards.push({ upkeep: st.upkeep, soldiers: st.soldiers, officers: st.officers || 0, cmd: pendingCmd, lh: pendingLH });
+      else regular += st.upkeep;
+    }
+    pendingNamed = false;
   }
-  // global constant ×1.0122 (uniform −1.2% residual across all four live ledgers —
-  // capua/julii/egypt/cyrene all land within ±0.1% with it)
-  return { upkeep: Math.round(sum * 1.0122), units };
+  // engine auto-heir: only one of leader/heir flagged in descr_strat (e.g. cyrene has
+  // no heir line) but ≥2 named generals → the engine promotes one at game start
+  const lhCount = bodyguards.filter(b => b.lh).length;
+  if (lhCount === 1 && bodyguards.length >= 2) {
+    const promote = bodyguards.find(b => !b.lh);
+    if (promote) promote.lh = true;
+  }
+  let sum = regular;
+  for (const b of bodyguards) {
+    if (!b.soldiers) { sum += b.upkeep; continue; }
+    const base = b.soldiers * UPKEEP_SIZE_MULT;
+    const men = b.lh ? 2 * (base + b.officers) : base + b.officers + 2 * b.cmd;
+    sum += Math.round(b.upkeep * men / base);
+  }
+  return { upkeep: Math.round(sum), units };
 }
 
 // ---- characters per faction from descr_strat (for the WAGES crack) ----

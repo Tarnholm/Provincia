@@ -100,13 +100,43 @@ describe("incomeModel — fixture mod", () => {
       "soldier test_crew, 30, 0, 1",
       "stat_cost 1, 500, 300, 0, 0, 500, 1, 90",
       "",
+      "type test general unit",
+      "category cavalry",
+      "class heavy",
+      "soldiers 6, 0, 3.2",
+      "officer test_officer_1",
+      "officer test_officer_2",
+      "officer test_officer_3",
+      "stat_cost 4, 2980, 45, 0, 6, 226",
+      "",
+    ].join("\n"));
+    fs.writeFileSync(path.join(dir, "export_descr_character_traits.txt"), [
+      "Trait TestCmd",
+      " Characters family",
+      " Level Test_Level_1",
+      "  Description x",
+      "  Threshold 1",
+      "  Effect Command 2",
+      "",
     ].join("\n"));
     fs.writeFileSync(path.join(camp, "descr_strat.txt"), [
       "faction\ttestfac, balanced smith",
-      "character\tTester, named character, x 10, y 10",
+      "character,\tLead, named character, leader, age 46, , x 10, y 10",
+      "traits TestCmd 1",
+      "unit\ttest general unit\t\t\texp 0 armour 0 weapon_lvl 0",
+      "character,\tHeir2, named character, heir, age 20, , x 11, y 10",
+      "unit\ttest general unit\t\t\texp 0 armour 0 weapon_lvl 0",
+      "character,\tOrd, named character, age 30, , x 12, y 10",
+      "traits TestCmd 1",
+      "unit\ttest general unit\t\t\texp 0 armour 0 weapon_lvl 0",
       "unit\ttest infantry unit\t\t\texp 0 armour 0 weapon_lvl 0",
       "unit\ttest cavalry unit\t\t\texp 0 armour 0 weapon_lvl 0",
       "unit\ttest ship unit\t\t\texp 0 armour 0 weapon_lvl 0",
+      "faction\ttestfac2, balanced smith",
+      "character,\tSolo, named character, leader, age 50, , x 20, y 20",
+      "unit\ttest general unit\t\t\texp 0 armour 0 weapon_lvl 0",
+      "character,\tKid, named character, age 18, , x 21, y 20",
+      "unit\ttest general unit\t\t\texp 0 armour 0 weapon_lvl 0",
       "",
     ].join("\n"));
     fs.writeFileSync(path.join(camp, "Test_Campaign_Script.txt"), [
@@ -118,12 +148,22 @@ describe("incomeModel — fixture mod", () => {
   });
   afterAll(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch { } });
 
-  test("armyUpkeepEDU: raw EDU upkeep ×1.0122, leader/heir bodyguard doubled", () => {
-    // RAW EDU LAW (2026-06-11 night, four-faction validation ±0.11%): the ledger
-    // charges stat_cost[2] directly; no category scales; ships count like the rest.
+  test("armyUpkeepEDU: regular raw; bodyguard scales by men (LH doubled, +2 men/command)", () => {
+    // EXACT LAW (Capua disband probe 2026-06-11): regular units = raw stat_cost[2];
+    // bodyguard = upkeep × men/(soldiers×4); men = soldiers×4 + officers (+2×command),
+    // leader/heir men doubled. General: 45 × 54/24 = 101.25 → 101 each for LH;
+    // ordinary with command 2: 45 × 31/24 = 58.125 → 58.
     const r = im.armyUpkeepEDU(dir, "testfac");
-    expect(r.units).toBe(3);
-    expect(r.upkeep).toBe(Math.round((100 + 200 + 300) * 1.0122));
+    expect(r.units).toBe(6);
+    expect(r.upkeep).toBe(101 + 101 + 58 + 100 + 200 + 300);
+  });
+
+  test("armyUpkeepEDU: engine auto-heir when descr_strat has leader but no heir", () => {
+    // cyrene case: only `leader` flagged → engine promotes an ordinary general to heir
+    // at game start, doubling his bodyguard too.
+    const r = im.armyUpkeepEDU(dir, "testfac2");
+    expect(r.units).toBe(2);
+    expect(r.upkeep).toBe(101 + 101);
   });
 
   test("parseProtectorates reads become_protector pairs from the campaign script", () => {
@@ -135,7 +175,7 @@ describe("incomeModel — fixture mod", () => {
 
   test("countCharacters: named characters drive the exact wage formula", () => {
     const c = im.countCharacters(dir, "testfac");
-    expect(c.named).toBe(1);
+    expect(c.named).toBe(3);
     expect(c.admiral).toBe(0);
   });
 });

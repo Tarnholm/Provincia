@@ -75,7 +75,9 @@ function parseUnitStatsUncached(modDataDir) {
     const cost = b.match(/^stat_cost\s+(.+?)\s*$/m);
     const cat = b.match(/^category\s+(\w+)/m);          // infantry / cavalry / siege / handler / ship
     const cls = b.match(/^class\s+(\w+)/m);             // light / heavy / missile / spearmen / skirmish
-    const sol = b.match(/^soldier\s+\w+,\s*(\d+)/m);
+    // RTW:R EDU: "soldiers  6, 0, 3.2" (count first); vanilla: "soldier name, 12, ..."
+    const sol = b.match(/^soldiers\s+(\d+)/m) || b.match(/^soldier\s+\w+,\s*(\d+)/m);
+    const officers = (b.match(/^officer\s/gm) || []).length;
     const f = cost ? cost[1].split(",").map(s => s.trim()) : [];
     out[name] = {
       recruit: f[1] != null ? +f[1] : null,
@@ -83,6 +85,7 @@ function parseUnitStatsUncached(modDataDir) {
       category: cat ? cat[1] : null,
       cls: cls ? cls[1] : null,
       soldiers: sol ? +sol[1] : null,
+      officers,
     };
   }
   return out;
