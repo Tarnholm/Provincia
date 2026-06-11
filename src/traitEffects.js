@@ -160,7 +160,7 @@ function growthEffectOfTraits(traitList, parsed, opts) {
 // every governor's traits. This is where accrued Fertility traits like Dalmatian_Carrot /
 // Ionian_Basileus / ICERating live — they give +0.5..+2% growth and explain the no-save
 // undercounts, since they're accrued in-play and absent from descr_strat.)
-function govEffectByCityFromSave(cracked, parsed) {
+function govEffectByCityFromSave(cracked, parsed, modDataDir) {
   const out = {};
   if (!cracked || !parsed) return out;
   const sf = cracked.settlementFields || {};
@@ -172,13 +172,49 @@ function govEffectByCityFromSave(cracked, parsed) {
     if (c.secondaryUuid != null) byUuid[c.secondaryUuid >>> 0] = c;
     if (c.primaryUuid != null && byUuid[c.primaryUuid >>> 0] == null) byUuid[c.primaryUuid >>> 0] = c;
   }
+  // TRAIT LEVEL RULE (cracked 2026-06-11, Tetrapyrgia/Larinum live cards): the engine's
+  // effective level for a SEEDED trait is the descr_strat ordinal NUMBER, not a threshold
+  // lookup of the save's points (start-randomization inflates points without leveling —
+  // Cheapskate seeded 1 stays Frugal at 3 pts despite level 2's threshold being 3).
+  // For traits NOT in the seed (accrued in play), threshold-on-points stays the estimate.
+  const seedMap = modDataDir ? stratSeedByCity(modDataDir) : null;
+  const ancFx = modDataDir ? parseAncillaryEffects(modDataDir) : null;
   for (const city of Object.keys(sf)) {
     const uuid = sf[city].governorUuid;
     if (!uuid) continue;
     const ch = byUuid[uuid >>> 0];
     if (!ch || !ch.traits) continue;
-    const e = growthEffectOfTraits(ch.traits, parsed);
-    if (e.growthFarm || e.health || e.squalor || e.tax || e.trading || e.mining || e.influence || e.law || e.unrest || e.localPop) out[city] = e;
+    let e;
+    const cs = seedMap && seedMap[city];
+    if (cs) {
+      // map each save trait to its effective ordinal level: seed level if seeded,
+      // else highest-threshold-≤-points index
+      const list = [];
+      for (const t of ch.traits) {
+        const name = t && (t.name || t.trait);
+        if (!name) continue;
+        if (cs.seed[name] != null) { list.push({ name, level: cs.seed[name] }); continue; }
+        const def = parsed[name];
+        if (!def || !def.length) continue;
+        const pts = (t.points != null ? t.points : t.level) | 0;
+        let idx = 0;
+        for (let i = 0; i < def.length; i++) if (def[i].threshold <= pts) idx = i + 1;
+        if (idx > 0) list.push({ name, level: idx });
+      }
+      e = growthEffectOfTraits(list, parsed, { ordinal: true });
+      // follower (ancillary) effects from the seed — same catalysts as the strat path
+      if (ancFx) for (const a of (cs.anc || [])) {
+        const fx = ancFx[a]; if (!fx) continue;
+        e.farm += fx.farm; e.fert += fx.fert; e.health += fx.health; e.squalor += fx.squalor;
+        e.tax += fx.tax || 0; e.trading += fx.trading || 0; e.mining += fx.mining || 0;
+        e.influence += fx.influence || 0; e.law += fx.law || 0; e.unrest += fx.unrest || 0;
+        e.localPop += fx.localPop || 0; e.growthFarm += fx.farm;
+        if (e.hits) e.hits.push("anc:" + a);
+      }
+    } else {
+      e = growthEffectOfTraits(ch.traits, parsed);
+    }
+    if (e.growthFarm || e.health || e.squalor || e.tax || e.trading || e.mining || e.influence || e.law || e.unrest || e.localPop || e.mgmt) out[city] = e;
   }
   return out;
 }
@@ -290,4 +326,52 @@ function findDescrStrat(modDataDir) {
   return null;
 }
 
-module.exports = { parseTraitEffects, parseAncillaryEffects, growthEffectOfTraits, govEffectByCityFromSave, govEffectByCityFromStrat, findEDCT };
+// SEED MAP: city → { seed: {traitName: seededLevel}, anc: [ancillaryNames] } from
+// descr_strat (same coordinate-binding walk as govEffectByCityFromStrat). Proven
+// 2026-06-11 (Hermokrates/Tetrapyrgia + Larinum Estates): the seeded NUMBER is the
+// engine's effective ordinal LEVEL regardless of the save's randomized points.
+const _seedCache = new Map();
+function stratSeedByCity(modDataDir) {
+  const strat0 = findDescrStrat(modDataDir);
+  let mt = 0;
+  try { mt = fs.statSync(strat0).mtimeMs; } catch { }
+  const hit = _seedCache.get(modDataDir);
+  if (hit && hit.mt === mt) return hit.v;
+  const out = {};
+  try {
+    const sites = settlementSites(modDataDir);
+    if (strat0 && sites.length) {
+      const lines = fs.readFileSync(strat0, "latin1").split(/\r?\n/);
+      const generals = [];
+      let pending = null;
+      const finalize = () => { if (pending) generals.push(pending); pending = null; };
+      for (const raw of lines) {
+        const t = raw.includes(";") ? raw.slice(0, raw.indexOf(";")).trim() : raw.trim();
+        if (!t) continue;
+        const m = t.match(/^character\s*,?\s*(?:sub_faction\s+\w+\s*,\s*)?[^,]+,\s*named character\b.*?\bx\s+(-?\d+)\s*,\s*y\s+(-?\d+)/i);
+        if (m) { finalize(); pending = { x: +m[1], y: +m[2], seed: {}, anc: [] }; continue; }
+        if (/^character[,\s]|^character_record/i.test(t)) { finalize(); continue; }
+        if (!pending) continue;
+        if (/^traits\b/i.test(t)) {
+          for (const s of t.replace(/^traits\s+/i, "").split(",")) {
+            const p = s.trim().split(/\s+/);
+            if (p.length >= 2) pending.seed[p[0]] = +p[p.length - 1];
+          }
+        } else if (/^ancillaries\b/i.test(t)) {
+          pending.anc = t.replace(/^ancillaries\s+/i, "").split(",").map(s => s.trim()).filter(Boolean);
+        }
+      }
+      finalize();
+      for (const g of generals) {
+        let best = null, bestD = Infinity;
+        for (const s of sites) { const d = Math.abs(s.x - g.x) + Math.abs(s.y - g.y); if (d < bestD) { bestD = d; best = s; } }
+        if (!best || bestD > TILE_TOL) continue;
+        out[best.city] = { seed: g.seed, anc: g.anc };
+      }
+    }
+  } catch { /* none */ }
+  _seedCache.set(modDataDir, { mt, v: out });
+  return out;
+}
+
+module.exports = { parseTraitEffects, parseAncillaryEffects, growthEffectOfTraits, govEffectByCityFromSave, govEffectByCityFromStrat, stratSeedByCity, findEDCT };
