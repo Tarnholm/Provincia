@@ -141,16 +141,14 @@ function growthEffectOfTraits(traitList, parsed, opts) {
       if (!chosen) chosen = def[0] || null;
     }
     // CORRUPTION-LAW channel: same as the card Law total, except LoyaltyLevel's
-    // law lines do NOT apply (meta-trait; live-confirmed across the 7 governors),
-    // and the L1 floor only counts for SHORT trait ladders (≤3 levels: Lenient,
-    // HarshJustice — both card-verified). Deep ladders (GoodAdministrator, 5 levels)
-    // floor for income effects but their law does NOT feed corruption below
-    // threshold — the julii 26-town corruption corpus has implied law ≈ 0 across
-    // the board while the trait parse was adding +1..+4 via floored GA.
+    // law lines do NOT apply (meta-trait; live-confirmed across the 7 governors).
+    // L1-floored law counts for ALL ladder depths, deep ladders included
+    // (REFIT 2 2026-06-12, corruption-refit-2.md): the fresh Venusia point needs
+    // lawPts 2 = bldg 1 + floored GoodAdministrator +1; excluding deep-ladder
+    // floors leaves Venusia at +3.26pp under the linear curve. The old "julii
+    // implied law ≈ 0" evidence was an artifact of the old over-biased curve.
     if (name !== "LoyaltyLevel") {
-      const belowThr = def.length && pts < def[0].threshold;
-      const lc = (belowThr && def.length > 3) ? null : chosen;
-      if (lc && lc.Law) lawCorr += lc.Law;
+      if (chosen && chosen.Law) lawCorr += chosen.Law;
     }
     if (!chosen) continue;
     if (chosen.Farming || chosen.Fertility || chosen.Health || chosen.Squalor || chosen.TaxCollection || chosen.Trading || chosen.Mining || chosen.Influence || chosen.Law || chosen.Unrest || chosen.LocalPopularity || chosen.Management) {

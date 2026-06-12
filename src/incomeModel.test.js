@@ -53,11 +53,11 @@ describe("incomeModel — cracked constants", () => {
     expect(im.CALIB.tradeRoutePopX).toBeCloseTo(0.2237, 4);
     expect(im.CALIB.tradeNoRights).toBeCloseTo(0.35, 2); // no-trade-rights partner tier
     expect(im.CALIB.tradeBonusPct).toBe(10);     // documented: 10% per trade_base point
-    // corruption refit 2026-06-11 (live 11-town ladder): quadratic % of gross past d0=6,
-    // zero for capital + office-holding governors (julii: 2,626 model vs 2,641 live)
-    expect(im.CALIB.corrD0).toBe(12); // grand refit 2026-06-11: law-subtractive corruption
-    expect(im.CALIB.corrA).toBeCloseTo(0.68, 3);
-    expect(im.CALIB.corrB).toBeCloseTo(0.0005, 4);
+    // corruption refit 2 2026-06-12 (fresh julii 6-town battery, corruption-refit-2.md):
+    // LINEAR law-subtractive % of gross — fresh rmse 0.35pp, Egypt-80 unchanged at 3.06pp
+    expect(im.CALIB.corrD0).toBe(15.5);
+    expect(im.CALIB.corrA).toBeCloseTo(0.74, 3);
+    expect(im.CALIB.corrB).toBe(0); // linear — negative-b fits rejected (Egypt tail collapse)
     // AI economy refit 2026-06-11 (215 current-vintage AI ledgers, median ratio 1.000/tier)
     expect(im.CALIB.aiFarmBonus).toBeCloseTo(1.188, 3);
     expect(im.CALIB.aiTaxFixByTier[1]).toBeCloseTo(1.976, 3);

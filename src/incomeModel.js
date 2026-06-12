@@ -459,11 +459,14 @@ const CALIB = {
   wageNamed: 200, wageAdmiral: 50,
   // corruption ("other" expenditure) — REFIT 2026-06-10 (corruption-refit.js), now
   // INCOME-PROPORTIONAL (live-confirmed: julii corr/income identical across tax flips):
-  // corruption (REFIT 2026-06-11, live 11-town ladder): per-town % of GROSS income
-  // (tax+farm+mine+trade+admin), corr% = corrA·(d−corrD0) + corrB·(d−corrD0)² for
-  // d>corrD0 (rmse 2.8 pts), ZERO for capital and office-holding governors.
-  // Mean |err| 8.7% (julii −3.8%, seleucid +3.3%, antigonid +4.6%; ptolemaic −19% worst).
-  corrA: 0.68, corrB: 0.0005, corrD0: 12, corrLawPct: 3,
+  // corruption (REFIT 2 2026-06-12, live julii 6-town fresh battery — corruption-refit-2.md):
+  // per-town % of GROSS income (tax+farm+mine+trade+admin), LINEAR law (corrB 0):
+  // corr% = corrA·(d−corrD0) for d>corrD0. Fresh rmse 0.35pp, max |resid| 0.62pp
+  // (all six ≤1pp); Egypt-80 out-of-sample rmse 3.06pp unchanged vs old curve.
+  // corrLawPct 3 double-confirmed live via HarshJustice probe (Nossis/Locri): EDCT
+  // ladder is Law +2/+4/+6 but HJ is an ANTI-TRAIT of Just — stripping Just/1 makes
+  // the net settlement deltas +1/+3 → 2.97/2.93 pp/lawpt, exactly linear.
+  corrA: 0.74, corrB: 0, corrD0: 15.5, corrLawPct: 3,
   corrNegLawShift: 4, // tiles of effective distance per NEGATIVE law point (Pisae console probe + cyrene trio)
   corrCap: 60, // far-distance saturation (live Egypt: d141/226/351 all read 59-64% — NOT the old 90% linear climb)
   seaLaneMaxDist: 40, riverBodyMaxCells: 1500, seaFlowRiverMult: 1.95, // river flows run hotter (Nile live 713/605/519) // sea-path tiles; lanes are local (live: Kyrenaica forms NO Aegean lanes; Sena→Nesactium ~15 allowed)
