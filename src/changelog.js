@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1095",
+    date: "2026-06-12",
+    items: [
+      { type: "fix", text: "**Turn-1 budget header no longer lies about the calibration save** — the panel claimed \"computed from the mod files alone (no save)\" even when an attached calibration save WAS driving the numbers (save governor traits + committed pops). The save-aware flag had been wired to the growth-dev usage marker, which is deliberately off for bracket planning since 2026-06-11, so it could never be true. The flag now reflects actual save usage, a silent save-parse failure surfaces as a visible ⚠ warning on the panel, and the save-attach path is covered by a regression test (it broke twice now). Also fixed: the Balance overview died on a ReferenceError the moment it was clicked (and ignored the attached calibration save)." },
+    ],
+  },
+  {
     version: "0.9.1086",
     date: "2026-06-11",
     items: [

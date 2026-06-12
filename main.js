@@ -6488,46 +6488,27 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
     const gm = require("./src/growthModel.js");
     const te = require("./src/traitEffects.js");
     const im = require("./src/incomeModel.js");
-    // 1. optimal brackets from the growth model (same path as get-strat-tax-plan)
+    // 1. optimal brackets from the growth model (same path as get-strat-tax-plan).
+    // Calibration-save assembly extracted to src/calibSaveOpts.js (2026-06-12,
+    // testable). PO anchor: live-verified 2026-06-11 — the save's publicOrder
+    // field equals the in-game % exactly (Camerinum 125 / Croton 85 / Rome 210).
+    // growthDevByCity (save-aware dev growth) is deliberately NOT passed for
+    // bracket planning: it reproduces THIS turn's growth tick, which embeds the
+    // harvest roll and seasonal/transient dips (live 2026-06-11: a julii turn with
+    // every town at −0.5% @normal dragged the whole plan to low). Brackets come
+    // from the no-save model baseline (validated 26/26 vs live turn-1 panels);
+    // the calibration save contributes the rolled TRAITS + committed POPS (and
+    // the exact PO anchor).
     let opts;
     let poAnchorByCity = null; // { city: { po, bracket } } — EXACT stored PO from the calibration save
-    if (savePath && fs.existsSync(savePath)) {
-      try {
-        const { crackSave } = require("./src/saveCracker.js");
-        const cr = crackSave(fs.readFileSync(savePath), modDataDir);
-        const growthDevByCity = {};
-        const sf = (cr && cr.settlementFields) || {};
-        // committed pops from the calibration save → the tax base tracks the actual
-        // campaign state (turn-1 saves equal descr_strat; mid-campaign saves diverge).
-        const popByCity = {};
-        for (const c of Object.keys(sf)) { const pv = sf[c].committedPopulation; if (pv > 0) popByCity[c] = pv; }
-        // PO anchor (live-verified 2026-06-11: the save's publicOrder field equals the
-        // in-game % exactly — Camerinum 125 / Croton 85 / Rome 210 vs panels). Project
-        // to other brackets with the verified tax-PO deltas (rel. to low: 0/−30/−50/−70).
-        const TB = { 0: "low", 1: "normal", 2: "high", 3: "very_high" };
-        poAnchorByCity = {};
-        for (const c of Object.keys(sf)) {
-          const p = sf[c].publicOrder;
-          if (typeof p === "number" && isFinite(p) && Math.abs(p) < 100000 && TB[sf[c].taxRate]) {
-            poAnchorByCity[c] = { po: Math.round(p), bracket: TB[sf[c].taxRate] };
-          }
-        }
-        if (!Object.keys(poAnchorByCity).length) poAnchorByCity = null;
-        for (const c of Object.keys(sf)) { const g = sf[c].growthDevValue; if (g != null) growthDevByCity[c] = { v1528: g, v1556: sf[c].growthDevValue2 }; }
-        let govEffectByCity = {};
-        try { govEffectByCity = te.govEffectByCityFromSave(cr, te.parseTraitEffects(modDataDir), modDataDir); } catch {}
-        opts = {};
-        // growthDevByCity (save-aware dev growth) is NOT passed for bracket planning:
-        // it reproduces THIS turn's growth tick, which embeds the harvest roll and
-        // seasonal/transient dips (live 2026-06-11: a julii turn with every town at
-        // −0.5% @normal dragged the whole plan to low). Brackets must come from the
-        // no-save model baseline (validated 26/26 vs live turn-1 panels); the
-        // calibration save contributes the rolled TRAITS (and the exact PO anchor).
-        void growthDevByCity;
-        if (Object.keys(govEffectByCity).length) opts.govEffectByCity = govEffectByCity;
-        if (Object.keys(popByCity).length) opts.popByCity = popByCity;
-        if (!Object.keys(opts).length) opts = undefined;
-      } catch (e) { _writeLog(`[turn1-budget] save read failed (${e && e.message}); using no-save model`); }
+    let saveApplied = false, saveError = null;
+    if (savePath) {
+      const cs = require("./src/calibSaveOpts.js").buildCalibSaveOpts(modDataDir, savePath);
+      opts = cs.opts || undefined;
+      poAnchorByCity = cs.poAnchorByCity;
+      saveApplied = cs.saveApplied; saveError = cs.saveError;
+      if (saveError) _writeLog(`[turn1-budget] calibration-save issue (${saveError})${saveApplied ? "" : "; using no-save model"}`);
+      if (saveApplied) _writeLog(`[turn1-budget] calibration save applied: ${cs.counts.governors} governors, ${cs.counts.pops} pops, ${cs.counts.poAnchors} PO anchors`);
     }
     if (!opts || !opts.govEffectByCity) {
       try {
@@ -6561,7 +6542,14 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
         const g = growthBySettlement[s.settlement] || growthBySettlement[s.region];
         if (g) { s.optimalBracket = g.optimalBracket; s.baseGrowthEst = g.baseGrowthEst; s.borderline = g.borderline; }
       }
-      budget.saveAware = !!(plan && plan.saveAware);
+      // SAVE-AWARE FLAG FIX (2026-06-12): was !!(plan && plan.saveAware) — but
+      // plan.saveAware means "growth-dev values used", which has been deliberately
+      // FALSE for bracket planning since the 2026-06-11 decoupling, so the budget
+      // header claimed "(no save)" forever even though the save's governor traits
+      // + committed pops WERE driving the numbers. The flag now reflects actual
+      // calibration-save usage; saveWarning surfaces silent crack failures.
+      budget.saveAware = saveApplied;
+      if (savePath && !saveApplied) budget.saveWarning = "calibration save NOT applied" + (saveError ? ` — ${saveError}` : "");
       budget.growthAccuracy = plan && plan.accuracy;
       // public-order: EXACT anchor from the calibration save when present (stored PO is
       // the in-game % verbatim; bracket deltas rel. to low = 0/−30/−50/−70, live-verified

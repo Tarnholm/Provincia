@@ -22625,7 +22625,11 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           const done = [];
           try {
             for (const ff of facList) {
-              const t1 = await window.electronAPI.getTurn1Budget?.(modDataDir, ff, calib || undefined, armyAsAI || undefined);
+              // 0.9.1095 BUGFIX: this read `calib` — a fetchFor-local that does NOT
+              // exist in this scope — so the whole overview died on a ReferenceError
+              // (silently: try/finally without catch) the moment it was clicked.
+              // The overview honors the attached calibration save like fetchFor does.
+              const t1 = await window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined, armyAsAI || undefined);
               if (t1 && !t1.error && t1.totals) {
                 const row = { fac: ff, ...t1.totals, towns: t1.settlements?.length || 0 };
                 done.push(row);
@@ -22839,7 +22843,8 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                       <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(143,180,110,0.10)", border: "1px solid rgba(143,180,110,0.4)" }}>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
                           <strong style={{ color: "#b8d38f" }}>💰 Turn-1 budget @ optimal taxes</strong>
-                          <span style={{ fontSize: "0.7rem", color: "#8aa" }}>{armyT1Budget.saveAware ? "save-aware growth + mod-file income model" : "computed from the mod files alone (no save)"} · empire size {armyT1Budget.tier} · {armyT1Budget.settlements.length} settlements</span>
+                          <span style={{ fontSize: "0.7rem", color: "#8aa" }}>{armyT1Budget.saveAware ? "calibration save applied (save governor traits + pops) + mod-file income model" : "computed from the mod files alone (no save)"} · empire size {armyT1Budget.tier} · {armyT1Budget.settlements.length} settlements</span>
+                          {armyT1Budget.saveWarning && <span style={{ fontSize: "0.7rem", color: "#e0a050" }} title="A calibration save is attached but could not be used — the numbers below are the no-save model.">⚠ {armyT1Budget.saveWarning}</span>}
                           <input value={armySetSearch} onChange={(e) => setArmySetSearch(e.target.value)} placeholder="Filter settlements…"
                             style={{ marginLeft: "auto", width: 140, background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 5, padding: "2px 7px", fontSize: "0.72rem" }} />
                           <button onClick={() => setArmyProjIncome(String(netAfterArmy != null ? netAfterArmy : t.armyBudget))}
