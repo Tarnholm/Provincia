@@ -1,3 +1,10 @@
+# Provincia
+
+> **RIS engine-law reference:** [docs/LAWS.md](docs/LAWS.md) — the complete catalog of
+> cracked RTW:Remastered economy & public-order laws (farming/wages/army
+> upkeep/taxes + H roll/admin/corruption/sea & land trade/tribute/AI tiers/PO), with
+> probe evidence. Earlier income spec: [docs/INCOME_MODEL.md](docs/INCOME_MODEL.md).
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

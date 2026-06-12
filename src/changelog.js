@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1098",
+    date: "2026-06-12",
+    items: [
+      { type: "feature", text: "**Public order cracked — exact component model (task #10)** — the PO column is no longer a ±20 risk ranking: the settlement-details panel is now reproduced row by row (base 100 + garrison + law + happiness + governor influence + health − squalor − distance-to-capital − culture penalties, ± tax bracket). Cracked from the 26-town julii details-panel corpus (recovered from the recycle bin, archived in jcrops/julii/details + po-corpus.tsv) cross-checked against the save's own orderBreakdown fields, validated out-of-sample on the 80-town egypt panel set. Highlights: happiness is EXACT 26/26 once majority_religion/faction_religion building lines and the empire-size tier evaluate correctly (Rome's +20 and Paestum's −70 were never anomalies); squalor = floor((pop + overflow doubling)/2300) + governor traits (85/86 exact on egypt); garrison = 5·floor(70·men/pop) capped at 80% (men = unit soldiers ×4). Save-aware accuracy: 26/26 towns within ±10pp, 16 exact; no-save: 24/26. Garrison-fix suggestions now use the exact per-man coefficient." },
+      { type: "improvement", text: "**Egypt + Cyrene revalidated under the v0.9.1097 trade laws** — the sea rebuild had drifted egypt trade to +33% (Nile river lanes ~2× live, Red-Sea exotic-cargo lanes at the open-sea constant) and cyrene to +15% (its five measured lanes were never folded into the per-lane table). Egypt's 83 towns are now pinned to their live t1 scroll totals (ledger drift +0.7%, corruption +0.9%); cyrene got its measured per-lane f values + live land-row pins (trade −6.8% vs the live anchor, farming exact, army +0.1%). Julii/capua/kyzikos exactness unchanged (suite-gated)." },
+      { type: "feature", text: "**docs/LAWS.md** — the complete reference of every cracked RIS economy & public-order law with probe evidence inline (farming 73.6/pt, wages, the bodyguard army-upkeep law, imperial + city-state tax laws + the hidden per-campaign H roll, the linear corruption law, the full sea-trade stack: lane slots / shortfall cargo / saturation / eff curve / ÷5 imports / t1 activation / the open f-ladder, the land-route law + rights tier, tribute, AI tiers, and the new PO model). Linked from the README." },
+    ],
+  },
+  {
     version: "0.9.1097",
     date: "2026-06-12",
     items: [

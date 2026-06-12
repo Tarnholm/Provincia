@@ -6559,9 +6559,12 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
       budget.growthAccuracy = plan && plan.accuracy;
       // public-order: EXACT anchor from the calibration save when present (stored PO is
       // the in-game % verbatim; bracket deltas rel. to low = 0/−30/−50/−70, live-verified
-      // on the Croton/Sena full sweeps 2026-06-11); ranking model (±20) as fallback.
+      // on the Croton/Sena full sweeps 2026-06-11); EXACT COMPONENT MODEL as fallback
+      // (cracked 2026-06-12: julii 26-panel corpus — save-aware 26/26 within ±10pp
+      // MAE 2.3pp, no-save 24/26 MAE 4.8pp; egypt 80-town component validation).
       try {
-        const po = require("./src/poModel.js").computeStartingPO(modDataDir, faction);
+        const po = require("./src/poModel.js").computeStartingPO(modDataDir, faction,
+          opts && opts.govEffectByCity ? { govEffectByCity: opts.govEffectByCity } : {});
         const POD = { low: 0, normal: -30, high: -50, very_high: -70 };
         let flagged = 0, exactN = 0;
         for (const s of budget.settlements) {
@@ -6581,11 +6584,11 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
           s.poRisk = s.poAtSet < 75 ? "red" : s.poAtSet < 85 ? "orange" : s.poAtSet < 100 ? "lightgreen" : "green";
           if (s.poRisk === "red") flagged++;
           // PRIORITY GARRISON SUGGESTION (user 2026-06-11, Neapolis <75 case): red-band
-          // towns get a concrete "add ≈N soldiers" fix to reach the 85+ band, using the
-          // PO model's garrison coefficient (≈272.2 PO per garrison-fraction unit).
+          // towns get a concrete "add ≈N men" fix to reach the 85+ band. EXACT garrison
+          // law (2026-06-12): PO% = 5·floor(70·men/pop) → ΔPO per man = 350/pop, 80% cap.
           if ((s.poRisk === "red" || s.poRisk === "orange") && s.pop) {
             const target = 85;
-            s.garrisonFixMen = Math.max(40, Math.ceil((target - s.poAtSet) / 272.2 * s.pop / 10) * 10);
+            s.garrisonFixMen = Math.max(40, Math.ceil((target - s.poAtSet) / 350 * s.pop / 10) * 10);
           }
         }
         if (exactN) _writeLog(`[turn1-budget] ${faction}: PO anchored EXACT from calibration save for ${exactN} towns`);

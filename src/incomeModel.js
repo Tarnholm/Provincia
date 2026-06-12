@@ -479,6 +479,15 @@ const CALIB = {
     "Daunia": { "Frentania": 14, "Pentria-Carricinia": 13, "Hirpinia": 14, "Peucetia": 14 },
     "Peucetia": { "Kanysion": 26, "Daunia": 27, "Calabria": 11, "Lucania_Vetus": 25, "Metapontion": 18, "Taras": 34 },
     "Kanysion": { "Peucetia": 10 },
+    // CYRENE live land rows (scrolls 2026-06-11 morning, land-rows-corpus.json;
+    // folded in with the cyrene sea-lane f pins, TASK B revalidation 2026-06-12):
+    "Kyrenaike": { "Barke": 250, "Katabathmos": 95 },
+    "Barke": { "Kyrenaike": 90, "Hesperos_Kyrenaike": 30 },
+    "Katabathmos": { "Kyrenaike": 38, "Hesperos_Aigyptos": 14 },
+    "Hesperos_Aigyptos": { "Katabathmos": 13 },
+    "Hesperos_Kyrenaike": { "Euesperidai": 25, "Barke": 6, "Augila": 6, "Euphranta": 4, "Castrum_Psyllorum": 4 },
+    "Euesperidai": { "Hesperos_Kyrenaike": 30, "Taucheira": 36 },
+    "Taucheira": { "Euesperidai": 30 },
     "Lokroi_Epizephyrioi": { "Bruttium": 10 },
     "Thourioi": { "Lucania_Vetus": 12, "Metapontion": 9, "Bruttium": 12, "Chonia": 11 },
     "Metapontion": { "Peucetia": 8, "Lucania_Vetus": 10, "Taras": 14, "Calabria": 4, "Thourioi": 8 },
@@ -584,6 +593,16 @@ const CALIB = {
     "Issa>Daunia": { fix: 195 },
     "Issa>Peucetia": { fix: 260 },
     "Issa>Kanysion": { fix: 110 },
+    // CYRENE measured lanes (live scrolls 2026-06-11 morning, cyrene-as-player game;
+    // folded into CALIB during the TASK B revalidation 2026-06-12 — the v1097 eff
+    // curve had re-based cargo pts, drifting cyrene trade to +15% on default f 33):
+    // Kyr→Ars 430, Ars→Kyr 140 (Kyrene's import row 28 = ÷5 ✓), Kyr→Eues 265
+    // (one-way; Eues side weak), Eues→Ptol 191, Ptol→Eues 174.
+    "Kyrenaike>Taucheira": { ply: 22.1 },
+    "Taucheira>Kyrenaike": { ply: 70.0 },
+    "Kyrenaike>Euesperidai": { ply: 17.9 },
+    "Euesperidai>Barke": { ply: 20.4 },
+    "Barke>Euesperidai": { ply: 24.9 },
   },
   // LIVE-READ lane sets (see seaLanesByRegion seeding): exA/exB = that side
   // exports. Sources: capua t1 trio scroll, julii 26-town t1 corpus, mamertines
@@ -623,7 +642,19 @@ const CALIB = {
   // rebuild): the per-lane law (seaLaneSeeds + seaLaneF + fixed-point saturation
   // pts) reproduces the julii 26-town ledger at −2.0% pure-law (capua −2.0%,
   // kyzikos −1.9%), so the frozen per-town table is gone for good.
-  tradeMeasuredByPlayer: {},
+  // EGYPT PER-TOWN LIVE TRADE PINS (TASK B revalidation 2026-06-12): the v1093/1097
+  // sea rebuild (fixed-point cargo flows, unmeasured lanes at seaCargoK 33) overshoots
+  // egypt +33% (Nile-delta river lanes ~2× live; Red-Sea exotic-cargo lanes f≈1 vs 33)
+  // while julii/capua/kyzikos stay exact. Until the per-lane f law is cracked, the
+  // played-egypt budget pins each town to its live t1 scroll total (jcrops/egypt/
+  // all.tsv A-rows, 83/84 towns, Σ 21,303 vs ledger 21,248; Alexandria 2412 is the
+  // post-GoodTrader-probe reading, +38 inherent). VINTAGE-BOUND (descr_strat git
+  // c60aade0c) — re-read after any rebalance, like the julii landLaneRows.
+  tradeMeasuredByPlayer: {
+    ptolemaic: {
+      "Abila": 14, "Alexandria": 2412, "Amathous": 227, "Arsinoe_Klysma": 79, "Arsinoe_Krokodeilon_Polis": 390, "Askalon": 104, "Aspendos": 23, "Athribis": 103, "Azotos": 279, "Berenike_Deire": 40, "Berenike_Panchrysos": 245, "Berenike_Trogodytike": 158, "Berytos": 234, "Boubastis": 117, "Chalkis_Libanos": 48, "Delos": 343, "Dora": 146, "Erythrai": 126, "Etenna_Kotenna": 7, "Gadara": 94, "Gamala": 82, "Gaza": 1683, "Gerasa": 77, "Halikarnassos": 522, "Hebron": 58, "Herakleia_Phoinike": 7, "Hermou_Polis": 262, "Heroon_Polis": 203, "Ioppe": 692, "Itanos": 196, "Jerusalem": 168, "Kaunos": 548, "Kition": 198, "Knidos": 272, "Korakesion": 161, "Kos": 370, "Limyra": 179, "Lykon_Polis": 28, "Megale_Apollonos_Polis": 75, "Memphis": 391, "Mendes_Thmouis": 481, "Methymna": 100, "Mikra_Apollonos_Polis": 66, "Miletos": 625, "Mylasa": 364, "Myos_Hormos": 381, "Myra": 112, "Mytilene": 544, "Nagidos": 147, "Naukratis": 314, "Naxos": 660, "Oxyrhynchos": 282, "Pachora": 39, "Panos_Polis": 98, "Paphos": 573, "Patara": 241, "Pella_Peraia": 47, "Pelousion": 438, "Phaselis": 142, "Philadelpheia": 85, "Philotera": 102, "Premnis": 39, "Ptolemais_Hermeiou": 199, "Ptolemais_Phoinike": 429, "Ptolemais_Theron": 0, "Rhaithou": 84, "Sais": 57, "Salamis": 571, "Samareia": 130, "Samos": 657, "Samothrake": 0, "Sebennytos_Bousiris": 324, "Soloi": 598, "Syene_Elephantine": 78, "Tachompso_Pselkis": 32, "Tanis": 224, "Telmessos": 163, "Termessos": 17, "Thebes_Megale_Diospolis": 165, "Thera": 236, "Tlos": 32, "Xanthos": 37, "Zeszes": 29,
+    },
+  },
   seaFlowWeak: 0, // WEAK SLOT SIDES EXPORT NOTHING (julii corpus: Cosa's 'Pisae 9' row = the
   // IMPORT of Pisae→Cosa 41 (÷5 exact); every 'weak export' reading was a misread import)
 };

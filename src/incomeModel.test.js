@@ -60,7 +60,11 @@ describe("incomeModel — cracked constants", () => {
     // land-lane live pins (julii 26-town corpus + capua + kyzikos): capua's four
     // rows sum to the live 491 (gate +/-10) and stay vintage-locked
     expect(Object.values(im.CALIB.landLaneRows.Campania).reduce((a, v) => a + v, 0)).toBe(490);
-    expect(Object.keys(im.CALIB.landLaneRows).length).toBe(28);
+    // 28 julii/capua/kyzikos towns + 7 cyrene towns (TASK B revalidation 2026-06-12)
+    expect(Object.keys(im.CALIB.landLaneRows).length).toBe(35);
+    // cyrene sea-lane f pins + egypt per-town live trade table (same revalidation)
+    expect(im.CALIB.seaLaneF["Kyrenaike>Taucheira"].ply).toBe(22.1);
+    expect(Object.keys(im.CALIB.tradeMeasuredByPlayer.ptolemaic).length).toBe(83);
     // corruption refit 2 2026-06-12 (fresh julii 6-town battery, corruption-refit-2.md):
     // LINEAR law-subtractive % of gross — fresh rmse 0.35pp, Egypt-80 unchanged at 3.06pp
     expect(im.CALIB.corrD0).toBe(15.5);
