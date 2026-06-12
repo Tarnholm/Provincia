@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1097",
+    date: "2026-06-12",
+    items: [
+      { type: "feature", text: "**Per-campaign tax calibration (H lock)** — the engine rolls a hidden per-town tax multiplier (±15% in 5% steps) at campaign start, seeded by the exact file set: not computable from the mod files, not stored in saves. The Turn-1 budget panel now has a 🎯 Tax calibration box — paste your game's live per-town tax readings once per campaign (flexible format: \"Arpi 618 vh\", tab-separated, bracket optional) and the app locks each town's multiplier, shows it in the settlement table (×1.05 badges), persists it per mod+faction, and applies it to all budget math. Validated on the 26-town julii corpus: all 19 governor-free towns reproduce live within ±6 denarii. A clear button forgets the calibration (do that after any mod-file edit — the roll reshuffles)." },
+      { type: "feature", text: "**Land trade lanes live-pinned** — the 108 land route rows read from the julii 26-town, capua and kyzikos scroll corpora now drive those towns' land trade directly (complete partner lists, measured per-lane values — the Campania wine probe proved per-lane multipliers: +3/+2/+6 per value point on its three responding lanes); the v3 regression law stays as the fallback for unmeasured towns. Capua's land trade lands at 490 vs live 491." },
+      { type: "improvement", text: "**Sea cargo worth curve refined + import-row turn-1 activation fixed** — quantity diminishing returns re-measured from the probe battery: units 1-4 full worth, unit 5 ≈ 0.42, units 6+ ≈ 0.3 (the old kink-4 underpaid unit 5 on the wine probe and overpaid deep stacks; the horses-9 probe now lands exact: Rome lane 417/417, Praeneste 576/570). Import-row turn-1 activation flags are now carried per measured lane (the julii corpus showed three live import rows the old nearest-lane heuristic wrongly suppressed). Trade validation after all three changes: capua 1268/1268 exact, julii 4486/4492 (−0.1%), kyzikos 1719/1719 exact." },
+    ],
+  },
+  {
     version: "0.9.1096",
     date: "2026-06-12",
     items: [

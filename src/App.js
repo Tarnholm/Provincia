@@ -18,6 +18,9 @@ import WelcomeScreen from "./WelcomeScreen";
 import { displayFirstName, displayFullName } from "./displayName";
 import { isGarrisonUnit, isOnSettlementTile } from "./garrisonClassify";
 import { tagOverlayGarrisonUnits } from "./garrisonUnits";
+// Per-campaign tax calibration (H lock, 2026-06-12): paste live tax scroll
+// readings → snapped per-town H multipliers (see src/taxCalib.js).
+import { computeTaxCalibration } from "./taxCalib";
 // diagnostics.js is CommonJS (main.js require()s it at runtime). Rollup can't
 // statically extract NAMED exports from `module.exports = {...}`, so import the
 // default (the whole exports object) and pull the fns off it.
@@ -9635,6 +9638,21 @@ function App() {
     return Number.isFinite(v) ? v : -500;
   });
   useEffect(() => { localStorage.setItem("armyBudgetFloor", String(armyBudgetFloor)); }, [armyBudgetFloor]);
+  // PER-CAMPAIGN TAX CALIBRATION (H lock, 2026-06-12): the user pastes the game's
+  // live per-town tax readings; the app computes H = live/model snapped to the
+  // engine's 0.05 grid (see src/taxCalib.js) and persists it per modDir+faction.
+  // H is a campaign-start roll seeded by the exact file set — NOT file-derivable,
+  // NOT in saves — so one paste per campaign makes the tax model denarius-grade.
+  const [taxCalibText, setTaxCalibText] = useState("");
+  const [taxCalibOpen, setTaxCalibOpen] = useState(false);
+  const [taxCalibBump, setTaxCalibBump] = useState(0); // re-render/refetch tick after apply/clear
+  const taxCalibKey = (mod, fac) => `taxCalibH::${mod || ""}::${String(fac || "").toLowerCase()}`;
+  const taxCalibStored = (mod, fac) => {
+    try {
+      const v = JSON.parse(localStorage.getItem(taxCalibKey(mod, fac)) || "null");
+      return v && typeof v === "object" && Object.keys(v).length ? v : null;
+    } catch { return null; }
+  };
   const [showStatsPanel, setShowStatsPanel] = useState(false);
 
   // (UI batch 2 save-insights state was hoisted up near the other early useState
@@ -22605,7 +22623,9 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           const calib = calibOverride !== undefined ? calibOverride : armyCalibSave;
           setArmyProjIncome("");
           setArmySetupBusy(true); setArmySetupData(null); setArmyT1Budget(null); setArmyStratPlan(null);
-          const t1Promise = ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, calib || undefined, armyAsAI || undefined), "turn-1 budget");
+          // per-campaign tax calibration (H lock): persisted per modDir+faction
+          const taxH = taxCalibStored(modDataDir, ff);
+          const t1Promise = ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, calib || undefined, armyAsAI || undefined, taxH || undefined), "turn-1 budget");
           // auto-compute the tax plan too (no button press needed)
           const planPromise = ipcWithTimeout(window.electronAPI.getStratTaxPlan?.(modDataDir, ff, calib || undefined), "strat tax plan");
           try {
@@ -22646,7 +22666,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
               // exist in this scope — so the whole overview died on a ReferenceError
               // (silently: try/finally without catch) the moment it was clicked.
               // The overview honors the attached calibration save like fetchFor does.
-              const t1 = await ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined, armyAsAI || undefined), "turn-1 budget (" + ff + ")");
+              const t1 = await ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined, armyAsAI || undefined, taxCalibStored(modDataDir, ff) || undefined), "turn-1 budget (" + ff + ")");
               if (t1 && t1.error) setArmyOverview(prev => ({ ...(prev || {}), error: t1.error }));
               if (t1 && !t1.error && t1.totals) {
                 const row = { fac: ff, ...t1.totals, towns: t1.settlements?.length || 0 };
@@ -22897,7 +22917,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                           </button>
                         </div>
                         <div style={{ marginTop: 6, fontSize: "0.8rem", color: "#cdc", display: "flex", gap: 14, flexWrap: "wrap" }}
-                          title={`Income model — live-cracked engine laws (validated: julii ±1.5%, cyrene −4%, AI median 5.2% over 215 ledgers):\n· taxes = 0.456·400(ln pop − 4.4)·bracket·governor − 3.9·building-points·governor (julii +1.4%)\n· farming = 73.6 × (fertility + farm levels + governor) (exact)\n· admin = (4% + 0.75·mgmt + 0.25·law) × town gross (the ledger's "other" row)\n· trade: per-route land law + sea aggregate (weakest line — sea lanes uncracked)\n· corruption = distance-quadratic % of gross, zero for capital/office governors\n· wages = 200×general + 50×admiral (exact) · army upkeep = calibrated EDU (±1%)`}>
+                          title={`Income model — live-cracked engine laws (validated: julii taxes −1.1% / trade −0.1%, capua trade exact, AI median 3.7% over 215 ledgers):\n· taxes = 0.456·400(ln pop − 4.4)·bracket·governor + 3.9·building-points·governor, × per-campaign H when calibrated (paste live readings below — H is the engine's hidden 5%-step campaign roll)\n· farming = 73.6 × (fertility + farm levels + governor) (exact)\n· admin = 2 × governor Management × town gross (the ledger's "other" row)\n· trade: live-pinned land lanes (julii/capua corpora) + per-lane sea cargo flows (shortfall-exclusion + saturation law)\n· corruption = linear distance % of gross minus 3%/law-point\n· wages = 200×general + 50×admiral (exact) · army upkeep = exact EDU law (±0.1%)`}>
                           <span>taxes <b style={{ color: "#e8c873" }}>{t.taxes}</b></span>
                           <span>+ farming <b style={{ color: "#9fd37f" }}>{t.farming}</b></span>
                           {t.mining > 0 && <span>+ mining <b style={{ color: "#d3b67f" }}>{t.mining}</b></span>}
@@ -22916,6 +22936,65 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                               style={{ cursor: "help", color: "#d3a7e8" }}>⚑ protectorate of {armyT1Budget.protectorate.suzerain}{t.tributeOut > 0 ? ` — pays ≈${t.tributeOut}` : ""} <span style={{ color: "#889", fontSize: "0.68rem" }}>(half its profit, from turn 2)</span></span>
                           )}
                         </div>
+                        {/* PER-CAMPAIGN TAX CALIBRATION (H lock, 2026-06-12): the engine rolls a
+                            per-town tax multiplier H ∈ {0.85..1.15, 0.05 steps} at campaign start,
+                            seeded by the exact file set — not file-derivable, not in saves. Pasting
+                            the live tax scroll values once per campaign locks H per town and makes
+                            the tax model denarius-grade (±6 over the 19-town julii validation). */}
+                        {(() => {
+                          const stored = taxCalibStored(modDataDir, fac);
+                          const nCal = stored ? Object.keys(stored).length : 0;
+                          return (
+                            <div style={{ marginTop: 6, fontSize: "0.74rem" }} key={taxCalibBump}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                                <button onClick={() => setTaxCalibOpen(o => !o)}
+                                  title={"Per-campaign tax calibration: the game rolls a hidden ±15% (5%-step) tax multiplier per town at campaign start — it can't be computed from the mod files or a save. Paste your game's LIVE per-town tax readings once per campaign and the app locks each town's multiplier, making tax projections near-exact.\nFormat: one town per line — 'Arpi 618 vh', 'Cosa 568 high' or tab-separated; bracket tokens l/n/h/vh (omit to use the town's recommended bracket)."}
+                                  style={{ background: "rgba(60,60,60,0.7)", color: nCal ? "#7fd1c0" : "#9fc3d3", border: "1px solid " + (nCal ? "#4a8a7a" : "#4a6a80"), borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
+                                  {taxCalibOpen ? "▾" : "▸"} 🎯 Tax calibration{nCal ? ` — ${nCal} town${nCal === 1 ? "" : "s"} ✓` : " (paste live taxes)"}
+                                </button>
+                                {nCal > 0 && (
+                                  <button onClick={() => {
+                                    try { localStorage.removeItem(taxCalibKey(modDataDir, fac)); } catch { }
+                                    setTaxCalibBump(b => b + 1);
+                                    pushToast("Tax calibration cleared — recomputing the uncalibrated model", "info", 4000);
+                                    fetchFor(fac);
+                                  }}
+                                    title="Forget all pasted tax readings for this mod+faction and recompute the plain model. Do this after ANY mod-file edit or when starting a new campaign — the engine reshuffles every town's multiplier."
+                                    style={{ background: "rgba(60,60,60,0.7)", color: "#e8a07a", border: "1px solid #8a5a4a", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
+                                    ✕ clear calibration
+                                  </button>
+                                )}
+                                <span style={{ color: "#778", fontSize: "0.68rem" }}>recalibrate after any mod-file edit (the roll reshuffles)</span>
+                              </div>
+                              {taxCalibOpen && (
+                                <div style={{ marginTop: 5, padding: "6px 8px", borderRadius: 5, background: "rgba(0,0,0,0.25)", border: "1px solid rgba(127,209,192,0.25)" }}>
+                                  <textarea value={taxCalibText} onChange={(ev) => setTaxCalibText(ev.target.value)}
+                                    placeholder={"Paste live per-town tax readings, one per line:\nArpi 618 vh\nCosa 568 high\nSena Gallica\t252\tl\n(bracket l/n/h/vh — omit it to use the town's recommended bracket)"}
+                                    spellCheck={false}
+                                    style={{ width: "100%", minHeight: 90, resize: "vertical", boxSizing: "border-box", background: "rgba(255,255,255,0.06)", color: "#dfe", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 4, padding: "5px 7px", fontSize: "0.74rem", fontFamily: "Consolas, monospace" }} />
+                                  <div style={{ marginTop: 4, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                                    <button onClick={() => {
+                                      const res = computeTaxCalibration(taxCalibText, armyT1Budget.settlements);
+                                      const n = Object.keys(res.byCity).length;
+                                      if (!n) { pushToast("No tax readings parsed — lines need a town name, a number and optionally a bracket (l/n/h/vh)", "error", 6000); return; }
+                                      const merged = { ...(taxCalibStored(modDataDir, fac) || {}), ...res.byCity };
+                                      try { localStorage.setItem(taxCalibKey(modDataDir, fac), JSON.stringify(merged)); } catch { }
+                                      setTaxCalibBump(b => b + 1);
+                                      const extra = [res.unmatched.length ? `${res.unmatched.length} unmatched: ${res.unmatched.slice(0, 3).join("; ")}` : "", res.skipped.length ? `${res.skipped.length} skipped` : ""].filter(Boolean).join(" · ");
+                                      pushToast(`Tax calibration: ${n} town${n === 1 ? "" : "s"} locked${extra ? " (" + extra + ")" : ""} — recomputing`, "info", 7000);
+                                      fetchFor(fac);
+                                    }}
+                                      title="Compute each pasted town's multiplier H = live ÷ model (snapped to the engine's 0.05 grid), persist it for this mod+faction, and recompute the budget with it."
+                                      style={{ background: "#3a7a6a", color: "#fff", border: "1px solid #5a9b88", borderRadius: 4, padding: "3px 12px", cursor: "pointer", fontSize: "0.74rem", fontWeight: 600 }}>
+                                      Apply calibration
+                                    </button>
+                                    {nCal > 0 && <span style={{ color: "#8aa", fontSize: "0.7rem" }}>{nCal} town{nCal === 1 ? "" : "s"} currently calibrated — pasting more merges; ✕ clears all.</span>}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                         {netAfterArmy != null && (() => {
                           const room = netAfterArmy - armyBudgetFloor; // floor is the allowed max deficit (e.g. −500)
                           // ARMY-ONLY trim suggestions when over budget: greedily drop the
@@ -22972,7 +23051,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                 </td>
                                 <td style={{ color: "#e8c873", cursor: s.govIncome ? "help" : "default" }}
                                   title={s.govIncome ? `Governor income traits applied (parsed from descr_strat starting traits + ancillaries, exact-tile binding):${s.govIncome.tax ? `\n  tax ${s.govIncome.tax > 0 ? "+" : ""}${s.govIncome.tax}%` : ""}${s.govIncome.trading ? `\n  trade ${s.govIncome.trading > 0 ? "+" : ""}${s.govIncome.trading}%` : ""}${s.govIncome.mining ? `\n  mining ${s.govIncome.mining > 0 ? "+" : ""}${s.govIncome.mining}%` : ""}\nFrom: ${(s.govIncome.hits || []).join(", ")}` : undefined}>
-                                  {s.taxes}{s.govIncome ? <span style={{ color: s.govIncome.tax >= 0 ? "#9fd37f" : "#e8a07a", fontSize: "0.66rem" }}> 👤</span> : null}</td>
+                                  {s.taxes}{s.taxH != null ? <span style={{ color: "#7fd1c0", fontSize: "0.64rem", cursor: "help" }} title={`Calibrated from your pasted live reading: per-campaign tax multiplier ×${s.taxH.toFixed(2)} applied (live = model × H, the engine's hidden 5%-step campaign roll).`}> {s.taxH === 1 ? "✓" : `×${s.taxH.toFixed(2)}`}</span> : null}{s.govIncome ? <span style={{ color: s.govIncome.tax >= 0 ? "#9fd37f" : "#e8a07a", fontSize: "0.66rem" }}> 👤</span> : null}</td>
                                 <td style={{ color: "#9fd37f" }}>{s.farming}</td>
                                 <td style={{ color: "#778" }}>{s.distToCapital != null ? s.distToCapital : "—"}</td>
                               </tr>

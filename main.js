@@ -6482,7 +6482,7 @@ function _modCopyWarning(modDataDir) {
 // land/sea fit, wages 200×named+50×admiral, corruption 6.43×Σdist-to-capital).
 // Validated vs the 10-faction turn-1 corpus: median |budget err| 7%, worst 27%.
 // Returns computeTurn1Budget() + per-settlement optimalBracket/growth merged in.
-ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath, asAI) => {
+ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath, asAI, taxH) => {
   try {
     if (!modDataDir || !faction) return { error: "modDataDir + faction required" };
     const gm = require("./src/growthModel.js");
@@ -6532,9 +6532,15 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
     // its world-wide governor traits (incl. start-randomized personalities) replace
     // the descr_strat seeds for income too — opts.govEffectByCity came from the
     // save-aware path above.
+    // PER-CAMPAIGN TAX CALIBRATION (H lock, 2026-06-12): taxH = { settlement:
+    // { h } } from the renderer's pasted live tax readings (persisted per
+    // modDir+faction). live = model × H, H quantized 0.05 — see src/taxCalib.js.
+    const nTaxH = taxH && typeof taxH === "object" ? Object.keys(taxH).length : 0;
+    if (nTaxH) _writeLog(`[turn1-budget] ${faction}: tax calibration applied for ${nTaxH} towns (per-campaign H lock)`);
     const budget = im.computeTurn1Budget(modDataDir, faction, bracketByCity,
       { ...(opts && opts.govEffectByCity ? { govEffectByCity: opts.govEffectByCity } : {}),
         ...(opts && opts.popByCity ? { popByCity: opts.popByCity } : {}),
+        ...(nTaxH ? { taxHByCity: taxH } : {}),
         ...(asAI ? { asAI: true, isPlayer: false } : {}) });
     if (budget && !budget.error) budget.asAI = !!asAI;
     if (budget && !budget.error) {

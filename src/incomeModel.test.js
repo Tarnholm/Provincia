@@ -53,6 +53,14 @@ describe("incomeModel — cracked constants", () => {
     expect(im.CALIB.tradeRoutePopX).toBeCloseTo(0.2237, 4);
     expect(im.CALIB.tradeNoRights).toBeCloseTo(0.35, 2); // no-trade-rights partner tier
     expect(im.CALIB.tradeBonusPct).toBe(10);     // documented: 10% per trade_base point
+    // eff per-unit worth curve (2026-06-12 probe battery: wine unit-5 delta 14 on
+    // the Rome lane, Messana 65/74, horses-9 -> eff(9)=5.56; replaces kink-4/0.32)
+    expect(im.CALIB.seaEffUnits).toEqual([1, 1, 1, 1, 0.42, 0.30, 0.28]);
+    expect(im.CALIB.seaEffTail).toBe(0.28);
+    // land-lane live pins (julii 26-town corpus + capua + kyzikos): capua's four
+    // rows sum to the live 491 (gate +/-10) and stay vintage-locked
+    expect(Object.values(im.CALIB.landLaneRows.Campania).reduce((a, v) => a + v, 0)).toBe(490);
+    expect(Object.keys(im.CALIB.landLaneRows).length).toBe(28);
     // corruption refit 2 2026-06-12 (fresh julii 6-town battery, corruption-refit-2.md):
     // LINEAR law-subtractive % of gross — fresh rmse 0.35pp, Egypt-80 unchanged at 3.06pp
     expect(im.CALIB.corrD0).toBe(15.5);
