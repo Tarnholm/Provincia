@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1096",
+    date: "2026-06-12",
+    items: [
+      { type: "fix", text: "**Turn-1 budget stuck on \"computing…\" (v0.9.1095 regression)** — the packaged build was missing src/calibSaveOpts.js (the new module from the 0.9.1095 save-flag fix was never added to the installer's file list), so every budget request with a calibration save attached failed in the main process with \"Cannot find module\" — and the panel dropped the error reply silently and showed \"computing…\" forever. The file now ships, a packaging guard test fails CI if a required module is ever left out of the installer again, and the panel now SHOWS handler errors (with a watchdog timeout) instead of hanging — this also un-breaks the Balance overview, which failed the same silent way." },
+    ],
+  },
+  {
     version: "0.9.1095",
     date: "2026-06-12",
     items: [

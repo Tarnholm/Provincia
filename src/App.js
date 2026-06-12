@@ -22585,16 +22585,31 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
         // live-verified exact, so it IS the planner. Everything below computes from the
         // mod files alone: tax plan (computeStratTaxPlan), turn-1 budget (incomeModel),
         // and the budget auto-fill (sustainable army budget − starting-army upkeep).
+        // 0.9.1096 HANG FIX: an IPC error reply used to be SILENTLY dropped here
+        // (`if (t1 && !t1.error && t1.totals)` with no else), so any main-process
+        // handler failure — e.g. v0.9.1095's "Cannot find module './src/calibSaveOpts.js'"
+        // (file missing from the packaged build's files list) — left the budget
+        // panel stuck on the "computing…" placeholder forever. Errors now render
+        // in the panel, and a watchdog timeout converts a genuinely-unreplying IPC
+        // into a visible error instead of an eternal await.
+        const ipcWithTimeout = (p, what, ms = 120000) => {
+          if (!p || typeof p.then !== "function") return Promise.resolve({ error: what + " IPC unavailable (preload bridge missing?)" });
+          let to;
+          return Promise.race([
+            p.finally(() => clearTimeout(to)),
+            new Promise(res => { to = setTimeout(() => res({ error: what + ` got no reply from the main process after ${ms / 1000}s — the handler likely crashed before replying (see provincia.log)` }), ms); }),
+          ]);
+        };
         const fetchFor = async (ff, calibOverride) => {
           if (!ff || !modDataDir) return;
           const calib = calibOverride !== undefined ? calibOverride : armyCalibSave;
           setArmyProjIncome("");
           setArmySetupBusy(true); setArmySetupData(null); setArmyT1Budget(null); setArmyStratPlan(null);
-          const t1Promise = window.electronAPI.getTurn1Budget?.(modDataDir, ff, calib || undefined, armyAsAI || undefined);
+          const t1Promise = ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, calib || undefined, armyAsAI || undefined), "turn-1 budget");
           // auto-compute the tax plan too (no button press needed)
-          const planPromise = window.electronAPI.getStratTaxPlan?.(modDataDir, ff, calib || undefined);
+          const planPromise = ipcWithTimeout(window.electronAPI.getStratTaxPlan?.(modDataDir, ff, calib || undefined), "strat tax plan");
           try {
-            const r = await window.electronAPI.getArmySetup(ff, modDataDir, armyBudgetFloor);
+            const r = await ipcWithTimeout(window.electronAPI.getArmySetup(ff, modDataDir, armyBudgetFloor), "army setup");
             setArmySetupData(r || { error: "no result" });
             const t1 = await t1Promise;
             if (t1 && !t1.error && t1.totals) {
@@ -22602,6 +22617,8 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
               if (typeof t1.totals.armyBudget === "number" && r && typeof r.armyUpkeep === "number") {
                 setArmyProjIncome(String(t1.totals.armyBudget - r.armyUpkeep));
               }
+            } else {
+              setArmyT1Budget({ error: (t1 && t1.error) || "turn-1 budget returned no result", faction: ff });
             }
             const plan = await planPromise;
             if (plan && !plan.error) setArmyStratPlan(plan);
@@ -22621,7 +22638,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
             const prev = JSON.parse(localStorage.getItem("armyOverviewPrev:" + modDataDir) || "null");
             if (prev && Array.isArray(prev.rows)) for (const r of prev.rows) prevByFac[r.fac] = r;
           } catch { }
-          setArmyOverview({ busy: true, rows: [], prevByFac, prevAt: (() => { try { return JSON.parse(localStorage.getItem("armyOverviewPrev:" + modDataDir) || "null")?.at || null; } catch { return null; } })() });
+          setArmyOverview({ busy: true, rows: [], error: null, prevByFac, prevAt: (() => { try { return JSON.parse(localStorage.getItem("armyOverviewPrev:" + modDataDir) || "null")?.at || null; } catch { return null; } })() });
           const done = [];
           try {
             for (const ff of facList) {
@@ -22629,7 +22646,8 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
               // exist in this scope — so the whole overview died on a ReferenceError
               // (silently: try/finally without catch) the moment it was clicked.
               // The overview honors the attached calibration save like fetchFor does.
-              const t1 = await window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined, armyAsAI || undefined);
+              const t1 = await ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined, armyAsAI || undefined), "turn-1 budget (" + ff + ")");
+              if (t1 && t1.error) setArmyOverview(prev => ({ ...(prev || {}), error: t1.error }));
               if (t1 && !t1.error && t1.totals) {
                 const row = { fac: ff, ...t1.totals, towns: t1.settlements?.length || 0 };
                 done.push(row);
@@ -22754,9 +22772,11 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
               </div>
               <div style={{ overflow: "auto", padding: "8px 16px" }}>
                 {/* ⚖ Balance overview — every faction's verdict (mod-team harness) */}
-                {armyOverview && armyOverview.rows.length > 0 && (
+                {armyOverview && (armyOverview.rows.length > 0 || armyOverview.error) && (
                   <div style={{ marginBottom: 12, padding: "8px 10px", borderRadius: 6, background: "rgba(232,200,115,0.07)", border: "1px solid rgba(232,200,115,0.3)" }}>
                     <div style={{ fontWeight: 700, color: "#e8c873", marginBottom: 4 }}>⚖ Balance overview — turn-1 economy @ optimal taxes vs starting army{armyOverview.busy ? ` (computing ${armyOverview.rows.length}/${facList.length}…)` : ` (${armyOverview.rows.length} factions, worst first)`}</div>
+                    {/* 0.9.1096: handler failures used to be dropped silently → 0 rows, no clue why */}
+                    {armyOverview.error && <div style={{ color: "#e8a090", fontSize: "0.74rem", marginBottom: 4 }}>⚠ {String(armyOverview.error)}</div>}
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.74rem" }}>
                       <thead><tr style={{ color: "#8aa", textAlign: "left" }}>
                         <th style={{ padding: "0 6px" }}>Faction</th><th>Towns</th><th>Income</th><th>Wages</th><th>Corr.</th><th>Army budget</th><th>Army upkeep</th><th>Net/turn</th><th title={armyOverview.prevAt ? `Change vs the previous overview run (${armyOverview.prevAt.slice(0, 16).replace("T", " ")}) — run, edit mod files, run again to see exactly which factions your changes moved.` : "Run the overview again after editing mod files to see per-faction changes here."}>Δ prev</th><th>Verdict</th>
@@ -22831,6 +22851,16 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                       );
                     })()}
                   </div>
+                  {/* 0.9.1096: surface a turn-1 budget failure instead of leaving the
+                      panel on "computing…" forever (v0.9.1095: packaged build was
+                      missing src/calibSaveOpts.js → handler errored on every
+                      calibration-save request and the error was silently dropped). */}
+                  {armyT1Budget && armyT1Budget.error && (
+                    <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(220,90,70,0.10)", border: "1px solid rgba(220,90,70,0.45)", color: "#e8a090", fontSize: "0.78rem" }}>
+                      ⚠ <b>Turn-1 budget failed:</b> {String(armyT1Budget.error)}
+                      <span style={{ color: "#b08a80" }}> — try detaching the calibration save; if that helps, the save path/parse is the culprit.</span>
+                    </div>
+                  )}
                   {/* STATIC turn-1 budget @ optimal taxes (2026-06-09) — works with NO save:
                       growth-model optimal brackets + the income model cracked from the mod
                       files (validated vs the 10-faction turn-1 save corpus: median 7%). */}
