@@ -474,26 +474,90 @@ const CALIB = {
   // OPEN-SEA EXACT (Capua t1 trio 2026-06-11: 426/13, 332/10, 100/3 — also pct-free:
   // Capua pct +6 and Praeneste pct −6 share the same constant)
   seaCargoK: 33,
-  // Per-resource trade-value corrections for SEA CARGO only (shortfall-grid.js
-  // 2026-06-12): salt=3 lands both Rome flows (489→495, 288→264..297) and timber=2
-  // lands Petelia→Metapontum (170→165); descr_sm reads salt=2/timber=1. Empty this
-  // to fall back to pure file values.
-  seaResValueOverride: { salt: 3, timber: 2 },
-  // MEASURED turn-1 per-town trade (live scroll income lines, 2026-06-12 julii
-  // 26-town session — sums to the ledger 4,492 exactly). Used VERBATIM when the
-  // PLAYED faction has an entry (the sea per-direction multiplier law is still
-  // open — Rome exports at 1.45× the capua constant). VINTAGE-BOUND: re-crib
-  // after descr_strat/EDB rebalances. Other factions fall through to the law.
-  tradeMeasuredByPlayer: {
-    romans_julii: {
-      Rome: 1407, Iguvium: 40, Praeneste: 214, Reate: 86, Camerinum: 31,
-      Sena_Gallica: 72, Fregellae: 378, Corfinium: 16, Teate: 30, Neapolis: 221,
-      Maleventum: 121, Larinum: 19, Paestum: 324, Arpi: 94, Venusia: 193,
-      Canusium: 32, Epizephyrian_Locri: 53, Thurii: 219, Metapontum: 159,
-      Croton: 14, Pisae: 76, Volaterrae: 96, Cosa: 425, Arretium: 88,
-      Perusia: 31, Falerii: 53,
-    },
+  // SEA VALUE SYSTEM CLOSED (2026-06-12 probe chain): FILE VALUE RATIOS ARE CORRECT
+  // (f_Freg = 20.0/value-pt EXACT across salt/glass/dyes/pottery deltas); the old
+  // salt=3/timber=2 overrides were saturation artifacts — REMOVED.
+  // MARKET-SATURATION LAW (glass/salt/dyes/pottery delta chain, live-proven):
+  // a good's worth on a lane collapses to ~0.18× when the importer's holdings of it
+  // from COMPETING routes beat the exporter's qty (relative rule: exporter qty >=
+  // competitor qty keeps FULL worth; land competitor needs qty >= 3 to suppress —
+  // the (RomaGlass,ParthGlass)->CapuaRow state table: (1,0)=(1,1)=(1,2)=259,
+  // (1,3)=230, (3,3)=318). Zero-trade-value goods (stone/hemp/pitch/flax) never
+  // compete (Praeneste stone-3 ships FULL past Parthenope's stone-4 at Capua) but
+  // DO ship at value 1 (floored).
+  seaSuppress: 0.18,
+  // PER-LANE f (flow = f × Σ qtyShipped × fileValue). The f LAW IS STILL OPEN —
+  // measured f spans 8–95 per lane+direction and regresses poorly on building/pop/
+  // rights/distance features (R²log 0.71, f-regress.js 2026-06-12). Until cracked,
+  // measured lanes carry their live-calibrated f (cross-campaign stable where
+  // double-measured: Campania>Roma 332 capua-game vs 335 julii-game; Latium>Campania
+  // shows the only player/AI split — ×0.49 when the PLAYER owns Praeneste, two
+  // campaigns each way). Keyed 'ExporterRegion>ImporterRegion' → { ai, ply }:
+  // ply applies when the exporter town belongs to the faction being computed as
+  // player; ai otherwise. Missing regime falls back to the other; unmeasured lanes
+  // run at seaCargoK (33).
+  seaLaneF: {
+    "Campania>Latium": { ply: 32.8, ai: 33.1 },
+    "Campania>Roma": { ply: 33.2, ai: 33.5 },
+    "Latium>Campania": { ai: 33.3, ply: 16.3 },
+    "Roma>Latium_Novum": { ply: 50.3 },
+    "Roma>Campania": { ply: 66.1 },
+    "Latium_Novum>Roma": { ply: 30.7 },
+    "Etruria_Meridionalis>Latium": { ply: 25.3 },
+    "Etruria_Septentrionalis>Etruria_Meridionalis": { ply: 3.4 },
+    "Parthenope>Latium_Novum": { ply: 14 },
+    "Poseidonia>Bruttium": { ply: 20.3 },
+    "Bruttium>Poseidonia": { ai: 15.5 },
+    "Lokroi_Epizephyrioi>Chonia": { ply: 8.6 },
+    "Thourioi>Taras": { ply: 17.8 },
+    "Taras>Thourioi": { ai: 37.1 },
+    "Metapontion>Chonia": { ply: 40.5 },
+    "Chonia>Metapontion": { ai: 56.7 },
+    "Etruria_Occidentalis>Roma": { ply: 8.6 },
+    "Mamertina>Bruttium": { ply: 33 },
+    "Arktonnesos>Pityoussa": { ply: 95 },
+    "Arktonnesos>Kardia": { ply: 56 },
+    "Pityoussa>Arktonnesos": { ai: 93.8 },
+    "Histria>Ager_Gallicus": { ai: 75.5 },
+    "Ingaunia>Etruria_Septentrionalis": { ai: 21.7 },
+    "Corsica>Etruria_Occidentalis": { ai: 14.9 },
+    "Lucania>Parthenope": { ai: 75 },
+    "Issa>Daunia": { fix: 195 },
+    "Issa>Peucetia": { fix: 260 },
+    "Issa>Kanysion": { fix: 110 },
   },
+  // LIVE-READ lane sets (see seaLanesByRegion seeding): exA/exB = that side
+  // exports. Sources: capua t1 trio scroll, julii 26-town t1 corpus, mamertines
+  // probe, kyzikos probe (all 2026-06-11/12, descr_strat git-HEAD vintage).
+  // VINTAGE-BOUND like all calibration: re-read after map/strat rebalances.
+  seaLaneSeeds: [
+    { a: "Campania", b: "Latium", exA: true, exB: true },
+    { a: "Campania", b: "Roma", exA: true, exB: true },
+    { a: "Roma", b: "Latium_Novum", exA: true, exB: true },
+    { a: "Roma", b: "Etruria_Occidentalis", exA: false, exB: true },
+    { a: "Latium", b: "Etruria_Meridionalis", exA: false, exB: true },
+    { a: "Etruria_Meridionalis", b: "Etruria_Septentrionalis", exA: false, exB: true },
+    { a: "Etruria_Septentrionalis", b: "Ingaunia", exA: false, exB: true },
+    { a: "Etruria_Occidentalis", b: "Corsica", exA: false, exB: true },
+    { a: "Parthenope", b: "Latium_Novum", exA: true, exB: false },
+    { a: "Parthenope", b: "Lucania", exA: false, exB: true },
+    { a: "Poseidonia", b: "Bruttium", exA: true, exB: true },
+    { a: "Lokroi_Epizephyrioi", b: "Chonia", exA: true, exB: false },
+    { a: "Thourioi", b: "Taras", exA: true, exB: true },
+    { a: "Metapontion", b: "Chonia", exA: true, exB: true },
+    { a: "Mamertina", b: "Bruttium", exA: true, exB: false },
+    { a: "Ager_Gallicus", b: "Histria", exA: false, exB: true },
+    { a: "Daunia", b: "Issa", exA: false, exB: true },
+    { a: "Peucetia", b: "Issa", exA: false, exB: true },
+    { a: "Kanysion", b: "Issa", exA: false, exB: true },
+    { a: "Arktonnesos", b: "Pityoussa", exA: true, exB: true },
+    { a: "Arktonnesos", b: "Kardia", exA: true, exB: false },
+  ],
+  // MEASURED per-town trade overrides — PERMANENTLY EMPTIED (2026-06-12 sea-model
+  // rebuild): the per-lane law (seaLaneSeeds + seaLaneF + fixed-point saturation
+  // pts) reproduces the julii 26-town ledger at −2.0% pure-law (capua −2.0%,
+  // kyzikos −1.9%), so the frozen per-town table is gone for good.
+  tradeMeasuredByPlayer: {},
   seaFlowWeak: 0, // WEAK SLOT SIDES EXPORT NOTHING (julii corpus: Cosa's 'Pisae 9' row = the
   // IMPORT of Pisae→Cosa 41 (÷5 exact); every 'weak export' reading was a misread import)
 };
@@ -753,7 +817,7 @@ function tradeQtyValByRegion(modDataDir) {
 const _tradeQtyMapsCache = {};
 function tradeQtyMapsByRegion(modDataDir) {
   if (_tradeQtyMapsCache[modDataDir]) return _tradeQtyMapsCache[modDataDir];
-  const out = { qty: {}, values: {} };
+  const out = { qty: {}, values: {}, rawValues: {} };
   try {
     const dg = require("./descrStratGeneral.js");
     const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
@@ -786,6 +850,7 @@ function tradeQtyMapsByRegion(modDataDir) {
       if (!reg) continue;
       (out.qty[reg] = out.qty[reg] || {})[name] = ((out.qty[reg] || {})[name] || 0) + (+m[2]);
       if (out.values[name] == null) out.values[name] = Math.max(1, e.tradeValue || 0);
+      if (out.rawValues[name] == null) out.rawValues[name] = e.tradeValue || 0;
     }
   } catch { /* none */ }
   return (_tradeQtyMapsCache[modDataDir] = out);
@@ -956,6 +1021,23 @@ function seaLanesByRegion(modDataDir) {
       pairs.push({ a, b, d: sd, river });
     }
     pairs.sort((x, y) => x.d - y.d);
+    // SEEDED LIVE LANES (probe corpora 2026-06-11/12: capua t1 trio, julii 26-town
+    // t1, mamertines, kyzikos): the greedy matcher's distance metric misses the
+    // engine's (movement-cost pathing, port-side choice, ally-tier preference —
+    // directed-slot model, see memory). Where a campaign's lane set was READ LIVE
+    // it is pinned here; seeded ports take ONLY their seeded lanes, the unseeded
+    // world keeps the greedy law. exA/exB = that side exports (live strength).
+    const seeded = new Set();
+    const portOf = {};
+    for (const p of ports) portOf[p.region] = p;
+    for (const sd of (CALIB.seaLaneSeeds || [])) {
+      const A = portOf[sd.a], B = portOf[sd.b];
+      if (!A || !B) continue;
+      seeded.add(sd.a); seeded.add(sd.b);
+      const d = (seaDist[sd.a] && seaDist[sd.a].get(sd.b)) != null ? seaDist[sd.a].get(sd.b) : 24;
+      (out[sd.a] = out[sd.a] || []).push({ to: sd.b, weak: !sd.exA, inWeak: !sd.exB, toPop: B.pop, toPort: B.basePort, ownPop: A.pop, ownPort: A.basePort, d, seeded: true });
+      (out[sd.b] = out[sd.b] || []).push({ to: sd.a, weak: !sd.exB, inWeak: !sd.exA, toPop: A.pop, toPort: A.basePort, ownPop: B.pop, ownPort: B.basePort, d, seeded: true });
+    }
     const used = {}; const slots = {};
     for (const p of ports) { slots[p.region] = 1 + p.level; used[p.region] = 0; }
     for (const pr of pairs) {
@@ -965,6 +1047,7 @@ function seaLanesByRegion(modDataDir) {
         (out[B] = out[B] || []).push({ to: A, weak: false, inWeak: false, toPop: pr.a.pop, toPort: pr.a.basePort, ownPop: pr.b.pop, ownPort: pr.b.basePort, river: true, d: pr.d });
         continue;
       }
+      if (seeded.has(A) || seeded.has(B)) continue; // pinned ports don't re-match
       if (used[A] >= slots[A] || used[B] >= slots[B]) continue;
       used[A]++; used[B]++;
       // PER-SIDE strength: each direction is weak iff THAT side burned its LAST slot
@@ -986,6 +1069,89 @@ function seaLanesByRegion(modDataDir) {
     for (const r of Object.keys(out)) for (const l of out[r]) l.toNearest = nearestOf[l.to] === r;
   } catch { /* none */ }
   return (_seaLaneCache[modDataDir] = out);
+}
+
+// ---- SEA FLOW CARGO: fixed-point market-saturation shortfall points per lane ----
+// flow(X→Y) = f_lane × pts(X→Y), pts = Σ_resources u × max(1, fileValue), where per
+// resource r of EXPORTER X's own region basket:
+//   importer own qty ≥ 2                  → excluded (covered)
+//   importer own qty 1 and shortfall < 2  → excluded
+//   else u = eff(qX − qY),  eff(q) = min(q,4) + 0.32·max(0,q−4)
+// SATURATION (glass/salt probe chain 2026-06-12, live-proven): u ×= 0.18 when the
+// importer's competing routes beat the exporter on r:
+//   • LAND competitor (partner region's own qty): needs C ≥ 3 AND C > qX
+//     (relative rule — exporter qty ≥ competitor keeps full worth)
+//   • SEA competitor: any HIGHER-PRIORITY (nearer) lane already shipping r
+//     (Rome's glass-1 keeps full worth at Fregellae while Neapolis' glass-3 there
+//     collapses — priority beats quantity between sea suppliers)
+//   • zero-trade-value goods never compete (Praeneste stone-3 ships full past
+//     Parthenope stone-4) but ship at value 1.
+// Flows depend on competitor flows → iterative relaxation, 3 passes suffice.
+const _seaFlowPtsCache = {};
+function seaFlowPtsByLane(modDataDir) {
+  if (_seaFlowPtsCache[modDataDir]) return _seaFlowPtsCache[modDataDir];
+  const lanesBy = seaLanesByRegion(modDataDir);
+  const { qty: GQ, values: GV, rawValues: RAW } = tradeQtyMapsByRegion(modDataDir);
+  const adjacency = regionAdjacency(modDataDir);
+  const { ownerOfRegion, wars } = tradePartnerCtx(modDataDir);
+  const coords = regionCoords(modDataDir);
+  const effQ = (q) => Math.min(q, 4) + 0.32 * Math.max(0, q - 4);
+  const sup = CALIB.seaSuppress;
+  // importer's incoming open-sea suppliers, priority = lane d, euclid tiebreak
+  const inBy = {};
+  for (const X of Object.keys(lanesBy)) for (const ln of lanesBy[X]) {
+    if (ln.river || ln.weak) continue; // weak sides ship nothing → don't compete
+    (inBy[ln.to] = inBy[ln.to] || []).push({ from: X, d: ln.d });
+  }
+  const eu = (a, b) => { const ca = coords[a], cb = coords[b]; return ca && cb ? Math.hypot(ca.x - cb.x, ca.y - cb.y) : 999; };
+  for (const Y of Object.keys(inBy)) inBy[Y].sort((p, q) => (p.d - q.d) || (eu(Y, p.from) - eu(Y, q.from)) || (p.from < q.from ? -1 : 1));
+  // land competitors' own qty at each importer (valued goods only)
+  const landC = {};
+  for (const Y of Object.keys(inBy)) {
+    const own = ownerOfRegion[Y]; const m = {};
+    for (const n of (adjacency[Y] || [])) {
+      const o = ownerOfRegion[n];
+      if (!o || o === "slave") continue;
+      if (own && o !== own && wars[own] && wars[own].has(o)) continue;
+      const q = GQ[n] || {};
+      for (const r of Object.keys(q)) if ((RAW[r] || 0) >= 1) m[r] = Math.max(m[r] || 0, q[r]);
+    }
+    landC[Y] = m;
+  }
+  let shipped = {};
+  let pts = {};
+  for (let pass = 0; pass < 3; pass++) {
+    const next = {};
+    pts = {};
+    for (const X of Object.keys(lanesBy)) for (const ln of lanesBy[X]) {
+      if (ln.river) continue;
+      const Y = ln.to;
+      const gx = GQ[X] || {}, gy = GQ[Y] || {};
+      const pri = inBy[Y] || [];
+      let myRank = -1;
+      for (let i = 0; i < pri.length; i++) if (pri[i].from === X) { myRank = i; break; }
+      let p = 0; const ship = {};
+      for (const r of Object.keys(gx)) {
+        const qx = gx[r], qy = gy[r] || 0;
+        if (qy >= 2) continue;
+        if (qy === 1 && qx - qy < 2) continue;
+        let u = effQ(qx - qy);
+        if (u <= 0) continue;
+        if ((RAW[r] || 0) >= 1) { // zero-trade-value goods never compete (stone law)
+          const cl = (landC[Y] || {})[r] || 0;
+          let seaHit = false;
+          for (let i = 0; i >= 0 && i < myRank; i++) { const sh = shipped[pri[i].from + ">" + Y]; if (sh && sh[r]) { seaHit = true; break; } }
+          if ((cl >= 3 && cl > qx) || seaHit) u *= sup;
+        }
+        ship[r] = qx - qy;
+        p += u * Math.max(1, GV[r] || 0);
+      }
+      next[X + ">" + Y] = ship;
+      pts[X + ">" + Y] = p;
+    }
+    shipped = next;
+  }
+  return (_seaFlowPtsCache[modDataDir] = pts);
 }
 
 // ---- protectorates (CRACKED 2026-06-10, tribute-rate-fit.js) ----
@@ -1156,20 +1322,21 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     let seaTrade = 0;
     if (s.portLevel) {
       const lanes = seaLanes[s.region] || [];
-      const { qty: goodsQty, values: goodsVal } = tradeQtyMapsByRegion(modDataDir);
-      const ovV = CALIB.seaResValueOverride || {};
-      const effQ = (q) => Math.min(q, 4) + 0.32 * Math.max(0, q - 4);
-      const cargoOf = (X, Y) => {
-        const gx = goodsQty[X] || {}, gy = goodsQty[Y] || {};
-        let v = 0;
-        for (const r of Object.keys(gx)) {
-          const qy = gy[r] || 0;
-          let u = 0;
-          if (qy === 0) u = effQ(gx[r]);
-          else if (qy < 2 && gx[r] - qy >= 2) u = effQ(gx[r] - qy);
-          if (u > 0) v += u * (ovV[r] != null ? ovV[r] : goodsVal[r]);
+      const lanePts = seaFlowPtsByLane(modDataDir);
+      const isPly = !(opts && opts.asAI);
+      // per-lane f: live-calibrated where measured (see CALIB.seaLaneF), else the
+      // open-sea constant 33. 'ply' regime applies when the EXPORTER town belongs
+      // to the faction this budget is computed for (as the human player) — the
+      // Praeneste→Capua ×0.49 player split, live-confirmed in 2+3 campaigns.
+      const flowOf = (X, Y, ply) => {
+        const e = (CALIB.seaLaneF || {})[X + ">" + Y];
+        if (e && e.fix != null) return e.fix; // live-pinned flow (e.g. slave-island exporters with empty cargo baskets)
+        let f0 = CALIB.seaCargoK;
+        if (e) {
+          const v0 = ply ? (e.ply != null ? e.ply : e.ai) : (e.ai != null ? e.ai : e.ply);
+          if (v0 != null) f0 = v0;
         }
-        return v;
+        return f0 * (lanePts[X + ">" + Y] || 0);
       };
       for (const ln of lanes) {
         let expV, impV;
@@ -1178,8 +1345,9 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           expV = rm * CALIB.seaFlowK * Math.pow(Math.max(400, s.pop), CALIB.seaFlowPopExp) * Math.exp(CALIB.seaFlowPct * (s.tradePct || 0));
           impV = rm * CALIB.seaFlowK * Math.pow(Math.max(400, ln.toPop || 1500), CALIB.seaFlowPopExp) / 5;
         } else {
-          expV = ln.weak ? 0 : CALIB.seaCargoK * cargoOf(s.region, ln.to);
-          impV = (ln.inWeak || !ln.toNearest) ? 0 : CALIB.seaCargoK * cargoOf(ln.to, s.region) / 5;
+          expV = ln.weak ? 0 : flowOf(s.region, ln.to, isPly);
+          const impPly = ownerOfRegion[ln.to] === facLow ? isPly : false;
+          impV = (ln.inWeak || !ln.toNearest) ? 0 : flowOf(ln.to, s.region, impPly) / 5;
         }
         seaTrade += expV + impV;
       }
@@ -1328,4 +1496,4 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   };
 }
 
-module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion };
+module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion, seaFlowPtsByLane };
