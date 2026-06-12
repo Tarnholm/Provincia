@@ -731,11 +731,17 @@ function tradeQtyValByRegion(modDataDir) {
   return (_tradeQtyCache[modDataDir] = out);
 }
 
-// Per-resource goods map per region: { region: { resource: qty×tradeValue } } — the
-// cargo basis for the sea-lane law (exclusion rule: a leg ships exactly the exporter
-// goods the importer lacks; icon-verified 2026-06-11). ZERO-trade-value resources
-// (stone/hemp/flax/pitch) COUNT AT VALUE 1 (Capua probe 2026-06-11 night: the whole
-// Praeneste→Capua flow = its stone 3 × 33 = 99 → /5 = the live 20 import row).
+// Per-resource goods map per region: { region: { resource: eff(qty)×tradeValue } } —
+// the cargo basis for the sea-lane law (exclusion rule: a leg ships exactly the
+// exporter goods the importer lacks; icon-verified 2026-06-11). ZERO-trade-value
+// resources (stone/hemp/flax/pitch) COUNT AT VALUE 1 (Capua probe 2026-06-11 night:
+// the whole Praeneste→Capua flow = its stone 3 × 33 = 99 → /5 = the live 20 import
+// row). QTY DIMINISHING past 3 (Campania horses 3→9 probe 2026-06-12: +6 qty moved
+// the Rome flow by only +85 = 33×2.58 → eff(q) = min(q,3) + 0.43·max(0,q−3));
+// slaves never ship as cargo. DEEP-WATER ROUTE PENALTY FALSIFIED (deep-sea-fit.js
+// 2026-06-12: all 14 corpus ports verified on passable 196-water, ground-types BFS +
+// straight-line deep fractions show ZERO correlation with the f-table — same-route
+// opposite directions read f 38.7 vs 17.8, and the deepest crossings run hottest).
 const _tradeGoodsCache = {};
 function tradeGoodsByRegion(modDataDir) {
   if (_tradeGoodsCache[modDataDir]) return _tradeGoodsCache[modDataDir];
@@ -761,14 +767,21 @@ function tradeGoodsByRegion(modDataDir) {
     };
     const resVal = parseResourceValues(modDataDir);
     const src = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
+    const qty = {}; // region -> resource -> total qty (eff() applies to the SUM)
     for (const raw of fs.readFileSync(src, "latin1").split(/\r?\n/)) {
       const t = raw.includes(";") ? raw.slice(0, raw.indexOf(";")) : raw;
       const m = t.match(/^resource\s+(\w+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
       if (!m) continue;
-      const e = resVal[m[1].toLowerCase()];
-      if (!e || e.hidden) continue;
+      const name = m[1].toLowerCase();
+      const e = resVal[name];
+      if (!e || e.hidden || name === "slaves") continue;
       const reg = regionAt(+m[3], +m[4]);
-      if (reg) (out[reg] = out[reg] || {})[m[1].toLowerCase()] = (out[reg][m[1].toLowerCase()] || 0) + (+m[2]) * Math.max(1, e.tradeValue || 0);
+      if (reg) (qty[reg] = qty[reg] || {})[name] = ((qty[reg] || {})[name] || 0) + (+m[2]);
+    }
+    const eff = (q) => Math.min(q, 3) + 0.43 * Math.max(0, q - 3);
+    for (const reg of Object.keys(qty)) {
+      out[reg] = {};
+      for (const name of Object.keys(qty[reg])) out[reg][name] = eff(qty[reg][name]) * Math.max(1, (resVal[name] && resVal[name].tradeValue) || 0);
     }
   } catch { /* none */ }
   return (_tradeGoodsCache[modDataDir] = out);
