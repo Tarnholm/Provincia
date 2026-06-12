@@ -474,6 +474,11 @@ const CALIB = {
   // OPEN-SEA EXACT (Capua t1 trio 2026-06-11: 426/13, 332/10, 100/3 — also pct-free:
   // Capua pct +6 and Praeneste pct −6 share the same constant)
   seaCargoK: 33,
+  // Per-resource trade-value corrections for SEA CARGO only (shortfall-grid.js
+  // 2026-06-12): salt=3 lands both Rome flows (489→495, 288→264..297) and timber=2
+  // lands Petelia→Metapontum (170→165); descr_sm reads salt=2/timber=1. Empty this
+  // to fall back to pure file values.
+  seaResValueOverride: { salt: 3, timber: 2 },
   // MEASURED turn-1 per-town trade (live scroll income lines, 2026-06-12 julii
   // 26-town session — sums to the ledger 4,492 exactly). Used VERBATIM when the
   // PLAYED faction has an entry (the sea per-direction multiplier law is still
@@ -731,21 +736,24 @@ function tradeQtyValByRegion(modDataDir) {
   return (_tradeQtyCache[modDataDir] = out);
 }
 
-// Per-resource goods map per region: { region: { resource: eff(qty)×tradeValue } } —
-// the cargo basis for the sea-lane law (exclusion rule: a leg ships exactly the
-// exporter goods the importer lacks; icon-verified 2026-06-11). ZERO-trade-value
-// resources (stone/hemp/flax/pitch) COUNT AT VALUE 1 (Capua probe 2026-06-11 night:
-// the whole Praeneste→Capua flow = its stone 3 × 33 = 99 → /5 = the live 20 import
-// row). QTY DIMINISHING past 3 (Campania horses 3→9 probe 2026-06-12: +6 qty moved
-// the Rome flow by only +85 = 33×2.58 → eff(q) = min(q,3) + 0.43·max(0,q−3));
-// slaves never ship as cargo. DEEP-WATER ROUTE PENALTY FALSIFIED (deep-sea-fit.js
-// 2026-06-12: all 14 corpus ports verified on passable 196-water, ground-types BFS +
-// straight-line deep fractions show ZERO correlation with the f-table — same-route
-// opposite directions read f 38.7 vs 17.8, and the deepest crossings run hottest).
-const _tradeGoodsCache = {};
-function tradeGoodsByRegion(modDataDir) {
-  if (_tradeGoodsCache[modDataDir]) return _tradeGoodsCache[modDataDir];
-  const out = {};
+// Per-region per-resource QUANTITY maps + per-resource value map — the cargo basis
+// for the sea-lane shortfall law (Mamertines probe crack 2026-06-12):
+//   cargo(X→Y) per resource r:  qtyY == 0            → eff(qtyX)
+//                               qtyY == 1, shortfall ≥ 2 → eff(qtyX − qtyY)
+//                               otherwise              → 0  (importer covered)
+//   × value_r  (descr_sm trade value, ZERO floored to 1 — Capua probe 2026-06-11
+//   night: the whole Praeneste→Capua flow = its stone 3 × 33 = 99 → /5 = the live
+//   20 import row; salt/timber re-valued via CALIB.seaResValueOverride, grid-fit
+//   2026-06-12: strong-row median |f−33| collapsed 30% → 1.2%).
+// eff(q) = min(q,4) + 0.32·max(0,q−4): kink-at-4 fits BOTH the horses 3→9 probe
+// (+85 = 33×2.6) and the exact Capua→Rome wine(4,0) → 4 (kink-at-3 would give 3.43
+// and break the exact 332/335 trio rows). Slaves never ship as cargo.
+// DEEP-WATER ROUTE PENALTY FALSIFIED (deep-sea-fit.js 2026-06-12 + Messana live:
+// the forced-deep Messana→Consentia lane flows at full f=1.0).
+const _tradeQtyMapsCache = {};
+function tradeQtyMapsByRegion(modDataDir) {
+  if (_tradeQtyMapsCache[modDataDir]) return _tradeQtyMapsCache[modDataDir];
+  const out = { qty: {}, values: {} };
   try {
     const dg = require("./descrStratGeneral.js");
     const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
@@ -767,7 +775,6 @@ function tradeGoodsByRegion(modDataDir) {
     };
     const resVal = parseResourceValues(modDataDir);
     const src = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
-    const qty = {}; // region -> resource -> total qty (eff() applies to the SUM)
     for (const raw of fs.readFileSync(src, "latin1").split(/\r?\n/)) {
       const t = raw.includes(";") ? raw.slice(0, raw.indexOf(";")) : raw;
       const m = t.match(/^resource\s+(\w+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
@@ -776,14 +783,26 @@ function tradeGoodsByRegion(modDataDir) {
       const e = resVal[name];
       if (!e || e.hidden || name === "slaves") continue;
       const reg = regionAt(+m[3], +m[4]);
-      if (reg) (qty[reg] = qty[reg] || {})[name] = ((qty[reg] || {})[name] || 0) + (+m[2]);
-    }
-    const eff = (q) => Math.min(q, 3) + 0.43 * Math.max(0, q - 3);
-    for (const reg of Object.keys(qty)) {
-      out[reg] = {};
-      for (const name of Object.keys(qty[reg])) out[reg][name] = eff(qty[reg][name]) * Math.max(1, (resVal[name] && resVal[name].tradeValue) || 0);
+      if (!reg) continue;
+      (out.qty[reg] = out.qty[reg] || {})[name] = ((out.qty[reg] || {})[name] || 0) + (+m[2]);
+      if (out.values[name] == null) out.values[name] = Math.max(1, e.tradeValue || 0);
     }
   } catch { /* none */ }
+  return (_tradeQtyMapsCache[modDataDir] = out);
+}
+
+// Legacy aggregate view { region: { resource: eff3(qty)×value } } — kept for the
+// external probe scripts that consume it; the sea law now uses tradeQtyMapsByRegion.
+const _tradeGoodsCache = {};
+function tradeGoodsByRegion(modDataDir) {
+  if (_tradeGoodsCache[modDataDir]) return _tradeGoodsCache[modDataDir];
+  const { qty, values } = tradeQtyMapsByRegion(modDataDir);
+  const eff = (q) => Math.min(q, 3) + 0.43 * Math.max(0, q - 3);
+  const out = {};
+  for (const reg of Object.keys(qty)) {
+    out[reg] = {};
+    for (const name of Object.keys(qty[reg])) out[reg][name] = eff(qty[reg][name]) * values[name];
+  }
   return (_tradeGoodsCache[modDataDir] = out);
 }
 
@@ -1121,10 +1140,14 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // component (~74% of a route's row value) and leaves imports unchanged.
     landTrade *= Math.max(0, 1 + 0.74 * ((gv0 && gv0.trading) || 0) / 100);
     tradeLandSum += landTrade;
-    // SEA = PER-LANE FLOWS. OPEN-SEA LAW EXACT (Capua t1/t2 probes 2026-06-11 night,
-    // three flows at 33.0/33.2/33.3 incl. pct +6 AND −6 → NO pct term):
-    //   strong export flow = seaCargoK × exclusion-cargo(X→Y)   (goods Y lacks,
-    //   zero-value resources floored to 1 — Latium stone3 IS the Praeneste flow);
+    // SEA = PER-LANE FLOWS. OPEN-SEA LAW (Capua t1/t2 probes 2026-06-11 night +
+    // MAMERTINES QUANTITY-SHORTFALL crack 2026-06-12, Messana wine 3 vs Consentia
+    // wine 1 → 2×33 = 66 live EXACT):
+    //   strong export flow = seaCargoK × shortfall-cargo(X→Y), where per resource
+    //   the importer EXCLUDES it when qtyY ≥ 2 or the shortfall is < 2; a qtyY of 1
+    //   only dampens (cargo unit = eff(qtyX − qtyY)); zero-value resources floored
+    //   to 1 (Latium stone3 IS the Praeneste flow). Strong-row f-table median error
+    //   1.2% (shortfall-grid.js 2026-06-12).
     //   importer earns exporter's flow / 5 (live /5 law, Delos/Naxos exact);
     //   TURN-1 RULE: a partner's reverse flow is live only if we are that partner's
     //   NEAREST lane (Praeneste→Capua live t1; Rome→Capua appears only at t2).
@@ -1133,11 +1156,19 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     let seaTrade = 0;
     if (s.portLevel) {
       const lanes = seaLanes[s.region] || [];
-      const goods = tradeGoodsByRegion(modDataDir);
+      const { qty: goodsQty, values: goodsVal } = tradeQtyMapsByRegion(modDataDir);
+      const ovV = CALIB.seaResValueOverride || {};
+      const effQ = (q) => Math.min(q, 4) + 0.32 * Math.max(0, q - 4);
       const cargoOf = (X, Y) => {
-        const gx = goods[X] || {}, gy = goods[Y] || {};
+        const gx = goodsQty[X] || {}, gy = goodsQty[Y] || {};
         let v = 0;
-        for (const r of Object.keys(gx)) if (!(r in gy)) v += gx[r];
+        for (const r of Object.keys(gx)) {
+          const qy = gy[r] || 0;
+          let u = 0;
+          if (qy === 0) u = effQ(gx[r]);
+          else if (qy < 2 && gx[r] - qy >= 2) u = effQ(gx[r] - qy);
+          if (u > 0) v += u * (ovV[r] != null ? ovV[r] : goodsVal[r]);
+        }
         return v;
       };
       for (const ln of lanes) {
@@ -1297,4 +1328,4 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   };
 }
 
-module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, tradePartnerCtx, tradeQtyValByRegion, tradeGoodsByRegion, seaLanesByRegion };
+module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion };
