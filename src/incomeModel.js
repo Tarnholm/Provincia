@@ -444,12 +444,15 @@ const CALIB = {
   // LAND LAW v3 (2026-06-12, julii 26-town t1 corpus 118 rights-rows + capua anchors,
   // R² 0.947 vs v2's 0.755): the TRADE-RIGHTS split was the missing structure —
   // partners without trade rights (suzerain/client links from become_protector)
-  // trade at ×0.35 (no-rights median 0.349, tight 0.24-0.42 over 17 rows). With the
+  // trade at ×0.33 (our empirical no-rights median was 0.349 over 17 rows; Feral's
+  // published Battle_and_Campaign_Formulae.md TRADE section gives the EXACT engine
+  // constant 0.33 for "no trade rights with the owner" — adopted 2026-06-13). With the
   // rights tier separated, popY's sign FLIPS POSITIVE (+0.133 — routes to big towns
-  // are richer; the old −0.109 was rights-contamination).
+  // are richer; the old −0.109 was rights-contamination). Only the unmeasured-town
+  // LAW fallback uses this; all corpus towns are landLaneRows-pinned.
   tradeRouteK: 0.2837, tradeRoutePopX: 0.2237, tradeRoutePct: 0.1563,
   tradeRouteRoad: -0.0728, tradeRouteRvX: 0.5939, tradeRouteRvY: 0.2746, tradeRoutePopY: 0.1333,
-  tradeNoRights: 0.35,
+  tradeNoRights: 0.33,
   // LAND-LANE LIVE PINS (2026-06-12, three corpora: julii 26-town t1 scrolls
   // [jcrops/julii/routes-all.tsv — every town's land partner list COMPLETE, row
   // sums = scroll totals], capua clean-vintage scroll [Freg 91/Bov 60/Malev 184/

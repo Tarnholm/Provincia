@@ -51,7 +51,7 @@ describe("incomeModel — cracked constants", () => {
     // per-route land law v3 (2026-06-12, julii 26-town t1 corpus, trade-rights split)
     expect(im.CALIB.tradeRouteK).toBeCloseTo(0.2837, 3);
     expect(im.CALIB.tradeRoutePopX).toBeCloseTo(0.2237, 4);
-    expect(im.CALIB.tradeNoRights).toBeCloseTo(0.35, 2); // no-trade-rights partner tier
+    expect(im.CALIB.tradeNoRights).toBeCloseTo(0.33, 2); // no-trade-rights tier — Feral published constant 0.33 (2026-06-13)
     expect(im.CALIB.tradeBonusPct).toBe(10);     // documented: 10% per trade_base point
     // eff per-unit worth curve (2026-06-12 probe battery: wine unit-5 delta 14 on
     // the Rome lane, Messana 65/74, horses-9 -> eff(9)=5.56; replaces kink-4/0.32)

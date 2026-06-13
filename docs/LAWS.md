@@ -230,15 +230,38 @@ State table from the (RomaGlass, ParthenopeGlass) probe chain → Capua row:
 (1,0)=(1,1)=(1,2)=259, (1,3)=230, (3,3)=318. Symmetric witness: Neapolis→Freg fell
 126→92 when its glass was removed (Rome supplies Freg too).
 
-### 7.7 The per-lane f ladder — still open
+### 7.7 The per-lane f ladder — still open (and the Feral `100/mp` lead, falsified)
 
 Measured f spans **8–95** per lane+direction (Capua 33/33, Rome 50/66 totals vs 20/24.5
 marginals, Kyzikos 95, julii small ports 3.4-25, Red-Sea exotic lanes ≈1) and regresses
 poorly on every feature tried (building level, pop, pct, distance, rights, player flag —
 R²log 0.71 best). Distance decay is dead three times over (Capua strong k23.8 and
 Grumentum weak k3.56 at IDENTICAL d=17; the forced-deep Messana lane flows at full f).
-The deep-water (128,0,0) trade-penalty lead was falsified by route fitting (median
-|err| 41.8%). One real split is player-vs-AI per town: Praeneste→Capua = 49 when JULII
+
+**Feral published the official sea-trade formula** (Battle_and_Campaign_Formulae.md,
+2026-06-13): sea income = the land base computation but with the road level **hardcoded
+to 8**, enemy army near route ×0.66, blockade → 0, and a **final scale of
+`(trade_income × 100) / mp`** where mp is the movement-point length of the dashed route.
+This made `f = 100/mp` the obvious closed form for our per-lane f. **We tested it against
+the full lane corpus and it is FALSIFIED:**
+
+- f shows a **2× direction asymmetry on geometrically identical paths** —
+  Capua↔Praeneste run the same BFS route (len 26) but f = 33.1 outbound vs 16.3 inbound;
+  Metapontum↔Petelia same path (len 20) at f = 40.5 vs 56.7. A symmetric `100/mp` cannot
+  produce direction asymmetry on one path.
+- f has **zero correlation with route length**: Neapolis→Freg (len 15) → f 7.2, but
+  `100/mp` predicts a *short* route gives *high* f (backwards); Capua→Rome (len 33) f 35.5
+  beats Capua→Praeneste (len 26) f 33.1 (longer route, higher f — backwards).
+- f has **zero correlation with deep-water content** (the `mp`-per-tile lead): the
+  deep-128 fraction is 0.00 on most lanes including the suppressed ones, while some
+  deep-crossing lanes are the hottest (Petelia→Metapontum deep-frac 0.25, f 56.7).
+  Route-fit median |err| 41.8%.
+
+The published formula's other new terms are all **constants or symmetric** (×2 cargo,
++0.13·√(popX+popY), ×8 road) so none can explain the per-direction spread either; they
+merely rescale the per-lane f we already calibrate. The residual that the data DOES
+explain is **market saturation** (§7.6, already modeled) plus an irreducible per-lane
+term. One real remaining split is player-vs-AI per town: Praeneste→Capua = 49 when JULII
 is the player vs 100 when CAPUA is (reproduced 2+3 campaigns) — but Rome→Capua is
 ≈290 in both. Until cracked, measured lanes carry live-calibrated f
 (`CALIB.seaLaneF`), unmeasured lanes run at 33 (`seaCargoK`), and egypt (whose Nile +
@@ -246,6 +269,36 @@ Red-Sea lanes overshoot pure-law +33%) is pinned per town to its live t1 scroll 
 (`CALIB.tradeMeasuredByPlayer.ptolemaic`, 83 towns). All pins are vintage-bound.
 
 ## 8. Land trade
+
+### 8.1 The official Feral formula (published 2026-06-13)
+
+Battle_and_Campaign_Formulae.md gives the exact engine structure:
+
+```
+land_trade(main → border) =
+    base × road_mult × rights_mult × trade_bonus_mult
+  base       = Σ_r [ qty_r × tradeValue_r × 2 ]   over border resources NOT in main
+               + 0.13 × sqrt(popMain + popBorder)          (pop term ADDED, not ×)
+  road_mult  = min(roadMain, roadBorder) + main.trade_level_bonus + 1
+  rights_mult= 0.33  if no trade rights with the owner, else 1
+  trade_bonus_mult = governor Trading stat + trade_base_income_bonus × 10   (floored 0)
+```
+
+We **adopted the published `0.33` no-rights constant** (`CALIB.tradeNoRights`, was our
+empirical 0.35; the published value is exact). It only affects the unmeasured-town law
+fallback — every corpus town is pinned, so no validation target moved.
+
+**We could NOT close the published formula to live data with our parseable inputs.**
+Reimplemented verbatim against the corpus, it gives the right *structure* (many small
+rows land within ±2) but the big rows are off by 2–4× in both directions
+(Rome→Cosa 163 vs model 80; Neapolis→Maleventum 21 vs model 92; full julii MAE 15–18 vs
+the ≤5 gate). The Capua anchor (live 491) only closes via pins, not the formula. The
+culprit is the **per-pair input data**: the engine's effective resource quantities and
+road levels differ from what descr_strat exposes (building/level/AI-modified holdings,
+and row aggregation we can't reconstruct statically). Conclusion: the formula is
+documented-correct but **input-bound**; live-pinned rows remain the production answer.
+
+### 8.2 The fitted fallback law (unmeasured towns)
 
 ```
 v_route = 5.27 × popX^0.0064 × popY^−0.1085 × e^(0.1355·pctX)
@@ -255,8 +308,9 @@ v_route = 5.27 × popX^0.0064 × popY^−0.1085 × e^(0.1355·pctX)
 
 - Global refit on 385 live route rows (julii 105 + cyrene 15 + egypt 265), R² 0.755 —
   RESOURCE-DRIVEN; pop is nearly irrelevant (the old popX^0.488 was an Italy artifact).
-- **Rights tier**: partners without trade rights earn less (Bovianum/samnites row 60 vs
-  rich julii-partner rows; rights = alliances + become_protector script lines).
+- **Rights tier** (now ×0.33, Feral-exact): partners without trade rights earn less
+  (Bovianum/samnites row 60 vs rich julii-partner rows; rights = alliances +
+  become_protector script lines).
 - Governor Trading multiplies the EXPORT component only (~74% share): Alexandria
   GoodTrader +10% probe moved every land row ×1.074.
 - Land rows respond to goods edits with the same shortfall/exclusion structure

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1099",
+    date: "2026-06-13",
+    items: [
+      { type: "change", text: "**Trade laws reconciled with Feral's official formula** — Feral Interactive published the engine's exact trade-income calculation. We adopted the documented no-trade-rights constant 0.33 (we had fit 0.35 empirically) for the unmeasured-town fallback law; all live-pinned corpus towns are unaffected, so capua (1268), julii (4492) and kyzikos (1719) trade totals stay exact. Testing the formula's headline sea result — that the per-lane factor is 100 ÷ route movement-points — against the full lane corpus FALSIFIED it: the factor shows a 2× split between the two directions of one identical sea path and zero correlation with route length or deep-water content, so per-lane calibration remains the answer. docs/LAWS.md now documents the official formula and the falsification in full." },
+    ],
+  },
+  {
     version: "0.9.1098",
     date: "2026-06-12",
     items: [
