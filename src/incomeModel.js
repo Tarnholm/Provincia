@@ -1396,7 +1396,8 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const taxFlat = (F.settlements.length > 1 ? CALIB.taxFlatPoint * taxPts : CALIB.taxFlatSingle) * gTax;
     const taxH = taxHByCity ? (taxHByCity[_normCity(s.settlement)] != null ? taxHByCity[_normCity(s.settlement)]
       : taxHByCity[_normCity(s.region)]) : null;
-    const tTax = Math.max(0, mult * taxW + taxFlat) * (taxH != null ? taxH : 1);
+    const tTaxNoH = Math.max(0, mult * taxW + taxFlat); // pre-fortune base (corruption uses this)
+    const tTax = tTaxNoH * (taxH != null ? taxH : 1);
     // governor Effect Farming = +1 farm level per point for INCOME (confirmed 2026-06-10,
     // gov-farm-income-test.js: 10/11 player factions land at ratio 1.000-1.002 with u=1 —
     // farming income is now exact; the lone seleucid +20% is a separate EDB underparse).
@@ -1539,7 +1540,10 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       const x = Math.max(0, dist - CALIB.corrD0);
       const raw = CALIB.corrA * x + CALIB.corrB * x * x - CALIB.corrLawPct * lawTot;
       corrPct = Math.min(CALIB.corrCap, Math.max(0, raw)) / 100;
-      corrSum += corrPct * (tTax + tFarm + tMine + tTrade + tAdmin);
+      // corruption gross uses the PRE-H (pre-fortune) tax base: H is a tax-display
+      // fortune multiplier and must not cascade into the corruption base (live julii
+      // Republic save 2026-06-14: H-gross gave 2238 vs game 2574; pre-H gives ~2661).
+      corrSum += corrPct * (tTaxNoH + tFarm + tMine + tTrade + tAdmin);
     }
     // DOCUMENTED engine formulas (Feral Battle_and_Campaign_Formulae.md):
     // siege hold-out turns = base(by level) + wall_level+1 + floor(govManagement/3)
@@ -1557,7 +1561,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // taxH: the applied per-campaign calibration multiplier (null = uncalibrated)
       taxParts: { w: taxW, flat: taxFlat }, taxH: taxH != null ? taxH : null,
       bracket, taxes: Math.round(tTax), farming: Math.round(tFarm), mining: Math.round(tMine), trade: Math.round(tTrade), admin: Math.round(tAdmin),
-      corruption: Math.round(corrPct * (tTax + tFarm + tMine + tTrade + tAdmin)),
+      corruption: Math.round(corrPct * (tTaxNoH + tFarm + tMine + tTrade + tAdmin)),
       taxFactor: Math.round(f * 100) / 100, resourceValue: rv, port: !!s.portLevel, tradePartners: nPartners, distToCapital: dist != null ? Math.round(dist) : null,
       siegeTurns, plagueRiskPct: Math.round(plagueRiskPct * 10) / 10,
       govIncome: gv0 && (gv0.tax || gv0.trading || gv0.mining) ? { tax: gv0.tax || 0, trading: gv0.trading || 0, mining: gv0.mining || 0, hits: gv0.hits || [] } : null });
