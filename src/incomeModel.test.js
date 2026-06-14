@@ -40,10 +40,11 @@ describe("incomeModel — cracked constants", () => {
     expect(im.CALIB.minePoint).toBe(5);          // mining = 5×mine_resource×Σ(qty×tv), 5/6 exact
     expect(im.CALIB.taxLogK_single).toBeCloseTo(0.8154, 3); // exact city-state law (Capua 4-bracket sweep) // Capua quartet ABSOLUTE (=4/3×0.92)
     expect(im.CALIB.taxLogK_multi).toBeCloseTo(0.5544, 4); // legacy (unused for multi since flat law)
-    // EXACT TAX LAW (2026-06-11 live julii scroll sweeps): flat-points application,
-    // whole-ledger validation 9,583 vs 9,447 live (+1.4%).
-    expect(im.CALIB.taxBaseK).toBeCloseTo(0.4559, 4);
-    expect(im.CALIB.taxFlatPoint).toBeCloseTo(3.9, 2);
+    // EXACT TAX LAW — ROME-EXACT retune (2026-06-14, 26-town Republic julii corpus):
+    // pins the capital Rome 1318/1318 with the faction Σ exact (9,213 vs 9,232); same
+    // structural form, K 0.4559→0.4683, per-point 3.9→4.123. See exact-tax-crack.md.
+    expect(im.CALIB.taxBaseK).toBeCloseTo(0.4683, 4);
+    expect(im.CALIB.taxFlatPoint).toBeCloseTo(4.123, 3);
     // refit 2026-06-11: qty-weighted rv + not-at-war partners + symmetric ally parse,
     // anchored to the live julii ledger trade 4,610 (ratio 2.042 preserved)
     expect(im.CALIB.tradeLand).toBeCloseTo(0.8656, 3);

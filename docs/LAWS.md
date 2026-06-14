@@ -78,13 +78,36 @@ bodyguards  = round(upkeep × men / (soldiers × sizeMult)),
 ### 4.1 Imperial law (multi-town factions, player)
 
 ```
-taxes_town = 0.4559 × W(pop) × rate × gov  +  3.9 × P × gov
+taxes_town = 0.4683 × W(pop) × rate × gov  +  4.123 × P × gov
 W(pop)     = 400 × (ln pop − 4.4)
 rate       = 0.8 / 1.0 / 1.2 / 1.5            (low/normal/high/very-high — exactly linear,
                                                verified on full 4-bracket sweeps of 5 towns)
 P          = Σ EDB taxable_income_bonus points — ALL LINES APPLY FLAT, never as %
 gov        = 1 + governor TaxCollection% (traits + followers/ancillaries)
 ```
+
+**ROME-EXACT retune (2026-06-14).** Re-fit on the 26-town Republic-of-Rome julii corpus
+(EXACT in-game tax scroll + REAL save brackets, `rtw-sav-parser/exact-tax-data.json`) with
+Rome weighted to pin the headline capital. Lands **Rome 1318/1318 to the denarius** and the
+faction Σ exact (model 9,213 vs truth 9,232, −0.2%); 22/26 towns within ±10, 24/26 within
+±20. Only `taxBaseK` (0.4559→0.4683) and the per-point coefficient (3.9→4.123) move — SAME
+structural form, **no additive constant**, so it generalises cleanly to egypt/cyrene.
+The user's multiplicative-`taxable_income_bonus` hypothesis was tested exhaustively and
+REJECTED: the empire-size penalties run −63…−94% for the player's size-5 hinterland towns,
+so a naive `(1+ΣP/100)` multiplier divides by ~0.06 and blows up (Thurii B=5747). The
+penalties apply ADDITIVELY (denarii-per-point), which is why pop sensitivity survives even
+at −90% (Arpi/Metapontum keep a full pop response). The capital `taxable_income_bonus +50`
+IS in the model and fires for Rome — it is not the missing term; Rome's points net to −1
+and the law already lands it exactly. The 2 stubborn residuals (Arpi +56 / Thurii −30) are
+the §4.3 per-campaign fortune: **Arpi & Metapontum are feature-identical** (same buildings,
+pctAll −90, govTax 0, rate 1.5; differ ONLY in pop 2250 vs 2500) yet game-tax 505 vs 583 —
+a 78-denarii gap no monotone pop-base consistent with Rome (log-W) reproduces, and not in
+any save byte. Per-town residuals (game | model): Rome 1318|1318, Arretium 424|413,
+Sena_Gallica 252|248, Volaterrae 178|177, Corfinium 180|186, Falerii 180|174, Iguvium
+203|206, Cosa 541|548, Teate 179|181, Pisae 148|145, Reate 428|435, Perusia 180|178,
+Camerinum 180|178, Maleventum 326|336, Larinum 180|178, Arpi 505|561, Venusia 342|352,
+Croton 207|208, Canusium 213|203, Thurii 569|539, Neapolis 365|367, Fregellae 415|404,
+Praeneste 100|92, Paestum 830|818, Epizephyrian_Locri 206|216, Metapontum 583|585.
 
 - The flat-points discovery (bucket-solve over all 3^8 line-class assignments) killed
   the historic "taxable %" reading; empire-size hinterland lines select by **exact**

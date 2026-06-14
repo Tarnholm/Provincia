@@ -120,9 +120,11 @@ dGate("taxCalib — julii 26-town live-corpus gate (±6 after H lock)", () => {
   });
 
   it("H assignments are the exact live/model ratio (calibration is exact, not snapped)", () => {
-    expect(byCity.Fregellae.h).toBeCloseTo(0.911, 2);  // low extreme (was snapped 0.90)
-    expect(byCity.Arpi.h).toBeCloseTo(1.110, 2);       // high extreme (was 1.10)
-    expect(byCity.Volaterrae.h).toBeCloseTo(0.95, 1);
+    // Rome-exact retune 2026-06-14 (taxBaseK 0.4559→0.4683, point 3.9→4.123): H values
+    // recomputed against this shadow-mod corpus shift only slightly toward 1.0.
+    expect(byCity.Fregellae.h).toBeCloseTo(0.897, 2);  // low extreme
+    expect(byCity.Arpi.h).toBeCloseTo(1.102, 2);       // high extreme (the twin-anomaly town)
+    expect(byCity.Volaterrae.h).toBeCloseTo(0.98, 1);
     expect(byCity.Arretium.h).toBeCloseTo(1.0, 1);
     expect(byCity.Camerinum.h).toBeGreaterThan(1.0);
   });
@@ -133,6 +135,6 @@ dGate("taxCalib — julii 26-town live-corpus gate (±6 after H lock)", () => {
     expect(r0.taxParts && typeof r0.taxParts.w).toBe("number");
     expect(r0.taxH).toBe(null);
     const r1 = recomputed.settlements.find(s => s.settlement === "Arpi");
-    expect(r1.taxH).toBeCloseTo(1.11, 2);
+    expect(r1.taxH).toBeCloseTo(1.10, 2);
   });
 });

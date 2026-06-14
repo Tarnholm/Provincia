@@ -383,7 +383,19 @@ const CALIB = {
   // The flat term is rate-INDEPENDENT (bracket flips move only the W part — verified
   // exactly on Rome/Camerinum/Croton/Sena/Locri full bracket sweeps). Whole-ledger
   // validation: julii turn-2 = 9,583 model vs 9,447 live (+1.4%, was +23%).
-  taxBaseK: 0.4559, taxFlatPoint: 3.9,
+  // ROME-EXACT RETUNE (2026-06-14, 26-town Republic-of-Rome julii corpus with EXACT
+  // in-game taxes + REAL save brackets, rtw-sav-parser/exact-tax-data.json): the
+  // generalizable 2-param refit (Rome weighted to pin the headline) lands the CAPITAL
+  // exactly — Rome 1318/1318 — while keeping the faction Σ exact (model 9,213 vs truth
+  // 9,232, −0.2%): taxBaseK 0.4559→0.4683, taxFlatPoint 3.9→4.123. SAME structural form
+  // (no constant → generalizes to egypt/cyrene), only K and the per-point coefficient
+  // move. 22/26 towns within ±10, 24/26 within ±20. The 2 stubborn residuals are the
+  // documented per-campaign fortune (Arpi +56 / Thurii −30): Arpi & Metapontum are
+  // FEATURE-IDENTICAL (same buildings, pctAll −90, govTax 0, rate 1.5; differ only pop
+  // 2250 vs 2500) yet tax 505 vs 583 — a gap no monotone pop-base consistent with Rome
+  // (log-W) reproduces; not in any save byte (Hscan negative on 2 saves). See
+  // rtw-sav-parser/exact-tax-crack.md.
+  taxBaseK: 0.4683, taxFlatPoint: 4.123,
   // DIFFICULTY (Feral docs, Battle_and_Campaign_Formulae.md): the human player's tax
   // and farm income scale by difficulty — Easy 1.20 / Normal 1.00 / HARD 0.92 /
   // Extreme 0.85. The user/team plays H/H, and every constant below was fit on H/H
