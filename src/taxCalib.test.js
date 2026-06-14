@@ -120,12 +120,14 @@ dGate("taxCalib — julii 26-town live-corpus gate (±6 after H lock)", () => {
   });
 
   it("H assignments are the exact live/model ratio (calibration is exact, not snapped)", () => {
-    // Rome-exact retune 2026-06-14 (taxBaseK 0.4559→0.4683, point 3.9→4.123): H values
-    // recomputed against this shadow-mod corpus shift only slightly toward 1.0.
-    expect(byCity.Fregellae.h).toBeCloseTo(0.897, 2);  // low extreme
-    expect(byCity.Arpi.h).toBeCloseTo(1.102, 2);       // high extreme (the twin-anomaly town)
-    expect(byCity.Volaterrae.h).toBeCloseTo(0.98, 1);
-    expect(byCity.Arretium.h).toBeCloseTo(1.0, 1);
+    // POWER-LAW retune 2026-06-15 (log→power law, FP 4.123→4.0): H values recomputed
+    // against this shadow-mod corpus. The new base is exact at the ends (Rome ±1) and
+    // runs ~7% high in the mid-pop range, so mid-size towns' H drifts below 1.0 — the
+    // paste calibration absorbs it exactly (the ±1 reproduction test above still passes).
+    expect(byCity.Fregellae.h).toBeCloseTo(0.912, 2);  // low extreme
+    expect(byCity.Arpi.h).toBeCloseTo(1.104, 2);       // high extreme (the twin-anomaly town)
+    expect(byCity.Volaterrae.h).toBeCloseTo(0.924, 2);
+    expect(byCity.Arretium.h).toBeCloseTo(0.932, 2);
     expect(byCity.Camerinum.h).toBeGreaterThan(1.0);
   });
 
