@@ -25,11 +25,15 @@ const BRACKET_TOKEN = {
 
 const norm = (x) => String(x || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
 
-// snap a raw live/model ratio to the engine's 0.05 H grid, clamped to [0.85, 1.15]
+// Calibration honors the pasted value EXACTLY (taxes reproduce to the denarius) —
+// the live/model ratio is stored raw, no 0.05 snap (the snap cost up to ~2.5%/town,
+// the "3 denarii" residual). Ratios outside the fortune band [0.80, 1.20] signal a
+// BRACKET MISMATCH (e.g. pasting a VH value against a normal-bracket model = ratio
+// ~1.5) and are rejected so a wrong bracket can't masquerade as fortune.
 export function snapH(raw) {
   if (!Number.isFinite(raw) || raw <= 0) return null;
-  const h = Math.round(raw * 20) / 20;
-  return Math.min(1.15, Math.max(0.85, h));
+  if (raw < 0.8 || raw > 1.2) return null;
+  return raw;
 }
 
 // parse pasted lines → [{ name, live, bracket|null, line }]; junk lines → skipped[]

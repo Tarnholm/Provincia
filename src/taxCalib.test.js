@@ -33,13 +33,14 @@ describe("taxCalib — parsing + snapping", () => {
     expect(skipped).toHaveLength(1);
   });
 
-  test("snapH quantizes to the 0.05 grid and clamps to [0.85, 1.15]", () => {
-    expect(snapH(1.0617)).toBe(1.05);
-    expect(snapH(1.097)).toBe(1.1);
-    expect(snapH(0.91)).toBe(0.9);
-    expect(snapH(1.004)).toBe(1.0);
-    expect(snapH(1.31)).toBe(1.15); // clamp
-    expect(snapH(0.62)).toBe(0.85); // clamp
+  test("snapH returns the EXACT ratio within the fortune band (no 0.05 snap), rejects out-of-band", () => {
+    expect(snapH(1.0617)).toBe(1.0617); // exact — calibration reproduces the pasted tax to the denarius
+    expect(snapH(0.91)).toBe(0.91);
+    expect(snapH(1.004)).toBe(1.004);
+    expect(snapH(1.2)).toBe(1.2);   // band edge kept
+    expect(snapH(0.8)).toBe(0.8);
+    expect(snapH(1.31)).toBe(null); // out of band = bracket mismatch, rejected
+    expect(snapH(0.62)).toBe(null);
     expect(snapH(0)).toBe(null);
     expect(snapH(NaN)).toBe(null);
   });
@@ -104,23 +105,25 @@ dGate("taxCalib — julii 26-town live-corpus gate (±6 after H lock)", () => {
     expect(recomputed.error).toBeFalsy();
   });
 
-  it("all 19 non-governor towns reproduce live within ±6 denarii", () => {
+  it("all 19 non-governor towns reproduce live to the denarius (exact-H calibration)", () => {
     let checked = 0;
     for (const s of recomputed.settlements) {
       const row = TABLE[s.settlement] || TABLE[s.settlement.replace(/[\s-]+/g, "_")];
       if (!row || row[2] === "gov") continue;
       checked++;
-      expect(Math.abs(s.taxes - row[1]), `${s.settlement}: model ${s.taxes} vs live ${row[1]} (H ${s.taxH})`).toBeLessThanOrEqual(6);
+      // exact-ratio H (no 0.05 snap) → calibrated taxes reproduce the pasted value
+      // to within rounding (±1)
+      expect(Math.abs(s.taxes - row[1]), `${s.settlement}: model ${s.taxes} vs live ${row[1]} (H ${s.taxH})`).toBeLessThanOrEqual(1);
     }
     expect(checked).toBe(19);
   });
 
-  it("H assignments match the resource-tax-fit verdict (extremes + identity towns)", () => {
-    expect(byCity.Fregellae.h).toBe(0.9);   // the campaign's low extreme
-    expect(byCity.Arpi.h).toBe(1.1);        // the high extreme
-    expect(byCity.Volaterrae.h).toBe(0.95);
-    expect(byCity.Arretium.h).toBe(1.0);
-    expect(byCity.Camerinum.h).toBe(1.05);
+  it("H assignments are the exact live/model ratio (calibration is exact, not snapped)", () => {
+    expect(byCity.Fregellae.h).toBeCloseTo(0.911, 2);  // low extreme (was snapped 0.90)
+    expect(byCity.Arpi.h).toBeCloseTo(1.110, 2);       // high extreme (was 1.10)
+    expect(byCity.Volaterrae.h).toBeCloseTo(0.95, 1);
+    expect(byCity.Arretium.h).toBeCloseTo(1.0, 1);
+    expect(byCity.Camerinum.h).toBeGreaterThan(1.0);
   });
 
   it("uncalibrated rows expose taxParts and a null taxH; calibrated rows carry H", () => {
@@ -129,6 +132,6 @@ dGate("taxCalib — julii 26-town live-corpus gate (±6 after H lock)", () => {
     expect(r0.taxParts && typeof r0.taxParts.w).toBe("number");
     expect(r0.taxH).toBe(null);
     const r1 = recomputed.settlements.find(s => s.settlement === "Arpi");
-    expect(r1.taxH).toBe(1.1);
+    expect(r1.taxH).toBeCloseTo(1.11, 2);
   });
 });
