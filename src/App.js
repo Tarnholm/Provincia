@@ -21,6 +21,7 @@ import { tagOverlayGarrisonUnits } from "./garrisonUnits";
 // Per-campaign tax calibration (H lock, 2026-06-12): paste live tax scroll
 // readings → snapped per-town H multipliers (see src/taxCalib.js).
 import { computeTaxCalibration } from "./taxCalib";
+import { computeCorrCalibration } from "./corrCalib";
 // diagnostics.js is CommonJS (main.js require()s it at runtime). Rollup can't
 // statically extract NAMED exports from `module.exports = {...}`, so import the
 // default (the whole exports object) and pull the fns off it.
@@ -9650,6 +9651,18 @@ function App() {
   const taxCalibStored = (mod, fac) => {
     try {
       const v = JSON.parse(localStorage.getItem(taxCalibKey(mod, fac)) || "null");
+      return v && typeof v === "object" && Object.keys(v).length ? v : null;
+    } catch { return null; }
+  };
+  // PER-TOWN CORRUPTION CALIBRATION (2026-06-14): same pattern — paste live per-town
+  // corruption once, reproduced exactly (corruption's road distance isn't file-derivable
+  // but is deterministic per files). Persisted per modDir+faction.
+  const [corrCalibText, setCorrCalibText] = useState("");
+  const [corrCalibOpen, setCorrCalibOpen] = useState(false);
+  const corrCalibKey = (mod, fac) => `corrCalib::${mod || ""}::${String(fac || "").toLowerCase()}`;
+  const corrCalibStored = (mod, fac) => {
+    try {
+      const v = JSON.parse(localStorage.getItem(corrCalibKey(mod, fac)) || "null");
       return v && typeof v === "object" && Object.keys(v).length ? v : null;
     } catch { return null; }
   };
@@ -22623,9 +22636,10 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           const calib = calibOverride !== undefined ? calibOverride : armyCalibSave;
           setArmyProjIncome("");
           setArmySetupBusy(true); setArmySetupData(null); setArmyT1Budget(null); setArmyStratPlan(null);
-          // per-campaign tax calibration (H lock): persisted per modDir+faction
+          // per-campaign tax + corruption calibration: persisted per modDir+faction
           const taxH = taxCalibStored(modDataDir, ff);
-          const t1Promise = ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, calib || undefined, armyAsAI || undefined, taxH || undefined), "turn-1 budget");
+          const corrCal = corrCalibStored(modDataDir, ff);
+          const t1Promise = ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, calib || undefined, armyAsAI || undefined, taxH || undefined, corrCal || undefined), "turn-1 budget");
           // auto-compute the tax plan too (no button press needed)
           const planPromise = ipcWithTimeout(window.electronAPI.getStratTaxPlan?.(modDataDir, ff, calib || undefined), "strat tax plan");
           try {
@@ -22666,7 +22680,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
               // exist in this scope — so the whole overview died on a ReferenceError
               // (silently: try/finally without catch) the moment it was clicked.
               // The overview honors the attached calibration save like fetchFor does.
-              const t1 = await ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined, armyAsAI || undefined, taxCalibStored(modDataDir, ff) || undefined), "turn-1 budget (" + ff + ")");
+              const t1 = await ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined, armyAsAI || undefined, taxCalibStored(modDataDir, ff) || undefined, corrCalibStored(modDataDir, ff) || undefined), "turn-1 budget (" + ff + ")");
               if (t1 && t1.error) setArmyOverview(prev => ({ ...(prev || {}), error: t1.error }));
               if (t1 && !t1.error && t1.totals) {
                 const row = { fac: ff, ...t1.totals, towns: t1.settlements?.length || 0 };
@@ -22995,6 +23009,60 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                             </div>
                           );
                         })()}
+                        {/* PER-CAMPAIGN CORRUPTION CALIBRATION (2026-06-14): corruption's
+                            distance-to-capital is the engine's road/pathfinding metric, not
+                            file-recoverable to the denarius — but it's deterministic per files.
+                            Paste the live per-town corruption once and the app reproduces it
+                            EXACTLY (and the settlement Total column then matches the game). */}
+                        {(() => {
+                          const stored = corrCalibStored(modDataDir, fac);
+                          const nCal = stored ? Object.keys(stored).length : 0;
+                          return (
+                            <div style={{ marginTop: 6, fontSize: "0.74rem" }} key={"corr" + taxCalibBump}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                                <button onClick={() => setCorrCalibOpen(o => !o)}
+                                  title={"Per-campaign corruption calibration: corruption depends on the engine's ROAD distance to the capital, which can't be computed exactly from the files (the save stores it only 5%-quantized). Paste your game's live per-town corruption once and the app reproduces it to the denarius.\nFormat: one town per line — 'Metapontum 364' (sign ignored, 364 == −364)."}
+                                  style={{ background: "rgba(60,60,60,0.7)", color: nCal ? "#e8a07a" : "#d3a0a0", border: "1px solid " + (nCal ? "#8a5a4a" : "#7a4a4a"), borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
+                                  {corrCalibOpen ? "▾" : "▸"} 🏛 Corruption calibration{nCal ? ` — ${nCal} town${nCal === 1 ? "" : "s"} ✓` : " (paste live corruption)"}
+                                </button>
+                                {nCal > 0 && (
+                                  <button onClick={() => {
+                                    try { localStorage.removeItem(corrCalibKey(modDataDir, fac)); } catch { }
+                                    setTaxCalibBump(b => b + 1);
+                                    pushToast("Corruption calibration cleared — recomputing the formula model", "info", 4000);
+                                    fetchFor(fac);
+                                  }} title="Clear corruption calibration for this faction" style={{ background: "transparent", color: "#c88", border: "1px solid #844", borderRadius: 4, padding: "1px 7px", cursor: "pointer", fontSize: "0.72rem" }}>✕</button>
+                                )}
+                              </div>
+                              {corrCalibOpen && (
+                                <div style={{ marginTop: 5, padding: "6px 8px", borderRadius: 5, background: "rgba(0,0,0,0.25)", border: "1px solid rgba(232,160,122,0.25)" }}>
+                                  <textarea value={corrCalibText} onChange={(ev) => setCorrCalibText(ev.target.value)}
+                                    placeholder={"Paste live per-town corruption, one per line:\nMetapontum 364\nThurii 334\nCroton 271\n(sign ignored — the settlement scroll's 'Other'/Corruption expenditure)"}
+                                    spellCheck={false}
+                                    style={{ width: "100%", minHeight: 80, resize: "vertical", boxSizing: "border-box", background: "rgba(255,255,255,0.06)", color: "#fed", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 4, padding: "5px 7px", fontSize: "0.74rem", fontFamily: "Consolas, monospace" }} />
+                                  <div style={{ marginTop: 4, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                                    <button onClick={() => {
+                                      const res = computeCorrCalibration(corrCalibText, armyT1Budget.settlements);
+                                      const n = Object.keys(res.byCity).length;
+                                      if (!n) { pushToast("No corruption readings parsed — lines need a town name and a number", "error", 6000); return; }
+                                      const merged = { ...(corrCalibStored(modDataDir, fac) || {}), ...res.byCity };
+                                      try { localStorage.setItem(corrCalibKey(modDataDir, fac), JSON.stringify(merged)); } catch { }
+                                      setTaxCalibBump(b => b + 1);
+                                      const extra = [res.unmatched.length ? `${res.unmatched.length} unmatched: ${res.unmatched.slice(0, 3).join("; ")}` : "", res.skipped.length ? `${res.skipped.length} skipped` : ""].filter(Boolean).join(" · ");
+                                      pushToast(`Corruption calibration: ${n} town${n === 1 ? "" : "s"} locked${extra ? " (" + extra + ")" : ""} — recomputing`, "info", 7000);
+                                      fetchFor(fac);
+                                    }}
+                                      title="Store each pasted town's exact corruption and recompute the budget — the settlement Total column will then match the in-game Net Income."
+                                      style={{ background: "#7a4a3a", color: "#fff", border: "1px solid #9b6a58", borderRadius: 4, padding: "3px 12px", cursor: "pointer", fontSize: "0.74rem", fontWeight: 600 }}>
+                                      Apply corruption
+                                    </button>
+                                    {nCal > 0 && <span style={{ color: "#a98", fontSize: "0.7rem" }}>{nCal} town{nCal === 1 ? "" : "s"} calibrated — pasting more merges; ✕ clears all.</span>}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                         {netAfterArmy != null && (() => {
                           const room = netAfterArmy - armyBudgetFloor; // floor is the allowed max deficit (e.g. −500)
                           // ARMY-ONLY trim suggestions when over budget: greedily drop the
@@ -23031,7 +23099,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         })()}
                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.74rem", marginTop: 6 }}>
                           <thead><tr style={{ color: "#8aa", textAlign: "left" }}>
-                            <th style={{ fontWeight: 600, padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Growth @ set</th><th>→ Tax</th><th title="Estimated public order at the recommended bracket — risk RANKING (±20), not the exact in-game %. 🔴 likely revolt risk · 🟡 watch · 🟢 fine. Validated on live Julii: flagged all 3 actual revolt-risk towns.">PO @ set</th><th>Tax income</th><th>Farm</th><th title="Corruption ('Other' expenditure on the settlement scroll) — shown negative/red. Per-town % of gross income (REFIT 2 2026-06-12, linear law). Compare against the in-game scroll to spot miscomputed towns.">Corruption</th><th title="Governor administration income (the settlement scroll's 'Admin' / 'Other' income line): admin% × town gross. Live-cracked 2026-06-11.">Admin</th><th>Dist→cap</th>
+                            <th style={{ fontWeight: 600, padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Growth @ set</th><th>→ Tax</th><th title="Estimated public order at the recommended bracket — risk RANKING (±20), not the exact in-game %. 🔴 likely revolt risk · 🟡 watch · 🟢 fine. Validated on live Julii: flagged all 3 actual revolt-risk towns.">PO @ set</th><th>Tax income</th><th>Farm</th><th title="Corruption ('Other' expenditure on the settlement scroll) — shown negative/red. Per-town % of gross income (REFIT 2 2026-06-12, linear law). Compare against the in-game scroll to spot miscomputed towns.">Corruption</th><th title="Governor administration income (the settlement scroll's 'Admin' / 'Other' income line): admin% × town gross. Live-cracked 2026-06-11.">Admin</th><th title="Settlement NET income = farms + taxes + trade + admin − corruption — the in-game settlement scroll's 'Net Income' line. Compare directly (e.g. Rome → 4527).">Total</th><th>Dist→cap</th>
                           </tr></thead>
                           <tbody>
                             {armyT1Budget.settlements.slice().filter(s => !armySetSearch.trim() || ((s.settlement || s.region) || "").toLowerCase().includes(armySetSearch.trim().toLowerCase())).sort((a, b) => ((a.settlement || a.region) || "").localeCompare((b.settlement || b.region) || "")).map((s, si) => {
@@ -23055,6 +23123,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                 <td style={{ color: "#9fd37f" }}>{s.farming}</td>
                                 <td style={{ color: (s.corruption ? "#e8a07a" : "#667"), cursor: s.corruption ? "help" : "default" }} title={s.corruption ? `Corruption ('Other' expenditure on the in-game settlement scroll) ≈−${Math.round(s.corruption)}/turn. Compare against the scroll — a mismatch flags a miscomputed town.` : "No corruption (capital / low-distance / law-suppressed)."}>{s.corruption ? `−${Math.round(s.corruption)}` : "0"}</td>
                                 <td style={{ color: (s.admin ? "#d3c89f" : "#667") }} title={s.admin ? `Governor administration income (the scroll's 'Admin'/'Other' income line) ≈+${Math.round(s.admin)}/turn — admin% × town gross.` : "No admin income."}>{s.admin ? Math.round(s.admin) : 0}</td>
+                                <td style={{ color: "#9fd3c0", fontWeight: 600 }} title={`Settlement NET income (farms + taxes + trade + admin − corruption) = the in-game scroll's 'Net Income' line${s.corrCalibrated ? " · corruption calibrated to your live paste" : ""}.`}>{s.totalIncome != null ? s.totalIncome : ((s.taxes || 0) + (s.farming || 0) + (s.trade || 0) + (s.admin || 0) - (s.corruption || 0))}</td>
                                 <td style={{ color: "#778" }}>{s.distToCapital != null ? s.distToCapital : "—"}</td>
                               </tr>
                             );})}

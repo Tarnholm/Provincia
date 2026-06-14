@@ -1373,6 +1373,19 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     }
     if (!Object.keys(taxHByCity).length) taxHByCity = null;
   }
+  // PER-TOWN CORRUPTION OVERRIDE (opts.corrByCity, 2026-06-14): the engine's
+  // corruption distance is road/pathfinding-based and not file-recoverable to the
+  // denarius, but corruption is DETERMINISTIC per files — so the user pastes the live
+  // per-town corruption once (corrCalib) and we reproduce it EXACTLY.
+  let corrByCity = null;
+  if (opts && opts.corrByCity) {
+    corrByCity = {};
+    for (const k of Object.keys(opts.corrByCity)) {
+      const v = Number(opts.corrByCity[k] && opts.corrByCity[k].corr != null ? opts.corrByCity[k].corr : opts.corrByCity[k]);
+      if (Number.isFinite(v) && v >= 0) corrByCity[_normCity(k)] = v;
+    }
+    if (!Object.keys(corrByCity).length) corrByCity = null;
+  }
   for (const s of F.settlements) {
     if (popOv) { const pv = popOv[s.settlement] != null ? popOv[s.settlement] : popOv[s.region]; if (pv != null && pv > 0) s.pop = pv; }
     const bracket = br[s.settlement] || br[s.region] || "normal";
@@ -1554,11 +1567,14 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       const x = Math.max(0, dist - CALIB.corrD0);
       const raw = CALIB.corrA * x + CALIB.corrB * x * x - CALIB.corrLawPct * lawTot;
       corrPct = Math.min(CALIB.corrCap, Math.max(0, raw)) / 100;
-      // corruption gross uses the PRE-H (pre-fortune) tax base: H is a tax-display
-      // fortune multiplier and must not cascade into the corruption base (live julii
-      // Republic save 2026-06-14: H-gross gave 2238 vs game 2574; pre-H gives ~2661).
-      corrSum += corrPct * (tTaxNoH + tFarm + tMine + tTrade + tAdmin);
     }
+    // corruption gross uses the PRE-H (pre-fortune) tax base: H is a tax-display
+    // fortune multiplier and must not cascade into the corruption base (live julii
+    // Republic save 2026-06-14: H-gross gave 2238 vs game 2574; pre-H gives ~2661).
+    // corrByCity (live paste) overrides the formula EXACTLY when present.
+    const corrOv = corrByCity ? (corrByCity[_normCity(s.settlement)] != null ? corrByCity[_normCity(s.settlement)] : corrByCity[_normCity(s.region)]) : null;
+    const corrAmt = corrOv != null ? corrOv : corrPct * (tTaxNoH + tFarm + tMine + tTrade + tAdmin);
+    corrSum += corrAmt;
     // DOCUMENTED engine formulas (Feral Battle_and_Campaign_Formulae.md):
     // siege hold-out turns = base(by level) + wall_level+1 + floor(govManagement/3)
     const SIEGE_BASE = { village: 2, town: 3, large_town: 4, city: 4, large_city: 5, huge_city: 5 };
@@ -1575,7 +1591,10 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // taxH: the applied per-campaign calibration multiplier (null = uncalibrated)
       taxParts: { w: taxW, flat: taxFlat }, taxH: taxH != null ? taxH : null,
       bracket, taxes: Math.round(tTax), farming: Math.round(tFarm), mining: Math.round(tMine), trade: Math.round(tTrade), admin: Math.round(tAdmin),
-      corruption: Math.round(corrPct * (tTaxNoH + tFarm + tMine + tTrade + tAdmin)),
+      corruption: Math.round(corrAmt),
+      corrCalibrated: corrOv != null ? true : undefined,
+      // settlement NET income (the in-game scroll's "Net Income"): gross − corruption
+      totalIncome: Math.round(tTax + tFarm + tMine + tTrade + tAdmin - corrAmt),
       _corrGross: process.env.CORR_DEBUG ? (tTaxNoH + tFarm + tMine + tTrade + tAdmin) : undefined,
       _corrLawTot: process.env.CORR_DEBUG ? lawTot : undefined,
       _corrPct: process.env.CORR_DEBUG ? corrPct : undefined,

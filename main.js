@@ -6482,7 +6482,7 @@ function _modCopyWarning(modDataDir) {
 // land/sea fit, wages 200×named+50×admiral, corruption 6.43×Σdist-to-capital).
 // Validated vs the 10-faction turn-1 corpus: median |budget err| 7%, worst 27%.
 // Returns computeTurn1Budget() + per-settlement optimalBracket/growth merged in.
-ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath, asAI, taxH) => {
+ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath, asAI, taxH, corr) => {
   try {
     if (!modDataDir || !faction) return { error: "modDataDir + faction required" };
     const gm = require("./src/growthModel.js");
@@ -6537,10 +6537,16 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
     // modDir+faction). live = model × H, H quantized 0.05 — see src/taxCalib.js.
     const nTaxH = taxH && typeof taxH === "object" ? Object.keys(taxH).length : 0;
     if (nTaxH) _writeLog(`[turn1-budget] ${faction}: tax calibration applied for ${nTaxH} towns (per-campaign H lock)`);
+    // PER-TOWN CORRUPTION CALIBRATION (2026-06-14): corr = { settlement: { corr } }
+    // from the renderer's pasted live corruption — reproduced EXACTLY (road/pathfinding
+    // distance isn't file-recoverable, but corruption is deterministic per files).
+    const nCorr = corr && typeof corr === "object" ? Object.keys(corr).length : 0;
+    if (nCorr) _writeLog(`[turn1-budget] ${faction}: corruption calibration applied for ${nCorr} towns`);
     const budget = im.computeTurn1Budget(modDataDir, faction, bracketByCity,
       { ...(opts && opts.govEffectByCity ? { govEffectByCity: opts.govEffectByCity } : {}),
         ...(opts && opts.popByCity ? { popByCity: opts.popByCity } : {}),
         ...(nTaxH ? { taxHByCity: taxH } : {}),
+        ...(nCorr ? { corrByCity: corr } : {}),
         ...(asAI ? { asAI: true, isPlayer: false } : {}) });
     if (budget && !budget.error) budget.asAI = !!asAI;
     if (budget && !budget.error) {
