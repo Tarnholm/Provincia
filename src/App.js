@@ -21098,9 +21098,16 @@ function App() {
               const view = new DataView(tgaBin instanceof ArrayBuffer ? tgaBin : tgaBin.buffer || tgaBin);
               mapHeight = view.getUint8(15) * 256 + view.getUint8(14); // little-endian uint16 at offset 14
             }
+            // CRITICAL (2026-06-14): without a valid mapHeight, parseDescrStratResources
+            // stores RAW bottom-origin gameY (no flip) → every resource renders mirrored
+            // into the sea. On mod-load the TGA isn't always in binaryContents, so fall
+            // back to the already-decoded active map height. THIS was the root of the
+            // persistent "resources upside-down" bug (cache rewritten unflipped each launch).
+            if (!mapHeight && imgSize && imgSize.height > 1) mapHeight = imgSize.height;
+            if (!mapHeight) { console.warn("[resources] no mapHeight — skipping resource parse to avoid an unflipped cache"); }
             // Use parsed regions from this import, or fall back to current state
             const regionsForLookup = (fileContents["descr_regions.txt"] ? parseDescrRegions(fileContents["descr_regions.txt"]) : regions);
-            const resources = parseDescrStratResources(text, mapHeight, tgaBin, regionsForLookup);
+            const resources = mapHeight ? parseDescrStratResources(text, mapHeight, tgaBin, regionsForLookup) : {};
             const resCount = Object.keys(resources).length;
             if (resCount > 0) {
               if (canSave) await window.electronAPI.saveFile(camp.out.resources, JSON.stringify(resources));
