@@ -26,13 +26,15 @@ const BRACKET_TOKEN = {
 const norm = (x) => String(x || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
 
 // Calibration honors the pasted value EXACTLY (taxes reproduce to the denarius) —
-// the live/model ratio is stored raw, no 0.05 snap (the snap cost up to ~2.5%/town,
-// the "3 denarii" residual). Ratios outside the fortune band [0.80, 1.20] signal a
-// BRACKET MISMATCH (e.g. pasting a VH value against a normal-bracket model = ratio
-// ~1.5) and are rejected so a wrong bracket can't masquerade as fortune.
+// the live/model ratio is stored raw, no 0.05 snap. The ratio is stored against the
+// budget's OWN bracket, so applying H reproduces the pasted game value even when the
+// app's bracket ≠ the game's (e.g. app set Rome "normal"=854, game VH=1318 → H 1.54,
+// 854×1.54=1318 exact). Band [0.35, 2.6] spans a one-step bracket gap (×1.5/×0.8 =
+// 1.875) plus fortune; ratios beyond it signal a wrong-town match or a population
+// paste (e.g. 9000/854 ≈ 10) and are rejected.
 export function snapH(raw) {
   if (!Number.isFinite(raw) || raw <= 0) return null;
-  if (raw < 0.8 || raw > 1.2) return null;
+  if (raw < 0.35 || raw > 2.6) return null;
   return raw;
 }
 

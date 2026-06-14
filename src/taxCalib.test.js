@@ -37,10 +37,11 @@ describe("taxCalib — parsing + snapping", () => {
     expect(snapH(1.0617)).toBe(1.0617); // exact — calibration reproduces the pasted tax to the denarius
     expect(snapH(0.91)).toBe(0.91);
     expect(snapH(1.004)).toBe(1.004);
-    expect(snapH(1.2)).toBe(1.2);   // band edge kept
+    expect(snapH(1.543)).toBe(1.543); // bracket-gap ratio kept (app normal vs game VH)
+    expect(snapH(2.132)).toBe(2.132);
     expect(snapH(0.8)).toBe(0.8);
-    expect(snapH(1.31)).toBe(null); // out of band = bracket mismatch, rejected
-    expect(snapH(0.62)).toBe(null);
+    expect(snapH(2.7)).toBe(null);  // beyond a one-step bracket gap = wrong match, rejected
+    expect(snapH(0.3)).toBe(null);  // population paste (9000/854 ≈ 10) rejected far above
     expect(snapH(0)).toBe(null);
     expect(snapH(NaN)).toBe(null);
   });

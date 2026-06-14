@@ -65,10 +65,17 @@ describe("incomeModel — cracked constants", () => {
     // cyrene sea-lane f pins + egypt per-town live trade table (same revalidation)
     expect(im.CALIB.seaLaneF["Kyrenaike>Taucheira"].ply).toBe(22.1);
     expect(Object.keys(im.CALIB.tradeMeasuredByPlayer.ptolemaic).length).toBe(83);
-    // corruption refit 2 2026-06-12 (fresh julii 6-town battery, corruption-refit-2.md):
-    // LINEAR law-subtractive % of gross — fresh rmse 0.35pp, Egypt-80 unchanged at 3.06pp
-    expect(im.CALIB.corrD0).toBe(15.5);
-    expect(im.CALIB.corrA).toBeCloseTo(0.74, 3);
+    // corruption refit 3 2026-06-14 (first FULL 26-town live corruption corpus,
+    // Republic-of-Rome julii save — corruption-refit-3.md). Joint fit on the live
+    // per-town denarii vs euclidean dist + lawTot, guarded against egypt(−2.6%)/
+    // cyrene(+3.9%): julii per-town MAE 14.7, total 2581/2569 (+12). Onset D0 dropped
+    // 15.5→11.25 (live Fregellae d11 is corrupt → onset ~11); lawPct 3→2.5 (the
+    // negative-law inflation was over-charging cyrene desert towns; HarshJustice
+    // probe's 2.95pp/pt is at the high edge — 2.5 fits all three factions jointly).
+    expect(im.CALIB.corrD0).toBe(11.25);
+    expect(im.CALIB.corrA).toBeCloseTo(0.64, 3);
+    expect(im.CALIB.corrLawPct).toBe(2.5);
+    expect(im.CALIB.corrCap).toBe(60);
     expect(im.CALIB.corrB).toBe(0); // linear — negative-b fits rejected (Egypt tail collapse)
     // AI economy refit 2026-06-11 (215 current-vintage AI ledgers, median ratio 1.000/tier)
     expect(im.CALIB.aiFarmBonus).toBeCloseTo(1.188, 3);

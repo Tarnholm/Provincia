@@ -19,7 +19,7 @@ vintage; probe evidence is cited inline.
 | army upkeep | exact law (julii ±0, capua ±0, egypt +0.02%, cyrene +0.13%) |
 | taxes | ±1% faction Σ modulo the per-town H roll (see §4.3) |
 | trade | capua 1268/1268 exact, julii −0.1%, kyzikos exact, egypt +0.7% (pinned), cyrene −7% |
-| corruption | julii +1.9%, cyrene +1.0%, egypt +0.9% |
+| corruption | julii +0.4% (26-town live), cyrene +3.9%, egypt −2.6% |
 | public order | save-aware 26/26 towns within ±10pp (16 exact), no-save 24/26 |
 | AI factions (n=215) | total income median 3.7%, p90 11.3% |
 
@@ -141,24 +141,40 @@ unsigned read). No governor → no admin row.
 ## 6. Corruption ("other" expenditure, slot f22)
 
 ```
-corr%_town = clamp( 0.74 × (d_eff − 15.5), 0, 60 )   of town gross (incl. admin)
-d_eff      = pixel distance to capital + 4 × max(0, −lawPts)
-law        = −3 pp per settlement law point (corrLawPct 3, see below)
+corr%_town = clamp( 0.64 × (d − 11.25) − 2.5 × lawTot, 0, 60 )   of town gross (incl. admin)
+d          = pixel distance to capital (euclidean)
+lawTot     = EDB lawBonus + governor trait law (NEGATIVE law adds corruption)
 capital    = 0
 ```
 
-- LINEAR (corrB 0): refit on six fresh julii console-probe towns (rmse 0.35pp, max
-  0.62pp — `corruption-refit-2.md`), egypt-80 out-of-sample rmse 3.06pp unchanged.
-- **corrLawPct 3 double-confirmed live**: `give_trait Nossis HarshJustice 1/2` on Locri:
-  34.24% → 31.27% → 25.45%. EDCT HarshJustice is Law +2/+4/+6 but it ANTI-TRAITS
-  Just/1, so the net law deltas were +1/+3 → 2.97/2.93 pp per law point. Exactly linear,
-  5%/pt ruled out.
-- Negative law inflates distance ~4 tiles/pt (Pisae law−2 probe: 14.3%→20.2%; explains
-  the cyrene desert trio).
-- Saturation cap 60: far-east egypt towns read 59-64% at x = 141/226/351 — not the old
-  90% linear climb.
+- **REFIT 3 (2026-06-14, `corruption-refit-3.md`)**: the first complete per-town live
+  corruption corpus (26-town Republic-of-Rome julii save) replaces the 6-town battery
+  fit. corrA 0.74→0.64, corrD0 15.5→11.25, corrLawPct 3→2.5. Joint-guarded across
+  factions: **julii 2580/2569 (+0.4%, per-town MAE 14.7), egypt −2.6%, cyrene +3.9%**
+  (cyrene improved from +5.8%). Live julii NET 255 vs game 261.
+  - **Onset d≈11, not 15.5**: live Fregellae (d11) is already corrupt; the old battery
+    had no town between d11–d35 so the onset was under-constrained.
+  - **corrLawPct 2.5, not 3**: the law term is symmetric, so negative law (cyrene desert
+    towns Euesperides/Automala/Tetrapyrgia, lawTot −2/−2/−3) ADDS `lawPct·|lawTot|`.
+    At lawPct 3 that inflation pushed cyrene corruption to +10.7%; at 2.5 it falls to
+    +3.9% and julii still fits. The HarshJustice probe (below) measured ~2.95 pp/pt on
+    POSITIVE law — the high edge of the joint 3-faction evidence; 2.5 reconciles all.
+- LINEAR (corrB 0): negative-b fits collapse the egypt tail (rmse 7.8 vs 3.06).
+- **Live law-channel probe**: `give_trait Nossis HarshJustice 1/2` on Locri:
+  34.24% → 31.27% → 25.45%. EDCT HarshJustice is Law +2/+4/+6 but ANTI-TRAITS Just/1,
+  net law deltas +1/+3 → 2.93–2.97 pp/lawpt — confirms the linear law channel (5%/pt
+  ruled out); the joint corpus prefers 2.5 over 3.
+- Saturation cap 60: far-east egypt towns read 59-64% at x = 141/226/351.
 - No display floor (Volaterrae 0.92% shows live). The historic "law ≥ 3 → zero"
   threshold and office-governor-zero rules were this law in small samples.
+- **Distance metric — euclidean (best available, NOT pathfinding)**: corruption is
+  mildly NON-monotonic in straight-line distance because the engine uses road/turns
+  distance-to-capital (coastal Metapontum is "closer", inland Venusia/Locri "farther").
+  The save's PO-panel distance-to-capital penalty (`orderBreakdown[11]`) is 5%-quantized
+  (reads only 0/1/2 across all 26 towns) → too coarse to use; no finer pathfinding
+  distance is recoverable. Euclidean's two worst residuals (Metapontum +86, Venusia −48)
+  are this irreducible artifact and largely cancel in the faction total. Same OPEN
+  status as the trade f-factor: a live console probe is needed to crack the road metric.
 
 ## 7. Sea trade
 

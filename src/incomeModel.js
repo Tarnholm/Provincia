@@ -520,7 +520,7 @@ const CALIB = {
   // corrLawPct 3 double-confirmed live via HarshJustice probe (Nossis/Locri): EDCT
   // ladder is Law +2/+4/+6 but HJ is an ANTI-TRAIT of Just — stripping Just/1 makes
   // the net settlement deltas +1/+3 → 2.97/2.93 pp/lawpt, exactly linear.
-  corrA: 0.74, corrB: 0, corrD0: 15.5, corrLawPct: 3,
+  corrA: 0.64, corrB: 0, corrD0: 11.25, corrLawPct: 2.5,
   corrNegLawShift: 4, // tiles of effective distance per NEGATIVE law point (Pisae console probe + cyrene trio)
   corrCap: 60, // far-distance saturation (live Egypt: d141/226/351 all read 59-64% — NOT the old 90% linear climb)
   seaLaneMaxDist: 40, riverBodyMaxCells: 1500, seaFlowRiverMult: 1.95, // river flows run hotter (Nile live 713/605/519) // sea-path tiles; lanes are local (live: Kyrenaica forms NO Aegean lanes; Sena→Nesactium ~15 allowed)
@@ -1512,7 +1512,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
         : Math.max(0, (4 + 0.75 * Math.min(3, Math.max(0, gv0.mgmt || 0)) + 0.25 * Math.max(0, gv0.law || 0)) / 100) * (tTax + tFarm + tMine + tTrade))
       : 0;
     admin += tAdmin;
-    let dist = null, corrPct = 0;
+    let dist = null, corrPct = 0, lawTot = 0;
     const c = coords[s.region];
     if (cap && c) {
       dist = Math.hypot(c.x - cap.x, c.y - cap.y);
@@ -1531,12 +1531,26 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // Model law parses with ±1 noise (trait levels, task #16) — at EXACTLY 3 the
       // model half-weights the curve to absorb the boundary uncertainty.
       // Validation: julii Σ2,544/2,496 (+1.9%%), cyrene Σ1,019/1,009 (+1.0%%).
-      const lawTot = (s.lawBonus || 0) + (gv0 ? (gv0.lawCorr != null ? gv0.lawCorr : (gv0.law || 0)) : 0);
+      lawTot = (s.lawBonus || 0) + (gv0 ? (gv0.lawCorr != null ? gv0.lawCorr : (gv0.law || 0)) : 0);
       // GRAND REFIT (2026-06-11 evening, 91 towns with PANEL-READ law across julii/
       // cyrene/egypt + console probes): corruption is LAW-SUBTRACTIVE, not a threshold:
       // corr% = min(cap, max(0, a*x + b*x^2 - lawPct*lawPts)), x = d - d0. Joint refit on
       // 111 computed-law towns: rmse 3.46pp (lawPct 3 absorbs the parse bias; panel-law
       // fit was 5%/pt). The old threshold-3 reading was this law in a small sample.
+      // REFIT 3 (2026-06-14, corruption-refit-3.md): the FIRST complete per-town live
+      // corruption corpus (26-town Republic-of-Rome julii save) — corrA 0.74→0.64,
+      // corrD0 15.5→11.25 (live Fregellae d11 is already corrupt → onset ~11, not 15.5),
+      // corrLawPct 3→2.5 (the negative-law inflation term lawPct·|lawTot| was over-
+      // charging cyrene's desert towns at lawPct 3 → +10.7%; lawPct 2.5 brings cyrene to
+      // +3.9% AND fits julii). Joint-guarded: julii 2581/2569 (+12, per-town MAE 14.7),
+      // egypt −2.6%, cyrene +3.9%. RESIDUAL = euclidean ≠ engine pathfinding/road
+      // distance-to-capital: the two largest residuals are coastal Metapontum (eucl 51
+      // but game corr ~ a d≈45 town: shorter road route → model OVER +86) and inland-toe
+      // Venusia/Locri (longer road route → model UNDER −48/−35). The save's PO panel
+      // distance-to-capital penalty (orderBreakdown[11]) is 5%-quantized (reads 0/1/2
+      // across all 26 towns) → too coarse to use as the metric; no finer pathfinding
+      // distance is recoverable from the save, so euclidean + refit constants is the
+      // shipped best metric (no-save accuracy preserved).
       const x = Math.max(0, dist - CALIB.corrD0);
       const raw = CALIB.corrA * x + CALIB.corrB * x * x - CALIB.corrLawPct * lawTot;
       corrPct = Math.min(CALIB.corrCap, Math.max(0, raw)) / 100;
@@ -1562,6 +1576,9 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       taxParts: { w: taxW, flat: taxFlat }, taxH: taxH != null ? taxH : null,
       bracket, taxes: Math.round(tTax), farming: Math.round(tFarm), mining: Math.round(tMine), trade: Math.round(tTrade), admin: Math.round(tAdmin),
       corruption: Math.round(corrPct * (tTaxNoH + tFarm + tMine + tTrade + tAdmin)),
+      _corrGross: process.env.CORR_DEBUG ? (tTaxNoH + tFarm + tMine + tTrade + tAdmin) : undefined,
+      _corrLawTot: process.env.CORR_DEBUG ? lawTot : undefined,
+      _corrPct: process.env.CORR_DEBUG ? corrPct : undefined,
       taxFactor: Math.round(f * 100) / 100, resourceValue: rv, port: !!s.portLevel, tradePartners: nPartners, distToCapital: dist != null ? Math.round(dist) : null,
       siegeTurns, plagueRiskPct: Math.round(plagueRiskPct * 10) / 10,
       govIncome: gv0 && (gv0.tax || gv0.trading || gv0.mining) ? { tax: gv0.tax || 0, trading: gv0.trading || 0, mining: gv0.mining || 0, hits: gv0.hits || [] } : null });

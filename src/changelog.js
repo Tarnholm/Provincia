@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1103",
+    date: "2026-06-14",
+    items: [
+      { type: "improvement", text: "**Corruption model refit against the first complete per-town live corpus** — every town's in-game corruption from a 26-region julii save (Republic of Rome) now pins the law, replacing the old 6-town console battery. Onset distance drops 15.5→11.25 px (live Fregellae at distance 11 is already corrupt), the slope eases 0.74→0.64, and the law-relief coefficient drops 3→2.5 per point (the symmetric term was over-inflating corruption on negative-law desert towns). Result: julii corruption 2580 vs live 2569 (+0.4%, per-town MAE ~15 denarii) and live julii NET 255 vs game 261 — up from a 336-denarii corruption shortfall. Egypt (−2.6%) and Cyrene (improved to +3.9%) stay within band. Finding: corruption is mildly non-monotonic in straight-line distance because the engine uses a road/turns distance-to-capital (coastal Metapontum reads closer, inland Venusia/Locri farther) — but that pathfinding distance isn't recoverable from saves (the public-order panel's distance row is quantized to 5% steps), so euclidean with refit constants remains the model. Documented in docs/LAWS.md §6." },
+    ],
+  },
+  {
     version: "0.9.1099",
     date: "2026-06-13",
     items: [
