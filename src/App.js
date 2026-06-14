@@ -6754,20 +6754,15 @@ function App() {
       return regions[key] ? regions[key].region : null;
     };
 
-    // Mark this dataset evaluated up-front so we never loop (the helper returns
-    // a NEW object reference when it flips, which retriggers this effect).
+    // AUTO-HEAL DISABLED (2026-06-14): the orientation detector was INVERTED — on the
+    // live RIS cache it flipped CORRECT data (Campania y=306, resources on Italy) to
+    // mirrored (y=393, resources in the sea) on every launch and re-persisted it,
+    // permanently re-breaking a hand-corrected/parser-correct cache. The import path
+    // (parseDescrStratResources, y = H-1-gameY) already produces the correct
+    // orientation, so no runtime "healing" is needed. Detection is left as a NO-OP
+    // (diagnostic only) until/unless a provably-correct detector replaces it.
     resOrientationHealedRef.current = sig;
-    const verdict = detectResourceOrientation(resourcesData, H, regionAtPixel);
-    if (verdict.flipped) {
-      setResourcesData(verdict.data);
-      // Persist the correction so it survives reload (Electron live/imported slot).
-      try {
-        const camp = CAMPAIGNS[mapCampaign];
-        if (camp?.resourcesFile && window.electronAPI?.saveFile) {
-          window.electronAPI.saveFile(camp.resourcesFile, JSON.stringify(verdict.data));
-        }
-      } catch {}
-    }
+    // (intentionally no flip / no persist — see above)
   }, [offscreen, imgSize, regions, resourcesData, mapCampaign]);
 
   // Load homelands data. 0.9.465: prefer LIVE data parsed from the
