@@ -1659,6 +1659,11 @@ function App() {
 
   const canvasRef = useRef(null);
   const pixelDataRef = useRef(null);
+  // Authoritative decoded map height, set the instant the map decodes (refs never go
+  // stale like the imgSize state closure does). Used by the resource parse so it always
+  // flips game-Y with the REAL height (700 for RIS), never the 600 default. (2026-06-14
+  // root fix for the resources upside-down/offset bug.)
+  const mapHeightRef = useRef(0);
   const bgCanvasRef = useRef(null);
   const bgSourceRef = useRef(null);
   const minimapRef = useRef(null);
@@ -9406,6 +9411,7 @@ function App() {
           const offCtx = off.getContext("2d", { willReadFrequently: true });
           offCtx.putImageData(new ImageData(decoded.data, decoded.width, decoded.height), 0, 0);
           pixelDataRef.current = offCtx.getImageData(0, 0, decoded.width, decoded.height).data;
+          mapHeightRef.current = decoded.height;
           setImgSize({ width: decoded.width, height: decoded.height });
           setCampaignMapHeights((prev) => prev[mapCampaign] === decoded.height ? prev : { ...prev, [mapCampaign]: decoded.height });
           setOffscreen(off);
@@ -9417,6 +9423,7 @@ function App() {
           img.src = srcUrl;
           img.onload = () => {
             if (cancelled) return;
+            mapHeightRef.current = img.height;
             setImgSize({ width: img.width, height: img.height });
             setCampaignMapHeights((prev) => prev[mapCampaign] === img.height ? prev : { ...prev, [mapCampaign]: img.height });
             const off = document.createElement("canvas");
@@ -21098,13 +21105,19 @@ function App() {
               const view = new DataView(tgaBin instanceof ArrayBuffer ? tgaBin : tgaBin.buffer || tgaBin);
               mapHeight = view.getUint8(15) * 256 + view.getUint8(14); // little-endian uint16 at offset 14
             }
-            // CRITICAL (2026-06-14): without a valid mapHeight, parseDescrStratResources
-            // stores RAW bottom-origin gameY (no flip) → every resource renders mirrored
-            // into the sea. On mod-load the TGA isn't always in binaryContents, so fall
-            // back to the already-decoded active map height. THIS was the root of the
-            // persistent "resources upside-down" bug (cache rewritten unflipped each launch).
-            if (!mapHeight && imgSize && imgSize.height > 1) mapHeight = imgSize.height;
-            if (!mapHeight) { console.warn("[resources] no mapHeight — skipping resource parse to avoid an unflipped cache"); }
+            // CRITICAL (2026-06-14): without the REAL mapHeight, parseDescrStratResources
+            // stores RAW bottom-origin gameY (no flip → mirrored into the sea), OR flips
+            // with the wrong height (the 600 default → every icon offset ~100px into the
+            // sea). The map_regions TGA isn't always in binaryContents on mod-load, so use
+            // the authoritative decoded height from mapHeightRef (set the moment the map
+            // decodes — never stale like the imgSize closure). Refuse an implausible height.
+            if (!mapHeight && mapHeightRef.current > 1) mapHeight = mapHeightRef.current;
+            if (mapHeight <= 1) {
+              console.warn(`[resources] no reliable mapHeight (tga=${mapHeight}, ref=${mapHeightRef.current}) — skipping resource parse to avoid a mis-flipped cache`);
+              mapHeight = 0;
+            } else {
+              console.log(`[resources] parsing with mapHeight=${mapHeight} (tgaBin=${!!tgaBin}, ref=${mapHeightRef.current})`);
+            }
             // Use parsed regions from this import, or fall back to current state
             const regionsForLookup = (fileContents["descr_regions.txt"] ? parseDescrRegions(fileContents["descr_regions.txt"]) : regions);
             const resources = mapHeight ? parseDescrStratResources(text, mapHeight, tgaBin, regionsForLookup) : {};
