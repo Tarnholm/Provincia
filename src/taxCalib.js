@@ -38,32 +38,46 @@ export function snapH(raw) {
   return raw;
 }
 
-// parse pasted lines → [{ name, live, bracket|null, line }]; junk lines → skipped[]
+// parse pasted readings → [{ name, live, bracket|null, line }]; junk → skipped[].
+// FORGIVING (2026-06-14): one-per-line OR comma-separated ("Rome 1318, Iguvium
+// 203, …"), tolerates filler ("Rome 1318 in game"), strips the app's table emoji
+// (★ 👤 🟢 ⚠), reads a bracket token anywhere. Detects an app-TABLE row (pop-first:
+// a 4-digit number before a bracket keyword) → flags tableRowSeen so the UI can tell
+// the user to paste GAME values, not the app's own table.
 export function parseTaxReadings(text) {
-  const readings = [], skipped = [];
-  for (const raw of String(text || "").split(/\r?\n/)) {
-    const line = raw.trim();
-    if (!line || /^[#;\/]/.test(line)) continue;
-    // tokens: split on whitespace / tabs / commas / colons / pipes / equals
-    const toks = line.split(/[\s,;:|=]+/).filter(Boolean);
-    let numIdx = -1;
-    for (let i = 0; i < toks.length; i++) {
-      if (/^[+-]?\d{1,6}$/.test(toks[i])) { numIdx = i; break; }
+  const readings = [], skipped = []; let tableRowSeen = false; let last = null;
+  for (const raw of String(text || "").split(/[\r\n,]+/)) {
+    const seg = raw.replace(/[★👤🟢⚠✓✕]/gu, "").trim();
+    if (!seg || /^[#;\/]/.test(seg)) continue;
+    const toks = seg.split(/[\s;:|=]+/).filter(Boolean);
+    const nums = [];
+    for (let i = 0; i < toks.length; i++) if (/^[+-]?\d{1,6}$/.test(toks[i])) nums.push({ i, v: parseInt(toks[i], 10) });
+    if (!nums.length) {
+      // a lone bracket segment (e.g. the ", low" of "Camerinum 189, low") binds to
+      // the previous reading; anything else with no number is junk.
+      const b = BRACKET_TOKEN[norm(seg)];
+      if (b && last && last.bracket == null) last.bracket = b;
+      else skipped.push(seg);
+      continue;
     }
-    if (numIdx < 1) { skipped.push(line); continue; } // need a name before the number
-    const name = toks.slice(0, numIdx).join(" ");
-    const live = parseInt(toks[numIdx], 10);
-    // bracket from the remaining tokens (joined, so "very high" works)
-    const rest = norm(toks.slice(numIdx + 1).join(""));
-    let bracket = null;
-    if (rest) {
-      bracket = BRACKET_TOKEN[rest] || null;
-      if (!bracket) { skipped.push(line); continue; } // trailing junk we can't read
-    }
-    if (!Number.isFinite(live) || live < 0) { skipped.push(line); continue; }
-    readings.push({ name, live, bracket, line });
+    // first inline bracket token position (for the app-table guard)
+    let brIdx = -1;
+    for (let i = 0; i < toks.length; i++) if (BRACKET_TOKEN[norm(toks[i])] != null) { brIdx = i; break; }
+    if (brIdx >= 0 && nums[0].v >= 1000 && nums[0].i < brIdx && nums.length >= 3) { tableRowSeen = true; skipped.push(seg); continue; }
+    // name = leading tokens before the first number/bracket; tax = first number after
+    let nameEnd = 0;
+    while (nameEnd < toks.length && !/^[+-]?\d{1,6}$/.test(toks[nameEnd]) && BRACKET_TOKEN[norm(toks[nameEnd])] == null) nameEnd++;
+    if (nameEnd === 0) { skipped.push(seg); continue; }
+    const name = toks.slice(0, nameEnd).join(" ");
+    const after = nums.find(n => n.i >= nameEnd);
+    if (!after || !Number.isFinite(after.v) || after.v < 0) { skipped.push(seg); continue; }
+    // bracket = the joined tokens AFTER the tax number ("very high" → very_high),
+    // matched against BRACKET_TOKEN; non-bracket filler ("in game") is ignored.
+    const bracket = BRACKET_TOKEN[norm(toks.slice(after.i + 1).join(""))] || null;
+    last = { name, live: after.v, bracket, line: seg };
+    readings.push(last);
   }
-  return { readings, skipped };
+  return { readings, skipped, tableRowSeen };
 }
 
 // match a pasted name against budget settlements (settlement/region, fuzzy)
