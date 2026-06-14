@@ -49,13 +49,20 @@ function buildCalibSaveOpts(modDataDir, savePath) {
     // tax-PO deltas (rel. to low: 0/−30/−50/−70).
     const TB = { 0: "low", 1: "normal", 2: "high", 3: "very_high" };
     let poAnchorByCity = {};
+    // SET BRACKET per town from the save (tax byte @ marker−2269, verified 26/26 vs
+    // live): the budget should show each town at the rate the PLAYER SET in-game, not
+    // the app's "optimal" guess — so save-attached taxes match the game's brackets.
+    const setBracketByCity = {};
     for (const c of Object.keys(sf)) {
+      const tr = sf[c].taxRate;
+      if (TB[tr]) setBracketByCity[c] = TB[tr];
       const p = sf[c].publicOrder;
-      if (typeof p === "number" && isFinite(p) && Math.abs(p) < 100000 && TB[sf[c].taxRate]) {
-        poAnchorByCity[c] = { po: Math.round(p), bracket: TB[sf[c].taxRate] };
+      if (typeof p === "number" && isFinite(p) && Math.abs(p) < 100000 && TB[tr]) {
+        poAnchorByCity[c] = { po: Math.round(p), bracket: TB[tr] };
       }
     }
     if (!Object.keys(poAnchorByCity).length) poAnchorByCity = null;
+    out.setBracketByCity = Object.keys(setBracketByCity).length ? setBracketByCity : null;
     // governor trait effects (incl. follower/ancillary folds) per settlement
     let govEffectByCity = {};
     try {

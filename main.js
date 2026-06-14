@@ -6501,11 +6501,13 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
     // the exact PO anchor).
     let opts;
     let poAnchorByCity = null; // { city: { po, bracket } } — EXACT stored PO from the calibration save
+    let setBracketByCity = null; // { city: bracket } — the rate the PLAYER SET in-game (save)
     let saveApplied = false, saveError = null;
     if (savePath) {
       const cs = require("./src/calibSaveOpts.js").buildCalibSaveOpts(modDataDir, savePath);
       opts = cs.opts || undefined;
       poAnchorByCity = cs.poAnchorByCity;
+      setBracketByCity = cs.setBracketByCity || null;
       saveApplied = cs.saveApplied; saveError = cs.saveError;
       if (saveError) _writeLog(`[turn1-budget] calibration-save issue (${saveError})${saveApplied ? "" : "; using no-save model"}`);
       if (saveApplied) _writeLog(`[turn1-budget] calibration save applied: ${cs.counts.governors} governors, ${cs.counts.pops} pops, ${cs.counts.poAnchors} PO anchors`);
@@ -6528,6 +6530,11 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
       // add units: the ⚔+N suggestion), per the live Neapolis decision 2026-06-11.
       growthBySettlement[key] = { optimalBracket: s.optimalBracket, baseGrowthEst: s.baseGrowthEst, borderline: s.borderline };
     }
+    // SAVE-SET BRACKETS WIN (2026-06-14): when a calibration save is attached it knows
+    // the rate the player actually set per town — show THAT, not the app's "optimal"
+    // guess, so save-attached taxes match the game (only the ±5% hidden H roll remains,
+    // closed by the optional paste). Falls back to optimal where the save lacks a rate.
+    if (setBracketByCity) for (const c of Object.keys(setBracketByCity)) bracketByCity[c] = setBracketByCity[c];
     // 2. static income model at those brackets. When a CALIBRATION SAVE is provided,
     // its world-wide governor traits (incl. start-randomized personalities) replace
     // the descr_strat seeds for income too — opts.govEffectByCity came from the
