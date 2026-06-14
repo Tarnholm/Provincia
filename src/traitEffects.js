@@ -162,6 +162,12 @@ function growthEffectOfTraits(traitList, parsed, opts) {
       // the true engine mechanism may be level-mapping + an unattributed −1 relief
       // rather than non-application; refine when a counterexample appears.
       if (/^Estates/.test(name)) squalorEstates += chosen.Squalor;
+      // NOTE (2026-06-14): STRating (an engine-computed bitmask meta-trait, levels ST00/ST01/…)
+      // IS a real tax channel despite its odd inversion (ST00 = +10 tax). Confirmed on Capua's
+      // controlled wine probe: model 2330 ×1.05 = live 2446; WITHOUT the STRating +10 the model
+      // is 2118 and cannot reach 2446. So it stays. (It does over-credit a few julii towns —
+      // Neapolis/Thurii/Canusium — but that's their base-tax per-campaign variance offsetting a
+      // genuine bonus, not a reason to drop a live-validated effect.)
       tax += chosen.TaxCollection || 0; trading += chosen.Trading || 0; mining += chosen.Mining || 0;
       influence += chosen.Influence || 0; law += chosen.Law || 0; unrest += chosen.Unrest || 0; localPop += chosen.LocalPopularity || 0;
       mgmt += chosen.Management || 0;
