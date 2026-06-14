@@ -6509,8 +6509,9 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
       poAnchorByCity = cs.poAnchorByCity;
       setBracketByCity = cs.setBracketByCity || null;
       saveApplied = cs.saveApplied; saveError = cs.saveError;
+      const saveBn = String(savePath).split(/[\\/]/).pop();
       if (saveError) _writeLog(`[turn1-budget] calibration-save issue (${saveError})${saveApplied ? "" : "; using no-save model"}`);
-      if (saveApplied) _writeLog(`[turn1-budget] calibration save applied: ${cs.counts.governors} governors, ${cs.counts.pops} pops, ${cs.counts.poAnchors} PO anchors`);
+      if (saveApplied) _writeLog(`[turn1-budget] calibration save applied: "${saveBn}" → ${cs.counts.governors} governors, ${cs.counts.pops} pops, ${cs.counts.poAnchors} PO anchors`);
     }
     if (!opts || !opts.govEffectByCity) {
       try {
@@ -6534,7 +6535,40 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
     // the rate the player actually set per town — show THAT, not the app's "optimal"
     // guess, so save-attached taxes match the game (only the ±5% hidden H roll remains,
     // closed by the optional paste). Falls back to optimal where the save lacks a rate.
-    if (setBracketByCity) for (const c of Object.keys(setBracketByCity)) bracketByCity[c] = setBracketByCity[c];
+    // BRACKET DIAGNOSTIC (2026-06-14): before merging, snapshot the optimal so the log
+    // can show, per town, optimal→saveSet→final and flag every override. This is the
+    // line that tells us at a glance whether the panel is showing the app's recommended
+    // bracket or the rate baked into the attached save (a fresh turn-1 save is all
+    // 'normal', which silently overrode the very_high Rome recommendation → 877 not 1318).
+    const optimalSnapshot = { ...bracketByCity };
+    // OVERRIDE GATE (2026-06-14): a calibration save taken at campaign start (the user's
+    // workflow: "save right away") has EVERY town at the game default 'normal' — the
+    // player hasn't set rates yet. Letting that default normal win silently downgraded
+    // Rome's very_high recommendation to normal (877 not 1318). So: a save bracket of
+    // 'normal' does NOT override a HIGHER optimal — but any rate the player actively
+    // changed (low / high / very_high) still wins, so a genuinely taxes-set save matches
+    // the game exactly. Net: Rome reads 1318 whether the save is fresh or taxes-set.
+    const RANK = { low: 0, normal: 1, high: 2, very_high: 3 };
+    if (setBracketByCity) for (const c of Object.keys(setBracketByCity)) {
+      const set = setBracketByCity[c], opt = optimalSnapshot[c];
+      if (set === "normal" && opt && RANK[opt] > RANK.normal) continue; // default normal won't suppress a higher rec
+      bracketByCity[c] = set;
+    }
+    if (pf && pf.settlements) {
+      const BR = { low: "low", normal: "norm", high: "high", very_high: "vhigh" };
+      const overrides = [];
+      const finalDist = {};
+      for (const s of pf.settlements) {
+        const k = s.settlement || s.region;
+        const fin = bracketByCity[k] || "normal";
+        finalDist[BR[fin] || fin] = (finalDist[BR[fin] || fin] || 0) + 1;
+        const opt = optimalSnapshot[k], set = setBracketByCity && setBracketByCity[k];
+        if (set && opt && set !== opt) overrides.push(`${k}: optimal=${BR[opt] || opt}→save=${BR[set] || set}`);
+      }
+      const distStr = Object.entries(finalDist).map(([b, n]) => `${b}:${n}`).join(" ");
+      _writeLog(`[turn1-budget] ${faction}: final brackets {${distStr}} | source=${setBracketByCity ? "SAVE-SET (overrides optimal)" : "OPTIMAL (no save)"}`);
+      if (overrides.length) _writeLog(`[turn1-budget] ${faction}: save overrode optimal for ${overrides.length} towns → ${overrides.slice(0, 8).join(" | ")}${overrides.length > 8 ? ` | …+${overrides.length - 8}` : ""}`);
+    }
     // 2. static income model at those brackets. When a CALIBRATION SAVE is provided,
     // its world-wide governor traits (incl. start-randomized personalities) replace
     // the descr_strat seeds for income too — opts.govEffectByCity came from the
