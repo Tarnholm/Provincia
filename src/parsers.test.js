@@ -5,6 +5,7 @@ import {
   parseDescrStratFactions,
   parseDescrStratBuildings,
   parseDescrStratResources,
+  detectResourceOrientation,
   parseDescrStratArmies,
 } from "./parsers.js";
 
@@ -270,5 +271,67 @@ unit naval bireme    exp 0 armour 0 weapon_lvl 0
     expect(result[0].units).toEqual([{ name: "roman hastati", exp: 0, armour: 0, weapon: 0 }]);
     expect(result[1]).toMatchObject({ faction: "romans_julii", type: "army", character: "Marcus Tullius" });
     expect(result[2]).toMatchObject({ faction: "carthage", type: "navy", character: "Hannibal Barca", armyClass: "navy" });
+  });
+});
+
+describe("detectResourceOrientation", () => {
+  // Synthetic 4-row map (H=4): each top-down row maps to a distinct region.
+  // Region "North" owns top rows, "South" owns bottom rows. Resource stored y
+  // is a top-down row; lookup convention is row = y - 1 (matches renderer/hover).
+  const H = 4;
+  // Map top-origin row -> region name. rows 0,1 => North ; rows 2,3 => South.
+  const regionAtRow = (row) => (row <= 1 ? "North" : "South");
+  // regionAtPixel ignores x in this synthetic fixture.
+  const regionAtPixel = (_x, topRow) => {
+    if (topRow < 0 || topRow >= H) return null;
+    return regionAtRow(topRow);
+  };
+
+  test("leaves correctly-oriented (top-down) data untouched", () => {
+    // North resource at top-down y=1 (lookup row 0 => North ✓),
+    // South resource at y=4 (lookup row 3 => South ✓). 20+ samples needed.
+    const data = {
+      North: Array.from({ length: 15 }, (_, i) => ({ type: "t", x: i, y: 1, amount: 1 })),
+      South: Array.from({ length: 15 }, (_, i) => ({ type: "t", x: i, y: 4, amount: 1 })),
+    };
+    const v = detectResourceOrientation(data, H, regionAtPixel);
+    expect(v.flipped).toBe(false);
+    expect(v.data).toBe(data); // same reference, no copy
+    expect(v.asIs).toBeGreaterThan(v.mirrored);
+  });
+
+  test("detects and corrects a vertically-mirrored (bottom-origin) cache", () => {
+    // Stale: North resources stored at the SOUTH rows and vice-versa
+    // (y -> H - y of the correct value). Correct North y=1 => stale y=3;
+    // correct South y=4 => stale y=0... use in-range mirror: y in [1..3].
+    // North correct y=1 -> stale y=H-1=3 ; South correct y=3 -> stale y=H-3=1.
+    const stale = {
+      North: Array.from({ length: 15 }, (_, i) => ({ type: "t", x: i, y: 3, amount: 1 })),
+      South: Array.from({ length: 15 }, (_, i) => ({ type: "t", x: i, y: 1, amount: 1 })),
+    };
+    const v = detectResourceOrientation(stale, H, regionAtPixel);
+    expect(v.flipped).toBe(true);
+    expect(v.mirrored).toBeGreaterThan(v.asIs);
+    // Corrected: y -> H - y. North 3 -> 1 (lands in North), South 1 -> 3 (South).
+    expect(v.data.North.every((r) => r.y === H - 3)).toBe(true);
+    expect(v.data.South.every((r) => r.y === H - 1)).toBe(true);
+    // And the corrected data now passes the orientation check.
+    const v2 = detectResourceOrientation(v.data, H, regionAtPixel);
+    expect(v2.flipped).toBe(false);
+  });
+
+  test("never flips on an undersized sample (safety)", () => {
+    const stale = {
+      North: [{ type: "t", x: 0, y: 3, amount: 1 }],
+      South: [{ type: "t", x: 1, y: 1, amount: 1 }],
+    };
+    const v = detectResourceOrientation(stale, H, regionAtPixel);
+    expect(v.flipped).toBe(false); // only 2 samples < 20
+  });
+
+  test("no-ops without a map height or lookup", () => {
+    const data = { North: [{ type: "t", x: 0, y: 1, amount: 1 }] };
+    expect(detectResourceOrientation(data, 0, regionAtPixel).flipped).toBe(false);
+    expect(detectResourceOrientation(data, H, null).flipped).toBe(false);
   });
 });

@@ -46,6 +46,7 @@ import {
   parseDescrStratFactions,
   parseDescrStratBuildings,
   parseDescrStratResources,
+  detectResourceOrientation,
   parseDescrStratArmies,
 } from "./parsers";
 
@@ -6699,6 +6700,70 @@ function App() {
       })
       .catch(() => setResourcesData({}));
   }, [loadCampaignData, mapCampaign]);
+
+  // ── Resource-overlay orientation self-heal (0.9.1107) ───────────────────
+  // ROOT CAUSE of the "resources render upside-down" bug: the renderer plots
+  // resource icons in the SAME top-origin space as the decoded map (row 0 =
+  // North). The current parser (parsers.js parseDescrStratResources) emits
+  // correct top-down rows (y = H-1-gameY; Campania ≈ 305 on the 700px RIS
+  // canvas — verified). BUT the live/imported slot loads resources from the
+  // persisted `resources_*.json` in userData/campaign_data, which is KEPT
+  // across app updates (main.js:6231) so the imported slot survives upgrades.
+  // If that file was written by an OLD parser version that stored bottom-origin
+  // y (y ≈ gameY, i.e. NO flip), the cache is vertically MIRRORED relative to
+  // the map and every prior in-code "fix" was a no-op — the stale cache shadows
+  // the new parser. This effect detects a mirrored cache by majority-voting
+  // each resource's keyed region against the map pixel at its current row vs.
+  // its vertical mirror (H-1-y), and, if mirrored wins decisively, corrects the
+  // whole set in place (y → H - y, the exact inverse verified on RIS anchors:
+  // Caledonia 643→57, Campania 394→306, Gaetulia 278→422). Self-healing means
+  // no re-import is required. A healed-signature ref prevents re-running / loops.
+  const resOrientationHealedRef = useRef(null);
+  useEffect(() => {
+    const data = pixelDataRef.current;
+    const H = imgSize.height;
+    const W = imgSize.width;
+    if (!offscreen || !data || !H || !W) return;
+    if (!regions || Object.keys(regions).length === 0) return;
+    const keys = Object.keys(resourcesData);
+    if (keys.length === 0) return;
+    // Signature so we don't re-evaluate (or flip) the same dataset repeatedly.
+    const sig = `${mapCampaign}|${keys.length}|${H}`;
+    if (resOrientationHealedRef.current === sig) return;
+
+    // Resolve a region NAME from a top-origin pixel row (with the same
+    // black-tile neighbor fallback the map-hover lookup uses).
+    const regionAtPixel = (px, py) => {
+      if (px < 0 || py < 0 || px >= W || py >= H) return null;
+      const pi = (py * W + px) * 4;
+      let key = `${data[pi]},${data[pi + 1]},${data[pi + 2]}`;
+      if (data[pi] === 0 && data[pi + 1] === 0 && data[pi + 2] === 0) {
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) {
+          const nx = px + dx, ny = py + dy;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          const ni = (ny * W + nx) * 4;
+          const nk = `${data[ni]},${data[ni + 1]},${data[ni + 2]}`;
+          if (regions[nk]) { key = nk; break; }
+        }
+      }
+      return regions[key] ? regions[key].region : null;
+    };
+
+    // Mark this dataset evaluated up-front so we never loop (the helper returns
+    // a NEW object reference when it flips, which retriggers this effect).
+    resOrientationHealedRef.current = sig;
+    const verdict = detectResourceOrientation(resourcesData, H, regionAtPixel);
+    if (verdict.flipped) {
+      setResourcesData(verdict.data);
+      // Persist the correction so it survives reload (Electron live/imported slot).
+      try {
+        const camp = CAMPAIGNS[mapCampaign];
+        if (camp?.resourcesFile && window.electronAPI?.saveFile) {
+          window.electronAPI.saveFile(camp.resourcesFile, JSON.stringify(verdict.data));
+        }
+      } catch {}
+    }
+  }, [offscreen, imgSize, regions, resourcesData, mapCampaign]);
 
   // Load homelands data. 0.9.465: prefer LIVE data parsed from the
   // active mod's EDB alias blocks (via `getModHomelands` IPC); the

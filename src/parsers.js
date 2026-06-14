@@ -354,6 +354,53 @@ function parseDescrStratResources(text, mapHeight, tgaBuf, regionsMap) {
   return result;
 }
 
+// 0.9.1107: resource-overlay orientation self-heal.
+//
+// The renderer plots resource icons in the SAME top-origin space as the
+// decoded map (row 0 = North); parseDescrStratResources emits correct
+// top-down rows. But the live/imported slot loads resources from a persisted
+// JSON that is KEPT across app updates — if that file was written by an OLD
+// parser that stored bottom-origin y (no flip), the cache is vertically
+// MIRRORED relative to the map and renders upside-down. This detects the
+// mirror by majority-voting each resource's keyed region against the map pixel
+// at its current top-down row vs. its vertical mirror, and (if mirrored wins
+// decisively) returns a corrected copy with y → H - y. Returns
+// { flipped: boolean, sampled, asIs, mirrored, data }. `data` is the original
+// reference when not flipped (no allocation), or a corrected deep-ish copy when
+// flipped. `regionAtPixel(x, topRow)` resolves a region NAME from a top-origin
+// pixel row (caller supplies the map lookup, incl. black-tile fallback). The
+// lookup row convention matches the renderer/hover: top row = y - 1.
+function detectResourceOrientation(resourcesData, mapHeight, regionAtPixel) {
+  const H = mapHeight;
+  const keys = Object.keys(resourcesData || {});
+  let asIs = 0, mirrored = 0, sampled = 0;
+  if (H && regionAtPixel) {
+    for (const regionName of keys) {
+      const entries = resourcesData[regionName];
+      if (!Array.isArray(entries)) continue;
+      for (const r of entries) {
+        if (typeof r.x !== "number" || typeof r.y !== "number") continue;
+        sampled++;
+        if (regionAtPixel(r.x, r.y - 1) === regionName) asIs++;
+        if (regionAtPixel(r.x, (H - r.y) - 1) === regionName) mirrored++;
+      }
+    }
+  }
+  // Decisive mirror verdict: clearly more entries land in their region when
+  // mirrored, and the mirror explains a real majority of the sample.
+  const flipped =
+    H && sampled >= 20 && mirrored > asIs * 1.5 && mirrored > sampled * 0.5;
+  if (!flipped) return { flipped: false, sampled, asIs, mirrored, data: resourcesData };
+  const fixed = {};
+  for (const regionName of keys) {
+    const entries = resourcesData[regionName];
+    fixed[regionName] = Array.isArray(entries)
+      ? entries.map((r) => (typeof r.y === "number" ? { ...r, y: H - r.y } : r))
+      : entries;
+  }
+  return { flipped: true, sampled, asIs, mirrored, data: fixed };
+}
+
 function parseDescrStratArmies(text) {
   // Walk the file once, tracking the current faction and the most recent
   // `character ...` line. When an `army` keyword follows, collect the unit
@@ -504,6 +551,7 @@ export {
   parseDescrStratFactions,
   parseDescrStratBuildings,
   parseDescrStratResources,
+  detectResourceOrientation,
   parseDescrStratArmies,
   parseDescrStratFactionWealth,
   parseDescrStratFactionRelationships,
