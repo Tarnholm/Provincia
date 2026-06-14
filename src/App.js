@@ -6736,6 +6736,11 @@ function App() {
     const regionAtPixel = (px, py) => {
       if (px < 0 || py < 0 || px >= W || py >= H) return null;
       const pi = (py * W + px) * 4;
+      // TRUE SEA (RTW marker R=41,G=140, any B across the separate sea bodies) is NOT
+      // land — return null so the orientation vote counts only real LAND. Without this
+      // every sea body counts as a "region" and a mirrored cache looks fine (the 2026-
+      // 06-14 bug where the heal never fired / mis-fired).
+      if (data[pi] === 41 && data[pi + 1] === 140) return null;
       let key = `${data[pi]},${data[pi + 1]},${data[pi + 2]}`;
       if (data[pi] === 0 && data[pi + 1] === 0 && data[pi + 2] === 0) {
         for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) {
