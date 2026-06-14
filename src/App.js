@@ -8823,7 +8823,11 @@ function App() {
             drawY = (devDragResource.my - baseOffsetY - offset.y) / totalScale;
           } else {
             drawX = res.x + 0.5;
-            drawY = res.y - 0.5;
+            // res.y is now the correct top-down pixel row (parsers.js uses
+            // H-1-gameY); center the icon on that pixel symmetrically with x
+            // (+0.5). The old `-0.5` compensated for the parser's off-by-one
+            // (H-gameY) and is no longer needed.
+            drawY = res.y + 0.5;
           }
           // Cull off-screen
           const sx = drawX * totalScale + baseOffsetX + offset.x;
@@ -22990,7 +22994,8 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                     <button onClick={() => {
                                       const res = computeTaxCalibration(taxCalibText, armyT1Budget.settlements);
                                       const n = Object.keys(res.byCity).length;
-                                      if (!n) { pushToast("No tax readings parsed — lines need a town name, a number and optionally a bracket (l/n/h/vh)", "error", 6000); return; }
+                                      if (res.tableRowSeen) { pushToast("That looks like the app's OWN table (population-first rows). Paste your IN-GAME tax numbers instead — one town per line, e.g. 'Rome 1318' (or comma-separated).", "error", 9000); if (!n) return; }
+                                      if (!n) { pushToast("No tax readings parsed — each town needs a name and its in-game tax number, e.g. 'Rome 1318' (one per line or comma-separated)", "error", 7000); return; }
                                       const merged = { ...(taxCalibStored(modDataDir, fac) || {}), ...res.byCity };
                                       try { localStorage.setItem(taxCalibKey(modDataDir, fac), JSON.stringify(merged)); } catch { }
                                       setTaxCalibBump(b => b + 1);
@@ -23099,7 +23104,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         })()}
                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.74rem", marginTop: 6 }}>
                           <thead><tr style={{ color: "#8aa", textAlign: "left" }}>
-                            <th style={{ fontWeight: 600, padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Growth @ set</th><th>→ Tax</th><th title="Estimated public order at the recommended bracket — risk RANKING (±20), not the exact in-game %. 🔴 likely revolt risk · 🟡 watch · 🟢 fine. Validated on live Julii: flagged all 3 actual revolt-risk towns.">PO @ set</th><th>Tax income</th><th>Farm</th><th title="Corruption ('Other' expenditure on the settlement scroll) — shown negative/red. Per-town % of gross income (REFIT 2 2026-06-12, linear law). Compare against the in-game scroll to spot miscomputed towns.">Corruption</th><th title="Governor administration income (the settlement scroll's 'Admin' / 'Other' income line): admin% × town gross. Live-cracked 2026-06-11.">Admin</th><th title="Settlement NET income = farms + taxes + trade + admin − corruption — the in-game settlement scroll's 'Net Income' line. Compare directly (e.g. Rome → 4527).">Total</th><th>Dist→cap</th>
+                            <th style={{ fontWeight: 600, padding: "0 6px" }}>Settlement</th><th>Pop</th><th>Growth @ set</th><th>→ Tax</th><th title="Estimated public order at the recommended bracket — risk RANKING (±20), not the exact in-game %. 🔴 likely revolt risk · 🟡 watch · 🟢 fine. Validated on live Julii: flagged all 3 actual revolt-risk towns.">PO @ set</th><th>Tax income</th><th>Farm</th><th title="Trade income (land routes + sea lanes) for this settlement.">Trade</th><th title="Corruption ('Other' expenditure on the settlement scroll) — shown negative/red. Per-town % of gross income (REFIT 2 2026-06-12, linear law). Compare against the in-game scroll to spot miscomputed towns.">Corruption</th><th title="Governor administration income (the settlement scroll's 'Admin' / 'Other' income line): admin% × town gross. Live-cracked 2026-06-11.">Admin</th><th title="Settlement NET income = farms + taxes + trade + admin − corruption — the in-game settlement scroll's 'Net Income' line. Compare directly (e.g. Rome → 4527).">Total</th><th>Dist→cap</th>
                           </tr></thead>
                           <tbody>
                             {armyT1Budget.settlements.slice().filter(s => !armySetSearch.trim() || ((s.settlement || s.region) || "").toLowerCase().includes(armySetSearch.trim().toLowerCase())).sort((a, b) => ((a.settlement || a.region) || "").localeCompare((b.settlement || b.region) || "")).map((s, si) => {
@@ -23121,6 +23126,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                   title={s.govIncome ? `Governor income traits applied (parsed from descr_strat starting traits + ancillaries, exact-tile binding):${s.govIncome.tax ? `\n  tax ${s.govIncome.tax > 0 ? "+" : ""}${s.govIncome.tax}%` : ""}${s.govIncome.trading ? `\n  trade ${s.govIncome.trading > 0 ? "+" : ""}${s.govIncome.trading}%` : ""}${s.govIncome.mining ? `\n  mining ${s.govIncome.mining > 0 ? "+" : ""}${s.govIncome.mining}%` : ""}\nFrom: ${(s.govIncome.hits || []).join(", ")}` : undefined}>
                                   {s.taxes}{s.taxH != null ? <span style={{ color: "#7fd1c0", fontSize: "0.64rem", cursor: "help" }} title={`Calibrated from your pasted live reading: per-campaign tax multiplier ×${s.taxH.toFixed(2)} applied (live = model × H, the engine's hidden 5%-step campaign roll).`}> {s.taxH === 1 ? "✓" : `×${s.taxH.toFixed(2)}`}</span> : null}{s.govIncome ? <span style={{ color: s.govIncome.tax >= 0 ? "#9fd37f" : "#e8a07a", fontSize: "0.66rem" }}> 👤</span> : null}</td>
                                 <td style={{ color: "#9fd37f" }}>{s.farming}</td>
+                                <td style={{ color: "#cfd37f" }} title="Trade income (land routes + sea lanes).">{s.trade != null ? Math.round(s.trade) : 0}</td>
                                 <td style={{ color: (s.corruption ? "#e8a07a" : "#667"), cursor: s.corruption ? "help" : "default" }} title={s.corruption ? `Corruption ('Other' expenditure on the in-game settlement scroll) ≈−${Math.round(s.corruption)}/turn. Compare against the scroll — a mismatch flags a miscomputed town.` : "No corruption (capital / low-distance / law-suppressed)."}>{s.corruption ? `−${Math.round(s.corruption)}` : "0"}</td>
                                 <td style={{ color: (s.admin ? "#d3c89f" : "#667") }} title={s.admin ? `Governor administration income (the scroll's 'Admin'/'Other' income line) ≈+${Math.round(s.admin)}/turn — admin% × town gross.` : "No admin income."}>{s.admin ? Math.round(s.admin) : 0}</td>
                                 <td style={{ color: "#9fd3c0", fontWeight: 600 }} title={`Settlement NET income (farms + taxes + trade + admin − corruption) = the in-game scroll's 'Net Income' line${s.corrCalibrated ? " · corruption calibrated to your live paste" : ""}.`}>{s.totalIncome != null ? s.totalIncome : ((s.taxes || 0) + (s.farming || 0) + (s.trade || 0) + (s.admin || 0) - (s.corruption || 0))}</td>

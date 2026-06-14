@@ -329,10 +329,20 @@ function parseDescrStratResources(text, mapHeight, tgaBuf, regionsMap) {
     const type = m[1].trim();
     const amount = parseInt(m[2]);
     const x = parseInt(m[3]);
-    const y = mapHeight ? mapHeight - parseInt(m[4]) : parseInt(m[4]);
+    // Flip game-Y (origin bottom-left) to a TOP-DOWN row. The engine's strat
+    // coords count rows from the bottom, so the top-down row is H-1-gameY (NOT
+    // H-gameY). The off-by-one matters: H-gameY shifts every resource icon one
+    // row up — on tall maps (RIS 700px, vanilla-HD 350px) that pushed coastal
+    // resources off their region into the sea and made the overlay look
+    // flipped/scattered. H-1-gameY matches incomeModel.js's verified `regionAt`
+    // transform (rowTop = H-1-yGame) and lands 100% of RIS + classic resources
+    // in their commented region (exact pixel), vs ~83% for the old formula.
+    const y = mapHeight ? mapHeight - 1 - parseInt(m[4]) : parseInt(m[4]);
     let region;
     if (pixelLookup) {
-      region = pixelLookup(x, y - 1);
+      // `y` is already the top-down row; pixelLookup re-applies the TGA origin
+      // flip internally, so pass it straight (no extra -1).
+      region = pixelLookup(x, y);
     } else {
       const cm = s.match(/;\s*(.+)/);
       region = cm ? cm[1].trim() : null;

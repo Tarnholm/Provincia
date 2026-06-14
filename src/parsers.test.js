@@ -216,8 +216,9 @@ resource wine,           1,    100,  50   ; Etruria
 resource olive_oil,      2,    120,  60   ; Umbria
 `;
     const result = parseDescrStratResources(text, 350, null, null);
-    expect(result.Etruria).toEqual([{ type: "wine", amount: 1, x: 100, y: 300, category: "trade" }]);
-    expect(result.Umbria).toEqual([{ type: "olive_oil", amount: 2, x: 120, y: 290, category: "trade" }]);
+    // y is flipped game-Y → top-down row as H-1-gameY: 350-1-50=299, 350-1-60=289.
+    expect(result.Etruria).toEqual([{ type: "wine", amount: 1, x: 100, y: 299, category: "trade" }]);
+    expect(result.Umbria).toEqual([{ type: "olive_oil", amount: 2, x: 120, y: 289, category: "trade" }]);
   });
 
   test("skips resource lines without a region comment when no TGA", () => {

@@ -4,63 +4,63 @@
       "type": "marble",
       "amount": 1,
       "x": 55,
-      "y": 93,
+      "y": 92,
       "category": "trade"
     },
     {
       "type": "lead",
       "amount": 1,
       "x": 55,
-      "y": 94,
+      "y": 93,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 2,
       "x": 54,
-      "y": 95,
+      "y": 94,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 54,
-      "y": 94,
+      "y": 93,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 53,
-      "y": 93,
+      "y": 92,
       "category": "trade"
     },
     {
       "type": "marble",
       "amount": 1,
       "x": 55,
-      "y": 93,
+      "y": 92,
       "category": "trade"
     },
     {
       "type": "lead",
       "amount": 1,
       "x": 47,
-      "y": 96,
+      "y": 95,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 54,
-      "y": 95,
+      "y": 94,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 54,
-      "y": 94,
+      "y": 93,
       "category": "trade"
     }
   ],
@@ -69,42 +69,42 @@
       "type": "timber",
       "amount": 1,
       "x": 201,
-      "y": 117,
+      "y": 116,
       "category": "trade"
     },
     {
       "type": "glass",
       "amount": 1,
       "x": 199,
-      "y": 119,
+      "y": 118,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 199,
-      "y": 112,
+      "y": 111,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 201,
-      "y": 117,
+      "y": 116,
       "category": "trade"
     },
     {
       "type": "glass",
       "amount": 1,
       "x": 199,
-      "y": 119,
+      "y": 118,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 199,
-      "y": 112,
+      "y": 111,
       "category": "trade"
     }
   ],
@@ -113,55 +113,13 @@
       "type": "gold",
       "amount": 1,
       "x": 46,
-      "y": 21,
+      "y": 20,
       "category": "trade"
     },
     {
       "type": "lead",
       "amount": 2,
       "x": 47,
-      "y": 20,
-      "category": "trade"
-    },
-    {
-      "type": "tin",
-      "amount": 1,
-      "x": 38,
-      "y": 30,
-      "category": "trade"
-    },
-    {
-      "type": "tin",
-      "amount": 1,
-      "x": 40,
-      "y": 30,
-      "category": "trade"
-    },
-    {
-      "type": "slaves",
-      "amount": 1,
-      "x": 48,
-      "y": 18,
-      "category": "trade"
-    },
-    {
-      "type": "gold",
-      "amount": 1,
-      "x": 45,
-      "y": 21,
-      "category": "trade"
-    },
-    {
-      "type": "lead",
-      "amount": 1,
-      "x": 45,
-      "y": 23,
-      "category": "trade"
-    },
-    {
-      "type": "lead",
-      "amount": 1,
-      "x": 44,
       "y": 19,
       "category": "trade"
     },
@@ -169,60 +127,67 @@
       "type": "tin",
       "amount": 1,
       "x": 38,
-      "y": 30,
+      "y": 29,
       "category": "trade"
     },
     {
       "type": "tin",
       "amount": 1,
       "x": 40,
-      "y": 30,
+      "y": 29,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 48,
-      "y": 18,
-      "category": "trade"
-    }
-  ],
-  "Gallaecia": [
-    {
-      "type": "gold",
-      "amount": 1,
-      "x": 20,
-      "y": 73,
+      "y": 17,
       "category": "trade"
     },
     {
-      "type": "iron",
-      "amount": 2,
-      "x": 16,
-      "y": 68,
+      "type": "gold",
+      "amount": 1,
+      "x": 45,
+      "y": 20,
+      "category": "trade"
+    },
+    {
+      "type": "lead",
+      "amount": 1,
+      "x": 45,
+      "y": 22,
+      "category": "trade"
+    },
+    {
+      "type": "lead",
+      "amount": 1,
+      "x": 44,
+      "y": 18,
       "category": "trade"
     },
     {
       "type": "tin",
       "amount": 1,
-      "x": 23,
-      "y": 70,
+      "x": 38,
+      "y": 29,
       "category": "trade"
     },
     {
-      "type": "timber",
+      "type": "tin",
       "amount": 1,
-      "x": 24,
-      "y": 74,
+      "x": 40,
+      "y": 29,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
-      "x": 18,
-      "y": 69,
+      "x": 48,
+      "y": 17,
       "category": "trade"
-    },
+    }
+  ],
+  "Gallaecia": [
     {
       "type": "gold",
       "amount": 1,
@@ -232,15 +197,8 @@
     },
     {
       "type": "iron",
-      "amount": 1,
+      "amount": 2,
       "x": 16,
-      "y": 67,
-      "category": "trade"
-    },
-    {
-      "type": "iron",
-      "amount": 1,
-      "x": 18,
       "y": 67,
       "category": "trade"
     },
@@ -255,14 +213,56 @@
       "type": "timber",
       "amount": 1,
       "x": 24,
-      "y": 74,
+      "y": 73,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 18,
-      "y": 69,
+      "y": 68,
+      "category": "trade"
+    },
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 20,
+      "y": 71,
+      "category": "trade"
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 16,
+      "y": 66,
+      "category": "trade"
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 18,
+      "y": 66,
+      "category": "trade"
+    },
+    {
+      "type": "tin",
+      "amount": 1,
+      "x": 23,
+      "y": 68,
+      "category": "trade"
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 24,
+      "y": 73,
+      "category": "trade"
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 18,
+      "y": 68,
       "category": "trade"
     }
   ],
@@ -271,42 +271,42 @@
       "type": "gold",
       "amount": 1,
       "x": 140,
-      "y": 92,
+      "y": 91,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 140,
-      "y": 90,
+      "y": 89,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 140,
-      "y": 88,
+      "y": 87,
       "category": "trade"
     },
     {
       "type": "gold",
       "amount": 1,
       "x": 140,
-      "y": 92,
+      "y": 91,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 140,
-      "y": 90,
+      "y": 89,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 140,
-      "y": 88,
+      "y": 87,
       "category": "trade"
     }
   ],
@@ -315,42 +315,42 @@
       "type": "grain",
       "amount": 1,
       "x": 103,
-      "y": 112,
+      "y": 111,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 104,
-      "y": 111,
+      "y": 110,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 105,
-      "y": 110,
+      "y": 109,
       "category": "trade"
     },
     {
       "type": "grain",
       "amount": 1,
       "x": 103,
-      "y": 112,
+      "y": 111,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 104,
-      "y": 111,
+      "y": 110,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 105,
-      "y": 110,
+      "y": 109,
       "category": "trade"
     }
   ],
@@ -359,91 +359,91 @@
       "type": "grain",
       "amount": 1,
       "x": 84,
-      "y": 115,
+      "y": 114,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 86,
-      "y": 114,
+      "y": 113,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 73,
-      "y": 114,
+      "y": 113,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 80,
-      "y": 116,
+      "y": 115,
       "category": "trade"
     },
     {
       "type": "olive_oil",
       "amount": 2,
       "x": 78,
-      "y": 112,
+      "y": 111,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 80,
-      "y": 110,
+      "y": 109,
       "category": "trade"
     },
     {
       "type": "grain",
       "amount": 1,
       "x": 84,
-      "y": 115,
+      "y": 114,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 86,
-      "y": 114,
+      "y": 113,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 73,
-      "y": 114,
+      "y": 113,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 80,
-      "y": 116,
+      "y": 115,
       "category": "trade"
     },
     {
       "type": "olive_oil",
       "amount": 1,
       "x": 76,
-      "y": 112,
+      "y": 111,
       "category": "trade"
     },
     {
       "type": "olive_oil",
       "amount": 1,
       "x": 78,
-      "y": 112,
+      "y": 111,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 80,
-      "y": 110,
+      "y": 109,
       "category": "trade"
     }
   ],
@@ -452,35 +452,35 @@
       "type": "lead",
       "amount": 2,
       "x": 56,
-      "y": 14,
-      "category": "trade"
-    },
-    {
-      "type": "slaves",
-      "amount": 1,
-      "x": 57,
-      "y": 16,
-      "category": "trade"
-    },
-    {
-      "type": "lead",
-      "amount": 1,
-      "x": 52,
       "y": 13,
       "category": "trade"
     },
     {
+      "type": "slaves",
+      "amount": 1,
+      "x": 57,
+      "y": 15,
+      "category": "trade"
+    },
+    {
       "type": "lead",
       "amount": 1,
       "x": 52,
-      "y": 17,
+      "y": 12,
+      "category": "trade"
+    },
+    {
+      "type": "lead",
+      "amount": 1,
+      "x": 52,
+      "y": 16,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 57,
-      "y": 16,
+      "y": 15,
       "category": "trade"
     }
   ],
@@ -489,56 +489,56 @@
       "type": "amber",
       "amount": 3,
       "x": 93,
-      "y": 20,
+      "y": 19,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 86,
-      "y": 11,
+      "y": 10,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 86,
-      "y": 15,
+      "y": 14,
       "category": "trade"
     },
     {
       "type": "amber",
       "amount": 1,
       "x": 96,
-      "y": 19,
-      "category": "trade"
-    },
-    {
-      "type": "amber",
-      "amount": 1,
-      "x": 98,
       "y": 18,
       "category": "trade"
     },
     {
       "type": "amber",
       "amount": 1,
+      "x": 98,
+      "y": 17,
+      "category": "trade"
+    },
+    {
+      "type": "amber",
+      "amount": 1,
       "x": 93,
-      "y": 20,
+      "y": 19,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 86,
-      "y": 11,
+      "y": 10,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 86,
-      "y": 15,
+      "y": 14,
       "category": "trade"
     }
   ],
@@ -547,62 +547,55 @@
       "type": "timber",
       "amount": 1,
       "x": 124,
-      "y": 16,
+      "y": 15,
       "category": "trade"
     },
     {
       "type": "amber",
       "amount": 3,
       "x": 113,
-      "y": 20,
+      "y": 19,
       "category": "trade"
     },
     {
       "type": "silver",
       "amount": 1,
       "x": 107,
-      "y": 24,
+      "y": 23,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 2,
       "x": 105,
-      "y": 22,
+      "y": 21,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 111,
-      "y": 18,
+      "y": 17,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 124,
-      "y": 16,
+      "y": 15,
       "category": "trade"
     },
     {
       "type": "amber",
       "amount": 1,
       "x": 113,
-      "y": 20,
+      "y": 19,
       "category": "trade"
     },
     {
       "type": "silver",
       "amount": 1,
       "x": 107,
-      "y": 24,
-      "category": "trade"
-    },
-    {
-      "type": "iron",
-      "amount": 1,
-      "x": 105,
       "y": 23,
       "category": "trade"
     },
@@ -614,24 +607,31 @@
       "category": "trade"
     },
     {
+      "type": "iron",
+      "amount": 1,
+      "x": 105,
+      "y": 21,
+      "category": "trade"
+    },
+    {
       "type": "slaves",
       "amount": 1,
       "x": 111,
-      "y": 18,
+      "y": 17,
       "category": "trade"
     },
     {
       "type": "amber",
       "amount": 1,
       "x": 108,
-      "y": 19,
+      "y": 18,
       "category": "trade"
     },
     {
       "type": "amber",
       "amount": 1,
       "x": 114,
-      "y": 19,
+      "y": 18,
       "category": "trade"
     }
   ],
@@ -640,28 +640,28 @@
       "type": "camels",
       "amount": 1,
       "x": 246,
-      "y": 16,
+      "y": 15,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 248,
-      "y": 6,
+      "y": 5,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 246,
-      "y": 16,
+      "y": 15,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 248,
-      "y": 6,
+      "y": 5,
       "category": "trade"
     }
   ],
@@ -670,28 +670,28 @@
       "type": "silver",
       "amount": 1,
       "x": 216,
-      "y": 48,
+      "y": 47,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 231,
-      "y": 24,
+      "y": 23,
       "category": "trade"
     },
     {
       "type": "silver",
       "amount": 1,
       "x": 216,
-      "y": 48,
+      "y": 47,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 231,
-      "y": 24,
+      "y": 23,
       "category": "trade"
     }
   ],
@@ -700,34 +700,6 @@
       "type": "iron",
       "amount": 2,
       "x": 49,
-      "y": 27,
-      "category": "trade"
-    },
-    {
-      "type": "textiles",
-      "amount": 1,
-      "x": 56,
-      "y": 27,
-      "category": "trade"
-    },
-    {
-      "type": "slaves",
-      "amount": 1,
-      "x": 59,
-      "y": 27,
-      "category": "trade"
-    },
-    {
-      "type": "iron",
-      "amount": 1,
-      "x": 49,
-      "y": 27,
-      "category": "trade"
-    },
-    {
-      "type": "iron",
-      "amount": 1,
-      "x": 50,
       "y": 26,
       "category": "trade"
     },
@@ -735,14 +707,42 @@
       "type": "textiles",
       "amount": 1,
       "x": 56,
-      "y": 27,
+      "y": 26,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 59,
-      "y": 27,
+      "y": 26,
+      "category": "trade"
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 49,
+      "y": 26,
+      "category": "trade"
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 50,
+      "y": 25,
+      "category": "trade"
+    },
+    {
+      "type": "textiles",
+      "amount": 1,
+      "x": 56,
+      "y": 26,
+      "category": "trade"
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 59,
+      "y": 26,
       "category": "trade"
     }
   ],
@@ -751,20 +751,27 @@
       "type": "iron",
       "amount": 2,
       "x": 78,
-      "y": 24,
+      "y": 23,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 85,
-      "y": 30,
+      "y": 29,
       "category": "trade"
     },
     {
       "type": "hides",
       "amount": 1,
       "x": 80,
+      "y": 26,
+      "category": "trade"
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 83,
       "y": 27,
       "category": "trade"
     },
@@ -776,24 +783,17 @@
       "category": "trade"
     },
     {
-      "type": "iron",
-      "amount": 1,
-      "x": 83,
-      "y": 29,
-      "category": "trade"
-    },
-    {
       "type": "slaves",
       "amount": 1,
       "x": 85,
-      "y": 30,
+      "y": 29,
       "category": "trade"
     },
     {
       "type": "hides",
       "amount": 1,
       "x": 80,
-      "y": 27,
+      "y": 26,
       "category": "trade"
     }
   ],
@@ -802,63 +802,63 @@
       "type": "iron",
       "amount": 2,
       "x": 107,
-      "y": 31,
+      "y": 30,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 3,
       "x": 112,
-      "y": 36,
+      "y": 35,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 116,
-      "y": 32,
+      "y": 31,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 108,
-      "y": 32,
+      "y": 31,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 107,
-      "y": 31,
+      "y": 30,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 1,
       "x": 103,
-      "y": 34,
+      "y": 33,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 1,
       "x": 110,
-      "y": 34,
+      "y": 33,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 1,
       "x": 112,
-      "y": 36,
+      "y": 35,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 116,
-      "y": 32,
+      "y": 31,
       "category": "trade"
     }
   ],
@@ -867,42 +867,42 @@
       "type": "textiles",
       "amount": 1,
       "x": 69,
-      "y": 34,
+      "y": 33,
       "category": "trade"
     },
     {
       "type": "pottery",
       "amount": 1,
       "x": 66,
-      "y": 33,
+      "y": 32,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 60,
-      "y": 39,
+      "y": 38,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 1,
       "x": 69,
-      "y": 34,
+      "y": 33,
       "category": "trade"
     },
     {
       "type": "pottery",
       "amount": 1,
       "x": 66,
-      "y": 33,
+      "y": 32,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 60,
-      "y": 39,
+      "y": 38,
       "category": "trade"
     }
   ],
@@ -911,28 +911,28 @@
       "type": "grain",
       "amount": 1,
       "x": 190,
-      "y": 41,
+      "y": 40,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 188,
-      "y": 42,
+      "y": 41,
       "category": "trade"
     },
     {
       "type": "grain",
       "amount": 1,
       "x": 190,
-      "y": 41,
+      "y": 40,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 188,
-      "y": 42,
+      "y": 41,
       "category": "trade"
     }
   ],
@@ -941,28 +941,28 @@
       "type": "hides",
       "amount": 1,
       "x": 84,
-      "y": 43,
+      "y": 42,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 89,
-      "y": 37,
+      "y": 36,
       "category": "trade"
     },
     {
       "type": "hides",
       "amount": 1,
       "x": 84,
-      "y": 43,
+      "y": 42,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 89,
-      "y": 37,
+      "y": 36,
       "category": "trade"
     }
   ],
@@ -971,42 +971,42 @@
       "type": "timber",
       "amount": 1,
       "x": 41,
-      "y": 46,
+      "y": 45,
       "category": "trade"
     },
     {
       "type": "glass",
       "amount": 1,
       "x": 46,
-      "y": 45,
+      "y": 44,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 47,
-      "y": 44,
+      "y": 43,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 41,
-      "y": 46,
+      "y": 45,
       "category": "trade"
     },
     {
       "type": "glass",
       "amount": 1,
       "x": 46,
-      "y": 45,
+      "y": 44,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 47,
-      "y": 44,
+      "y": 43,
       "category": "trade"
     }
   ],
@@ -1015,35 +1015,35 @@
       "type": "iron",
       "amount": 2,
       "x": 109,
-      "y": 46,
+      "y": 45,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 113,
-      "y": 43,
+      "y": 42,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 110,
-      "y": 45,
+      "y": 44,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 109,
-      "y": 46,
+      "y": 45,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 113,
-      "y": 43,
+      "y": 42,
       "category": "trade"
     }
   ],
@@ -1052,35 +1052,35 @@
       "type": "iron",
       "amount": 2,
       "x": 171,
-      "y": 45,
+      "y": 44,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 159,
-      "y": 50,
+      "y": 49,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 173,
-      "y": 43,
+      "y": 42,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 171,
-      "y": 45,
+      "y": 44,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 159,
-      "y": 50,
+      "y": 49,
       "category": "trade"
     }
   ],
@@ -1089,63 +1089,63 @@
       "type": "iron",
       "amount": 2,
       "x": 53,
-      "y": 53,
+      "y": 52,
       "category": "trade"
     },
     {
       "type": "lead",
       "amount": 1,
       "x": 54,
-      "y": 57,
+      "y": 56,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 65,
-      "y": 51,
+      "y": 50,
       "category": "trade"
     },
     {
       "type": "hides",
       "amount": 1,
       "x": 68,
-      "y": 47,
+      "y": 46,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 54,
-      "y": 52,
+      "y": 51,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 53,
-      "y": 53,
+      "y": 52,
       "category": "trade"
     },
     {
       "type": "lead",
       "amount": 1,
       "x": 54,
-      "y": 57,
+      "y": 56,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 65,
-      "y": 51,
+      "y": 50,
       "category": "trade"
     },
     {
       "type": "hides",
       "amount": 1,
       "x": 68,
-      "y": 47,
+      "y": 46,
       "category": "trade"
     }
   ],
@@ -1154,70 +1154,70 @@
       "type": "lead",
       "amount": 1,
       "x": 54,
-      "y": 58,
+      "y": 57,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 2,
       "x": 47,
-      "y": 65,
+      "y": 64,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 2,
       "x": 54,
-      "y": 65,
+      "y": 64,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 47,
-      "y": 58,
+      "y": 57,
       "category": "trade"
     },
     {
       "type": "lead",
       "amount": 1,
       "x": 54,
-      "y": 58,
+      "y": 57,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 47,
-      "y": 65,
+      "y": 64,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 45,
-      "y": 67,
+      "y": 66,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 54,
-      "y": 66,
+      "y": 65,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 55,
-      "y": 66,
+      "y": 65,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 47,
-      "y": 58,
+      "y": 57,
       "category": "trade"
     }
   ],
@@ -1226,49 +1226,49 @@
       "type": "gold",
       "amount": 1,
       "x": 136,
-      "y": 58,
+      "y": 57,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 2,
       "x": 139,
-      "y": 55,
+      "y": 54,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 139,
-      "y": 56,
+      "y": 55,
       "category": "trade"
     },
     {
       "type": "gold",
       "amount": 1,
       "x": 136,
-      "y": 58,
+      "y": 57,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 142,
-      "y": 58,
+      "y": 57,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 141,
-      "y": 57,
+      "y": 56,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 139,
-      "y": 56,
+      "y": 55,
       "category": "trade"
     }
   ],
@@ -1277,28 +1277,28 @@
       "type": "timber",
       "amount": 1,
       "x": 160,
-      "y": 57,
+      "y": 56,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 156,
-      "y": 58,
+      "y": 57,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 160,
-      "y": 57,
+      "y": 56,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 156,
-      "y": 58,
+      "y": 57,
       "category": "trade"
     }
   ],
@@ -1307,28 +1307,28 @@
       "type": "grain",
       "amount": 1,
       "x": 174,
-      "y": 55,
+      "y": 54,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 175,
-      "y": 59,
+      "y": 58,
       "category": "trade"
     },
     {
       "type": "grain",
       "amount": 1,
       "x": 174,
-      "y": 55,
+      "y": 54,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 175,
-      "y": 59,
+      "y": 58,
       "category": "trade"
     }
   ],
@@ -1337,28 +1337,28 @@
       "type": "pottery",
       "amount": 1,
       "x": 65,
-      "y": 67,
+      "y": 66,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 67,
-      "y": 65,
+      "y": 64,
       "category": "trade"
     },
     {
       "type": "pottery",
       "amount": 1,
       "x": 65,
-      "y": 67,
+      "y": 66,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 67,
-      "y": 65,
+      "y": 64,
       "category": "trade"
     }
   ],
@@ -1367,28 +1367,28 @@
       "type": "gold",
       "amount": 1,
       "x": 212,
-      "y": 64,
+      "y": 63,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 215,
-      "y": 66,
+      "y": 65,
       "category": "trade"
     },
     {
       "type": "gold",
       "amount": 1,
       "x": 214,
-      "y": 64,
+      "y": 63,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 215,
-      "y": 66,
+      "y": 65,
       "category": "trade"
     }
   ],
@@ -1397,49 +1397,49 @@
       "type": "glass",
       "amount": 1,
       "x": 96,
-      "y": 65,
+      "y": 64,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 2,
       "x": 91,
-      "y": 66,
+      "y": 65,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 93,
-      "y": 67,
+      "y": 66,
       "category": "trade"
     },
     {
       "type": "glass",
       "amount": 1,
       "x": 96,
-      "y": 65,
+      "y": 64,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 1,
       "x": 91,
-      "y": 66,
+      "y": 65,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 1,
       "x": 94,
-      "y": 63,
+      "y": 62,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 93,
-      "y": 67,
+      "y": 66,
       "category": "trade"
     }
   ],
@@ -1448,70 +1448,70 @@
       "type": "textiles",
       "amount": 1,
       "x": 49,
-      "y": 71,
+      "y": 70,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 3,
       "x": 55,
-      "y": 74,
+      "y": 73,
       "category": "trade"
     },
     {
       "type": "silver",
       "amount": 1,
       "x": 59,
-      "y": 72,
+      "y": 71,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 58,
-      "y": 73,
+      "y": 72,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 1,
       "x": 49,
-      "y": 71,
+      "y": 70,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 55,
-      "y": 74,
+      "y": 73,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 57,
-      "y": 73,
+      "y": 72,
       "category": "trade"
     },
     {
       "type": "silver",
       "amount": 1,
       "x": 59,
-      "y": 71,
+      "y": 70,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 58,
-      "y": 73,
+      "y": 72,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 63,
-      "y": 69,
+      "y": 68,
       "category": "trade"
     }
   ],
@@ -1520,28 +1520,28 @@
       "type": "wine",
       "amount": 1,
       "x": 65,
-      "y": 70,
+      "y": 69,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 68,
-      "y": 75,
+      "y": 74,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 65,
-      "y": 70,
+      "y": 69,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 68,
-      "y": 75,
+      "y": 74,
       "category": "trade"
     }
   ],
@@ -1550,70 +1550,14 @@
       "type": "iron",
       "amount": 2,
       "x": 112,
-      "y": 72,
+      "y": 71,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 3,
       "x": 108,
-      "y": 67,
-      "category": "trade"
-    },
-    {
-      "type": "gold",
-      "amount": 1,
-      "x": 114,
-      "y": 73,
-      "category": "trade"
-    },
-    {
-      "type": "slaves",
-      "amount": 1,
-      "x": 107,
-      "y": 65,
-      "category": "trade"
-    },
-    {
-      "type": "silver",
-      "amount": 1,
-      "x": 111,
-      "y": 73,
-      "category": "trade"
-    },
-    {
-      "type": "iron",
-      "amount": 1,
-      "x": 112,
-      "y": 71,
-      "category": "trade"
-    },
-    {
-      "type": "wine",
-      "amount": 1,
-      "x": 106,
-      "y": 67,
-      "category": "trade"
-    },
-    {
-      "type": "wine",
-      "amount": 1,
-      "x": 107,
-      "y": 68,
-      "category": "trade"
-    },
-    {
-      "type": "wine",
-      "amount": 1,
-      "x": 108,
-      "y": 67,
-      "category": "trade"
-    },
-    {
-      "type": "iron",
-      "amount": 1,
-      "x": 111,
-      "y": 71,
+      "y": 66,
       "category": "trade"
     },
     {
@@ -1627,14 +1571,70 @@
       "type": "slaves",
       "amount": 1,
       "x": 107,
-      "y": 65,
+      "y": 64,
       "category": "trade"
     },
     {
       "type": "silver",
       "amount": 1,
       "x": 111,
-      "y": 74,
+      "y": 72,
+      "category": "trade"
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 112,
+      "y": 70,
+      "category": "trade"
+    },
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 106,
+      "y": 66,
+      "category": "trade"
+    },
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 107,
+      "y": 67,
+      "category": "trade"
+    },
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 108,
+      "y": 66,
+      "category": "trade"
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 111,
+      "y": 70,
+      "category": "trade"
+    },
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 114,
+      "y": 71,
+      "category": "trade"
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 107,
+      "y": 64,
+      "category": "trade"
+    },
+    {
+      "type": "silver",
+      "amount": 1,
+      "x": 111,
+      "y": 73,
       "category": "trade"
     }
   ],
@@ -1643,20 +1643,6 @@
       "type": "gold",
       "amount": 1,
       "x": 148,
-      "y": 78,
-      "category": "trade"
-    },
-    {
-      "type": "slaves",
-      "amount": 1,
-      "x": 148,
-      "y": 73,
-      "category": "trade"
-    },
-    {
-      "type": "gold",
-      "amount": 1,
-      "x": 148,
       "y": 77,
       "category": "trade"
     },
@@ -1664,7 +1650,21 @@
       "type": "slaves",
       "amount": 1,
       "x": 148,
-      "y": 73,
+      "y": 72,
+      "category": "trade"
+    },
+    {
+      "type": "gold",
+      "amount": 1,
+      "x": 148,
+      "y": 76,
+      "category": "trade"
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 148,
+      "y": 72,
       "category": "trade"
     }
   ],
@@ -1673,63 +1673,63 @@
       "type": "gold",
       "amount": 1,
       "x": 117,
-      "y": 80,
+      "y": 79,
       "category": "trade"
     },
     {
       "type": "olive_oil",
       "amount": 2,
       "x": 123,
-      "y": 83,
+      "y": 82,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 110,
-      "y": 76,
+      "y": 75,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 116,
-      "y": 80,
+      "y": 79,
       "category": "trade"
     },
     {
       "type": "gold",
       "amount": 1,
       "x": 117,
-      "y": 79,
+      "y": 78,
       "category": "trade"
     },
     {
       "type": "olive_oil",
       "amount": 1,
       "x": 121,
-      "y": 83,
+      "y": 82,
       "category": "trade"
     },
     {
       "type": "olive_oil",
       "amount": 1,
       "x": 123,
-      "y": 83,
+      "y": 82,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 110,
-      "y": 76,
+      "y": 75,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 116,
-      "y": 80,
+      "y": 79,
       "category": "trade"
     }
   ],
@@ -1738,56 +1738,56 @@
       "type": "iron",
       "amount": 2,
       "x": 223,
-      "y": 76,
+      "y": 75,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 2,
       "x": 220,
-      "y": 70,
+      "y": 69,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 226,
-      "y": 67,
+      "y": 66,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 223,
-      "y": 75,
+      "y": 74,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 225,
-      "y": 74,
+      "y": 73,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 220,
-      "y": 70,
+      "y": 69,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 221,
-      "y": 68,
+      "y": 67,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 226,
-      "y": 67,
+      "y": 66,
       "category": "trade"
     }
   ],
@@ -1796,42 +1796,42 @@
       "type": "pottery",
       "amount": 1,
       "x": 86,
-      "y": 73,
+      "y": 72,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 78,
-      "y": 72,
+      "y": 71,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 85,
-      "y": 72,
+      "y": 71,
       "category": "trade"
     },
     {
       "type": "pottery",
       "amount": 1,
       "x": 86,
-      "y": 73,
+      "y": 72,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 78,
-      "y": 72,
+      "y": 71,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 85,
-      "y": 72,
+      "y": 71,
       "category": "trade"
     }
   ],
@@ -1840,55 +1840,20 @@
       "type": "timber",
       "amount": 1,
       "x": 197,
-      "y": 75,
+      "y": 74,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 2,
       "x": 188,
-      "y": 82,
-      "category": "trade"
-    },
-    {
-      "type": "silver",
-      "amount": 1,
-      "x": 202,
-      "y": 78,
-      "category": "trade"
-    },
-    {
-      "type": "slaves",
-      "amount": 1,
-      "x": 191,
-      "y": 78,
-      "category": "trade"
-    },
-    {
-      "type": "timber",
-      "amount": 1,
-      "x": 197,
-      "y": 75,
-      "category": "trade"
-    },
-    {
-      "type": "iron",
-      "amount": 1,
-      "x": 188,
-      "y": 82,
-      "category": "trade"
-    },
-    {
-      "type": "iron",
-      "amount": 1,
-      "x": 189,
       "y": 81,
       "category": "trade"
     },
     {
       "type": "silver",
       "amount": 1,
-      "x": 201,
+      "x": 202,
       "y": 77,
       "category": "trade"
     },
@@ -1896,7 +1861,42 @@
       "type": "slaves",
       "amount": 1,
       "x": 191,
-      "y": 78,
+      "y": 77,
+      "category": "trade"
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 197,
+      "y": 74,
+      "category": "trade"
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 188,
+      "y": 81,
+      "category": "trade"
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 189,
+      "y": 80,
+      "category": "trade"
+    },
+    {
+      "type": "silver",
+      "amount": 1,
+      "x": 201,
+      "y": 76,
+      "category": "trade"
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 191,
+      "y": 77,
       "category": "trade"
     }
   ],
@@ -1905,48 +1905,13 @@
       "type": "iron",
       "amount": 2,
       "x": 28,
-      "y": 82,
+      "y": 81,
       "category": "trade"
     },
     {
       "type": "lead",
       "amount": 2,
       "x": 30,
-      "y": 76,
-      "category": "trade"
-    },
-    {
-      "type": "slaves",
-      "amount": 1,
-      "x": 25,
-      "y": 82,
-      "category": "trade"
-    },
-    {
-      "type": "iron",
-      "amount": 1,
-      "x": 31,
-      "y": 82,
-      "category": "trade"
-    },
-    {
-      "type": "iron",
-      "amount": 1,
-      "x": 32,
-      "y": 82,
-      "category": "trade"
-    },
-    {
-      "type": "lead",
-      "amount": 1,
-      "x": 30,
-      "y": 76,
-      "category": "trade"
-    },
-    {
-      "type": "lead",
-      "amount": 1,
-      "x": 31,
       "y": 75,
       "category": "trade"
     },
@@ -1954,7 +1919,42 @@
       "type": "slaves",
       "amount": 1,
       "x": 25,
-      "y": 82,
+      "y": 81,
+      "category": "trade"
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 31,
+      "y": 81,
+      "category": "trade"
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 32,
+      "y": 81,
+      "category": "trade"
+    },
+    {
+      "type": "lead",
+      "amount": 1,
+      "x": 30,
+      "y": 75,
+      "category": "trade"
+    },
+    {
+      "type": "lead",
+      "amount": 1,
+      "x": 31,
+      "y": 74,
+      "category": "trade"
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 25,
+      "y": 81,
       "category": "trade"
     }
   ],
@@ -1963,49 +1963,49 @@
       "type": "iron",
       "amount": 2,
       "x": 89,
+      "y": 77,
+      "category": "trade"
+    },
+    {
+      "type": "marble",
+      "amount": 1,
+      "x": 90,
+      "y": 73,
+      "category": "trade"
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 89,
+      "y": 75,
+      "category": "trade"
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 90,
       "y": 78,
       "category": "trade"
     },
     {
-      "type": "marble",
-      "amount": 1,
-      "x": 90,
-      "y": 74,
-      "category": "trade"
-    },
-    {
-      "type": "slaves",
-      "amount": 1,
-      "x": 89,
-      "y": 76,
-      "category": "trade"
-    },
-    {
       "type": "iron",
       "amount": 1,
-      "x": 90,
+      "x": 91,
       "y": 79,
       "category": "trade"
     },
     {
-      "type": "iron",
-      "amount": 1,
-      "x": 91,
-      "y": 80,
-      "category": "trade"
-    },
-    {
       "type": "marble",
       "amount": 1,
       "x": 91,
-      "y": 74,
+      "y": 73,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 89,
-      "y": 76,
+      "y": 75,
       "category": "trade"
     }
   ],
@@ -2014,70 +2014,70 @@
       "type": "silver",
       "amount": 1,
       "x": 47,
-      "y": 80,
+      "y": 79,
       "category": "trade"
     },
     {
       "type": "marble",
       "amount": 1,
       "x": 50,
-      "y": 84,
+      "y": 83,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 42,
-      "y": 79,
+      "y": 78,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 3,
       "x": 41,
-      "y": 76,
+      "y": 75,
       "category": "trade"
     },
     {
       "type": "silver",
       "amount": 1,
       "x": 47,
-      "y": 79,
+      "y": 78,
       "category": "trade"
     },
     {
       "type": "marble",
       "amount": 1,
       "x": 50,
-      "y": 84,
+      "y": 83,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 44,
-      "y": 77,
+      "y": 76,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 40,
-      "y": 75,
+      "y": 74,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 42,
-      "y": 79,
+      "y": 78,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 41,
-      "y": 76,
+      "y": 75,
       "category": "trade"
     }
   ],
@@ -2086,28 +2086,28 @@
       "type": "pottery",
       "amount": 1,
       "x": 99,
-      "y": 77,
+      "y": 76,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 97,
-      "y": 75,
+      "y": 74,
       "category": "trade"
     },
     {
       "type": "pottery",
       "amount": 1,
       "x": 99,
-      "y": 77,
+      "y": 76,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 97,
-      "y": 75,
+      "y": 74,
       "category": "trade"
     }
   ],
@@ -2116,91 +2116,91 @@
       "type": "iron",
       "amount": 2,
       "x": 241,
-      "y": 92,
+      "y": 91,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 253,
-      "y": 81,
+      "y": 80,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 250,
-      "y": 88,
+      "y": 87,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 251,
-      "y": 78,
+      "y": 77,
       "category": "trade"
     },
     {
       "type": "silk",
       "amount": 3,
       "x": 254,
-      "y": 75,
+      "y": 74,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 240,
-      "y": 89,
+      "y": 88,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 240,
-      "y": 92,
+      "y": 91,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 253,
-      "y": 81,
+      "y": 80,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 250,
-      "y": 88,
+      "y": 87,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 251,
-      "y": 78,
+      "y": 77,
       "category": "trade"
     },
     {
       "type": "silk",
       "amount": 1,
       "x": 254,
-      "y": 75,
+      "y": 74,
       "category": "trade"
     },
     {
       "type": "silk",
       "amount": 1,
       "x": 254,
-      "y": 80,
+      "y": 79,
       "category": "trade"
     },
     {
       "type": "silk",
       "amount": 1,
       "x": 252,
-      "y": 79,
+      "y": 78,
       "category": "trade"
     }
   ],
@@ -2209,42 +2209,42 @@
       "type": "timber",
       "amount": 1,
       "x": 155,
-      "y": 86,
+      "y": 85,
       "category": "trade"
     },
     {
       "type": "gold",
       "amount": 1,
       "x": 151,
-      "y": 87,
+      "y": 86,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 158,
-      "y": 83,
+      "y": 82,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 155,
-      "y": 86,
+      "y": 85,
       "category": "trade"
     },
     {
       "type": "gold",
       "amount": 1,
       "x": 151,
-      "y": 87,
+      "y": 86,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 158,
-      "y": 83,
+      "y": 82,
       "category": "trade"
     }
   ],
@@ -2253,35 +2253,35 @@
       "type": "wine",
       "amount": 2,
       "x": 166,
-      "y": 86,
+      "y": 85,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 167,
-      "y": 84,
+      "y": 83,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 163,
-      "y": 87,
+      "y": 86,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 166,
-      "y": 86,
+      "y": 85,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 167,
-      "y": 84,
+      "y": 83,
       "category": "trade"
     }
   ],
@@ -2290,28 +2290,28 @@
       "type": "textiles",
       "amount": 1,
       "x": 171,
-      "y": 92,
+      "y": 91,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 173,
-      "y": 88,
+      "y": 87,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 1,
       "x": 171,
-      "y": 92,
+      "y": 91,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 173,
-      "y": 88,
+      "y": 87,
       "category": "trade"
     }
   ],
@@ -2320,27 +2320,6 @@
       "type": "silver",
       "amount": 1,
       "x": 38,
-      "y": 89,
-      "category": "trade"
-    },
-    {
-      "type": "pottery",
-      "amount": 1,
-      "x": 40,
-      "y": 91,
-      "category": "trade"
-    },
-    {
-      "type": "slaves",
-      "amount": 1,
-      "x": 38,
-      "y": 97,
-      "category": "trade"
-    },
-    {
-      "type": "silver",
-      "amount": 1,
-      "x": 38,
       "y": 88,
       "category": "trade"
     },
@@ -2348,14 +2327,35 @@
       "type": "pottery",
       "amount": 1,
       "x": 40,
-      "y": 91,
+      "y": 90,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 38,
-      "y": 97,
+      "y": 96,
+      "category": "trade"
+    },
+    {
+      "type": "silver",
+      "amount": 1,
+      "x": 38,
+      "y": 87,
+      "category": "trade"
+    },
+    {
+      "type": "pottery",
+      "amount": 1,
+      "x": 40,
+      "y": 90,
+      "category": "trade"
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 38,
+      "y": 96,
       "category": "trade"
     }
   ],
@@ -2364,28 +2364,35 @@
       "type": "copper",
       "amount": 1,
       "x": 109,
-      "y": 89,
+      "y": 88,
       "category": "trade"
     },
     {
       "type": "copper",
       "amount": 1,
       "x": 109,
-      "y": 90,
+      "y": 89,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 115,
-      "y": 91,
+      "y": 90,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 113,
-      "y": 91,
+      "y": 90,
+      "category": "trade"
+    },
+    {
+      "type": "copper",
+      "amount": 1,
+      "x": 108,
+      "y": 88,
       "category": "trade"
     },
     {
@@ -2396,24 +2403,17 @@
       "category": "trade"
     },
     {
-      "type": "copper",
-      "amount": 1,
-      "x": 108,
-      "y": 90,
-      "category": "trade"
-    },
-    {
       "type": "timber",
       "amount": 1,
       "x": 115,
-      "y": 91,
+      "y": 90,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 113,
-      "y": 91,
+      "y": 90,
       "category": "trade"
     }
   ],
@@ -2422,84 +2422,84 @@
       "type": "camels",
       "amount": 1,
       "x": 217,
-      "y": 98,
+      "y": 97,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 216,
-      "y": 94,
+      "y": 93,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 1,
       "x": 218,
-      "y": 96,
+      "y": 95,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 214,
-      "y": 97,
+      "y": 96,
       "category": "trade"
     },
     {
       "type": "silk",
       "amount": 3,
       "x": 224,
-      "y": 93,
+      "y": 92,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 217,
-      "y": 98,
+      "y": 97,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 216,
-      "y": 94,
+      "y": 93,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 1,
       "x": 218,
-      "y": 96,
+      "y": 95,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 214,
-      "y": 97,
-      "category": "trade"
-    },
-    {
-      "type": "silk",
-      "amount": 1,
-      "x": 220,
       "y": 96,
       "category": "trade"
     },
     {
       "type": "silk",
       "amount": 1,
-      "x": 222,
+      "x": 220,
       "y": 95,
       "category": "trade"
     },
     {
       "type": "silk",
       "amount": 1,
+      "x": 222,
+      "y": 94,
+      "category": "trade"
+    },
+    {
+      "type": "silk",
+      "amount": 1,
       "x": 224,
-      "y": 93,
+      "y": 92,
       "category": "trade"
     }
   ],
@@ -2508,70 +2508,70 @@
       "type": "wine",
       "amount": 2,
       "x": 18,
-      "y": 102,
+      "y": 101,
       "category": "trade"
     },
     {
       "type": "olive_oil",
       "amount": 2,
       "x": 12,
-      "y": 102,
+      "y": 101,
       "category": "trade"
     },
     {
       "type": "gold",
       "amount": 1,
       "x": 16,
-      "y": 103,
+      "y": 102,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 16,
-      "y": 97,
+      "y": 96,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 18,
-      "y": 102,
+      "y": 101,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 19,
-      "y": 99,
-      "category": "trade"
-    },
-    {
-      "type": "olive_oil",
-      "amount": 1,
-      "x": 16,
       "y": 98,
       "category": "trade"
     },
     {
       "type": "olive_oil",
       "amount": 1,
+      "x": 16,
+      "y": 97,
+      "category": "trade"
+    },
+    {
+      "type": "olive_oil",
+      "amount": 1,
       "x": 12,
-      "y": 102,
+      "y": 101,
       "category": "trade"
     },
     {
       "type": "gold",
       "amount": 1,
       "x": 16,
-      "y": 102,
+      "y": 101,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 16,
-      "y": 97,
+      "y": 96,
       "category": "trade"
     }
   ],
@@ -2580,77 +2580,77 @@
       "type": "timber",
       "amount": 1,
       "x": 156,
-      "y": 91,
+      "y": 90,
       "category": "trade"
     },
     {
       "type": "silver",
       "amount": 1,
       "x": 160,
-      "y": 93,
+      "y": 92,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 1,
       "x": 158,
-      "y": 98,
+      "y": 97,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 2,
       "x": 161,
-      "y": 91,
+      "y": 90,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 156,
-      "y": 95,
+      "y": 94,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 156,
-      "y": 91,
+      "y": 90,
       "category": "trade"
     },
     {
       "type": "silver",
       "amount": 1,
       "x": 160,
-      "y": 93,
+      "y": 92,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 1,
       "x": 158,
-      "y": 98,
+      "y": 97,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 161,
-      "y": 91,
+      "y": 90,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 156,
-      "y": 95,
+      "y": 94,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 159,
-      "y": 92,
+      "y": 91,
       "category": "trade"
     }
   ],
@@ -2659,41 +2659,6 @@
       "type": "silver",
       "amount": 1,
       "x": 195,
-      "y": 97,
-      "category": "trade"
-    },
-    {
-      "type": "timber",
-      "amount": 1,
-      "x": 191,
-      "y": 99,
-      "category": "trade"
-    },
-    {
-      "type": "pottery",
-      "amount": 1,
-      "x": 195,
-      "y": 99,
-      "category": "trade"
-    },
-    {
-      "type": "pottery",
-      "amount": 1,
-      "x": 196,
-      "y": 98,
-      "category": "trade"
-    },
-    {
-      "type": "slaves",
-      "amount": 1,
-      "x": 193,
-      "y": 99,
-      "category": "trade"
-    },
-    {
-      "type": "silver",
-      "amount": 1,
-      "x": 195,
       "y": 96,
       "category": "trade"
     },
@@ -2701,28 +2666,63 @@
       "type": "timber",
       "amount": 1,
       "x": 191,
-      "y": 99,
+      "y": 98,
       "category": "trade"
     },
     {
       "type": "pottery",
       "amount": 1,
       "x": 195,
-      "y": 99,
+      "y": 98,
       "category": "trade"
     },
     {
       "type": "pottery",
       "amount": 1,
       "x": 196,
-      "y": 98,
+      "y": 97,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 193,
-      "y": 99,
+      "y": 98,
+      "category": "trade"
+    },
+    {
+      "type": "silver",
+      "amount": 1,
+      "x": 195,
+      "y": 95,
+      "category": "trade"
+    },
+    {
+      "type": "timber",
+      "amount": 1,
+      "x": 191,
+      "y": 98,
+      "category": "trade"
+    },
+    {
+      "type": "pottery",
+      "amount": 1,
+      "x": 195,
+      "y": 98,
+      "category": "trade"
+    },
+    {
+      "type": "pottery",
+      "amount": 1,
+      "x": 196,
+      "y": 97,
+      "category": "trade"
+    },
+    {
+      "type": "slaves",
+      "amount": 1,
+      "x": 193,
+      "y": 98,
       "category": "trade"
     }
   ],
@@ -2731,70 +2731,70 @@
       "type": "silver",
       "amount": 1,
       "x": 167,
-      "y": 100,
+      "y": 99,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 156,
-      "y": 101,
+      "y": 100,
       "category": "trade"
     },
     {
       "type": "marble",
       "amount": 1,
       "x": 165,
-      "y": 99,
+      "y": 98,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 1,
       "x": 160,
-      "y": 102,
+      "y": 101,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 161,
-      "y": 100,
+      "y": 99,
       "category": "trade"
     },
     {
       "type": "silver",
       "amount": 1,
       "x": 167,
-      "y": 100,
+      "y": 99,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 156,
-      "y": 101,
+      "y": 100,
       "category": "trade"
     },
     {
       "type": "marble",
       "amount": 1,
       "x": 165,
-      "y": 99,
+      "y": 98,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 1,
       "x": 160,
-      "y": 102,
+      "y": 101,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 161,
-      "y": 100,
+      "y": 99,
       "category": "trade"
     }
   ],
@@ -2803,98 +2803,112 @@
       "type": "iron",
       "amount": 2,
       "x": 201,
-      "y": 99,
+      "y": 98,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 206,
-      "y": 102,
+      "y": 101,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 201,
-      "y": 106,
+      "y": 105,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 2,
       "x": 203,
-      "y": 101,
+      "y": 100,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 1,
       "x": 198,
-      "y": 100,
+      "y": 99,
       "category": "trade"
     },
     {
       "type": "silk",
       "amount": 3,
       "x": 205,
-      "y": 97,
+      "y": 96,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 199,
-      "y": 103,
+      "y": 102,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 202,
-      "y": 98,
+      "y": 97,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 201,
-      "y": 98,
+      "y": 97,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 206,
-      "y": 102,
+      "y": 101,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 201,
-      "y": 106,
+      "y": 105,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 201,
-      "y": 103,
+      "y": 102,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 203,
-      "y": 101,
+      "y": 100,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 1,
       "x": 198,
-      "y": 100,
+      "y": 99,
+      "category": "trade"
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 205,
+      "y": 96,
+      "category": "trade"
+    },
+    {
+      "type": "silk",
+      "amount": 1,
+      "x": 204,
+      "y": 97,
       "category": "trade"
     },
     {
@@ -2905,24 +2919,10 @@
       "category": "trade"
     },
     {
-      "type": "silk",
-      "amount": 1,
-      "x": 204,
-      "y": 98,
-      "category": "trade"
-    },
-    {
-      "type": "silk",
-      "amount": 1,
-      "x": 205,
-      "y": 98,
-      "category": "trade"
-    },
-    {
       "type": "slaves",
       "amount": 1,
       "x": 199,
-      "y": 103,
+      "y": 102,
       "category": "trade"
     }
   ],
@@ -2931,70 +2931,70 @@
       "type": "elephants",
       "amount": 1,
       "x": 238,
-      "y": 101,
+      "y": 100,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 240,
-      "y": 107,
+      "y": 106,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 243,
-      "y": 103,
+      "y": 102,
       "category": "trade"
     },
     {
       "type": "silk",
       "amount": 3,
       "x": 239,
-      "y": 99,
+      "y": 98,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 238,
-      "y": 101,
+      "y": 100,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 240,
-      "y": 107,
+      "y": 106,
       "category": "trade"
     },
     {
       "type": "silk",
       "amount": 1,
       "x": 241,
-      "y": 100,
+      "y": 99,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 243,
-      "y": 103,
+      "y": 102,
       "category": "trade"
     },
     {
       "type": "silk",
       "amount": 1,
       "x": 239,
-      "y": 99,
+      "y": 98,
       "category": "trade"
     },
     {
       "type": "silk",
       "amount": 1,
       "x": 243,
-      "y": 101,
+      "y": 100,
       "category": "trade"
     }
   ],
@@ -3003,77 +3003,77 @@
       "type": "silver",
       "amount": 1,
       "x": 142,
-      "y": 104,
+      "y": 103,
       "category": "trade"
     },
     {
       "type": "olive_oil",
       "amount": 2,
       "x": 142,
-      "y": 101,
+      "y": 100,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 3,
       "x": 140,
-      "y": 102,
+      "y": 101,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 143,
-      "y": 103,
+      "y": 102,
       "category": "trade"
     },
     {
       "type": "silver",
       "amount": 1,
       "x": 142,
-      "y": 103,
+      "y": 102,
       "category": "trade"
     },
     {
       "type": "olive_oil",
       "amount": 1,
       "x": 142,
-      "y": 101,
+      "y": 100,
       "category": "trade"
     },
     {
       "type": "olive_oil",
       "amount": 1,
       "x": 146,
-      "y": 102,
+      "y": 101,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 145,
-      "y": 100,
+      "y": 99,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 139,
-      "y": 101,
+      "y": 100,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 141,
-      "y": 101,
+      "y": 100,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 143,
-      "y": 103,
+      "y": 102,
       "category": "trade"
     }
   ],
@@ -3082,63 +3082,63 @@
       "type": "camels",
       "amount": 1,
       "x": 251,
-      "y": 113,
+      "y": 112,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 254,
-      "y": 113,
+      "y": 112,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 2,
       "x": 251,
-      "y": 104,
+      "y": 103,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 251,
-      "y": 107,
+      "y": 106,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 251,
-      "y": 113,
+      "y": 112,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 254,
-      "y": 113,
+      "y": 112,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 251,
-      "y": 103,
+      "y": 102,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 252,
-      "y": 102,
+      "y": 101,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 251,
-      "y": 107,
+      "y": 106,
       "category": "trade"
     }
   ],
@@ -3147,42 +3147,42 @@
       "type": "timber",
       "amount": 1,
       "x": 135,
-      "y": 110,
+      "y": 109,
       "category": "trade"
     },
     {
       "type": "marble",
       "amount": 1,
       "x": 136,
-      "y": 108,
+      "y": 107,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 140,
-      "y": 107,
+      "y": 106,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 135,
-      "y": 110,
+      "y": 109,
       "category": "trade"
     },
     {
       "type": "marble",
       "amount": 1,
       "x": 136,
-      "y": 107,
+      "y": 106,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 140,
-      "y": 107,
+      "y": 106,
       "category": "trade"
     }
   ],
@@ -3191,49 +3191,49 @@
       "type": "olive_oil",
       "amount": 2,
       "x": 166,
-      "y": 106,
+      "y": 105,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 1,
       "x": 164,
-      "y": 105,
+      "y": 104,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 159,
-      "y": 105,
+      "y": 104,
       "category": "trade"
     },
     {
       "type": "olive_oil",
       "amount": 1,
       "x": 166,
-      "y": 106,
+      "y": 105,
       "category": "trade"
     },
     {
       "type": "olive_oil",
       "amount": 1,
       "x": 167,
-      "y": 107,
+      "y": 106,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 1,
       "x": 164,
-      "y": 105,
+      "y": 104,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 159,
-      "y": 105,
+      "y": 104,
       "category": "trade"
     }
   ],
@@ -3242,105 +3242,105 @@
       "type": "camels",
       "amount": 1,
       "x": 2,
-      "y": 133,
+      "y": 132,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 15,
-      "y": 112,
+      "y": 111,
       "category": "trade"
     },
     {
       "type": "copper",
       "amount": 1,
       "x": 26,
-      "y": 117,
+      "y": 116,
       "category": "trade"
     },
     {
       "type": "copper",
       "amount": 1,
       "x": 27,
-      "y": 117,
+      "y": 116,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 2,
       "x": 41,
-      "y": 114,
+      "y": 113,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 11,
-      "y": 111,
+      "y": 110,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 13,
-      "y": 114,
+      "y": 113,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 2,
-      "y": 133,
+      "y": 132,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 15,
-      "y": 112,
+      "y": 111,
       "category": "trade"
     },
     {
       "type": "copper",
       "amount": 1,
       "x": 26,
-      "y": 117,
+      "y": 116,
       "category": "trade"
     },
     {
       "type": "copper",
       "amount": 1,
       "x": 27,
-      "y": 117,
+      "y": 116,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 1,
       "x": 41,
-      "y": 114,
+      "y": 113,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 1,
       "x": 45,
-      "y": 115,
+      "y": 114,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 11,
-      "y": 111,
+      "y": 110,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 13,
-      "y": 114,
+      "y": 113,
       "category": "trade"
     }
   ],
@@ -3349,56 +3349,56 @@
       "type": "camels",
       "amount": 1,
       "x": 215,
-      "y": 114,
+      "y": 113,
       "category": "trade"
     },
     {
       "type": "incense",
       "amount": 3,
       "x": 218,
-      "y": 112,
+      "y": 111,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 211,
-      "y": 108,
+      "y": 107,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 215,
-      "y": 114,
+      "y": 113,
       "category": "trade"
     },
     {
       "type": "incense",
       "amount": 1,
       "x": 217,
-      "y": 109,
+      "y": 108,
       "category": "trade"
     },
     {
       "type": "incense",
       "amount": 1,
       "x": 216,
-      "y": 111,
+      "y": 110,
       "category": "trade"
     },
     {
       "type": "incense",
       "amount": 1,
       "x": 218,
-      "y": 112,
+      "y": 111,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 211,
-      "y": 108,
+      "y": 107,
       "category": "trade"
     }
   ],
@@ -3407,84 +3407,84 @@
       "type": "elephants",
       "amount": 1,
       "x": 58,
-      "y": 117,
+      "y": 116,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 60,
-      "y": 125,
+      "y": 124,
       "category": "trade"
     },
     {
       "type": "marble",
       "amount": 1,
       "x": 64,
-      "y": 118,
+      "y": 117,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 58,
-      "y": 111,
+      "y": 110,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 1,
       "x": 53,
-      "y": 113,
+      "y": 112,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 57,
-      "y": 116,
+      "y": 115,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 58,
-      "y": 117,
+      "y": 116,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 60,
-      "y": 125,
+      "y": 124,
       "category": "trade"
     },
     {
       "type": "marble",
       "amount": 1,
       "x": 64,
-      "y": 118,
+      "y": 117,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 58,
-      "y": 111,
+      "y": 110,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 1,
       "x": 53,
-      "y": 113,
+      "y": 112,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 57,
-      "y": 116,
+      "y": 115,
       "category": "trade"
     }
   ],
@@ -3493,42 +3493,42 @@
       "type": "camels",
       "amount": 1,
       "x": 209,
-      "y": 109,
+      "y": 108,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 206,
-      "y": 111,
+      "y": 110,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 206,
-      "y": 114,
+      "y": 113,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 209,
-      "y": 109,
+      "y": 108,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 206,
-      "y": 111,
+      "y": 110,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 206,
-      "y": 114,
+      "y": 113,
       "category": "trade"
     }
   ],
@@ -3537,28 +3537,28 @@
       "type": "camels",
       "amount": 1,
       "x": 233,
-      "y": 135,
+      "y": 134,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 239,
-      "y": 133,
+      "y": 132,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 233,
-      "y": 135,
+      "y": 134,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 239,
-      "y": 133,
+      "y": 132,
       "category": "trade"
     }
   ],
@@ -3567,63 +3567,63 @@
       "type": "camels",
       "amount": 1,
       "x": 81,
-      "y": 126,
+      "y": 125,
       "category": "trade"
     },
     {
       "type": "olive_oil",
       "amount": 2,
       "x": 85,
-      "y": 119,
+      "y": 118,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 81,
-      "y": 122,
+      "y": 121,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 80,
-      "y": 124,
+      "y": 123,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 81,
-      "y": 126,
+      "y": 125,
       "category": "trade"
     },
     {
       "type": "olive_oil",
       "amount": 1,
       "x": 85,
-      "y": 119,
+      "y": 118,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 81,
-      "y": 122,
+      "y": 121,
       "category": "trade"
     },
     {
       "type": "olive_oil",
       "amount": 1,
       "x": 83,
-      "y": 118,
+      "y": 117,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 80,
-      "y": 124,
+      "y": 123,
       "category": "trade"
     }
   ],
@@ -3632,56 +3632,56 @@
       "type": "purple_dye",
       "amount": 3,
       "x": 152,
-      "y": 119,
+      "y": 118,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 147,
-      "y": 119,
+      "y": 118,
       "category": "trade"
     },
     {
       "type": "purple_dye",
       "amount": 1,
       "x": 150,
-      "y": 120,
+      "y": 119,
       "category": "trade"
     },
     {
       "type": "purple_dye",
       "amount": 1,
       "x": 145,
-      "y": 119,
+      "y": 118,
       "category": "trade"
     },
     {
       "type": "purple_dye",
       "amount": 1,
       "x": 151,
-      "y": 120,
+      "y": 119,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 150,
-      "y": 118,
+      "y": 117,
       "category": "trade"
     },
     {
       "type": "iron",
       "amount": 1,
       "x": 152,
-      "y": 119,
+      "y": 118,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 147,
-      "y": 119,
+      "y": 118,
       "category": "trade"
     }
   ],
@@ -3690,56 +3690,56 @@
       "type": "camels",
       "amount": 1,
       "x": 209,
-      "y": 126,
+      "y": 125,
       "category": "trade"
     },
     {
       "type": "incense",
       "amount": 3,
       "x": 212,
-      "y": 140,
+      "y": 139,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 213,
-      "y": 131,
+      "y": 130,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 209,
-      "y": 126,
+      "y": 125,
       "category": "trade"
     },
     {
       "type": "incense",
       "amount": 1,
       "x": 211,
-      "y": 130,
+      "y": 129,
       "category": "trade"
     },
     {
       "type": "incense",
       "amount": 1,
       "x": 212,
-      "y": 135,
+      "y": 134,
       "category": "trade"
     },
     {
       "type": "incense",
       "amount": 1,
       "x": 212,
-      "y": 140,
+      "y": 139,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 213,
-      "y": 131,
+      "y": 130,
       "category": "trade"
     }
   ],
@@ -3748,76 +3748,48 @@
       "type": "purple_dye",
       "amount": 3,
       "x": 196,
-      "y": 132,
+      "y": 131,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 2,
       "x": 200,
-      "y": 129,
+      "y": 128,
       "category": "trade"
     },
     {
       "type": "olive_oil",
       "amount": 2,
       "x": 200,
-      "y": 124,
+      "y": 123,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 201,
-      "y": 132,
+      "y": 131,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 203,
-      "y": 122,
+      "y": 121,
       "category": "trade"
     },
     {
       "type": "purple_dye",
       "amount": 1,
       "x": 199,
-      "y": 125,
+      "y": 124,
       "category": "trade"
     },
     {
       "type": "purple_dye",
       "amount": 1,
       "x": 196,
-      "y": 132,
-      "category": "trade"
-    },
-    {
-      "type": "olive_oil",
-      "amount": 1,
-      "x": 200,
-      "y": 122,
-      "category": "trade"
-    },
-    {
-      "type": "wine",
-      "amount": 1,
-      "x": 202,
-      "y": 121,
-      "category": "trade"
-    },
-    {
-      "type": "wine",
-      "amount": 1,
-      "x": 200,
-      "y": 129,
-      "category": "trade"
-    },
-    {
-      "type": "purple_dye",
-      "amount": 1,
-      "x": 197,
       "y": 131,
       "category": "trade"
     },
@@ -3825,21 +3797,49 @@
       "type": "olive_oil",
       "amount": 1,
       "x": 200,
-      "y": 124,
+      "y": 121,
+      "category": "trade"
+    },
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 202,
+      "y": 120,
+      "category": "trade"
+    },
+    {
+      "type": "wine",
+      "amount": 1,
+      "x": 200,
+      "y": 128,
+      "category": "trade"
+    },
+    {
+      "type": "purple_dye",
+      "amount": 1,
+      "x": 197,
+      "y": 130,
+      "category": "trade"
+    },
+    {
+      "type": "olive_oil",
+      "amount": 1,
+      "x": 200,
+      "y": 123,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 201,
-      "y": 132,
+      "y": 131,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 203,
-      "y": 122,
+      "y": 121,
       "category": "trade"
     }
   ],
@@ -3848,42 +3848,42 @@
       "type": "elephants",
       "amount": 1,
       "x": 64,
-      "y": 130,
+      "y": 129,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 40,
-      "y": 139,
+      "y": 138,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 43,
-      "y": 136,
+      "y": 135,
       "category": "trade"
     },
     {
       "type": "elephants",
       "amount": 1,
       "x": 64,
-      "y": 130,
+      "y": 129,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 40,
-      "y": 139,
+      "y": 138,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 43,
-      "y": 136,
+      "y": 135,
       "category": "trade"
     }
   ],
@@ -3892,84 +3892,84 @@
       "type": "camels",
       "amount": 1,
       "x": 105,
-      "y": 142,
+      "y": 141,
       "category": "trade"
     },
     {
       "type": "purple_dye",
       "amount": 3,
       "x": 94,
-      "y": 135,
+      "y": 134,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 3,
       "x": 79,
-      "y": 134,
+      "y": 133,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 97,
-      "y": 139,
+      "y": 138,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 105,
-      "y": 142,
+      "y": 141,
       "category": "trade"
     },
     {
       "type": "purple_dye",
       "amount": 1,
       "x": 94,
-      "y": 135,
+      "y": 134,
       "category": "trade"
     },
     {
       "type": "purple_dye",
       "amount": 1,
       "x": 99,
-      "y": 135,
+      "y": 134,
       "category": "trade"
     },
     {
       "type": "purple_dye",
       "amount": 1,
       "x": 89,
-      "y": 133,
+      "y": 132,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 1,
       "x": 79,
-      "y": 130,
+      "y": 129,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 1,
       "x": 82,
-      "y": 131,
+      "y": 130,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 1,
       "x": 79,
-      "y": 134,
+      "y": 133,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 97,
-      "y": 139,
+      "y": 138,
       "category": "trade"
     }
   ],
@@ -3978,42 +3978,42 @@
       "type": "timber",
       "amount": 1,
       "x": 132,
-      "y": 139,
+      "y": 138,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 139,
-      "y": 140,
+      "y": 139,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 130,
-      "y": 139,
+      "y": 138,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 132,
-      "y": 139,
+      "y": 138,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 139,
-      "y": 140,
+      "y": 139,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 130,
-      "y": 139,
+      "y": 138,
       "category": "trade"
     }
   ],
@@ -4022,70 +4022,70 @@
       "type": "camels",
       "amount": 1,
       "x": 190,
-      "y": 136,
+      "y": 135,
       "category": "trade"
     },
     {
       "type": "glass",
       "amount": 1,
       "x": 180,
-      "y": 137,
+      "y": 136,
       "category": "trade"
     },
     {
       "type": "grain",
       "amount": 1,
       "x": 182,
-      "y": 139,
+      "y": 138,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 1,
       "x": 184,
-      "y": 134,
+      "y": 133,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 177,
-      "y": 138,
+      "y": 137,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 190,
-      "y": 136,
+      "y": 135,
       "category": "trade"
     },
     {
       "type": "glass",
       "amount": 1,
       "x": 180,
-      "y": 137,
+      "y": 136,
       "category": "trade"
     },
     {
       "type": "grain",
       "amount": 1,
       "x": 182,
-      "y": 139,
+      "y": 138,
       "category": "trade"
     },
     {
       "type": "textiles",
       "amount": 1,
       "x": 184,
-      "y": 134,
+      "y": 133,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 177,
-      "y": 138,
+      "y": 137,
       "category": "trade"
     }
   ],
@@ -4094,56 +4094,56 @@
       "type": "camels",
       "amount": 1,
       "x": 195,
-      "y": 137,
+      "y": 136,
       "category": "trade"
     },
     {
       "type": "incense",
       "amount": 3,
       "x": 206,
-      "y": 146,
+      "y": 145,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 207,
-      "y": 140,
+      "y": 139,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 195,
-      "y": 137,
+      "y": 136,
       "category": "trade"
     },
     {
       "type": "incense",
       "amount": 1,
       "x": 207,
-      "y": 148,
+      "y": 147,
       "category": "trade"
     },
     {
       "type": "incense",
       "amount": 1,
       "x": 206,
-      "y": 146,
+      "y": 145,
       "category": "trade"
     },
     {
       "type": "incense",
       "amount": 1,
       "x": 207,
-      "y": 144,
+      "y": 143,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 207,
-      "y": 140,
+      "y": 139,
       "category": "trade"
     }
   ],
@@ -4152,28 +4152,28 @@
       "type": "camels",
       "amount": 1,
       "x": 167,
-      "y": 143,
+      "y": 142,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 168,
-      "y": 152,
+      "y": 151,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 167,
-      "y": 143,
+      "y": 142,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 168,
-      "y": 152,
+      "y": 151,
       "category": "trade"
     }
   ],
@@ -4182,70 +4182,70 @@
       "type": "camels",
       "amount": 1,
       "x": 181,
-      "y": 147,
+      "y": 146,
       "category": "trade"
     },
     {
       "type": "grain",
       "amount": 1,
       "x": 185,
-      "y": 147,
+      "y": 146,
       "category": "trade"
     },
     {
       "type": "incense",
       "amount": 3,
       "x": 187,
-      "y": 149,
+      "y": 148,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 183,
-      "y": 146,
+      "y": 145,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 181,
-      "y": 147,
+      "y": 146,
       "category": "trade"
     },
     {
       "type": "grain",
       "amount": 1,
       "x": 185,
-      "y": 147,
-      "category": "trade"
-    },
-    {
-      "type": "incense",
-      "amount": 1,
-      "x": 187,
       "y": 146,
       "category": "trade"
     },
     {
       "type": "incense",
       "amount": 1,
+      "x": 187,
+      "y": 145,
+      "category": "trade"
+    },
+    {
+      "type": "incense",
+      "amount": 1,
       "x": 183,
-      "y": 144,
+      "y": 143,
       "category": "trade"
     },
     {
       "type": "incense",
       "amount": 1,
       "x": 187,
-      "y": 149,
+      "y": 148,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 183,
-      "y": 146,
+      "y": 145,
       "category": "trade"
     }
   ],
@@ -4254,70 +4254,70 @@
       "type": "gold",
       "amount": 1,
       "x": 192,
-      "y": 152,
+      "y": 151,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 181,
-      "y": 153,
+      "y": 152,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 3,
       "x": 191,
-      "y": 155,
+      "y": 154,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 186,
-      "y": 152,
+      "y": 151,
       "category": "trade"
     },
     {
       "type": "gold",
       "amount": 1,
       "x": 192,
-      "y": 152,
+      "y": 151,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 181,
-      "y": 153,
+      "y": 152,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 1,
       "x": 191,
-      "y": 155,
+      "y": 154,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 1,
       "x": 193,
-      "y": 155,
+      "y": 154,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 1,
       "x": 189,
-      "y": 156,
+      "y": 155,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 186,
-      "y": 152,
+      "y": 151,
       "category": "trade"
     }
   ],
@@ -4326,98 +4326,98 @@
       "type": "copper",
       "amount": 1,
       "x": 185,
-      "y": 113,
+      "y": 112,
       "category": "trade"
     },
     {
       "type": "purple_dye",
       "amount": 3,
       "x": 191,
-      "y": 111,
+      "y": 110,
       "category": "trade"
     },
     {
       "type": "gold",
       "amount": 1,
       "x": 188,
-      "y": 113,
+      "y": 112,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 186,
-      "y": 110,
+      "y": 109,
       "category": "trade"
     },
     {
       "type": "copper",
       "amount": 1,
       "x": 184,
-      "y": 114,
+      "y": 113,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 188,
-      "y": 111,
+      "y": 110,
       "category": "trade"
     },
     {
       "type": "copper",
       "amount": 1,
       "x": 185,
-      "y": 113,
+      "y": 112,
       "category": "trade"
     },
     {
       "type": "purple_dye",
       "amount": 1,
       "x": 191,
-      "y": 111,
+      "y": 110,
       "category": "trade"
     },
     {
       "type": "purple_dye",
       "amount": 1,
       "x": 192,
-      "y": 108,
+      "y": 107,
       "category": "trade"
     },
     {
       "type": "purple_dye",
       "amount": 1,
       "x": 187,
-      "y": 114,
+      "y": 113,
       "category": "trade"
     },
     {
       "type": "gold",
       "amount": 1,
       "x": 187,
-      "y": 113,
+      "y": 112,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 186,
-      "y": 110,
+      "y": 109,
       "category": "trade"
     },
     {
       "type": "copper",
       "amount": 1,
       "x": 184,
-      "y": 114,
+      "y": 113,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 188,
-      "y": 111,
+      "y": 110,
       "category": "trade"
     }
   ],
@@ -4426,35 +4426,35 @@
       "type": "wine",
       "amount": 2,
       "x": 105,
-      "y": 92,
+      "y": 91,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 101,
-      "y": 87,
+      "y": 86,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 105,
-      "y": 92,
+      "y": 91,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 101,
-      "y": 89,
+      "y": 88,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 101,
-      "y": 87,
+      "y": 86,
       "category": "trade"
     }
   ],
@@ -4463,35 +4463,35 @@
       "type": "wine",
       "amount": 2,
       "x": 79,
-      "y": 97,
+      "y": 96,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 79,
-      "y": 96,
+      "y": 95,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 78,
-      "y": 99,
+      "y": 98,
       "category": "trade"
     },
     {
       "type": "wine",
       "amount": 1,
       "x": 79,
-      "y": 97,
+      "y": 96,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 79,
-      "y": 96,
+      "y": 95,
       "category": "trade"
     }
   ],
@@ -4500,42 +4500,42 @@
       "type": "wild_animals",
       "amount": 3,
       "x": 129,
-      "y": 13,
+      "y": 12,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 134,
-      "y": 20,
+      "y": 19,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 1,
       "x": 133,
-      "y": 8,
+      "y": 7,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 1,
       "x": 129,
-      "y": 13,
+      "y": 12,
       "category": "trade"
     },
     {
       "type": "wild_animals",
       "amount": 1,
       "x": 136,
-      "y": 19,
+      "y": 18,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 134,
-      "y": 20,
+      "y": 19,
       "category": "trade"
     }
   ],
@@ -4544,14 +4544,21 @@
       "type": "iron",
       "amount": 2,
       "x": 106,
-      "y": 57,
+      "y": 56,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 116,
-      "y": 57,
+      "y": 56,
+      "category": "trade"
+    },
+    {
+      "type": "iron",
+      "amount": 1,
+      "x": 106,
+      "y": 56,
       "category": "trade"
     },
     {
@@ -4562,17 +4569,10 @@
       "category": "trade"
     },
     {
-      "type": "iron",
-      "amount": 1,
-      "x": 106,
-      "y": 58,
-      "category": "trade"
-    },
-    {
       "type": "slaves",
       "amount": 1,
       "x": 116,
-      "y": 57,
+      "y": 56,
       "category": "trade"
     }
   ],
@@ -4581,28 +4581,28 @@
       "type": "timber",
       "amount": 1,
       "x": 161,
-      "y": 112,
+      "y": 111,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 160,
-      "y": 113,
+      "y": 112,
       "category": "trade"
     },
     {
       "type": "timber",
       "amount": 1,
       "x": 161,
-      "y": 112,
+      "y": 111,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 160,
-      "y": 113,
+      "y": 112,
       "category": "trade"
     }
   ],
@@ -4611,14 +4611,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 35,
-      "y": 15,
+      "y": 14,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 35,
-      "y": 15,
+      "y": 14,
       "category": "trade"
     }
   ],
@@ -4627,14 +4627,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 79,
-      "y": 43,
+      "y": 42,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 79,
-      "y": 43,
+      "y": 42,
       "category": "trade"
     }
   ],
@@ -4643,14 +4643,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 95,
-      "y": 27,
+      "y": 26,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 95,
-      "y": 27,
+      "y": 26,
       "category": "trade"
     }
   ],
@@ -4659,14 +4659,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 147,
-      "y": 29,
+      "y": 28,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 147,
-      "y": 29,
+      "y": 28,
       "category": "trade"
     }
   ],
@@ -4675,28 +4675,28 @@
       "type": "slaves",
       "amount": 1,
       "x": 188,
-      "y": 1,
+      "y": 0,
       "category": "trade"
     },
     {
       "type": "gold",
       "amount": 1,
       "x": 192,
-      "y": 1,
+      "y": 0,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 188,
-      "y": 1,
+      "y": 0,
       "category": "trade"
     },
     {
       "type": "gold",
       "amount": 1,
       "x": 192,
-      "y": 1,
+      "y": 0,
       "category": "trade"
     }
   ],
@@ -4705,14 +4705,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 181,
-      "y": 18,
+      "y": 17,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 181,
-      "y": 18,
+      "y": 17,
       "category": "trade"
     }
   ],
@@ -4721,14 +4721,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 135,
-      "y": 98,
+      "y": 97,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 135,
-      "y": 98,
+      "y": 97,
       "category": "trade"
     }
   ],
@@ -4737,14 +4737,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 132,
-      "y": 102,
+      "y": 101,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 132,
-      "y": 102,
+      "y": 101,
       "category": "trade"
     }
   ],
@@ -4753,14 +4753,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 138,
-      "y": 111,
+      "y": 110,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 138,
-      "y": 111,
+      "y": 110,
       "category": "trade"
     }
   ],
@@ -4769,14 +4769,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 124,
-      "y": 91,
+      "y": 90,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 124,
-      "y": 91,
+      "y": 90,
       "category": "trade"
     }
   ],
@@ -4785,14 +4785,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 98,
-      "y": 53,
+      "y": 52,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 98,
-      "y": 53,
+      "y": 52,
       "category": "trade"
     }
   ],
@@ -4801,14 +4801,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 130,
-      "y": 51,
+      "y": 50,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 130,
-      "y": 51,
+      "y": 50,
       "category": "trade"
     }
   ],
@@ -4817,14 +4817,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 136,
-      "y": 80,
+      "y": 79,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 136,
-      "y": 80,
+      "y": 79,
       "category": "trade"
     }
   ],
@@ -4833,14 +4833,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 83,
-      "y": 64,
+      "y": 63,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 83,
-      "y": 64,
+      "y": 63,
       "category": "trade"
     }
   ],
@@ -4849,14 +4849,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 95,
-      "y": 87,
+      "y": 86,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 95,
-      "y": 87,
+      "y": 86,
       "category": "trade"
     }
   ],
@@ -4865,14 +4865,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 96,
-      "y": 108,
+      "y": 107,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 96,
-      "y": 108,
+      "y": 107,
       "category": "trade"
     }
   ],
@@ -4881,14 +4881,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 107,
-      "y": 106,
+      "y": 105,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 107,
-      "y": 106,
+      "y": 105,
       "category": "trade"
     }
   ],
@@ -4897,14 +4897,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 8,
-      "y": 86,
+      "y": 85,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 8,
-      "y": 86,
+      "y": 85,
       "category": "trade"
     }
   ],
@@ -4913,28 +4913,28 @@
       "type": "slaves",
       "amount": 1,
       "x": 63,
-      "y": 155,
+      "y": 154,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 60,
-      "y": 151,
+      "y": 150,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 63,
-      "y": 155,
+      "y": 154,
       "category": "trade"
     },
     {
       "type": "camels",
       "amount": 1,
       "x": 60,
-      "y": 151,
+      "y": 150,
       "category": "trade"
     }
   ],
@@ -4943,35 +4943,35 @@
       "type": "slaves",
       "amount": 1,
       "x": 190,
-      "y": 89,
+      "y": 88,
       "category": "trade"
     },
     {
       "type": "lead",
       "amount": 2,
       "x": 197,
-      "y": 89,
+      "y": 88,
       "category": "trade"
     },
     {
       "type": "lead",
       "amount": 1,
       "x": 196,
-      "y": 88,
+      "y": 87,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 190,
-      "y": 89,
+      "y": 88,
       "category": "trade"
     },
     {
       "type": "lead",
       "amount": 1,
       "x": 197,
-      "y": 88,
+      "y": 87,
       "category": "trade"
     }
   ],
@@ -4980,14 +4980,14 @@
       "type": "slaves",
       "amount": 1,
       "x": 238,
-      "y": 74,
+      "y": 73,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 238,
-      "y": 74,
+      "y": 73,
       "category": "trade"
     }
   ],
@@ -4996,28 +4996,28 @@
       "type": "slaves",
       "amount": 1,
       "x": 113,
-      "y": 97,
+      "y": 96,
       "category": "trade"
     },
     {
       "type": "silver",
       "amount": 1,
       "x": 111,
-      "y": 102,
+      "y": 101,
       "category": "trade"
     },
     {
       "type": "slaves",
       "amount": 1,
       "x": 113,
-      "y": 97,
+      "y": 96,
       "category": "trade"
     },
     {
       "type": "silver",
       "amount": 1,
       "x": 112,
-      "y": 101,
+      "y": 100,
       "category": "trade"
     }
   ]
