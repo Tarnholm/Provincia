@@ -373,7 +373,12 @@ function parseDescrStratResources(text, mapHeight, tgaBuf, regionsMap) {
 function detectResourceOrientation(resourcesData, mapHeight, regionAtPixel) {
   const H = mapHeight;
   const keys = Object.keys(resourcesData || {});
-  let asIs = 0, mirrored = 0, sampled = 0;
+  // TWO signals: (1) ON-LAND — does the resource land on ANY region (regionAtPixel
+  // non-null) vs sea; this is ROBUST (no name dependency, only needs the map) and is
+  // decisive because a mirrored cache dumps most resources into the sea. (2) NAME-
+  // MATCH — lands in its OWN keyed region; stronger but fragile (needs region names
+  // to match the keys). On-land alone is enough to catch a full vertical mirror.
+  let asLand = 0, mirLand = 0, asName = 0, mirName = 0, sampled = 0;
   if (H && regionAtPixel) {
     for (const regionName of keys) {
       const entries = resourcesData[regionName];
@@ -381,16 +386,18 @@ function detectResourceOrientation(resourcesData, mapHeight, regionAtPixel) {
       for (const r of entries) {
         if (typeof r.x !== "number" || typeof r.y !== "number") continue;
         sampled++;
-        if (regionAtPixel(r.x, r.y - 1) === regionName) asIs++;
-        if (regionAtPixel(r.x, (H - r.y) - 1) === regionName) mirrored++;
+        const a = regionAtPixel(r.x, r.y - 1);
+        const m = regionAtPixel(r.x, (H - r.y) - 1);
+        if (a) { asLand++; if (a === regionName) asName++; }
+        if (m) { mirLand++; if (m === regionName) mirName++; }
       }
     }
   }
-  // Decisive mirror verdict: clearly more entries land in their region when
-  // mirrored, and the mirror explains a real majority of the sample.
-  const flipped =
-    H && sampled >= 20 && mirrored > asIs * 1.5 && mirrored > sampled * 0.5;
-  if (!flipped) return { flipped: false, sampled, asIs, mirrored, data: resourcesData };
+  const flipped = H && sampled >= 20 && (
+    (mirLand > asLand * 1.3 && mirLand > sampled * 0.6) ||   // robust on-land vote
+    (mirName > asName * 1.5 && mirName > sampled * 0.4)      // name-match vote
+  );
+  if (!flipped) return { flipped: false, sampled, asIs: asName, mirrored: mirName, data: resourcesData };
   const fixed = {};
   for (const regionName of keys) {
     const entries = resourcesData[regionName];
@@ -398,7 +405,7 @@ function detectResourceOrientation(resourcesData, mapHeight, regionAtPixel) {
       ? entries.map((r) => (typeof r.y === "number" ? { ...r, y: H - r.y } : r))
       : entries;
   }
-  return { flipped: true, sampled, asIs, mirrored, data: fixed };
+  return { flipped: true, sampled, asIs: asName, mirrored: mirName, data: fixed };
 }
 
 function parseDescrStratArmies(text) {
