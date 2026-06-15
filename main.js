@@ -6541,18 +6541,21 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
     // bracket or the rate baked into the attached save (a fresh turn-1 save is all
     // 'normal', which silently overrode the very_high Rome recommendation → 877 not 1318).
     const optimalSnapshot = { ...bracketByCity };
-    // DISPLAYED TAX MUST MATCH THE GAME (2026-06-15): when a calibration save is
-    // attached it knows the rate the player ACTUALLY set per town — the displayed
-    // faction tax has to reproduce what the in-game panel shows, so we use the
-    // save's brackets verbatim. (live julii4: save = all-normal → model 9266 vs
-    // game 9215, +0.5%; the prior "override gate" kept optimal very_high for 5
-    // towns → 11175, +21% — wrong.) The app's recommendation is NOT lost: every
-    // settlement still carries s.optimalBracket (surfaced below from
-    // growthBySettlement), so a higher recommended rate (e.g. Rome very_high)
-    // shows as a separate hint without inflating the number that must match the
-    // game. Falls back to optimal only where the save lacks a rate for a town.
+    // DISPLAY THE PLAN, NOT THE FRESH-SAVE DEFAULT (2026-06-15, v0.9.1119). Provincia
+    // is a turn-1 PLANNER: the panel must show "set these rates → get this budget", so
+    // the displayed per-town bracket AND the income are computed at the RECOMMENDED
+    // (optimal) bracket. A calibration save taken at campaign start is all default
+    // 'normal' (rates unset) — that default must NOT replace the recommendation, or
+    // every town shows Normal and the plan disappears (the v1118 bug: all-normal 9266;
+    // and the v1115 gate's asymmetry, which kept the HIGH recs but forced the LOW recs
+    // back to normal → a −0.5% town wrongly showed Normal instead of Low, and the
+    // faction read 11175). So: optimal drives the display; ONLY a bracket the player
+    // ACTIVELY changed from the default (save bracket !== 'normal') overrides it — a
+    // deliberate in-game choice the app should respect over its own recommendation.
+    // live julii4: pure optimal {vhigh:5 high:1 low:15 norm:5} → taxes 9398, which the
+    // game reproduces once those rates are set (the 9215 screenshot was pre-plan).
     if (setBracketByCity) for (const c of Object.keys(setBracketByCity)) {
-      bracketByCity[c] = setBracketByCity[c];
+      if (setBracketByCity[c] && setBracketByCity[c] !== "normal") bracketByCity[c] = setBracketByCity[c];
     }
     if (pf && pf.settlements) {
       const BR = { low: "low", normal: "norm", high: "high", very_high: "vhigh" };
@@ -6563,10 +6566,11 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
         const fin = bracketByCity[k] || "normal";
         finalDist[BR[fin] || fin] = (finalDist[BR[fin] || fin] || 0) + 1;
         const opt = optimalSnapshot[k], set = setBracketByCity && setBracketByCity[k];
-        if (set && opt && set !== opt) overrides.push(`${k}: optimal=${BR[opt] || opt}→save=${BR[set] || set}`);
+        // only an ACTIVELY-set (non-normal) save bracket actually overrides the rec
+        if (set && set !== "normal" && opt && set !== opt) overrides.push(`${k}: optimal=${BR[opt] || opt}→player-set=${BR[set] || set}`);
       }
       const distStr = Object.entries(finalDist).map(([b, n]) => `${b}:${n}`).join(" ");
-      _writeLog(`[turn1-budget] ${faction}: final brackets {${distStr}} | source=${setBracketByCity ? "SAVE-SET (overrides optimal)" : "OPTIMAL (no save)"}`);
+      _writeLog(`[turn1-budget] ${faction}: final brackets {${distStr}} | source=${setBracketByCity ? "OPTIMAL plan (player-set rates override)" : "OPTIMAL (no save)"}`);
       if (overrides.length) _writeLog(`[turn1-budget] ${faction}: save overrode optimal for ${overrides.length} towns → ${overrides.slice(0, 8).join(" | ")}${overrides.length > 8 ? ` | …+${overrides.length - 8}` : ""}`);
     }
     // 2. static income model at those brackets. When a CALIBRATION SAVE is provided,
