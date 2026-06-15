@@ -443,7 +443,12 @@ const CALIB = {
   // corpus 3000 (658) exactly. Replaces the single power-law/knee form: the power law was too
   // STEEP in the 2250-2500 band (Cosa/Arpi base +3.3 low, Metapontum +10 high) — the real
   // curve bends gently. All anchors confirmed by no-gov in-game readings.
-  taxWanchors: [[1000, 466], [1500, 540], [2250, 614.8], [3750, 701.6], [9000, 980]],
+  // WINTER-FREE re-anchor (2026-06-15): turn-1 tax no longer folds the disabling_in_winter
+  // penalty, so W(pop) is re-derived from no-governor turn-1 game reads with taxPts =
+  // base+size only — W = (live − 4·(base+size))/rate. Confirmed points: Sena 1200 low 252,
+  // Arpi 2250 vh 562, Neapolis 3750 n 365, Arretium 4500 n 360, Rome 9000 vh 1465. Low-pop
+  // (<1200) is provisional pending the Sena 100→2000 pop sweep.
+  taxWanchors: [[1000, 430], [1200, 455], [2250, 580], [3750, 649], [4500, 668], [9000, 912.67]],
   // DIFFICULTY (Feral docs, Battle_and_Campaign_Formulae.md): the human player's tax
   // and farm income scale by difficulty — Easy 1.20 / Normal 1.00 / HARD 0.92 /
   // Extreme 0.85. The user/team plays H/H, and every constant below was fit on H/H
@@ -1475,7 +1480,15 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // taxes = 0.8154·W·rate·gov − 43.2·gov — the population coefficient runs 1.79×
     // the imperial law and the flat building points collapse to ~0 (the player-side
     // sibling of the AI tier-1 subsidy regime). Validated exact at all 4 brackets.
-    const taxPts = s.taxPctParts.base + s.taxPctParts.size + s.taxPctParts.winter;
+    // TURN-1 IS SUMMER — NEVER WINTER (user, 2026-06-15, emphatic). The EDB
+    // `disabling_in_winter` taxable_income_bonus lines (e.g. bonus −10 requires
+    // disabling_in_winter) are a WINTER-ONLY penalty; at turn 1 they are inactive, so the
+    // winter bucket must be ZERO for every town. Folding it in injected spurious per-town
+    // tax (Arretium's resource-driven winter −3 vs the typical −13 split same-pop towns
+    // that are otherwise identical — Falerii/Arpi base+size −75/−77). Turn-1 tax = base +
+    // size only; the W(pop) anchors below are re-derived winter-free from no-governor game
+    // reads (Sena 252 / Arpi 562 / Neapolis 365 / Arretium 360 / Rome 1465).
+    const taxPts = s.taxPctParts.base + s.taxPctParts.size;
     // decompose so the UI can evaluate the model at ANY bracket (H calibration):
     // tax(bracket) = max(0, bracketMult × taxW + taxFlat) [pre-H]
     // multi-town: POWER-LAW up to the knee, then LINEAR to the Rome 9000 anchor (the pop

@@ -120,17 +120,15 @@ dGate("taxCalib — julii 26-town live-corpus gate (±6 after H lock)", () => {
   });
 
   it("H assignments are the exact live/model ratio (calibration is exact, not snapped)", () => {
-    // FP=4.0 + PIECEWISE-LINEAR-KNEE retune 2026-06-15: FP returned to the capital-derived
-    // 4.0 and the knee to 2500 (where the pop sweep shows linearity starting). The power
-    // law's mid-pop bow is replaced by a linear chord to the Rome 9000 anchor. Mid/high-pop H
-    // collapsed toward 1.0: Arretium (4500) 0.952→1.006, Neapolis (3750) →0.998 — model
-    // reproduces live within ~0.5% with no calibration. Low-pop towns shift slightly with FP;
-    // their residual H scatter (Fregellae .. Praeneste at the SAME pop 1500) is per-town
-    // pts/governor noise the paste absorbs, NOT a curve issue.
-    expect(byCity.Fregellae.h).toBeCloseTo(0.899, 2);  // low extreme (W(1500)=540 anchor)
-    expect(byCity.Arpi.h).toBeCloseTo(1.099, 2);       // pop 2250 (W anchor 614.8)
-    expect(byCity.Volaterrae.h).toBeCloseTo(0.997, 2); // pop 3000 on the 2250→3750 chord (658) → ~exact
-    expect(byCity.Arretium.h).toBeCloseTo(1.006, 2);   // pop 4500: ~exact
+    // WINTER-FREE re-anchor 2026-06-15: turn-1 tax dropped the disabling_in_winter penalty
+    // (turn 1 is summer) and W(pop) was re-derived from no-gov CURRENT-mod game reads. This
+    // SHADOW corpus is the older julii vintage (its 424-class reads predate the mod update),
+    // so its H values shift — the ±1 reproduction GATE still holds (H is the exact ratio);
+    // these are just the documented residual snapshots for the legacy corpus.
+    expect(byCity.Fregellae.h).toBeCloseTo(0.971, 2);
+    expect(byCity.Arpi.h).toBeCloseTo(1.100, 2);
+    expect(byCity.Volaterrae.h).toBeCloseTo(0.910, 2);
+    expect(byCity.Arretium.h).toBeCloseTo(1.178, 2);
     expect(byCity.Camerinum.h).toBeGreaterThan(1.0);
   });
 

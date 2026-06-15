@@ -65,7 +65,11 @@ describe("incomeModel — cracked constants", () => {
     expect(im.CALIB.taxW1500).toBe(540);
     // W(pop) ANCHOR TABLE: controlled no-gov julii4 readings pin the curve directly. The
     // 2250→3750 chord passes through Metapontum (2500) and the corpus 3000 exactly.
-    expect(im.CALIB.taxWanchors).toEqual([[1000, 466], [1500, 540], [2250, 614.8], [3750, 701.6], [9000, 980]]);
+    // WINTER-FREE re-anchor (2026-06-15): turn-1 tax dropped the disabling_in_winter penalty
+    // (turn 1 is summer), so W(pop) re-derived from no-gov game reads with taxPts = base+size.
+    // Confirmed exact: Sena 1200 low 252, Arpi 2250 vh 562, Neapolis 3750 n 365, Arretium 4500
+    // n 360, Rome 9000 vh 1465. Low-pop (<1200) provisional pending the Sena pop sweep.
+    expect(im.CALIB.taxWanchors).toEqual([[1000, 430], [1200, 455], [2250, 580], [3750, 649], [4500, 668], [9000, 912.67]]);
     // refit 2026-06-11: qty-weighted rv + not-at-war partners + symmetric ally parse,
     // anchored to the live julii ledger trade 4,610 (ratio 2.042 preserved)
     expect(im.CALIB.tradeLand).toBeCloseTo(0.8656, 3);

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1132",
+    date: "2026-06-15",
+    items: [
+      { type: "fix", text: "**Turn-1 tax no longer applies the winter penalty (turn 1 is summer).** The engine's `disabling_in_winter` taxable-income lines (e.g. −10 denarii, reduced to −5 with timber/pitch/hemp) are a WINTER-ONLY penalty — inactive at turn 1. The model was folding that penalty into the turn-1 tax, and because it varies by a town's resources it split otherwise-identical same-population towns (Arretium's −3 vs the typical −13) and threw individual tax values off. Turn-1 tax now uses base + size building points only, and the W(pop) population-tax curve was re-derived winter-free from no-governor game reads. Result on a fresh julii save: Arretium 360 (was 421), Arpi 562, Neapolis 365, Sena 252 — all exact — and the fix cascades: Arretium admin 176→170 (game 169) and trade fall into line. Mod-agnostic: a fresh save reads correctly with no winter artifact." },
+    ],
+  },
+  {
     version: "0.9.1131",
     date: "2026-06-15",
     items: [
