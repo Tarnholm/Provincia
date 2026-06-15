@@ -113,8 +113,8 @@ const BASELINE_TRAITS = new Set(["TurnsAlive"]);
 // farming/growth; Health and Squalor are the other settlement effects. growthFarm = farm only.
 function growthEffectOfTraits(traitList, parsed, opts) {
   const ordinal = !!(opts && opts.ordinal);
-  let farm = 0, fert = 0, health = 0, squalor = 0, squalorEstates = 0, tax = 0, trading = 0, mining = 0, influence = 0, law = 0, unrest = 0, localPop = 0, mgmt = 0; const hits = [];
-  if (!Array.isArray(traitList) || !parsed) return { farm, fert, health, squalor, squalorEstates, tax, trading, mining, influence, law, unrest, localPop, mgmt, growthFarm: 0, hits };
+  let farm = 0, fert = 0, health = 0, squalor = 0, squalorEstates = 0, tax = 0, taxSTRating = 0, trading = 0, mining = 0, influence = 0, law = 0, unrest = 0, localPop = 0, mgmt = 0; const hits = [];
+  if (!Array.isArray(traitList) || !parsed) return { farm, fert, health, squalor, squalorEstates, tax, taxSTRating, trading, mining, influence, law, unrest, localPop, mgmt, growthFarm: 0, hits };
   // ANTI-TRAIT CANCELLATION (live-cracked Thessalonike 2026-06-10): a seeded anti-trait
   // reduces the trait's effective level (Bokros: Prim 3 + Feck 1 → Prim level 2 → NO
   // squalor relief; his card shows only the architect −1, move-out test exact at ±0.5%).
@@ -162,19 +162,22 @@ function growthEffectOfTraits(traitList, parsed, opts) {
       // the true engine mechanism may be level-mapping + an unattributed −1 relief
       // rather than non-application; refine when a counterexample appears.
       if (/^Estates/.test(name)) squalorEstates += chosen.Squalor;
-      // NOTE (2026-06-14): STRating (an engine-computed bitmask meta-trait, levels ST00/ST01/…)
-      // IS a real tax channel despite its odd inversion (ST00 = +10 tax). Confirmed on Capua's
-      // controlled wine probe: model 2330 ×1.05 = live 2446; WITHOUT the STRating +10 the model
-      // is 2118 and cannot reach 2446. So it stays. (It does over-credit a few julii towns —
-      // Neapolis/Thurii/Canusium — but that's their base-tax per-campaign variance offsetting a
-      // genuine bonus, not a reason to drop a live-validated effect.)
+      // STRating (an engine-computed bitmask meta-trait, levels ST00/ST01/…) is the game's
+      // own *Settlement Tax Rating* — ST00 carries Effect TaxCollection 15. It IS a real
+      // tax channel for SINGLE-TOWN city-states (Capua wine probe: WITHOUT it the model is
+      // 2118 and cannot reach the live 2446). But in a multi-settlement faction it
+      // OVER-CREDITS governed towns: live julii4 Neapolis reads 365, BELOW the no-governor
+      // base 382, so the modelled +15% is simply not in the game there. STRating's
+      // contribution is tracked separately (taxSTRating) so incomeModel can apply it only
+      // for single-town factions and drop it for multi-town. (2026-06-15)
+      if (name === "STRating") taxSTRating += chosen.TaxCollection || 0;
       tax += chosen.TaxCollection || 0; trading += chosen.Trading || 0; mining += chosen.Mining || 0;
       influence += chosen.Influence || 0; law += chosen.Law || 0; unrest += chosen.Unrest || 0; localPop += chosen.LocalPopularity || 0;
       mgmt += chosen.Management || 0;
       hits.push(`${name}/${pts}`);
     }
   }
-  return { farm, fert, health, squalor, squalorEstates, tax, trading, mining, influence, law, unrest, localPop, mgmt, lawCorr, growthFarm: farm, hits }; // growthFarm = Farming only (Fertility is character, not settlement)
+  return { farm, fert, health, squalor, squalorEstates, tax, taxSTRating, trading, mining, influence, law, unrest, localPop, mgmt, lawCorr, growthFarm: farm, hits }; // growthFarm = Farming only (Fertility is character, not settlement)
 }
 
 // Convenience for callers holding a cracked save: build { [city]: {growthFarm, health, ...} }

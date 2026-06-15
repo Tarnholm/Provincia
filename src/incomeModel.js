@@ -1419,7 +1419,13 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const bracket = br[s.settlement] || br[s.region] || "normal";
     const mult = BRACKET_MULT[bracket] || 1;
     const gv0 = govFx[s.settlement] || govFx[s.region] || null;
-    const gTax = gv0 ? Math.max(0, 1 + (gv0.tax || 0) / 100) : 1;
+    // STRating (the game's engine-computed tax-rating meta-trait) is a real tax channel
+    // for single-town city-states (Capua-validated) but OVER-credits governed towns in a
+    // multi-settlement faction (live julii4 Neapolis 365 < no-gov base 382 → its modelled
+    // +15% isn't in the game). Drop STRating's contribution from the governor tax
+    // multiplier for multi-town factions; keep it for single-town. (2026-06-15)
+    const gvTaxPct = gv0 ? ((gv0.tax || 0) - (F.settlements.length > 1 ? (gv0.taxSTRating || 0) : 0)) : 0;
+    const gTax = gv0 ? Math.max(0, 1 + gvTaxPct / 100) : 1;
     const gTrading = gv0 ? Math.max(0, 1 + (gv0.trading || 0) / 100) : 1;
     const gMine = gv0 ? Math.max(0, 1 + (gv0.mining || 0) / 100) : 1;
     const f = Math.max(0, 1 + (s.taxPctParts.base + s.taxPctParts.winter) / 100);
