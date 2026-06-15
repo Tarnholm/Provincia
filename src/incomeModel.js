@@ -1456,8 +1456,14 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // single-town (city-states / Capua): unchanged log law (separately calibrated).
     const _wPowAt = p => CALIB.taxPowC * Math.pow(Math.max(400, p), CALIB.taxPowB);
     const _knee = CALIB.taxPopKnee || Infinity;
+    // Linear chord ONLY between the knee and the Rome 9000 anchor (the range the pop sweep
+    // covers, 2k-8k, where the curve is demonstrably straight). Below the knee and ABOVE
+    // 9000 keep the power law: low-pop convexity is real, and high-pop mega-cities (egypt/
+    // eastern) were verified to climb the power law to 31k — a linear extrapolation past
+    // 9000 would over-shoot them. Continuous at both the knee and 9000 (chord endpoints
+    // are the power-law values there).
     let wPow;
-    if (s.pop <= _knee) wPow = _wPowAt(s.pop);
+    if (s.pop <= _knee || s.pop >= 9000) wPow = _wPowAt(s.pop);
     else { const wk = _wPowAt(_knee), w9 = _wPowAt(9000); wPow = wk + (w9 - wk) / (9000 - _knee) * (s.pop - _knee); }
     const taxW = (F.settlements.length > 1 ? wPow : CALIB.taxLogK_single * wLog) * gTax;
     const taxFlat = (F.settlements.length > 1 ? CALIB.taxFlatPoint * taxPts : CALIB.taxFlatSingle) * gTax;
