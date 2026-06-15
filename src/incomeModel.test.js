@@ -63,6 +63,9 @@ describe("incomeModel — cracked constants", () => {
     // both read W(1500)=540 vs power law 534.5 — the curve is piecewise-linear through it
     // below the knee. Fixes the low-pop faction-tax undershoot.
     expect(im.CALIB.taxW1500).toBe(540);
+    // W(pop) ANCHOR TABLE: controlled no-gov julii4 readings pin the curve directly. The
+    // 2250→3750 chord passes through Metapontum (2500) and the corpus 3000 exactly.
+    expect(im.CALIB.taxWanchors).toEqual([[1000, 466], [1500, 540], [2250, 614.8], [3750, 701.6], [9000, 980]]);
     // refit 2026-06-11: qty-weighted rv + not-at-war partners + symmetric ally parse,
     // anchored to the live julii ledger trade 4,610 (ratio 2.042 preserved)
     expect(im.CALIB.tradeLand).toBeCloseTo(0.8656, 3);

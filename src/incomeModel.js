@@ -435,6 +435,15 @@ const CALIB = {
   // faction-tax undershoot (the bulk of julii4's −0.6%) without touching the knee+ region
   // (Neapolis stays exact). W is pure population (engine mechanic), so this is mod-independent.
   taxW1500: 540,
+  // W(pop) ANCHOR TABLE (2026-06-15) — the controlled no-governor julii4 readings pin the
+  // pop→W curve directly (W isolated: governor removed, W = (live − flat)/mult). Piecewise-
+  // linear between anchors; power law below 1000 and above 9000 (mega-cities climb it to 31k).
+  //   1000:466  1500:540(Corfinium)  2250:614.8(Cosa+Arpi)  3750:701.6(Neapolis)  9000:980(Rome)
+  // The 2250→3750 chord (slope 0.058) also passes through Metapontum (2500→628.9) and the
+  // corpus 3000 (658) exactly. Replaces the single power-law/knee form: the power law was too
+  // STEEP in the 2250-2500 band (Cosa/Arpi base +3.3 low, Metapontum +10 high) — the real
+  // curve bends gently. All anchors confirmed by no-gov in-game readings.
+  taxWanchors: [[1000, 466], [1500, 540], [2250, 614.8], [3750, 701.6], [9000, 980]],
   // DIFFICULTY (Feral docs, Battle_and_Campaign_Formulae.md): the human player's tax
   // and farm income scale by difficulty — Easy 1.20 / Normal 1.00 / HARD 0.92 /
   // Extreme 0.85. The user/team plays H/H, and every constant below was fit on H/H
@@ -1447,8 +1456,15 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // multi-settlement faction (live julii4 Neapolis 365 < no-gov base 382 → its modelled
     // +15% isn't in the game). Drop STRating's contribution from the governor tax
     // multiplier for multi-town factions; keep it for single-town. (2026-06-15)
-    const gvTaxPct = gv0 ? ((gv0.tax || 0) - (F.settlements.length > 1 ? (gv0.taxSTRating || 0) : 0)) : 0;
-    const gTax = gv0 ? Math.max(0, 1 + gvTaxPct / 100) : 1;
+    // GOVERNOR TAX MULTIPLIER — single-town only. The julii4 no-gov experiment (general
+    // removed, read with vs without) proved the trait-derived governor tax effect is NOISE
+    // for multi-town: Neapolis/Corfinium/Arpi/Metapontum all read tax-NEUTRAL in-game, yet
+    // the trait sum gave Metapontum −10% (a spurious Corrupt/STRating credit). So neutralize
+    // it for multi-town (gTax=1). Single-town city-states (Capua) keep the full trait tax
+    // (incl. STRating) — live-validated there. The real per-governor effects that DO exist
+    // (Cosa +5%, Rome −15%) are NOT trait-derived (they track command / high-pop squalor),
+    // so dropping the trait multiplier loses nothing the model was capturing. (2026-06-15)
+    const gTax = (gv0 && F.settlements.length === 1) ? Math.max(0, 1 + (gv0.tax || 0) / 100) : 1;
     const gTrading = gv0 ? Math.max(0, 1 + (gv0.trading || 0) / 100) : 1;
     const gMine = gv0 ? Math.max(0, 1 + (gv0.mining || 0) / 100) : 1;
     const f = Math.max(0, 1 + (s.taxPctParts.base + s.taxPctParts.winter) / 100);
@@ -1474,15 +1490,13 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // eastern) were verified to climb the power law to 31k — a linear extrapolation past
     // 9000 would over-shoot them. Continuous at both the knee and 9000 (chord endpoints
     // are the power-law values there).
-    // Piecewise W(pop): power law ≤1000 and ≥9000; controlled-anchor linears in between.
-    // 1000→1500 rises to the measured W(1500)=540 (power law is −5.5 low there); 1500→knee
-    // and knee→9000 are linear chords to the power-law/Rome anchors (keeps Neapolis exact).
+    // W(pop) from the controlled-anchor table: linear interpolation between anchors,
+    // power law outside [1000, 9000] (continuous: the end anchors equal the power law).
+    const _anch = CALIB.taxWanchors;
     let wPow;
-    const _w1500 = CALIB.taxW1500;
-    if (s.pop >= 9000 || s.pop <= 1000) wPow = _wPowAt(s.pop);
-    else if (s.pop <= 1500) { const w1 = _wPowAt(1000); wPow = w1 + (_w1500 - w1) / 500 * (s.pop - 1000); }
-    else if (s.pop <= _knee) { const wk = _wPowAt(_knee); wPow = _w1500 + (wk - _w1500) / (_knee - 1500) * (s.pop - 1500); }
-    else { const wk = _wPowAt(_knee), w9 = _wPowAt(9000); wPow = wk + (w9 - wk) / (9000 - _knee) * (s.pop - _knee); }
+    const _pp = Math.max(400, s.pop);
+    if (_pp <= _anch[0][0] || _pp >= _anch[_anch.length - 1][0]) wPow = _wPowAt(_pp);
+    else { for (let i = 1; i < _anch.length; i++) { if (_pp <= _anch[i][0]) { const [x0, y0] = _anch[i - 1], [x1, y1] = _anch[i]; wPow = y0 + (y1 - y0) * (_pp - x0) / (x1 - x0); break; } } }
     const taxW = (F.settlements.length > 1 ? wPow : CALIB.taxLogK_single * wLog) * gTax;
     const taxFlat = (F.settlements.length > 1 ? CALIB.taxFlatPoint * taxPts : CALIB.taxFlatSingle) * gTax;
     const taxH = taxHByCity ? (taxHByCity[_normCity(s.settlement)] != null ? taxHByCity[_normCity(s.settlement)]
