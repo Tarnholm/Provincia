@@ -127,8 +127,8 @@ dGate("taxCalib — julii 26-town live-corpus gate (±6 after H lock)", () => {
     // reproduces live within ~0.5% with no calibration. Low-pop towns shift slightly with FP;
     // their residual H scatter (Fregellae .. Praeneste at the SAME pop 1500) is per-town
     // pts/governor noise the paste absorbs, NOT a curve issue.
-    expect(byCity.Fregellae.h).toBeCloseTo(0.912, 2);  // low extreme
-    expect(byCity.Arpi.h).toBeCloseTo(1.104, 2);       // high extreme (twin-anomaly town)
+    expect(byCity.Fregellae.h).toBeCloseTo(0.899, 2);  // low extreme (W(1500) raised to controlled 540)
+    expect(byCity.Arpi.h).toBeCloseTo(1.109, 2);       // high extreme (twin-anomaly town)
     expect(byCity.Volaterrae.h).toBeCloseTo(0.981, 2);
     expect(byCity.Arretium.h).toBeCloseTo(1.006, 2);   // pop 4500 > knee: mid-pop bow removed → ~exact
     expect(byCity.Camerinum.h).toBeGreaterThan(1.0);
@@ -140,6 +140,6 @@ dGate("taxCalib — julii 26-town live-corpus gate (±6 after H lock)", () => {
     expect(r0.taxParts && typeof r0.taxParts.w).toBe("number");
     expect(r0.taxH).toBe(null);
     const r1 = recomputed.settlements.find(s => s.settlement === "Arpi");
-    expect(r1.taxH).toBeCloseTo(1.104, 2);
+    expect(r1.taxH).toBeCloseTo(1.109, 2);
   });
 });

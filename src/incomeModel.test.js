@@ -59,6 +59,10 @@ describe("incomeModel — cracked constants", () => {
     // law's bow (which over-estimated mid-pop). FP 4.0 + knee 2500: Neapolis 366 (live 365),
     // faction Σ within −0.6%, corpus MAE 14.2.
     expect(im.CALIB.taxPopKnee).toBe(2500);
+    // LOW-POP ANCHOR: controlled no-gov sweeps (julii3 Praeneste + shadow corpus cluster)
+    // both read W(1500)=540 vs power law 534.5 — the curve is piecewise-linear through it
+    // below the knee. Fixes the low-pop faction-tax undershoot.
+    expect(im.CALIB.taxW1500).toBe(540);
     // refit 2026-06-11: qty-weighted rv + not-at-war partners + symmetric ally parse,
     // anchored to the live julii ledger trade 4,610 (ratio 2.042 preserved)
     expect(im.CALIB.tradeLand).toBeCloseTo(0.8656, 3);

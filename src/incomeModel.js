@@ -427,6 +427,14 @@ const CALIB = {
   // Neapolis 366 (live 365), faction Σ 9158 (game 9215, −0.6%, was −184 at 4.123), corpus
   // mean-abs-err 14.2 (was 19.5).
   taxPopKnee: 2500,
+  // LOW-POP ANCHOR (2026-06-15): the controlled no-gov W-sweeps show the power law is ~5.5
+  // LOW at pop 1500 — in-game W(1500)=540 (julii3 Praeneste, governor removed, W-isolated)
+  // AND the frozen shadow-mod corpus cluster (Corfinium/Perusia/Larinum, identical no-gov)
+  // both read 540 vs power law 534.5. So below the knee the curve is piecewise-linear through
+  // the controlled anchors W(1000)=466 (=power law) → W(1500)=540 → W(knee). Fixes the low-pop
+  // faction-tax undershoot (the bulk of julii4's −0.6%) without touching the knee+ region
+  // (Neapolis stays exact). W is pure population (engine mechanic), so this is mod-independent.
+  taxW1500: 540,
   // DIFFICULTY (Feral docs, Battle_and_Campaign_Formulae.md): the human player's tax
   // and farm income scale by difficulty — Easy 1.20 / Normal 1.00 / HARD 0.92 /
   // Extreme 0.85. The user/team plays H/H, and every constant below was fit on H/H
@@ -1466,8 +1474,14 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // eastern) were verified to climb the power law to 31k — a linear extrapolation past
     // 9000 would over-shoot them. Continuous at both the knee and 9000 (chord endpoints
     // are the power-law values there).
+    // Piecewise W(pop): power law ≤1000 and ≥9000; controlled-anchor linears in between.
+    // 1000→1500 rises to the measured W(1500)=540 (power law is −5.5 low there); 1500→knee
+    // and knee→9000 are linear chords to the power-law/Rome anchors (keeps Neapolis exact).
     let wPow;
-    if (s.pop <= _knee || s.pop >= 9000) wPow = _wPowAt(s.pop);
+    const _w1500 = CALIB.taxW1500;
+    if (s.pop >= 9000 || s.pop <= 1000) wPow = _wPowAt(s.pop);
+    else if (s.pop <= 1500) { const w1 = _wPowAt(1000); wPow = w1 + (_w1500 - w1) / 500 * (s.pop - 1000); }
+    else if (s.pop <= _knee) { const wk = _wPowAt(_knee); wPow = _w1500 + (wk - _w1500) / (_knee - 1500) * (s.pop - 1500); }
     else { const wk = _wPowAt(_knee), w9 = _wPowAt(9000); wPow = wk + (w9 - wk) / (9000 - _knee) * (s.pop - _knee); }
     const taxW = (F.settlements.length > 1 ? wPow : CALIB.taxLogK_single * wLog) * gTax;
     const taxFlat = (F.settlements.length > 1 ? CALIB.taxFlatPoint * taxPts : CALIB.taxFlatSingle) * gTax;
