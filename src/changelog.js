@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1139",
+    date: "2026-06-16",
+    items: [
+      { type: "fix", text: "**Duplicated settlements fixed** (every town appeared twice — seen on a fresh cyrene save). The updated mod's descr_strat ships the entire campaign duplicated (two identical `faction` sets appended), and the parser was merging both, doubling every faction's settlement list. It now keeps only the first block per faction, exactly as the game does. Cyrene reads its 7 towns again (julii/egypt unaffected)." },
+    ],
+  },
+  {
     version: "0.9.1138",
     date: "2026-06-16",
     items: [

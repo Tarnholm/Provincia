@@ -201,7 +201,15 @@ function parseStratUncached(stratPath) {
   let curFac = null, cur = null, inSettle = false, firstSettleOfFac = false;
   for (const ln of lines) {
     const fm = ln.match(/^faction\s+([a-z_0-9]+)\s*,/i);
-    if (fm) { curFac = fm[1].toLowerCase(); factions[curFac] = factions[curFac] || { settlements: [] }; firstSettleOfFac = true; continue; }
+    if (fm) {
+      const fac = fm[1].toLowerCase();
+      // DUPLICATE faction block guard: some mod descr_strat files ship the WHOLE campaign
+      // duplicated (a second identical faction set appended — RIS 2026-06 had two
+      // `faction cyrene` blocks). The game reads the first; we must too, or every town
+      // doubles. If we've already parsed this faction, skip its block entirely.
+      if (factions[fac]) { curFac = null; cur = null; inSettle = false; continue; }
+      curFac = fac; factions[fac] = { settlements: [] }; firstSettleOfFac = true; continue;
+    }
     if (/^settlement\b/.test(ln)) {
       cur = { region: null, level: null, pop: 0, buildings: [], capital: firstSettleOfFac };
       firstSettleOfFac = false;
