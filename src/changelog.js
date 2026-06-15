@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1130",
+    date: "2026-06-15",
+    items: [
+      { type: "improvement", text: "**Full trait-mapping verification across the whole turn-1 roster.** Confirmed every trait ID on all 1,051 turn-1 characters (13,387 references) resolves to a real trait — zero unmapped — and flagged a genuine data defect: `Argos_Captured` is defined twice in the EDCT (a duplicate trait name collides two IDs on lookup). The id→name table is rebuilt from the live EDCT on every load, so traits you add map automatically; the two things that break it are duplicate names and inserting a trait mid-file (which shifts every later ID, mismapping older saves — append new traits at the end)." },
+      { type: "fix", text: "**Reverted the v1129 governor-STRating recompute — it was a wrong guess.** v1129 recomputed the engine's *Settlement Tax Rating* (ST00…ST14) live from each governor's Selflessness/Temperament. A controlled card reading refuted it: Sena's governor stores STRating 6 (→ST123 by threshold), his current Sel2/Temp5 recomputes to ST01, but his actual in-game card reads ST10 \"Considerate/Pessimistic\" — which is his ICERating value, not either STRating decode. The ICE/ST meta-ratings are engine-recomputed bitmasks whose displayed level doesn't equal the stored points, and no-governor controlled reads (Sena low 252=252, Arpi 562=562, Metapontum 583=583) confirm they carry no live settlement-tax effect for multi-town factions. So STRating now falls through on its stored points like any normal trait and the governor-tax channel stays neutralized for multi-town — income is unchanged (julii4 faction tax 9208 vs live 9215, Neapolis exact)." },
+    ],
+  },
+  {
     version: "0.9.1103",
     date: "2026-06-14",
     items: [

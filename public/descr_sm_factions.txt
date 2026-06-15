@@ -3302,7 +3302,7 @@
 			"rebel standard index": 39,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       47,
+			"logo index":       197,
 			"rebel logo index": 47,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
@@ -11480,6 +11480,79 @@
 		;;allow this faction to have a functioning family tree
 		"allow reproduction": true,
 	},
+	"libyans":
+	{
+		;;name and description
+		"string":      "LIBYANS",
+		"description": "LIBYANS_DESCR",
+
+		;;culture and (default?) character ethnicity
+		"culture":   "libyan",
+		"ethnicity": "berber",
+
+		;;tags for faction groups
+		"tags": [ "fgroup_carthaginian", ],
+
+		;;namelists
+		"namelists":
+		{
+			"men":      "massylii_men",
+			"women":    "african_women",
+			"surnames": "blank_surnames",
+		},
+
+		"logos":
+		{
+			;;logo to use in the loading screens (seperate as sprite sheets aren't loaded at that point)
+			"loading screen icon": "data/ui/faction_icons/libyans.tga",
+
+			;;standard index as declared in descr_standards (4 per page)
+			"standard index":       144,
+			"rebel standard index": 144,
+
+			;;logo index as declared in descr_sm_faction_logos (1 per page)
+			"logo index":       154,
+			"rebel logo index": 145,
+
+			;;flag models to be used on the strat map when a settlement is unoccupied
+			"strat symbol model":       "data/models_strat/symbol_libyan_rebels.CAS",
+			"strat rebel symbol model": "data/models_strat/symbol_libyan_rebels.CAS",
+		},
+
+		;;faction colours (some base game factions may have hardcoded overrides)
+		"colours":
+		{
+			"primary":   [  148,  123,  72,  ],
+			"secondary": [  225, 215, 200, ],
+
+			"family tree":
+			{
+				"background":      [  148,  123,  72,  ],
+				"font":            [  255, 255, 255, ],
+
+				"selected line":   [  255, 255, 255, ],
+				"unselected line": [  200, 187, 187, ],
+			},
+		},
+
+		"movies":
+		{
+			;;movie to play when starting a campaign
+			"intro": "data/fmv/intros/numidia_intro_1080p.wmv",
+
+			;;movie to play when this faction wins or is defeated, respectively
+			"victory": "data/fmv/victory/carthage_outro.wmv",
+			"defeat": "data/fmv/lose/masaesyli.wmv",
+		},
+
+		"available in custom battles": false,
+		"prefer naval invasions": false,
+		"default religion": "libyan",
+		"default battle ai personality": "default_personality",
+
+		;;allow this faction to have a functioning family tree
+		"allow reproduction": true,
+	},
 	"lihyan":
 	{
 		;;name and description
@@ -11713,79 +11786,6 @@
 		"available in custom battles": false,
 		"prefer naval invasions": false,
 		"default religion": "germanic",
-		"default battle ai personality": "default_personality",
-
-		;;allow this faction to have a functioning family tree
-		"allow reproduction": true,
-	},
-	"libyans":
-	{
-		;;name and description
-		"string":      "LIBYANS",
-		"description": "LIBYANS_DESCR",
-
-		;;culture and (default?) character ethnicity
-		"culture":   "libyan",
-		"ethnicity": "berber",
-
-		;;tags for faction groups
-		"tags": [ "fgroup_carthaginian", ],
-
-		;;namelists
-		"namelists":
-		{
-			"men":      "massylii_men",
-			"women":    "african_women",
-			"surnames": "blank_surnames",
-		},
-
-		"logos":
-		{
-			;;logo to use in the loading screens (seperate as sprite sheets aren't loaded at that point)
-			"loading screen icon": "data/ui/faction_icons/libyans.tga",
-
-			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       144,
-			"rebel standard index": 144,
-
-			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       154,
-			"rebel logo index": 145,
-
-			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_libyan_rebels.CAS",
-			"strat rebel symbol model": "data/models_strat/symbol_libyan_rebels.CAS",
-		},
-
-		;;faction colours (some base game factions may have hardcoded overrides)
-		"colours":
-		{
-			"primary":   [  148,  123,  72,  ],
-			"secondary": [  225, 215, 200, ],
-
-			"family tree":
-			{
-				"background":      [  148,  123,  72,  ],
-				"font":            [  255, 255, 255, ],
-
-				"selected line":   [  255, 255, 255, ],
-				"unselected line": [  200, 187, 187, ],
-			},
-		},
-
-		"movies":
-		{
-			;;movie to play when starting a campaign
-			"intro": "data/fmv/intros/numidia_intro_1080p.wmv",
-
-			;;movie to play when this faction wins or is defeated, respectively
-			"victory": "data/fmv/victory/carthage_outro.wmv",
-			"defeat": "data/fmv/lose/masaesyli.wmv",
-		},
-
-		"available in custom battles": false,
-		"prefer naval invasions": false,
-		"default religion": "libyan",
 		"default battle ai personality": "default_personality",
 
 		;;allow this faction to have a functioning family tree

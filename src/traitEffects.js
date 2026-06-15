@@ -127,6 +127,18 @@ function growthEffectOfTraits(traitList, parsed, opts) {
     if (BASELINE_TRAITS.has(name)) continue;
     const def = parsed[name]; if (!def || !def.length) continue;
     let pts = (t.level != null ? t.level : (t.points != null ? t.points : 0)) | 0;
+    // META-RATING TRAITS (ICERating "ICE…", STRating "ST…") are engine-computed bitmask
+    // ratings whose IN-GAME DISPLAYED LEVEL is recomputed from the character's underlying
+    // stats each turn and does NOT equal the threshold-decode of the stored points
+    // (live-disproven 2026-06-15: Sena's governor Publius stores STRating 6 → ST123 by
+    // threshold, and his current Sel2/Temp5 recomputes to ST01, but his CARD reads ST10
+    // "Considerate/Pessimistic" = his ICERating value 3 — neither stored nor Sel/Temp
+    // recompute reproduces it). They also carry NO live settlement tax effect for
+    // multi-town factions (no-governor controlled reads: Sena low 252 = 252, Arpi 562 =
+    // 562, Metapontum 583 = 583), so we do NOT try to reverse the engine's bitmask here —
+    // STRating falls through on its stored points like any other trait, and incomeModel
+    // keeps the governor-tax channel neutralized for multi-town. Don't recompute STRating
+    // from Sel/Temp; that was a wrong guess the Publius card refuted.
     if (ordinal) for (const a of (antiMap[name] || [])) if (seededLevel[a]) pts -= seededLevel[a];
     if (pts <= 0) continue;
     let chosen = null;
