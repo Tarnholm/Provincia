@@ -46,8 +46,9 @@ describe("incomeModel — cracked constants", () => {
     // POWER-LAW retune (2026-06-15, controlled live-game pop sweep — exact-tax-crack.md §3):
     // multi-town pop term is now a power law K·W = taxPowC·pop^taxPowB (was log), pinned on
     // Rome's neutral-governor bracket sweep (780/976/1172/1466 model vs 779/975/1171/1465
-    // live = ±1 denarius). taxFlatPoint 4.123→4.0 EXACT (capital +50 pts = +200 denarii live).
-    expect(im.CALIB.taxFlatPoint).toBeCloseTo(4.0, 3);
+    // live = ±1 denarius). taxFlatPoint stays 4.123 (26-town faction-total live check pins it;
+    // capital quick-test read ~4.0 but that over-shoots the faction Σ by +264 vs +51 at 4.123).
+    expect(im.CALIB.taxFlatPoint).toBeCloseTo(4.123, 3);
     expect(im.CALIB.taxPowC).toBeCloseTo(45.0218, 2);
     expect(im.CALIB.taxPowB).toBeCloseTo(0.33832, 4);
     // refit 2026-06-11: qty-weighted rv + not-at-war partners + symmetric ally parse,

@@ -395,7 +395,7 @@ const CALIB = {
   // 2250 vs 2500) yet tax 505 vs 583 — a gap no monotone pop-base consistent with Rome
   // (log-W) reproduces; not in any save byte (Hscan negative on 2 saves). See
   // rtw-sav-parser/exact-tax-crack.md.
-  taxBaseK: 0.4683, taxFlatPoint: 4.0,
+  taxBaseK: 0.4683, taxFlatPoint: 4.123,
   // POWER-LAW POP TERM (2026-06-15, controlled live-game derivation — see
   // rtw-sav-parser/exact-tax-crack.md §SESSION 3). The population term is a POWER LAW,
   // not the log used above: K·W = taxPowC·pop^taxPowB. Derived by sweeping a single
@@ -407,8 +407,10 @@ const CALIB = {
   // LEVEL is irrelevant to the curve (large_town == large_city at equal pop); the apparent
   // high-pop "cap" was SQUALOR in a building-stripped test town, not a tax cap — a real
   // governed/healthy settlement keeps climbing the power law without limit (verified to
-  // 31k). taxFlatPoint is now 4.0 EXACT (pinned by the capital bonus: capital = +50
-  // taxable_income_bonus = +200 denarii live, 200/50 = 4.0).
+  // 31k). taxFlatPoint stays 4.123: the capital-bonus quick-test read ~4.0 (+200 denarii /
+  // +50 pts), but the 26-town faction-total live check (julii4 main-mod, game tax 9215)
+  // pins 4.123 — at 4.0 the faction Σ over-shoots by +264, at 4.123 by +51 (the residual
+  // power-law mid-pop bulge). Rome is FP-insensitive (pts≈−1) so stays exact either way.
   taxPowC: 45.0218, taxPowB: 0.33832,
   // DIFFICULTY (Feral docs, Battle_and_Campaign_Formulae.md): the human player's tax
   // and farm income scale by difficulty — Easy 1.20 / Normal 1.00 / HARD 0.92 /
