@@ -1480,7 +1480,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // farming income is now exact; the lone seleucid +20% is a separate EDB underparse).
     const tFarm = CALIB.farmPoint * (s.farmN + s.farmLevel + (gv0 ? (gv0.growthFarm || 0) : 0)) * gardensMult;
     const tMine = CALIB.minePoint * s.mineSum * (mineQty[s.region] || 0) * gMine;
-    taxes += Math.floor(tTax); farming += tFarm; mining += tMine; // tax floored per-town (game truncates) → faction Σ = sum of displayed town taxes
+    taxes += tTax; farming += tFarm; mining += tMine; // unrounded accumulators; faction totals are floored (the game truncates each faction-total income line)
     // quantity-weighted resource value (descr_strat qty column); Set-based fallback
     const rv = tradeQtyVal[s.region] != null ? tradeQtyVal[s.region] : s.resources.reduce((a, r) => a + (r.tradeValue || 0), 0);
     const tradePts = s.tradePctParts ? (s.tradePctParts.base + s.tradePctParts.winter) : (s.tradePct || 0);
@@ -1719,7 +1719,9 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     faction: F.faction, tier: F.tier, nSettlements: F.nSettlements, settlements: sets,
     characters: ch,
     totals: {
-      taxes: Math.round(taxes), farming: Math.round(farming), mining: Math.round(mining), trade: Math.round(trade),
+      // faction-total income lines are FLOORED — the in-game panel truncates each total
+      // (live julii4: farm 73.6×ΣN = 19356.8 → game 19356, not 19357; tax/trade likewise).
+      taxes: Math.floor(taxes), farming: Math.floor(farming), mining: Math.floor(mining), trade: Math.floor(trade),
       admin, income, wages, corruption,
       // tributeIn is a CONSERVATIVE FLOOR (client profits are modeled at Normal tax
       // and the income model currently underestimates small/city-state factions —
