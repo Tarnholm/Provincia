@@ -666,11 +666,14 @@ const CALIB = {
     // curve had re-based cargo pts, drifting cyrene trade to +15% on default f 33):
     // Kyr→Ars 430, Ars→Kyr 140 (Kyrene's import row 28 = ÷5 ✓), Kyr→Eues 265
     // (one-way; Eues side weak), Eues→Ptol 191, Ptol→Eues 174.
-    "Kyrenaike>Taucheira": { ply: 22.1 },
-    "Taucheira>Kyrenaike": { ply: 70.0 },
-    "Kyrenaike>Euesperidai": { ply: 17.9 },
-    "Euesperidai>Barke": { ply: 20.4 },
-    "Barke>Euesperidai": { ply: 24.9 },
+    // REFRESHED to the current mod (2026-06-16) from live cyrene1 reads — the prior
+    // values were the old-mod vintage. f = export ÷ cargo; the export law itself
+    // (base 1.1·√popSum + slope·cargo) is queued for the cross-faction sea-trade fit.
+    "Kyrenaike>Taucheira": { ply: 13.438 },
+    "Taucheira>Kyrenaike": { ply: 35.0 },
+    "Kyrenaike>Euesperidai": { ply: 10.003 },
+    "Euesperidai>Barke": { ply: 10.952 },
+    "Barke>Euesperidai": { ply: 13.679 },
   },
   // LIVE-READ lane sets (see seaLanesByRegion seeding): exA/exB = that side
   // exports. Sources: capua t1 trio scroll, julii 26-town t1 corpus, mamertines

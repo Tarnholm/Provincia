@@ -89,7 +89,7 @@ describe("incomeModel — cracked constants", () => {
     // 28 julii/capua/kyzikos towns + 7 cyrene towns (TASK B revalidation 2026-06-12)
     expect(Object.keys(im.CALIB.landLaneRows).length).toBe(35);
     // cyrene sea-lane f pins + egypt per-town live trade table (same revalidation)
-    expect(im.CALIB.seaLaneF["Kyrenaike>Taucheira"].ply).toBe(22.1);
+    expect(im.CALIB.seaLaneF["Kyrenaike>Taucheira"].ply).toBe(13.438); // refreshed to current mod (live cyrene1)
     expect(Object.keys(im.CALIB.tradeMeasuredByPlayer.ptolemaic).length).toBe(83);
     // corruption refit 3 2026-06-14 (first FULL 26-town live corruption corpus,
     // Republic-of-Rome julii save — corruption-refit-3.md). Joint fit on the live

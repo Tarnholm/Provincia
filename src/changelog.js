@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1140",
+    date: "2026-06-16",
+    items: [
+      { type: "fix", text: "**Cyrene sea trade refreshed to the current mod — Kyrene reads 1068 exactly.** The cyrene coast's per-lane sea values were from a previous mod vintage; refreshed from live cyrene1 reads (Kyrene→Arsinoe 430, →Euesperides 265, etc.). Along the way the sea law's shape got cracked: export = `1.1·√(popExporter+popImporter)` + `slope·cargo`, where cargo is Σ qty×tradeValue (the honey-only control route — 4 units worth 140 — proved the population base term and that cargo *type* is already captured by value-weighting). The import = export÷5 rule is confirmed exact. The remaining `slope(distance)` piece needs a cross-faction sea-route sweep to fit; readings now accumulate in docs/sea-trade-corpus.json so it can replace every sea pin in one go." },
+    ],
+  },
+  {
     version: "0.9.1139",
     date: "2026-06-16",
     items: [

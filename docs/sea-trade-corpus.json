@@ -1,0 +1,19 @@
+{
+  "_doc": "Sea-trade EXPORT-flow corpus for cracking the per-lane sea law. Each row is a live in-game trade-scroll EXPORT value (the exporter's earning on that route). IMPORT rows are NOT stored — the import = export/5 law is confirmed exact (Kyrene exports 430 to Arsinoe -> Arsinoe imports 86 = 430/5; Arsinoe exports 140 -> Kyrene imports 28 = 140/5).",
+  "law_hypothesis": {
+    "form": "export = base + slope(d) * cargo",
+    "base": "1.10 * sqrt(popExporter + popImporter)  — confirmed: Kyrene<->Arsinoe popSum 8100 -> base ~99; Arsinoe->Kyrene honey-only 4 cargo -> 140 = 99 + ~41",
+    "cargo": "Sum over traded goods of qty * tradeValue (already type-weighted: spices=3, salt=2, bulk=1). The honey-only control (value 1) fits the SAME slope as mixed cargo, proving type is captured by the value-weighting, not a separate term.",
+    "slope_open": "slope depends on distance d (and possibly exporter size). Observed: d24 -> ~10.3, d32 -> ~6.2, d16 -> ~7. Non-monotonic on 6 cyrene points; needs cross-faction data to pin.",
+    "import": "import_row = export_row / 5 (exact, confirmed repeatedly)",
+    "rights": "cross-faction routes multiply by trade-deal rights (0.33 if no rights, else 1). Intra-faction (all cyrene rows below) = 1."
+  },
+  "needed_to_crack": "Same sea-route sweep on 1-2 more factions in different seas (Italy / Aegean / Egypt-Nile) with varied distances, good-types, and trade-deal states. Then one regression fits base + slope(d) and replaces ALL the seaLaneF pins (julii included).",
+  "rows": [
+    { "faction": "cyrene", "mod": "RIS 2026-06", "from": "Kyrene",      "to": "Arsinoe-Kyrenaike", "fromRegion": "Kyrenaike",   "toRegion": "Taucheira",   "cargo": 32.0, "d": 24, "popFrom": 6200, "popTo": 1900, "portFrom": 0, "portTo": 0, "goods": ["horses","grain","olives","spices","perfumes"],          "export": 430 },
+    { "faction": "cyrene", "mod": "RIS 2026-06", "from": "Kyrene",      "to": "Euesperides",       "fromRegion": "Kyrenaike",   "toRegion": "Euesperidai", "cargo": 26.49,"d": 32, "popFrom": 6200, "popTo": 2000, "portFrom": 0, "portTo": 2, "goods": ["horses","olives","wine","spices","perfumes"],            "export": 265 },
+    { "faction": "cyrene", "mod": "RIS 2026-06", "from": "Euesperides", "to": "Ptolemais-Kyrenaike","fromRegion": "Euesperidai", "toRegion": "Barke",       "cargo": 17.44,"d": 16, "popFrom": 2000, "popTo": 3000, "portFrom": 2, "portTo": 2, "goods": [],                                                       "export": 191 },
+    { "faction": "cyrene", "mod": "RIS 2026-06", "from": "Ptolemais-Kyrenaike", "to": "Euesperides","fromRegion": "Barke",       "toRegion": "Euesperidai", "cargo": 12.72,"d": 16, "popFrom": 3000, "popTo": 2000, "portFrom": 2, "portTo": 2, "goods": [],                                                       "export": 174 },
+    { "faction": "cyrene", "mod": "RIS 2026-06", "from": "Arsinoe-Kyrenaike", "to": "Kyrene",       "fromRegion": "Taucheira",   "toRegion": "Kyrenaike",   "cargo": 4.0,  "d": 24, "popFrom": 1900, "popTo": 6200, "portFrom": 0, "portTo": 0, "goods": ["honey"],                                                "export": 140 }
+  ]
+}
