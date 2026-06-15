@@ -69,7 +69,7 @@ describe("incomeModel — cracked constants", () => {
     // (turn 1 is summer), so W(pop) re-derived from no-gov game reads with taxPts = base+size.
     // Confirmed exact: Sena 1200 low 252, Arpi 2250 vh 562, Neapolis 3750 n 365, Arretium 4500
     // n 360, Rome 9000 vh 1465. Low-pop (<1200) provisional pending the Sena pop sweep.
-    expect(im.CALIB.taxWanchors).toEqual([[1000, 430], [1200, 455], [1500, 515], [2250, 580], [3000, 592.5], [3750, 649], [4500, 668], [9000, 912.67]]);
+    expect(im.CALIB.taxWanchors).toEqual([[1000, 430], [1200, 455], [1500, 515], [2200, 577.5], [2250, 580], [3000, 592.5], [3750, 649], [4500, 668], [9000, 912.67]]);
     // refit 2026-06-11: qty-weighted rv + not-at-war partners + symmetric ally parse,
     // anchored to the live julii ledger trade 4,610 (ratio 2.042 preserved)
     expect(im.CALIB.tradeLand).toBeCloseTo(0.8656, 3);
