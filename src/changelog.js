@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1131",
+    date: "2026-06-15",
+    items: [
+      { type: "fix", text: "**Governor farm-level cap no longer over-credits seeded estate traits.** The turn-1 farm cap (which corrects start-rolled GoodFarmer/BadFarmer point-inflation) was firing on every farm-bearing trait, including the seeded multi-effect Estates trait. On a fresh julii save Rome's governor (Estates 26 points → level 3, Farming 0) was wrongly bumped to his seeded estate level (Farming +1), inflating faction farming 19356 → 19429. The cap is now restricted to the start-rolled GoodFarmer/BadFarmer traits it was designed for, so seeded/accrued traits keep the points-decoded level the game actually uses — faction farming is exact (19356) again and the fix is mod-agnostic (no per-mod recalibration): a fresh save reads correctly whatever's in the EDCT." },
+    ],
+  },
+  {
     version: "0.9.1130",
     date: "2026-06-15",
     items: [

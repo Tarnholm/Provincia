@@ -265,6 +265,13 @@ function govEffectByCityFromSave(cracked, parsed, modDataDir) {
       for (const t of ch.traits) {
         const name = t && (t.name || t.trait); if (!name) continue;
         const def = parsed[name]; if (!def || !def.length) continue;
+        // ONLY the start-ROLLED farm traits suffer the points-inflation this cap corrects
+        // (GoodFarmer/BadFarmer are rolled at CharacterComesOfAge with random points).
+        // SEEDED / accrued multi-effect traits (Estates, Propraetor_*, Being*) keep the
+        // points-decoded level the game actually uses — applying the seed-override to them
+        // double-counts: Rome's seeded Estates (26 pts → level 3, Farming 0) was wrongly
+        // bumped to the seed level (Farming +1), inflating faction farm 19356 → 19429.
+        if (name !== "GoodFarmer" && name !== "BadFarmer") continue;
         if (!def.some(L => L.Farming)) continue;            // farm-bearing traits only
         const pts = (t.points != null ? t.points : t.level) | 0;
         let thr = null; for (const L of def) if (L.threshold <= pts) thr = L; if (!thr) thr = def[0]; // points path (L1-floored)
