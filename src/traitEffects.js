@@ -238,6 +238,29 @@ function govEffectByCityFromSave(cracked, parsed, modDataDir) {
       e = growthEffectOfTraits(list, parsed, { ordinal: true });
     } else {
       e = growthEffectOfTraits(ch.traits, parsed);
+      // TURN-1 FARM-LEVEL CAP (2026-06-15): on a turn-1 calibration save a farm trait's
+      // start-randomized POINTS must not re-level it past its grant level. The points→
+      // threshold path over-levels: live julii4 Metapontum's general is a Roman patrician
+      // (no GoodFarmer seeded) who ROLLED GoodFarmer at start — the save stores 6 points,
+      // which reads as Farmer (+2 farm), but in-game it sits at Grower (+1) (faction farm
+      // 19356 = seed baseline 19283 + exactly ONE level; the model gave +2 → 19430). So
+      // cap GoodFarmer/BadFarmer to their effective turn-1 level: the descr_strat SEED
+      // ordinal if seeded, else 1 (the start-roll grant level). Re-credit the FARM channel
+      // by the delta. This aligns the save path with the no-save strat path (validated farm
+      // 10/11 exact), which already reads seed levels directly. Tax/law stay on the points
+      // path (the full seededOrdinals switch regressed cyrene taxes).
+      let farmDelta = 0;
+      for (const t of ch.traits) {
+        const name = t && (t.name || t.trait); if (!name) continue;
+        const def = parsed[name]; if (!def || !def.length) continue;
+        if (!def.some(L => L.Farming)) continue;            // farm-bearing traits only
+        const pts = (t.points != null ? t.points : t.level) | 0;
+        let thr = null; for (const L of def) if (L.threshold <= pts) thr = L; if (!thr) thr = def[0]; // points path (L1-floored)
+        const seedLvl = (cs && cs.seed && cs.seed[name] != null) ? cs.seed[name] : 1;                  // seed ordinal, else grant level 1
+        const eff = def[Math.max(0, Math.min(def.length - 1, seedLvl - 1))];
+        farmDelta += ((eff && eff.Farming) || 0) - ((thr && thr.Farming) || 0);
+      }
+      if (farmDelta) { e.farm += farmDelta; e.growthFarm += farmDelta; if (e.hits) e.hits.push(`farmLvlΔ${farmDelta > 0 ? "+" : ""}${farmDelta}`); }
     }
     // follower (ancillary) effects from the seed — same settlement catalysts as traits
     if (ancFx && cs) for (const a of (cs.anc || [])) {
