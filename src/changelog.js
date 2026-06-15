@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1138",
+    date: "2026-06-16",
+    items: [
+      { type: "change", text: "**Removed the manual calibration paste boxes** — the 🎯 Tax calibration and 🏛 Corruption calibration paste panels (and the 🧪 copy experiment protocol button) are gone now that the tax/farm/trade/admin model is exact from the mod files directly. No more pasting live readings per campaign." },
+    ],
+  },
+  {
     version: "0.9.1137",
     date: "2026-06-16",
     items: [
