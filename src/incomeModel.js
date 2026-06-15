@@ -412,6 +412,17 @@ const CALIB = {
   // pins 4.123 — at 4.0 the faction Σ over-shoots by +264, at 4.123 by +51 (the residual
   // power-law mid-pop bulge). Rome is FP-insensitive (pts≈−1) so stays exact either way.
   taxPowC: 45.0218, taxPowB: 0.33832,
+  // PIECEWISE-LINEAR ABOVE THE KNEE (2026-06-15, controlled pop-sweep §SESSION 3 re-read):
+  // the user's fine pop sweeps (Corfinium 100-step then 1000-step, stripped town, no gov)
+  // show tax rising LINEARLY with pop above ~2-3k (constant Δ≈+57/1000 pop), NOT on the
+  // concave power law. A 2-param power law fit to only Rome's endpoints (1000,9000) BOWS
+  // ABOVE the straight truth between them — that bow IS the systematic mid-pop over-estimate
+  // (corpus pop 3000-4500 ran ~3-5% high; Neapolis 382 vs live 365). So: keep the power law
+  // up to the knee (it fits the low-pop convexity), then go LINEAR to the Rome 9000 anchor.
+  // Continuous at the knee, exact at Rome. knee=3000 centres the clean targets (Neapolis
+  // 367 vs 365, Arretium 422 vs 424). With the bulge gone, taxFlatPoint can return to the
+  // clean capital-derived 4.0 (the +264 faction over-shoot at 4.0 WAS the bulge).
+  taxPopKnee: 3000,
   // DIFFICULTY (Feral docs, Battle_and_Campaign_Formulae.md): the human player's tax
   // and farm income scale by difficulty — Easy 1.20 / Normal 1.00 / HARD 0.92 /
   // Extreme 0.85. The user/team plays H/H, and every constant below was fit on H/H
@@ -1439,9 +1450,15 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const taxPts = s.taxPctParts.base + s.taxPctParts.size + s.taxPctParts.winter;
     // decompose so the UI can evaluate the model at ANY bracket (H calibration):
     // tax(bracket) = max(0, bracketMult × taxW + taxFlat) [pre-H]
-    // multi-town: POWER-LAW pop term (taxPowC·pop^taxPowB, gives K·W directly).
+    // multi-town: POWER-LAW up to the knee, then LINEAR to the Rome 9000 anchor (the pop
+    // sweep proved the curve is linear above ~3k; the power law's bow above the chord was
+    // the mid-pop over-estimate — see CALIB.taxPopKnee).
     // single-town (city-states / Capua): unchanged log law (separately calibrated).
-    const wPow = CALIB.taxPowC * Math.pow(Math.max(400, s.pop), CALIB.taxPowB);
+    const _wPowAt = p => CALIB.taxPowC * Math.pow(Math.max(400, p), CALIB.taxPowB);
+    const _knee = CALIB.taxPopKnee || Infinity;
+    let wPow;
+    if (s.pop <= _knee) wPow = _wPowAt(s.pop);
+    else { const wk = _wPowAt(_knee), w9 = _wPowAt(9000); wPow = wk + (w9 - wk) / (9000 - _knee) * (s.pop - _knee); }
     const taxW = (F.settlements.length > 1 ? wPow : CALIB.taxLogK_single * wLog) * gTax;
     const taxFlat = (F.settlements.length > 1 ? CALIB.taxFlatPoint * taxPts : CALIB.taxFlatSingle) * gTax;
     const taxH = taxHByCity ? (taxHByCity[_normCity(s.settlement)] != null ? taxHByCity[_normCity(s.settlement)]

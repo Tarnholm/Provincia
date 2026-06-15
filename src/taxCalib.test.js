@@ -120,14 +120,17 @@ dGate("taxCalib — julii 26-town live-corpus gate (±6 after H lock)", () => {
   });
 
   it("H assignments are the exact live/model ratio (calibration is exact, not snapped)", () => {
-    // POWER-LAW retune 2026-06-15 (log→power law, FP 4.123→4.0): H values recomputed
-    // against this shadow-mod corpus. The new base is exact at the ends (Rome ±1) and
-    // runs ~7% high in the mid-pop range, so mid-size towns' H drifts below 1.0 — the
-    // paste calibration absorbs it exactly (the ±1 reproduction test above still passes).
-    expect(byCity.Fregellae.h).toBeCloseTo(0.922, 2);  // low extreme
-    expect(byCity.Arpi.h).toBeCloseTo(1.127, 2);       // high extreme (the twin-anomaly town)
-    expect(byCity.Volaterrae.h).toBeCloseTo(0.978, 2);
-    expect(byCity.Arretium.h).toBeCloseTo(0.952, 2);
+    // POWER-LAW + PIECEWISE-LINEAR-KNEE retune 2026-06-15: the pop sweep showed the curve
+    // is LINEAR above ~3k, so the power law's mid-pop bow was removed (knee=3000 → linear to
+    // the Rome 9000 anchor). That collapsed the mid/high-pop H drift toward 1.0: Arretium
+    // (pop 4500) went 0.952 → ~1.005 (model now reproduces live within 0.5%, no calibration
+    // needed). Low-pop towns (≤knee) are unchanged — their H scatter (Fregellae 0.922 ..
+    // Praeneste 1.235 at the SAME pop 1500) is per-town pts/governor noise the paste absorbs,
+    // NOT a curve issue. Volaterrae sits exactly at the knee so is unchanged.
+    expect(byCity.Fregellae.h).toBeCloseTo(0.922, 2);  // low extreme (≤knee, unchanged)
+    expect(byCity.Arpi.h).toBeCloseTo(1.127, 2);       // high extreme (≤knee, unchanged)
+    expect(byCity.Volaterrae.h).toBeCloseTo(0.978, 2); // pop 3000 = knee, unchanged
+    expect(byCity.Arretium.h).toBeCloseTo(1.005, 2);   // pop 4500 > knee: mid-pop bow removed → ~exact
     expect(byCity.Camerinum.h).toBeGreaterThan(1.0);
   });
 

@@ -51,6 +51,10 @@ describe("incomeModel — cracked constants", () => {
     expect(im.CALIB.taxFlatPoint).toBeCloseTo(4.123, 3);
     expect(im.CALIB.taxPowC).toBeCloseTo(45.0218, 2);
     expect(im.CALIB.taxPowB).toBeCloseTo(0.33832, 4);
+    // PIECEWISE-LINEAR KNEE (2026-06-15): the pop sweep showed tax rises LINEARLY above ~3k,
+    // so above the knee W goes linear to the Rome 9000 anchor instead of following the power
+    // law's bow (which over-estimated mid-pop). Fixes Arretium H 0.952→1.005, Neapolis 382→367.
+    expect(im.CALIB.taxPopKnee).toBe(3000);
     // refit 2026-06-11: qty-weighted rv + not-at-war partners + symmetric ally parse,
     // anchored to the live julii ledger trade 4,610 (ratio 2.042 preserved)
     expect(im.CALIB.tradeLand).toBeCloseTo(0.8656, 3);
