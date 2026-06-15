@@ -1480,7 +1480,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // farming income is now exact; the lone seleucid +20% is a separate EDB underparse).
     const tFarm = CALIB.farmPoint * (s.farmN + s.farmLevel + (gv0 ? (gv0.growthFarm || 0) : 0)) * gardensMult;
     const tMine = CALIB.minePoint * s.mineSum * (mineQty[s.region] || 0) * gMine;
-    taxes += tTax; farming += tFarm; mining += tMine;
+    taxes += Math.floor(tTax); farming += tFarm; mining += tMine; // tax floored per-town (game truncates) → faction Σ = sum of displayed town taxes
     // quantity-weighted resource value (descr_strat qty column); Set-based fallback
     const rv = tradeQtyVal[s.region] != null ? tradeQtyVal[s.region] : s.resources.reduce((a, r) => a + (r.tradeValue || 0), 0);
     const tradePts = s.tradePctParts ? (s.tradePctParts.base + s.tradePctParts.winter) : (s.tradePct || 0);
@@ -1654,7 +1654,9 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // taxParts: pre-H bracket decomposition (tax(b) = max(0, mult_b·w + flat));
       // taxH: the applied per-campaign calibration multiplier (null = uncalibrated)
       taxParts: { w: taxW, flat: taxFlat }, taxH: taxH != null ? taxH : null,
-      bracket, taxes: Math.round(tTax), farming: Math.round(tFarm), mining: Math.round(tMine), trade: Math.round(tTrade), admin: Math.round(tAdmin),
+      // TAX is FLOORED, not rounded — the in-game panel truncates (live: Neapolis model
+      // 365.628 displays 365, not 366). Farm/trade/admin keep round (they already match live).
+      bracket, taxes: Math.floor(tTax), farming: Math.round(tFarm), mining: Math.round(tMine), trade: Math.round(tTrade), admin: Math.round(tAdmin),
       corruption: Math.round(corrAmt),
       corrCalibrated: corrOv != null ? true : undefined,
       // settlement NET income (the in-game scroll's "Net Income"): gross − corruption
