@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1133",
+    date: "2026-06-15",
+    items: [
+      { type: "fix", text: "**Low-pop tax curve: added the pop-1500 W anchor (Pisae).** After the winter-free re-anchor, pop-1500 towns interpolated between the 1200 and 2250 anchors, which sagged ~25 denarii low (Pisae read 128 vs game 148). Pinned W(1500)=515 from Pisae's no-governor read; Pisae is now exact and the confirmed towns (Arretium 360, Arpi 562, Neapolis 365, Sena 252) are unchanged. Low-pop anchors continue to firm up as controlled reads come in (the Sena 100→2000 pop sweep will lock the sub-1200 range)." },
+    ],
+  },
+  {
     version: "0.9.1132",
     date: "2026-06-15",
     items: [

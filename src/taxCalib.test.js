@@ -125,7 +125,7 @@ dGate("taxCalib — julii 26-town live-corpus gate (±6 after H lock)", () => {
     // SHADOW corpus is the older julii vintage (its 424-class reads predate the mod update),
     // so its H values shift — the ±1 reproduction GATE still holds (H is the exact ratio);
     // these are just the documented residual snapshots for the legacy corpus.
-    expect(byCity.Fregellae.h).toBeCloseTo(0.971, 2);
+    expect(byCity.Fregellae.h).toBeCloseTo(0.910, 2);
     expect(byCity.Arpi.h).toBeCloseTo(1.100, 2);
     expect(byCity.Volaterrae.h).toBeCloseTo(0.910, 2);
     expect(byCity.Arretium.h).toBeCloseTo(1.178, 2);
