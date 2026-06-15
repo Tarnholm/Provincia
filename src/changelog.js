@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1137",
+    date: "2026-06-16",
+    items: [
+      { type: "fix", text: "**Thurii tax + Arretium trade now exact.** Added a pop-2200 W anchor so Thurii (very high) reads 542 instead of 539. And corrected Arretium's land-trade pin to Etruria_Occidentalis (was a stale 16 from the previous mod vintage; the current mod's route is 15) — Arretium trade now 87, matching the scroll route-by-route (15/7/22/21/22). Verified Venusia (193 = 141 land + 52 sea) and Thurii (219) trade unchanged." },
+    ],
+  },
+  {
     version: "0.9.1135",
     date: "2026-06-16",
     items: [

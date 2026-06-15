@@ -563,7 +563,7 @@ const CALIB = {
     "Etruria_Septentrionalis": { "Apuania": 3, "Boia": 5, "Etruria_Occidentalis": 14 },
     "Etruria_Occidentalis": { "Etruria_Septentrionalis": 12, "Boia": 3, "Etruria": 9, "Etruria_Meridionalis": 12 },
     "Etruria_Meridionalis": { "Etruria_Occidentalis": 40, "Etruria": 37, "Velzna": 36, "Faliscia": 37, "Roma": 53 },
-    "Etruria": { "Etruria_Occidentalis": 16, "Sassinia": 7, "Etruria_Orientalis": 22, "Etruria_Meridionalis": 21, "Velzna": 22 },
+    "Etruria": { "Etruria_Occidentalis": 15, "Sassinia": 7, "Etruria_Orientalis": 22, "Etruria_Meridionalis": 21, "Velzna": 22 },
     "Etruria_Orientalis": { "Etruria": 11, "Umbria": 7, "Camertia-Nahartia": 5, "Velzna": 8 },
     "Faliscia": { "Velzna": 15, "Camertia-Nahartia": 9, "Etruria_Meridionalis": 16, "Roma": 13 },
     "Campania": { "Latium_Novum": 91, "Pentria-Carricinia": 60, "Samnium": 184, "Parthenope": 155 },
