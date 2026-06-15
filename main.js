@@ -6541,18 +6541,18 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
     // bracket or the rate baked into the attached save (a fresh turn-1 save is all
     // 'normal', which silently overrode the very_high Rome recommendation → 877 not 1318).
     const optimalSnapshot = { ...bracketByCity };
-    // OVERRIDE GATE (2026-06-14): a calibration save taken at campaign start (the user's
-    // workflow: "save right away") has EVERY town at the game default 'normal' — the
-    // player hasn't set rates yet. Letting that default normal win silently downgraded
-    // Rome's very_high recommendation to normal (877 not 1318). So: a save bracket of
-    // 'normal' does NOT override a HIGHER optimal — but any rate the player actively
-    // changed (low / high / very_high) still wins, so a genuinely taxes-set save matches
-    // the game exactly. Net: Rome reads 1318 whether the save is fresh or taxes-set.
-    const RANK = { low: 0, normal: 1, high: 2, very_high: 3 };
+    // DISPLAYED TAX MUST MATCH THE GAME (2026-06-15): when a calibration save is
+    // attached it knows the rate the player ACTUALLY set per town — the displayed
+    // faction tax has to reproduce what the in-game panel shows, so we use the
+    // save's brackets verbatim. (live julii4: save = all-normal → model 9266 vs
+    // game 9215, +0.5%; the prior "override gate" kept optimal very_high for 5
+    // towns → 11175, +21% — wrong.) The app's recommendation is NOT lost: every
+    // settlement still carries s.optimalBracket (surfaced below from
+    // growthBySettlement), so a higher recommended rate (e.g. Rome very_high)
+    // shows as a separate hint without inflating the number that must match the
+    // game. Falls back to optimal only where the save lacks a rate for a town.
     if (setBracketByCity) for (const c of Object.keys(setBracketByCity)) {
-      const set = setBracketByCity[c], opt = optimalSnapshot[c];
-      if (set === "normal" && opt && RANK[opt] > RANK.normal) continue; // default normal won't suppress a higher rec
-      bracketByCity[c] = set;
+      bracketByCity[c] = setBracketByCity[c];
     }
     if (pf && pf.settlements) {
       const BR = { low: "low", normal: "norm", high: "high", very_high: "vhigh" };
