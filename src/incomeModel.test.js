@@ -48,13 +48,17 @@ describe("incomeModel — cracked constants", () => {
     // Rome's neutral-governor bracket sweep (780/976/1172/1466 model vs 779/975/1171/1465
     // live = ±1 denarius). taxFlatPoint stays 4.123 (26-town faction-total live check pins it;
     // capital quick-test read ~4.0 but that over-shoots the faction Σ by +264 vs +51 at 4.123).
-    expect(im.CALIB.taxFlatPoint).toBeCloseTo(4.123, 3);
+    // FP = 4.0 EXACT — the capital bonus pins it (+50 taxable_income_bonus = +200 denarii,
+    // 200/50 = 4.0; live capital-reorder sweep). 4.123 had been a kludge compensating the
+    // power-law mid-pop bulge; with the bulge removed (piecewise-linear knee) FP returns to 4.0.
+    expect(im.CALIB.taxFlatPoint).toBeCloseTo(4.0, 3);
     expect(im.CALIB.taxPowC).toBeCloseTo(45.0218, 2);
     expect(im.CALIB.taxPowB).toBeCloseTo(0.33832, 4);
-    // PIECEWISE-LINEAR KNEE (2026-06-15): the pop sweep showed tax rises LINEARLY above ~3k,
+    // PIECEWISE-LINEAR KNEE (2026-06-15): the pop sweep showed tax rises LINEARLY above ~2k,
     // so above the knee W goes linear to the Rome 9000 anchor instead of following the power
-    // law's bow (which over-estimated mid-pop). Fixes Arretium H 0.952→1.005, Neapolis 382→367.
-    expect(im.CALIB.taxPopKnee).toBe(3000);
+    // law's bow (which over-estimated mid-pop). FP 4.0 + knee 2500: Neapolis 366 (live 365),
+    // faction Σ within −0.6%, corpus MAE 14.2.
+    expect(im.CALIB.taxPopKnee).toBe(2500);
     // refit 2026-06-11: qty-weighted rv + not-at-war partners + symmetric ally parse,
     // anchored to the live julii ledger trade 4,610 (ratio 2.042 preserved)
     expect(im.CALIB.tradeLand).toBeCloseTo(0.8656, 3);

@@ -395,7 +395,7 @@ const CALIB = {
   // 2250 vs 2500) yet tax 505 vs 583 — a gap no monotone pop-base consistent with Rome
   // (log-W) reproduces; not in any save byte (Hscan negative on 2 saves). See
   // rtw-sav-parser/exact-tax-crack.md.
-  taxBaseK: 0.4683, taxFlatPoint: 4.123,
+  taxBaseK: 0.4683, taxFlatPoint: 4.0,
   // POWER-LAW POP TERM (2026-06-15, controlled live-game derivation — see
   // rtw-sav-parser/exact-tax-crack.md §SESSION 3). The population term is a POWER LAW,
   // not the log used above: K·W = taxPowC·pop^taxPowB. Derived by sweeping a single
@@ -419,10 +419,14 @@ const CALIB = {
   // ABOVE the straight truth between them — that bow IS the systematic mid-pop over-estimate
   // (corpus pop 3000-4500 ran ~3-5% high; Neapolis 382 vs live 365). So: keep the power law
   // up to the knee (it fits the low-pop convexity), then go LINEAR to the Rome 9000 anchor.
-  // Continuous at the knee, exact at Rome. knee=3000 centres the clean targets (Neapolis
-  // 367 vs 365, Arretium 422 vs 424). With the bulge gone, taxFlatPoint can return to the
-  // clean capital-derived 4.0 (the +264 faction over-shoot at 4.0 WAS the bulge).
-  taxPopKnee: 3000,
+  // Continuous at the knee, exact at Rome. KNEE=2500 + FP=4.0: with FP restored to the
+  // clean capital-derived 4.0 (+50 pts = +200 denarii, sweep-confirmed), the knee that
+  // fits the clean targets is 2500 — where the Corfinium sweep actually shows linearity
+  // starting (~2k). FP 4.123 had been a kludge compensating the mid-pop bulge; with the
+  // bulge gone it pushed the faction Σ and low-pop towns off. FP 4.0 + knee 2500: julii4
+  // Neapolis 366 (live 365), faction Σ 9158 (game 9215, −0.6%, was −184 at 4.123), corpus
+  // mean-abs-err 14.2 (was 19.5).
+  taxPopKnee: 2500,
   // DIFFICULTY (Feral docs, Battle_and_Campaign_Formulae.md): the human player's tax
   // and farm income scale by difficulty — Easy 1.20 / Normal 1.00 / HARD 0.92 /
   // Extreme 0.85. The user/team plays H/H, and every constant below was fit on H/H

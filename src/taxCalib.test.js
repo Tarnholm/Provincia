@@ -120,17 +120,17 @@ dGate("taxCalib — julii 26-town live-corpus gate (±6 after H lock)", () => {
   });
 
   it("H assignments are the exact live/model ratio (calibration is exact, not snapped)", () => {
-    // POWER-LAW + PIECEWISE-LINEAR-KNEE retune 2026-06-15: the pop sweep showed the curve
-    // is LINEAR above ~3k, so the power law's mid-pop bow was removed (knee=3000 → linear to
-    // the Rome 9000 anchor). That collapsed the mid/high-pop H drift toward 1.0: Arretium
-    // (pop 4500) went 0.952 → ~1.005 (model now reproduces live within 0.5%, no calibration
-    // needed). Low-pop towns (≤knee) are unchanged — their H scatter (Fregellae 0.922 ..
-    // Praeneste 1.235 at the SAME pop 1500) is per-town pts/governor noise the paste absorbs,
-    // NOT a curve issue. Volaterrae sits exactly at the knee so is unchanged.
-    expect(byCity.Fregellae.h).toBeCloseTo(0.922, 2);  // low extreme (≤knee, unchanged)
-    expect(byCity.Arpi.h).toBeCloseTo(1.127, 2);       // high extreme (≤knee, unchanged)
-    expect(byCity.Volaterrae.h).toBeCloseTo(0.978, 2); // pop 3000 = knee, unchanged
-    expect(byCity.Arretium.h).toBeCloseTo(1.005, 2);   // pop 4500 > knee: mid-pop bow removed → ~exact
+    // FP=4.0 + PIECEWISE-LINEAR-KNEE retune 2026-06-15: FP returned to the capital-derived
+    // 4.0 and the knee to 2500 (where the pop sweep shows linearity starting). The power
+    // law's mid-pop bow is replaced by a linear chord to the Rome 9000 anchor. Mid/high-pop H
+    // collapsed toward 1.0: Arretium (4500) 0.952→1.006, Neapolis (3750) →0.998 — model
+    // reproduces live within ~0.5% with no calibration. Low-pop towns shift slightly with FP;
+    // their residual H scatter (Fregellae .. Praeneste at the SAME pop 1500) is per-town
+    // pts/governor noise the paste absorbs, NOT a curve issue.
+    expect(byCity.Fregellae.h).toBeCloseTo(0.912, 2);  // low extreme
+    expect(byCity.Arpi.h).toBeCloseTo(1.104, 2);       // high extreme (twin-anomaly town)
+    expect(byCity.Volaterrae.h).toBeCloseTo(0.981, 2);
+    expect(byCity.Arretium.h).toBeCloseTo(1.006, 2);   // pop 4500 > knee: mid-pop bow removed → ~exact
     expect(byCity.Camerinum.h).toBeGreaterThan(1.0);
   });
 
@@ -140,6 +140,6 @@ dGate("taxCalib — julii 26-town live-corpus gate (±6 after H lock)", () => {
     expect(r0.taxParts && typeof r0.taxParts.w).toBe("number");
     expect(r0.taxH).toBe(null);
     const r1 = recomputed.settlements.find(s => s.settlement === "Arpi");
-    expect(r1.taxH).toBeCloseTo(1.127, 2);
+    expect(r1.taxH).toBeCloseTo(1.104, 2);
   });
 });
