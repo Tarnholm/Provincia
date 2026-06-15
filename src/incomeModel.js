@@ -1695,10 +1695,13 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // taxParts: pre-H bracket decomposition (tax(b) = max(0, mult_b·w + flat));
       // taxH: the applied per-campaign calibration multiplier (null = uncalibrated)
       taxParts: { w: taxW, flat: taxFlat }, taxH: taxH != null ? taxH : null,
-      // TAX is FLOORED, not rounded — the in-game panel truncates (live: Neapolis model
-      // 365.628 displays 365, not 366). Farm/trade/admin keep round (they already match live).
-      bracket, taxes: Math.floor(tTax), farming: Math.round(tFarm), mining: Math.round(tMine), trade: Math.round(tTrade), admin: Math.round(tAdmin),
-      corruption: Math.round(corrAmt),
+      // Income lines TRUNCATE in the panel — tax/trade/mining/admin are FLOORED (live julii4:
+      // Neapolis tax 365.628→365; Venusia admin 107.6→107 not 108; trade 193). FARMING stays
+      // ROUNDED: its law is calibrated so the FACTION total floors to exact (19356), and at the
+      // per-town level the rounded value matches the panel (Venusia 809.7→810) — flooring it
+      // would show 809 and we can't lift the law without breaking the faction sum. (2026-06-16)
+      bracket, taxes: Math.floor(tTax), farming: Math.round(tFarm), mining: Math.floor(tMine), trade: Math.floor(tTrade), admin: Math.floor(tAdmin),
+      corruption: Math.floor(corrAmt),
       corrCalibrated: corrOv != null ? true : undefined,
       // settlement NET income (the in-game scroll's "Net Income"): gross − corruption
       totalIncome: Math.round(tTax + tFarm + tMine + tTrade + tAdmin - corrAmt),
@@ -1726,7 +1729,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     corruption = Math.round(corruption / CALIB.difficultyIncome * CALIB.aiFarmBonus * (CALIB.aiCorrFixByTier[F.tier] != null ? CALIB.aiCorrFixByTier[F.tier] : 1.0));
     admin = Math.round(admin * (CALIB.aiAdminFixByTier[F.tier] != null ? CALIB.aiAdminFixByTier[F.tier] : 1.0));
   }
-  admin = Math.round(admin);
+  admin = Math.floor(admin); // faction admin line truncates like the rest
   const income = Math.round(taxes + farming + mining + trade + admin);
   const army = armyUpkeepEDU(modDataDir, faction);
   const preNet = army ? (income - wages - corruption - army.upkeep) : null;

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1135",
+    date: "2026-06-16",
+    items: [
+      { type: "fix", text: "**Income lines now truncate like the in-game panel (admin was rounding up).** The settlement scroll truncates every income figure, but the app was rounding admin/trade — so a governor's admin of 107.6 showed 108 instead of 107 (Venusia), and Arretium read 170 vs the game's 169. Tax/trade/mining/admin/corruption now floor; farming stays rounded (its law is tuned so the faction total floors to exact and the per-town rounded value matches the panel). Verified on the julii save: Venusia tax 342 / farm 810 / trade 193 / admin 107 and Arretium admin 169 all match to the denarius." },
+    ],
+  },
+  {
     version: "0.9.1133",
     date: "2026-06-15",
     items: [
