@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1146",
+    date: "2026-06-16",
+    items: [
+      { type: "fix", text: "**Second tax-rate experiment (Hadrumetum) added a W(5000) anchor and caught a data error.** Reading Hadrumetum's four rates (200/334/468/670) gives W(5000)=(468−334)/0.2=670 — nearly flat from the 4500 anchor (668), so the model's old 4500→9000 chord was over-reading mid-5000s populations. It also exposed a transcription slip in the ground-truth set (Hadrumetum tax recorded as 534 instead of 334 — a 3 misread as 5); a net-income cross-check confirmed 334 (1472+334+319+127 = 2252 net exactly), and with it fixed the per-town tax now sums to the in-game faction total (10976) to the denarius. Per-town tax error down (MAE 28.5→25.3). The residual on the big cities is a known building-tax parsing gap (religion-gated temple lines), tracked separately." },
+    ],
+  },
+  {
     version: "0.9.1145",
     date: "2026-06-16",
     items: [

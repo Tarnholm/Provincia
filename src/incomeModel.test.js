@@ -74,7 +74,7 @@ describe("incomeModel — cracked constants", () => {
     // Carthage towns (2026-06-16). Lifted Carthage tax exact 3/41→11/41, MAE 35.9→32.2.
     // [12000,925] from the live Carthage tax-rate experiment (rate slope W=(1090-905)/0.2=925);
     // the curve is near-flat 9000->12000, replacing the power law's overshoot (1080) for big cities.
-    expect(im.CALIB.taxWanchors).toEqual([[1000, 430], [1200, 455], [1500, 540], [2200, 577.5], [2250, 580], [3000, 592.5], [3750, 649], [4500, 668], [9000, 912.67], [12000, 925]]);
+    expect(im.CALIB.taxWanchors).toEqual([[1000, 430], [1200, 455], [1500, 540], [2200, 577.5], [2250, 580], [3000, 592.5], [3750, 649], [4500, 668], [5000, 670], [9000, 912.67], [12000, 925]]);
     // refit 2026-06-11: qty-weighted rv + not-at-war partners + symmetric ally parse,
     // anchored to the live julii ledger trade 4,610 (ratio 2.042 preserved)
     expect(im.CALIB.tradeLand).toBeCloseTo(0.8656, 3);

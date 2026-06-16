@@ -459,7 +459,10 @@ const CALIB = {
   // W(9000)=912.67, so the curve is NEARLY FLAT 9000→12000 (slope 0.004/pop), NOT the power
   // law's steep climb to 1080 — the old power-law extrapolation over-taxed every big city.
   // Pop >12000 still uses the power law (egypt mega-cities unverified at flat; left as-is).
-  taxWanchors: [[1000, 430], [1200, 455], [1500, 540], [2200, 577.5], [2250, 580], [3000, 592.5], [3750, 649], [4500, 668], [9000, 912.67], [12000, 925]],
+  // [5000, 670] added 2026-06-16 from the live Hadrumetum tax-rate experiment (pop 5000,
+  // Adrumet): Taxes 200/334/468/670 → W=(468−334)/0.2=670 (all 4 fit mult·670−336). Nearly
+  // flat from the 4500 anchor (668), so the old 4500→9000 linear chord over-read mid-5000s.
+  taxWanchors: [[1000, 430], [1200, 455], [1500, 540], [2200, 577.5], [2250, 580], [3000, 592.5], [3750, 649], [4500, 668], [5000, 670], [9000, 912.67], [12000, 925]],
   // DIFFICULTY (Feral docs, Battle_and_Campaign_Formulae.md): the human player's tax
   // and farm income scale by difficulty — Easy 1.20 / Normal 1.00 / HARD 0.92 /
   // Extreme 0.85. The user/team plays H/H, and every constant below was fit on H/H
