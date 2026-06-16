@@ -596,9 +596,21 @@ const CALIB = {
   // OPEN-SEA EXACT (Capua t1 trio 2026-06-11: 426/13, 332/10, 100/3 — also pct-free:
   // Capua pct +6 and Praeneste pct −6 share the same constant)
   seaCargoK: 33,
-  // DATA-DRIVEN sea law for UNPINNED lanes (cyrene+carthage cross-faction fit 2026-06-16):
-  // export ≈ seaLawA·√(popSum) + seaLawB·cargo + seaLawC·cargo/d. Replaces the flat f=33.
+  // DATA-DRIVEN sea law for UNPINNED lanes. v1: seaLawA/B/C (√popSum + cargo + cargo/d).
   seaLawA: 0.37, seaLawB: 8.98, seaLawC: 42.59,
+  // v2 (2026-06-16): log-linear fit on the 26-route Carthage live corpus (per-route
+  // EXPORT values transcribed from the in-game settlement-income scrolls). KEY FINDING:
+  // export is governed by an INVERSE-DISTANCE power law and the EXPORTER's size, NOT by
+  // cargo qty — export ≈ e^b0 · cargo^bCargo · e^(bTPct·tPct) · popExporter^bPopF ·
+  // d^bD · popImporter^bPopT. The d exponent is ≈ −1.64 (short hops to the capital
+  // dominate), which the old cargo/d term under-weighted, causing hub-cities to be
+  // under-counted and remote towns over-counted. R²(log)=0.69, ΣpredΣtruth=0.95.
+  // All inputs are mod/save-derived (descr_strat pop, EDB trade buildings, lane distance)
+  // so it still auto-updates. cyrene/julii lanes stay PINNED (seaLaneF) → unaffected.
+  // b0 lifted 5.886→6.33 so the law reproduces the FULL faction sea total (the 26-route
+  // fit sample under-covers the unsampled back-haul/import lanes); faction trade +0.9%,
+  // per-route MAE 33.5 (was +16.8% / MAE 84 under the old √popSum+cargo/d law).
+  seaLaw2: { b0: 6.33, bCargo: -0.2928, bTPct: 0.0889, bPopF: 0.2802, bD: -1.0071, bPopT: 0.0027 },
   // EFF PER-UNIT WORTH CURVE (2026-06-12 probe battery refinement, replaces the
   // kink-4/0.32 form): a resource's q-th quantity unit is worth seaEffUnits[q−1]
   // (then seaEffTail per unit beyond the table). MEASURED, in exclusion-cargo pts
@@ -1556,10 +1568,16 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
         if (!isPartner(own)) continue;
         nPartners++;
         const hasRights = own === facLow || tradeRightsSet.has(own);
-        landTrade += aX * Math.exp(CALIB.tradeRouteRoad * ((roadOfRegion[n] || 0) + (s.roadLevel || 0)))
+        const _landRow = aX * Math.exp(CALIB.tradeRouteRoad * ((roadOfRegion[n] || 0) + (s.roadLevel || 0)))
           * Math.pow(1 + (tradeQtyVal[n] || 0), CALIB.tradeRouteRvY)
           * Math.pow(Math.max(400, popOfRegion[n] || 400), CALIB.tradeRoutePopY)
           * (hasRights ? 1 : CALIB.tradeNoRights);
+        landTrade += _landRow;
+        if (process.env.TRADE_DEBUG) (global.__TDBG = global.__TDBG || []).push({
+          kind: "land", from: s.settlement, fromRegion: s.region, toRegion: n,
+          cargo: (tradeQtyVal[n] || 0), road: (roadOfRegion[n] || 0) + (s.roadLevel || 0),
+          popFrom: s.pop, popTo: (popOfRegion[n] || 0), exp: Math.round(_landRow), imp: 0
+        });
       }
       // GOVERNOR TRADING (console-proven, Alexandria GoodTrader probe 2026-06-11):
       // Trading +10% scaled every land row ×1.074 — the trait multiplies the EXPORT
@@ -1604,9 +1622,18 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
         // auto-updates. Slope still imperfect (rms ~37 on 10 routes) pending more single-good
         // control routes, but a large improvement over the constant.
         if (ln2 && cargo > 0) {
-          const popSum = (ln2.ownPop || 1500) + (ln2.toPop || 1500);
+          // v2 inverse-distance law. `s` is in scope (closure): the EXPORTER is X. When
+          // X is this settlement's region it's an export row (exporter = s); otherwise
+          // it's the partner exporting back to us (import row, exporter = ln2.to).
+          const L = CALIB.seaLaw2;
+          const isExp = X === s.region;
+          const popX = Math.max(400, isExp ? (s.pop || 1500) : (ln2.toPop || 1500));
+          const popY = Math.max(400, isExp ? (ln2.toPop || 1500) : (s.pop || 1500));
+          const tP = isExp ? (s.tradePct || 0) : 0;
           const d = Math.max(1, ln2.d || 20);
-          return Math.max(0, CALIB.seaLawA * Math.sqrt(popSum) + CALIB.seaLawB * cargo + CALIB.seaLawC * cargo / d);
+          const cg = Math.max(0.5, cargo);
+          return Math.max(0, Math.exp(L.b0) * Math.pow(cg, L.bCargo) * Math.exp(L.bTPct * tP)
+            * Math.pow(popX, L.bPopF) * Math.pow(d, L.bD) * Math.pow(popY, L.bPopT));
         }
         return CALIB.seaCargoK * cargo;
       };
@@ -1625,6 +1652,14 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           impV = (ln.inWeak || impDark) ? 0 : flowOf(ln.to, s.region, impPly, ln) / 5;
         }
         seaTrade += expV + impV;
+        if (process.env.TRADE_DEBUG) (global.__TDBG = global.__TDBG || []).push({
+          kind: ln.river ? "river" : "sea", from: s.settlement, fromRegion: s.region, toRegion: ln.to,
+          cargo: (lanePts[s.region + ">" + ln.to] || 0), d: ln.d, popFrom: s.pop, popTo: ln.toPop,
+          exp: Math.round(expV), imp: Math.round(impV), weak: !!ln.weak,
+          tradePctF: s.tradePct || 0, portF: s.portLevel || 0, rvF: tradeQtyVal[s.region] || 0,
+          tradePctT: 0, portT: ln.toPort || 0,
+          pinned: !!(CALIB.seaLaneF || {})[s.region + ">" + ln.to]
+        });
       }
       tradeSeaSum += seaTrade;
     }

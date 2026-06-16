@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1142",
+    date: "2026-06-16",
+    items: [
+      { type: "improvement", text: "**Sea trade refit against the full Carthage in-game ledger — faction trade now +0.9% (was +16.8%) and per-route error nearly halved.** Transcribed all 53 turn-1 Carthage settlement-income screenshots into a complete ground-truth set (41 towns, ~170 individual trade routes with their exact values) and ran the real model against it. The screenshots revealed the missing mechanism: per-route export is governed by an **inverse-distance power law and the exporter's size**, not by cargo quantity — short hops to a big capital dominate, so the old `cargo/distance` term under-counted hub cities (Carthage was −564) and over-counted remote towns (Ebusus was +349, nearly 4× too high). The new law `export ≈ e^6.33 · cargo^-0.29 · popExporter^0.28 · distance^-1.01 · …` (log-linear fit on the 26 cleanest sea routes, weighted to match the big routes) cuts per-route MAE from 84 to 33 and lands the faction total within 1%. All inputs stay mod/save-derived; the pinned julii/cyrene lanes are untouched (still exact). Farming remains 41/41 exact; admin within 1%." },
+    ],
+  },
+  {
     version: "0.9.1141",
     date: "2026-06-16",
     items: [
