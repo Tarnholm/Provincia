@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1141",
+    date: "2026-06-16",
+    items: [
+      { type: "improvement", text: "**Sea trade is now data-driven instead of a flat constant.** Unpinned sea lanes were valued at a fixed 33 denarii per cargo unit, which over-counted faction trade massively (Carthage 16,502 vs the game's 7,036 — 2.3× over). Replaced it with a law fit across cyrene + Carthage live reads: `export ≈ 0.37·√(popExporter+popImporter) + 8.98·cargo + 42.6·cargo/distance`, with cargo (Σ qty×trade-value), distance and populations all read from the mod files — so it auto-updates with the mod. Carthage faction trade now ~7,950 (+13%, was +135%) and the big per-town over-counts are roughly halved; the live-pinned julii/cyrene lanes are untouched (still exact). The per-town slope still has an unrecovered variable (the in-game routes scatter at fixed distance), so individual towns aren't denarius-exact yet — that needs single-good control routes at several distances to finish, but this is a large step toward fully file-driven trade." },
+    ],
+  },
+  {
     version: "0.9.1140",
     date: "2026-06-16",
     items: [

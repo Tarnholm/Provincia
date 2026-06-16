@@ -596,6 +596,9 @@ const CALIB = {
   // OPEN-SEA EXACT (Capua t1 trio 2026-06-11: 426/13, 332/10, 100/3 — also pct-free:
   // Capua pct +6 and Praeneste pct −6 share the same constant)
   seaCargoK: 33,
+  // DATA-DRIVEN sea law for UNPINNED lanes (cyrene+carthage cross-faction fit 2026-06-16):
+  // export ≈ seaLawA·√(popSum) + seaLawB·cargo + seaLawC·cargo/d. Replaces the flat f=33.
+  seaLawA: 0.37, seaLawB: 8.98, seaLawC: 42.59,
   // EFF PER-UNIT WORTH CURVE (2026-06-12 probe battery refinement, replaces the
   // kink-4/0.32 form): a resource's q-th quantity unit is worth seaEffUnits[q−1]
   // (then seaEffTail per unit beyond the table). MEASURED, in exclusion-cargo pts
@@ -1586,15 +1589,26 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // open-sea constant 33. 'ply' regime applies when the EXPORTER town belongs
       // to the faction this budget is computed for (as the human player) — the
       // Praeneste→Capua ×0.49 player split, live-confirmed in 2+3 campaigns.
-      const flowOf = (X, Y, ply) => {
+      const flowOf = (X, Y, ply, ln2) => {
         const e = (CALIB.seaLaneF || {})[X + ">" + Y];
         if (e && e.fix != null) return e.fix; // live-pinned flow (e.g. slave-island exporters with empty cargo baskets)
-        let f0 = CALIB.seaCargoK;
+        const cargo = lanePts[X + ">" + Y] || 0;
         if (e) {
           const v0 = ply ? (e.ply != null ? e.ply : e.ai) : (e.ai != null ? e.ai : e.ply);
-          if (v0 != null) f0 = v0;
+          if (v0 != null) return v0 * cargo; // live-calibrated per-lane f (julii/cyrene)
         }
-        return f0 * (lanePts[X + ">" + Y] || 0);
+        // UNPINNED lanes — DATA-DRIVEN cross-faction sea law (cyrene + carthage live fit,
+        // 2026-06-16): export ≈ a·√(popX+popY) + b·cargo + c·cargo/d. Replaces the old flat
+        // f=33 (which over-counted carthage 2.35×). cargo = Σ qty·tradeValue from the files,
+        // d = sea-lane movement distance, pops from descr_strat — all mod-file derived, so it
+        // auto-updates. Slope still imperfect (rms ~37 on 10 routes) pending more single-good
+        // control routes, but a large improvement over the constant.
+        if (ln2 && cargo > 0) {
+          const popSum = (ln2.ownPop || 1500) + (ln2.toPop || 1500);
+          const d = Math.max(1, ln2.d || 20);
+          return Math.max(0, CALIB.seaLawA * Math.sqrt(popSum) + CALIB.seaLawB * cargo + CALIB.seaLawC * cargo / d);
+        }
+        return CALIB.seaCargoK * cargo;
       };
       for (const ln of lanes) {
         let expV, impV;
@@ -1603,12 +1617,12 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           expV = rm * CALIB.seaFlowK * Math.pow(Math.max(400, s.pop), CALIB.seaFlowPopExp) * Math.exp(CALIB.seaFlowPct * (s.tradePct || 0));
           impV = rm * CALIB.seaFlowK * Math.pow(Math.max(400, ln.toPop || 1500), CALIB.seaFlowPopExp) / 5;
         } else {
-          expV = ln.weak ? 0 : flowOf(s.region, ln.to, isPly);
+          expV = ln.weak ? 0 : flowOf(s.region, ln.to, isPly, ln);
           const impPly = ownerOfRegion[ln.to] === facLow ? isPly : false;
           // import-row t1 activation: seeded lanes carry the OBSERVED flag
           // (impLive); unseeded lanes keep the nearest-lane heuristic.
           const impDark = ln.impLive != null ? !ln.impLive : !ln.toNearest;
-          impV = (ln.inWeak || impDark) ? 0 : flowOf(ln.to, s.region, impPly) / 5;
+          impV = (ln.inWeak || impDark) ? 0 : flowOf(ln.to, s.region, impPly, ln) / 5;
         }
         seaTrade += expV + impV;
       }
