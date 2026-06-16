@@ -10,10 +10,160 @@
   },
   "needed_to_crack": "Same sea-route sweep on 1-2 more factions in different seas (Italy / Aegean / Egypt-Nile) with varied distances, good-types, and trade-deal states. Then one regression fits base + slope(d) and replaces ALL the seaLaneF pins (julii included).",
   "rows": [
-    { "faction": "cyrene", "mod": "RIS 2026-06", "from": "Kyrene",      "to": "Arsinoe-Kyrenaike", "fromRegion": "Kyrenaike",   "toRegion": "Taucheira",   "cargo": 32.0, "d": 24, "popFrom": 6200, "popTo": 1900, "portFrom": 0, "portTo": 0, "goods": ["horses","grain","olives","spices","perfumes"],          "export": 430 },
-    { "faction": "cyrene", "mod": "RIS 2026-06", "from": "Kyrene",      "to": "Euesperides",       "fromRegion": "Kyrenaike",   "toRegion": "Euesperidai", "cargo": 26.49,"d": 32, "popFrom": 6200, "popTo": 2000, "portFrom": 0, "portTo": 2, "goods": ["horses","olives","wine","spices","perfumes"],            "export": 265 },
-    { "faction": "cyrene", "mod": "RIS 2026-06", "from": "Euesperides", "to": "Ptolemais-Kyrenaike","fromRegion": "Euesperidai", "toRegion": "Barke",       "cargo": 17.44,"d": 16, "popFrom": 2000, "popTo": 3000, "portFrom": 2, "portTo": 2, "goods": [],                                                       "export": 191 },
-    { "faction": "cyrene", "mod": "RIS 2026-06", "from": "Ptolemais-Kyrenaike", "to": "Euesperides","fromRegion": "Barke",       "toRegion": "Euesperidai", "cargo": 12.72,"d": 16, "popFrom": 3000, "popTo": 2000, "portFrom": 2, "portTo": 2, "goods": [],                                                       "export": 174 },
-    { "faction": "cyrene", "mod": "RIS 2026-06", "from": "Arsinoe-Kyrenaike", "to": "Kyrene",       "fromRegion": "Taucheira",   "toRegion": "Kyrenaike",   "cargo": 4.0,  "d": 24, "popFrom": 1900, "popTo": 6200, "portFrom": 0, "portTo": 0, "goods": ["honey"],                                                "export": 140 }
-  ]
+    {
+      "faction": "cyrene",
+      "mod": "RIS 2026-06",
+      "from": "Kyrene",
+      "to": "Arsinoe-Kyrenaike",
+      "fromRegion": "Kyrenaike",
+      "toRegion": "Taucheira",
+      "cargo": 32,
+      "d": 24,
+      "popFrom": 6200,
+      "popTo": 1900,
+      "portFrom": 0,
+      "portTo": 0,
+      "goods": [
+        "horses",
+        "grain",
+        "olives",
+        "spices",
+        "perfumes"
+      ],
+      "export": 430
+    },
+    {
+      "faction": "cyrene",
+      "mod": "RIS 2026-06",
+      "from": "Kyrene",
+      "to": "Euesperides",
+      "fromRegion": "Kyrenaike",
+      "toRegion": "Euesperidai",
+      "cargo": 26.49,
+      "d": 32,
+      "popFrom": 6200,
+      "popTo": 2000,
+      "portFrom": 0,
+      "portTo": 2,
+      "goods": [
+        "horses",
+        "olives",
+        "wine",
+        "spices",
+        "perfumes"
+      ],
+      "export": 265
+    },
+    {
+      "faction": "cyrene",
+      "mod": "RIS 2026-06",
+      "from": "Euesperides",
+      "to": "Ptolemais-Kyrenaike",
+      "fromRegion": "Euesperidai",
+      "toRegion": "Barke",
+      "cargo": 17.44,
+      "d": 16,
+      "popFrom": 2000,
+      "popTo": 3000,
+      "portFrom": 2,
+      "portTo": 2,
+      "goods": [],
+      "export": 191
+    },
+    {
+      "faction": "cyrene",
+      "mod": "RIS 2026-06",
+      "from": "Ptolemais-Kyrenaike",
+      "to": "Euesperides",
+      "fromRegion": "Barke",
+      "toRegion": "Euesperidai",
+      "cargo": 12.72,
+      "d": 16,
+      "popFrom": 3000,
+      "popTo": 2000,
+      "portFrom": 2,
+      "portTo": 2,
+      "goods": [],
+      "export": 174
+    },
+    {
+      "faction": "cyrene",
+      "mod": "RIS 2026-06",
+      "from": "Arsinoe-Kyrenaike",
+      "to": "Kyrene",
+      "fromRegion": "Taucheira",
+      "toRegion": "Kyrenaike",
+      "cargo": 4,
+      "d": 24,
+      "popFrom": 1900,
+      "popTo": 6200,
+      "portFrom": 0,
+      "portTo": 0,
+      "goods": [
+        "honey"
+      ],
+      "export": 140
+    },
+    {
+      "faction": "carthage",
+      "mod": "RIS 2026-06",
+      "from": "Lilybaion",
+      "to": "Panormos",
+      "cargo": 14.7,
+      "d": 16,
+      "popFrom": 5000,
+      "popTo": 4500,
+      "goods": [],
+      "export": 211
+    },
+    {
+      "faction": "carthage",
+      "mod": "RIS 2026-06",
+      "from": "Panormos",
+      "to": "Eryx",
+      "cargo": 8.7,
+      "d": 16,
+      "popFrom": 4500,
+      "popTo": 3500,
+      "goods": [],
+      "export": 121
+    },
+    {
+      "faction": "carthage",
+      "mod": "RIS 2026-06",
+      "from": "Eryx",
+      "to": "Panormos",
+      "cargo": 8,
+      "d": 16,
+      "popFrom": 3500,
+      "popTo": 4500,
+      "goods": [],
+      "export": 111
+    },
+    {
+      "faction": "carthage",
+      "mod": "RIS 2026-06",
+      "from": "Carthage",
+      "to": "Clupea",
+      "cargo": 27.4,
+      "d": 4,
+      "popFrom": 12000,
+      "popTo": 2200,
+      "goods": [],
+      "export": 613
+    },
+    {
+      "faction": "carthage",
+      "mod": "RIS 2026-06",
+      "from": "Clupea",
+      "to": "Carthage",
+      "cargo": 18,
+      "d": 4,
+      "popFrom": 2200,
+      "popTo": 12000,
+      "goods": [],
+      "export": 352
+    }
+  ],
+  "_carthage_note": "Carthage turn-1 full ground truth in docs/carthage-turn1-truth.json (40 towns). FARM exact 40/40. TAX: per-town Punic-building scatter -6..-18 (hinterland_region penalty is empire-size-gated -40 for carthage vs -20 julii, correct). TRADE: sea over-counts (seaCargoK 33 too high for African/Spanish coast). Slope still does not reduce cleanly even with base term (Lilybaion->Panormos slope 7.1 vs Panormos->Eryx 2.6, both d16) -> needs more clean single-good control routes per distance."
 }
