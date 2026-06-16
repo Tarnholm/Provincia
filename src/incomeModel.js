@@ -448,7 +448,11 @@ const CALIB = {
   // base+size only — W = (live − 4·(base+size))/rate. Confirmed points: Sena 1200 low 252,
   // Arpi 2250 vh 562, Neapolis 3750 n 365, Arretium 4500 n 360, Rome 9000 vh 1465. Low-pop
   // (<1200) is provisional pending the Sena 100→2000 pop sweep.
-  taxWanchors: [[1000, 430], [1200, 455], [1500, 515], [2200, 577.5], [2250, 580], [3000, 592.5], [3750, 649], [4500, 668], [9000, 912.67]],
+  // 1500 anchor wired to the directly-measured taxW1500=540 (julii+cyrene no-gov reads, and
+  // independently confirmed on all 6 basic pop-1500 Carthage towns 2026-06-16: each implies
+  // W(1500)=540 exactly via truth−4·pts). Was an interpolated 515 — the measured 540 had been
+  // sitting orphaned in CALIB.taxW1500 but never wired into the anchor table.
+  taxWanchors: [[1000, 430], [1200, 455], [1500, 540], [2200, 577.5], [2250, 580], [3000, 592.5], [3750, 649], [4500, 668], [9000, 912.67]],
   // DIFFICULTY (Feral docs, Battle_and_Campaign_Formulae.md): the human player's tax
   // and farm income scale by difficulty — Easy 1.20 / Normal 1.00 / HARD 0.92 /
   // Extreme 0.85. The user/team plays H/H, and every constant below was fit on H/H

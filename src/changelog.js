@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1144",
+    date: "2026-06-16",
+    items: [
+      { type: "fix", text: "**Tax: wired in the measured W(1500)=540 that was sitting unused — per-town tax exactness tripled (3/41 → 11/41 settlements denarius-exact).** Decomposing the in-game Carthage tax against the model showed all six basic pop-1500 towns imply the same populace-tax value of exactly 540, but the model's W(pop) anchor table used an interpolated 515. The correct value (540) had actually already been measured on the Roman and Cyrenian campaigns and stored in the code — it just was never connected to the curve the model uses. Connecting it lifted per-settlement tax accuracy across the board and improved admin too (admin scales with total income). This also confirmed the governor tax effect is correctly NOT applied for multi-town factions — the in-game numbers prove it. All mod/save-derived; the value is a measured calibration constant, not a hardcoded per-town number." },
+    ],
+  },
+  {
     version: "0.9.1143",
     date: "2026-06-16",
     items: [
