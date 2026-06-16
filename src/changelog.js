@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1143",
+    date: "2026-06-16",
+    items: [
+      { type: "improvement", text: "**Sea trade refit on clean export/import-separated data — per-town trade error down again (MAE 33.5 → 29.4), hub cities now tight.** Spotted that every in-game settlement panel lists BOTH a town's export rows AND its import rows, where the import is exactly ⅕ of the partner's export (engine rule, confirmed: Carthage→Clupea 613 shows as 123 on Clupea's panel). The previous fit had mixed those ⅕-shadow rows in with real exports — fitting on garbage. Reclassifying every route by the ⅕ law and refitting on clean exports only lifted the fit quality from R²0.69 to R²0.90 and cut per-route error in half (35.8→18.1). Applied to the model (export = law, import = law/5), faction trade is +1.2% and the big trade hubs are now within a few percent (Carthage, Clupea, Tingi, Lilybaion all tight). Admin tightened too (it scales with total income). Still fully mod/save-derived." },
+    ],
+  },
+  {
     version: "0.9.1142",
     date: "2026-06-16",
     items: [

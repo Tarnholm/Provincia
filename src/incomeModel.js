@@ -607,10 +607,15 @@ const CALIB = {
   // under-counted and remote towns over-counted. R²(log)=0.69, ΣpredΣtruth=0.95.
   // All inputs are mod/save-derived (descr_strat pop, EDB trade buildings, lane distance)
   // so it still auto-updates. cyrene/julii lanes stay PINNED (seaLaneF) → unaffected.
-  // b0 lifted 5.886→6.33 so the law reproduces the FULL faction sea total (the 26-route
-  // fit sample under-covers the unsampled back-haul/import lanes); faction trade +0.9%,
-  // per-route MAE 33.5 (was +16.8% / MAE 84 under the old √popSum+cargo/d law).
-  seaLaw2: { b0: 6.33, bCargo: -0.2928, bTPct: 0.0889, bPopF: 0.2802, bD: -1.0071, bPopT: 0.0027 },
+  // v3 (2026-06-16, CLEAN-DATA refit): the v2 fit was POLLUTED — every settlement panel
+  // lists both EXPORT rows and IMPORT-shadow rows (import = export/5, engine-confirmed), and
+  // v2 fit them all as exports. Reclassifying each route via the /5 law (the larger of a
+  // bidirectional pair is the export; the ~1/5 partner row is its shadow) and refitting on
+  // the 18 CLEAN sea exports lifts R²(log) 0.69→0.90 and per-route MAE 35.8→18.1. Applied to
+  // all lanes (export = law, import = law/5): faction trade +1.2%, per-town MAE 33.5→29.4,
+  // hub cities now tight (Carthage −84, Clupea +30, Tingi +5). b0 2.405→2.70 balances the
+  // faction total (the clean sample skews to large routes). Inputs stay mod/save-derived.
+  seaLaw2: { b0: 2.70, bCargo: -0.0313, bTPct: 0.0954, bPopF: 0.3530, bD: -0.6433, bPopT: 0.1821 },
   // EFF PER-UNIT WORTH CURVE (2026-06-12 probe battery refinement, replaces the
   // kink-4/0.32 form): a resource's q-th quantity unit is worth seaEffUnits[q−1]
   // (then seaEffTail per unit beyond the table). MEASURED, in exclusion-cargo pts
