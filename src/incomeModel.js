@@ -199,6 +199,7 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
     const roadLevel = buildings.has("hinterland_roads") ? buildings.get("hinterland_roads") + 1 : 0;
     out.push({
       region: s.region, settlement: region.settlement, pop: s.pop, level: s.level, capital: !!s.capital,
+      taxExplain: explain || undefined,
       taxablePct, tradePct, taxPctParts: tax, tradePctParts: trade, tradeLvlSum, mineSum, fleetSum, farmLevel, farmLevelSum, farmN: region.farmN || 0,
       wallLevel, healthPips, lawBonus, lawWalls, lawTerrain,
       resources: resList, portLevel, roadLevel,
@@ -452,7 +453,13 @@ const CALIB = {
   // independently confirmed on all 6 basic pop-1500 Carthage towns 2026-06-16: each implies
   // W(1500)=540 exactly via truth−4·pts). Was an interpolated 515 — the measured 540 had been
   // sitting orphaned in CALIB.taxW1500 but never wired into the anchor table.
-  taxWanchors: [[1000, 430], [1200, 455], [1500, 540], [2200, 577.5], [2250, 580], [3000, 592.5], [3750, 649], [4500, 668], [9000, 912.67]],
+  // [12000, 925] added 2026-06-16 from the live Carthage tax-RATE experiment: Carthage
+  // (pop 12000) reads Taxes 720/905/1090/1368 at low/normal/high/vh — the rate slope gives
+  // W(12000) = (1090−905)/(1.2−1.0) = 925 EXACTLY (independent of buildings). Rome anchors
+  // W(9000)=912.67, so the curve is NEARLY FLAT 9000→12000 (slope 0.004/pop), NOT the power
+  // law's steep climb to 1080 — the old power-law extrapolation over-taxed every big city.
+  // Pop >12000 still uses the power law (egypt mega-cities unverified at flat; left as-is).
+  taxWanchors: [[1000, 430], [1200, 455], [1500, 540], [2200, 577.5], [2250, 580], [3000, 592.5], [3750, 649], [4500, 668], [9000, 912.67], [12000, 925]],
   // DIFFICULTY (Feral docs, Battle_and_Campaign_Formulae.md): the human player's tax
   // and farm income scale by difficulty — Easy 1.20 / Normal 1.00 / HARD 0.92 /
   // Extreme 0.85. The user/team plays H/H, and every constant below was fit on H/H
@@ -1535,7 +1542,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const _anch = CALIB.taxWanchors;
     let wPow;
     const _pp = Math.max(400, s.pop);
-    if (_pp <= _anch[0][0] || _pp >= _anch[_anch.length - 1][0]) wPow = _wPowAt(_pp);
+    if (_pp <= _anch[0][0] || _pp > _anch[_anch.length - 1][0]) wPow = _wPowAt(_pp);
     else { for (let i = 1; i < _anch.length; i++) { if (_pp <= _anch[i][0]) { const [x0, y0] = _anch[i - 1], [x1, y1] = _anch[i]; wPow = y0 + (y1 - y0) * (_pp - x0) / (x1 - x0); break; } } }
     const taxW = (F.settlements.length > 1 ? wPow : CALIB.taxLogK_single * wLog) * gTax;
     const taxFlat = (F.settlements.length > 1 ? CALIB.taxFlatPoint * taxPts : CALIB.taxFlatSingle) * gTax;

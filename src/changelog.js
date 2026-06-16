@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1145",
+    date: "2026-06-16",
+    items: [
+      { type: "fix", text: "**Big-city tax fixed using the live Carthage tax-rate experiment — the high-population curve was overshooting.** Reading Carthage's Taxes at all four rates (720/905/1090/1368 at low/normal/high/very-high) lets the populace-tax be solved directly from the rate slope, independent of buildings: W(12000) = (1090−905)/(1.2−1.0) = 925 exactly. The model's curve extrapolated a power law above population 9000 and was reading 1080 — over-taxing every large city. Since Rome's W(9000)=912.67, the real curve is nearly flat from 9000 to 12000, so the anchor [12000,925] was added and the power-law overshoot removed for that range. Carthage tax 1140→985 (game 905), faction tax error halved, admin tightened. The remaining ~80 on the capital is a separate capital-building-bonus question (the size-6 capital +50 line) needing one more controlled read to resolve safely. Fully save+mod-derived; W=925 is a measured constant from the rate slope, not a per-town number." },
+    ],
+  },
+  {
     version: "0.9.1144",
     date: "2026-06-16",
     items: [
