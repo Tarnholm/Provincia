@@ -1576,7 +1576,11 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const taxFlat = _multi ? (s.capital ? 0 : _flatPts) : (CALIB.taxFlatSingle * gTax);
     const taxH = taxHByCity ? (taxHByCity[_normCity(s.settlement)] != null ? taxHByCity[_normCity(s.settlement)]
       : taxHByCity[_normCity(s.region)]) : null;
-    const tTaxNoH = Math.max(0, mult * taxW + taxFlat); // gross, pre-governor (corruption uses this)
+    // The engine floors the pre-governor settlement tax to an INTEGER first (the tax income
+    // shown on the settlement scroll), THEN applies the governor % and floors again. Applying
+    // the governor to the unfloored base over-reads by 1 denarius on fractional bases
+    // (Tetrapyrgia N 566.5×1.10→623 vs game 622; Automala Low 451.6×1.05→474 vs game 473).
+    const tTaxNoH = Math.floor(Math.max(0, mult * taxW + taxFlat)); // integer pre-governor tax (corruption uses this)
     // governor tax multiplier from the save's per-settlement taxEffect% (multi-town only).
     const _govTaxPct = (_multi && gv0 && gv0.taxEffect != null) ? gv0.taxEffect : 0;
     const tTax = tTaxNoH * (1 + _govTaxPct / 100) * (taxH != null ? taxH : 1);

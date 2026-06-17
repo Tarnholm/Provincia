@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1149",
+    date: "2026-06-17",
+    items: [
+      { type: "fix", text: "**Governor tax no longer over-reads by 1 denarius on fractional bases.** The engine floors a settlement's pre-governor tax to a whole number (the income shown on the settlement scroll) *before* applying the governor's tax %, then floors again. We were applying the governor to the unfloored base, which rounded up on towns whose base has a fraction: live Cyrene Tetrapyrgia at Normal now reads 622 (was 623), Automala at Low reads 473 (was 474). Towns with an integer base or no governor are unaffected." },
+    ],
+  },
+  {
     version: "0.9.1148",
     date: "2026-06-17",
     items: [
