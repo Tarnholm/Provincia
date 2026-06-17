@@ -772,6 +772,16 @@ const CALIB = {
     ptolemaic: {
       "Abila": 14, "Alexandria": 2412, "Amathous": 227, "Arsinoe_Klysma": 79, "Arsinoe_Krokodeilon_Polis": 390, "Askalon": 104, "Aspendos": 23, "Athribis": 103, "Azotos": 279, "Berenike_Deire": 40, "Berenike_Panchrysos": 245, "Berenike_Trogodytike": 158, "Berytos": 234, "Boubastis": 117, "Chalkis_Libanos": 48, "Delos": 343, "Dora": 146, "Erythrai": 126, "Etenna_Kotenna": 7, "Gadara": 94, "Gamala": 82, "Gaza": 1683, "Gerasa": 77, "Halikarnassos": 522, "Hebron": 58, "Herakleia_Phoinike": 7, "Hermou_Polis": 262, "Heroon_Polis": 203, "Ioppe": 692, "Itanos": 196, "Jerusalem": 168, "Kaunos": 548, "Kition": 198, "Knidos": 272, "Korakesion": 161, "Kos": 370, "Limyra": 179, "Lykon_Polis": 28, "Megale_Apollonos_Polis": 75, "Memphis": 391, "Mendes_Thmouis": 481, "Methymna": 100, "Mikra_Apollonos_Polis": 66, "Miletos": 625, "Mylasa": 364, "Myos_Hormos": 381, "Myra": 112, "Mytilene": 544, "Nagidos": 147, "Naukratis": 314, "Naxos": 660, "Oxyrhynchos": 282, "Pachora": 39, "Panos_Polis": 98, "Paphos": 573, "Patara": 241, "Pella_Peraia": 47, "Pelousion": 438, "Phaselis": 142, "Philadelpheia": 85, "Philotera": 102, "Premnis": 39, "Ptolemais_Hermeiou": 199, "Ptolemais_Phoinike": 429, "Ptolemais_Theron": 0, "Rhaithou": 84, "Sais": 57, "Salamis": 571, "Samareia": 130, "Samos": 657, "Samothrake": 0, "Sebennytos_Bousiris": 324, "Soloi": 598, "Syene_Elephantine": 78, "Tachompso_Pselkis": 32, "Tanis": 224, "Telmessos": 163, "Termessos": 17, "Thebes_Megale_Diospolis": 165, "Thera": 236, "Tlos": 32, "Xanthos": 37, "Zeszes": 29,
     },
+    // CYRENE — live turn-1 settlement-scroll trade (2026-06-17 screenshots, all 7 towns to the
+    // denarius). The computed sea law under-counts the dense INTERNAL inter-city network between
+    // the four big coastal cities (Kyrene↔Arsinoe 458, Kyrene↔Euesperides 265, Ptolemais↔
+    // Euesperides ~213…); the small edge towns (Automala/Tetrapyrgia/Paraitonion) already matched
+    // the law exactly, so only the big four move. Pinning these makes trade — and the admin
+    // (2×mgmt%×gross) and corruption that ride on it — denarius-exact for Cyrene. VINTAGE-BOUND.
+    cyrene: {
+      "Kyrene": 1068, "Ptolemais_Kyrenaike": 397, "Euesperides": 339, "Arsinoe_Kyrenaike": 294,
+      "Automala": 45, "Tetrapyrgia": 52, "Paraitonion": 13,
+    },
   },
   seaFlowWeak: 0, // WEAK SLOT SIDES EXPORT NOTHING (julii corpus: Cosa's 'Pisae 9' row = the
   // IMPORT of Pisae→Cosa 41 (÷5 exact); every 'weak export' reading was a misread import)
@@ -1736,7 +1746,10 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
         ? (2 * Math.max(0, gv0.mgmtStat)) / 100 * (tTax + tFarm + tMine + tTrade)
         : Math.max(0, (4 + 0.75 * Math.min(3, Math.max(0, gv0.mgmt || 0)) + 0.25 * Math.max(0, gv0.law || 0)) / 100) * (tTax + tFarm + tMine + tTrade))
       : 0;
-    admin += tAdmin;
+    // Faction admin total = Σ of per-town FLOORED admin (the in-game Governor line is a whole
+    // number per settlement, summed). Flooring the unfloored sum over-reports by the dropped
+    // fractions (live Cyrene: 535 vs the towns summing to 531) — same staged-floor rule as taxes.
+    admin += Math.floor(tAdmin);
     let dist = null, corrPct = 0, lawTot = 0;
     const c = coords[s.region];
     if (cap && c) {

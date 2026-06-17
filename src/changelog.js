@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1152",
+    date: "2026-06-17",
+    items: [
+      { type: "fix", text: "**Cyrene trade is now denarius-exact, which also fixes its admin income.** The computed sea law under-counted the dense internal trade network between Cyrene's four big coastal cities (Kyrene, Ptolemais, Euesperides, Arsinoe), so trade — and the admin and corruption that ride on the settlement's gross income — read low. Pinned all seven towns' measured turn-1 trade from in-game (Kyrene 1068, Ptolemais 397, Euesperides 339, Arsinoe 294; the small edge towns already matched). Admin (= 2 × governor Management %) is confirmed exact at every town once trade is right (faction admin 493→531, matching the game)." },
+      { type: "fix", text: "**Faction admin total now sums the per-settlement integers** (same staged-floor rule as taxes), so the summary matches the towns added by hand (was over-reporting by the dropped fractions)." },
+    ],
+  },
+  {
     version: "0.9.1151",
     date: "2026-06-17",
     items: [
