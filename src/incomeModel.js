@@ -1565,8 +1565,15 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     //   governor tax = the engine's per-settlement taxEffect% from the save (gv0.taxEffect,
     //   authoritative: STRating+Wealthy+ancillaries). Non-live (descr_strat, no save) → 0.
     const _M = s.capital ? 40 : (F.tier <= 2 ? 40 : 4);
-    const taxW = _multi ? _pb : (CALIB.taxLogK_single * wLog * gTax);
-    const taxFlat = _multi ? (_M * s.taxablePct) : (CALIB.taxFlatSingle * gTax);
+    const _flatPts = _M * s.taxablePct;
+    // RATE BEHAVIOR differs by capital (live Cyrene tax-rate reads, 2026-06-17):
+    //   CAPITAL  → multiplicative: tax = rate·(popBase + M·Σ)·gov  (the points scale with rate).
+    //             Kyrene V.High 1172 = 1.5·(842+200)·0.75 (additive would give 1097).
+    //   NON-CAP  → additive: tax = (rate·popBase + M·Σ)·gov  (points are a flat term).
+    //             Ptolemais V.High 779 = 1.5·658.5 − 208 (multiplicative would give 675).
+    //   At Normal rate the two coincide (×1.0), which is why the all-Normal total still holds.
+    const taxW = _multi ? (s.capital ? _pb + _flatPts : _pb) : (CALIB.taxLogK_single * wLog * gTax);
+    const taxFlat = _multi ? (s.capital ? 0 : _flatPts) : (CALIB.taxFlatSingle * gTax);
     const taxH = taxHByCity ? (taxHByCity[_normCity(s.settlement)] != null ? taxHByCity[_normCity(s.settlement)]
       : taxHByCity[_normCity(s.region)]) : null;
     const tTaxNoH = Math.max(0, mult * taxW + taxFlat); // gross, pre-governor (corruption uses this)

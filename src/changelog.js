@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1148",
+    date: "2026-06-17",
+    items: [
+      { type: "fix", text: "**Capital tax now scales correctly with the tax rate.** The turn-1 tax law treats the building/region points (M·Σ) as a flat term for non-capital towns but as a RATE-SCALED term for the capital — i.e. capital `tax = floor(rate·(popBase + M·Σ)·gov)`, non-cap `tax = floor((rate·popBase + M·Σ)·gov)`. They coincide at Normal rate (which is why it slipped through), but diverge otherwise: live Cyrene reads Kyrene (capital) at Very-High = 1172, which needs the points inside the rate multiply (the flat form gave 1097), while Ptolemais (non-cap) at Very-High = 779 stays additive. Only the capital's non-Normal-rate tax changes; every other town is unaffected." },
+    ],
+  },
+  {
     version: "0.9.1147",
     date: "2026-06-17",
     items: [
