@@ -1589,7 +1589,12 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // farming income is now exact; the lone seleucid +20% is a separate EDB underparse).
     const tFarm = CALIB.farmPoint * (s.farmN + s.farmLevel + (gv0 ? (gv0.growthFarm || 0) : 0)) * gardensMult;
     const tMine = CALIB.minePoint * s.mineSum * (mineQty[s.region] || 0) * gMine;
-    taxes += tTax; farming += tFarm; mining += tMine; // unrounded accumulators; faction totals are floored (the game truncates each faction-total income line)
+    // TAX faction total = Σ of the per-settlement FLOORED taxes. Each town's tax income is an
+    // integer in-game (the settlement scroll truncates, e.g. 365.628→365), and the faction
+    // financial line sums those integers — NOT floor(Σ of unfloored taxes), which over-reports
+    // by the dropped fractions (live Cyrene: floor-of-sum 4477 vs sum-of-floored 4475). Farming
+    // stays an unrounded accumulator (its law is calibrated so floor(Σ) hits the exact panel total).
+    taxes += Math.floor(tTax); farming += tFarm; mining += tMine;
     // quantity-weighted resource value (descr_strat qty column); Set-based fallback
     const rv = tradeQtyVal[s.region] != null ? tradeQtyVal[s.region] : s.resources.reduce((a, r) => a + (r.tradeValue || 0), 0);
     const tradePts = s.tradePctParts ? (s.tradePctParts.base + s.tradePctParts.winter) : (s.tradePct || 0);

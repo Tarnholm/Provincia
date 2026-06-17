@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1150",
+    date: "2026-06-17",
+    items: [
+      { type: "fix", text: "**Faction tax total now matches the sum of the per-settlement tax lines.** Each settlement's tax income is a whole number in-game and the financial summary adds those integers; we were flooring the *unfloored* sum, which over-reported by the dropped fractions (live Cyrene summary read 4477 when the towns add up to 4475). The taxes line now equals what you get counting the settlements by hand." },
+    ],
+  },
+  {
     version: "0.9.1149",
     date: "2026-06-17",
     items: [
