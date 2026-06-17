@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1155",
+    date: "2026-06-18",
+    items: [
+      { type: "improvement", text: "**Sea trade is now computed from the real game formula too** (matching the land-trade rework). Each sea route = the exporter's trade rate × a relationship factor × (6 × the quantity-weighted cargo the partner lacks + a population-based baseline). This was reverse-engineered live by tagging six port towns with a marker good and reading their scrolls: sea cargo is linear in quantity (not diminishing), the per-unit rate is ~6× the land rate, and the relationship factor is 1.0 to your own towns, 0.74 to allies/protectorates, and 0.43 to foreign ports. It reproduces the in-game sea numbers to a few percent, and the faction trade total now lands on the live value." },
+      { type: "improvement", text: "**Sea trade requires a working harbour (trade_fleet ≥ 1).** A basic port with no fleet carries no sea trade; each port upgrade opens one more sea lane to the nearest reachable harbours, which the app now models correctly." },
+      { type: "fix", text: "**A general's Trading trait now boosts sea exports**, not just land trade — so a governor with trade bonuses raises the town's full trade income (land and sea), in both live-save and starting-position views." },
+    ],
+  },
+  {
     version: "0.9.1154",
     date: "2026-06-17",
     items: [

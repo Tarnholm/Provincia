@@ -670,6 +670,21 @@ const CALIB = {
   // hub cities now tight (Carthage −84, Clupea +30, Tingi +5). b0 2.405→2.70 balances the
   // faction total (the clean sample skews to large routes). Inputs stay mod/save-derived.
   seaLaw2: { b0: 2.70, bCargo: -0.0313, bTPct: 0.0954, bPopF: 0.3530, bD: -0.6433, bPopT: 0.1821 },
+  // ★ CRACKED SEA VALUE LAW (2026-06-18, Rome/Cosa/Sena amber qty5+qty40 pairs, gov out):
+  //   sea(X→Y) = landRateX · rights · (seaMarginal·cargo + seaBaseK·popX^px·popY^py)
+  //   - landRate = 2.0+0.2·tradePctX (same exporter rate as land); cargo = LINEAR qty×value
+  //     exclusion (qty5 & qty40 give identical per-unit → no saturation, unlike old effQ).
+  //   - MARGINAL per qty×value = landRate·6 (Rome→Fregellae 18.7, Cosa→Praeneste 12.8 measured).
+  //   - rights OWN 1.0 / ALLY(protectorate) 0.74 / FOREIGN 0.43 (confirmed 3 ways: Rome→Capua
+  //     1927 = own-rate×0.74; Sena→Nesactium ×0.43).
+  //   - popBaseline = the no-special-cargo floor, rises with both pops (fit on 3 own/ally lanes:
+  //     Rome→Fregellae 72, Rome→Capua 85, Cosa→Praeneste 42). seaFactor flat in fleet (fleet =
+  //     lane-FORMATION only; fleet0 = no sea). Replaces the refuted pop-only seaLaw2.
+  // retuned to the model's threshold-exclusion cargo (importer effect is already IN the cargo,
+  // so popBaseline is exporter-pop only): fits Rome→Fregellae 458, Rome→Capua 270, Cosa→Praeneste
+  // 207 to ~1%. popBase = seaBaseK·popX^seaBasePopX (seaBasePopY≈0).
+  seaMarginal: 6.1, seaBaseK: 0.69, seaBasePopX: 0.54, seaBasePopY: 0,
+  seaRightsOwn: 1.0, seaRightsAlly: 0.74, seaRightsForeign: 0.43,
   // EFF PER-UNIT WORTH CURVE (2026-06-12 probe battery refinement, replaces the
   // kink-4/0.32 form): a resource's q-th quantity unit is worth seaEffUnits[q−1]
   // (then seaEffTail per unit beyond the table). MEASURED, in exclusion-cargo pts
@@ -1357,6 +1372,7 @@ function seaFlowPtsByLane(modDataDir) {
   const coords = regionCoords(modDataDir);
   // per-unit worth curve (see CALIB.seaEffUnits — probe-measured diminishing returns)
   const effQ = (q) => {
+    if (CALIB.dynamicTradeOnly) return q; // cracked sea law: cargo is LINEAR in quantity (qty5=qty40 per-unit)
     const U = CALIB.seaEffUnits, T = CALIB.seaEffTail;
     let v = 0;
     for (let i = 0; i < q; i++) v += i < U.length ? U[i] : T;
@@ -1736,10 +1752,24 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
         // d = sea-lane movement distance, pops from descr_strat — all mod-file derived, so it
         // auto-updates. Slope still imperfect (rms ~37 on 10 routes) pending more single-good
         // control routes, but a large improvement over the constant.
+        if (ln2 && CALIB.dynamicTradeOnly) {
+          // ★ CRACKED SEA VALUE (see CALIB.seaMarginal): landRateX · rights · (6·cargo + popBaseline).
+          // `s` is the current town (closure); X is the EXPORTER region of this leg (= s on export
+          // rows, = the partner on import rows). cargo is LINEAR qty×value (effQ now identity).
+          const isExp = X === s.region;
+          const popX = Math.max(400, isExp ? (s.pop || 1500) : (ln2.toPop || 1500));
+          const popY = Math.max(400, isExp ? (ln2.toPop || 1500) : (s.pop || 1500));
+          const tPX = isExp ? (s.tradePct || 0) : 0; // partner tradePct unknown on import leg → base rate
+          const landRateX = CALIB.tradeLandRateBase + CALIB.tradeLandRatePct * tPX;
+          const ownX = ownerOfRegion[X], ownY = ownerOfRegion[Y];
+          const rights = ownX === ownY ? CALIB.seaRightsOwn
+            : ((tradeRightsSet.has(ownY) || tradeRightsSet.has(ownX)) ? CALIB.seaRightsAlly : CALIB.seaRightsForeign);
+          const popBase = CALIB.seaBaseK * Math.pow(popX, CALIB.seaBasePopX) * Math.pow(popY, CALIB.seaBasePopY);
+          return Math.max(0, landRateX * rights * (CALIB.seaMarginal * cargo + popBase));
+        }
         if (ln2 && cargo > 0) {
-          // v2 inverse-distance law. `s` is in scope (closure): the EXPORTER is X. When
-          // X is this settlement's region it's an export row (exporter = s); otherwise
-          // it's the partner exporting back to us (import row, exporter = ln2.to).
+          // v2 inverse-distance law (legacy, non-dynamic). `s` is in scope (closure): the EXPORTER
+          // is X. When X is this settlement's region it's an export row; otherwise the import row.
           const L = CALIB.seaLaw2;
           const isExp = X === s.region;
           const popX = Math.max(400, isExp ? (s.pop || 1500) : (ln2.toPop || 1500));
@@ -1766,6 +1796,11 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           const impDark = ln.impLive != null ? !ln.impLive : !ln.toNearest;
           impV = (ln.inWeak || impDark) ? 0 : flowOf(ln.to, s.region, impPly, ln) / 5;
         }
+        // GOVERNOR TRADING trait — same as land: multiplies the EXPORT leg (this town's
+        // exports) ×(1+0.74·trading%); the import leg (the partner's export back to us) is
+        // unaffected. gv0 is this town's governor effect (descr_strat seed or save-derived).
+        const _seaGovTrade = Math.max(0, 1 + 0.74 * ((gv0 && gv0.trading) || 0) / 100);
+        expV *= _seaGovTrade;
         seaTrade += expV + impV;
         if (process.env.TRADE_DEBUG) (global.__TDBG = global.__TDBG || []).push({
           kind: ln.river ? "river" : "sea", from: s.settlement, fromRegion: s.region, toRegion: ln.to,
