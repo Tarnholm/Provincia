@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1151",
+    date: "2026-06-17",
+    items: [
+      { type: "fix", text: "**Governor squalor-relief now raises population growth.** A governor trait that *reduces* squalor (e.g. Lenient's `Effect Squalor −1`) adds +0.5% growth per point — previously only Estates-family squalor counted toward growth. Live Cyrene: Arsinoe-Kyrenaike's governor (Lenient) now reads +0.5% at Normal, so the optimal plan correctly pushes it to High under a 0-growth/max-tax target (was stuck at Normal). Squalor *worsening* from personality/finance traits is still excluded (it nets out in-game), so towns like Tetrapyrgia are unaffected; Estates squalor continues to count both ways." },
+    ],
+  },
+  {
     version: "0.9.1150",
     date: "2026-06-17",
     items: [

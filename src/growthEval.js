@@ -536,7 +536,15 @@ function computeFactionGrowth(modDataDir, faction, opts) {
     // squalor (verified — adding it on top regressed save-aware 97→90%), so for a save-backed
     // estimate we leave it alone. No-save uses the descr_strat starting governors and was
     // recalibrated WITH this term (fit on truth+0.5×govSqualor, subtract per-settlement here).
-    const govSq = ge ? (ge.squalorEstates != null ? ge.squalorEstates : ge.squalor) : 0; // Estates-family only (Tetrapyrgia live case)
+    // GROWTH-SQUALOR ATTRIBUTION (refined 2026-06-17, live Cyrene counterexample): Estates-family
+    // squalor moves growth in BOTH directions (Larinum +2 → −1.0%, validated). NON-Estates
+    // (personality/finance) squalor moves growth ONLY when it RELIEVES (negative): Aristoteles'
+    // Lenient `Effect Squalor −1` raises Arsinoe-Kyrenaike growth +0.5% (user-confirmed in-game,
+    // flipping it Normal→High under the 0-growth/max-tax rule). Personality squalor WORSENING is
+    // still excluded — the save path over-reads it (Tetrapyrgia +1 where the in-game card nets 0).
+    const _estSq = ge ? (ge.squalorEstates || 0) : 0;
+    const _allSq = ge ? (ge.squalor || 0) : 0;
+    const govSq = _estSq + Math.min(0, _allSq - _estSq); // Estates (both ways) + non-Estates relief only
     const govSqualorPct = (govSq && !savedDev) ? 0.5 * govSq : 0;
     // TOTAL squalor (pop baseline + governor effect) clamps at 0 — a squalor-RELIEVING
     // governor (GoodBuilder/architect) in a town with no pop squalor cannot push squalor
