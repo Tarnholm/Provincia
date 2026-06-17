@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1153",
+    date: "2026-06-17",
+    items: [
+      { type: "fix", text: "**Oracle of Dodona now boosts its city's tax correctly.** A tax-granting world wonder (the Oracle, building `temple_of_viking_sp6`) makes its settlement tax like a capital — the building points scale with the tax rate instead of being a small flat bonus. Live Epirus Dodona now reads 455/568/682/853 across Low/Normal/High/Very-High (was ~426/532/638), matching the game. Detected from the building list, so it works both from a save and from descr_strat, and applies to any town that holds the wonder." },
+      { type: "change", text: "**Trade is now fully dynamic — zero pinned values.** Every settlement's trade is computed live from the mod files + save (population, ownership, buildings, goods, ports, trade fleets, governors), so editing any faction immediately shows the correct new trade. The previous per-town/per-route measured overrides (Carthage, Julii, Cyrene, Egypt) are gone. Faction trade totals stay within ~2% of the game (Carthage +1.7%, Julii −2.1%); per-town sea-trade accuracy continues to improve as the route law is refined." },
+    ],
+  },
+  {
     version: "0.9.1152",
     date: "2026-06-17",
     items: [

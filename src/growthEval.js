@@ -267,7 +267,7 @@ function parseEDBUncached(edbPath) {
     // this under-counted olive/wine settlements (−0.28 residual, found 2026-06-09).
     if ((m = ln.match(/^\s*farming_level\s+bonus\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("farmBonus", { val: +m[1], req: (m[2] || "").trim() }); continue; }
     if ((m = ln.match(/^\s*farming_level\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("farming", { val: +m[1], req: (m[2] || "").trim() }); continue; }
-    if ((m = ln.match(/^\s*population_health_bonus\s+bonus\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("health", { bonus: +m[1], req: (m[2] || "").trim() }); continue; }
+    if ((m = ln.match(/^\s*population_health_bonus\s+(?:bonus\s+)?(-?\d+)(?:\s+requires\s+(.+))?/))) { add("health", { bonus: +m[1], req: (m[2] || "").trim() }); continue; }
   }
   return { capIndex, chainLevels, aliases };
 }

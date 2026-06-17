@@ -71,14 +71,14 @@ function parseEDBIncome(edbPath) {
       curLevel = tok[0]; continue;
     }
     let m;
-    if ((m = ln.match(/^\s*taxable_income_bonus\s+bonus\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("taxable", { val: +m[1], req: (m[2] || "").trim() }); continue; }
-    if ((m = ln.match(/^\s*trade_base_income_bonus\s+bonus\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("trade", { val: +m[1], req: (m[2] || "").trim() }); continue; }
-    if ((m = ln.match(/^\s*trade_level_bonus\s+bonus\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("tradeLvl", { val: +m[1], req: (m[2] || "").trim() }); continue; }
+    if ((m = ln.match(/^\s*taxable_income_bonus\s+(?:bonus\s+)?(-?\d+)(?:\s+requires\s+(.+))?/))) { add("taxable", { val: +m[1], req: (m[2] || "").trim() }); continue; }
+    if ((m = ln.match(/^\s*trade_base_income_bonus\s+(?:bonus\s+)?(-?\d+)(?:\s+requires\s+(.+))?/))) { add("trade", { val: +m[1], req: (m[2] || "").trim() }); continue; }
+    if ((m = ln.match(/^\s*trade_level_bonus\s+(?:bonus\s+)?(-?\d+)(?:\s+requires\s+(.+))?/))) { add("tradeLvl", { val: +m[1], req: (m[2] || "").trim() }); continue; }
     if ((m = ln.match(/^\s*mine_resource\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("mine", { val: +m[1], req: (m[2] || "").trim() }); continue; }
     if ((m = ln.match(/^\s*trade_fleet\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("fleet", { val: +m[1], req: (m[2] || "").trim() }); continue; }
     if ((m = ln.match(/^\s*wall_level\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("walls", { val: +m[1], req: (m[2] || "").trim() }); continue; }
-    if ((m = ln.match(/^\s*population_health_bonus\s+bonus\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("health", { val: +m[1], req: (m[2] || "").trim() }); continue; }
-    if ((m = ln.match(/^\s*law_bonus\s+bonus\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("law", { val: +m[1], req: (m[2] || "").trim() }); continue; }
+    if ((m = ln.match(/^\s*population_health_bonus\s+(?:bonus\s+)?(-?\d+)(?:\s+requires\s+(.+))?/))) { add("health", { val: +m[1], req: (m[2] || "").trim() }); continue; }
+    if ((m = ln.match(/^\s*law_bonus\s+(?:bonus\s+)?(-?\d+)(?:\s+requires\s+(.+))?/))) { add("law", { val: +m[1], req: (m[2] || "").trim() }); continue; }
   }
   return { capIndex, chainLevels, aliases };
 }
@@ -474,7 +474,24 @@ const CALIB = {
   // (used directly for the player; the AI block divides out 0.92 separately).
   popBasePre: [[400,301.5],[450,324.5],[500,347.5],[550,363.5],[600,373.5],[700,396.5],[800,419.5],[900,442.5],[1000,465.5],[1100,488.5],[1150,500.5],[1200,505.5],[1400,528.5],[1600,551.5],[1800,574.5],[2000,597.5],[2500,629.5],[3000,658.5],[3500,686.5],[4000,715.5],[4500,744.5],[5000,773.5],[5500,801.5],[6000,830.5],[6500,859.5],[7000,888.5],[7500,917.5],[8000,945.5],[8500,965.5],[9000,979.5],[9350,989.5],[9706,1000.5]],
   popBasePost: [[9707,875.5],[10000,879.5],[12000,908.5],[14000,936.5],[16000,965.5],[18000,994.5],[20000,1023.5],[24000,1080.5],[30000,1166.5],[34000,1215.5]],
+  // ZERO TRADE PINS — fully dynamic (user mandate 2026-06-17: "0 pinns, dynamic at all
+  // cost"). When true, every hardcoded measured trade value (tradeMeasuredByPlayer per-town
+  // totals, landLaneRows per-route land, seaLaneF per-lane sea f, seaLaneSeeds observed lane
+  // sets) is IGNORED, so trade is computed 100% from EDB + descr_strat + save and recomputes
+  // when you edit any faction. The pin tables below are retained ONLY as validation reference
+  // and are dead while this is true. Set false to restore the old calibrated path.
+  dynamicTradeOnly: true,
   taxCliffPop: 9707, // pop at/above which the −125 step applies (popBasePost vs popBasePre)
+  // WONDER TAX — world-wonder buildings (RIS temples_of_viking / temple_of_horse_2 chains)
+  // that grant a taxable_income_bonus make their town use the CAPITAL tax treatment: the
+  // points count multiplicatively inside the rate (M=40, ×rate) instead of the non-capital
+  // flat M=4. Validated on the Oracle of Dodona (temple_of_viking_sp6, taxable_income_bonus
+  // 8 requires faction_religion_group_hellenic): live Epirus Dodona turn-1 2026-06-17 reads
+  // 455/568/682/853 at low/normal/high/vh = floor(rate·(popBase+40·Σ)), Σ=1 — EXACT (±1).
+  // (User shorthand "+8%×rate×popBase"; for this town 40·Σ = 40 ≈ 0.076·popBase.) Match by
+  // building level-name suffix so a relocated/upgraded wonder still triggers. Add other
+  // tax wonders here once a live reading confirms they behave the same (Parthenon sp1 etc.).
+  taxCapitalWonders: ["temple_of_viking_sp6"],
   taxPointK: 40,     // denarii per EDB taxable point, at Normal rate, INSIDE the rate multiply
   // DIFFICULTY (Feral docs, Battle_and_Campaign_Formulae.md): the human player's tax
   // and farm income scale by difficulty — Easy 1.20 / Normal 1.00 / HARD 0.92 /
@@ -772,16 +789,19 @@ const CALIB = {
     ptolemaic: {
       "Abila": 14, "Alexandria": 2412, "Amathous": 227, "Arsinoe_Klysma": 79, "Arsinoe_Krokodeilon_Polis": 390, "Askalon": 104, "Aspendos": 23, "Athribis": 103, "Azotos": 279, "Berenike_Deire": 40, "Berenike_Panchrysos": 245, "Berenike_Trogodytike": 158, "Berytos": 234, "Boubastis": 117, "Chalkis_Libanos": 48, "Delos": 343, "Dora": 146, "Erythrai": 126, "Etenna_Kotenna": 7, "Gadara": 94, "Gamala": 82, "Gaza": 1683, "Gerasa": 77, "Halikarnassos": 522, "Hebron": 58, "Herakleia_Phoinike": 7, "Hermou_Polis": 262, "Heroon_Polis": 203, "Ioppe": 692, "Itanos": 196, "Jerusalem": 168, "Kaunos": 548, "Kition": 198, "Knidos": 272, "Korakesion": 161, "Kos": 370, "Limyra": 179, "Lykon_Polis": 28, "Megale_Apollonos_Polis": 75, "Memphis": 391, "Mendes_Thmouis": 481, "Methymna": 100, "Mikra_Apollonos_Polis": 66, "Miletos": 625, "Mylasa": 364, "Myos_Hormos": 381, "Myra": 112, "Mytilene": 544, "Nagidos": 147, "Naukratis": 314, "Naxos": 660, "Oxyrhynchos": 282, "Pachora": 39, "Panos_Polis": 98, "Paphos": 573, "Patara": 241, "Pella_Peraia": 47, "Pelousion": 438, "Phaselis": 142, "Philadelpheia": 85, "Philotera": 102, "Premnis": 39, "Ptolemais_Hermeiou": 199, "Ptolemais_Phoinike": 429, "Ptolemais_Theron": 0, "Rhaithou": 84, "Sais": 57, "Salamis": 571, "Samareia": 130, "Samos": 657, "Samothrake": 0, "Sebennytos_Bousiris": 324, "Soloi": 598, "Syene_Elephantine": 78, "Tachompso_Pselkis": 32, "Tanis": 224, "Telmessos": 163, "Termessos": 17, "Thebes_Megale_Diospolis": 165, "Thera": 236, "Tlos": 32, "Xanthos": 37, "Zeszes": 29,
     },
-    // CYRENE — live turn-1 settlement-scroll trade (2026-06-17 screenshots, all 7 towns to the
-    // denarius). The computed sea law under-counts the dense INTERNAL inter-city network between
-    // the four big coastal cities (Kyrene↔Arsinoe 458, Kyrene↔Euesperides 265, Ptolemais↔
-    // Euesperides ~213…); the small edge towns (Automala/Tetrapyrgia/Paraitonion) already matched
-    // the law exactly, so only the big four move. Pinning these makes trade — and the admin
-    // (2×mgmt%×gross) and corruption that ride on it — denarius-exact for Cyrene. VINTAGE-BOUND.
-    cyrene: {
-      "Kyrene": 1068, "Ptolemais_Kyrenaike": 397, "Euesperides": 339, "Arsinoe_Kyrenaike": 294,
-      "Automala": 45, "Tetrapyrgia": 52, "Paraitonion": 13,
-    },
+    // CARTHAGE — COMPLETE 41/41 settlement trade, live turn-1 scrolls 2026-06-17
+    // (save 'save_Autosave Carthage Turn 1.sav', taxRate Normal). Value = the
+    // Turn-Income Trade line (= the settlement's authoritative trade income that
+    // balances its on-scroll Net). Row-sums cross-validate the scroll header on all
+    // 41 towns. Feral publishes NO trade-value formula (Battle_and_Campaign_Formulae
+    // has no trade section) → live pins are the exactness route. Re-read after a
+    // map/strat/goods rebalance (vintage-bound, like landLaneRows). Generated by
+    // rtw-sav-parser/gen-trade-pins.js from carth-raw.json.
+    carthage: { "Carthage": 2025, "Lilybaion": 641, "Panormos": 220, "Eryx": 218, "Melite": 0, "Caralis": 112, "Olbia_Sardinia": 8, "Neapolis_Sardinia": 175, "Sulci": 111, "Aleria": 3, "Hadrumetum": 319, "Leptis": 67, "Hippo": 84, "Iol": 58, "Tingi": 231, "Utica": 544, "Bulla": 46, "Clupea": 666, "Oea": 9, "Sabrata": 19, "Rusadir": 40, "Saldae": 34, "Ebusus": 122, "Malaca": 123, "Carteia": 125, "Segesta": 95, "Herakleia_Minoa": 23, "Meninx": 39, "Tunes": 155, "Vaga": 76, "Hippo_Diarrhytus": 325, "Gigthis": 17, "Euphranta": 6, "Karchedonike_Neapolis": 53, "Icosium": 58, "Thapsus": 9, "Leptis_Minor": 11, "Rusicade": 28, "Macomades_Minores": 12, "Sexi": 57, "Baria": 13 },
+    // JULII — 26 core settlements, live turn-1 scrolls 2026-06-17 (current build).
+    // Land rows re-confirmed identical to landLaneRows pins; full per-town totals
+    // from each scroll's Trade line. Generated from julii2-raw.json.
+    romans_julii: { "Rome": 1408, "Arretium": 87, "Sena_Gallica": 72, "Volaterrae": 104, "Corfinium": 16, "Falerii": 53, "Iguvium": 40, "Cosa": 421, "Teate": 30, "Pisae": 77, "Reate": 86, "Perusia": 31, "Camerinum": 31, "Maleventum": 121, "Larinum": 19, "Arpi": 94, "Venusia": 193, "Croton": 14, "Canusium": 32, "Thurii": 219, "Neapolis": 221, "Fregellae": 378, "Praeneste": 214, "Paestum": 324, "Epizephyrian_Locri": 53, "Metapontum": 159 },
   },
   seaFlowWeak: 0, // WEAK SLOT SIDES EXPORT NOTHING (julii corpus: Cosa's 'Pisae 9' row = the
   // IMPORT of Pisae→Cosa 41 (÷5 exact); every 'weak export' reading was a misread import)
@@ -1255,7 +1275,7 @@ function seaLanesByRegion(modDataDir) {
     const seeded = new Set();
     const portOf = {};
     for (const p of ports) portOf[p.region] = p;
-    for (const sd of (CALIB.seaLaneSeeds || [])) {
+    for (const sd of (CALIB.dynamicTradeOnly ? [] : (CALIB.seaLaneSeeds || []))) {
       const A = portOf[sd.a], B = portOf[sd.b];
       if (!A || !B) continue;
       seeded.add(sd.a); seeded.add(sd.b);
@@ -1574,7 +1594,10 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     //   size) and for any town when empireTier≤2; M = 4 for non-capitals at tier≥3.
     //   governor tax = the engine's per-settlement taxEffect% from the save (gv0.taxEffect,
     //   authoritative: STRating+Wealthy+ancillaries). Non-live (descr_strat, no save) → 0.
-    const _M = s.capital ? 40 : (F.tier <= 2 ? 40 : 4);
+    // a tax-granting world wonder (Oracle of Dodona) flips its town to capital-style tax.
+    const _wonderCapTax = (s.buildings || []).some(b => CALIB.taxCapitalWonders.some(w => b.endsWith(":" + w)));
+    const _capTax = s.capital || _wonderCapTax;
+    const _M = _capTax ? 40 : (F.tier <= 2 ? 40 : 4);
     const _flatPts = _M * s.taxablePct;
     // RATE BEHAVIOR differs by capital (live Cyrene tax-rate reads, 2026-06-17):
     //   CAPITAL  → multiplicative: tax = rate·(popBase + M·Σ)·gov  (the points scale with rate).
@@ -1582,8 +1605,8 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     //   NON-CAP  → additive: tax = (rate·popBase + M·Σ)·gov  (points are a flat term).
     //             Ptolemais V.High 779 = 1.5·658.5 − 208 (multiplicative would give 675).
     //   At Normal rate the two coincide (×1.0), which is why the all-Normal total still holds.
-    const taxW = _multi ? (s.capital ? _pb + _flatPts : _pb) : (CALIB.taxLogK_single * wLog * gTax);
-    const taxFlat = _multi ? (s.capital ? 0 : _flatPts) : (CALIB.taxFlatSingle * gTax);
+    const taxW = _multi ? (_capTax ? _pb + _flatPts : _pb) : (CALIB.taxLogK_single * wLog * gTax);
+    const taxFlat = _multi ? (_capTax ? 0 : _flatPts) : (CALIB.taxFlatSingle * gTax);
     const taxH = taxHByCity ? (taxHByCity[_normCity(s.settlement)] != null ? taxHByCity[_normCity(s.settlement)]
       : taxHByCity[_normCity(s.region)]) : null;
     // The engine floors the pre-governor settlement tax to an INTEGER first (the tax income
@@ -1621,7 +1644,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       * Math.exp(CALIB.tradeRoutePct * (s.tradePct || 0))
       * Math.pow(1 + rvX, CALIB.tradeRouteRvX);
     let landTrade = 0;
-    const landPins = (CALIB.landLaneRows || {})[s.region];
+    const landPins = CALIB.dynamicTradeOnly ? null : (CALIB.landLaneRows || {})[s.region];
     if (landPins) {
       // LIVE-PINNED town (see CALIB.landLaneRows): the pin set is the COMPLETE
       // scroll partner list — land trade = Σ pinned rows. Live values already
@@ -1673,7 +1696,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // to the faction this budget is computed for (as the human player) — the
       // Praeneste→Capua ×0.49 player split, live-confirmed in 2+3 campaigns.
       const flowOf = (X, Y, ply, ln2) => {
-        const e = (CALIB.seaLaneF || {})[X + ">" + Y];
+        const e = CALIB.dynamicTradeOnly ? null : (CALIB.seaLaneF || {})[X + ">" + Y];
         if (e && e.fix != null) return e.fix; // live-pinned flow (e.g. slave-island exporters with empty cargo baskets)
         const cargo = lanePts[X + ">" + Y] || 0;
         if (e) {
@@ -1729,7 +1752,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       tradeSeaSum += seaTrade;
     }
     // measured live t1 override for the played faction (see CALIB.tradeMeasuredByPlayer)
-    const _measTbl = CALIB.tradeMeasuredByPlayer[facLow];
+    const _measTbl = CALIB.dynamicTradeOnly ? null : CALIB.tradeMeasuredByPlayer[facLow];
     const _measKey = _measTbl && String(s.settlement || "").replace(/[\s-]+/g, "_");
     const _meas = _measTbl ? (_measTbl[_measKey] != null ? _measTbl[_measKey] : _measTbl[s.settlement]) : null;
     if (_meas != null) { tradeLandSum += _meas - landTrade; tradeSeaSum -= seaTrade; }

@@ -3925,7 +3925,7 @@
 			"loading screen icon": "data/ui/faction_icons/bituriges.tga",
 
 			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       39,
+			"standard index":       50,
 			"rebel standard index": 39,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
@@ -6761,7 +6761,7 @@
 			"rebel logo index": 47,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_gallic_rebel.CAS",
+			"strat symbol model":       "data/models_strat/symbol_corsi.CAS",
 			"strat rebel symbol model": "data/models_strat/symbol_gallic_rebel.CAS",
 		},
 
@@ -15630,7 +15630,7 @@
 			"rebel logo index": 70,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_iberian_rebels.CAS",
+			"strat symbol model":       "data/models_strat/symbol_sardinians.CAS",
 			"strat rebel symbol model": "data/models_strat/symbol_iberian_rebels.CAS",
 		},
 
@@ -15703,7 +15703,7 @@
 			"rebel logo index": 143,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_italic_rebels.CAS",
+			"strat symbol model":       "data/models_strat/symbol_sarsinates.CAS",
 			"strat rebel symbol model": "data/models_strat/symbol_italic_rebels.CAS",
 		},
 
