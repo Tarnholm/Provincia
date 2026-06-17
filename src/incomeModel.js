@@ -680,11 +680,18 @@ const CALIB = {
   //   - popBaseline = the no-special-cargo floor, rises with both pops (fit on 3 own/ally lanes:
   //     Rome→Fregellae 72, Rome→Capua 85, Cosa→Praeneste 42). seaFactor flat in fleet (fleet =
   //     lane-FORMATION only; fleet0 = no sea). Replaces the refuted pop-only seaLaw2.
-  // retuned to the model's threshold-exclusion cargo (importer effect is already IN the cargo,
-  // so popBaseline is exporter-pop only): fits Rome→Fregellae 458, Rome→Capua 270, Cosa→Praeneste
-  // 207 to ~1%. popBase = seaBaseK·popX^seaBasePopX (seaBasePopY≈0).
-  seaMarginal: 6.1, seaBaseK: 0.69, seaBasePopX: 0.54, seaBasePopY: 0,
-  seaRightsOwn: 1.0, seaRightsAlly: 0.74, seaRightsForeign: 0.43,
+  // ★★ SEA EXPORT — CRACKED STRUCTURE (2026-06-18, Kyrene controlled amber experiment, gov out):
+  //   sea(X→Y) = seaK·popX^a·popY^b·d^c·(cargo + seaConst) · rights · gov
+  //   SAME SHAPE AS LAND (rate × (cargo + const)) but with a STEEP DISTANCE factor instead of roads.
+  //   - cargo = FULL-exclusion qty×value of X's goods Y lacks (amber test: Kyrene→Arsinoe baseline
+  //     cargo 20, +120 amber = 140; both reproduce exactly). NOT the suppressed lanePts.
+  //   - seaConst = 10.55 PINNED EXACT by amber dilution (Kyrene→Arsinoe 2183/443 = (140+C)/(20+C)).
+  //   - distance d^c steep (Kyrene d24→14.5, d32→9.2 per-cargo ⇒ c≈−1.58 alone; ~−1.15 w/ pop terms).
+  //     NOTE: d should be SEA-DEPTH-WEIGHTED path (user: shallow=full / medium≈½ range / deep=blocked,
+  //     + a max-range cutoff) — the plain BFS d leaves ~18% on d16 routes. That's the final refinement.
+  //   - rights: own/with-trade-rights 1.0, no-rights 0.5 (Quietus guide: trade rights = ×2 sea export).
+  seaK: 0.05, seaPopX: 0.7, seaPopY: 0.4, seaDist: -1.15, seaConst: 10.55,
+  seaRightsForeign: 0.5,
   // EFF PER-UNIT WORTH CURVE (2026-06-12 probe battery refinement, replaces the
   // kink-4/0.32 form): a resource's q-th quantity unit is worth seaEffUnits[q−1]
   // (then seaEffTail per unit beyond the table). MEASURED, in exclusion-cargo pts
@@ -1753,19 +1760,22 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
         // auto-updates. Slope still imperfect (rms ~37 on 10 routes) pending more single-good
         // control routes, but a large improvement over the constant.
         if (ln2 && CALIB.dynamicTradeOnly) {
-          // ★ CRACKED SEA VALUE (see CALIB.seaMarginal): landRateX · rights · (6·cargo + popBaseline).
-          // `s` is the current town (closure); X is the EXPORTER region of this leg (= s on export
-          // rows, = the partner on import rows). cargo is LINEAR qty×value (effQ now identity).
+          // ★★ CRACKED SEA EXPORT (Kyrene controlled amber experiment 2026-06-18):
+          //   seaK · popX^a · popY^b · d^c · (cargo + seaConst) · rights
+          // Same shape as land (rate × (cargo+const)) with a STEEP distance factor instead of roads.
+          // cargo = FULL-exclusion qty×value of the EXPORTER's goods the importer lacks (amber test:
+          // baseline cargo + amber both reproduce exactly). seaConst pinned by the amber dilution.
+          // d is the sea-lane BFS distance (TODO: sea-depth-weight it — shallow×1/medium×2/deep block).
           const isExp = X === s.region;
           const popX = Math.max(400, isExp ? (s.pop || 1500) : (ln2.toPop || 1500));
           const popY = Math.max(400, isExp ? (ln2.toPop || 1500) : (s.pop || 1500));
-          const tPX = isExp ? (s.tradePct || 0) : 0; // partner tradePct unknown on import leg → base rate
-          const landRateX = CALIB.tradeLandRateBase + CALIB.tradeLandRatePct * tPX;
+          const gx = _goodsQty[X] || {}, gy = _goodsQty[Y] || {};
+          let cF = 0; for (const r in gx) if (!(r in gy)) cF += gx[r] * (_goodsVal[r] || 0);
           const ownX = ownerOfRegion[X], ownY = ownerOfRegion[Y];
-          const rights = ownX === ownY ? CALIB.seaRightsOwn
-            : ((tradeRightsSet.has(ownY) || tradeRightsSet.has(ownX)) ? CALIB.seaRightsAlly : CALIB.seaRightsForeign);
-          const popBase = CALIB.seaBaseK * Math.pow(popX, CALIB.seaBasePopX) * Math.pow(popY, CALIB.seaBasePopY);
-          return Math.max(0, landRateX * rights * (CALIB.seaMarginal * cargo + popBase));
+          const rights = (ownX === ownY || tradeRightsSet.has(ownY) || tradeRightsSet.has(ownX)) ? 1.0 : CALIB.seaRightsForeign;
+          const d = Math.max(1, ln2.d || 20);
+          return Math.max(0, CALIB.seaK * Math.pow(popX, CALIB.seaPopX) * Math.pow(popY, CALIB.seaPopY)
+            * Math.pow(d, CALIB.seaDist) * (cF + CALIB.seaConst) * rights);
         }
         if (ln2 && cargo > 0) {
           // v2 inverse-distance law (legacy, non-dynamic). `s` is in scope (closure): the EXPORTER

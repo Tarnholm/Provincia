@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1156",
+    date: "2026-06-18",
+    items: [
+      { type: "improvement", text: "**Sea trade rewritten to the real engine structure.** A controlled in-game experiment (tagging a single port with a marker good and reading the exact scroll change) revealed sea export uses the *same shape as land trade* — `rate × (cargo + constant)` — but with a steep **distance** factor instead of roads. The cargo is the exporter's goods the partner lacks (quantity×value), the constant was pinned exactly from the marker-good test, and the distance penalty is severe (far ports trade far less). This replaces the previous population-based estimate that over-counted big trade cities by ~50%; the test city now reads 983 vs the game's 1095 (was 1629), with land routes denarius-exact." },
+      { type: "improvement", text: "**Sea import is exactly 20% of the matching export** (confirmed against the classic RTW economics findings), and **trade rights** halve sea export when absent — both now modelled directly." },
+    ],
+  },
+  {
     version: "0.9.1155",
     date: "2026-06-18",
     items: [
