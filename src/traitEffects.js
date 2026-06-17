@@ -295,7 +295,12 @@ function govEffectByCityFromSave(cracked, parsed, modDataDir) {
     // Management/Command/Influence/Loyalty directly (signed) — no trait-level
     // mapping needed. admin% = 2·max(0, mgmtStat) is exact (7/7 live cyrene towns).
     if (ch.management != null) { e.mgmtStat = ch.management; e.influenceStat = ch.influence; e.commandStat = ch.command; }
-    if (e.growthFarm || e.health || e.squalor || e.tax || e.trading || e.mining || e.influence || e.law || e.unrest || e.localPop || e.mgmt || e.mgmtStat != null) out[city] = e;
+    // AUTHORITATIVE governor tax %: the engine's per-character accumulated TaxCollection
+    // (frame+124, decoded in characterParser as `taxEffect`) — STRating+Wealthy+ancillaries,
+    // frozen turn-1. This is the value the in-game settlement tax card shows; it is NOT
+    // recoverable from the (clobbered/derived) traits, so read it directly. (2026-06-17)
+    if (ch.taxEffect != null) e.taxEffect = ch.taxEffect;
+    if (e.growthFarm || e.health || e.squalor || e.tax || e.trading || e.mining || e.influence || e.law || e.unrest || e.localPop || e.mgmt || e.mgmtStat != null || e.taxEffect != null) out[city] = e;
   }
   return out;
 }

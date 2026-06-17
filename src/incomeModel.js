@@ -463,6 +463,19 @@ const CALIB = {
   // Adrumet): Taxes 200/334/468/670 → W=(468−334)/0.2=670 (all 4 fit mult·670−336). Nearly
   // flat from the 4500 anchor (668), so the old 4500→9000 linear chord over-read mid-5000s.
   taxWanchors: [[1000, 430], [1200, 455], [1500, 540], [2200, 577.5], [2250, 580], [3000, 592.5], [3750, 649], [4500, 668], [5000, 670], [9000, 912.67], [12000, 925]],
+  // ★ MEASURED popBase(pop) — the pure populace-tax-base curve, from the Bruttians controlled
+  // experiment (2026-06-16): a 2-settlement faction stripped to core+gov+region_base, both
+  // settlements swept across population at all 4 tax rates. Tax law cracked denarius-exact:
+  //   tax_town = floor( rate · ( popBase(pop) + taxPointK·pts ) )   [MULTIPLICATIVE, not additive]
+  //   rate ∈ {0.8,1.0,1.2,1.5}; pts = EDB taxable_income_bonus sum (empire-size region_base etc.).
+  // popBase is TIER-INDEPENDENT (town=large_town=city identical) and always a half-integer (X.5),
+  // so single-rate reads are exact. There is a −125 DISCONTINUITY at pop 9707 (verified real:
+  // not squalor, not order, not tier — a fixed population threshold). Values are H/H in-game reads
+  // (used directly for the player; the AI block divides out 0.92 separately).
+  popBasePre: [[400,301.5],[450,324.5],[500,347.5],[550,363.5],[600,373.5],[700,396.5],[800,419.5],[900,442.5],[1000,465.5],[1100,488.5],[1150,500.5],[1200,505.5],[1400,528.5],[1600,551.5],[1800,574.5],[2000,597.5],[2500,629.5],[3000,658.5],[3500,686.5],[4000,715.5],[4500,744.5],[5000,773.5],[5500,801.5],[6000,830.5],[6500,859.5],[7000,888.5],[7500,917.5],[8000,945.5],[8500,965.5],[9000,979.5],[9350,989.5],[9706,1000.5]],
+  popBasePost: [[9707,875.5],[10000,879.5],[12000,908.5],[14000,936.5],[16000,965.5],[18000,994.5],[20000,1023.5],[24000,1080.5],[30000,1166.5],[34000,1215.5]],
+  taxCliffPop: 9707, // pop at/above which the −125 step applies (popBasePost vs popBasePre)
+  taxPointK: 40,     // denarii per EDB taxable point, at Normal rate, INSIDE the rate multiply
   // DIFFICULTY (Feral docs, Battle_and_Campaign_Formulae.md): the human player's tax
   // and farm income scale by difficulty — Easy 1.20 / Normal 1.00 / HARD 0.92 /
   // Extreme 0.85. The user/team plays H/H, and every constant below was fit on H/H
@@ -1532,27 +1545,34 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // sweep proved the curve is linear above ~3k; the power law's bow above the chord was
     // the mid-pop over-estimate — see CALIB.taxPopKnee).
     // single-town (city-states / Capua): unchanged log law (separately calibrated).
-    const _wPowAt = p => CALIB.taxPowC * Math.pow(Math.max(400, p), CALIB.taxPowB);
-    const _knee = CALIB.taxPopKnee || Infinity;
-    // Linear chord ONLY between the knee and the Rome 9000 anchor (the range the pop sweep
-    // covers, 2k-8k, where the curve is demonstrably straight). Below the knee and ABOVE
-    // 9000 keep the power law: low-pop convexity is real, and high-pop mega-cities (egypt/
-    // eastern) were verified to climb the power law to 31k — a linear extrapolation past
-    // 9000 would over-shoot them. Continuous at both the knee and 9000 (chord endpoints
-    // are the power-law values there).
-    // W(pop) from the controlled-anchor table: linear interpolation between anchors,
-    // power law outside [1000, 9000] (continuous: the end anchors equal the power law).
-    const _anch = CALIB.taxWanchors;
-    let wPow;
+    // NEW multiplicative tax law (Bruttians experiment 2026-06-16): tax = floor(rate·(popBase+40·pts)).
+    // popBase from CALIB.popBasePre/Post (measured, half-integer), −125 cliff at pop 9707. Expressed
+    // in the existing rate·w+flat shape with w = popBase + taxPointK·pts and flat = 0.
+    // NOTE: building taxable coefficients beyond region_base are still being calibrated — full-building
+    // cities (Carthage) are WIP until each building's pts contribution is measured & corrected.
     const _pp = Math.max(400, s.pop);
-    if (_pp <= _anch[0][0] || _pp > _anch[_anch.length - 1][0]) wPow = _wPowAt(_pp);
-    else { for (let i = 1; i < _anch.length; i++) { if (_pp <= _anch[i][0]) { const [x0, y0] = _anch[i - 1], [x1, y1] = _anch[i]; wPow = y0 + (y1 - y0) * (_pp - x0) / (x1 - x0); break; } } }
-    const taxW = (F.settlements.length > 1 ? wPow : CALIB.taxLogK_single * wLog) * gTax;
-    const taxFlat = (F.settlements.length > 1 ? CALIB.taxFlatPoint * taxPts : CALIB.taxFlatSingle) * gTax;
+    const _pbT = _pp >= CALIB.taxCliffPop ? CALIB.popBasePost : CALIB.popBasePre;
+    let _pb;
+    if (_pp <= _pbT[0][0]) _pb = _pbT[0][1];
+    else { let _hit = false; for (let i = 1; i < _pbT.length; i++) { if (_pp <= _pbT[i][0]) { const [x0, y0] = _pbT[i - 1], [x1, y1] = _pbT[i]; _pb = y0 + (y1 - y0) * (_pp - x0) / (x1 - x0); _hit = true; break; } } if (!_hit) { const [x0, y0] = _pbT[_pbT.length - 2], [x1, y1] = _pbT[_pbT.length - 1]; _pb = y1 + (y1 - y0) * (_pp - x1) / (x1 - x0); } }
+    const _multi = F.settlements.length > 1;
+    // NEW TAX LAW (2026-06-17, cracked via Bruttians/Cyrene/Julii/Carthage; ref gov-tax.js):
+    //   multi-town  tax = floor( (rate·popBase + M·Σ) · (1 + govTax%) )
+    //   Σ = FULL taxablePct (base+size+winter): the disabling_in_winter taxable lines DO fire
+    //   at turn-1 (it is summer; "winter" = disabled-in-winter, i.e. active now). Validated
+    //   denarius-exact on Cyrene (port/roads included). M = 40 for the CAPITAL (any empire
+    //   size) and for any town when empireTier≤2; M = 4 for non-capitals at tier≥3.
+    //   governor tax = the engine's per-settlement taxEffect% from the save (gv0.taxEffect,
+    //   authoritative: STRating+Wealthy+ancillaries). Non-live (descr_strat, no save) → 0.
+    const _M = s.capital ? 40 : (F.tier <= 2 ? 40 : 4);
+    const taxW = _multi ? _pb : (CALIB.taxLogK_single * wLog * gTax);
+    const taxFlat = _multi ? (_M * s.taxablePct) : (CALIB.taxFlatSingle * gTax);
     const taxH = taxHByCity ? (taxHByCity[_normCity(s.settlement)] != null ? taxHByCity[_normCity(s.settlement)]
       : taxHByCity[_normCity(s.region)]) : null;
-    const tTaxNoH = Math.max(0, mult * taxW + taxFlat); // pre-fortune base (corruption uses this)
-    const tTax = tTaxNoH * (taxH != null ? taxH : 1);
+    const tTaxNoH = Math.max(0, mult * taxW + taxFlat); // gross, pre-governor (corruption uses this)
+    // governor tax multiplier from the save's per-settlement taxEffect% (multi-town only).
+    const _govTaxPct = (_multi && gv0 && gv0.taxEffect != null) ? gv0.taxEffect : 0;
+    const tTax = tTaxNoH * (1 + _govTaxPct / 100) * (taxH != null ? taxH : 1);
     // governor Effect Farming = +1 farm level per point for INCOME (confirmed 2026-06-10,
     // gov-farm-income-test.js: 10/11 player factions land at ratio 1.000-1.002 with u=1 —
     // farming income is now exact; the lone seleucid +20% is a separate EDB underparse).

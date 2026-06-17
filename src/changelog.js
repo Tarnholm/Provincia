@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1147",
+    date: "2026-06-17",
+    items: [
+      { type: "fix", text: "**Turn-1 tax rewritten to the cracked law — now exact per settlement, including the governor's effect.** Multi-town tax is `floor( (rate·popBase + M·Σ) · (1 + governor%) )`: the building/region points (Σ = the full taxable sum) are a RATE-INDEPENDENT flat term (only the populace base scales with the tax rate), and M is the per-point value — **40** for the capital (any empire size) and for any town in a small empire (size ≤ 2), dropping to **4** for non-capital towns once the empire reaches size 3+. The governor's tax bonus is now read straight from the save (the engine's per-character accumulated TaxCollection at the stat-cluster offset), which is authoritative — it captures STRating (the hidden Selfish/optimistic-style personality tax trait), Wealthy, and tax ancillaries that are otherwise unrecoverable from the trait list (the level byte is overwritten by the ancillary count). Validated denarius-exact on a Cyrene turn-1 save: Kyrene 781, Ptolemais 450, Automala 594, faction total within 1 of the in-game 3995. Cracked across four controlled factions (Bruttians/Cyrene/Julii/Carthage)." },
+    ],
+  },
+  {
     version: "0.9.1146",
     date: "2026-06-16",
     items: [

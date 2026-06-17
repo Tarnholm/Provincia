@@ -386,6 +386,25 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
   // The byte offsets are unchanged; only the field labels rotate.
   // LAYOUT_B offsets follow the same -4 shift convention as other fields.
   let management = null, command = null, influence = null, loyalty = null;
+  // taxEffect = the engine's accumulated TaxCollection% for this character — the
+  // governor-tax modifier the engine actually applies to a settlement's tax
+  // income. CRACKED 2026-06-17 (cyrene STRating session): the stat frame
+  // ([u16=23][u32=50]) is the base of a fixed-stride i32 EFFECT VECTOR indexed
+  // by the engine's internal attribute enum; every trait/ancillary/meta-trait
+  // (STRating, ICERating, Wealthy, Cheapskate, …) folds its effects into this
+  // vector at game-start and on every load. TaxCollection is enum index 31, so
+  // it sits at frame+124 (== record+218 for LAYOUT_B greek, record+222 for
+  // LAYOUT_A roman — both anchored off the frame, so the read is layout-agnostic).
+  //
+  // This is the AUTHORITATIVE governor-tax value and SUPERSEDES the heuristic
+  // re-derivation in gov-tax.js. It is the only field that distinguishes two
+  // governors whose final Selflessness/Temperament are identical but whose
+  // come-of-age STRating differed (the long-standing Perseus@Automala +5% vs
+  // Theodotos@Ptolemais 0% puzzle): Perseus reads +5 here, Theodotos 0. Proven
+  // on all 7 Cyrene governors in BOTH the Turn-1 and Turn-2 saves
+  // (Magas −25, Perseus +5, Hermokrates +10, Aristoteles +5, others 0), giving
+  // the correct faction tax total of 3995 with Automala = 594.
+  let taxEffect = null;
   {
     // Locate the stat cluster by its frame signature [u16=23][u32=50] rather
     // than a fixed offset. The frame's exact position drifts ±4 by record
@@ -415,6 +434,13 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
       // garbage read lands far outside ±30 — filter those.
       if (Math.abs(management) > 30 || Math.abs(command) > 30 || Math.abs(influence) > 30 || Math.abs(loyalty) > 30) {
         management = command = influence = loyalty = null;
+      }
+      // TaxCollection effect — enum index 31 of the effect vector (frame+124).
+      if (frameP + 124 + 4 <= buf.length) {
+        const te = buf.readInt32LE(frameP + 124);
+        // TaxCollection effects are small (±~50). Anything larger is a garbage
+        // read (frame mislocated); leave null so the caller can fall back.
+        if (Math.abs(te) <= 100) taxEffect = te;
       }
     }
   }
@@ -469,13 +495,30 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
       }
     }
   }
-  // The ancillary block reuses the LAST trait's points slot (ancStart == that
-  // slot's +4), so when ancillaries exist the last trait's `points` we read
-  // above is actually the ancCount — not a real level. Null it out so the UI
-  // doesn't show a bogus level on the final trait.
+  // LAST-TRAIT POINTS / ANCILLARY OVERLAP — byte-exact layout (verified on the
+  // Cyrene T1 save, 2026-06-17 cracker session). The post-trait region is:
+  //
+  //     [lastTraitId u32][ancCount u16][ancId u32 × ancCount][portLen u16][portrait]
+  //
+  // i.e. the ancCount occupies the LAST trait's would-be `points` slot (+4) and
+  // the first ancId occupies its `pad` slot (+6) onward. There is NO points
+  // field stored for the last trait — its slot is structurally the ancCount.
+  // (Proven: Magas has [id][02 00][0b00 0000][2001 0000][33 00] = ancCount 2,
+  //  ancIds bodyguard(11)+mercenary_captain(288); Perseus [id][01 00][d200 0000]
+  //  [35 00] = ancCount 1, ancId drillmaster(210). No second copy of the trait
+  //  id exists anywhere in the record.)
+  //
+  // Consequence: the last trait's true points are UNRECOVERABLE from the binary
+  // whenever ancCount > 0 (the slot holds the count, not the value). When
+  // ancCount == 0 the slot reads 0, which IS the true points for the last trait
+  // (the engine writes 0 there for "no ancillaries", and the only last traits we
+  // observe — STRating / TurnsAlive on starting generals — are genuinely 0 in
+  // that slot). So we keep points only when ancCount == 0, and flag it unknown
+  // (null) otherwise rather than fabricating a bogus 0 that a tax/level consumer
+  // would mistake for a real value. See gov-tax.js for the STRating fallback.
   if (ancCountFound > 0 && traits.length > 0) {
     const last = traits[traits.length - 1];
-    last.points = 0; last.level = 0;
+    last.points = null; last.level = null; last.pointsUnknown = true;
   }
 
   // Portraits: scan forward from trait end for length-prefixed ASCII paths.
@@ -558,6 +601,7 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
     command,
     influence,
     loyalty,
+    taxEffect,
   };
 }
 
