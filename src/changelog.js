@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1154",
+    date: "2026-06-17",
+    items: [
+      { type: "improvement", text: "**Land trade is now computed from the real game formula instead of a rough estimate.** Each trade route = (2.0 + 0.2 × the town's trade-bonus%) × (the goods it exports that the partner lacks + half the goods it imports, by quantity×value) × a road multiplier × the governor's trade bonus. This was reverse-engineered live, one variable at a time: the road multiplier is `1 + min(exporterRoad−1, importerRoad)` (a `roads` building gives nothing, `paved`/`highways` add the bonus, capped by the partner's road); cargo is quantity-weighted and only counts goods the other side doesn't have; and the per-route rate scales purely with the town's trade buildings (market + pottery/salt/agriculture industries), not its size, port, or capital status. It reproduces the in-game numbers to the denarius on controlled tests." },
+      { type: "fix", text: "**Trade now reflects roads, buildings, resources, and population correctly** — because it parses them live, editing any of these in the mod immediately shows the right new trade numbers (no pinned values anywhere)." },
+    ],
+  },
+  {
     version: "0.9.1153",
     date: "2026-06-17",
     items: [

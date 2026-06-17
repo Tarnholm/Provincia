@@ -562,6 +562,16 @@ const CALIB = {
   tradeRouteK: 0.2837, tradeRoutePopX: 0.2237, tradeRoutePct: 0.1563,
   tradeRouteRoad: -0.0728, tradeRouteRvX: 0.5939, tradeRouteRvY: 0.2746, tradeRoutePopY: 0.1333,
   tradeNoRights: 0.33,
+  // LAND-TRADE LAW (cracked LIVE 2026-06-17 via ~30 descr_strat experiments; replaces the
+  // bogus pop/road regression). route(X→Y) = (rateBase + ratePct·tradePctX) × (exportCargo
+  // + importFrac·importCargo + const) × (1+min(roadX−1,roadY)) × (1+0.74·govTrade%).
+  //   rate = 2.0 + 0.2·tradePct  — Rome tradePct5→3.0, Cosa1→2.2, Neapolis−5→1.0, inland−6→0.8
+  //     (all denarius-exact; tradePct = net trade_base_income_bonus from market+pottery/salt/
+  //      agroforestry industries − size penalty; NOT coastal/pop/capital — those were spurious).
+  //   cargo = Σ qty×value (descr_strat qty × descr_sm value) of goods the OTHER side LACKS
+  //     (exclusion rule; value-scaling proven: grain1/glass2/amber3; quantity LINEAR).
+  //   import side counts at ½; const ≈6.5 (flat baseline ≈ ½ exporter's own goods value).
+  tradeLandRateBase: 2.0, tradeLandRatePct: 0.2, tradeLandImportFrac: 0.5, tradeLandConst: 6.5,
   // LAND-LANE LIVE PINS (2026-06-12, three corpora: julii 26-town t1 scrolls
   // [jcrops/julii/routes-all.tsv — every town's land partner list COMPLETE, row
   // sums = scroll totals], capua clean-vintage scroll [Freg 91/Bov 60/Malev 184/
@@ -980,7 +990,10 @@ function tradePartnerCtx(modDataDir) {
     for (const [fac, f] of Object.entries(strat)) for (const sd of f.settlements) {
       ownerOfRegion[sd.region] = fac;
       popOfRegion[sd.region] = sd.pop || 400;
-      roadOfRegion[sd.region] = (sd.buildings || []).some(b => /hinterland_roads/.test(b.chain)) ? 1 : 0;
+      // road LEVEL (model units: none 0, roads 1, paved_roads 2, highways 3) — needed
+      // for the trade road multiplier (the importer's road level CAPS the exporter's bonus).
+      { const _rb = (sd.buildings || []).find(b => /hinterland_roads/.test(b.chain));
+        roadOfRegion[sd.region] = _rb ? ({ roads: 1, paved_roads: 2, highways: 3 }[_rb.level] || 1) : 0; }
       if (sd.buildings && sd.buildings.some(b => /port/i.test(b.chain))) portTowns.push({ region: sd.region, fac });
     }
     // RELATIONSHIP CODES (descr_strat): 199 = alliance, 201 = at war. Both are listed
@@ -1483,6 +1496,14 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   if (/^romans?_/.test(facLow)) tradeRightsSet.add("roman_senate");
   if (facLow === "roman_senate") for (const f of ["romans_julii", "romans_brutii", "romans_scipii"]) tradeRightsSet.add(f);
   const tradeQtyVal = tradeQtyValByRegion(modDataDir);
+  // per-region per-resource quantities (raw, slaves excluded) + descr_sm values, for the
+  // qty-weighted exclusion cargo of the cracked land-trade law.
+  const { qty: _goodsQty, rawValues: _goodsVal } = tradeQtyMapsByRegion(modDataDir);
+  const _landCargo = (Areg, Breg) => { // A's goods that B lacks, Σ qty×value
+    const a = _goodsQty[Areg] || {}, b = _goodsQty[Breg] || {}; let c = 0;
+    for (const r in a) if (!(r in b)) c += a[r] * (_goodsVal[r] || 0);
+    return c;
+  };
   const seaLanes = seaLanesByRegion(modDataDir);
   const seaPartnersOf = (region) => {
     const bodies = seaOf[region];
@@ -1639,10 +1660,8 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // TRADE RIGHTS with us (rights = suzerain/client links from become_protector;
     // live capua save: trade list = julii only; julii save: senate + its 6 clients).
     // R² 0.947 on 118 rights-rows; no-rights median 0.349 over 17 rows.
-    const rvX = tradeQtyVal[s.region] || 0;
-    const aX = CALIB.tradeRouteK * Math.pow(Math.max(400, s.pop), CALIB.tradeRoutePopX)
-      * Math.exp(CALIB.tradeRoutePct * (s.tradePct || 0))
-      * Math.pow(1 + rvX, CALIB.tradeRouteRvX);
+    // cracked land-trade rate: linear in the town's net trade_base_income_bonus (tradePct).
+    const _landRate = CALIB.tradeLandRateBase + CALIB.tradeLandRatePct * (s.tradePct || 0);
     let landTrade = 0;
     const landPins = CALIB.dynamicTradeOnly ? null : (CALIB.landLaneRows || {})[s.region];
     if (landPins) {
@@ -1656,10 +1675,18 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
         if (!isPartner(own)) continue;
         nPartners++;
         const hasRights = own === facLow || tradeRightsSet.has(own);
-        const _landRow = aX * Math.exp(CALIB.tradeRouteRoad * ((roadOfRegion[n] || 0) + (s.roadLevel || 0)))
-          * Math.pow(1 + (tradeQtyVal[n] || 0), CALIB.tradeRouteRvY)
-          * Math.pow(Math.max(400, popOfRegion[n] || 400), CALIB.tradeRoutePopY)
-          * (hasRights ? 1 : CALIB.tradeNoRights);
+        // ROAD MULTIPLIER (live-cracked 2026-06-17, Rome road-sweep new campaign):
+        // route × (1 + min(max(0, roadExporter − 1), roadImporter)). The EXPORTER (s, whose
+        // scroll this row is on) contributes road−1 (the `roads` building = engine road_level
+        // 0 → no bonus; paved → 1; highways → 2); the IMPORTER's road CAPS it (no road → ×1
+        // flat). Linear in min. Validated exact: Rome `roads`→Cosa 76 (×1), `paved`→Cosa 152
+        // (×2), `highways`→Cosa 152 (capped by Cosa's `roads`); Cosa→Rome & Reate→Rome stay
+        // flat because their exporters' roads are ≤1 (term 0). Replaces the bogus e^(−0.073·road).
+        const roadMult = 1 + Math.min(Math.max(0, (s.roadLevel || 0) - 1), roadOfRegion[n] || 0);
+        // qty-weighted exclusion cargo: exporter's goods n lacks (+ ½ of n's goods exporter lacks)
+        const _exC = _landCargo(s.region, n), _imC = _landCargo(n, s.region);
+        const _landRow = _landRate * (_exC + CALIB.tradeLandImportFrac * _imC + CALIB.tradeLandConst)
+          * roadMult * (hasRights ? 1 : CALIB.tradeNoRights);
         landTrade += _landRow;
         if (process.env.TRADE_DEBUG) (global.__TDBG = global.__TDBG || []).push({
           kind: "land", from: s.settlement, fromRegion: s.region, toRegion: n,
