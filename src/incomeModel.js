@@ -1339,7 +1339,10 @@ function seaLanesByRegion(modDataDir) {
       (out[sd.b] = out[sd.b] || []).push({ to: sd.a, weak: !sd.exB, inWeak: !sd.exA, impLive: sd.impB !== false, toPop: A.pop, toPort: A.basePort, ownPop: B.pop, ownPort: B.basePort, d, seeded: true });
     }
     const slots = {};
-    for (const p of ports) slots[p.region] = 1 + p.level;
+    // SLOTS = built port chain level (live 2026-06-18: Carthage dockyard = 3 sea exports, not 4 —
+    // the symmetric scroll shows 3 exports + 3 imports, and the value law can't produce Hadrumetum's
+    // 21 as a d28 export so it's an import). Was 1+level (over by one).
+    for (const p of ports) slots[p.region] = Math.max(1, p.level);
     // PER-EXPORTER lane formation (live-cracked 2026-06-18, Carthage→Hippo Diarrhytus): the engine
     // is per-exporter, NOT bidirectional pairing. Each port forms EXPORT lanes to its nearest
     // slots[X] eligible partners INDEPENDENTLY of the partner's own slot usage (Carthage claims
@@ -1357,13 +1360,25 @@ function seaLanesByRegion(modDataDir) {
       (partnersOf[A] = partnersOf[A] || []).push({ to: B, d: pr.d, pop: pr.b.pop, port: pr.b.basePort, ownPop: pr.a.pop, ownPort: pr.a.basePort });
       (partnersOf[B] = partnersOf[B] || []).push({ to: A, d: pr.d, pop: pr.a.pop, port: pr.a.basePort, ownPop: pr.b.pop, ownPort: pr.b.basePort });
     }
-    // NOTE: the engine ranks each port's slots by PROFIT, not distance (live 2026-06-18) — but profit
-    // = trade value uses the real NAVAL MOVEMENT COST, where a same-coast hop (Adrumet) beats a
-    // channel crossing (Epikrateia) even with less cargo. Our depth-weighted distance can't separate
-    // those (28 vs 29), so profit-ranking with it regresses. Keeping distance-rank until movement-cost
-    // is cracked (then switch to profit-rank). See ris-tax-formula-crack memory.
+    // PROFIT-RANKED selection (live 2026-06-18): the engine fills each port's slots with its most
+    // PROFITABLE partners (trade value), not its nearest — Carthage takes Arik(Eryx) over the closer
+    // Epikrateia/Adrumet because cargo wins. Rank by the export value's per-partner factors (the
+    // exporter-constant K·landRateX·popX cancel): dist^seaDist · (export+0.35·import+const) · popY^.06 · rights.
+    const { qty: _GQ, rawValues: _RV } = tradeQtyMapsByRegion(modDataDir);
+    const _spd = seaPortDistDepth(modDataDir);
+    const _ownerFac = {}; for (const p of ports) _ownerFac[p.region] = p.fac;
+    const _cargoVal = (A, B) => { const a = _GQ[A] || {}, b = _GQ[B] || {}; let e = 0, i = 0; for (const r in a) if (!(r in b)) e += a[r] * (_RV[r] || 0); for (const r in b) if (!(r in a)) i += b[r] * (_RV[r] || 0); return e + CALIB.seaImportFrac * i; };
     const nearestSet = {};
-    for (const X in partnersOf) { partnersOf[X].sort((u, v) => u.d - v.d); nearestSet[X] = new Set(partnersOf[X].slice(0, slots[X] || 1).map(p => p.to)); }
+    for (const X in partnersOf) {
+      const dFromX = _spd.distFrom(X) || {};
+      for (const pp of partnersOf[X]) {
+        const dw = dFromX[pp.to], dist = Math.max(1, (dw != null && isFinite(dw)) ? dw : pp.d);
+        const rights = (_ownerFac[X] === _ownerFac[pp.to]) ? 1 : CALIB.seaRightsForeign;
+        pp.profit = Math.pow(dist, CALIB.seaDist) * (_cargoVal(X, pp.to) + CALIB.seaConst) * Math.pow(Math.max(400, pp.pop), CALIB.seaPopY) * rights;
+      }
+      partnersOf[X].sort((u, v) => v.profit - u.profit);
+      nearestSet[X] = new Set(partnersOf[X].slice(0, slots[X] || 1).map(p => p.to));
+    }
     for (const X in partnersOf) for (const pp of partnersOf[X]) {
       const Y = pp.to, isExp = nearestSet[X].has(Y), isImp = !!(nearestSet[Y] && nearestSet[Y].has(X));
       if (!isExp && !isImp) continue;

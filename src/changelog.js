@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1163",
+    date: "2026-06-18",
+    items: [
+      { type: "improvement", text: "**Sea trade routes are now chosen the way the game chooses them — by profit, with the right port capacity.** Each port fills its trade-route slots (set by its built port level) with its most *profitable* partners, not simply its nearest, and a coastal hop can beat a longer crossing only when its cargo wins. This fixes both the route set and the count: Carthage's sea exports now match the in-game scroll exactly (Aspis, Hippo Diarrhytus, Eryx), and its settlement trade lands within ~3% (1898 vs 1960). Verified against a full Ptolemaic capture." },
+    ],
+  },
+  {
     version: "0.9.1162",
     date: "2026-06-18",
     items: [
