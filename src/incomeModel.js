@@ -690,7 +690,12 @@ const CALIB = {
   //     NOTE: d should be SEA-DEPTH-WEIGHTED path (user: shallow=full / medium≈½ range / deep=blocked,
   //     + a max-range cutoff) — the plain BFS d leaves ~18% on d16 routes. That's the final refinement.
   //   - rights: own/with-trade-rights 1.0, no-rights 0.5 (Quietus guide: trade rights = ×2 sea export).
-  seaK: 0.05, seaPopX: 0.7, seaPopY: 0.4, seaDist: -1.15, seaConst: 10.55,
+  // distance exponent MEASURED LIVE 2026-06-18 (Issa→Asculum forced-corridor: shallow 546 →
+  // full-medium 294 gov-out ⇒ medium=2.0× distance, value ∝ distance^-0.89). Re-fit on Cyrene
+  // with c fixed: route = seaK·landRate^seaExpG·d^-0.89·(cargo+seaConst)·popX^.13·popY^.06·rights.
+  // const re-confirmed ~10 (matches the amber-pinned 10.55). TODO tomorrow: swap d for the
+  // depth-weighted white-pixel-port path distance (seaPortDist) + pin seaExpG with varied-cargo data.
+  seaK: 15.46, seaExpG: 0.78, seaPopX: 0.13, seaPopY: 0.06, seaDist: -0.89, seaConst: 10,
   seaRightsForeign: 0.5,
   // EFF PER-UNIT WORTH CURVE (2026-06-12 probe battery refinement, replaces the
   // kink-4/0.32 form): a resource's q-th quantity unit is worth seaEffUnits[q−1]
@@ -1769,12 +1774,14 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           const isExp = X === s.region;
           const popX = Math.max(400, isExp ? (s.pop || 1500) : (ln2.toPop || 1500));
           const popY = Math.max(400, isExp ? (ln2.toPop || 1500) : (s.pop || 1500));
+          const tPX = isExp ? (s.tradePct || 0) : 0; // exporter trade-buildings (import leg → base rate)
+          const landRateX = CALIB.tradeLandRateBase + CALIB.tradeLandRatePct * tPX;
           const gx = _goodsQty[X] || {}, gy = _goodsQty[Y] || {};
           let cF = 0; for (const r in gx) if (!(r in gy)) cF += gx[r] * (_goodsVal[r] || 0);
           const ownX = ownerOfRegion[X], ownY = ownerOfRegion[Y];
           const rights = (ownX === ownY || tradeRightsSet.has(ownY) || tradeRightsSet.has(ownX)) ? 1.0 : CALIB.seaRightsForeign;
           const d = Math.max(1, ln2.d || 20);
-          return Math.max(0, CALIB.seaK * Math.pow(popX, CALIB.seaPopX) * Math.pow(popY, CALIB.seaPopY)
+          return Math.max(0, CALIB.seaK * Math.pow(landRateX, CALIB.seaExpG) * Math.pow(popX, CALIB.seaPopX) * Math.pow(popY, CALIB.seaPopY)
             * Math.pow(d, CALIB.seaDist) * (cF + CALIB.seaConst) * rights);
         }
         if (ln2 && cargo > 0) {

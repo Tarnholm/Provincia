@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1157",
+    date: "2026-06-18",
+    items: [
+      { type: "improvement", text: "**Sea trade's distance penalty is now the measured value.** Using an in-game map experiment — walling a settlement off with deep sea so its trade was forced through a single corridor of known depth — the distance falloff was measured directly: sea trade value scales as distance^−0.89, and medium-depth water counts as exactly 2× distance (deep sea is impassable). This replaces the earlier estimate and is paired with the exporter's trade-building level as the rate driver, so coastal trade reflects real geography more faithfully." },
+    ],
+  },
+  {
     version: "0.9.1156",
     date: "2026-06-18",
     items: [
