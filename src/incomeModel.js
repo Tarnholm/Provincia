@@ -695,7 +695,11 @@ const CALIB = {
   // with c fixed: route = seaK·landRate^seaExpG·d^-0.89·(cargo+seaConst)·popX^.13·popY^.06·rights.
   // const re-confirmed ~10 (matches the amber-pinned 10.55). TODO tomorrow: swap d for the
   // depth-weighted white-pixel-port path distance (seaPortDist) + pin seaExpG with varied-cargo data.
-  seaK: 15.46, seaExpG: 0.78, seaPopX: 0.13, seaPopY: 0.06, seaDist: -0.89, seaConst: 10,
+  // v0.9.1158: distance now = depth-weighted WHITE-PORT path (seaPortDistDepth), refit on
+  // Cyrene+Carthage with c=-0.89: K 14.27, landRate^0.875, const 9.72 (16.8% maxerr). Fixes the
+  // short-strait over-count (Carthage→Aspis BFS d4 → dW11). seaExpG still soft (0.6-1.0) pending
+  // varied-cargo data. Blocked straits fall back to the formation BFS distance.
+  seaK: 14.27, seaExpG: 0.875, seaPopX: 0.13, seaPopY: 0.06, seaDist: -0.89, seaConst: 9.72,
   seaRightsForeign: 0.5,
   // EFF PER-UNIT WORTH CURVE (2026-06-12 probe battery refinement, replaces the
   // kink-4/0.32 form): a resource's q-th quantity unit is worth seaEffUnits[q−1]
@@ -1358,6 +1362,47 @@ function seaLanesByRegion(modDataDir) {
   return (_seaLaneCache[modDataDir] = out);
 }
 
+// ★ DEPTH-WEIGHTED WHITE-PORT SEA DISTANCE (live-cracked 2026-06-18 forced-corridor experiment).
+// Trade route distance = PORT(white pixel in map_regions) → PORT(white pixel), path cost summed over
+// map_ground_types depth: shallow R196 ×1 / medium R128 ×2 (½-range) / deep R64 BLOCKED. Sea value
+// ∝ distance^-0.89 (CALIB.seaDist). Narrow straits (Gibraltar) bridged across 1 land cell. Lazy
+// Dijkstra per source port, cached. Returns { distFrom(srcRegion) -> { region: pixelDist } }; callers
+// fall back to the formation BFS distance for any still-unreachable lane.
+const _seaPortDistCache = {};
+function seaPortDistDepth(modDataDir) {
+  if (_seaPortDistCache[modDataDir]) return _seaPortDistCache[modDataDir];
+  const base = path.join(modDataDir, "world", "maps", "base");
+  const rbuf = fs.readFileSync(path.join(base, "map_regions.tga"));
+  const RW = rbuf.readUInt16LE(12), RH = rbuf.readUInt16LE(14), rOff = 18 + rbuf[0];
+  const gbuf = fs.readFileSync(path.join(base, "map_ground_types.tga"));
+  const GW2 = gbuf.readUInt16LE(12), GH2 = gbuf.readUInt16LE(14), gOff = 18 + gbuf[0], sxr = GW2 / RW, syr = GH2 / RH;
+  const gw = RW, gh = RH, N = gw * gh;
+  const sea = new Uint8Array(N), cls = new Uint8Array(N);
+  for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) { const o = rOff + (y * RW + x) * 3; if (rbuf[o + 2] === 41 && rbuf[o + 1] === 140) { sea[y * gw + x] = 1; const go = gOff + (Math.round(y * syr) * GW2 + Math.round(x * sxr)) * 3, R = gbuf[go + 2]; cls[y * gw + x] = (gbuf[go + 1] || gbuf[go]) ? 1 : (R >= 180 ? 1 : R >= 100 ? 2 : 3); } }
+  const dg = require("./descrStratGeneral.js");
+  const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(base, "descr_regions.txt"), "latin1"));
+  const sites = dg.buildRegionCoords(rbuf, rgbToRegion);
+  const regs = Object.keys(sites).map(r => ({ r, x: sites[r].x, y: sites[r].y }));
+  const portCell = {}; // white-pixel port → nearest sea cell
+  for (let y = 0; y < RH; y++) for (let x = 0; x < RW; x++) { const o = rOff + (y * RW + x) * 3; if (rbuf[o] === 255 && rbuf[o + 1] === 255 && rbuf[o + 2] === 255) { let b = null, bd = 400; for (const s of regs) { const dd = (s.x - x) ** 2 + (s.y - y) ** 2; if (dd < bd) { bd = dd; b = s.r; } } if (b && !portCell[b]) { let best = null, bdd = 1e9; for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) { const gx = x + dx, gy = y + dy; if (gx < 0 || gy < 0 || gx >= gw || gy >= gh || !sea[gy * gw + gx]) continue; const dd = dx * dx + dy * dy; if (dd < bdd) { bdd = dd; best = gy * gw + gx; } } portCell[b] = best; } } }
+  const NB = [[1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1], [1, 1, 1.41], [1, -1, 1.41], [-1, 1, 1.41], [-1, -1, 1.41]];
+  const JUMP = [[2, 0], [-2, 0], [0, 2], [0, -2]], BRIDGE = 14;
+  const cache = {}, D = new Float64Array(N), seen = new Uint8Array(N), heap = new Int32Array(N * 4); // reused (distFrom is not re-entrant)
+  function distFrom(src) {
+    if (cache[src]) return cache[src]; const start = portCell[src]; const out = {}; cache[src] = out; if (start == null) return out;
+    D.fill(Infinity); seen.fill(0); D[start] = 0; let hn = 0;
+    const up = () => { let i = hn - 1; const c = heap[i]; while (i > 0) { const p = (i - 1) >> 1; if (D[heap[p]] <= D[c]) break; heap[i] = heap[p]; i = p; } heap[i] = c; };
+    const down = () => { let i = 0; const c = heap[0]; for (; ;) { let l = 2 * i + 1, r = l + 1, m = i, md = D[c]; if (l < hn && D[heap[l]] < md) { m = l; md = D[heap[l]]; } if (r < hn && D[heap[r]] < md) m = r; if (m === i) break; heap[i] = heap[m]; i = m; } heap[i] = c; };
+    heap[hn++] = start;
+    while (hn > 0) { const c = heap[0]; heap[0] = heap[--hn]; if (hn) down(); if (seen[c]) continue; seen[c] = 1; const d0 = D[c], cx = c % gw, cy = (c / gw) | 0;
+      for (const [dx, dy, diag] of NB) { const nx = cx + dx, ny = cy + dy; if (nx < 0 || ny < 0 || nx >= gw || ny >= gh) continue; const nc = ny * gw + nx; if (!sea[nc] || cls[nc] === 3) continue; const nd = d0 + cls[nc] * diag; if (nd < D[nc]) { D[nc] = nd; heap[hn++] = nc; up(); } }
+      for (const [dx, dy] of JUMP) { const mx = cx + dx / 2, my = cy + dy / 2, nx = cx + dx, ny = cy + dy; if (nx < 0 || ny < 0 || nx >= gw || ny >= gh) continue; const mc = my * gw + mx, nc = ny * gw + nx; if (sea[mc] || !sea[nc] || cls[nc] === 3) continue; const nd = d0 + BRIDGE; if (nd < D[nc]) { D[nc] = nd; heap[hn++] = nc; up(); } } }
+    for (const t in portCell) if (portCell[t] != null && isFinite(D[portCell[t]])) out[t] = D[portCell[t]];
+    return out;
+  }
+  return (_seaPortDistCache[modDataDir] = { distFrom });
+}
+
 // ---- SEA FLOW CARGO: fixed-point market-saturation shortfall points per lane ----
 // flow(X→Y) = f_lane × pts(X→Y), pts = Σ_resources u × max(1, fileValue), where per
 // resource r of EXPORTER X's own region basket:
@@ -1780,7 +1825,9 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           let cF = 0; for (const r in gx) if (!(r in gy)) cF += gx[r] * (_goodsVal[r] || 0);
           const ownX = ownerOfRegion[X], ownY = ownerOfRegion[Y];
           const rights = (ownX === ownY || tradeRightsSet.has(ownY) || tradeRightsSet.has(ownX)) ? 1.0 : CALIB.seaRightsForeign;
-          const d = Math.max(1, ln2.d || 20);
+          // distance = depth-weighted white-port path; fall back to formation BFS for blocked straits
+          const _dWp = (seaPortDistDepth(modDataDir).distFrom(X) || {})[Y];
+          const d = Math.max(1, (_dWp != null && isFinite(_dWp)) ? _dWp : (ln2.d || 20));
           return Math.max(0, CALIB.seaK * Math.pow(landRateX, CALIB.seaExpG) * Math.pow(popX, CALIB.seaPopX) * Math.pow(popY, CALIB.seaPopY)
             * Math.pow(d, CALIB.seaDist) * (cF + CALIB.seaConst) * rights);
         }

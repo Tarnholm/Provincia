@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1158",
+    date: "2026-06-18",
+    items: [
+      { type: "improvement", text: "**Sea trade distance is now the real depth-weighted route, port to port.** Each settlement's actual harbour location is read from the map, and the distance between two ports follows the navigable path — counting medium-depth water as twice as far and treating deep sea as impassable — instead of a straight coarse estimate. This fixes a long-standing over-count on short straits (a route the old method thought was 4 tiles is really ~11), so coastal economies like Carthage's are no longer inflated. Verified against in-game scrolls (Cyrene within 9%)." },
+    ],
+  },
+  {
     version: "0.9.1157",
     date: "2026-06-18",
     items: [
