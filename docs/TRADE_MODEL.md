@@ -142,7 +142,8 @@ There are three kinds: LAND, SEA, and RIVER.
 
    COMPONENT                         STATUS     TYPICAL ERROR
    -------------------------------   --------   --------------------------
-   Land trade                        GOOD       ~3%
+   Land trade -- per route VALUE     GOOD       ~3%
+   Land trade -- partner SET (total) OVER       +33..+61% (road-graph; OPEN)
    Sea value -- open water           EXCELLENT  ~1-2%
    Sea value -- coastal/short        FAIR       +/-10-16%
    Sea formation (route picks)       EXACT      exact route set
