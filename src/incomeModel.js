@@ -1373,8 +1373,10 @@ function seaLanesByRegion(modDataDir) {
       const dFromX = _spd.distFrom(X) || {};
       for (const pp of partnersOf[X]) {
         const dw = dFromX[pp.to], dist = Math.max(1, (dw != null && isFinite(dw)) ? dw : pp.d);
-        const rights = (_ownerFac[X] === _ownerFac[pp.to]) ? 1 : CALIB.seaRightsForeign;
-        pp.profit = Math.pow(dist, CALIB.seaDist) * (_cargoVal(X, pp.to) + CALIB.seaConst) * Math.pow(Math.max(400, pp.pop), CALIB.seaPopY) * rights;
+        // NOTE: lane SELECTION ranks by profit potential WITHOUT the trade-rights penalty (live 2026-06-18:
+        // Rome picks foreign Capua d21 over same-faction Neapolis d27.7 — rights only scale realized VALUE,
+        // not which lanes form).
+        pp.profit = Math.pow(dist, CALIB.seaDist) * (_cargoVal(X, pp.to) + CALIB.seaConst) * Math.pow(Math.max(400, pp.pop), CALIB.seaPopY);
       }
       partnersOf[X].sort((u, v) => v.profit - u.profit);
       nearestSet[X] = new Set(partnersOf[X].slice(0, slots[X] || 1).map(p => p.to));
