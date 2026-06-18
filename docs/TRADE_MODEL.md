@@ -1,6 +1,6 @@
 =============================================================================
  PROVINCIA TRADE MODEL — HOW IT WORKS & CURRENT ACCURACY
- Last updated 2026-06-18 (v0.9.1166)
+ Last updated 2026-06-18 (v0.9.1167)
  All formulas cracked from controlled in-game experiments + live scroll
  captures (RIS mod, turn 1).
 =============================================================================
@@ -26,10 +26,19 @@ There are three kinds: LAND, SEA, and RIVER.
      importCargo = the reverse (x0.5).
    - roadMult = road network bonus. NO distance penalty (road-based).
    - rights = x3 with trade rights, /3 without.
+   - PARTNERS = settlements with a DIRECT road link = the GABRIEL GRAPH:
+     X land-trades Y only if NO third settlement lies between them (inside the
+     circle whose diameter is segment XY). A town in between breaks the link.
+     (Live-cracked 2026-06-18 from Pontus: Amaseia does NOT trade Komana or
+     Kimiata -- BLOCKED by Kabeira / Pimolisa sitting between them. Was raw
+     region-border adjacency, which over-counted partners by up to +60% for
+     compact inland factions. Border length and straight-line distance both
+     FAILED to separate real from spurious; only the Gabriel rule does.)
 
-   ACCURACY: GOOD, ~3%. Rome's land routes verified live:
-   Camerinum 60/60, Reate 64/65, Falerii 96/93, Praeneste 112/111,
-   Cosa 153/150.
+   ACCURACY: GOOD. Rome routes exact (Cosa 153/150, Praeneste 112/111,
+   Falerii 96/93, Reate 64/65, Camerinum 60/60); Amaseia scroll EXACT
+   (117 with 3 partners); Pontus faction 362 vs PLAYER-save 349 (+3.7%,
+   was +61% before the Gabriel fix).
 
 
 -----------------------------------------------------------------------------
@@ -164,9 +173,13 @@ There are three kinds: LAND, SEA, and RIVER.
    lanes in the model, and changing the river code does not move them. So the
    save exposed TWO SEPARATE over-counts:
      A) PTOLEMAIC (Nile): genuine RIVER FORMATION over-count (near-all-pairs).
-     B) SELEUCID/BACTRIA/PONTUS/ARMENIA: a NON-RIVER over-count (sea/land/
-        imports) -- the larger and still-undiagnosed issue. Pontus (+61%, no
-        rivers) is the cleanest case to crack next, via a Pontus player save.
+     B) SELEUCID/BACTRIA/PONTUS/ARMENIA: a NON-RIVER over-count -- RESOLVED
+        2026-06-18. It was LAND trade (raw region-border adjacency counting
+        partners through intervening towns); FIXED by the GABRIEL GRAPH (see
+        section 1). Pontus +61%->+3.7% (player save); Seleucid +33%->-10%;
+        Carthage +8%->-0%. Factions still reading UNDER (Bactria -35%, Armenia
+        -41%) are the no-gov model vs gov-in save (missing governor bonus) --
+        being confirmed with per-faction PLAYER saves, not a filter error.
 
    NOTE: a single global river-distance CUTOFF was tried and FAILED -- the
    delta needs different cutoffs per city (Alexandria keeps lanes out to ~40,
@@ -179,13 +192,19 @@ There are three kinds: LAND, SEA, and RIVER.
  THE LAST MILE TO 0%
 -----------------------------------------------------------------------------
 
-   1. RIVER FORMATION (now the biggest) -- river lanes are "near-all-pairs";
-      interior delta cities form too many. Fix: limit river lanes by
-      slot/range like sea lanes (the body-confined distance is already in
-      place to drive a proper range cutoff).
+   0. LAND TRADE OVER-COUNT -- FIXED 2026-06-18 by the Gabriel graph
+      (section 1). Was the single biggest faction-level error for inland
+      empires (+33..+61%).
 
-   2. RIVER MULTIPLIER -- currently 1.0; a GOV-OUT Nile capture would pin it
-      exactly.
+   1. GOVERNOR MODELLING -- the model is NO-GOV; saves are gov-in, so factions
+      with trading governors read UNDER. Reading each settlement's governor
+      trait FROM the save (already stored) removes this confound and is the
+      next precision step.
+
+   2. RIVER FORMATION -- river lanes are "near-all-pairs"; interior delta
+      cities form too many. A single distance cutoff FAILED; the fix is
+      PER-EXPORTER slot-limiting (each city keeps its top-N by profit, like
+      sea lanes). Ptolemaic-only (the Nile); aggregate ~+10% gov-in.
 
    3. COASTAL VALUE NOISE -- +/-10-16% on short sea routes; a cargo/pop
       fine-tune, not a structural problem.
