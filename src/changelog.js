@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1159",
+    date: "2026-06-18",
+    items: [
+      { type: "improvement", text: "**A settlement's trade buildings now scale its sea exports linearly — proven, not estimated.** A controlled in-game test (dropping Carthage's market from great-forum to trader and reading every route) showed all exports, sea and land alike, scale directly with the trade-building level, while imports are unaffected (they follow the partner's buildings). This locks down the last loose factor in the sea-trade formula. Cyrene's total trade is now within 3% of the in-game scroll." },
+    ],
+  },
+  {
     version: "0.9.1158",
     date: "2026-06-18",
     items: [

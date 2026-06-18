@@ -695,11 +695,13 @@ const CALIB = {
   // with c fixed: route = seaK·landRate^seaExpG·d^-0.89·(cargo+seaConst)·popX^.13·popY^.06·rights.
   // const re-confirmed ~10 (matches the amber-pinned 10.55). TODO tomorrow: swap d for the
   // depth-weighted white-pixel-port path distance (seaPortDist) + pin seaExpG with varied-cargo data.
-  // v0.9.1158: distance now = depth-weighted WHITE-PORT path (seaPortDistDepth), refit on
-  // Cyrene+Carthage with c=-0.89: K 14.27, landRate^0.875, const 9.72 (16.8% maxerr). Fixes the
-  // short-strait over-count (Carthage→Aspis BFS d4 → dW11). seaExpG still soft (0.6-1.0) pending
-  // varied-cargo data. Blocked straits fall back to the formation BFS distance.
-  seaK: 14.27, seaExpG: 0.875, seaPopX: 0.13, seaPopY: 0.06, seaDist: -0.89, seaConst: 9.72,
+  // v0.9.1159: seaExpG = 1.0 PROVEN (Carthage market great_forum→trader experiment 2026-06-18:
+  // all routes, sea AND land, scaled by landRate^1.0 exactly — Clupea 592→465, Eryx 260→204, etc.).
+  // Exporter rate is LINEAR landRate, identical to land trade; imports key off the partner's rate.
+  // Refit K 14.27 / const 8.33 with g=1.0 (19% on Cyrene+Carthage). NOTE: amber-pinned const=10.55
+  // gives 29% here (all under) → a ~1.25× factor is still missing in the cargo/reversed-lane term
+  // (Barke⇄Euesperides asymmetry) — the next target. Distance = depth-weighted white-port path.
+  seaK: 14.27, seaExpG: 1.0, seaPopX: 0.13, seaPopY: 0.06, seaDist: -0.89, seaConst: 8.33,
   seaRightsForeign: 0.5,
   // EFF PER-UNIT WORTH CURVE (2026-06-12 probe battery refinement, replaces the
   // kink-4/0.32 form): a resource's q-th quantity unit is worth seaEffUnits[q−1]
