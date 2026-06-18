@@ -1416,8 +1416,8 @@ function seaPortDistDepth(modDataDir) {
   const gbuf = fs.readFileSync(path.join(base, "map_ground_types.tga"));
   const GW2 = gbuf.readUInt16LE(12), GH2 = gbuf.readUInt16LE(14), gOff = 18 + gbuf[0], sxr = GW2 / RW, syr = GH2 / RH;
   const gw = RW, gh = RH, N = gw * gh;
-  const sea = new Uint8Array(N), cls = new Uint8Array(N);
-  for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) { const o = rOff + (y * RW + x) * 3; if (rbuf[o + 2] === 41 && rbuf[o + 1] === 140) { sea[y * gw + x] = 1; const go = gOff + (Math.round(y * syr) * GW2 + Math.round(x * sxr)) * 3, R = gbuf[go + 2]; cls[y * gw + x] = (gbuf[go + 1] || gbuf[go]) ? 1 : (R >= 180 ? 1 : R >= 100 ? 2 : 3); } }
+  const sea = new Uint8Array(N), cls = new Uint8Array(N), body = new Uint8Array(N); // body = sea-color (B); rivers are their own bodies
+  for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) { const o = rOff + (y * RW + x) * 3; if (rbuf[o + 2] === 41 && rbuf[o + 1] === 140) { const idx = y * gw + x; sea[idx] = 1; body[idx] = rbuf[o]; const go = gOff + (Math.round(y * syr) * GW2 + Math.round(x * sxr)) * 3, R = gbuf[go + 2]; cls[idx] = (gbuf[go + 1] || gbuf[go]) ? 1 : (R >= 180 ? 1 : R >= 100 ? 2 : 3); } }
   const dg = require("./descrStratGeneral.js");
   const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(base, "descr_regions.txt"), "latin1"));
   const sites = dg.buildRegionCoords(rbuf, rgbToRegion);
@@ -1439,7 +1439,23 @@ function seaPortDistDepth(modDataDir) {
     for (const t in portCell) if (portCell[t] != null && isFinite(D[portCell[t]])) out[t] = D[portCell[t]];
     return out;
   }
-  return (_seaPortDistCache[modDataDir] = { distFrom });
+  // RIVER distance: Dijkstra CONFINED to the source's water body (can't shortcut across delta land via
+  // the coast) and with NO strait-bridging (channels are continuous within the body). Fixes the Nile
+  // shortcut (Tanis) + obstruction-fallback (Mendes) that the full-grid distFrom hits in the delta.
+  const cacheR = {};
+  function distFromRiver(src) {
+    if (cacheR[src]) return cacheR[src]; const start = portCell[src]; const out = {}; cacheR[src] = out; if (start == null) return out;
+    const bid = body[start];
+    D.fill(Infinity); seen.fill(0); D[start] = 0; let hn = 0;
+    const up = () => { let i = hn - 1; const c = heap[i]; while (i > 0) { const p = (i - 1) >> 1; if (D[heap[p]] <= D[c]) break; heap[i] = heap[p]; i = p; } heap[i] = c; };
+    const down = () => { let i = 0; const c = heap[0]; for (; ;) { let l = 2 * i + 1, r = l + 1, m = i, md = D[c]; if (l < hn && D[heap[l]] < md) { m = l; md = D[heap[l]]; } if (r < hn && D[heap[r]] < md) m = r; if (m === i) break; heap[i] = heap[m]; i = m; } heap[i] = c; };
+    heap[hn++] = start;
+    while (hn > 0) { const c = heap[0]; heap[0] = heap[--hn]; if (hn) down(); if (seen[c]) continue; seen[c] = 1; const d0 = D[c], cx = c % gw, cy = (c / gw) | 0;
+      for (const [dx, dy, diag] of NB) { const nx = cx + dx, ny = cy + dy; if (nx < 0 || ny < 0 || nx >= gw || ny >= gh) continue; const nc = ny * gw + nx; if (!sea[nc] || cls[nc] === 3 || body[nc] !== bid) continue; const nd = d0 + cls[nc] * diag; if (nd < D[nc]) { D[nc] = nd; heap[hn++] = nc; up(); } } }
+    for (const t in portCell) if (portCell[t] != null && body[portCell[t]] === bid && isFinite(D[portCell[t]])) out[t] = D[portCell[t]];
+    return out;
+  }
+  return (_seaPortDistCache[modDataDir] = { distFrom, distFromRiver });
 }
 
 // ---- SEA FLOW CARGO: fixed-point market-saturation shortfall points per lane ----
@@ -1865,8 +1881,10 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           let iC = 0; for (const r in gy) if (!(r in gx)) iC += gy[r] * (_goodsVal[r] || 0); // import cargo (×seaImportFrac)
           const ownX = ownerOfRegion[X], ownY = ownerOfRegion[Y];
           const rights = (ownX === ownY || tradeRightsSet.has(ownY) || tradeRightsSet.has(ownX)) ? 1.0 : CALIB.seaRightsForeign;
-          // distance = depth-weighted white-port path; fall back to formation BFS for blocked straits
-          const _dWp = (seaPortDistDepth(modDataDir).distFrom(X) || {})[Y];
+          // distance = depth-weighted white-port path; RIVER lanes use the body-confined channel path
+          // (no delta shortcut/block); fall back to formation BFS for anything still unreachable.
+          const _spd = seaPortDistDepth(modDataDir);
+          const _dWp = (ln2 && ln2.river) ? (_spd.distFromRiver(X) || {})[Y] : (_spd.distFrom(X) || {})[Y];
           const d = Math.max(1, (_dWp != null && isFinite(_dWp)) ? _dWp : (ln2.d || 20));
           return Math.max(0, CALIB.seaK * Math.pow(landRateX, CALIB.seaExpG) * Math.pow(popX, CALIB.seaPopX) * Math.pow(popY, CALIB.seaPopY)
             * Math.pow(d, CALIB.seaDist) * (cF + CALIB.seaImportFrac * iC + CALIB.seaConst) * rights);
