@@ -898,40 +898,6 @@ function regionAdjacency(modDataDir) {
   return (_adjCache[modDataDir] = adj);
 }
 
-// ---- LAND-TRADE GABRIEL FILTER (live-cracked 2026-06-18, Pontus scrolls) ----
-// Two region-adjacent settlements land-trade ONLY if no THIRD settlement lies "between"
-// them — i.e. inside the circle whose diameter is the segment joining them (the Gabriel
-// graph). This is the engine's road-network rule: an intervening town breaks the direct
-// link. Pontus proof: Amaseia⇄Komana BLOCKED by Kabeira, Amaseia⇄Kimiata BLOCKED by
-// Pimolisa — exactly the partners the scroll omits. Returns a Set of blocked "a|b" keys.
-const _gabrielCache = {};
-function landGabrielBlocked(modDataDir) {
-  if (_gabrielCache[modDataDir]) return _gabrielCache[modDataDir];
-  const blocked = new Set();
-  try {
-    const dg = require("./descrStratGeneral.js");
-    const base = path.join(modDataDir, "world", "maps", "base");
-    const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(base, "descr_regions.txt"), "latin1"));
-    const coords = dg.buildRegionCoords(fs.readFileSync(path.join(base, "map_regions.tga")), rgbToRegion);
-    const pts = Object.keys(coords).map(r => ({ r, x: coords[r].x, y: coords[r].y }));
-    const adj = regionAdjacency(modDataDir);
-    for (const a in adj) {
-      const ca = coords[a]; if (!ca) continue;
-      for (const b of adj[a]) {
-        const cb = coords[b]; if (!cb) continue;
-        const kk = a < b ? a + "|" + b : b + "|" + a;
-        if (blocked.has(kk)) continue;
-        const dAB2 = (ca.x - cb.x) ** 2 + (ca.y - cb.y) ** 2;
-        for (const p of pts) {
-          if (p.r === a || p.r === b) continue;
-          if ((p.x - ca.x) ** 2 + (p.y - ca.y) ** 2 + (p.x - cb.x) ** 2 + (p.y - cb.y) ** 2 < dAB2) { blocked.add(kk); break; }
-        }
-      }
-    }
-  } catch { /* coords unavailable → no blocking */ }
-  return (_gabrielCache[modDataDir] = blocked);
-}
-
 // ---- region → adjacent SEA BODIES (map_regions.tga: 16 distinct 41,140,X sea colors
 // = named sea zones; ports sharing a body are sea-trade partners) ----
 const _seaCache = {};
@@ -1836,9 +1802,6 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       for (const n of (adjacency[s.region] || [])) {
         const own = ownerOfRegion[n];
         if (!isPartner(own)) continue;
-        // GABRIEL FILTER: skip partners blocked by an intervening settlement (no direct road link)
-        const _gk = s.region < n ? s.region + "|" + n : n + "|" + s.region;
-        if (landGabrielBlocked(modDataDir).has(_gk)) continue;
         nPartners++;
         const hasRights = own === facLow || tradeRightsSet.has(own);
         // ROAD MULTIPLIER (live-cracked 2026-06-17, Rome road-sweep new campaign):
