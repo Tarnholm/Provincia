@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1161",
+    date: "2026-06-18",
+    items: [
+      { type: "fix", text: "**Fixed sea-lane slot counts.** A parsing bug read each region's port level from the map by scanning across line breaks, so a region without a port level would steal the next region's value — leaving major ports (e.g. Carthage, whose level is 3) reading as 0 and getting too few trade-route slots. Now parsed per region, so port capacity is correct." },
+    ],
+  },
+  {
     version: "0.9.1160",
     date: "2026-06-18",
     items: [

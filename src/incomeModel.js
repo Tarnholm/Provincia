@@ -1208,8 +1208,15 @@ function seaLanesByRegion(modDataDir) {
     // fit on this port definition; the slot count keeps using the built port chain.
     const basePort = {};
     {
+      // descr_regions: region name at column 0, then indented attribute lines (one holds
+      // base_port_level_N). Parse per-region — a lazy cross-newline regex mis-assigned levels
+      // to the wrong region (Carthage base_port_level_3 read as 0), corrupting sea-lane slots.
       const rtxt = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1");
-      for (const m of rtxt.matchAll(/^(\S+)[^]*?base_port_level_(\d)/gm)) basePort[m[1]] = +m[2];
+      let curReg = null;
+      for (const line of rtxt.split(/\r?\n/)) {
+        if (/^\S/.test(line)) curReg = line.trim();
+        else if (curReg) { const m = line.match(/base_port_level_(\d)/); if (m) basePort[curReg] = +m[1]; }
+      }
     }
     for (const [fac, f] of Object.entries(strat)) for (const sd of f.settlements) {
       const pb = (sd.buildings || []).find(b => /^port_buildings$/i.test(b.chain));
