@@ -26,19 +26,27 @@ There are three kinds: LAND, SEA, and RIVER.
      importCargo = the reverse (x0.5).
    - roadMult = road network bonus. NO distance penalty (road-based).
    - rights = x3 with trade rights, /3 without.
-   - PARTNERS = settlements with a DIRECT road link = the GABRIEL GRAPH:
-     X land-trades Y only if NO third settlement lies between them (inside the
-     circle whose diameter is segment XY). A town in between breaks the link.
-     (Live-cracked 2026-06-18 from Pontus: Amaseia does NOT trade Komana or
-     Kimiata -- BLOCKED by Kabeira / Pimolisa sitting between them. Was raw
-     region-border adjacency, which over-counted partners by up to +60% for
-     compact inland factions. Border length and straight-line distance both
-     FAILED to separate real from spurious; only the Gabriel rule does.)
+   - PARTNERS = settlements connected by the ROAD NETWORK (a direct road
+     link). The model APPROXIMATES this with raw region-border adjacency,
+     which OVER-COUNTS: it trades through intervening towns and with rebel/
+     neighbour regions (Pontus +61%, Bactria +52% at the faction level).
+     *** OPEN PROBLEM (2026-06-18): no GEOMETRIC rule reproduces the engine. ***
+     A Gabriel-graph proxy (X-Y trade only if no third town inside the circle
+     on segment XY) fit Pontus EXACTLY -- Amaseia omits Komana/Kimiata, blocked
+     by Kabeira/Pimolisa -- but a Bactria save DISPROVED it: the engine trades
+     Baktra<->Marouka and Baktra<->Alexandreia even though Aornos / Oxeiana sit
+     ON the connecting line (perpFrac 0.08-0.24). Bactria's roads are HUB-AND-
+     SPOKE (Baktra reaches every nearby city directly); Pontus's are a CHAIN.
+     Gabriel, distance, border-length and line-proximity were ALL tested; none
+     fit both. The true rule is the actual ROAD GRAPH (terrain-dependent),
+     which needs real road data -- or per-faction live PINS (as julii/cyrene).
 
-   ACCURACY: GOOD. Rome routes exact (Cosa 153/150, Praeneste 112/111,
-   Falerii 96/93, Reate 64/65, Camerinum 60/60); Amaseia scroll EXACT
-   (117 with 3 partners); Pontus faction 362 vs PLAYER-save 349 (+3.7%,
-   was +61% before the Gabriel fix).
+   ACCURACY: per-ROUTE VALUE is exact where measured (Rome Cosa 153/150,
+   Praeneste 112/111, Falerii 96/93, Reate 64/65, Camerinum 60/60; Pontus
+   Amaseia's real routes match). The per-faction TOTAL OVER-COUNTS by the
+   extra partners: Pontus +61%, Bactria +52%, Seleucid +33%. Julii/Cyrene
+   towns with live PINS are exact; everything else over-counts until the
+   road graph is solved.
 
 
 -----------------------------------------------------------------------------
@@ -173,13 +181,13 @@ There are three kinds: LAND, SEA, and RIVER.
    lanes in the model, and changing the river code does not move them. So the
    save exposed TWO SEPARATE over-counts:
      A) PTOLEMAIC (Nile): genuine RIVER FORMATION over-count (near-all-pairs).
-     B) SELEUCID/BACTRIA/PONTUS/ARMENIA: a NON-RIVER over-count -- RESOLVED
-        2026-06-18. It was LAND trade (raw region-border adjacency counting
-        partners through intervening towns); FIXED by the GABRIEL GRAPH (see
-        section 1). Pontus +61%->+3.7% (player save); Seleucid +33%->-10%;
-        Carthage +8%->-0%. Factions still reading UNDER (Bactria -35%, Armenia
-        -41%) are the no-gov model vs gov-in save (missing governor bonus) --
-        being confirmed with per-faction PLAYER saves, not a filter error.
+     B) SELEUCID/BACTRIA/PONTUS/ARMENIA: a NON-RIVER over-count = LAND trade
+        (raw adjacency over-counting PARTNERS). DIAGNOSED but NOT yet fixed:
+        a Gabriel-graph fix (shipped v1167) was REVERTED in v1168 after a
+        Bactria player save disproved it (see section 1 OPEN PROBLEM).
+        Confirmed real via player saves -- Pontus model 561 vs save 349
+        (+61%), Bactria model 5329 vs save 3513 (+52%). Per-ROUTE values are
+        correct; only the partner SET is too large. Needs the road graph.
 
    NOTE: a single global river-distance CUTOFF was tried and FAILED -- the
    delta needs different cutoffs per city (Alexandria keeps lanes out to ~40,
@@ -192,9 +200,12 @@ There are three kinds: LAND, SEA, and RIVER.
  THE LAST MILE TO 0%
 -----------------------------------------------------------------------------
 
-   0. LAND TRADE OVER-COUNT -- FIXED 2026-06-18 by the Gabriel graph
-      (section 1). Was the single biggest faction-level error for inland
-      empires (+33..+61%).
+   0. LAND TRADE PARTNER OVER-COUNT (the biggest faction-level error,
+      +33..+61% for inland empires) -- OPEN. The road-graph problem: the
+      model trades with too many partners (through intervening towns + with
+      rebel/neighbour regions). Geometry CANNOT solve it (Gabriel disproven by
+      Bactria). Path: extract the engine's road/terrain graph, OR add live
+      PINS per faction from scrolls (julii/cyrene are already pinned & exact).
 
    1. GOVERNOR MODELLING -- the model is NO-GOV; saves are gov-in, so factions
       with trading governors read UNDER. Reading each settlement's governor
