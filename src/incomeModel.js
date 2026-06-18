@@ -642,7 +642,7 @@ const CALIB = {
   corrA: 0.64, corrB: 0, corrD0: 11.25, corrLawPct: 2.5,
   corrNegLawShift: 4, // tiles of effective distance per NEGATIVE law point (Pisae console probe + cyrene trio)
   corrCap: 60, // far-distance saturation (live Egypt: d141/226/351 all read 59-64% — NOT the old 90% linear climb)
-  seaLaneMaxDist: 40, riverBodyMaxCells: 1500, seaFlowRiverMult: 1.95, // river flows run hotter (Nile live 713/605/519) // sea-path tiles; lanes are local (live: Kyrenaica forms NO Aegean lanes; Sena→Nesactium ~15 allowed)
+  seaLaneMaxDist: 40, riverBodyMaxCells: 1500, seaFlowRiverMult: 1.0, // river flows run hotter (Nile live 713/605/519) // sea-path tiles; lanes are local (live: Kyrenaica forms NO Aegean lanes; Sena→Nesactium ~15 allowed)
   // strong flow: v = K·pop^exp·e^(pct·tradePct) — refit on 16 current-build flows
   // (full julii 26-scroll corpus + cyrene, 2026-06-11 evening; R²0.82, max ×1.61).
   // The pct coefficient ≈ the historic 0.127 sea exponent; pop is nearly irrelevant.
@@ -1889,9 +1889,12 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       for (const ln of lanes) {
         let expV, impV;
         if (ln.river) {
+          // RIVER lanes now use the cracked sea law (white-port channel distance + cargo) × river mult
+          // (rivers run hotter) — was a flat pop-only law ignoring distance/cargo (Nile flat 1318).
           const rm = CALIB.seaFlowRiverMult;
-          expV = rm * CALIB.seaFlowK * Math.pow(Math.max(400, s.pop), CALIB.seaFlowPopExp) * Math.exp(CALIB.seaFlowPct * (s.tradePct || 0));
-          impV = rm * CALIB.seaFlowK * Math.pow(Math.max(400, ln.toPop || 1500), CALIB.seaFlowPopExp) / 5;
+          const impPlyR = ownerOfRegion[ln.to] === facLow ? isPly : false;
+          expV = rm * flowOf(s.region, ln.to, isPly, ln);
+          impV = rm * flowOf(ln.to, s.region, impPlyR, ln) / 5;
         } else {
           expV = ln.weak ? 0 : flowOf(s.region, ln.to, isPly, ln);
           const impPly = ownerOfRegion[ln.to] === facLow ? isPly : false;
