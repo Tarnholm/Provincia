@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1162",
+    date: "2026-06-18",
+    items: [
+      { type: "improvement", text: "**Sea trade routes now form per-settlement, the way the game does.** Previously a route required a free trade slot on *both* ports, so a big port like Carthage would miss a close neighbour (Hippo Diarrhytus) whose own slots were already full — undercounting its trade by ~25%. Now each port independently picks its nearest trading partners up to its own capacity, and carries an import from any partner that ships to it. Carthage's settlement trade now lands within ~4% of the in-game scroll (was −24%), and Cyrene stays within ~2%." },
+    ],
+  },
+  {
     version: "0.9.1161",
     date: "2026-06-18",
     items: [

@@ -1338,8 +1338,14 @@ function seaLanesByRegion(modDataDir) {
       (out[sd.a] = out[sd.a] || []).push({ to: sd.b, weak: !sd.exA, inWeak: !sd.exB, impLive: sd.impA !== false, toPop: B.pop, toPort: B.basePort, ownPop: A.pop, ownPort: A.basePort, d, seeded: true });
       (out[sd.b] = out[sd.b] || []).push({ to: sd.a, weak: !sd.exB, inWeak: !sd.exA, impLive: sd.impB !== false, toPop: A.pop, toPort: A.basePort, ownPop: B.pop, ownPort: B.basePort, d, seeded: true });
     }
-    const used = {}; const slots = {};
-    for (const p of ports) { slots[p.region] = 1 + p.level; used[p.region] = 0; }
+    const slots = {};
+    for (const p of ports) slots[p.region] = 1 + p.level;
+    // PER-EXPORTER lane formation (live-cracked 2026-06-18, Carthage→Hippo Diarrhytus): the engine
+    // is per-exporter, NOT bidirectional pairing. Each port forms EXPORT lanes to its nearest
+    // slots[X] eligible partners INDEPENDENTLY of the partner's own slot usage (Carthage claims
+    // nearby Xupon_Zaxyir even though that port's 2 slots are spent on its own nearer Karaly/Sulky).
+    // A lane out[X]→Y exports iff Y ∈ nearestSet[X]; it carries X's IMPORT from Y iff X ∈ nearestSet[Y].
+    const partnersOf = {};
     for (const pr of pairs) {
       const A = pr.a.region, B = pr.b.region;
       if (pr.river) {
@@ -1348,13 +1354,15 @@ function seaLanesByRegion(modDataDir) {
         continue;
       }
       if (seeded.has(A) || seeded.has(B)) continue; // pinned ports don't re-match
-      if (used[A] >= slots[A] || used[B] >= slots[B]) continue;
-      used[A]++; used[B]++;
-      // PER-SIDE strength: each direction is weak iff THAT side burned its LAST slot
-      // (Rome→Volat absent = Rome's last; Volat→Rome weak = Volat's last; Cosa→Praen
-      // strong = Cosa's first even though Praeneste's slots were busy elsewhere).
-      (out[A] = out[A] || []).push({ to: B, weak: used[A] === slots[A], inWeak: used[B] === slots[B], toPop: pr.b.pop, toPort: pr.b.basePort, ownPop: pr.a.pop, ownPort: pr.a.basePort, d: pr.d });
-      (out[B] = out[B] || []).push({ to: A, weak: used[B] === slots[B], inWeak: used[A] === slots[A], toPop: pr.a.pop, toPort: pr.a.basePort, ownPop: pr.b.pop, ownPort: pr.b.basePort, d: pr.d });
+      (partnersOf[A] = partnersOf[A] || []).push({ to: B, d: pr.d, pop: pr.b.pop, port: pr.b.basePort, ownPop: pr.a.pop, ownPort: pr.a.basePort });
+      (partnersOf[B] = partnersOf[B] || []).push({ to: A, d: pr.d, pop: pr.a.pop, port: pr.a.basePort, ownPop: pr.b.pop, ownPort: pr.b.basePort });
+    }
+    const nearestSet = {};
+    for (const X in partnersOf) { partnersOf[X].sort((u, v) => u.d - v.d); nearestSet[X] = new Set(partnersOf[X].slice(0, slots[X] || 1).map(p => p.to)); }
+    for (const X in partnersOf) for (const pp of partnersOf[X]) {
+      const Y = pp.to, isExp = nearestSet[X].has(Y), isImp = !!(nearestSet[Y] && nearestSet[Y].has(X));
+      if (!isExp && !isImp) continue;
+      (out[X] = out[X] || []).push({ to: Y, weak: !isExp, inWeak: false, impLive: isImp, toPop: pp.pop, toPort: pp.port, ownPop: pp.ownPop, ownPort: pp.ownPort, d: pp.d });
     }
     // TURN-1 ACTIVATION (Capua t1/t2 probe 2026-06-11 night): a partner's REVERSE flow
     // is live at turn 1 only if our port is that partner's NEAREST open-sea lane
