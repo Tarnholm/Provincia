@@ -1,89 +1,201 @@
-# Provincia Trade Model — How It Works & Current Accuracy
-*Last updated 2026-06-18 (v0.9.1165). All formulas cracked from controlled in-game experiments + live scroll captures (RIS mod, turn 1).*
+=============================================================================
+ PROVINCIA TRADE MODEL — HOW IT WORKS & CURRENT ACCURACY
+ Last updated 2026-06-18 (v0.9.1166)
+ All formulas cracked from controlled in-game experiments + live scroll
+ captures (RIS mod, turn 1).
+=============================================================================
 
-A settlement's **Trade** income = the sum, over all its trade routes, of each route's value.
-Routes are **one-directional and per-settlement**: a town **exports** to some partners and **imports** from others. The same physical link appears on *both* towns' scrolls (one as an export row, the other as an import row). There are three kinds: **land**, **sea**, and **river**.
+A settlement's TRADE income = the sum, over all its trade routes, of each
+route's value. Routes are ONE-DIRECTIONAL and PER-SETTLEMENT: a town EXPORTS
+to some partners and IMPORTS from others. The same physical link appears on
+BOTH towns' scrolls (one as an export row, the other as an import row).
+There are three kinds: LAND, SEA, and RIVER.
 
----
 
-## 1. Land trade
+-----------------------------------------------------------------------------
+ 1. LAND TRADE
+-----------------------------------------------------------------------------
 
-```
-land(X→Y) = (2 + 0.2·tradePct_X) · (exportCargo + 0.5·importCargo + const) · roadMult · rights
-```
-- **tradePct_X** = exporter's trade-building level (market chain: trader 1 … curia 5).
-- **exportCargo** = Σ qty·value of X's goods that Y lacks; **importCargo** = the reverse (×0.5).
-- **roadMult** = road network bonus. **No distance penalty** — land trade is road-based.
-- **rights** = ×3 with trade rights, ÷3 without (own/agreement = full).
+   land(X->Y) = (2 + 0.2*tradePct_X)
+              * (exportCargo + 0.5*importCargo + const)
+              * roadMult * rights
 
-**Accuracy: ✅ ~3%.** Rome's land routes verified live: Camerinum 60/60, Reate 64/65, Falerii 96/93, Praeneste 112/111, Cosa 153/150.
+   - tradePct_X = exporter's trade-building level (market chain: trader 1
+     ... curia 5).
+   - exportCargo = sum of qty*value of X's goods that Y lacks;
+     importCargo = the reverse (x0.5).
+   - roadMult = road network bonus. NO distance penalty (road-based).
+   - rights = x3 with trade rights, /3 without.
 
----
+   ACCURACY: GOOD, ~3%. Rome's land routes verified live:
+   Camerinum 60/60, Reate 64/65, Falerii 96/93, Praeneste 112/111,
+   Cosa 153/150.
 
-## 2. Sea trade — VALUE (how much a route is worth)
 
-```
-sea(X→Y) = K · landRate_X · dist^−0.89 · (exportCargo + 0.35·importCargo + const) · popX^0.13 · popY^0.06 · rights
-```
-| term | value | how it was cracked |
-|---|---|---|
-| **K** | 13 | fit |
-| **landRate_X** | 2 + 0.2·tradePct_X (**linear**) | Carthage market great_forum→trader experiment (every route scaled ×landRate^1.0) |
-| **dist** | depth-weighted **white-port** path: shallow ×1, medium ×2, deep impassable; port = white pixel in map_regions, settlement = black pixel | forced-corridor experiment (Issa walled to one corridor) |
-| **dist exponent** | **−0.89** | same corridor (shallow 546 → medium 294, medium = 2.0× distance) |
-| **cargo** | export + **0.347**·import + const | amber qty experiment (linear in qty; return-cargo term) |
-| **const** | 9.86 | amber dilution (Kyrene & Carthage) |
-| **popX / popY** | ^0.13 / ^0.06 (weak) | Arsinoe pop ×4.74 experiment |
-| **rights** | 1 (own/agreement) or 0.5 (foreign) — **value only** | Quietus guide + Rome/Capua |
+-----------------------------------------------------------------------------
+ 2. SEA TRADE — VALUE (how much a route is worth)
+-----------------------------------------------------------------------------
 
-**Accuracy:**
-- **Open-water crossings: ✅ ~1-2%** (Carthage→Aspis +2%, →Eryx ratio 1.01). Verified on the map: sea routes run **straight** across gulfs, which is exactly what the white-port distance computes.
-- **Coastal / short routes: ⚠️ ±10-16%** (value-law noise — small cargo/pop residuals, not a pathing problem).
+   sea(X->Y) = K * landRate_X * dist^-0.89
+             * (exportCargo + 0.347*importCargo + const)
+             * popX^0.13 * popY^0.06 * rights
 
----
+   TERM           VALUE                       HOW IT WAS CRACKED
+   -----------    ------------------------    -------------------------------
+   K              13                          fit
+   landRate_X     2 + 0.2*tradePct (LINEAR)   Carthage market great_forum->
+                                              trader experiment (every route
+                                              scaled x landRate^1.0)
+   dist           depth-weighted WHITE-PORT   forced-corridor experiment
+                  path: shallow x1, medium    (Issa walled to one corridor);
+                  x2, deep impassable. Port   port = white pixel, town = black
+                  = white pixel in map.
+   dist exponent  -0.89                       same corridor (shallow 546 ->
+                                              medium 294 = medium is 2.0x dist)
+   cargo          export + 0.347*import       amber qty experiment (linear in
+                  + const                     qty; return-cargo term)
+   const          9.86                        amber dilution (Kyrene+Carthage)
+   popX / popY    ^0.13 / ^0.06 (weak)        Arsinoe pop x4.74 experiment
+   rights         1 (own/agreement) or 0.5    Quietus guide + Rome/Capua
+                  (foreign) -- VALUE only
 
-## 3. Sea trade — FORMATION (which routes a port forms)
+   ACCURACY:
+   - OPEN-WATER crossings: EXCELLENT, ~1-2% (Carthage->Aspis +2%,
+     ->Eryx ratio 1.01). CONFIRMED ON THE MAP: sea trade lines run STRAIGHT
+     across gulfs (Volaterrae, Pisae, Ingaunum all checked), exactly what
+     the white-port distance computes.
+   - COASTAL / SHORT routes: FAIR, +/-10-16% (value-law noise -- small
+     cargo/pop residuals, NOT rounding and NOT a pathing problem).
 
-- Each port fills **slots_X = built port chain level** (e.g. dockyard = 3) with its **most profitable** partners — **not** its nearest.
-- Selection profit = `dist^−0.89 · (cargo+const) · popY^0.06` — **rights are NOT applied to selection** (they only scale the realized value).
-- A port also shows **import rows** for any partner whose own slot set includes it.
 
-**Accuracy: ✅ routes exact.** Carthage exports = {Aspis, Hippo Diarrhytus, Eryx} = game; Rome exports = {Fregellae, Capua} = game (Capua picked over distant same-faction Neapolis).
+-----------------------------------------------------------------------------
+ 3. SEA TRADE — FORMATION (which routes a port forms)
+-----------------------------------------------------------------------------
 
----
+   - Each port fills slots_X = BUILT PORT CHAIN LEVEL (e.g. dockyard = 3)
+     with its MOST PROFITABLE partners -- NOT its nearest.
+   - Selection profit = dist^-0.89 * (cargo+const) * popY^0.06.
+     RIGHTS ARE NOT APPLIED TO SELECTION (they only scale realized value).
+   - A port also shows IMPORT rows for any partner whose own slot set
+     includes it.
 
-## 4. River trade (Nile, etc.)
+   ACCURACY: ROUTES EXACT. Carthage exports = {Aspis, Hippo Diarrhytus,
+   Eryx} = game. Rome exports = {Fregellae, Capua} = game (Capua picked
+   over the distant same-faction Neapolis).
 
-- River bodies are thin sea bodies; river ports lane near-all-pairs within the body.
-- **Value now uses the same sea law** (channel distance + cargo) — previously a flat size-only law (every Nile route from a city showed the same number).
 
-**Accuracy: ⚠️ −1% to +22%.** Alexandria→Sebennytos 658 vs 663 (**−1%**, exact); →Tanis +22%; →Mendes −15%. Alexandria total +9%.
+-----------------------------------------------------------------------------
+ 4. RIVER TRADE (Nile, etc.)
+-----------------------------------------------------------------------------
 
----
+   - River bodies are thin sea bodies (the Nile is its own water colour).
+   - VALUE uses the same SEA law, with the DISTANCE computed CONFINED TO THE
+     RIVER BODY (the path follows the channel; it cannot shortcut across a
+     delta via the coast, and cannot get blocked in a narrow channel).
+     Previously a flat size-only law (every Nile route from a city showed
+     the same number).
+   - CONFIRMED ON THE MAP: Nile cities sit inland on the channels; trade runs
+     east-west along the coast to each channel mouth, so Tanis (far east) is
+     a longer haul than Sebennytos -- which the body-confined distance now
+     captures.
 
-## 5. Governor
+   ACCURACY:
+   - VALUE per route: GOOD where the source is well-connected --
+     Alexandria total Nile trade 2253 vs game 2246 (+0.3%, EXACT).
+   - FORMATION: STILL OVER. River lanes form "near-all-pairs" (every delta
+     city pairs with every other), so an interior city like Tanis gets ~7
+     partners where the game gives it 4 -> interior cities over-count
+     (+50% to +170%). This is the main remaining river error and needs the
+     same slot/range limiting the sea lanes use.
 
-The exporter's **governor trading trait** multiplies the **export** leg ×(1 + 0.74·trading%). The import leg (partner's export back) is unaffected. (Captures can be gov-in or gov-out; gov-out is preferred for calibration.)
 
----
+-----------------------------------------------------------------------------
+ 5. GOVERNOR
+-----------------------------------------------------------------------------
 
-## Accuracy at a glance
+   The exporter's GOVERNOR TRADING TRAIT multiplies the EXPORT leg by
+   (1 + 0.74*trading%). The import leg (partner's export back) is
+   unaffected. (Captures should be gov-out for clean calibration; saves let
+   us read the actual governor trait per settlement.)
 
-| Component | Status | Typical error |
-|---|---|---|
-| Land trade | ✅ | ~3% |
-| Sea value — open water | ✅ | ~1-2% |
-| Sea value — coastal/short | ⚠️ | ±10-16% |
-| Sea formation (route picks) | ✅ | exact route set |
-| River value | ⚠️ | −15% … +22% |
-| **Faction/settlement aggregates** | ✅ | Kyrene −0.5%, Carthage −3%, Rome +9%, Alexandria +9% |
 
----
+-----------------------------------------------------------------------------
+ ACCURACY AT A GLANCE
+-----------------------------------------------------------------------------
 
-## The last mile to 0%
+   COMPONENT                         STATUS     TYPICAL ERROR
+   -------------------------------   --------   --------------------------
+   Land trade                        GOOD       ~3%
+   Sea value -- open water           EXCELLENT  ~1-2%
+   Sea value -- coastal/short        FAIR       +/-10-16%
+   Sea formation (route picks)       EXACT      exact route set
+   River value (well-connected)      GOOD       Alexandria +0.3%
+   River formation (interior city)   POOR       +50% ... +170% (too many
+                                                partners; near-all-pairs)
+   Faction/settlement aggregates     GOOD/MIXED Kyrene -0.5%, Carthage -3%,
+                                                Rome +9%, Alexandria +0.3%,
+                                                Ptolemaic faction still over
+                                                (river formation)
 
-1. **Delta/river distances** — the white-port Dijkstra takes shortcuts across compact deltas (Tanis underestimated) and **blocks** some channel-locked cities (Mendes → bad BFS fallback). Fix: force river-lane distance to follow the channel. *(This is the single biggest remaining error.)*
-2. **River multiplier** — currently 1.0; needs a **gov-out** Nile capture to calibrate exactly.
-3. **Coastal value noise** — ±10-16% on short sea routes; a cargo/pop fine-tune, not a structural problem.
 
-Everything structural is cracked and shipped; the residuals above are calibration/pathing refinements.
+-----------------------------------------------------------------------------
+ SAVE VALIDATION (the engine's own per-faction trade numbers)
+-----------------------------------------------------------------------------
+
+   A turn-1 .sav stores the engine's EXACT per-faction TRADE income (and each
+   settlement's governor). Read from a Ptolemaic Turn-1 save (values are
+   gov-IN, so the no-gov model should sit a few % UNDER; MODEL coming out
+   OVER = a real over-count):
+
+   FACTION         SAVE(engine)  MODEL    DIFF    RIVERS?
+   -------------   -----------   ------   -----   -------------------
+   ptolemaic          20867       23029    +10%   Nile
+   carthage            7472        8104     +8%   no
+   antigonid           9836        8528    -13%   no
+   seleucid           22513       29985    +33%   Tigris/Euphrates
+   bactria             3421        5185    +52%   Oxus
+   pontus               387         625    +61%   Halys
+   armenia              707         954    +35%   rivers
+   getae                115          86    -25%   --
+
+   VERDICT (updated): non-river factions land within ~+/-13% (mostly gov-in
+   gap). The over-counting factions (Seleucid +33, Bactria +52, Pontus +61,
+   Armenia +35) turned out NOT to be a river problem -- they have NO river
+   lanes in the model, and changing the river code does not move them. So the
+   save exposed TWO SEPARATE over-counts:
+     A) PTOLEMAIC (Nile): genuine RIVER FORMATION over-count (near-all-pairs).
+     B) SELEUCID/BACTRIA/PONTUS/ARMENIA: a NON-RIVER over-count (sea/land/
+        imports) -- the larger and still-undiagnosed issue. Pontus (+61%, no
+        rivers) is the cleanest case to crack next, via a Pontus player save.
+
+   NOTE: a single global river-distance CUTOFF was tried and FAILED -- the
+   delta needs different cutoffs per city (Alexandria keeps lanes out to ~40,
+   Tanis must trim below ~36), which one threshold cannot do. The real fix is
+   PER-EXPORTER slot-limiting (each city keeps its top-N partners by profit,
+   exactly like sea lanes).
+
+
+-----------------------------------------------------------------------------
+ THE LAST MILE TO 0%
+-----------------------------------------------------------------------------
+
+   1. RIVER FORMATION (now the biggest) -- river lanes are "near-all-pairs";
+      interior delta cities form too many. Fix: limit river lanes by
+      slot/range like sea lanes (the body-confined distance is already in
+      place to drive a proper range cutoff).
+
+   2. RIVER MULTIPLIER -- currently 1.0; a GOV-OUT Nile capture would pin it
+      exactly.
+
+   3. COASTAL VALUE NOISE -- +/-10-16% on short sea routes; a cargo/pop
+      fine-tune, not a structural problem.
+
+   VALIDATION: a turn-1 SAVE stores the engine's exact PER-FACTION trade
+   total directly, plus each settlement's actual GOVERNOR trait -- so it
+   validates every faction at once instead of reading scrolls one by one.
+   (Per-route values are recomputed each turn and are NOT in the save, so
+   individual river-lane counts still need the occasional scroll.)
+
+   Everything structural is cracked and shipped; the river FORMATION limit
+   is the main remaining piece, then calibration/fine-tuning.
+=============================================================================
