@@ -1357,6 +1357,11 @@ function seaLanesByRegion(modDataDir) {
       (partnersOf[A] = partnersOf[A] || []).push({ to: B, d: pr.d, pop: pr.b.pop, port: pr.b.basePort, ownPop: pr.a.pop, ownPort: pr.a.basePort });
       (partnersOf[B] = partnersOf[B] || []).push({ to: A, d: pr.d, pop: pr.a.pop, port: pr.a.basePort, ownPop: pr.b.pop, ownPort: pr.b.basePort });
     }
+    // NOTE: the engine ranks each port's slots by PROFIT, not distance (live 2026-06-18) — but profit
+    // = trade value uses the real NAVAL MOVEMENT COST, where a same-coast hop (Adrumet) beats a
+    // channel crossing (Epikrateia) even with less cargo. Our depth-weighted distance can't separate
+    // those (28 vs 29), so profit-ranking with it regresses. Keeping distance-rank until movement-cost
+    // is cracked (then switch to profit-rank). See ris-tax-formula-crack memory.
     const nearestSet = {};
     for (const X in partnersOf) { partnersOf[X].sort((u, v) => u.d - v.d); nearestSet[X] = new Set(partnersOf[X].slice(0, slots[X] || 1).map(p => p.to)); }
     for (const X in partnersOf) for (const pp of partnersOf[X]) {
