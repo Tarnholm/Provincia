@@ -701,7 +701,7 @@ const CALIB = {
   // Refit K 14.27 / const 8.33 with g=1.0 (19% on Cyrene+Carthage). NOTE: amber-pinned const=10.55
   // gives 29% here (all under) → a ~1.25× factor is still missing in the cargo/reversed-lane term
   // (Barke⇄Euesperides asymmetry) — the next target. Distance = depth-weighted white-port path.
-  seaK: 14.27, seaExpG: 1.0, seaPopX: 0.13, seaPopY: 0.06, seaDist: -0.89, seaConst: 8.33,
+  seaK: 13, seaExpG: 1.0, seaPopX: 0.13, seaPopY: 0.06, seaDist: -0.89, seaConst: 9.86, seaImportFrac: 0.347,
   seaRightsForeign: 0.5,
   // EFF PER-UNIT WORTH CURVE (2026-06-12 probe battery refinement, replaces the
   // kink-4/0.32 form): a resource's q-th quantity unit is worth seaEffUnits[q−1]
@@ -1824,14 +1824,15 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           const tPX = isExp ? (s.tradePct || 0) : 0; // exporter trade-buildings (import leg → base rate)
           const landRateX = CALIB.tradeLandRateBase + CALIB.tradeLandRatePct * tPX;
           const gx = _goodsQty[X] || {}, gy = _goodsQty[Y] || {};
-          let cF = 0; for (const r in gx) if (!(r in gy)) cF += gx[r] * (_goodsVal[r] || 0);
+          let cF = 0; for (const r in gx) if (!(r in gy)) cF += gx[r] * (_goodsVal[r] || 0); // export cargo
+          let iC = 0; for (const r in gy) if (!(r in gx)) iC += gy[r] * (_goodsVal[r] || 0); // import cargo (×seaImportFrac)
           const ownX = ownerOfRegion[X], ownY = ownerOfRegion[Y];
           const rights = (ownX === ownY || tradeRightsSet.has(ownY) || tradeRightsSet.has(ownX)) ? 1.0 : CALIB.seaRightsForeign;
           // distance = depth-weighted white-port path; fall back to formation BFS for blocked straits
           const _dWp = (seaPortDistDepth(modDataDir).distFrom(X) || {})[Y];
           const d = Math.max(1, (_dWp != null && isFinite(_dWp)) ? _dWp : (ln2.d || 20));
           return Math.max(0, CALIB.seaK * Math.pow(landRateX, CALIB.seaExpG) * Math.pow(popX, CALIB.seaPopX) * Math.pow(popY, CALIB.seaPopY)
-            * Math.pow(d, CALIB.seaDist) * (cF + CALIB.seaConst) * rights);
+            * Math.pow(d, CALIB.seaDist) * (cF + CALIB.seaImportFrac * iC + CALIB.seaConst) * rights);
         }
         if (ln2 && cargo > 0) {
           // v2 inverse-distance law (legacy, non-dynamic). `s` is in scope (closure): the EXPORTER

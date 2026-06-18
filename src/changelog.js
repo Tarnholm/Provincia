@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1160",
+    date: "2026-06-18",
+    items: [
+      { type: "improvement", text: "**Sea trade now counts the return cargo too.** A controlled resource test (adding amber to Carthage at increasing quantities and reading every route) confirmed trade value rises linearly with cargo — and revealed that a route's worth includes a fraction (~0.35) of what the *destination* ships back, not just what the origin exports. Adding this return-cargo term and re-pinning the baselines brings Cyrene's total to within 0.5% of the in-game scroll and Carthage's main route to within 5%." },
+    ],
+  },
+  {
     version: "0.9.1159",
     date: "2026-06-18",
     items: [
