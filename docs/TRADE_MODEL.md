@@ -1,6 +1,6 @@
 =============================================================================
  PROVINCIA TRADE MODEL — HOW IT WORKS & CURRENT ACCURACY
- Last updated 2026-06-18 (v0.9.1167)
+ Last updated 2026-06-18 (v0.9.1168)
  All formulas cracked from controlled in-game experiments + live scroll
  captures (RIS mod, turn 1).
 =============================================================================
