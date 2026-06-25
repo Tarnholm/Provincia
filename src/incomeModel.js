@@ -2442,11 +2442,15 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
         expV *= _seaTradeM;
         // import leg: the partner's Large-Colony bonus rides on the goods we import from it (its export was boosted)
         impV *= 1 + (tradePctAll[ln.to] != null ? tradePctAll[ln.to] : (colonyMByRegion[ln.to] || 0)) / 100;
-        seaTrade += expV + impV;
+        // VANILLA: the engine CEILS the per-row import (⌈0.2·routeValue⌉ — ceilf in the route-value writer), which
+        // the model's round-of-the-total was losing (Thessalonica→Rhodes import 0.2·82=16.4 → ⌈⌉17, model gave 16).
+        // Exports stay summed-raw: their float sits a hair high, so the total round already matches and ceiling them
+        // double-counts (over-shot Thessalonica/Arretium/Sinope/Rhodes by 1). So ceil imports only.
+        seaTrade += (_mapVer(modDataDir) < 0x7b) ? (Math.round(expV) + Math.ceil(impV)) : (expV + impV);
         if (process.env.TRADE_DEBUG) (global.__TDBG = global.__TDBG || []).push({
           kind: ln.river ? "river" : "sea", from: s.settlement, fromRegion: s.region, toRegion: ln.to,
           cargo: (lanePts[s.region + ">" + ln.to] || 0), d: ln.d, popFrom: s.pop, popTo: ln.toPop,
-          exp: Math.round(expV), imp: Math.round(impV), weak: !!ln.weak,
+          exp: Math.round(expV), imp: (_mapVer(modDataDir) < 0x7b) ? Math.ceil(impV) : Math.round(impV), weak: !!ln.weak,
           tradePctF: s.tradePct || 0, portF: s.portLevel || 0, rvF: tradeQtyVal[s.region] || 0,
           tradePctT: 0, portT: ln.toPort || 0,
           pinned: !!(CALIB.seaLaneF || {})[s.region + ">" + ln.to]

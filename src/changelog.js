@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1191",
+    date: "2026-06-25",
+    items: [
+      { type: "improvement", text: "**Turn-1 sea trade — per-row rounding to match the engine.** (1) Each sea **import** is now rounded up — ⌈0.2 · partner's export⌉ — the way the game ceils every import row; the model had summed raw values and rounded the total, dropping the fraction (e.g. Rhodes' import from Thessalonica 16→17). (2) A settlement's sea income is now the **sum of its displayed (rounded) export rows**, not the round of the raw float sum — so towns whose individual rows already matched but whose raw total rounded down now read correctly (Carthage's 22 + 43 + 202 totalled 266 instead of 267). gov-off test-corpus error now 4 across 25 settlements, 23 exact. From the map and building data." },
+    ],
+  },
+  {
     version: "0.9.1190",
     date: "2026-06-25",
     items: [
