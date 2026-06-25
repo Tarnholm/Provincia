@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1190",
+    date: "2026-06-25",
+    items: [
+      { type: "improvement", text: "**Turn-1 land trade — the trade-building bonus is now applied per route, not to the total.** The game computes each land-trade row as ⌊band · base⌋, truncating the fraction on every row; the model had been summing the raw rows and multiplying by the band once at the end, which kept fractions the game throws away. Applying the band per route with truncation makes the high-value eastern land routes read exactly (Hatra, Sinope, Mazaka). Derived from the map and building data — no pinned numbers." },
+    ],
+  },
+  {
     version: "0.9.1189",
     date: "2026-06-25",
     items: [

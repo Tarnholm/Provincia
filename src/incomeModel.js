@@ -2194,6 +2194,11 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // non-adjacent allied-town trade (e.g. Julii Arretium↔Capua) is actually SEA: a PORT settlement trades
       // with a coastal region along their shared sea-body even when that region has NO port (user-confirmed:
       // Capua has no port but Arretium does). That coastal sea trade is handled in the sea block below.
+      // VANILLA: the trader/market band is applied PER-ROUTE with truncation — the engine computes
+      // ⌊band·base⌋ for each land row, so Σ⌊M·row⌋ < (Σrow)·M by the dropped fractions. Live-confirmed:
+      // Hatra 110→107, Sinope 178→177, Mazaka 100→99 (each route ⌊1.10·base⌋). RIS keeps its calibrated total-band law.
+      const _landM = Math.max(0, 1 + (colonyMByRegion[s.region] || 0) / 100 + 0.74 * ((gv0 && gv0.trading) || 0) / 100);
+      const _vanLandM = _mapVer(modDataDir) < 0x7b;
       for (const n of landNeighbors) {
         const own = ownerOfRegion[n];
         if (own === "slave") continue; // rebels: every faction is permanently at war with slave → no trade
@@ -2242,11 +2247,11 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           _landRow = _landRate * (_exC + CALIB.tradeLandImportFrac * _imC + CALIB.tradeLandConst)
             * roadMult * (hasRights ? 1 : CALIB.tradeNoRights);
         }
-        landTrade += _landRow;
+        landTrade += _vanLandM ? Math.trunc(_landM * _landRow) : _landRow;
         if (process.env.TRADE_DEBUG) (global.__TDBG = global.__TDBG || []).push({
           kind: "land", from: s.settlement, fromRegion: s.region, toRegion: n,
           cargo: (tradeQtyVal[n] || 0), road: (roadOfRegion[n] || 0) + (s.roadLevel || 0),
-          popFrom: s.pop, popTo: (popOfRegion[n] || 0), exp: Math.round(_landRow), imp: 0
+          popFrom: s.pop, popTo: (popOfRegion[n] || 0), exp: _vanLandM ? Math.trunc(_landM * _landRow) : Math.round(_landRow), imp: 0
         });
       }
       // TRADE-BUILDING bonus M (cracked in-game 2026-06-25, Corduba trader add/remove): the settlement's
@@ -2254,7 +2259,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // multiplies ALL its trade — LAND as well as sea. M = 1 + tradePct/10 (= colonyMByRegion/100). The model
       // already applied this to sea export; it was missing on land (Corduba 89→97 with its +10% trader).
       // GOVERNOR TRADING (Alexandria GoodTrader probe): +trading% scales the export component on top.
-      landTrade *= Math.max(0, 1 + (colonyMByRegion[s.region] || 0) / 100 + 0.74 * ((gv0 && gv0.trading) || 0) / 100);
+      if (!_vanLandM) landTrade *= Math.max(0, 1 + (colonyMByRegion[s.region] || 0) / 100 + 0.74 * ((gv0 && gv0.trading) || 0) / 100);
     }
     tradeLandSum += landTrade;
     // SEA = PER-LANE FLOWS. OPEN-SEA LAW (Capua t1/t2 probes 2026-06-11 night +
