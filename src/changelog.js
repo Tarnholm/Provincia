@@ -8,6 +8,107 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1189",
+    date: "2026-06-25",
+    items: [
+      { type: "improvement", text: "**Turn-1 sea trade — four accuracy fixes from the map and building data, cutting the gov-off test-corpus error roughly 20×.** (1) The **Colossus of Rhodes** now adds **+20% of sea-trade income** to every settlement of the faction that owns the wonder — confirmed by removing the landmark in-game and watching Rhodes' trade fall 128→106 and Syracuse's 131→113, exactly the bonus. (2) **Imports are now limited to a settlement's strongest trade partners** (the same per-port fleet cap the game uses), instead of crediting every distant hub. (3) **Sea distances now use the exporting port's own route**, fixing the import side of two-way routes that had borrowed the wrong direction's distance. (4) **Imports now include the trading partner's market/trade-building bonus**, which was being dropped for cross-faction trade. All four are computed from the game's map and building files — no pinned per-settlement numbers." },
+    ],
+  },
+  {
+    version: "0.9.1188",
+    date: "2026-06-23",
+    items: [
+      { type: "improvement", text: "**Sea-trade population weighting pinned by a controlled in-game experiment.** Doubling one coastal settlement's population (3500→7000) and reading the exact trade change showed the engine weights population by roughly **pop^0.48** — slightly flatter than the √pop (pop^0.5) the formula had assumed. Adopting the measured exponent (and recalibrating the sea constant accordingly) makes the high-population settlements read near-exact and tightens turn-1 Epirus/Acarnania trade (combined per-settlement error 198→179). No pinned per-settlement numbers — only the one engine coefficient the experiment measured. The remaining Acarnanian gap is the known trade-route connectivity issue on Leukas, not the value." },
+    ],
+  },
+  {
+    version: "0.9.1187",
+    date: "2026-06-22",
+    items: [
+      { type: "improvement", text: "**Turn-1 sea trade now applies the full per-settlement trade-income multiplier, derived entirely from the building data.** Each settlement's net `trade_base_income_bonus` (colony + market + resource-industry, minus the government/empire-size penalties) scales its sea exports — exactly the \"Trade income bonus %\" the game shows on the Region Information Scroll. The negative penalties are floored so they never push the per-route export below its base (they apply per-turn, not per-route). No pinned numbers — it's computed from the EDB. Net effect: Epirus reads near-exact (within a few denarii on every settlement) and the Acarnanian League's settlements move much closer to the live game; the remaining gap on the island town is a known trade-route connectivity issue, not the value." },
+      { type: "improvement", text: "**Scripts › Temples: rewritten for the standard-temple system.** The temple step now adds a `temples_standard` building to every settlement above town level, sized one tier below the settlement and capped at tier 3 (large_temple) — so large_city and huge_city both get a large_temple rather than a tier-4/5 temple that would flood the low-population top-tier settlements with public order. Settlements under indirect government (governmentA/B) get a matching `creator` line so the engine resolves the building's culture variant. The eight unique-temple regions and any settlement that already has a temple are left untouched (their wonder temples are deliberate). On the RIS imperial map this places 474 temples (384 shrine / 76 temple / 14 large_temple)." },
+    ],
+  },
+  {
+    version: "0.9.1186",
+    date: "2026-06-22",
+    items: [
+      { type: "improvement", text: "**Turn-1 sea trade now models the Large Colony trade bonus.** A settlement with a Large Colony (colony level 2) carries a **+20% trade-income bonus** — the figure shown right on its building's Region Information Scroll. The model now applies that +20% to the colony town's own sea exports *and* to the cut a trading partner collects on the goods it imports from the colony (the partner imports the already-boosted flow). Validated to the denarius against the in-game scrolls — an Acarnanian island colony's exports move exactly ×1.20 when the colony is present, and removing the colony in-game drops them by the same amount. Net effect: own-faction sea income for colony-bearing provinces lines up far closer to the live game, with no change to provinces that have no Large Colony." },
+    ],
+  },
+  {
+    version: "0.9.1185",
+    date: "2026-06-22",
+    items: [
+      { type: "fix", text: "**Sea trade between close coastal settlements is no longer under-counted.** The model clamps very short sea distances to a minimum so that gulf hops across an invalidated land-bridge (like the Gulf of Ambrakia) don't mathematically explode. That clamp was being applied to *every* short sea route, including genuine open-sea hops between an island and the adjacent mainland — which crushed their value by up to ~2× (e.g. an Acarnanian island town's big route to its neighbour read ~250 instead of ~400+). The clamp now applies only to the invalidated land-bridge pairs it was meant for; true open-sea routes keep their real distance, matching the in-game figures from the map data." },
+    ],
+  },
+  {
+    version: "0.9.1184",
+    date: "2026-06-22",
+    items: [
+      { type: "change", text: "**Victory-mode Copy List now copies as a comma-separated list (CSV)** instead of one region per line — so it pastes straight into a `hold_regions` victory-conditions line or a spreadsheet cell. Still in the exact order shown in the list (including any order you've set by dragging)." },
+    ],
+  },
+  {
+    version: "0.9.1183",
+    date: "2026-06-22",
+    items: [
+      { type: "feature", text: "**Copy the victory-target list in one click.** In the political map's victory-conditions mode, a new **Copy List** button sits right next to *Deselect All*. It copies every victory target region to the clipboard, one per line, in exactly the order shown in the list — including any order you've set by dragging the rows. Handy for pasting the targets straight into a victory-conditions edit or your notes." },
+    ],
+  },
+  {
+    version: "0.9.1175",
+    date: "2026-06-22",
+    items: [
+      { type: "improvement", text: "**Sea trade now uses the game's real sea-route graph and a reverse-engineered export formula (Epirus calibration).** Building on the map's sea-route data, the per-route trade value was cracked from a live Epirus turn-1 game: a port's export on a sea route scales with its own population squared and falls off steeply with the true sea distance, and a settlement counts both its own exports and the goods a foreign partner ships back. Individual Epirus routes reproduce to the denarius (e.g. Ambrakia→Leukas 341). The sea-route graph is switched on; the faction sea-trade total currently lands within a few percent while the last rule — exactly how many routes each port forms (it varies by coastline, not a fixed number) — is finished off." },
+    ],
+  },
+  {
+    version: "0.9.1174",
+    date: "2026-06-22",
+    items: [
+      { type: "improvement", text: "**Groundwork for exact sea trade: the game's own sea-route graph is now read from the map data.** Sea trade decides which ports trade with which, and the model was approximating that with a pixel-distance guess that under-formed long-range routes (e.g. an Epirus port's big route to a rich port across the gulf). The game's actual sea-route network — every coastal region's reachable sea partners and the exact sea distance to each — is stored in map.rwm (the 'landing frontiers', right after the land borders). That whole graph (525 coastal regions, 8,351 sea links) is now extracted and wired into the trade model. It's switched off by default for now: the per-route value math still needs re-fitting to these real sea distances before it's denarius-exact, so this release ships the connectivity foundation without changing current numbers." },
+    ],
+  },
+  {
+    version: "0.9.1173",
+    date: "2026-06-22",
+    items: [
+      { type: "improvement", text: "**Settlement tax is now exact to the denarius — all 84 Ptolemaic towns match the in-game turn-1 numbers perfectly (0 off).** Three precision fixes got the last towns to the denarius: (1) the population tax-base table was filled in at the missing population sizes (it was straight-line-guessing between 2,000 and 2,500 and reading ~2 low); (2) a culture mix-up — the Successor kingdoms (Ptolemaic/Seleucid/etc.) use the *e_hellenistic* culture, which was being wrongly treated as classical *greek*, so a brewery/bakery handed out the greek tax bonus instead of the eastern one (over-taxing big Nile cities like Memphis by 5/turn); and (3) a settlement whose tax is negative (when empire-size penalties exceed its base) now rounds toward zero the way the game does (−73, not −74). With a turn-1 calibration save loaded, faction tax is now exact." },
+    ],
+  },
+  {
+    version: "0.9.1172",
+    date: "2026-06-21",
+    items: [
+      { type: "fix", text: "**Governor tax now reads correctly for every governor in a save, not just most.** The save stores each governor's exact tax effect (the engine value behind the settlement tax card), located by a small signature in the character record. That signature included an attribute count the reader assumed was always 23 — but it varies per character (e.g. the Egyptian governor Nactanebo's is 21), so those governors had their entire stat block — including tax effect — silently dropped, falling back to a less precise estimate. The reader now accepts the real range of counts. On a full 84-settlement Ptolemaic turn-1 save, every governor's tax now resolves and the worst remaining per-town miss (Thebes, was +45) is exact; faction tax lands within ~0.1% with the calibration save loaded." },
+    ],
+  },
+  {
+    version: "0.9.1171",
+    date: "2026-06-21",
+    items: [
+      { type: "fix", text: "**Settlement tax can now go negative, the way the game does.** In a large empire the per-city tax penalties can exceed a town's population tax base, so the game shows a *negative* tax for that settlement (it subtracts from the faction's income). The model was flooring every town at zero, which over-counted those towns. Tax now truncates toward zero exactly like the game (so a settlement can read −62, and positives are unchanged). Validated against a full 84-settlement live Ptolemaic turn-1 capture." },
+      { type: "improvement", text: "**Per-settlement tax validated against every Ptolemaic town.** Going through all 84 Ptolemaic settlements from a live turn-1 save, the model now lands the faction's total tax within ~1.6% and matches 60% of individual towns to the denarius (including the capital, near-zero towns like Athribis, and negative-tax towns like Mendes-Thmouis and Kaunos). Remaining per-town differences are small building/governor-trait residuals." },
+    ],
+  },
+  {
+    version: "0.9.1170",
+    date: "2026-06-21",
+    items: [
+      { type: "fix", text: "**Capital tax no longer collapses to zero in large empires.** In a big empire (many settlements), the per-city tax penalties grow large, and the capital's tax was being computed by *multiplying* those penalties — which could drive a major capital's tax to 0 (e.g. a 12,000-population capital paying no tax). A capital is now never taxed harder than an ordinary town, so its base bonus still applies while the penalties only subtract. Verified against live turn-1 settlement scrolls: the capital now pays a realistic tax instead of nothing." },
+      { type: "improvement", text: "**Governor tax effects now count in multi-settlement factions.** A governor's tax-affecting traits (e.g. a corrupt/lenient official lowering tax, or a skilled administrator raising it) were only applied in single-settlement factions; for everyone else they were ignored. They now apply everywhere, using the save's exact per-settlement value when a save is loaded and the governor's traits otherwise. Validated against live Ptolemaic settlement scrolls — 8 of 12 sampled towns now match the in-game tax exactly, and faction tax accuracy improved across the board (e.g. Cyrene's error halved)." },
+    ],
+  },
+  {
+    version: "0.9.1169",
+    date: "2026-06-18",
+    items: [
+      { type: "improvement", text: "**Land trade now uses the game's exact region connectivity from the map data.** Land-trade partners were approximated by raw region-border adjacency, which over-counted — it traded across impassable borders (rivers, mountains) the game never connects, inflating inland empires by +33–61%. Land trade is now driven by the map's own region-frontier connectivity (from map.rwm): only land-type borders form routes, correctly excluding crossings like Baktra↔Marakanda (across the Oxus river), and Amaseia↔Komana / Amaseia↔Kimiata in Pontus. Validated 100% symmetric across 5,422 land edges. Bactria's land partners now match the in-game scroll exactly, and its faction trade lands within ~3% of a current-version turn-1 save. Works in both live and non-live mode (parsed straight from the mod's map.rwm)." },
+    ],
+  },
+  {
     version: "0.9.1163",
     date: "2026-06-18",
     items: [

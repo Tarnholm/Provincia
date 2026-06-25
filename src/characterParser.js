@@ -414,11 +414,19 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
     // Verified vs Macedon T0 (Antigonos II Gonatas, age 50): frame at +94, so
     // command=frame+4 (=7), influence=+8 (=6), management=+12 (=5),
     // loyalty=frame+28. command/influence/management labels per 2026-05-19.
+    // The u16 immediately before the [u32=50] base is the character's ATTRIBUTE-VECTOR
+    // COUNT, which varies per character (16..24 observed: most Greek govs = 23, but e.g.
+    // the Egyptian governor Nactanebo = 21). The old `=== 23` check nulled the whole stat
+    // cluster (incl. taxEffect) for any non-23 character, falling back to imprecise trait
+    // tax. Anchor on the stable [u32=50] base and accept any plausible count; the ±30 stat
+    // and ±100 taxEffect sanity gates below reject the rare false [count][50] match.
     let frameP = -1;
     for (let p = 90; p <= 104; p++) {
       const o = offset + p;
-      if (o - 2 >= 0 && o + 12 <= buf.length &&
-          buf.readUInt16LE(o - 2) === 23 && buf.readUInt32LE(o) === 50) { frameP = o; break; }
+      if (o - 2 >= 0 && o + 12 <= buf.length) {
+        const cnt = buf.readUInt16LE(o - 2);
+        if (cnt >= 14 && cnt <= 28 && buf.readUInt32LE(o) === 50) { frameP = o; break; }
+      }
     }
     if (frameP >= 0 && frameP + 28 + 4 <= buf.length) {
       // SIGNED reads (2026-06-11, cyrene live cards): stats can be negative

@@ -18078,6 +18078,8 @@ function App() {
                   <span style={{ fontWeight: 700, fontSize: "0.95rem" }}>
                     {isVictoryMode ? "Victory target regions:" : "Selected Provinces:"}
                   </span>
+                  {/* Controls kept together on the right so Copy List sits directly beside Deselect All. */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                   <button
                     style={{ fontSize: "0.75rem", padding: "2px 8px", borderRadius: 6, border: "1px solid #bbb",
                       cursor: selectedProvinces.length ? "pointer" : "not-allowed",
@@ -18087,6 +18089,29 @@ function App() {
                     disabled={selectedProvinces.length === 0}
                     title="Clear all selected provinces"
                   >Deselect All</button>
+                  {isVictoryMode && (
+                    <button
+                      style={{ fontSize: "0.75rem", padding: "2px 8px", borderRadius: 6, border: "1px solid #bbb",
+                        cursor: selectedProvinces.length ? "pointer" : "not-allowed",
+                        opacity: selectedProvinces.length ? 1 : 0.5, fontWeight: 500,
+                        background: "transparent", color: "inherit", flexShrink: 0 }}
+                      disabled={selectedProvinces.length === 0}
+                      // Copy the victory target regions IN THE DISPLAYED ORDER. selectedProvinces is the same
+                      // array the list renders from and is drag-reorderable, so it already holds the user's order.
+                      onClick={(e) => {
+                        const btn = e.currentTarget;
+                        const names = selectedProvinces
+                          .map(k => regions[k]?.city || regions[k]?.region)
+                          .filter(Boolean);
+                        const csv = names.join(", ");
+                        console.log(`[victory-copy] copying ${names.length} target region(s) as CSV in display order:`, csv);
+                        navigator.clipboard.writeText(csv)
+                          .then(() => { const orig = btn.textContent; btn.textContent = "Copied!"; setTimeout(() => { btn.textContent = orig; }, 1200); })
+                          .catch(err => console.error("[victory-copy] clipboard write failed:", err));
+                      }}
+                      title="Copy the victory target regions to the clipboard as a comma-separated list (CSV), in this list's order"
+                    >Copy List</button>
+                  )}
                   {devMode && isVictoryMode && mapCampaign === "imperial" && (
                     <div style={{ display: "flex", gap: 4 }}>
                       {!portedVictory && (
@@ -18110,6 +18135,7 @@ function App() {
                       )}
                     </div>
                   )}
+                  </div>
                 </div>
                 <div style={{ flex: 1, minHeight: 0, overflow: "auto" }}>
                   {showFactionSummary && selectedProvinces.length > 0

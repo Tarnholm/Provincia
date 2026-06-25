@@ -1,0 +1,31 @@
+{
+  "_comment": "Vanilla RTW turn-1 (270 BC) ground-truth trade, from in-game Settlement Income scrolls (2026-06-24 screenshots). Each settlement: total trade + per-partner EXPORT rows (import rows = 0.2x partner export are listed separately by the game and excluded here). Values are denarius-exact. Used to validate incomeModel vanilla sea+land trade.",
+  "settlements": {
+    "Thessalonica": { "total": 186, "rows": { "Bylazora": 52, "Larissa": 52, "Rhodes": 82 } },
+    "Bylazora":     { "total": 52,  "rows": { "Porrolissum": 12, "Tylis": 8, "Thessalonica": 32 } },
+    "Larissa":      { "total": 35,  "rows": { "Thessalonica": 32, "Thermon": 3 } },
+    "Corinth":      { "total": 12,  "rows": { "Sparta": 12 } },
+    "Thermon":      { "total": 3,   "rows": { "Larissa": 3 } },
+    "Sparta":       { "total": 8,   "rows": { "Corinth": 8 } },
+    "Pergamum":     { "total": 14,  "rows": { "Sardis": 14 } },
+    "Arretium":     { "total": 215, "rows": { "Patavium": 20, "Ariminum": 51, "Rome": 52, "Capua": 92 } },
+    "Ariminum":     { "total": 90,  "rows": { "Patavium": 8, "Arretium": 34, "Rome": 17, "Tarentum": 31 } },
+    "Seleucia":     { "total": 40,  "rows": { "Arsakia": 7, "Hatra": 11, "Susa": 22 } },
+    "Sardis":       { "total": 39,  "rows": { "Tarsus": 28, "Pergamum": 11 } },
+    "Tarsus":       { "total": 135, "rows": { "Mazaka": 17, "Sardis": 23, "Antioch": 95 } },
+    "Antioch":      { "total": 492, "rows": { "Tarsus": 123, "Hatra": 58, "Sidon": 39, "Damascus": 104, "Rhodes": 153 }, "importRows": { "Rhodes": 15 } },
+    "Damascus":     { "total": 84,  "rows": { "Antioch": 57, "Sidon": 7, "Jerusalem": 20 } },
+    "Hatra":        { "total": 107, "rows": { "Artaxarta": 28, "Arsakia": 8, "Mazaka": 20, "Seleucia": 14, "Antioch": 37 } },
+    "Rhodes":       { "total": 128, "rowsTotal": 106, "rows": { "Antioch": 58 }, "importRows": { "Thessalonica": 17, "Antioch": 31 } },
+    "Syracuse":     { "total": 131, "rowsTotal": 113, "rows": { "Lilybaeum": 12, "Messana": 12, "Tarentum": 71 }, "importRows": { "Tarentum": 18 } },
+    "Carthage":     { "total": 267, "rows": { "Cirta": 22, "Thapsus": 43, "Lilybaeum": 202 } },
+    "Thapsus":      { "total": 42,  "rows": { "Carthage": 26, "Cirta": 16 } },
+    "Lilybaeum":    { "total": 52,  "rows": { "Messana": 3, "Syracuse": 8, "Carthage": 41 } },
+    "Corduba":      { "total": 97,  "rows": { "Scallabis": 28, "Numantia": 36, "Carthago Nova": 33 } },
+    "Palma":        { "total": 0,   "rows": {} },
+    "Caralis":      { "total": 0,   "rows": {} },
+    "Sinope":       { "total": 177, "rows": { "Kotais": 29, "Artaxarta": 19, "Mazaka": 78, "Rhodes": 51 } },
+    "Mazaka":       { "total": 99,  "rows": { "Sinope": 55, "Artaxarta": 16, "Tarsus": 13, "Hatra": 15 } }
+  },
+  "seaRoutes": ["Thessalonica->Rhodes", "Arretium->Capua", "Antioch->Rhodes", "Rhodes->Antioch", "Syracuse->Tarentum", "Sinope->Rhodes", "Carthage->Lilybaeum", "Lilybaeum->Carthage", "Ariminum->Tarentum"]
+}

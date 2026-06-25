@@ -57,3 +57,4 @@ __pycache__/
 /derived/treasury_run_imperial/
 
 tmp-*.json
+_scratch/

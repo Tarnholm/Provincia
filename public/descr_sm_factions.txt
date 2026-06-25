@@ -5641,7 +5641,7 @@
 
 		"available in custom battles": false,
 		"prefer naval invasions": true,
-		"default religion": "iranian",
+		"default religion": "mesopotamian",
 		"default battle ai personality": "default_personality",
 
 		;;allow this faction to have a functioning family tree
@@ -9213,7 +9213,7 @@
 
 		"available in custom battles": false,
 		"prefer naval invasions": false,
-		"default religion": "arab",
+		"default religion": "judaean",
 		"default battle ai personality": "default_personality",
 
 		;;allow this faction to have a functioning family tree
@@ -14039,7 +14039,7 @@
 
 		"available in custom battles": false,
 		"prefer naval invasions": false,
-		"default religion": "iranian",
+		"default religion": "assyrian",
 		"default battle ai personality": "default_personality",
 
 		;;allow this faction to have a functioning family tree

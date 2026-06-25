@@ -161,10 +161,11 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
     // settlement-details law% reconciles only with them counted).
     const lawCtx = { ...ctx, aliases: { ...(ctx.aliases || {}) } };
     const lawReqOk = (req) => gv.evalReq((req || "").replace(/is_toggled\s+"[^"]*"/g, "factionwide"), lawCtx);
+    let taxableRegionBase = 0, taxableBuilding = 0; // split for the region_base-only ×40 rule
     for (const b of aiDropped) {
       const cap = inc.capIndex[b.chain + ":" + b.level];
       if (!cap) continue;
-      for (const x of cap.taxable) if (gv.evalReq(x.req, ctx)) { tax[cat(x.req)] += x.val; if (explain) explain.push({ chain: b.chain + ":" + b.level, val: x.val, req: x.req }); }
+      for (const x of cap.taxable) if (gv.evalReq(x.req, ctx)) { tax[cat(x.req)] += x.val; if (/^hinterland_region$/i.test(b.chain)) taxableRegionBase += x.val; else taxableBuilding += x.val; if (explain) explain.push({ chain: b.chain + ":" + b.level, val: x.val, req: x.req }); }
       for (const x of cap.trade) if (gv.evalReq(x.req, ctx)) trade[cat(x.req)] += x.val;
       for (const x of cap.tradeLvl) if (gv.evalReq(x.req, ctx)) tradeLvlSum += x.val;
       for (const x of cap.mine) if (gv.evalReq(x.req, ctx)) mineSum += x.val;
@@ -200,7 +201,7 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
     out.push({
       region: s.region, settlement: region.settlement, pop: s.pop, level: s.level, capital: !!s.capital,
       taxExplain: explain || undefined,
-      taxablePct, tradePct, taxPctParts: tax, tradePctParts: trade, tradeLvlSum, mineSum, fleetSum, farmLevel, farmLevelSum, farmN: region.farmN || 0,
+      taxablePct, taxableRegionBase, taxableBuilding, tradePct, taxPctParts: tax, tradePctParts: trade, tradeLvlSum, mineSum, fleetSum, farmLevel, farmLevelSum, farmN: region.farmN || 0,
       wallLevel, healthPips, lawBonus, lawWalls, lawTerrain,
       resources: resList, portLevel, roadLevel,
       buildings: s.buildings.map(b => b.chain + ":" + b.level),
@@ -472,7 +473,11 @@ const CALIB = {
   // so single-rate reads are exact. There is a −125 DISCONTINUITY at pop 9707 (verified real:
   // not squalor, not order, not tier — a fixed population threshold). Values are H/H in-game reads
   // (used directly for the player; the AI block divides out 0.92 separately).
-  popBasePre: [[400,301.5],[450,324.5],[500,347.5],[550,363.5],[600,373.5],[700,396.5],[800,419.5],[900,442.5],[1000,465.5],[1100,488.5],[1150,500.5],[1200,505.5],[1400,528.5],[1600,551.5],[1800,574.5],[2000,597.5],[2500,629.5],[3000,658.5],[3500,686.5],[4000,715.5],[4500,744.5],[5000,773.5],[5500,801.5],[6000,830.5],[6500,859.5],[7000,888.5],[7500,917.5],[8000,945.5],[8500,965.5],[9000,979.5],[9350,989.5],[9706,1000.5]],
+  // Dense gap-fill points (2026-06-22) MEASURED from the 84-settlement live Ptolemaic turn-1 save:
+  // the old coarse table linearly-interpolated the 2000→2500 and 2500→3000 gaps wrong (2100 read
+  // 603.9, real 606.5). Each added point is the exact half-integer the in-game tax implies for a
+  // positive-tax town at that pop (governors exact from the save; building points integer from EDB).
+  popBasePre: [[400,301.5],[450,324.5],[500,347.5],[550,363.5],[600,373.5],[700,396.5],[800,419.5],[900,442.5],[1000,465.5],[1100,488.5],[1150,500.5],[1200,505.5],[1300,517.5],[1400,528.5],[1500,540.5],[1600,551.5],[1650,556.5],[1700,563.5],[1800,574.5],[2000,597.5],[2100,606.5],[2200,612.5],[2300,617.5],[2400,623.5],[2500,629.5],[2700,640.5],[2750,643.5],[2800,646.5],[3000,658.5],[3200,669.5],[3250,672.5],[3400,681.5],[3500,686.5],[3800,704.5],[4000,715.5],[4100,721.5],[4500,744.5],[5000,773.5],[5500,801.5],[6000,830.5],[6500,859.5],[7000,888.5],[7500,917.5],[8000,945.5],[8500,965.5],[9000,979.5],[9350,989.5],[9706,1000.5]],
   popBasePost: [[9707,875.5],[10000,879.5],[12000,908.5],[14000,936.5],[16000,965.5],[18000,994.5],[20000,1023.5],[24000,1080.5],[30000,1166.5],[34000,1215.5]],
   // ZERO TRADE PINS — fully dynamic (user mandate 2026-06-17: "0 pinns, dynamic at all
   // cost"). When true, every hardcoded measured trade value (tradeMeasuredByPlayer per-town
@@ -572,6 +577,11 @@ const CALIB = {
   //     (exclusion rule; value-scaling proven: grain1/glass2/amber3; quantity LINEAR).
   //   import side counts at ½; const ≈6.5 (flat baseline ≈ ½ exporter's own goods value).
   tradeLandRateBase: 2.0, tradeLandRatePct: 0.2, tradeLandImportFrac: 0.5, tradeLandConst: 6.5,
+  // LAND PARTNERS = type-0 REGION_FRONTIER edges from map.rwm (the game's exact connectivity,
+  // 2026-06-18). f10 = per-frontier distance/cost; the far tail does not form a route.
+  // Baktria: 5 traded all f10<=319, the 2 excluded (Margiane/Notia_Margiane) f10>=493 → cutoff ~400.
+  // useFrontierGraph swaps pixel-adjacency for the frontier graph; falls back to adjacency if absent.
+  useFrontierGraph: true, frontierF10Cutoff: 400,
   // LAND-LANE LIVE PINS (2026-06-12, three corpora: julii 26-town t1 scrolls
   // [jcrops/julii/routes-all.tsv — every town's land partner list COMPLETE, row
   // sums = scroll totals], capua clean-vintage scroll [Freg 91/Bov 60/Malev 184/
@@ -643,6 +653,37 @@ const CALIB = {
   corrNegLawShift: 4, // tiles of effective distance per NEGATIVE law point (Pisae console probe + cyrene trio)
   corrCap: 60, // far-distance saturation (live Egypt: d141/226/351 all read 59-64% — NOT the old 90% linear climb)
   seaLaneMaxDist: 40, riverBodyMaxCells: 1500, seaFlowRiverMult: 1.0, // river flows run hotter (Nile live 713/605/519) // sea-path tiles; lanes are local (live: Kyrenaica forms NO Aegean lanes; Sena→Nesactium ~15 allowed)
+  // ENGINE SEA GRAPH (2026-06-22): use the map.rwm LANDING-FRONTIER graph (exact sea candidates +
+  // distances) for sea-lane formation instead of the pixel-BFS. seaLaneMaxDistLF = generous bound
+  // (the engine profit-ranks all sea-reachable ports; the slot limit caps the count, not distance).
+  // GATED OFF by default: the landing-frontier graph is the CORRECT engine candidate+distance source
+  // (extracted from map.rwm, validated — Kichyros now sees Stratos), but the per-route VALUE law was fit
+  // on the old pixel-BFS distances, so switching the distance source alone under-shoots (Epirus Stratos
+  // reads 7 vs game 218) AND regresses the BFS-fit factions (Carthage 6867→6524). Turning this on needs
+  // the sea-value law RE-FIT to the engine distances + partner-selection refined. Toggle for dev/test.
+  useLandingFrontiers: true, seaLaneMaxDistLF: 250, seaSelPopY: 1.0,
+  // LANDING-FRONTIER sea value law (Epirus live per-route fit 2026-06-22): export = seaK_LF · landRate^G
+  // · popX^2 · d^-3 · (cargo + seaConst_LF) · rights. Steep distance + pop² (engine each-port-own-export).
+  seaK_LF: 2650, seaK_LF_vanilla: 770, seaPopExp: 0.48, seaBandOwn: 0.33, landBandOwn: 0.5, landOwnBoostVanilla: 3.12, tradeLandImportFracVanilla: 0, seaBandAgree: 0.66, seaBandForeign: 0.33, seaImportCut: 0.2, straitBorderMax: 2, seaInvalidF10: 150, seaDistFloor: 45, landK_LF: 600, landBordC: 0.05, landF10Floor: 20, landBandBump: 1.6, seaPopX_LF: 2.0, seaDist_LF: -3.0, seaConst_LF: 13, // seaK_LF = the 8×band×C constant of the exe formula (0.1·√pop+cargo)·band·C/dist
+  // ★ VANILLA (map 0x78) sea law — EXE-cracked 2026-06-24 (MAP_REGIONS::routeValue FUN_1414a3e70):
+  //   export = seaKV · (seaPopCoefV·fastSqrt(popX+popY) + cargoFull) · gate / dNav   (dNav = map.rwm landing-frontier distance).
+  // cargo = Σ qty×descr_sm tradeValue of the exporter's goods the partner lacks (FULL value, NOT flat-1 — confirmed from the
+  // route-value asm: IMUL qty×tradeValue). seaKV = engine 8×100=800. Pop coeff fit to 0.145 (≡ binary 0.1 over the engine's
+  // ~2.1× population; land's exact 0.13·√descr-pop is the same identity). gates fit on the turn-1 scroll corpus
+  // (scripts/vanilla-trade-gt.json): foreign 0.5, own 0.36 (internal naval trade penalised), trade-agreement 0.66.
+  // K/popCoef/own-gate are a joint fit (scratchpad tune.js) min'ing the 6-faction turn-1 total error 234→120.
+  seaKV: 800, seaPopCoefV: 0.1, seaGateForeignV: 0.5, seaGateOwnV: 0.33, seaGateAgreeV: 0.66,
+  // TRUE same-faction sea gate (Carthage→own Lilybaeum, market-removed isolation 2026-06-25: base 168 vs the
+  // SPQR-internal 0.36's 175) is a hair lower than the SPQR-group gate (Julii/Brutii/Scipii trade as 0.36).
+  seaGateTrueOwnV: 0.33,
+  // Engine reads a larger-than-displayed trade population: the sea pop term = seaPopCoefV·√pin + seaBaseTerm
+  // (constant). Controlled descr_strat experiments 2026-06-25 (Carthage cargo 22→72 AND pop 6k→90k) fix the
+  // effective term to ~15 at displayed pin 9000 → 0.1·√pin + ~5.15. Reproduces both the pop-response (202→316 at
+  // pop 6k→90k) and the cargo-response (202→474) to the denarius. seaKV=800 and own-gate=0.33 are PROVEN exact by
+  // the cargo derivative ΔV/ΔC=272/50=5.44=800·M/dNav·gate (Gemini 2nd-analyst slope check); seaKV=800≡the binary
+  // 8×100, own-gate 0.33≡the asm reachability ×0.33. baseTerm absorbs the bit-hack-vs-true-sqrt offset (~5.15).
+  // OPEN: the +5.15's binary origin (NOT in routeValue/selector/pop-getter; land uses same getter & is linear).
+  seaBaseTerm: 5.15,
   // strong flow: v = K·pop^exp·e^(pct·tradePct) — refit on 16 current-build flows
   // (full julii 26-scroll corpus + cyrene, 2026-06-11 evening; R²0.82, max ×1.61).
   // The pct coefficient ≈ the historic 0.127 sea exponent; pop is nearly irrelevant.
@@ -862,6 +903,145 @@ function regionCoords(modDataDir) {
   } catch (e) { return (_coordCache[modDataDir] = {}); }
 }
 
+// ---- LAND-TRADE FRONTIER GRAPH from map.rwm (the game's region-frontier connectivity, 2026-06-18) ----
+// Land-trade partners = the TYPE-0 REGION_FRONTIER edges, read straight from map.rwm
+// (type 0 = land border, type 1 = sea/impassable). This is the game's OWN terrain-classified
+// adjacency: it correctly excludes Marakanda/Sogdiane (Baktria) and Komana+Kimiata (Pontus),
+// which raw pixel-adjacency over-counts (+33..+61% for inland empires). Each frontier carries an
+// f10 distance/cost float; the far tail (f10 > cutoff) does not form a land route. Whole-map parse
+// is 100% symmetric (5422 land edges, 0 asymmetric) = byte-exact. map.rwm entry/frontier format is
+// documented in the trade-network investigation notes.
+const _frontierCache = {};
+// map.rwm format version byte (cached): 0x78 = vanilla RTW:R, 0x7b = RIS's custom map. Used to gate the
+// invalid-bridge detection (vanilla: bord≈1; RIS: the f10>150 cutoff its land calibration was tuned against).
+const _mapVerCache = {};
+function _mapVer(modDataDir) {
+  if (_mapVerCache[modDataDir] != null) return _mapVerCache[modDataDir];
+  let v = 0x7b;
+  try { const fd = fs.openSync(path.join(modDataDir, "world", "maps", "base", "map.rwm"), "r"); const buf = Buffer.alloc(1); fs.readSync(fd, buf, 0, 1, 0); fs.closeSync(fd); v = buf[0]; } catch { /* no map → assume RIS */ }
+  return (_mapVerCache[modDataDir] = v);
+}
+// RTW's bit-hack fast integer-sqrt — the same √ approximation the engine uses in its trade-value math.
+function _fastSqrt(x){ const _b=new ArrayBuffer(4),_f=new Float32Array(_b),_i=new Int32Array(_b); _f[0]=x; _i[0]=(((_i[0]-0x3f800000)|0)>>1)+0x3f800000; return _f[0]; }
+function frontierGraph(modDataDir) {
+  if (!modDataDir) return {};
+  if (_frontierCache[modDataDir]) return _frontierCache[modDataDir];
+  const graph = {};
+  try {
+    const dg = require("./descrStratGeneral.js");
+    const base = path.join(modDataDir, "world", "maps", "base");
+    const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(base, "descr_regions.txt"), "latin1"));
+    const names = [...new Set(Object.values(rgbToRegion))];
+    const b = fs.readFileSync(path.join(base, "map.rwm"));
+    const byName = {}, byStored = {};
+    for (const nm of names) {
+      const pat = Buffer.from(nm + "\x00", "latin1");
+      let i = b.indexOf(pat, b.length < 12000000 ? 0 : 12000000); // RIS's huge map needs the 12MB skip; vanilla (3.3MB) searches from 0
+      while (i >= 0) {
+        // entry header: [u16 namelen=len+1][name+NUL][u16 0][u16 settlen][settlement+NUL][u16 cultlen][culture+NUL][u32 flag][u32 storedIndex]
+        if (i >= 2 && b.readUInt16LE(i - 2) === nm.length + 1 && b.readUInt16LE(i + nm.length + 1) === 0) {
+          const sl = b.readUInt16LE(i + nm.length + 3);
+          if (sl > 1 && sl < 48) {
+            let p = i + nm.length + 5 + sl;            // after settlement
+            const cl = b.readUInt16LE(p); p += 2 + cl;  // after culture
+            byName[nm] = { bodyP: p, sidx: b.readUInt32LE(p + (b[0] >= 0x7b ? 4 : 0)) };
+            byStored[b.readUInt32LE(p + (b[0] >= 0x7b ? 4 : 0))] = nm; // region index frontiers reference (RIS 0x7b body=[flag][index]; vanilla 0x78=[index] only)
+            break;
+          }
+        }
+        i = b.indexOf(pat, i + 1);
+      }
+    }
+    for (const nm in byName) {
+      let p = byName[nm].bodyP + (b[0] >= 0x7b ? 8 : 4); // body header to tilesA (RIS 0x7b=8B [flag][index]; vanilla 0x78=4B [index])
+      const tA = b.readUInt32LE(p); p += 4 + tA * 4;     // tilesA
+      const tB = b.readUInt32LE(p); p += 4 + tB * 4;     // tilesB
+      const fc = b.readUInt32LE(p); p += 4;              // frontier count
+      const list = [];
+      if (fc <= 40) {
+        for (let k = 0; k < fc; k++) {
+          const r = b.readUInt32LE(p); p += 4;
+          const f10 = b.readFloatLE(p); p += 4;
+          const ty = b[p]; p += 1 + 4 + 4;               // type byte, then two skipped u32s
+          let bord = 0;
+          for (let a = 0; a < 5; a++) { const c = b.readUInt32LE(p); if (a === 0) bord = c; p += 4 + c * 4; }  // 5 border-tile arrays; [0] count = shared-border length (pixels)
+          const rn = byStored[r];
+          // bord = the SHARED-BORDER LENGTH (adjacent pixel count). A STRAIT/land-bridge crossing (island
+          // Korkyra↔Phoinike, gulf Ambrakia↔Stratos) has bord≈1; a true land border has bord≈7-13. This
+          // distinguishes sea crossings (trade by SEA) from real borders (trade by LAND).
+          if (rn) list.push({ region: rn, type: ty, f10: f10, bord });
+        }
+      }
+      graph[nm] = list;
+    }
+  } catch (e) { /* no map.rwm (or parse fail) → empty graph; land loop falls back to pixel adjacency */ }
+  return (_frontierCache[modDataDir] = graph);
+}
+
+// ---- SEA-TRADE LANDING-FRONTIER GRAPH from map.rwm (the game's exact sea connectivity, 2026-06-22) ----
+// Each region's LANDING_FRONTIERS (the engine's sea-access records, stored in map.rwm right AFTER the
+// REGION_FRONTIER array) list the regions reachable by sea + the engine's exact sea DISTANCE. This is the
+// candidate set + distance the engine uses for sea trade — each port fills its slots with the highest-PROFIT
+// landing-frontier partners (value-ranked, NOT nearest; e.g. Epirus's Kichyros picks rich Korkyra+Stratos
+// over the nearer-but-poor Leukas). The old model used a pixel-BFS for sea distance (wrong: Leukas read d8
+// vs the engine's d33.9) and a hard 40-distance cap that killed far-but-rich routes (Stratos d53, Uria d108).
+// Record layout per landing frontier: u32 region_index, f32 sea_distance, u32 _, u32 _, u32 _, then a
+// length-prefixed array of landing tiles (8 bytes each). Returns {region: [{region, dist}]}.
+const _landingCache = {};
+function landingFrontierGraph(modDataDir) {
+  if (!modDataDir) return {};
+  if (_landingCache[modDataDir]) return _landingCache[modDataDir];
+  const graph = {};
+  try {
+    const dg = require("./descrStratGeneral.js");
+    const base = path.join(modDataDir, "world", "maps", "base");
+    const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(base, "descr_regions.txt"), "latin1"));
+    const names = [...new Set(Object.values(rgbToRegion))];
+    const b = fs.readFileSync(path.join(base, "map.rwm"));
+    const byName = {}, byStored = {};
+    for (const nm of names) {
+      const pat = Buffer.from(nm + "\x00", "latin1");
+      let i = b.indexOf(pat, b.length < 12000000 ? 0 : 12000000); // RIS's huge map needs the 12MB skip; vanilla (3.3MB) searches from 0
+      while (i >= 0) {
+        if (i >= 2 && b.readUInt16LE(i - 2) === nm.length + 1 && b.readUInt16LE(i + nm.length + 1) === 0) {
+          const sl = b.readUInt16LE(i + nm.length + 3);
+          if (sl > 1 && sl < 48) {
+            let p = i + nm.length + 5 + sl;
+            const cl = b.readUInt16LE(p); p += 2 + cl;
+            byName[nm] = { bodyP: p }; byStored[b.readUInt32LE(p + (b[0] >= 0x7b ? 4 : 0))] = nm;
+            break;
+          }
+        }
+        i = b.indexOf(pat, i + 1);
+      }
+    }
+    for (const nm in byName) {
+      let p = byName[nm].bodyP + (b[0] >= 0x7b ? 8 : 4);  // body header to tilesA (RIS 0x7b=8B; vanilla 0x78=4B)
+      const tA = b.readUInt32LE(p); p += 4 + tA * 4;       // tilesA
+      const tB = b.readUInt32LE(p); p += 4 + tB * 4;       // tilesB
+      const fc = b.readUInt32LE(p); p += 4;                // region-frontier count — skip them
+      for (let k = 0; k < fc; k++) { p += 17; for (let a = 0; a < 5; a++) { const c = b.readUInt32LE(p); p += 4 + c * 4; } }
+      const lc = b.readUInt32LE(p); p += 4;                // landing-frontier count
+      const list = [];
+      if (lc <= 200) {
+        for (let k = 0; k < lc; k++) {
+          const ridx = b.readUInt32LE(p);                  // sea-connected region index
+          const dEuclid = b.readFloatLE(p + 4);            // +4 = straight-line distance
+          const dNav = b.readFloatLE(p + 8);               // +8 = NAVIGABLE (pathfinding) sea distance; -1 = unreachable
+          p += 20;
+          const tc = b.readUInt32LE(p); p += 4 + tc * 8;   // landing-tiles array
+          const rn = byStored[ridx];
+          // The engine values trade by the NAVIGABLE distance (around peninsulas), not straight-line; a
+          // negative dNav means there is no direct sea path (blocked by land) → not a trade candidate.
+          if (rn && dNav > 0 && dNav < 5000) list.push({ region: rn, dist: dNav, dEuclid });
+        }
+      }
+      graph[nm] = list;
+    }
+  } catch (e) { /* no map.rwm → empty; sea loop falls back to the pixel BFS */ }
+  return (_landingCache[modDataDir] = graph);
+}
+
 const BRACKET_MULT = { low: 0.8, normal: 1.0, high: 1.2, very_high: 1.5 };
 
 // ---- region adjacency from map_regions.tga (for land-trade partners) ----
@@ -1013,6 +1193,23 @@ function wonderOwners(modDataDir) {
   return (_wonderCache[modDataDir] = out);
 }
 
+// Cross-faction tradePct (×10, same units as colonyMByRegion) for EVERY region. An import from a FOREIGN
+// partner rides that partner's own market/trade-building bonus (its export leg was boosted by it), but each
+// budget's colonyMByRegion only covers its own faction's regions — so a foreign import (e.g. Seleucid Antioch
+// importing Rhodes' goods) silently dropped Rhodes' market bonus. Built once per mod dir (cached).
+const _tradePctAllCache = {};
+function tradePctByRegionAll(modDataDir) {
+  if (_tradePctAllCache[modDataDir]) return _tradePctAllCache[modDataDir];
+  const out = {};
+  try {
+    const ctx = tradePartnerCtx(modDataDir);
+    for (const f of new Set(Object.values(ctx.ownerOfRegion))) {
+      try { const F = computeIncomeFeatures(modDataDir, f); for (const s of (F.settlements || [])) out[s.region] = Math.max(0, s.tradePct || 0) * 10; } catch { /* skip faction */ }
+    }
+  } catch { /* no ctx */ }
+  return (_tradePctAllCache[modDataDir] = out);
+}
+
 // ---- region ownership + starting allies (trade agreements) + all port towns ----
 const _tradeCtxCache = {};
 function tradePartnerCtx(modDataDir) {
@@ -1131,9 +1328,15 @@ function tradeQtyMapsByRegion(modDataDir) {
     };
     const resVal = parseResourceValues(modDataDir);
     const src = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
+    let _qtyDisabled = false;
     for (const raw of fs.readFileSync(src, "latin1").split(/\r?\n/)) {
       const t = raw.includes(";") ? raw.slice(0, raw.indexOf(";")) : raw;
-      const m = t.match(/^resource\s+(\w+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+      // VANILLA lists every resource TWICE — once under `resource_quantity_enabled`, once under
+      // `resource_quantity_disabled` (same tile). The engine counts the ENABLED set only, so skip everything
+      // after the disabled marker. RIS has no such split (each resource once) → this is a no-op there.
+      if (/resource_quantity_disabled/.test(t)) { _qtyDisabled = true; continue; }
+      if (_qtyDisabled) continue;
+      const m = t.match(/^\s*resource\s+(\w+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
       if (!m) continue;
       const name = m[1].toLowerCase();
       const e = resVal[name];
@@ -1174,7 +1377,7 @@ function seaLanesByRegion(modDataDir) {
   if (_seaLaneCache[modDataDir]) return _seaLaneCache[modDataDir];
   const out = {};
   try {
-    const { ownerOfRegion, allies, wars } = tradePartnerCtx(modDataDir);
+    const { ownerOfRegion, allies, wars, popOfRegion } = tradePartnerCtx(modDataDir);
     const adjacency = regionAdjacency(modDataDir);
     const dg = require("./descrStratGeneral.js");
     const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
@@ -1227,6 +1430,89 @@ function seaLanesByRegion(modDataDir) {
       // Sebennytos/Tanis built port level 0 yet hold 3 live lanes; Rome base 2 → 3 ✓).
       // The built chain level does NOT set lane capacity.
       ports.push({ region: sd.region, fac, level: (idx >= 0 ? idx : 0) + 1, pop: sd.pop || 1500, basePort: basePort[sd.region] || 0 });
+    }
+    // ★ VANILLA (map 0x78) SEA-TRADE PARTNER SELECTION — EXE-CRACKED 2026-06-24 (MAP_REGIONS::
+    // calculate_sea_trade_income FUN_1414a57f0 + routeValue FUN_1414a3e70): GREEDY top-N by per-route VALUE.
+    // Each port fills slots=min(3,1+base_port) with the HIGHEST-VALUE sea-reachable partners. Value =
+    // (seaPopCoefV·fastSqrt(popX+popY) + cargoFull)·gate / dNav, gate = own×1 / foreign×0.5 / war×0. Pool =
+    // ANY sea-reachable settlement (region+0x158≠0, positive dNav) that is NOT a land-frontier neighbour — NO
+    // port-building requirement (own portless coastal regions like Lilybaeum qualify). Distance + candidate set
+    // come from the map.rwm LANDING_FRONTIERS (dNav), NOT the pixel BFS. When self picks P, P always gets a
+    // 0.2×value IMPORT row (the /5 tariff); a full 2-row mutual link forms only when P ranks self back.
+    // RIS (0x7b) keeps its own graph below.
+    if (_mapVer(modDataDir) < 0x7b) {
+      const lfg = landingFrontierGraph(modDataDir);
+      const portTownSet = new Set(ports.map(p => p.region));
+      const { qty: _GQ, rawValues: _RV } = tradeQtyMapsByRegion(modDataDir);
+      const _cargoV = (X, Y) => { const ga = _GQ[X] || {}, gb = _GQ[Y] || {}; let c = 0; for (const r in ga) if (!(r in gb)) c += ga[r] * (_RV[r] || 0); return c; };
+      const _fsq = (x) => { const b = new ArrayBuffer(4), f = new Float32Array(b), i = new Int32Array(b); f[0] = x; i[0] = (((i[0] + 0xc0800000) | 0) >> 1) + 0x3f800000; return f[0]; };
+      const _dNav = (X, Y) => { const e = (lfg[X] || []).find(z => z.region === Y); return e ? e.dist : null; };
+      // PASS 1 — each port greedily picks its export partners by route value.
+      // POOL (map.rwm candidate builder FUN_14149e4f0, empirically port-town + own + ally — portless non-ally
+      // islands like Caralis are NOT in it; own portless coastal like Lilybaeum IS, via the own-faction branch).
+      const exportPick = {}; // region -> [{to, d}]
+      for (const p of ports) {
+        const F = p.fac, A = p.region;
+        const adjA = adjacency[A];
+        const isLandNbr = (r) => adjA && (adjA.has ? adjA.has(r) : adjA.includes(r));
+        const allyFacs = new Set(allies[F] || []);
+        if (/^romans?_/.test(F)) for (const rf of ["romans_senate", "romans_julii", "romans_brutii", "romans_scipii"]) if (rf !== F) allyFacs.add(rf);
+        const cands = [];
+        for (const fr of (lfg[A] || [])) {
+          const r = fr.region, d = fr.dist;
+          if (r === A || !(d > 0) || isLandNbr(r)) continue;
+          const o = ownerOfRegion[r];
+          if (!o || o === "slave") continue;
+          const trueOwn = (o === F);
+          const own = trueOwn || (/^romans?_/.test(F) && /^romans?_/.test(o)); // SPQR (julii/brutii/scipii/senate) = one Roman state
+          if (!(portTownSet.has(r) || own || allyFacs.has(o))) continue; // pool: port town, own, or ally
+          const _agr = allyFacs.has(o);
+          const gate = (!own && wars[F] && wars[F].has(o)) ? 0 : (trueOwn ? CALIB.seaGateTrueOwnV : own ? CALIB.seaGateOwnV : _agr ? CALIB.seaGateAgreeV : CALIB.seaGateForeignV);
+          if (gate === 0) continue;
+          const pin = (popOfRegion[A] || 1500) + (portTownSet.has(r) ? (popOfRegion[r] || 1500) : 0);
+          const val = (CALIB.seaPopCoefV * _fsq(pin) + _cargoV(A, r)) * gate / d;
+          cands.push({ r, d, val });
+        }
+        cands.sort((a, b) => b.val - a.val);
+        // slots = min(3, 1+base_port) — the engine caps trade fleets at 3 ("+1 trade fleet" per port level,
+        // hard cap 3, byte-confirmed FUN_1414a57f0). Without the cap, big ports over-pick low-value far hubs
+        // (e.g. Alexandria/Sidon/Sinope phantom-exporting to Rhodes), inflating those hubs' import income.
+        exportPick[A] = cands.slice(0, Math.min(3, 1 + (p.basePort || 0))).map(c => ({ to: c.r, d: c.d, val: c.val }));
+      }
+      // PASS 2 — assemble per-region lanes: own export rows (impLive when the partner ranks me back) + 0.2×
+      // import-only rows for every inbound export I did not pick back.
+      const inbound = {}; // P -> [{from, val}] exporters targeting P (by route value)
+      for (const A in exportPick) for (const c of exportPick[A]) (inbound[c.to] = inbound[c.to] || []).push({ from: A, val: c.val });
+      const ranksBack = (P, A) => (exportPick[P] || []).some(c => c.to === A);
+      const portByRegion = {}; for (const p of ports) portByRegion[p.region] = p;
+      const out2 = {};
+      // process every region that EXPORTS or that RECEIVES an inbound export (portless importers like Lilybaeum
+      // are not in `ports`, but still show a 0.2× import row from their suzerain port).
+      for (const A of new Set([...Object.keys(exportPick), ...Object.keys(inbound)])) {
+        const p = portByRegion[A];
+        const picks = exportPick[A] || [], pickedSet = new Set(picks.map(c => c.to));
+        const ownPop = p ? p.pop : (popOfRegion[A] || 1500), ownPort = p ? 1 : 0;
+        const lanes = picks.map(c => ({
+          to: c.to, d: c.d, weak: false, inWeak: false, impLive: ranksBack(c.to, A),
+          toPop: popOfRegion[c.to] || 1500, toPort: portTownSet.has(c.to) ? 1 : 0,
+          ownPop, ownPort, invalidBridge: false, toNearest: true,
+        }));
+        // IMPORT slot cap: a settlement RECEIVES imports only from its top-N inbound exporters by value
+        // (N = min(3, 1+port), same fleet cap as exports). Live-confirmed: Rhodes imports from Antioch(153)
+        // + Thessalonica(82) but NOT the lower Sinope(51)/Alexandria/Sidon despite those exporting to it.
+        const _impN = p ? Math.min(3, 2 + (p.basePort || 0)) : 1;
+        const _inb = (inbound[A] || []).slice().sort((x, y) => y.val - x.val).slice(0, _impN);
+        for (const { from: B } of _inb) {
+          if (pickedSet.has(B)) continue; // mutual handled above
+          lanes.push({
+            to: B, d: _dNav(B, A) || _dNav(A, B) || 20, weak: true, inWeak: false, impLive: true,
+            toPop: popOfRegion[B] || 1500, toPort: portTownSet.has(B) ? 1 : 0,
+            ownPop, ownPort, invalidBridge: false, toNearest: true,
+          });
+        }
+        out2[A] = lanes;
+      }
+      return (_seaLaneCache[modDataDir] = out2);
     }
     // sea-body membership per region + body pixel sizes (full-res) for river detection
     const bodiesOf = {}, bodySize = {};
@@ -1294,6 +1580,24 @@ function seaLanesByRegion(modDataDir) {
       }
       seaDist[p.region] = found;
     }
+    // ENGINE SEA GRAPH (2026-06-22): replace the pixel-BFS distances with the LANDING-FRONTIER graph
+    // from map.rwm — the engine's exact sea candidates + distances. Each port then fills its slots with
+    // the highest-PROFIT landing-frontier partners (value-ranked), matching the game (Epirus: Kichyros
+    // picks rich Korkyra+Stratos over the nearer-but-poor Leukas). Falls back to the BFS if no graph.
+    const _useLF = CALIB.useLandingFrontiers && !process.env.NO_LANDING_FRONTIERS;
+    if (_useLF) {
+      const lf = landingFrontierGraph(modDataDir);
+      if (Object.keys(lf).length) {
+        const portSet = new Set(ports.map(p => p.region));
+        for (const p of ports) {
+          const m = new Map();
+          for (const e of (lf[p.region] || [])) if (portSet.has(e.region)) m.set(e.region, e.dist);
+          seaDist[p.region] = m;
+        }
+      }
+    }
+    const _seaInvalid = new Set();
+    if (_useLF) { const _van = _mapVer(modDataDir) < 0x7b; const _fg = frontierGraph(modDataDir); for (const rg in _fg) for (const e of _fg[rg]) if (e.type === 0 && (_van ? e.bord <= 2 : e.f10 > CALIB.seaInvalidF10)) _seaInvalid.add(rg + "|" + e.region); }
     // eligible pairs (sea-path ordered)
     const pairs = [];
     for (let i = 0; i < ports.length; i++) for (let j = i + 1; j < ports.length; j++) {
@@ -1307,17 +1611,21 @@ function seaLanesByRegion(modDataDir) {
       // predicts (Kyrene⇄Arsinoe and Euesperides⇄Ptolemais both SKIP their adjacent
       // neighbor; no adjacent pair lanes).
       const adjA = adjacency[a.region];
-      if (adjA && (adjA.has ? adjA.has(b.region) : adjA.includes(b.region))) continue;
+      const _inval = _seaInvalid.has(a.region + "|" + b.region) || _seaInvalid.has(b.region + "|" + a.region);
+      if (!_inval && adjA && (adjA.has ? adjA.has(b.region) : adjA.includes(b.region))) continue;
       const sd = seaDist[a.region] && seaDist[a.region].get(b.region);
       if (sd == null) continue; // no sea path
-      if (sd > CALIB.seaLaneMaxDist) continue; // lanes are LOCAL (live: no Aegean lanes from Kyrenaica)
+      // With the landing-frontier graph the engine has NO hard distance cap (it profit-ranks every
+      // sea-reachable port and the slot limit caps the count); the old 40-tile cap was a BFS-era kludge
+      // that wrongly killed far-but-rich routes (Epirus→Stratos d53, →Uria d108). Use a generous bound.
+      if (sd > (_useLF ? CALIB.seaLaneMaxDistLF : CALIB.seaLaneMaxDist)) continue;
       // RIVER LANES (2026-06-11 Nile crack): the Nile is its own small sea body
       // (41,140,235); river ports lane near-all-pairs without consuming sea slots
       // (Sebennytos holds 3 lanes on a level-0 port). Pairs sharing a SMALL body
       // (< riverBodyMaxCells at 4px) lane unconditionally.
       const shared = (bodiesOf[a.region] || []).filter(x => (bodiesOf[b.region] || []).includes(x));
       const river = shared.some(bid => (bodySize[bid] || 1e9) < CALIB.riverBodyMaxCells);
-      pairs.push({ a, b, d: sd, river });
+      pairs.push({ a, b, d: sd, river, inval: _inval });
     }
     pairs.sort((x, y) => x.d - y.d);
     // SEEDED LIVE LANES (probe corpora 2026-06-11/12: capua t1 trio, julii 26-town
@@ -1358,8 +1666,13 @@ function seaLanesByRegion(modDataDir) {
         continue;
       }
       if (seeded.has(A) || seeded.has(B)) continue; // pinned ports don't re-match
-      (partnersOf[A] = partnersOf[A] || []).push({ to: B, d: pr.d, pop: pr.b.pop, port: pr.b.basePort, ownPop: pr.a.pop, ownPort: pr.a.basePort });
-      (partnersOf[B] = partnersOf[B] || []).push({ to: A, d: pr.d, pop: pr.a.pop, port: pr.a.basePort, ownPop: pr.b.pop, ownPort: pr.b.basePort });
+      // DIRECTIONAL distance: the navigable sea distance is ASYMMETRIC (A→B ≠ B→A around coastlines), and a
+      // port's EXPORT is valued/ranked over the EXPORTER→partner path. Using the shared pair distance (the
+      // a<b-ordered direction) picked the wrong partner — Kichyros ranked Leukas (Leukas→Kichyros 45.9) over
+      // Stratos, but Kichyros→Stratos (47.8) is actually NEARER than Kichyros→Leukas (48.5). Use seaDist[X][Y].
+      const _dAB = (seaDist[A] && seaDist[A].get(B)) || pr.d, _dBA = (seaDist[B] && seaDist[B].get(A)) || pr.d;
+      (partnersOf[A] = partnersOf[A] || []).push({ to: B, d: _dAB, pop: pr.b.pop, port: pr.b.basePort, ownPop: pr.a.pop, ownPort: pr.a.basePort, inval: pr.inval });
+      (partnersOf[B] = partnersOf[B] || []).push({ to: A, d: _dBA, pop: pr.a.pop, port: pr.a.basePort, ownPop: pr.b.pop, ownPort: pr.b.basePort, inval: pr.inval });
     }
     // PROFIT-RANKED selection (live 2026-06-18): the engine fills each port's slots with its most
     // PROFITABLE partners (trade value), not its nearest — Carthage takes Arik(Eryx) over the closer
@@ -1368,7 +1681,7 @@ function seaLanesByRegion(modDataDir) {
     const { qty: _GQ, rawValues: _RV } = tradeQtyMapsByRegion(modDataDir);
     const _spd = seaPortDistDepth(modDataDir);
     const _ownerFac = {}; for (const p of ports) _ownerFac[p.region] = p.fac;
-    const _cargoVal = (A, B) => { const a = _GQ[A] || {}, b = _GQ[B] || {}; let e = 0, i = 0; for (const r in a) if (!(r in b)) e += a[r] * (_RV[r] || 0); for (const r in b) if (!(r in a)) i += b[r] * (_RV[r] || 0); return e + CALIB.seaImportFrac * i; };
+    const _cargoVal = (A, B, exportOnly) => { const a = _GQ[A] || {}, b = _GQ[B] || {}; let e = 0, i = 0; for (const r in a) if (!(r in b)) e += a[r] * (_RV[r] || 0); if (exportOnly) return e; for (const r in b) if (!(r in a)) i += b[r] * (_RV[r] || 0); return e + CALIB.seaImportFrac * i; };
     const nearestSet = {};
     for (const X in partnersOf) {
       const dFromX = _spd.distFrom(X) || {};
@@ -1377,7 +1690,20 @@ function seaLanesByRegion(modDataDir) {
         // NOTE: lane SELECTION ranks by profit potential WITHOUT the trade-rights penalty (live 2026-06-18:
         // Rome picks foreign Capua d21 over same-faction Neapolis d27.7 — rights only scale realized VALUE,
         // not which lanes form).
-        pp.profit = Math.pow(dist, CALIB.seaDist) * (_cargoVal(X, pp.to) + CALIB.seaConst) * Math.pow(Math.max(400, pp.pop), CALIB.seaPopY);
+        // SELECTION pop-weight: with the landing-frontier graph the engine prefers BIGGER partners over
+        // nearer-but-smaller ones (Epirus Kichyros picks Stratos+Korkyra pop-3500 over Leukas pop-2300);
+        // the value-fit popY (0.06) is far too weak for that. seaSelPopY is a separate selection weight.
+        if (_useLF) {
+          // ENGINE selection ranks export candidates by route value / dist_navigable (popX constant per X).
+          // Rank by the EXPORT cargo (what X ships out) over the EXPORTER→partner navigable distance — NOT
+          // the import cargo (which belongs to the partner's own export decision). With equal export cargo the
+          // nearer partner wins: Kichyros→Stratos (47.8) correctly beats Kichyros→Leukas (48.5), matching the
+          // game (which trades Kichyros↔Stratos, not Leukas). Including the import made the poorer-but-richer-
+          // imports Leukas wrongly win.
+          pp.profit = (_cargoVal(X, pp.to, true) + CALIB.seaConst_LF) / Math.max(1, pp.d);
+        } else {
+          pp.profit = Math.pow(dist, CALIB.seaDist) * (_cargoVal(X, pp.to) + CALIB.seaConst) * Math.pow(Math.max(400, pp.pop), CALIB.seaPopY);
+        }
       }
       partnersOf[X].sort((u, v) => v.profit - u.profit);
       nearestSet[X] = new Set(partnersOf[X].slice(0, slots[X] || 1).map(p => p.to));
@@ -1385,7 +1711,7 @@ function seaLanesByRegion(modDataDir) {
     for (const X in partnersOf) for (const pp of partnersOf[X]) {
       const Y = pp.to, isExp = nearestSet[X].has(Y), isImp = !!(nearestSet[Y] && nearestSet[Y].has(X));
       if (!isExp && !isImp) continue;
-      (out[X] = out[X] || []).push({ to: Y, weak: !isExp, inWeak: false, impLive: isImp, toPop: pp.pop, toPort: pp.port, ownPop: pp.ownPop, ownPort: pp.ownPort, d: pp.d });
+      (out[X] = out[X] || []).push({ to: Y, weak: !isExp, inWeak: false, impLive: isImp, toPop: pp.pop, toPort: pp.port, ownPop: pp.ownPop, ownPort: pp.ownPort, d: pp.d, invalidBridge: pp.inval });
     }
     // TURN-1 ACTIVATION (Capua t1/t2 probe 2026-06-11 night): a partner's REVERSE flow
     // is live at turn 1 only if our port is that partner's NEAREST open-sea lane
@@ -1622,12 +1948,25 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   const tradeRightsSet = new Set();
   if (protRights.suzerainOf[facLow]) tradeRightsSet.add(protRights.suzerainOf[facLow]);
   for (const c of (protRights.clientsOf[facLow] || [])) tradeRightsSet.add(c);
-  if (/^romans?_/.test(facLow)) tradeRightsSet.add("roman_senate");
-  if (facLow === "roman_senate") for (const f of ["romans_julii", "romans_brutii", "romans_scipii"]) tradeRightsSet.add(f);
+  if (/^romans?_/.test(facLow)) tradeRightsSet.add("romans_senate");
+  if (facLow === "romans_senate") for (const f of ["romans_julii", "romans_brutii", "romans_scipii"]) tradeRightsSet.add(f);
+  // VANILLA (map 0x78) land trade gives band 1.0 to descr_strat ALLIES (relationship ≤199),
+  // not just protectorate trade-rights. Live Julii t1: Tarentum(Apulia, ally romans_brutii) reads
+  // 31 (band 1.0 → law 30) where the rights-only band 0.33 gave 10; the Roman houses are
+  // mutually allied at start. Macedon has ZERO allies (fully neutral), so this set = {macedon}
+  // and the change is a strict no-op there. RIS keeps its own band ladder (this set is only read
+  // by the vanilla branch). own faction is added so the predicate is self-contained.
+  const _landAlliedBand = new Set([facLow, ...tradeRightsSet, ...((allies && allies[facLow]) || [])]);
   const tradeQtyVal = tradeQtyValByRegion(modDataDir);
   // per-region per-resource quantities (raw, slaves excluded) + descr_sm values, for the
   // qty-weighted exclusion cargo of the cracked land-trade law.
-  const { qty: _goodsQty, rawValues: _goodsVal } = tradeQtyMapsByRegion(modDataDir);
+  const { qty: _goodsQty, rawValues: _rawVal } = tradeQtyMapsByRegion(modDataDir);
+  // VANILLA (map 0x78): engine cargo = qty × (tradeable flag), NOT qty × trade-value — proven by vanilla's
+  // high-value goods (gold=15) massively over-predicting trade. Flat-1 for any good with a nonzero descr_sm
+  // value. RIS (0x7b) keeps its trade-value calibration (its goods are nearly all value-1, so it's ~the same).
+  const _goodsVal = _mapVer(modDataDir) < 0x7b
+    ? Object.fromEntries(Object.keys(_rawVal).map(k => [k, _rawVal[k] > 0 ? 1 : 0]))
+    : _rawVal;
   const _landCargo = (Areg, Breg) => { // A's goods that B lacks, Σ qty×value
     const a = _goodsQty[Areg] || {}, b = _goodsQty[Breg] || {}; let c = 0;
     for (const r in a) if (!(r in b)) c += a[r] * (_goodsVal[r] || 0);
@@ -1681,6 +2020,24 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     }
     if (!Object.keys(corrByCity).length) corrByCity = null;
   }
+  // Per-region Large-Colony (colony_2+) trade-income bonus: the +20% scales BOTH the colony town's own exports
+  // and the 0.2× import a PARTNER collects on the colony's goods (the partner imports the already-boosted flow).
+  // Per-region trade-income-bonus M (the engine's per-route export multiplier "effect 24"): the settlement's
+  // NET trade_base_income_bonus × 10 = colony + market + resource-industry + government(Dependency −4 / Indirect
+  // −2) + EMPIRE-SIZE penalty (−1…−5 by faction settlement count) — ALL file-derived from the EDB; the model's
+  // `tradePct` already sums them exactly (verified 2026-06-22: the in-game Region-scroll "Trade income bonus %"
+  // = tradePct×10; Ambrakia's −20% is the size-4 empire penalty, NOT a capital penalty). M scales the town's own
+  // exports AND the 0.2× import a partner collects on its goods. NO pins — pure EDB computation.
+  // Per-region trade-income-bonus M (the engine's per-route export multiplier): M = 1 + max(0, tradePct)/10,
+  // where tradePct = the NET trade_base_income_bonus from the EDB (colony + market + resource-industry + the
+  // negative government/empire-size penalties). The POSITIVE bonuses (colony etc.) scale each export; the NET is
+  // FLOORED at 0 so the negative government/size penalties don't reduce the per-route multiplier below 1.0 (they
+  // hit per-total instead). Verified 2026-06-22: floor brings Kichyros/Korkyra (net-negative, M→1.0) into the
+  // same seaK cluster as Leukas (+20% colony) etc., and reproduces the colony-removal ×1.20 exactly. NO pins.
+  const colonyMByRegion = {};
+  for (const _s of F.settlements) colonyMByRegion[_s.region] = Math.max(0, _s.tradePct || 0) * 10;
+  // cross-faction map so foreign imports apply the PARTNER's trade-building bonus (see tradePctByRegionAll)
+  const tradePctAll = tradePctByRegionAll(modDataDir);
   for (const s of F.settlements) {
     if (popOv) { const pv = popOv[s.settlement] != null ? popOv[s.settlement] : popOv[s.region]; if (pv != null && pv > 0) s.pop = pv; }
     const bracket = br[s.settlement] || br[s.region] || "normal";
@@ -1747,7 +2104,15 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // a tax-granting world wonder (Oracle of Dodona) flips its town to capital-style tax.
     const _wonderCapTax = (s.buildings || []).some(b => CALIB.taxCapitalWonders.some(w => b.endsWith(":" + w)));
     const _capTax = s.capital || _wonderCapTax;
-    const _M = _capTax ? 40 : (F.tier <= 2 ? 40 : 4);
+    // Capital uses ×40 on its (usually positive) region_base bonus, but a capital must never be taxed
+    // HARDER than a normal town — applying ×40 to a NEGATIVE taxablePct (large empires, where building/
+    // empire-size penalties dominate) wrongly drove the capital's tax to 0 (live: Alexandria pays 481,
+    // model gave 0). So on a negative taxablePct the capital falls back to the ×4 non-capital rate.
+    // Small-empire capitals (positive taxablePct) are unchanged. (Live Ptolemaic turn-1, 2026-06-21.)
+    const _M = _capTax ? (s.taxablePct >= 0 ? 40 : 4) : (F.tier <= 2 ? 40 : 4);
+    // taxablePct (region_base + building points) × _M. The "40/pt for region_base only" split was
+    // tested (s.taxableRegionBase / s.taxableBuilding are exposed for it) but every building-multiplier
+    // traded factions on the current corpus — the big-empire under-tax needs per-city scrolls to pin.
     const _flatPts = _M * s.taxablePct;
     // RATE BEHAVIOR differs by capital (live Cyrene tax-rate reads, 2026-06-17):
     //   CAPITAL  → multiplicative: tax = rate·(popBase + M·Σ)·gov  (the points scale with rate).
@@ -1763,9 +2128,18 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // shown on the settlement scroll), THEN applies the governor % and floors again. Applying
     // the governor to the unfloored base over-reads by 1 denarius on fractional bases
     // (Tetrapyrgia N 566.5×1.10→623 vs game 622; Automala Low 451.6×1.05→474 vs game 473).
-    const tTaxNoH = Math.floor(Math.max(0, mult * taxW + taxFlat)); // integer pre-governor tax (corruption uses this)
+    // Settlement tax can go NEGATIVE in large empires (building + empire-size penalties exceed the
+    // populace base) — live Ptolemaic Mendes-Thmouis pays −62. The engine TRUNCATES toward zero
+    // (positives floor as before; −62.5→−62, matching the game), so no 0-floor and Math.trunc not floor.
+    const tTaxNoH = Math.trunc(mult * taxW + taxFlat); // integer pre-governor tax (corruption uses this)
     // governor tax multiplier from the save's per-settlement taxEffect% (multi-town only).
-    const _govTaxPct = (_multi && gv0 && gv0.taxEffect != null) ? gv0.taxEffect : 0;
+    // Governor tax effect on multi-town settlements: the save's authoritative per-settlement taxEffect%
+    // when available, else the trait-derived gov tax (gv0.tax, which EXCLUDES STRating — the component
+    // the old julii4 finding flagged as multi-town noise). Live Ptolemaic turn-1 (2026-06-21) confirmed
+    // governors DO move settlement tax (Alexandria −23%, Pelousion +40%): applying it makes Oxyrhynchos
+    // exact and improves Cyrene (+9→+5%); julii governors carry no trait tax so it's a no-op there.
+    const _govTaxPct = (_multi && gv0 && gv0.taxEffect != null) ? gv0.taxEffect
+      : (_multi && gv0 && gv0.tax != null) ? gv0.tax : 0;
     const tTax = tTaxNoH * (1 + _govTaxPct / 100) * (taxH != null ? taxH : 1);
     // governor Effect Farming = +1 farm level per point for INCOME (confirmed 2026-06-10,
     // gov-farm-income-test.js: 10/11 player factions land at ratio 1.000-1.002 with u=1 —
@@ -1777,7 +2151,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // financial line sums those integers — NOT floor(Σ of unfloored taxes), which over-reports
     // by the dropped fractions (live Cyrene: floor-of-sum 4477 vs sum-of-floored 4475). Farming
     // stays an unrounded accumulator (its law is calibrated so floor(Σ) hits the exact panel total).
-    taxes += Math.floor(tTax); farming += tFarm; mining += tMine;
+    taxes += Math.trunc(tTax); farming += tFarm; mining += tMine; // trunc toward zero: a NEGATIVE settlement tax reads −73, not −74 (the engine truncates, doesn't floor)
     // quantity-weighted resource value (descr_strat qty column); Set-based fallback
     const rv = tradeQtyVal[s.region] != null ? tradeQtyVal[s.region] : s.resources.reduce((a, r) => a + (r.tradeValue || 0), 0);
     const tradePts = s.tradePctParts ? (s.tradePctParts.base + s.tradePctParts.winter) : (s.tradePct || 0);
@@ -1799,9 +2173,31 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // include the vintage's governor Trading, so no extra multipliers.
       for (const n of Object.keys(landPins)) { landTrade += landPins[n]; nPartners++; }
     } else {
-      for (const n of (adjacency[s.region] || [])) {
+      // LAND PARTNERS: engine-exact type-0 frontier edges (map.rwm) when available, else pixel adjacency.
+      let landNeighbors;
+      const fEdges = CALIB.useFrontierGraph ? frontierGraph(modDataDir)[s.region] : null;
+      if (fEdges && fEdges.length) {
+        // VANILLA (0x78): land partner = EVERY type-0 frontier neighbour with a valid (non-slave, non-war) owner —
+        // the owner filter below does the real work; the f10 cutoff was an over-aggressive approximation that wrongly
+        // killed valid long-border partners (Pontus→Armenia f10=492, Hatra→Media f10=514, both confirmed trade in-game).
+        // RIS (0x7b) keeps its tuned f10 cutoff. Both still drop bord≤2 strait hops (those are SEA, handled below).
+        const _f10cut = _mapVer(modDataDir) < 0x7b ? Infinity : CALIB.frontierF10Cutoff;
+        landNeighbors = fEdges.filter(e => e.type === 0 && e.f10 <= _f10cut
+          && !(CALIB.useLandingFrontiers && (_mapVer(modDataDir) < 0x7b ? e.bord <= 2 : e.f10 > CALIB.seaInvalidF10))).map(e => e.region);
+        // INVALID-BRIDGE detection. VANILLA (map 0x78): bord≈1 = a strait/gulf hop (map-independent, correct).
+        // RIS (0x7b): keep the f10>150 cutoff its land calibration was tuned against (bord would add 2472 borders
+        // and blow up Epirus). f10's scale differs by map (RIS huge vs vanilla 255-wide) so it can't be shared.
+      } else {
+        landNeighbors = (adjacency[s.region] || []);  // fallback: region not in frontier graph (e.g. unmatched entry)
+      }
+      // NOTE: RTW LAND trade is DIRECT-border only — there is no through-ally land network. A faction's
+      // non-adjacent allied-town trade (e.g. Julii Arretium↔Capua) is actually SEA: a PORT settlement trades
+      // with a coastal region along their shared sea-body even when that region has NO port (user-confirmed:
+      // Capua has no port but Arretium does). That coastal sea trade is handled in the sea block below.
+      for (const n of landNeighbors) {
         const own = ownerOfRegion[n];
-        if (!isPartner(own)) continue;
+        if (own === "slave") continue; // rebels: every faction is permanently at war with slave → no trade
+        if (process.env.RIGHTS_GATE ? !(own === facLow || tradeRightsSet.has(own)) : !isPartner(own)) continue;
         nPartners++;
         const hasRights = own === facLow || tradeRightsSet.has(own);
         // ROAD MULTIPLIER (live-cracked 2026-06-17, Rome road-sweep new campaign):
@@ -1814,8 +2210,38 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
         const roadMult = 1 + Math.min(Math.max(0, (s.roadLevel || 0) - 1), roadOfRegion[n] || 0);
         // qty-weighted exclusion cargo: exporter's goods n lacks (+ ½ of n's goods exporter lacks)
         const _exC = _landCargo(s.region, n), _imC = _landCargo(n, s.region);
-        const _landRow = _landRate * (_exC + CALIB.tradeLandImportFrac * _imC + CALIB.tradeLandConst)
-          * roadMult * (hasRights ? 1 : CALIB.tradeNoRights);
+        let _landRow;
+        if (CALIB.useLandingFrontiers) {
+          // ENGINE LAND-TRADE LAW (Gemini-confirmed): Cargo · BAND · Road_Multiplier · landBandBump. NO distance
+          // term (land is localized adjacent exchange — f10 is only the validity check, not a divisor). The
+          // diplomatic band is the SAME 0.5 own / 0.66 trade-rights / 0.33 neutral as sea; the uniform ~+30%
+          // inland inflation was a flat 1.0 own-band. landBandBump re-absorbs the constant the old 1.0 hid.
+          // NOTE: LAND own-faction band is 0.5 (landBandOwn); SEA own-faction is a harsher 0.33 (the engine
+          // penalises internal naval trade more than internal land trade — Gemini, 2026-06-22).
+          if (_mapVer(modDataDir) < 0x7b) {
+            // ★ Vanilla land-trade law (derived from the map.rwm region graph + descr_strat resources + descr_sm
+            // trade values): value = trunc( roadMult · band · (0.13·fastSqrt(popExp+popPartner) + 2·exportCargoTV + importCargoTV) )
+            // cargo = qty × descr_sm TRADE VALUE (gold15, timber5…), EXPORT goods DOUBLED, exclusive goods only
+            // (shared goods cancel). band = 1.0 own/treaty, 0.33 foreign-neutral, 0 war. roadMult=1 & bonusPct=0
+            // at dirt-road turn-1. Matches 7/8 in-game route values exactly; truncate toward zero.
+            const _gx = _goodsQty[s.region] || {}, _gy = _goodsQty[n] || {};
+            let _exTV = 0, _imTV = 0;
+            for (const r in _gx) if (!(r in _gy)) _exTV += _gx[r] * (_rawVal[r] || 0);
+            for (const r in _gy) if (!(r in _gx)) _imTV += _gy[r] * (_rawVal[r] || 0);
+            const _vband = _landAlliedBand.has(own) ? 1.0 : CALIB.seaBandForeign;
+            // popOfRegion is the reliable pop source (the live save s.pop is garbage for some settlements; the old
+            // land law never read pop so it was latent). Exporter pop = popOfRegion[s.region].
+            const _popExp = popOfRegion[s.region] || s.pop || 0;
+            _landRow = Math.trunc(roadMult * _vband * (0.13 * _fastSqrt(_popExp + (popOfRegion[n] || 0)) + 2 * _exTV + _imTV));
+          } else {
+            const _band = own === facLow ? CALIB.landBandOwn : (tradeRightsSet.has(own) ? CALIB.seaBandAgree : CALIB.seaBandForeign);
+            _landRow = _landRate * CALIB.landBandBump * (_exC + CALIB.tradeLandImportFrac * _imC + CALIB.tradeLandConst)
+              * roadMult * _band;
+          }
+        } else {
+          _landRow = _landRate * (_exC + CALIB.tradeLandImportFrac * _imC + CALIB.tradeLandConst)
+            * roadMult * (hasRights ? 1 : CALIB.tradeNoRights);
+        }
         landTrade += _landRow;
         if (process.env.TRADE_DEBUG) (global.__TDBG = global.__TDBG || []).push({
           kind: "land", from: s.settlement, fromRegion: s.region, toRegion: n,
@@ -1823,10 +2249,12 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           popFrom: s.pop, popTo: (popOfRegion[n] || 0), exp: Math.round(_landRow), imp: 0
         });
       }
-      // GOVERNOR TRADING (console-proven, Alexandria GoodTrader probe 2026-06-11):
-      // Trading +10% scaled every land row ×1.074 — the trait multiplies the EXPORT
-      // component (~74% of a route's row value) and leaves imports unchanged.
-      landTrade *= Math.max(0, 1 + 0.74 * ((gv0 && gv0.trading) || 0) / 100);
+      // TRADE-BUILDING bonus M (cracked in-game 2026-06-25, Corduba trader add/remove): the settlement's
+      // trade_base_income_bonus (market chain trader+10%/market+20%/forum+30%/…, plus resource industries)
+      // multiplies ALL its trade — LAND as well as sea. M = 1 + tradePct/10 (= colonyMByRegion/100). The model
+      // already applied this to sea export; it was missing on land (Corduba 89→97 with its +10% trader).
+      // GOVERNOR TRADING (Alexandria GoodTrader probe): +trading% scales the export component on top.
+      landTrade *= Math.max(0, 1 + (colonyMByRegion[s.region] || 0) / 100 + 0.74 * ((gv0 && gv0.trading) || 0) / 100);
     }
     tradeLandSum += landTrade;
     // SEA = PER-LANE FLOWS. OPEN-SEA LAW (Capua t1/t2 probes 2026-06-11 night +
@@ -1843,10 +2271,18 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     //   Weak slot sides export nothing (unchanged).
     // RIVER lanes (Nile) keep the pop-law fit (713/605/519 validated, ×1.95).
     let seaTrade = 0;
-    if (s.portLevel) {
+    // a portless coastal settlement has no export fleet, but STILL earns the 0.2× import row from any port that
+    // exports to it (e.g. Lilybaeum imports from Carthage) — so process whenever there are inbound lanes too.
+    if (s.portLevel || (seaLanes[s.region] || []).length) {
       const lanes = seaLanes[s.region] || [];
       const lanePts = seaFlowPtsByLane(modDataDir);
       const isPly = !(opts && opts.asAI);
+      // DIRECTIONAL dNav: the engine reads dNav from the EXPORTER's landing-frontier record, so a flow X→Y must
+      // use X's frontier distance — NOT the lane's stored .d (which, on a MUTUAL route, is the importer's own
+      // export distance Y→X). This is why Antioch's import from Rhodes read 10 not 15: the impLive import reused
+      // Antioch→Rhodes' distance instead of Rhodes→Antioch's. lfg is module-cached.
+      const _lfgB = landingFrontierGraph(modDataDir);
+      const _dNavOf = (X, Y) => { const e = (_lfgB[X] || []).find(z => z.region === Y); return e ? e.dist : null; };
       // per-lane f: live-calibrated where measured (see CALIB.seaLaneF), else the
       // open-sea constant 33. 'ply' regime applies when the EXPORTER town belongs
       // to the faction this budget is computed for (as the human player) — the
@@ -1873,17 +2309,71 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           // baseline cargo + amber both reproduce exactly). seaConst pinned by the amber dilution.
           // d is the sea-lane BFS distance (TODO: sea-depth-weight it — shallow×1/medium×2/deep block).
           const isExp = X === s.region;
-          const popX = Math.max(400, isExp ? (s.pop || 1500) : (ln2.toPop || 1500));
-          const popY = Math.max(400, isExp ? (ln2.toPop || 1500) : (s.pop || 1500));
+          // EXPORTER POP: prefer popOfRegion (descr_strat, reliable) over the live-save s.pop.
+          // VANILLA (map 0x78) ONLY: some live turn-1 saves carry a GARBAGE settlement pop for the
+          // player's towns (e.g. Arretium reads 4244388962), and the bit-hack √(popX+popY) in the
+          // vanilla sea law turns that into a ~6515 pop term → a 41109 Etruria→Africa lane. The land
+          // law already reads popOfRegion for exactly this reason (see _popExp above); the sea law
+          // was the last latent s.pop user. RIS (0x7b) keeps s.pop — its calibrated sea law was fit
+          // against it and is unaffected by this garbage (and Macedon parses clean), so leave it.
+          const _sPop = (_mapVer(modDataDir) < 0x7b) ? (popOfRegion[s.region] || s.pop || 1500) : (s.pop || 1500);
+          const popX = Math.max(400, isExp ? _sPop : (ln2.toPop || 1500));
+          const popY = Math.max(400, isExp ? (ln2.toPop || 1500) : _sPop);
           const tPX = isExp ? (s.tradePct || 0) : 0; // exporter trade-buildings (import leg → base rate)
           const landRateX = CALIB.tradeLandRateBase + CALIB.tradeLandRatePct * tPX;
           const gx = _goodsQty[X] || {}, gy = _goodsQty[Y] || {};
           let cF = 0; for (const r in gx) if (!(r in gy)) cF += gx[r] * (_goodsVal[r] || 0); // export cargo
           let iC = 0; for (const r in gy) if (!(r in gx)) iC += gy[r] * (_goodsVal[r] || 0); // import cargo (×seaImportFrac)
           const ownX = ownerOfRegion[X], ownY = ownerOfRegion[Y];
-          const rights = (ownX === ownY || tradeRightsSet.has(ownY) || tradeRightsSet.has(ownX)) ? 1.0 : CALIB.seaRightsForeign;
+          // RELATIONSHIP BAND (engine: 0.5/0.66/0.33). LF uses it directly; own-faction internal trade is its
+          // own factor — calibrated on Epirus (own routes were over, foreign under = a flat 1.0/0.5 artifact).
+          const _trueOwn = ownX === ownY; // genuinely the same faction
+          const _own = _trueOwn || (/^romans?_/.test(ownX || "") && /^romans?_/.test(ownY || "")), _agr = tradeRightsSet.has(ownY) || tradeRightsSet.has(ownX);
+          const rights = CALIB.useLandingFrontiers
+            ? (_own ? CALIB.seaBandOwn : _agr ? CALIB.seaBandAgree : CALIB.seaBandForeign)
+            : ((_own || _agr) ? 1.0 : CALIB.seaRightsForeign);
           // distance = depth-weighted white-port path; RIVER lanes use the body-confined channel path
           // (no delta shortcut/block); fall back to formation BFS for anything still unreachable.
+          // EXACT ENGINE FORMULA (decompiled from the route-value function, 2026-06-22):
+          //   export = (0.1·√(exporterPop) + Σ qty·tradeValue) × 8 × relationshipBand × C ÷ distance
+          // base goes through a fast-sqrt (√pop, NOT pop^2 — the earlier empirical fit was wrong); cargo is the
+          // matched exclusion qty×value; band = 0.5 ally / 0.66 neutral / 0.33 war; LINEAR in 1/distance. The
+          // importer earns export×~0.2 (the /5 law) — handled by the strong/weak aggregation below.
+          if (CALIB.useLandingFrontiers) {
+            // MIN-DISTANCE FLOOR (Gemini 2026-06-22): the floor is a FAILSAFE only for f10-INVALIDATED land-bridges
+            // (the Ambrakia gulf hop reclassified as sea) to stop the 1/dist denominator exploding. The engine does
+            // NOT floor TRUE open-sea routes — so an adjacent island↔mainland hop like Leukas↔Oiniadai (d29) keeps
+            // its raw distance (was crushed 250→clamped; raw 29 gives its real ~2× value).
+            const dRaw = (ln2 && ln2.river) ? (function(){ const _s = seaPortDistDepth(modDataDir); return (_s.distFromRiver(X) || {})[Y] || 20; })() : (_dNavOf(X, Y) || (ln2 && ln2.d) || 20);
+            const dLF = (ln2 && ln2.invalidBridge) ? Math.max(CALIB.seaDistFloor, dRaw) : dRaw;
+            // pop term: the bit-hack fast-sqrt of (exporterPop + importerPop) — the SUM of both settlement pops
+            // (confirmed from the game's trade-value math, 2026-06-23).
+            const _vanSea = _mapVer(modDataDir) < 0x7b;
+            if (_vanSea) {
+              // ★ EXE-cracked vanilla routeValue (FUN_1414a3e70): export =
+              //   seaKV·(seaPopCoefV·fastSqrt(popX+popY) + cargoFull)·gate / dNav
+              // popX+popY = both settlement pops (two get_population vcalls, summed — confirmed in asm). cargoFull =
+              // Σ qty×descr_sm tradeValue of the exporter's goods the partner lacks (IMUL qty×value in the asm — full
+              // value, NOT the flat-1 the older model used). dLF = dNav. gate (seaGate*V, fit to the turn-1 scroll
+              // corpus): foreign 0.5, agreement 0.66, own 0.36 — internal naval trade is penalised (the asm shows
+              // own-faction SKIPPING the 0.5, i.e. nominally full, but the live numbers come out ~0.36, so own ports
+              // do NOT dominate selection — Carthage still picks its own Lilybaeum over foreign Syracuse on distance).
+              // pin = popX + popY (BOTH settlement pops, byte-confirmed from routeValue's two vtable+0x130 reads —
+              // the portless partner's pop IS included, unlike the old popX-only heuristic).
+              const _pinV = popX + popY;
+              const _b = new ArrayBuffer(4), _f = new Float32Array(_b), _i = new Int32Array(_b);
+              _f[0] = _pinV; _i[0] = (((_i[0] + 0xc0800000) | 0) >> 1) + 0x3f800000; // bit-hack fastSqrt
+              const _ptV = CALIB.seaPopCoefV * _f[0];
+              let _cFv = 0; for (const r in gx) if (!(r in gy)) _cFv += gx[r] * (_rawVal[r] || 0);
+              const _gateV = _trueOwn ? CALIB.seaGateTrueOwnV : _own ? CALIB.seaGateOwnV : _agr ? CALIB.seaGateAgreeV : CALIB.seaGateForeignV;
+              return Math.max(0, CALIB.seaKV * (_ptV + _cFv + CALIB.seaBaseTerm) * _gateV / dLF);
+            }
+            const _pin = (CALIB.seaPopSum ? (popX + popY) : popX);
+            let _pt;
+            if (CALIB.seaPopMode === "bithack") { const _b = new ArrayBuffer(4), _f = new Float32Array(_b), _i = new Int32Array(_b); _f[0] = _pin; _i[0] = (((_i[0] + 0xc0800000) | 0) >> 1) + 0x3f800000; _pt = 0.1 * _f[0]; }
+            else { _pt = 0.1 * Math.pow(_pin, CALIB.seaPopExp || 0.5); }
+            return Math.max(0, CALIB.seaK_LF * (_pt + cF + CALIB.seaImportFrac * iC) * rights / dLF);
+          }
           const _spd = seaPortDistDepth(modDataDir);
           const _dWp = (ln2 && ln2.river) ? (_spd.distFromRiver(X) || {})[Y] : (_spd.distFrom(X) || {})[Y];
           const d = Math.max(1, (_dWp != null && isFinite(_dWp)) ? _dWp : (ln2.d || 20));
@@ -1914,6 +2404,16 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           const impPlyR = ownerOfRegion[ln.to] === facLow ? isPly : false;
           expV = rm * flowOf(s.region, ln.to, isPly, ln);
           impV = rm * flowOf(ln.to, s.region, impPlyR, ln) / 5;
+        } else if (CALIB.useLandingFrontiers) {
+          // LF aggregation: my export ONLY on the lane I selected (1 slot for a tier-1 port — the cap is absolute). I collect
+          // the 0.2× importer cut on goods flowing back FROM a FOREIGN partner (always — the 2-row foreign
+          // trade) OR from an OWN-faction partner that EXPORTS to me (impLive — e.g. Korkyra→Kichyros: Kichyros
+          // collects the tariff on Korkyra's inbound goods even though its own export slot went to Stratos).
+          expV = ln.weak ? 0 : flowOf(s.region, ln.to, isPly, ln);
+          // VANILLA: import only on a genuinely MUTUAL route (partner slots me back = impLive). RIS keeps the
+          // blanket "any foreign partner imports" rule its calibration was tuned with. The blanket rule wrongly
+          // added Thessalonica's 0.2× tariff on the 1-row Rhodes export (game shows a single export row, no import).
+          impV = ((_mapVer(modDataDir) < 0x7b ? !!ln.impLive : (ownerOfRegion[ln.to] !== facLow || ln.impLive))) ? flowOf(ln.to, s.region, false, ln) * CALIB.seaImportCut : 0;
         } else {
           expV = ln.weak ? 0 : flowOf(s.region, ln.to, isPly, ln);
           const impPly = ownerOfRegion[ln.to] === facLow ? isPly : false;
@@ -1922,11 +2422,21 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           const impDark = ln.impLive != null ? !ln.impLive : !ln.toNearest;
           impV = (ln.inWeak || impDark) ? 0 : flowOf(ln.to, s.region, impPly, ln) / 5;
         }
-        // GOVERNOR TRADING trait — same as land: multiplies the EXPORT leg (this town's
-        // exports) ×(1+0.74·trading%); the import leg (the partner's export back to us) is
-        // unaffected. gv0 is this town's governor effect (descr_strat seed or save-derived).
-        const _seaGovTrade = Math.max(0, 1 + 0.74 * ((gv0 && gv0.trading) || 0) / 100);
-        expV *= _seaGovTrade;
+        // REGION TRADE-INCOME-BONUS modifier (cracked 2026-06-22 via the Leukas colony-removal experiment +
+        // the in-game Region Information Scroll). The engine scales every EXPORT leg by
+        //   M = 1 + tradePct/10 + governorTrading/100
+        // where tradePct = the town's NET trade_base_income_bonus (the scroll's "Trade income bonus %" is
+        // exactly tradePct×10 — colony_2's trade_base +2 displays as +20%, and removing colony_2 cut Leukas's
+        // exports by ×1.20 to the denarius). Per-EXPORTER; the import leg (partner's export back) is unaffected,
+        // which the experiment confirmed (Leukas's import rows 82/69 didn't move when its colony was removed).
+        // Large Colony (colony_2) = +20% trade income bonus — measured to the denarius (Leukas colony-removal cut
+        // exports ×1.20) AND confirmed verbatim on the in-game building scroll. Small Colony (colony_1) is a
+        // smaller bonus the scroll calls out but we don't yet apply (its host settlements' base is mis-parsed).
+        const _colTrade = colonyMByRegion[s.region] || 0;
+        const _seaTradeM = Math.max(0, 1 + _colTrade / 100 + 0.74 * ((gv0 && gv0.trading) || 0) / 100);
+        expV *= _seaTradeM;
+        // import leg: the partner's Large-Colony bonus rides on the goods we import from it (its export was boosted)
+        impV *= 1 + (tradePctAll[ln.to] != null ? tradePctAll[ln.to] : (colonyMByRegion[ln.to] || 0)) / 100;
         seaTrade += expV + impV;
         if (process.env.TRADE_DEBUG) (global.__TDBG = global.__TDBG || []).push({
           kind: ln.river ? "river" : "sea", from: s.settlement, fromRegion: s.region, toRegion: ln.to,
@@ -1937,6 +2447,12 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           pinned: !!(CALIB.seaLaneF || {})[s.region + ">" + ln.to]
         });
       }
+      // COLOSSUS OF RHODES (wonder): the faction owning the colossus landmark gets +20% of EACH of its
+      // settlements' sea trade (ceil), faction-wide. Controlled-experiment proven 2026-06-25: removing the
+      // `landmark colossus` line dropped Rhodes' Trade 128→106 and Syracuse 131→113 (= their row totals),
+      // i.e. the bonus = ⌈0.20·sea⌉ (22=⌈0.2·106⌉, 18=⌈0.2·89⌉). The "+40%" tooltip is the described rate;
+      // the applied income effect is +20% of the SEA total (Syracuse rules out +40%-of-export).
+      if (wonders.colossus && wonders.colossus.owner === facLow) seaTrade += Math.ceil(0.20 * seaTrade);
       tradeSeaSum += seaTrade;
     }
     // measured live t1 override for the played faction (see CALIB.tradeMeasuredByPlayer)
@@ -2031,7 +2547,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // ROUNDED: its law is calibrated so the FACTION total floors to exact (19356), and at the
       // per-town level the rounded value matches the panel (Venusia 809.7→810) — flooring it
       // would show 809 and we can't lift the law without breaking the faction sum. (2026-06-16)
-      bracket, taxes: Math.floor(tTax), farming: Math.round(tFarm), mining: Math.floor(tMine), trade: Math.floor(tTrade), admin: Math.floor(tAdmin),
+      bracket, taxes: Math.trunc(tTax), farming: Math.round(tFarm), mining: Math.floor(tMine), trade: Math.floor(tTrade), admin: Math.floor(tAdmin),
       corruption: Math.floor(corrAmt),
       corrCalibrated: corrOv != null ? true : undefined,
       // settlement NET income (the in-game scroll's "Net Income"): gross − corruption
@@ -2117,8 +2633,8 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     },
     protectorate: (clients || suzerain) ? { suzerain, clients } : null,
     // honest accuracy notes for the UI (validated vs the 10-faction turn-1 corpus)
-    accuracy: { taxes: "±9%", farming: "±5%", trade: "±19% (partner-aware refit)", wages: "exact", corruption: "±10%", tribute: "50% of client net (exact rate; client nets modeled at Normal tax)", unmodeled: "'other' income (~1-4% of total)" },
+    accuracy: { taxes: "exact for small/mid empires; large empires read low (Empire-Size penalty ×M scale, WIP)", farming: "exact (±1)", trade: "partner set exact (frontier graph); per-route value ±10% (east) / ±15% (coastal sea)", wages: "exact", army_upkeep: "exact (EDU law)", corruption: "~±1% of income", tribute: "50% of client net (exact rate; client nets modeled at Normal tax)", aiFactions: "per-tier affine fit applied to AI economy (corrected, not pure-law)", unmodeled: "'other' income (~1-4% of total)" },
   };
 }
 
-module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, regionBorderLen, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion, seaFlowPtsByLane };
+module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, regionBorderLen, frontierGraph, landingFrontierGraph, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion, seaFlowPtsByLane, seaPortDistDepth };

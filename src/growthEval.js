@@ -187,7 +187,14 @@ function parseFactionGroupsUncached(modDataDir) {
 function factionTokenSet(factionName, groups) {
   const set = new Set([String(factionName || "").toLowerCase()]);
   const g = groups && groups[String(factionName || "").toLowerCase()];
-  if (g) { if (g.culture) set.add(g.culture); for (const tag of g.tags) set.add(tag); }
+  // EDB factions{} tokens are FACTION-NAME or CULTURE only — the EDB lists every culture
+  // explicitly (e_hellenistic, w_hellenistic, greek, egyptian, roman… all distinct) and uses
+  // NO fgroup_ tokens. Adding the fgroup tags (fgroup_greek → "greek") wrongly matched the
+  // GREEK culture to the e_hellenistic Successor factions: e.g. Ptolemaic (culture e_hellenistic,
+  // tag fgroup_greek) falsely satisfied `factions{greek}`, so `beer_factions` (= not greek/roman)
+  // read false and a brewery/bakery gave the greek +15 instead of the barbarian +10 — over-taxing
+  // Memphis by 5/turn (live Ptolemaic save: it pays the +10). Match name + culture only.
+  if (g && g.culture) set.add(g.culture);
   return set;
 }
 
@@ -327,6 +334,10 @@ function evalAtom(t, ctx) {
   // `not is_player`, i.e. AI-only, which the player path never reaches).
   if ((m = t.match(/^size(\d+)/))) return ctx.empireTier != null ? ctx.empireTier === +m[1] : ctx.sizeTier >= +m[1];
   if (t === "homeland") return ctx.homeland;
+  // NOTE (latent): `no_other_government` falls through to false below (so `not no_other_government`
+  // = true). Correct only because every town has a government at start; a proper buildings-aware
+  // check broke the PO model (which populates ctx.buildings differently), so it's left as-is. If a
+  // mod edit ever removes a government, the empire-size region_base tax penalty would mis-apply.
   // EDB supply aliases (perfumes_building_supply etc.) → expand & evaluate. At a
   // campaign start the `*_supply_built factionwide` half is false (no supply building
   // yet), so these reduce to `resource X`, which we can read from the region.
