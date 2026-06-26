@@ -683,6 +683,9 @@ const CALIB = {
   // TRUE same-faction sea gate (Carthage→own Lilybaeum, market-removed isolation 2026-06-25: base 168 vs the
   // SPQR-internal 0.36's 175) is a hair lower than the SPQR-group gate (Julii/Brutii/Scipii trade as 0.36).
   seaGateTrueOwnV: 0.33,
+  // RIS-only protectorate (trade-agreement) sea gate — Rome's client factions (Bruttii/Taras/Samnites via
+  // become_protector) trade nearer to own; the shared 0.66 under-reads them. Vanilla keeps seaGateAgreeV.
+  seaGateAgreeRisV: 0.82,
   // Engine reads a larger-than-displayed trade population: the sea pop term = seaPopCoefV·√pin + seaBaseTerm
   // (constant). Controlled descr_strat experiments 2026-06-25 (Carthage cargo 22→72 AND pop 6k→90k) fix the
   // effective term to ~15 at displayed pin 9000 → 0.1·√pin + ~5.15. Reproduces both the pop-response (202→316 at
@@ -2373,12 +2376,16 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
               // do NOT dominate selection — Carthage still picks its own Lilybaeum over foreign Syracuse on distance).
               // pin = popX + popY (BOTH settlement pops, byte-confirmed from routeValue's two vtable+0x130 reads —
               // the portless partner's pop IS included, unlike the old popX-only heuristic).
-              const _pinV = popX + popY;
+              // RIS: the EXPORT leg keys on the EXPORTER pop only (popX), not the popX+popY sum vanilla uses. Validated
+              // against the engine's own per-route pins (Thourioi->Taras export 69 vs pin-target 71; Metapontion->Chonia
+              // 88 — both popX-exact): a one-way export carries only the exporter's pop; the asm's popX+popY is the
+              // selection/combined value (the partner pop re-enters only via the separate mutual-only import leg).
+              const _pinV = _vanSea ? (popX + popY) : popX;
               const _b = new ArrayBuffer(4), _f = new Float32Array(_b), _i = new Int32Array(_b);
               _f[0] = _pinV; _i[0] = (((_i[0] + 0xc0800000) | 0) >> 1) + 0x3f800000; // bit-hack fastSqrt
               const _ptV = CALIB.seaPopCoefV * _f[0];
               let _cFv = 0; for (const r in gx) if (!(r in gy)) _cFv += gx[r] * ((_vanSea && r === "copper") ? 6 : (_rawVal[r] || 0)); // SEA cargo uses the REAL resource values (same as the land law), vanilla + RIS; copper=6 sea-adjust is vanilla-only
-              const _gateV = _vanSea ? (_trueOwn ? CALIB.seaGateTrueOwnV : _own ? CALIB.seaGateOwnV : _agr ? CALIB.seaGateAgreeV : CALIB.seaGateForeignV) : ((_trueOwn || _own) ? 1.0 : (_agr ? CALIB.seaGateAgreeV : CALIB.seaGateForeignV));
+              const _gateV = _vanSea ? (_trueOwn ? CALIB.seaGateTrueOwnV : _own ? CALIB.seaGateOwnV : _agr ? CALIB.seaGateAgreeV : CALIB.seaGateForeignV) : ((_trueOwn || _own) ? 1.0 : (_agr ? CALIB.seaGateAgreeRisV : CALIB.seaGateForeignV));
               return Math.max(0, CALIB.seaKV * (_ptV + _cFv + CALIB.seaBaseTerm) * _gateV / dLF);
             }
             const _pin = (CALIB.seaPopSum ? (popX + popY) : popX);
@@ -2423,10 +2430,16 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           // trade) OR from an OWN-faction partner that EXPORTS to me (impLive — e.g. Korkyra→Kichyros: Kichyros
           // collects the tariff on Korkyra's inbound goods even though its own export slot went to Stratos).
           expV = ln.weak ? 0 : flowOf(s.region, ln.to, isPly, ln);
-          // VANILLA: import only on a genuinely MUTUAL route (partner slots me back = impLive). RIS keeps the
-          // blanket "any foreign partner imports" rule its calibration was tuned with. The blanket rule wrongly
-          // added Thessalonica's 0.2× tariff on the 1-row Rhodes export (game shows a single export row, no import).
-          impV = ((_mapVer(modDataDir) < 0x7b ? !!ln.impLive : (ownerOfRegion[ln.to] !== facLow || ln.impLive))) ? flowOf(ln.to, s.region, false, ln) * CALIB.seaImportCut : 0;
+          // Import only on a genuinely MUTUAL route (the partner slots me back = impLive) — the engine adds the
+          // 0.2× tariff only when there is a real reverse export. (Was a RIS-only blanket "any foreign partner
+          // imports" rule; that handed a phantom import to settlements whose far partner — Issa/Histria — never
+          // reciprocates, over-counting Sena Gallica/Venusia/Arpi/Canusium. Vanilla was always mutual-only.)
+          // RIS suzerain exception: a trade-rights CLIENT (protectorate) still ships me its inbound goods even when
+          // the landing-frontier profit-ranker spent its one export slot on a nearer port — the trade agreement
+          // carries the tariff. (Paestum collects Bruttium's import though Bruttium's slot went to nearer Mamertina;
+          // the live pin Bruttium->Poseidonia ai=15.5 confirms it. Plain-foreign far partners form no client link.)
+          const _agrLane = (_mapVer(modDataDir) >= 0x7b) && ownerOfRegion[ln.to] !== facLow && tradeRightsSet.has(ownerOfRegion[ln.to]);
+          impV = (!!ln.impLive || _agrLane) ? flowOf(ln.to, s.region, false, ln) * CALIB.seaImportCut : 0;
         } else {
           expV = ln.weak ? 0 : flowOf(s.region, ln.to, isPly, ln);
           const impPly = ownerOfRegion[ln.to] === facLow ? isPly : false;

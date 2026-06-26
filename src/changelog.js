@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1195",
+    date: "2026-06-26",
+    items: [
+      { type: "improvement", text: "**Turn-1 sea trade on the modded campaign — far-foreign over-prediction closed; corpus error ~300 → ~140.** Four engine-faithful refinements on top of the now-exact land: export value keys on the exporter's OWN population (verified against the engine's per-route pins, not the partner's); imports form only on genuinely mutual routes (matching vanilla), dropping phantom income from one-way distant exports; trade-agreement client states still ship their tariff even when their fleet sails elsewhere; and protectorate trade is valued nearer to own. Every internal route stays exact; the small residual is a couple of own-faction and strait routes that need a live scroll to pin. Vanilla stays 25/25. From the map and building data." },
+    ],
+  },
+  {
     version: "0.9.1194",
     date: "2026-06-26",
     items: [
