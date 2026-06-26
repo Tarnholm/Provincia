@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1192",
+    date: "2026-06-26",
+    items: [
+      { type: "improvement", text: "**Turn-1 sea trade — the Colossus of Rhodes also boosts what *other* factions import from its owner.** The wonder gives its faction +20% on sea exports, so a settlement importing from a Colossus-owner port collects 0.2× of that boosted export — e.g. the Seleucids' Antioch importing from Greek Rhodes reads ⌈0.2·60·1.20⌉ = 15, not 12. Confirmed by controlled in-game experiments: making Rhodes a palace, a city, and the capital each changed nothing (the boost lives on the *exporter's* wonder, not the importer), and adding it lands Antioch exactly on the game's 492. This closes the last import gap — the gov-off test-corpus is now 1 across 25 settlements, 24 exact. From the map and building data." },
+    ],
+  },
+  {
     version: "0.9.1191",
     date: "2026-06-25",
     items: [

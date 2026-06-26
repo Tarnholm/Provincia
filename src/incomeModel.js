@@ -2442,6 +2442,11 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
         expV *= _seaTradeM;
         // import leg: the partner's Large-Colony bonus rides on the goods we import from it (its export was boosted)
         impV *= 1 + (tradePctAll[ln.to] != null ? tradePctAll[ln.to] : (colonyMByRegion[ln.to] || 0)) / 100;
+        // COLOSSUS rides on the EXPORTER, not the importer. A partner whose faction owns the Colossus exports at
+        // the +20% wonder rate (faction-wide sea boost), so the 0.2x import we collect from it carries that boost.
+        // In-game proof: Antioch's import from Rhodes is +25% (12→15) ONLY because Rhodes (the partner) has the
+        // Colossus — making Rhodes a palace/city/capital changed nothing; the boost is the wonder on the exporter.
+        if (_mapVer(modDataDir) < 0x7b && wonders.colossus && ownerOfRegion[ln.to] === wonders.colossus.owner) impV *= 1.20;
         // VANILLA: the engine CEILS the per-row import (⌈0.2·routeValue⌉ — ceilf in the route-value writer), which
         // the model's round-of-the-total was losing (Thessalonica→Rhodes import 0.2·82=16.4 → ⌈⌉17, model gave 16).
         // Exports stay summed-raw: their float sits a hair high, so the total round already matches and ceiling them
