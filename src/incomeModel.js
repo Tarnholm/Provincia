@@ -49,13 +49,13 @@ function empireTier(nSettlements) {
 function parseEDBIncome(edbPath) {
   const lines = fs.readFileSync(edbPath, "latin1").split(/\r?\n/);
   const capIndex = {}, chainLevels = {};
-  let curBuilding = null, levelsList = [], curLevel = null;
+  let curBuilding = null, levelsList = [], curLevel = null, inFC = false, fcPending = false;
   const aliases = {};
   let curAlias = null;
   const add = (kind, obj) => {
     if (!curBuilding || !curLevel) return;
     const key = curBuilding + ":" + curLevel;
-    (capIndex[key] = capIndex[key] || { taxable: [], trade: [], tradeLvl: [], mine: [], fleet: [], walls: [], health: [], law: [] })[kind].push(obj);
+    (capIndex[key] = capIndex[key] || { taxable: [], trade: [], factionTrade: [], tradeLvl: [], mine: [], fleet: [], walls: [], health: [], law: [] })[kind].push(obj);
   };
   for (const raw of lines) {
     const ln = raw.replace(/;.*$/, "");
@@ -63,16 +63,20 @@ function parseEDBIncome(edbPath) {
     if (am) { curAlias = am[1]; continue; }
     if (curAlias) { const rq = ln.match(/^\s*requires\s+(.+)/); if (rq) { aliases[curAlias] = rq[1].trim(); curAlias = null; } else if (/^\s*\}/.test(ln)) curAlias = null; continue; }
     const bm = ln.match(/^building\s+(\w+)/);
-    if (bm) { curBuilding = bm[1]; levelsList = []; curLevel = null; continue; }
+    if (bm) { curBuilding = bm[1]; levelsList = []; curLevel = null; inFC = false; fcPending = false; continue; }
     const lm = ln.match(/^\s*levels\s+(.+)$/);
     if (lm) { levelsList = lm[1].trim().split(/\s+/).filter(w => w && w !== "{"); chainLevels[curBuilding] = levelsList.slice(); continue; }
     const tok = ln.trim().split(/\s+/);
     if (levelsList.length && tok[0] && levelsList.includes(tok[0]) && (tok[1] === "requires" || tok[1] === undefined || tok[1] === "{")) {
       curLevel = tok[0]; continue;
     }
+    const _t = ln.trim();
+    if (/^faction_capability\b/.test(_t)) { fcPending = true; continue; }       // factionwide effects block
+    if (_t === "{") { if (fcPending) { inFC = true; fcPending = false; } continue; }
+    if (_t === "}") { if (inFC) inFC = false; continue; }
     let m;
     if ((m = ln.match(/^\s*taxable_income_bonus\s+(?:bonus\s+)?(-?\d+)(?:\s+requires\s+(.+))?/))) { add("taxable", { val: +m[1], req: (m[2] || "").trim() }); continue; }
-    if ((m = ln.match(/^\s*trade_base_income_bonus\s+(?:bonus\s+)?(-?\d+)(?:\s+requires\s+(.+))?/))) { add("trade", { val: +m[1], req: (m[2] || "").trim() }); continue; }
+    if ((m = ln.match(/^\s*trade_base_income_bonus\s+(?:bonus\s+)?(-?\d+)(?:\s+requires\s+(.+))?/))) { add(inFC ? "factionTrade" : "trade", { val: +m[1], req: (m[2] || "").trim() }); continue; }
     if ((m = ln.match(/^\s*trade_level_bonus\s+(?:bonus\s+)?(-?\d+)(?:\s+requires\s+(.+))?/))) { add("tradeLvl", { val: +m[1], req: (m[2] || "").trim() }); continue; }
     if ((m = ln.match(/^\s*mine_resource\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("mine", { val: +m[1], req: (m[2] || "").trim() }); continue; }
     if ((m = ln.match(/^\s*trade_fleet\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("fleet", { val: +m[1], req: (m[2] || "").trim() }); continue; }
@@ -125,6 +129,7 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
   const tier = empireTier(f.settlements.length);
 
   const out = [];
+  let factionwideTrade = 0; // Σ faction_capability trade bonuses across all the faction's settlements (applied to every settlement)
   for (const s of f.settlements) {
     const region = byRegion[s.region];
     if (!region) continue;
@@ -166,7 +171,8 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
       const cap = inc.capIndex[b.chain + ":" + b.level];
       if (!cap) continue;
       for (const x of cap.taxable) if (gv.evalReq(x.req, ctx)) { tax[cat(x.req)] += x.val; if (/^hinterland_region$/i.test(b.chain)) taxableRegionBase += x.val; else taxableBuilding += x.val; if (explain) explain.push({ chain: b.chain + ":" + b.level, val: x.val, req: x.req }); }
-      for (const x of cap.trade) if (gv.evalReq(x.req, ctx)) trade[cat(x.req)] += x.val;
+      for (const x of cap.trade) if (gv.evalReq(x.req, ctx)) { trade[cat(x.req)] += x.val; if (explain) explain.push({ kind: "trade", chain: b.chain + ":" + b.level, val: x.val, req: x.req }); }
+      for (const x of (cap.factionTrade || [])) if (gv.evalReq(x.req, ctx)) factionwideTrade += x.val; // factionwide bonus — counted once, applied to ALL settlements after the loop
       for (const x of cap.tradeLvl) if (gv.evalReq(x.req, ctx)) tradeLvlSum += x.val;
       for (const x of cap.mine) if (gv.evalReq(x.req, ctx)) mineSum += x.val;
       for (const x of cap.fleet) if (gv.evalReq(x.req, ctx)) fleetSum += x.val;
@@ -196,7 +202,7 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
     const resList = [...(resourcesByRegion[s.region] || new Set())]
       .map(r => ({ name: r, ...(resourceValues[r] || { tradeValue: 0, mineable: false }) }))
       .filter(r => !r.hidden);
-    const portLevel = (() => { for (const h of (region.hidden || [])) { const m = String(h).match(/^base_port_level(\d+)?/); if (m) return m[1] ? +m[1] : 1; } return buildings.has("port_buildings") ? buildings.get("port_buildings") + 1 : 0; })();
+    const portLevel = (() => { for (const h of (region.hidden || [])) { const m = String(h).match(/^base_port_level(\d+)?/); if (m) return m[1] ? +m[1] : 1; } if (buildings.has("port_buildings")) return buildings.get("port_buildings") + 1; if (buildings.has("river_port")) return buildings.get("river_port") + 1; return 0; })();
     const roadLevel = buildings.has("hinterland_roads") ? buildings.get("hinterland_roads") + 1 : 0;
     out.push({
       region: s.region, settlement: region.settlement, pop: s.pop, level: s.level, capital: !!s.capital,
@@ -208,6 +214,7 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
       ...(explain ? { taxableLines: explain } : {}),
     });
   }
+  if (factionwideTrade) for (const o of out) { o.tradePct += factionwideTrade; if (o.tradePctParts) o.tradePctParts.faction = factionwideTrade; }
   return { faction: want, isPlayer, tier, nSettlements: f.settlements.length, settlements: out };
 }
 
@@ -664,7 +671,7 @@ const CALIB = {
   useLandingFrontiers: true, seaLaneMaxDistLF: 250, seaSelPopY: 1.0,
   // LANDING-FRONTIER sea value law (Epirus live per-route fit 2026-06-22): export = seaK_LF · landRate^G
   // · popX^2 · d^-3 · (cargo + seaConst_LF) · rights. Steep distance + pop² (engine each-port-own-export).
-  seaK_LF: 2650, seaK_LF_vanilla: 770, seaPopExp: 0.48, seaBandOwn: 0.33, landBandOwn: 0.5, landOwnBoostVanilla: 3.12, tradeLandImportFracVanilla: 0, seaBandAgree: 0.66, seaBandForeign: 0.33, seaImportCut: 0.2, straitBorderMax: 2, seaInvalidF10: 150, seaDistFloor: 45, landK_LF: 600, landBordC: 0.05, landF10Floor: 20, landBandBump: 1.6, seaPopX_LF: 2.0, seaDist_LF: -3.0, seaConst_LF: 13, // seaK_LF = the 8×band×C constant of the exe formula (0.1·√pop+cargo)·band·C/dist
+  seaK_LF: 2650, seaK_LF_vanilla: 770, seaPopExp: 0.48, seaBandOwn: 0.33, landBandOwn: 0.5, landOwnBoostVanilla: 3.12, tradeLandImportFracVanilla: 0, seaBandAgree: 0.66, seaBandForeign: 0.33, seaImportCut: 0.2, straitBorderMax: 2, seaInvalidF10: 1e9, seaDistFloor: 45, landK_LF: 600, landBordC: 0.05, landF10Floor: 20, landBandBump: 1.6, seaPopX_LF: 2.0, seaDist_LF: -3.0, seaConst_LF: 13, // seaK_LF = the 8×band×C constant of the exe formula (0.1·√pop+cargo)·band·C/dist
   // ★ VANILLA (map 0x78) sea law — EXE-cracked 2026-06-24 (MAP_REGIONS::routeValue FUN_1414a3e70):
   //   export = seaKV · (seaPopCoefV·fastSqrt(popX+popY) + cargoFull) · gate / dNav   (dNav = map.rwm landing-frontier distance).
   // cargo = Σ qty×descr_sm tradeValue of the exporter's goods the partner lacks (FULL value, NOT flat-1 — confirmed from the
@@ -1204,7 +1211,7 @@ function tradePctByRegionAll(modDataDir) {
   try {
     const ctx = tradePartnerCtx(modDataDir);
     for (const f of new Set(Object.values(ctx.ownerOfRegion))) {
-      try { const F = computeIncomeFeatures(modDataDir, f); for (const s of (F.settlements || [])) out[s.region] = Math.max(0, s.tradePct || 0) * 10; } catch { /* skip faction */ }
+      try { const F = computeIncomeFeatures(modDataDir, f); for (const s of (F.settlements || [])) out[s.region] = (s.tradePct || 0) * 10; } catch { /* skip faction */ }
     }
   } catch { /* no ctx */ }
   return (_tradePctAllCache[modDataDir] = out);
@@ -2035,7 +2042,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   // hit per-total instead). Verified 2026-06-22: floor brings Kichyros/Korkyra (net-negative, M→1.0) into the
   // same seaK cluster as Leukas (+20% colony) etc., and reproduces the colony-removal ×1.20 exactly. NO pins.
   const colonyMByRegion = {};
-  for (const _s of F.settlements) colonyMByRegion[_s.region] = Math.max(0, _s.tradePct || 0) * 10;
+  for (const _s of F.settlements) colonyMByRegion[_s.region] = (_s.tradePct || 0) * 10; // NO clamp: the trade-building M multiplies BOTH ways — a net-negative tradePct (size penalty > market) is a real trade PENALTY (M<1), confirmed by RIS land routes (Iguvium -4 -> M0.6, Camerinum -6 -> M0.4 land-exact). The M is still floored at 0 at the use sites.
   // cross-faction map so foreign imports apply the PARTNER's trade-building bonus (see tradePctByRegionAll)
   const tradePctAll = tradePctByRegionAll(modDataDir);
   for (const s of F.settlements) {
@@ -2198,7 +2205,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // ⌊band·base⌋ for each land row, so Σ⌊M·row⌋ < (Σrow)·M by the dropped fractions. Live-confirmed:
       // Hatra 110→107, Sinope 178→177, Mazaka 100→99 (each route ⌊1.10·base⌋). RIS keeps its calibrated total-band law.
       const _landM = Math.max(0, 1 + (colonyMByRegion[s.region] || 0) / 100 + 0.74 * ((gv0 && gv0.trading) || 0) / 100);
-      const _vanLandM = _mapVer(modDataDir) < 0x7b;
+      const _vanLandM = true; // RIS now uses the same exe-cracked land law + per-route trunc as vanilla (engine is identical; only the data differs)
       for (const n of landNeighbors) {
         const own = ownerOfRegion[n];
         if (own === "slave") continue; // rebels: every faction is permanently at war with slave → no trade
@@ -2223,7 +2230,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           // inland inflation was a flat 1.0 own-band. landBandBump re-absorbs the constant the old 1.0 hid.
           // NOTE: LAND own-faction band is 0.5 (landBandOwn); SEA own-faction is a harsher 0.33 (the engine
           // penalises internal naval trade more than internal land trade — Gemini, 2026-06-22).
-          if (_mapVer(modDataDir) < 0x7b) {
+          if (_vanLandM) {
             // ★ Vanilla land-trade law (derived from the map.rwm region graph + descr_strat resources + descr_sm
             // trade values): value = trunc( roadMult · band · (0.13·fastSqrt(popExp+popPartner) + 2·exportCargoTV + importCargoTV) )
             // cargo = qty × descr_sm TRADE VALUE (gold15, timber5…), EXPORT goods DOUBLED, exclusive goods only
@@ -2354,7 +2361,8 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
             // pop term: the bit-hack fast-sqrt of (exporterPop + importerPop) — the SUM of both settlement pops
             // (confirmed from the game's trade-value math, 2026-06-23).
             const _vanSea = _mapVer(modDataDir) < 0x7b;
-            if (_vanSea) {
+            const _useCracked = true; // engine routeValue formula (exe-cracked) now applies to RIS too — same engine
+            if (_useCracked) {
               // ★ EXE-cracked vanilla routeValue (FUN_1414a3e70): export =
               //   seaKV·(seaPopCoefV·fastSqrt(popX+popY) + cargoFull)·gate / dNav
               // popX+popY = both settlement pops (two get_population vcalls, summed — confirmed in asm). cargoFull =
@@ -2369,8 +2377,8 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
               const _b = new ArrayBuffer(4), _f = new Float32Array(_b), _i = new Int32Array(_b);
               _f[0] = _pinV; _i[0] = (((_i[0] + 0xc0800000) | 0) >> 1) + 0x3f800000; // bit-hack fastSqrt
               const _ptV = CALIB.seaPopCoefV * _f[0];
-              let _cFv = 0; for (const r in gx) if (!(r in gy)) _cFv += gx[r] * (r === "copper" ? 6 : (_rawVal[r] || 0)); // SEA-only copper=6 (in-game copper-qty experiment: Syracuse import scales as if copper worth 6, not the file's 5; land law keeps 5)
-              const _gateV = _trueOwn ? CALIB.seaGateTrueOwnV : _own ? CALIB.seaGateOwnV : _agr ? CALIB.seaGateAgreeV : CALIB.seaGateForeignV;
+              let _cFv = 0; for (const r in gx) if (!(r in gy)) _cFv += gx[r] * ((_vanSea && r === "copper") ? 6 : (_rawVal[r] || 0)); // SEA cargo uses the REAL resource values (same as the land law), vanilla + RIS; copper=6 sea-adjust is vanilla-only
+              const _gateV = _vanSea ? (_trueOwn ? CALIB.seaGateTrueOwnV : _own ? CALIB.seaGateOwnV : _agr ? CALIB.seaGateAgreeV : CALIB.seaGateForeignV) : ((_trueOwn || _own) ? 1.0 : (_agr ? CALIB.seaGateAgreeV : CALIB.seaGateForeignV));
               return Math.max(0, CALIB.seaKV * (_ptV + _cFv + CALIB.seaBaseTerm) * _gateV / dLF);
             }
             const _pin = (CALIB.seaPopSum ? (popX + popY) : popX);

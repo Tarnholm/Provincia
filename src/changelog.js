@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1194",
+    date: "2026-06-26",
+    items: [
+      { type: "improvement", text: "**Turn-1 trade — the engine rules now hold on heavily-modded campaigns, and the land side is exact.** The same rules cracked on vanilla now drive trade on a large mod campaign, reading that mod's own buildings, resources and region frontiers instead of approximating. Two fixes carried it: the trade-building bonus is applied with its full range — a net-negative bonus (a small town whose size penalty outweighs its market) is a real trade *penalty*, not clamped to zero — and internal sea routes use the engine's own-faction rule. Every land route now matches the in-game scroll to the denarius (61 routes, all 10 inland settlements exact), and internal sea routes match too, taking a 25-settlement test campaign from ~1500 denarii off to ~300 (the remainder isolated to long over-sea distances, still being tuned). From the map and building data." },
+    ],
+  },
+  {
     version: "0.9.1193",
     date: "2026-06-26",
     items: [
