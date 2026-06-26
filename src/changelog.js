@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1193",
+    date: "2026-06-26",
+    items: [
+      { type: "improvement", text: "**Turn-1 sea trade — copper closes the last residual; cross-validated on Gaul.** Sea trade values copper at 6, not the 5 in the resource file (which the land trade correctly uses) — found by an in-game experiment: doubling Tarentum's copper deposits scaled Syracuse's sea import exactly as if copper were worth 6 (18→26 denarii). Modeling copper as 6 in the sea cargo lands Syracuse on the game's value, taking the gov-off test-corpus to **25/25 exact**. Independently cross-checked against the Gauls — a faction the model was never calibrated to — and all 7 settlements match to the denarius (32 exact across 7 factions). From the map and building data, no pinned numbers." },
+    ],
+  },
+  {
     version: "0.9.1192",
     date: "2026-06-26",
     items: [

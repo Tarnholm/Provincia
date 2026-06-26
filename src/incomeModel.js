@@ -2369,7 +2369,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
               const _b = new ArrayBuffer(4), _f = new Float32Array(_b), _i = new Int32Array(_b);
               _f[0] = _pinV; _i[0] = (((_i[0] + 0xc0800000) | 0) >> 1) + 0x3f800000; // bit-hack fastSqrt
               const _ptV = CALIB.seaPopCoefV * _f[0];
-              let _cFv = 0; for (const r in gx) if (!(r in gy)) _cFv += gx[r] * (_rawVal[r] || 0);
+              let _cFv = 0; for (const r in gx) if (!(r in gy)) _cFv += gx[r] * (r === "copper" ? 6 : (_rawVal[r] || 0)); // SEA-only copper=6 (in-game copper-qty experiment: Syracuse import scales as if copper worth 6, not the file's 5; land law keeps 5)
               const _gateV = _trueOwn ? CALIB.seaGateTrueOwnV : _own ? CALIB.seaGateOwnV : _agr ? CALIB.seaGateAgreeV : CALIB.seaGateForeignV;
               return Math.max(0, CALIB.seaKV * (_ptV + _cFv + CALIB.seaBaseTerm) * _gateV / dLF);
             }
