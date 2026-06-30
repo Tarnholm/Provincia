@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1205",
+    date: "2026-07-01",
+    items: [
+      { type: "fix", text: "**Public order now matches the in-game value exactly for foreign settlements (Neapolis 90 → 88).** Two refinements from the Neapolis scroll: the settlement-culture penalty is the measured −22 (was a flat −20), and the model no longer rounds its result to a multiple of 5 (public order is genuinely non-5 wherever a culture penalty applies). Neapolis reads its true 88; homeland / same-culture towns are unaffected." },
+    ],
+  },
+  {
     version: "0.9.1204",
     date: "2026-07-01",
     items: [
