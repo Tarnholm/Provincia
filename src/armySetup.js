@@ -590,6 +590,44 @@ function applySwap(text, faction, characterName, oldUnit, newUnit) {
   return { ok: false, error: `unit '${oldUnit}' not found in ${characterName}'s army` };
 }
 
+// Append ONE unit into a settlement's garrison army in descr_strat text. CRLF-safe; mirrors
+// applySwap. Resolves settlementName→region (via regionToCity), finds the ;<settlement> (or
+// ;<region>) garrison comment within the faction block, walks to the next character's `army`,
+// and inserts after its last `unit` line (mirroring the tab format). RIS comments these blocks
+// with the SETTLEMENT name (;Paestum), not the region — so match settlement-first. No-garrison
+// towns (buildings only, no character) return an error rather than synthesising a character.
+// Returns { ok, text, insertedAtLine, anchor, newLine, error }.
+function applyAddGarrison(text, faction, settlementName, unitName, regionToCity) {
+  if (!text || !faction || !settlementName || !unitName) return { ok: false, error: "missing args" };
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  const lines = text.split(/\r?\n/);
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const sNorm = settlementName.trim().toLowerCase();
+  let region = null;
+  if (regionToCity) for (const [reg, city] of Object.entries(regionToCity)) if (city && city.trim().toLowerCase() === sNorm) { region = reg; break; }
+  let fStart = -1, fEnd = lines.length;
+  const facRe = new RegExp("^faction\\s+" + esc(faction) + "\\b", "i");
+  for (let i = 0; i < lines.length; i++) if (facRe.test(lines[i])) { fStart = i; break; }
+  if (fStart < 0) return { ok: false, error: `faction ${faction} not found` };
+  for (let i = fStart + 1; i < lines.length; i++) if (/^faction\s+\S/i.test(lines[i])) { fEnd = i; break; }
+  const cRe = new RegExp("^;\\s*(" + esc(sNorm) + (region ? "|" + esc(region.trim().toLowerCase()) : "") + ")\\s*$", "i");
+  let cIdx = -1;
+  for (let i = fStart; i < fEnd; i++) if (cRe.test(lines[i])) { cIdx = i; break; }
+  if (cIdx < 0) return { ok: false, error: `no garrison present at ${settlementName} — station a general or captain there first, then re-run.` };
+  let chIdx = -1;
+  for (let i = cIdx + 1; i < fEnd; i++) { const t = lines[i].trim(); if (/^character\b|^character,/i.test(t)) { chIdx = i; break; } if (/^;\s*\S/.test(t) || /^settlement\b/i.test(t)) break; }
+  if (chIdx < 0) return { ok: false, error: `no garrison character at ${settlementName}` };
+  let armyIdx = -1;
+  for (let i = chIdx + 1; i < fEnd; i++) { const t = lines[i].trim(); if (/^army\b/i.test(t)) { armyIdx = i; break; } if (/^character\b|^character,|^;\s*\S|^settlement\b/i.test(t)) break; }
+  if (armyIdx < 0) return { ok: false, error: `${settlementName}'s garrison has no army block` };
+  let lastUnit = -1;
+  for (let i = armyIdx + 1; i < fEnd; i++) { const t = lines[i].trim(); if (/^unit\b/i.test(t)) lastUnit = i; else if (t === "") { if (lastUnit >= 0) break; } else if (/^character\b|^character,|^;\s*\S|^settlement\b|^army\b/i.test(t)) break; }
+  if (lastUnit < 0) lastUnit = armyIdx;
+  const newLine = "unit\t\t" + unitName + "\t\t\texp 0 armour 0 weapon_lvl 0";
+  lines.splice(lastUnit + 1, 0, newLine);
+  return { ok: true, text: lines.join(eol), insertedAtLine: lastUnit + 1, anchor: ";" + settlementName + " → character army", newLine };
+}
+
 function parseUnitStatsLocal(modDataDir, cache) {
   if (cache.unitStats) return cache.unitStats;
   return (cache.unitStats = recruitPool.parseUnitStats(modDataDir));
@@ -616,7 +654,7 @@ function dominantBracket(saveBuf, cracked, faction) {
 
 module.exports = {
   TAX_BRACKETS, BRACKET_ORDER,
-  findDescrStrat, parseFaction, balanceOf, projectNet, analyzeFaction, listCampaignFactions, applySwap, applyUpgradeFix, attributeAllBudgets,
+  findDescrStrat, parseFaction, balanceOf, projectNet, analyzeFaction, listCampaignFactions, applySwap, applyUpgradeFix, applyAddGarrison, attributeAllBudgets,
   optimalTaxPlan, optimalBracketForBase, TAX_GROWTH_MOD, TAX_ORDER_DELTA,
   parseUnitStats: recruitPool.parseUnitStats,
   poolForSettlement: recruitPool.poolForSettlement,

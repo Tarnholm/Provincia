@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1203",
+    date: "2026-07-01",
+    items: [
+      { type: "feature", text: "**Garrison-fix suggestions now Apply to descr_strat.** The Suggestions panel's \"🛡 recruit 1× ‹unit›\" public-order fix used to be info-only; its button now actually writes that unit into the settlement's garrison army in the campaign descr_strat.txt — CRLF-safe, with a descr_strat.txt.provincia-bak backup, the same flow as the unit-swap apply. It appends the unit to the garrison character stationed at the town (e.g. Paestum's Statiis). If a town has no garrison character, it tells you to station a general/captain there first rather than risk a malformed entry. Reload the mod (🔄) or restart the game to see it." },
+    ],
+  },
+  {
     version: "0.9.1202",
     date: "2026-07-01",
     items: [

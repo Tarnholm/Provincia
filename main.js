@@ -6750,6 +6750,29 @@ ipcMain.handle("apply-army-swap", async (_event, modDataDir, faction, character,
   }
 });
 
+// IPC: add one unit to a settlement's garrison army in descr_strat (CRLF-safe, backup).
+ipcMain.handle("apply-add-garrison", async (_event, modDataDir, faction, settlementName, unitName) => {
+  try {
+    if (!modDataDir || !faction || !settlementName || !unitName) return { error: "missing args" };
+    const as = require("./src/armySetup.js");
+    const dg = require("./src/descrStratGeneral.js");
+    const p = as.findDescrStrat(modDataDir);
+    if (!p || !fs.existsSync(p)) return { error: "descr_strat.txt not found" };
+    let regionToCity = {};
+    try { const regPath = path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"); regionToCity = (dg.parseDescrRegions(fs.readFileSync(regPath, "utf8")) || {}).regionToCity || {}; } catch { }
+    const text = fs.readFileSync(p, "latin1");
+    const r = as.applyAddGarrison(text, faction, settlementName, unitName, regionToCity);
+    if (!r.ok) return { error: r.error };
+    try { fs.copyFileSync(p, p + ".provincia-bak"); } catch (e) { _writeLog(`[add-garrison] backup failed: ${e && e.message}`); }
+    fs.writeFileSync(p, r.text, "latin1");
+    _writeLog(`[add-garrison] ${faction} ${settlementName}: +1 "${unitName}" @line ${r.insertedAtLine} (${r.anchor})`);
+    return { ok: true, insertedAtLine: r.insertedAtLine, anchor: r.anchor, newLine: r.newLine, path: p };
+  } catch (e) {
+    _writeLog(`[add-garrison] failed: ${e && e.message}`);
+    return { error: e && e.message ? e.message : String(e) };
+  }
+});
+
 // IPC: zero illegitimate weapon/armour upgrades on a character's army (CRLF-safe, backup).
 ipcMain.handle("apply-upgrade-fix", async (_event, modDataDir, faction, character, opts) => {
   try {

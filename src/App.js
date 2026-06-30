@@ -23263,7 +23263,19 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                               <span style={{ flex: 1, color: s.ok ? "#dfe" : "#e8a07a" }}>{s.text}</span>
                               <button
                                 onClick={async () => {
-                                  if (s.garrison) { pushToast(`Recruit ${s.garrUnit ? s.garrUnit.n + "× " + s.garrUnit.unit : "the suggested unit"} at ${s.settlement} in-game to lift its public order — settlement garrisons aren't written to descr_strat from here.`, "info", 6500); return; }
+                                  if (s.garrison) {
+                                    if (!modDataDir) { alert("No mod loaded."); return; }
+                                    const gunit = s.garrUnit ? s.garrUnit.unit : null;
+                                    if (!gunit) { pushToast("No garrison unit suggested.", "info", 4000); return; }
+                                    if (!confirm(`Add 1× ${gunit} to ${s.settlement}'s garrison in descr_strat?\n\n(${d.faction}) Writes the campaign descr_strat.txt (a backup, descr_strat.txt.provincia-bak, is saved first). Reload the mod (🔄) or restart the game to see it.`)) return;
+                                    try {
+                                      const r = await window.electronAPI.applyAddGarrison(modDataDir, d.faction, s.settlement, gunit);
+                                      if (r && r.ok) { pushToast(`Added 1× ${gunit} to ${s.settlement}'s garrison (line ${r.insertedAtLine})`, "info", 6000); fetchFor(d.faction); }
+                                      else if (r && /no garrison present/i.test(r.error || "")) pushToast(`No garrison at ${s.settlement} — station a general or captain there first, then re-run.`, "info", 7000);
+                                      else alert("Add garrison failed: " + (r?.error || "unknown"));
+                                    } catch (e) { alert(e?.message || String(e)); }
+                                    return;
+                                  }
                                   if (!modDataDir) { alert("No mod loaded."); return; }
                                   const warn = s.ok ? "" : "\n\n⚠ This swap goes OVER your budget floor — apply anyway?";
                                   if (!confirm(`Apply this swap to descr_strat?\n\nIn ${s.character}'s army (${d.faction}):\n  ${s.oldUnit} → ${s.newUnit}${warn}\n\nWrites the campaign descr_strat.txt (a backup, descr_strat.txt.provincia-bak, is saved first). Reload the mod / restart the game to see it.`)) return;
