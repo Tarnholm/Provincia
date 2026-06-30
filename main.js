@@ -6660,11 +6660,11 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
             s.poAtSet = p.poAt[br] != null ? p.poAt[br] : p.poAt.normal;
             s.poAtLow = p.poAt.low;
           }
-          // Public order moves in 5-point steps in-game (each happiness/law source is 5%/pt), so
-          // snap the displayed value to the nearest 5 — the save-anchored path above carries the
-          // raw save PO (e.g. 93/108/153), which must read 95/110/155 to match the in-game scroll.
-          if (s.poAtSet != null) s.poAtSet = Math.round(s.poAtSet / 5) * 5;
-          if (s.poAtLow != null) s.poAtLow = Math.round(s.poAtLow / 5) * 5;
+          // Public order is NOT in 5-point steps — the culture penalty can be non-5 (Neapolis 88).
+          // Do NOT snap to 5; the save-anchored path carries the EXACT in-game PO. Integer-round
+          // only for clean display.
+          if (s.poAtSet != null) s.poAtSet = Math.round(s.poAtSet);
+          if (s.poAtLow != null) s.poAtLow = Math.round(s.poAtLow);
           // user bands 2026-06-11: 0-74 red, 75-84 orange, 85-99 light green, 100+ dark green.
           s.poRisk = s.poAtSet < 75 ? "red" : s.poAtSet < 85 ? "orange" : s.poAtSet < 100 ? "lightgreen" : "green";
           if (s.poRisk === "red") flagged++;

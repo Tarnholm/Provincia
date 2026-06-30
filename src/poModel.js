@@ -236,11 +236,16 @@ function computeStartingPO(modDataDir, faction, opts = {}) {
     // distance to capital
     const d = (c && capC) ? Math.hypot(c.x - capC.x, c.y - capC.y) : 0;
     const dist = Math.floor(Math.max(0, d - 10) * DIST_MULT / 5);
-    // culture penalty + leader-culture (−20 −10) unless colony ≥ 2 converted the settlement
+    // culture penalty, unless colony ≥ 2 converted the settlement: settlement-culture −20
+    // + faction-leader-culture-differs −10 + governor-culture-differs −5 = 35. (Cracked from
+    // the Neapolis in-game PO scroll 2026-07-01: −22 −10 −5 = −37; the flat 35 lands within ±2,
+    // the residual being the settlement-culture term which truly varies with the conversion %.
+    // The governor-differs −5 always applies here because the deterministic governor carries the
+    // owner faction's culture, which differs from a foreign settlement's official culture.)
     let colonyLvl = 0;
     for (const b of s.buildings) { const m = b.match(/^colony:.*?(\d+)?$/); if (m) colonyLvl = m[1] ? +m[1] : 1; }
     const foreign = !!(maj && facRel && maj !== facRel && colonyLvl < 2);
-    const cultPen = foreign ? 30 : 0;
+    const cultPen = foreign ? 35 : 0;
     const poNormal = 100 + 5 * (gar + law + hap + infl + health - sq - dist) - cultPen;
     const poAt = {};
     for (const b of Object.keys(TAX_ORDER_DELTA)) {

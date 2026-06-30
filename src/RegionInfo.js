@@ -1590,7 +1590,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             ? orderFields.publicOrder
             : (typeof happiness === "number" ? happiness : null);
           if (po == null) return null;
-          const pct = Math.round(po / 5) * 5;  // game shows public order in 5-point steps
+          const pct = Math.round(po);  // exact in-game PO (NOT 5-snapped — culture penalties make it non-5)
           // Same bands as the public-order map view.
           const color = pct > 100 ? "#3aa33a" : pct >= 85 ? "#7ed27e" : pct >= 75 ? "#e8a030" : "#e85050";
           return (

@@ -13723,7 +13723,7 @@ function App() {
       if (!saveHappinessByCity) return { label: "Public Order", value: "Live save required" };
       const v = saveHappinessByCity[info.city];
       if (typeof v !== "number") return { label: "Public Order", value: "No data" };
-      return { label: "Public Order", value: `${Math.round(v / 5) * 5} / 200` };
+      return { label: "Public Order", value: `${Math.round(v)} / 200` };
     }
     if (colorMode === "income") {
       if (saveIncomeByCity && saveIncomeByCity[info.city] && typeof saveIncomeByCity[info.city].perTurn === "number") {
@@ -23327,7 +23327,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           const own = owner[city] || null;
           if (focusFaction && own !== focusFaction) continue;
           if (!focusFaction && !own) continue;
-          const po = (f && typeof f.publicOrder === "number" && isFinite(f.publicOrder) && Math.abs(f.publicOrder) < 100000) ? Math.round(f.publicOrder / 5) * 5 : null;  // game shows PO in 5-point steps
+          const po = (f && typeof f.publicOrder === "number" && isFinite(f.publicOrder) && Math.abs(f.publicOrder) < 100000) ? Math.round(f.publicOrder) : null;  // exact save PO (NOT 5-snapped: the culture penalty can be non-5, e.g. 88)
           const inc = (f && typeof f.income === "number") ? f.income : null;
           const grow = (f && f.populationGrowth != null && f.committedPopulation) ? (f.populationGrowth / f.committedPopulation * 100) : null;
           const tax = (f && f.taxRate != null) ? f.taxRate : null;

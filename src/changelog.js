@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1204",
+    date: "2026-07-01",
+    items: [
+      { type: "fix", text: "**Public order shows its true value again — no more 5-point snapping.** Public order is NOT in 5% steps: culture penalties are non-multiples-of-5 (a settlement's −22% culture hit lands it on 88, not 90). The 5%-snap added earlier (on a mistaken read that it was 5-stepped) was clobbering the real save values; it's reverted on every save-based PO readout — Economy Audit, the settlement info panel, the Public Order map hover, and the army-setup column — so they show the exact in-game public order again." },
+      { type: "improvement", text: "**Public-order model: governor-culture-differs penalty added.** Cracked from an in-game PO scroll: the component model lumped culture as a flat −30 (settlement + faction-leader) and was missing the −5 'governor's culture differs from the settlement's' line. It now applies that −5 for foreign-owned settlements, bringing e.g. Neapolis from 95 to 90 — within 2 of the in-game 88 (the residual is the settlement-culture term, which truly varies with the conversion %)." },
+    ],
+  },
+  {
     version: "0.9.1203",
     date: "2026-07-01",
     items: [
