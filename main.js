@@ -6623,6 +6623,24 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
           opts && opts.govEffectByCity ? { govEffectByCity: opts.govEffectByCity } : {});
         const POD = { low: 0, normal: -30, high: -50, very_high: -70 };
         let flagged = 0, exactN = 0;
+        // Garrison-fix unit recommender: the cheapest GATED garrison-infantry unit (full RIS
+        // recruitability via poolForSettlement — never bypass it) that covers a town's men-gap to
+        // PO 85. men/unit = EDU soldiers ×4 (HUGE size, matching the garrison law). Shared cache so
+        // EDB/EDU/descr_regions parse once for the whole faction, not once per town.
+        const _garrCache = {};
+        const _recommendGarrisonUnit = (buildings, regionName, menGap) => {
+          const rp = require("./src/recruitPool.js");
+          const pool = rp.poolForSettlement(modDataDir, faction, buildings, regionName, _garrCache);
+          if (!pool || !pool.length) return null;
+          const us = rp.parseUnitStats(modDataDir) || {};
+          const cands = pool.map(u => ({ unit: u.unit, upkeep: u.upkeep, category: u.category, soldiers: (us[u.unit.toLowerCase()] || {}).soldiers }))
+            .filter(u => u.category === "infantry" && u.soldiers && u.upkeep != null && !/general|bodyguard|captain/i.test(u.unit))
+            .sort((a, b) => (a.upkeep - b.upkeep) || ((b.soldiers || 0) - (a.soldiers || 0)));
+          if (!cands.length) return null;
+          const best = cands[0], menPerUnit = best.soldiers * 4;
+          const n = Math.max(1, Math.round(menGap / menPerUnit));  // round (not ceil): 1 unit that lands near the band is "good enough"
+          return { unit: best.unit, n, soldiers: best.soldiers, menPerUnit, upkeep: best.upkeep, totalUpkeep: n * best.upkeep };
+        };
         for (const s of budget.settlements) {
           const br = s.optimalBracket || "normal";
           // The save's stored PO is exact ONLY for the save's own PLAYER faction; for every
@@ -6656,6 +6674,8 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
           if ((s.poRisk === "red" || s.poRisk === "orange") && s.pop) {
             const target = 85;
             s.garrisonFixMen = Math.max(40, Math.ceil((target - s.poAtSet) / 350 * s.pop / 10) * 10);
+            // name a concrete fix: cheapest gated garrison-infantry unit covering the gap
+            try { const gu = _recommendGarrisonUnit(s.buildings, s.region, s.garrisonFixMen); if (gu) { gu.poAfter = Math.min(200, Math.round((s.poAtSet + gu.n * gu.menPerUnit * 350 / s.pop) / 5) * 5); s.garrisonUnit = gu; } } catch { }
           }
         }
         if (exactN) _writeLog(`[turn1-budget] ${faction}: PO anchored EXACT from calibration save for ${exactN} towns`);

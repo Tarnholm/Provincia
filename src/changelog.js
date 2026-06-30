@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1201",
+    date: "2026-07-01",
+    items: [
+      { type: "feature", text: "**Garrison fix now names a unit.** A revolt-risk settlement's ⚔ suggestion used to read an abstract '+180m'; it now recommends a SPECIFIC unit — the cheapest infantry actually recruitable there (full RIS gating, never a unit you can't build) that lifts public order toward the safe band, e.g. Paestum → 'add 1× roman leves'. The count rounds (one unit that lands near 85 is good enough, rather than two that overshoot); the tooltip shows the resulting public order, the men added, and the upkeep. Falls back to '+Nm' if the gated pool has no infantry." },
+    ],
+  },
+  {
     version: "0.9.1200",
     date: "2026-06-30",
     items: [

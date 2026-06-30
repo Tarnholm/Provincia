@@ -2579,6 +2579,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const sqPips = Math.floor(effPop / 1500);
     const plagueRiskPct = sqPips > 3 ? Math.max(0, ((sqPips - 3) - 2 * (s.healthPips || 0)) / 20) * 100 : 0;
     sets.push({ settlement: s.settlement, region: s.region, pop: s.pop, level: s.level, capital: s.capital,
+      buildings: s.buildings,  // chain:level list — feeds the handler's garrison-unit recommender (mic tier gating)
       // taxParts: pre-H bracket decomposition (tax(b) = max(0, mult_b·w + flat));
       // taxH: the applied per-campaign calibration multiplier (null = uncalibrated)
       taxParts: { w: taxW, flat: taxFlat }, taxH: taxH != null ? taxH : null,
