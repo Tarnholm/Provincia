@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1199",
+    date: "2026-06-30",
+    items: [
+      { type: "fix", text: "**Army-setup settlement table — public order now snaps to 5 with a calibration save attached.** The 'PO @ set' column's save-anchored path was carrying the raw save value (e.g. 93, 108, 153); it now reads in 5-point steps (95, 110, 155) like every other PO readout, matching the in-game scroll. (The earlier 5-snap pass missed this one because it's computed in the IPC handler, not the renderer.)" },
+    ],
+  },
+  {
     version: "0.9.1198",
     date: "2026-06-30",
     items: [
