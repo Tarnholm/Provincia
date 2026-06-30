@@ -6482,7 +6482,7 @@ function _modCopyWarning(modDataDir) {
 // land/sea fit, wages 200×named+50×admiral, corruption 6.43×Σdist-to-capital).
 // Validated vs the 10-faction turn-1 corpus: median |budget err| 7%, worst 27%.
 // Returns computeTurn1Budget() + per-settlement optimalBracket/growth merged in.
-ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath, asAI, taxH, corr) => {
+ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath, asAI, taxH, corr, humanDifficulty) => {
   try {
     if (!modDataDir || !faction) return { error: "modDataDir + faction required" };
     const gm = require("./src/growthModel.js");
@@ -6554,7 +6554,12 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
     // deliberate in-game choice the app should respect over its own recommendation.
     // live julii4: pure optimal {vhigh:5 high:1 low:15 norm:5} → taxes 9398, which the
     // game reproduces once those rates are set (the 9215 screenshot was pre-plan).
-    if (setBracketByCity) for (const c of Object.keys(setBracketByCity)) {
+    // ALL-HUMAN balance mode (humanDifficulty:"normal") measures every faction at its
+    // 0-growth-OPTIMAL taxes, so it must NOT honor save-set brackets — with a save attached
+    // those are the OTHER factions' AI-set (often Low-for-growth) choices, not the optimal
+    // the harness is comparing (this was reading Rome at AI-Low taxes 6810 vs optimal 10465).
+    // Other modes keep a player's deliberate in-game tax choice (a non-default save bracket).
+    if (setBracketByCity && humanDifficulty !== "normal") for (const c of Object.keys(setBracketByCity)) {
       if (setBracketByCity[c] && setBracketByCity[c] !== "normal") bracketByCity[c] = setBracketByCity[c];
     }
     if (pf && pf.settlements) {
@@ -6592,7 +6597,7 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
         ...(opts && opts.popByCity ? { popByCity: opts.popByCity } : {}),
         ...(nTaxH ? { taxHByCity: taxH } : {}),
         ...(nCorr ? { corrByCity: corr } : {}),
-        ...(asAI ? { asAI: true, isPlayer: false } : {}) });
+        ...(asAI ? { asAI: true, isPlayer: false } : (humanDifficulty === "normal" ? { humanDifficulty: "normal" } : {})) });
     if (budget && !budget.error) budget.asAI = !!asAI;
     if (budget && !budget.error) {
       for (const s of budget.settlements) {

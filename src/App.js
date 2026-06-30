@@ -9693,11 +9693,12 @@ function App() {
   // the whole campaign's randomness for every faction.
   const [armyCalibSave, setArmyCalibSave] = useState(() => localStorage.getItem("armyCalibSave") || "");
   useEffect(() => { try { if (armyCalibSave) localStorage.setItem("armyCalibSave", armyCalibSave); else localStorage.removeItem("armyCalibSave"); } catch { } }, [armyCalibSave]);
-  // model perspective: 👤 human-player rules (H/H ×0.92 income) vs 🤖 AI rules
-  // (no human malus + the tiered empire-size income bonus) — the campaign reality
-  // for every faction except the one the tester actually plays.
-  const [armyAsAI, setArmyAsAI] = useState(() => localStorage.getItem("armyAsAI") === "1");
-  useEffect(() => { try { localStorage.setItem("armyAsAI", armyAsAI ? "1" : "0"); } catch { } }, [armyAsAI]);
+  // model perspective, 3-way: 🧑 all-human Normal (no 0.92 malus, no AI bonus — what each
+  // faction makes if YOU played it on Normal with manual taxes; the balance-harness default) ·
+  // 👤 player Hard (H/H ×0.92) · 🤖 AI rules (no malus + tiered empire-size bonus, the campaign
+  // reality for every faction except the one the tester actually plays).
+  const [armyEcoMode, setArmyEcoMode] = useState(() => localStorage.getItem("armyEcoMode") || "human");
+  useEffect(() => { try { localStorage.setItem("armyEcoMode", armyEcoMode); } catch { } }, [armyEcoMode]);
   // Tax plan computed from the mod files (live-verified exact; the save-based
   // two-save flow was removed 2026-06-10 — the no-save model IS the planner).
   const [armyStratPlan, setArmyStratPlan] = useState(null);
@@ -22754,7 +22755,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           // per-campaign tax + corruption calibration: persisted per modDir+faction
           const taxH = taxCalibStored(modDataDir, ff);
           const corrCal = corrCalibStored(modDataDir, ff);
-          const t1Promise = ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, calib || undefined, armyAsAI || undefined, taxH || undefined, corrCal || undefined), "turn-1 budget");
+          const t1Promise = ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, calib || undefined, armyEcoMode === "ai" || undefined, taxH || undefined, corrCal || undefined, armyEcoMode === "human" ? "normal" : undefined), "turn-1 budget");
           // auto-compute the tax plan too (no button press needed)
           const planPromise = ipcWithTimeout(window.electronAPI.getStratTaxPlan?.(modDataDir, ff, calib || undefined), "strat tax plan");
           try {
@@ -22795,7 +22796,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
               // exist in this scope — so the whole overview died on a ReferenceError
               // (silently: try/finally without catch) the moment it was clicked.
               // The overview honors the attached calibration save like fetchFor does.
-              const t1 = await ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined, armyAsAI || undefined, taxCalibStored(modDataDir, ff) || undefined, corrCalibStored(modDataDir, ff) || undefined), "turn-1 budget (" + ff + ")");
+              const t1 = await ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined, armyEcoMode === "ai" || undefined, taxCalibStored(modDataDir, ff) || undefined, corrCalibStored(modDataDir, ff) || undefined, armyEcoMode === "human" ? "normal" : undefined), "turn-1 budget (" + ff + ")");
               if (t1 && t1.error) setArmyOverview(prev => ({ ...(prev || {}), error: t1.error }));
               if (t1 && !t1.error && t1.totals) {
                 const row = { fac: ff, ...t1.totals, towns: t1.settlements?.length || 0 };
@@ -22827,12 +22828,14 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                   </button>
                   {armyOverview && !armyOverview.busy && <button onClick={() => setArmyOverview(null)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.2)", color: "#9aa", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>hide</button>}
                   <button
-                    onClick={() => { const next = !armyAsAI; setArmyAsAI(next); pushToast(next ? "Modeling factions under AI rules (no human income malus + empire-size bonus)" : "Modeling factions under human-player rules (H/H ×0.92 income)", "info", 4500); if (fac) setTimeout(() => fetchFor(fac), 0); }}
-                    title={armyAsAI
-                      ? "Currently modeling every faction under AI RULES: no 0.92 human income malus, plus the tiered empire-size AI income bonus (≈×1.8 for city-states down to ×1.0 for big empires — cracked from 215 AI ledgers). Click for human-player rules."
-                      : "Currently modeling every faction under HUMAN-PLAYER rules (H/H: 92% tax+farm income, no AI bonus). Click to model them as the AI actually plays them — usually the right view for campaign balance, since all but one faction are AI."}
-                    style={{ background: armyAsAI ? "rgba(120,140,200,0.25)" : "rgba(60,60,60,0.7)", color: armyAsAI ? "#9fb6e8" : "#9ab", border: "1px solid " + (armyAsAI ? "#5a72b0" : "rgba(255,255,255,0.25)"), borderRadius: 5, padding: "2px 10px", cursor: "pointer", fontSize: "0.74rem" }}>
-                    {armyAsAI ? "🤖 AI rules" : "👤 player rules"}
+                    onClick={() => { const order = ["human", "player", "ai"]; const next = order[(order.indexOf(armyEcoMode) + 1) % order.length]; setArmyEcoMode(next); pushToast(next === "ai" ? "Modeling factions under AI rules (no human malus + empire-size bonus)" : next === "human" ? "Modeling factions all-human at Normal (no 0.92 malus, no AI bonus) — the 'if you played each' view" : "Modeling factions under human-player HARD rules (H/H ×0.92 income)", "info", 4500); if (fac) setTimeout(() => fetchFor(fac), 0); }}
+                    title={armyEcoMode === "ai"
+                      ? "AI RULES: no 0.92 human income malus + the tiered empire-size AI income bonus (≈×1.8 city-states → ×1.0 big empires, from 215 AI ledgers). Click to cycle → player (Hard)."
+                      : armyEcoMode === "human"
+                      ? "ALL-HUMAN, NORMAL: no 0.92 malus, no AI bonus — what each faction makes if YOU played it on Normal and set taxes by hand (the balance-harness view). Click to cycle → AI rules."
+                      : "HUMAN-PLAYER, HARD (H/H: 92% tax+farm income, no AI bonus). Click to cycle → all-human."}
+                    style={{ background: armyEcoMode === "ai" ? "rgba(120,140,200,0.25)" : armyEcoMode === "human" ? "rgba(90,150,110,0.22)" : "rgba(60,60,60,0.7)", color: armyEcoMode === "ai" ? "#9fb6e8" : armyEcoMode === "human" ? "#9ed6ad" : "#9ab", border: "1px solid " + (armyEcoMode === "ai" ? "#5a72b0" : armyEcoMode === "human" ? "#4a9a6a" : "rgba(255,255,255,0.25)"), borderRadius: 5, padding: "2px 10px", cursor: "pointer", fontSize: "0.74rem" }}>
+                    {armyEcoMode === "ai" ? "🤖 AI rules" : armyEcoMode === "human" ? "🧑 all-human" : "👤 player (Hard)"}
                   </button>
                   <button
                     onClick={async () => {

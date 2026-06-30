@@ -8,6 +8,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1196",
+    date: "2026-06-30",
+    items: [
+      { type: "feature", text: "**Army Setup → Balance overview: each faction's economy at optimal taxes, all-human.** New 3-way perspective toggle — 🧑 all-human (the new default) · 👤 player (Hard) · 🤖 AI rules. All-human lists every faction's income, sustainable army budget and net at its 0-growth-optimal taxes, computed as if YOU played it on Normal and set its taxes by hand — so you can size armies to each faction's real economy without opening every campaign. Attach a turn-1 save (🎯) for governor-accurate numbers." },
+      { type: "improvement", text: "**Capital tax — the Roman capital now lands exact.** The capital tax was over-reading the Roman capital by roughly 3×. Cracked from the map and building data (four capital settlement scrolls spanning small, mid and the largest empires): the capital tax multiplier was stale, capitals follow the pre-cliff populace curve, and the Roman capital carries a tax-base term the building files don't express — and it is NOT an empire-size effect (the 115-region Seleucids read the *highest* multiplier). Rome's turn-1 economy lands to the denarius; validated across all 217 factions' capitals with no negatives; vanilla stays 25/25." },
+      { type: "fix", text: "**Army upkeep — bodyguards counted correctly on modded campaigns.** The faction-leader/heir bodyguard double-cost was being missed because the modded character records separate the name with a tab rather than a comma; the upkeep now matches in-game." },
+      { type: "fix", text: "**Balance overview uses optimal taxes; admin un-malused on Normal.** In all-human mode the overview ignores a loaded save's set tax rates and uses each faction's 0-growth-optimal brackets, and the governor-admin income line drops the Hard-difficulty 0.92 malus." },
+    ],
+  },
+  {
     version: "0.9.1195",
     date: "2026-06-26",
     items: [

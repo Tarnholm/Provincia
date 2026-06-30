@@ -3298,7 +3298,7 @@
 			"loading screen icon": "data/ui/faction_icons/aulerci.tga",
 
 			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       39,
+			"standard index":       200,
 			"rebel standard index": 39,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
@@ -3925,7 +3925,7 @@
 			"loading screen icon": "data/ui/faction_icons/bituriges.tga",
 
 			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       50,
+			"standard index":       202,
 			"rebel standard index": 39,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
@@ -18520,11 +18520,11 @@
 			"loading screen icon": "data/ui/faction_icons/veneti_gallia.tga",
 
 			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       39,
+			"standard index":       201,
 			"rebel standard index": 39,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       47,
+			"logo index":       199,
 			"rebel logo index": 47,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied

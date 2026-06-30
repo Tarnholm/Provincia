@@ -301,7 +301,7 @@ function armyUpkeepEDU(modDataDir, faction) {
     const m = ln.match(/^faction\s+([a-z_0-9]+)\s*,/i);
     if (m) { inWanted = m[1].toLowerCase() === want; continue; }
     if (!inWanted) continue;
-    if (/^character,.*named character/i.test(ln)) {
+    if (/^character[\s,].*named character/i.test(ln)) {   // RIS writes `character\tName, named character` (tab, not comma) — match tab/space too, else every general's bodyguard is misread as a regular unit and the leader/heir miss the ×2
       pendingNamed = true;
       pendingLH = /,\s*(leader|heir)\s*,/i.test(ln);
       pendingCmd = 0;
@@ -2098,7 +2098,12 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // NOTE: building taxable coefficients beyond region_base are still being calibrated — full-building
     // cities (Carthage) are WIP until each building's pts contribution is measured & corrected.
     const _pp = Math.max(400, s.pop);
-    const _pbT = _pp >= CALIB.taxCliffPop ? CALIB.popBasePost : CALIB.popBasePre;
+    // RIS capital-tax calibration (from the map/data files + 4 capital settlement scrolls,
+    // 2026-06-30: Athens/Kyrene/Seleucia/Rome). The capital tax multiplier is ~31.3 (not 40),
+    // capitals track the PRE-cliff populace curve, and the Roman capital carries a ~123-denarius
+    // tax-base suppression the EDB does not express. Vanilla (map < 0x7b) keeps ×40 / cliff intact.
+    const _ris = _mapVer(modDataDir) >= 0x7b;
+    const _pbT = (_pp >= CALIB.taxCliffPop && !(_ris && s.capital)) ? CALIB.popBasePost : CALIB.popBasePre;
     let _pb;
     if (_pp <= _pbT[0][0]) _pb = _pbT[0][1];
     else { let _hit = false; for (let i = 1; i < _pbT.length; i++) { if (_pp <= _pbT[i][0]) { const [x0, y0] = _pbT[i - 1], [x1, y1] = _pbT[i]; _pb = y0 + (y1 - y0) * (_pp - x0) / (x1 - x0); _hit = true; break; } } if (!_hit) { const [x0, y0] = _pbT[_pbT.length - 2], [x1, y1] = _pbT[_pbT.length - 1]; _pb = y1 + (y1 - y0) * (_pp - x1) / (x1 - x0); } }
@@ -2119,11 +2124,11 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // empire-size penalties dominate) wrongly drove the capital's tax to 0 (live: Alexandria pays 481,
     // model gave 0). So on a negative taxablePct the capital falls back to the ×4 non-capital rate.
     // Small-empire capitals (positive taxablePct) are unchanged. (Live Ptolemaic turn-1, 2026-06-21.)
-    const _M = _capTax ? (s.taxablePct >= 0 ? 40 : 4) : (F.tier <= 2 ? 40 : 4);
+    const _M = _capTax ? (s.taxablePct >= 0 ? (_ris ? 31.32 : 40) : 4) : (F.tier <= 2 ? 40 : 4);
     // taxablePct (region_base + building points) × _M. The "40/pt for region_base only" split was
     // tested (s.taxableRegionBase / s.taxableBuilding are exposed for it) but every building-multiplier
     // traded factions on the current corpus — the big-empire under-tax needs per-city scrolls to pin.
-    const _flatPts = _M * s.taxablePct;
+    const _flatPts = _M * s.taxablePct + (_ris && _capTax && /^romans?_/.test(F.faction) ? -123 : 0);
     // RATE BEHAVIOR differs by capital (live Cyrene tax-rate reads, 2026-06-17):
     //   CAPITAL  → multiplicative: tax = rate·(popBase + M·Σ)·gov  (the points scale with rate).
     //             Kyrene V.High 1172 = 1.5·(842+200)·0.75 (additive would give 1097).
@@ -2610,8 +2615,24 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     trade *= CALIB.aiFarmBonus * (CALIB.aiTradeFixByTier[F.tier] != null ? CALIB.aiTradeFixByTier[F.tier] : 1.0);
     corruption = Math.round(corruption / CALIB.difficultyIncome * CALIB.aiFarmBonus * (CALIB.aiCorrFixByTier[F.tier] != null ? CALIB.aiCorrFixByTier[F.tier] : 1.0));
     admin = Math.round(admin * (CALIB.aiAdminFixByTier[F.tier] != null ? CALIB.aiAdminFixByTier[F.tier] : 1.0));
+  } else if (opts && opts.humanDifficulty === "normal") {
+    // NORMAL difficulty (human): no 0.92 income malus — Hard/V.Hard only, but the base
+    // lines bake in H/H. Un-divide it from every income line that scales with it: farming,
+    // taxes, admin and corruption (all ride the populace gross). Validated per-town vs the
+    // 26 Julii settlement scrolls (farm exact; admin within ±3/town once un-Hard'd).
+    taxes = taxes / CALIB.difficultyIncome;
+    farming = farming / CALIB.difficultyIncome;
+    admin = admin / CALIB.difficultyIncome;
+    corruption = Math.round(corruption / CALIB.difficultyIncome);
   }
   admin = Math.floor(admin); // faction admin line truncates like the rest
+  // SAVE-AWARE 'other' income (governor-admin + tribute; the engine recalculates it at
+  // end-of-turn). When a save provides the live value, count it verbatim instead of the
+  // modeled admin — the figure the user sees right now — and suppress the fabricated
+  // client-net tribute estimate (the tribute block below is gated on this too).
+  if (opts && opts.storedOtherIncome != null && Number.isFinite(opts.storedOtherIncome)) {
+    admin = Math.floor(opts.storedOtherIncome);
+  }
   const income = Math.round(taxes + farming + mining + trade + admin);
   const army = armyUpkeepEDU(modDataDir, faction);
   const preNet = army ? (income - wages - corruption - army.upkeep) : null;
@@ -2620,7 +2641,10 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   // the AI's actual taxes vary, so this is a magnitude, not denarius-exact).
   // Clients: − half of own profit (only when profitable; deficits pay nothing).
   let tributeIn = 0, tributeOut = 0, suzerain = null, clients = null;
-  if (!(opts && opts._noTribute)) {
+  // When the save's live 'other' income is supplied it already includes the real
+  // tribute (which the engine recalculates at end-of-turn), so don't fabricate a
+  // separate client-net estimate on top of it — that was inflating netAfterTribute.
+  if (!(opts && (opts._noTribute || opts.storedOtherIncome != null))) {
     const prot = parseProtectorates(modDataDir);
     const fac = F.faction;
     if (prot.clientsOf[fac]) {
