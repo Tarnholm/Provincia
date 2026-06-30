@@ -7431,6 +7431,21 @@ ipcMain.handle("calibrate-from-save", async (_event, savePath) => {
   }
 });
 
+ipcMain.handle("select-save-files", async (_event, saveDir) => {
+  // Multi-select variant of select-save-file: pick 1+ turn-1 saves so the Army-Setup
+  // Balance overview can median each faction's economy across them, smoothing the
+  // engine's per-campaign governor-trait randomness. Returns { paths: [...] } or null.
+  const normalised = saveDir ? path.normalize(saveDir) : undefined;
+  const result = await dialog.showOpenDialog({
+    defaultPath: normalised,
+    filters: [{ name: "Rome save files", extensions: ["sav"] }],
+    properties: ["openFile", "multiSelections"],
+    title: "Pick one or more turn-1 saves — the overview medians across them",
+  });
+  if (result.canceled || !result.filePaths.length) return null;
+  return { paths: result.filePaths };
+});
+
 ipcMain.handle("select-save-file", async (_event, saveDir) => {
   // Normalise to the platform's path separator — Electron's defaultPath
   // honours mixed slashes on Windows but forward slashes alone sometimes

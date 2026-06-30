@@ -198,6 +198,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getLatestSaveMtime: (saveDir) => ipcRenderer.invoke("get-latest-save-mtime", saveDir),
   listSaves: (saveDir) => ipcRenderer.invoke("list-saves", saveDir),
   selectSaveFile: (saveDir) => ipcRenderer.invoke("select-save-file", saveDir),
+  selectSaveFiles: (saveDir) => ipcRenderer.invoke("select-save-files", saveDir),
   calibrateFromSave: (savePath) => ipcRenderer.invoke("calibrate-from-save", savePath),
   saveWatchStop: () => ipcRenderer.invoke("save-watch-stop"),
   saveCheckNow: () => ipcRenderer.invoke("save-check-now"),

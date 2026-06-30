@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1197",
+    date: "2026-06-30",
+    items: [
+      { type: "feature", text: "**Balance overview — median across multiple saves.** The 🎯 calibration picker now takes several turn-1 saves at once, and the overview shows each faction's per-metric MEDIAN across them. The engine re-rolls every faction's governor personalities at each campaign start (≈±3% on income), so any one save is just that campaign's dice — the median across 3–4 saves is the representative economy to balance armies against. One save still behaves exactly as before." },
+      { type: "fix", text: "**Public order shown in 5-point steps.** Public order changes 5% at a time in-game (each happiness/law source is 5% per point), but the Economy Audit was printing the raw stored value (e.g. 93, 108). It now snaps to the nearest 5 (95, 110) to match the in-game settlement scroll." },
+    ],
+  },
+  {
     version: "0.9.1196",
     date: "2026-06-30",
     items: [

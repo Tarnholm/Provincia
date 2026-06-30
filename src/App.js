@@ -9691,8 +9691,11 @@ function App() {
   // (incl. start-randomized personalities, ~1000 characters / 798 governed settlements)
   // replace the descr_strat seeds in the growth + income models — one save calibrates
   // the whole campaign's randomness for every faction.
-  const [armyCalibSave, setArmyCalibSave] = useState(() => localStorage.getItem("armyCalibSave") || "");
-  useEffect(() => { try { if (armyCalibSave) localStorage.setItem("armyCalibSave", armyCalibSave); else localStorage.removeItem("armyCalibSave"); } catch { } }, [armyCalibSave]);
+  // 1+ calibration saves. Multiple → the Balance overview shows the per-faction MEDIAN
+  // across them, smoothing the engine's per-campaign governor-trait randomness (±~3%).
+  const [armyCalibSaves, setArmyCalibSaves] = useState(() => { try { const a = JSON.parse(localStorage.getItem("armyCalibSaves") || "null"); if (Array.isArray(a) && a.length) return a; } catch { } const one = localStorage.getItem("armyCalibSave"); return one ? [one] : []; });
+  useEffect(() => { try { if (armyCalibSaves.length) localStorage.setItem("armyCalibSaves", JSON.stringify(armyCalibSaves)); else localStorage.removeItem("armyCalibSaves"); } catch { } }, [armyCalibSaves]);
+  const armyCalibSave = armyCalibSaves[0] || "";  // primary save — single-faction panel + labels read this
   // model perspective, 3-way: 🧑 all-human Normal (no 0.92 malus, no AI bonus — what each
   // faction makes if YOU played it on Normal with manual taxes; the balance-harness default) ·
   // 👤 player Hard (H/H ×0.92) · 🤖 AI rules (no malus + tiered empire-size bonus, the campaign
@@ -22791,15 +22794,23 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           setArmyOverview({ busy: true, rows: [], error: null, prevByFac, prevAt: (() => { try { return JSON.parse(localStorage.getItem("armyOverviewPrev:" + modDataDir) || "null")?.at || null; } catch { return null; } })() });
           const done = [];
           try {
+            // Median-across-saves: per faction, run the budget under EACH calibration save
+            // and take the per-metric median — one save is ±~3% (random governor rolls), the
+            // median across several smooths it. With 0/1 save this is just the single result.
+            const calibList = armyCalibSaves.length ? armyCalibSaves : [undefined];
+            const medOf = (arr) => { const v = arr.filter(x => typeof x === "number" && isFinite(x)).sort((a, b) => a - b); if (!v.length) return undefined; const m = Math.floor(v.length / 2); return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; };
             for (const ff of facList) {
-              // 0.9.1095 BUGFIX: this read `calib` — a fetchFor-local that does NOT
-              // exist in this scope — so the whole overview died on a ReferenceError
-              // (silently: try/finally without catch) the moment it was clicked.
-              // The overview honors the attached calibration save like fetchFor does.
-              const t1 = await ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, armyCalibSave || undefined, armyEcoMode === "ai" || undefined, taxCalibStored(modDataDir, ff) || undefined, corrCalibStored(modDataDir, ff) || undefined, armyEcoMode === "human" ? "normal" : undefined), "turn-1 budget (" + ff + ")");
-              if (t1 && t1.error) setArmyOverview(prev => ({ ...(prev || {}), error: t1.error }));
-              if (t1 && !t1.error && t1.totals) {
-                const row = { fac: ff, ...t1.totals, towns: t1.settlements?.length || 0 };
+              // The overview honors the attached calibration save(s) like fetchFor does.
+              const perSave = [];
+              for (const sv of calibList) {
+                const t1 = await ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, sv || undefined, armyEcoMode === "ai" || undefined, taxCalibStored(modDataDir, ff) || undefined, corrCalibStored(modDataDir, ff) || undefined, armyEcoMode === "human" ? "normal" : undefined), "turn-1 budget (" + ff + (sv ? " · " + sv.split(/[\\/]/).pop().slice(0, 10) : "") + ")");
+                if (t1 && t1.error) setArmyOverview(prev => ({ ...(prev || {}), error: t1.error }));
+                if (t1 && !t1.error && t1.totals) perSave.push(t1);
+              }
+              if (perSave.length) {
+                const keys = new Set(); perSave.forEach(t => Object.keys(t.totals).forEach(k => { if (typeof t.totals[k] === "number") keys.add(k); }));
+                const medTotals = {}; for (const k of keys) { const mv = medOf(perSave.map(t => t.totals[k])); if (mv !== undefined) medTotals[k] = mv; }
+                const row = { fac: ff, ...medTotals, towns: perSave[0].settlements?.length || 0, nSaves: perSave.length };
                 done.push(row);
                 setArmyOverview(prev => ({ ...(prev || {}), busy: true, rows: [...((prev && prev.rows) || []), row] }));
               }
@@ -22839,17 +22850,18 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                   </button>
                   <button
                     onClick={async () => {
-                      if (armyCalibSave) { setArmyCalibSave(""); pushToast("Calibration save cleared — back to descr_strat seeds", "info", 4000); if (fac) fetchFor(fac, ""); return; }
+                      if (armyCalibSaves.length) { setArmyCalibSaves([]); pushToast("Calibration saves cleared — back to descr_strat seeds", "info", 4000); if (fac) fetchFor(fac, ""); return; }
                       try {
-                        const r = await window.electronAPI.selectSaveFile?.();
-                        if (r && r.path) { setArmyCalibSave(r.path); pushToast("Calibration save set — governor traits (incl. start-randomized personalities) now come from this save for ALL factions", "info", 6000); if (fac) fetchFor(fac, r.path); }
+                        const r = await window.electronAPI.selectSaveFiles?.();
+                        const paths = (r && Array.isArray(r.paths)) ? r.paths : (r && r.path ? [r.path] : []);
+                        if (paths.length) { setArmyCalibSaves(paths); pushToast(paths.length > 1 ? `${paths.length} calibration saves set — the Balance overview shows the per-faction MEDIAN across them (smooths the ±governor-trait randomness)` : "Calibration save set — governor traits now come from this save for ALL factions", "info", 6000); if (fac) fetchFor(fac, paths[0]); }
                       } catch { }
                     }}
-                    title={armyCalibSave
-                      ? `Calibration save active: ${armyCalibSave.split(/[\\/]/).pop()}\nThe save's world-wide governor traits (incl. the personality traits the engine randomizes at campaign start) replace the descr_strat seeds in the growth + income models, for every faction. Click to clear.`
-                      : "Pick a FRESH TURN-1 save as a calibration source: the engine randomizes personality traits (charisma/intelligence/energy) at campaign start, and the save records the actual roll for all ~1000 characters — one save pins the whole campaign's randomness for every faction."}
-                    style={{ background: armyCalibSave ? "rgba(143,180,110,0.25)" : "rgba(60,60,60,0.7)", color: armyCalibSave ? "#b8d38f" : "#9ab", border: "1px solid " + (armyCalibSave ? "#7a9a5a" : "rgba(255,255,255,0.25)"), borderRadius: 5, padding: "2px 10px", cursor: "pointer", fontSize: "0.74rem" }}>
-                    🎯 {armyCalibSave ? "calibrated: " + armyCalibSave.split(/[\\/]/).pop().replace(/\.sav$/i, "").slice(0, 28) + " ✕" : "calibration save…"}
+                    title={armyCalibSaves.length
+                      ? `${armyCalibSaves.length} calibration save${armyCalibSaves.length > 1 ? "s" : ""} active${armyCalibSaves.length > 1 ? " — the overview shows the per-faction median across them" : ""}:\n${armyCalibSaves.map(s => s.split(/[\\/]/).pop()).join("\n")}\nClick to clear.`
+                      : "Pick one or MORE fresh turn-1 saves as calibration: the engine randomizes personality traits at campaign start and each save records that campaign's roll. Pick several and the Balance overview medians across them, smoothing the per-campaign noise."}
+                    style={{ background: armyCalibSaves.length ? "rgba(143,180,110,0.25)" : "rgba(60,60,60,0.7)", color: armyCalibSaves.length ? "#b8d38f" : "#9ab", border: "1px solid " + (armyCalibSaves.length ? "#7a9a5a" : "rgba(255,255,255,0.25)"), borderRadius: 5, padding: "2px 10px", cursor: "pointer", fontSize: "0.74rem" }}>
+                    🎯 {armyCalibSaves.length ? (armyCalibSaves.length > 1 ? `${armyCalibSaves.length} saves (median) ✕` : "calibrated: " + armyCalibSave.split(/[\\/]/).pop().replace(/\.sav$/i, "").slice(0, 22) + " ✕") : "calibration save(s)…"}
                   </button>
                   {armyOverview && !armyOverview.busy && armyOverview.rows.length > 0 && (
                     <button
@@ -23280,7 +23292,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           const own = owner[city] || null;
           if (focusFaction && own !== focusFaction) continue;
           if (!focusFaction && !own) continue;
-          const po = (f && typeof f.publicOrder === "number" && isFinite(f.publicOrder) && Math.abs(f.publicOrder) < 100000) ? Math.round(f.publicOrder) : null;
+          const po = (f && typeof f.publicOrder === "number" && isFinite(f.publicOrder) && Math.abs(f.publicOrder) < 100000) ? Math.round(f.publicOrder / 5) * 5 : null;  // game shows PO in 5-point steps
           const inc = (f && typeof f.income === "number") ? f.income : null;
           const grow = (f && f.populationGrowth != null && f.committedPopulation) ? (f.populationGrowth / f.committedPopulation * 100) : null;
           const tax = (f && f.taxRate != null) ? f.taxRate : null;
