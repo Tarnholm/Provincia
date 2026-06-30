@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1202",
+    date: "2026-07-01",
+    items: [
+      { type: "feature", text: "**Army-setup suggestions now lead with public-order fixes.** The suggestions panel (previously only unit swaps) lists revolt-risk towns first — e.g. \"🛡 Paestum: public order 65 (revolt risk) — recruit 1× roman leves there → ~85\". A red/orange town is a real problem, so it ranks above the cosmetic quality swaps. The garrison fix is an in-game recruit, so its button explains that rather than writing a unit swap to descr_strat." },
+    ],
+  },
+  {
     version: "0.9.1201",
     date: "2026-07-01",
     items: [

@@ -23207,6 +23207,15 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     const headroom = hasProj ? proj - armyBudgetFloor : null;
                     // find a skirmisher-heavy character + suggest swapping one skirmisher for a heavier line unit within headroom
                     const sugg = [];
+                    // PO-risk garrison fixes rank ABOVE the cosmetic unit swaps — a red/orange town is
+                    // an actual revolt risk, not a tuning tweak. Pull them from the turn-1 budget rows.
+                    const _bset = (armyT1Budget && armyT1Budget.faction === d.faction && armyT1Budget.settlements) || [];
+                    for (const bs of _bset) {
+                      if (!bs.garrisonUnit || !(bs.poRisk === "red" || bs.poRisk === "orange")) continue;
+                      const gu = bs.garrisonUnit;
+                      sugg.push({ garrison: true, ok: true, settlement: bs.settlement, garrUnit: gu,
+                        text: `🛡 ${bs.settlement}: public order ${bs.poAtSet} (${bs.poRisk === "red" ? "revolt risk" : "shaky"}) — recruit ${gu.n}× ${gu.unit} there → ~${gu.poAfter} (+${gu.totalUpkeep}/turn upkeep).` });
+                    }
                     for (const c of d.characters) {
                       if (!c.flags.some(f => /skirmisher-heavy|no heavy/.test(f))) continue;
                       const sk = c.army.find(u => { const p = pool.find(x => x.unit.toLowerCase() === u.unit.toLowerCase()); return p && (p.cls === "missile" || p.cls === "skirmish"); });
@@ -23247,13 +23256,14 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     if (!sugg.length) return null;
                     return (
                       <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(120,170,90,0.10)", border: "1px solid rgba(120,170,90,0.35)" }}>
-                        <strong style={{ color: "#a7d77f" }}>Swap suggestions</strong>
+                        <strong style={{ color: "#a7d77f" }}>Suggestions</strong>
                         <div style={{ margin: "6px 0 0", display: "flex", flexDirection: "column", gap: 6 }}>
                           {sugg.map((s, i) => (
                             <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.8rem" }}>
                               <span style={{ flex: 1, color: s.ok ? "#dfe" : "#e8a07a" }}>{s.text}</span>
                               <button
                                 onClick={async () => {
+                                  if (s.garrison) { pushToast(`Recruit ${s.garrUnit ? s.garrUnit.n + "× " + s.garrUnit.unit : "the suggested unit"} at ${s.settlement} in-game to lift its public order — settlement garrisons aren't written to descr_strat from here.`, "info", 6500); return; }
                                   if (!modDataDir) { alert("No mod loaded."); return; }
                                   const warn = s.ok ? "" : "\n\n⚠ This swap goes OVER your budget floor — apply anyway?";
                                   if (!confirm(`Apply this swap to descr_strat?\n\nIn ${s.character}'s army (${d.faction}):\n  ${s.oldUnit} → ${s.newUnit}${warn}\n\nWrites the campaign descr_strat.txt (a backup, descr_strat.txt.provincia-bak, is saved first). Reload the mod / restart the game to see it.`)) return;
@@ -23265,7 +23275,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                 }}
                                 title={s.ok ? "Write this swap to the campaign descr_strat.txt (backup taken first)" : "This swap exceeds your budget floor"}
                                 style={{ flexShrink: 0, background: s.ok ? "#5a9b88" : "#8a6a3a", color: "#fff", border: "1px solid " + (s.ok ? "#5a9b88" : "#a07a3a"), borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontSize: "0.76rem", fontWeight: 600 }}>
-                                Apply
+                                {s.garrison ? "Recruit ↗" : "Apply"}
                               </button>
                             </div>
                           ))}
