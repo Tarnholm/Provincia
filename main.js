@@ -6625,7 +6625,13 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
         let flagged = 0, exactN = 0;
         for (const s of budget.settlements) {
           const br = s.optimalBracket || "normal";
-          const a = poAnchorByCity && (poAnchorByCity[s.settlement] || poAnchorByCity[s.region]);
+          // The save's stored PO is exact ONLY for the save's own PLAYER faction; for every
+          // OTHER faction the save carries an unreliable value (AI Rome's Paestum read 225 → 155
+          // at V.High vs the component model's 65 and the in-game 70 — like governors, the engine
+          // doesn't keep a live PO for AI factions). The all-human DETERMINISTIC overview compares
+          // every faction on equal footing, so it uses the component model (designed-start PO),
+          // never the per-save anchor. Other modes keep the anchor (the player's own save = exact).
+          const a = (humanDifficulty !== "normal") && poAnchorByCity && (poAnchorByCity[s.settlement] || poAnchorByCity[s.region]);
           if (a) {
             s.poAtSet = a.po - POD[a.bracket] + POD[br];
             s.poAtLow = a.po - POD[a.bracket];

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1200",
+    date: "2026-06-30",
+    items: [
+      { type: "fix", text: "**Army-setup public order now uses the component model for the deterministic overview — fixes wildly-high PO (e.g. Paestum showing 155 vs the real ~70).** The save's stored public order is exact only for the save's OWN played faction; for every other faction it's an unreliable value (AI Rome's Paestum read 225, which the V.High conversion turned into 155, vs the component model's 65 and the in-game 70). Like governor personality traits, the engine doesn't keep a live, accurate public order for AI factions. So the all-human deterministic overview now reads PO from the exact component model instead of the per-save anchor — accurate (Paestum ≈ 65–70) and consistent across the whole map." },
+    ],
+  },
+  {
     version: "0.9.1199",
     date: "2026-06-30",
     items: [
