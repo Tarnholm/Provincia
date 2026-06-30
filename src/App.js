@@ -9691,8 +9691,9 @@ function App() {
   // (incl. start-randomized personalities, ~1000 characters / 798 governed settlements)
   // replace the descr_strat seeds in the growth + income models — one save calibrates
   // the whole campaign's randomness for every faction.
-  // 1+ calibration saves. Multiple → the Balance overview shows the per-faction MEDIAN
-  // across them, smoothing the engine's per-campaign governor-trait randomness (±~3%).
+  // 1+ calibration saves. Multiple → the Balance overview shows each faction's DETERMINISTIC
+  // starting-governor economy (the value its AI-campaign saves agree on; the engine only rolls
+  // a faction's governors in its OWN player save, so that lone outlier is dropped).
   const [armyCalibSaves, setArmyCalibSaves] = useState(() => { try { const a = JSON.parse(localStorage.getItem("armyCalibSaves") || "null"); if (Array.isArray(a) && a.length) return a; } catch { } const one = localStorage.getItem("armyCalibSave"); return one ? [one] : []; });
   useEffect(() => { try { if (armyCalibSaves.length) localStorage.setItem("armyCalibSaves", JSON.stringify(armyCalibSaves)); else localStorage.removeItem("armyCalibSaves"); } catch { } }, [armyCalibSaves]);
   const armyCalibSave = armyCalibSaves[0] || "";  // primary save — single-faction panel + labels read this
@@ -13722,7 +13723,7 @@ function App() {
       if (!saveHappinessByCity) return { label: "Public Order", value: "Live save required" };
       const v = saveHappinessByCity[info.city];
       if (typeof v !== "number") return { label: "Public Order", value: "No data" };
-      return { label: "Public Order", value: `${Math.round(v)} / 200` };
+      return { label: "Public Order", value: `${Math.round(v / 5) * 5} / 200` };
     }
     if (colorMode === "income") {
       if (saveIncomeByCity && saveIncomeByCity[info.city] && typeof saveIncomeByCity[info.city].perTurn === "number") {
@@ -22794,11 +22795,23 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           setArmyOverview({ busy: true, rows: [], error: null, prevByFac, prevAt: (() => { try { return JSON.parse(localStorage.getItem("armyOverviewPrev:" + modDataDir) || "null")?.at || null; } catch { return null; } })() });
           const done = [];
           try {
-            // Median-across-saves: per faction, run the budget under EACH calibration save
-            // and take the per-metric median — one save is ±~3% (random governor rolls), the
-            // median across several smooths it. With 0/1 save this is just the single result.
+            // Deterministic-across-saves: per faction, run the budget under EACH calibration
+            // save and take the DETERMINISTIC value — the figure its AI-campaign saves agree on.
+            // The engine only rolls a governor's start-of-campaign personality traits for the
+            // SAVE's OWN player faction, so that one save is a lone outlier; every OTHER save
+            // gives the identical seed-governor (designed-start) economy. detOf returns the
+            // most-common value (the seed); with no agreement it falls back to the median.
+            // With 0/1 save it's just the single result.
             const calibList = armyCalibSaves.length ? armyCalibSaves : [undefined];
-            const medOf = (arr) => { const v = arr.filter(x => typeof x === "number" && isFinite(x)).sort((a, b) => a - b); if (!v.length) return undefined; const m = Math.floor(v.length / 2); return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; };
+            const detOf = (arr) => {
+              const v = arr.filter(x => typeof x === "number" && isFinite(x));
+              if (!v.length) return undefined;
+              const counts = new Map(); for (const x of v) counts.set(x, (counts.get(x) || 0) + 1);
+              let best, bestC = 0; for (const [val, c] of counts) if (c > bestC) { bestC = c; best = val; }
+              if (bestC >= 2) return best;                         // the seed value the AI-saves agree on
+              const s = [...v].sort((a, b) => a - b); const m = Math.floor(s.length / 2);
+              return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;   // no agreement (≤1 AI save) → median
+            };
             for (const ff of facList) {
               // The overview honors the attached calibration save(s) like fetchFor does.
               const perSave = [];
@@ -22809,8 +22822,8 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
               }
               if (perSave.length) {
                 const keys = new Set(); perSave.forEach(t => Object.keys(t.totals).forEach(k => { if (typeof t.totals[k] === "number") keys.add(k); }));
-                const medTotals = {}; for (const k of keys) { const mv = medOf(perSave.map(t => t.totals[k])); if (mv !== undefined) medTotals[k] = mv; }
-                const row = { fac: ff, ...medTotals, towns: perSave[0].settlements?.length || 0, nSaves: perSave.length };
+                const detTotals = {}; for (const k of keys) { const dv = detOf(perSave.map(t => t.totals[k])); if (dv !== undefined) detTotals[k] = dv; }
+                const row = { fac: ff, ...detTotals, towns: perSave[0].settlements?.length || 0, nSaves: perSave.length };
                 done.push(row);
                 setArmyOverview(prev => ({ ...(prev || {}), busy: true, rows: [...((prev && prev.rows) || []), row] }));
               }
@@ -22854,14 +22867,14 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                       try {
                         const r = await window.electronAPI.selectSaveFiles?.();
                         const paths = (r && Array.isArray(r.paths)) ? r.paths : (r && r.path ? [r.path] : []);
-                        if (paths.length) { setArmyCalibSaves(paths); pushToast(paths.length > 1 ? `${paths.length} calibration saves set — the Balance overview shows the per-faction MEDIAN across them (smooths the ±governor-trait randomness)` : "Calibration save set — governor traits now come from this save for ALL factions", "info", 6000); if (fac) fetchFor(fac, paths[0]); }
+                        if (paths.length) { setArmyCalibSaves(paths); pushToast(paths.length > 1 ? `${paths.length} calibration saves set — the Balance overview shows each faction's DETERMINISTIC starting-governor economy across them (drops the lone played-faction roll)` : "Calibration save set — governor traits now come from this save for ALL factions", "info", 6000); if (fac) fetchFor(fac, paths[0]); }
                       } catch { }
                     }}
                     title={armyCalibSaves.length
-                      ? `${armyCalibSaves.length} calibration save${armyCalibSaves.length > 1 ? "s" : ""} active${armyCalibSaves.length > 1 ? " — the overview shows the per-faction median across them" : ""}:\n${armyCalibSaves.map(s => s.split(/[\\/]/).pop()).join("\n")}\nClick to clear.`
-                      : "Pick one or MORE fresh turn-1 saves as calibration: the engine randomizes personality traits at campaign start and each save records that campaign's roll. Pick several and the Balance overview medians across them, smoothing the per-campaign noise."}
+                      ? `${armyCalibSaves.length} calibration save${armyCalibSaves.length > 1 ? "s" : ""} active${armyCalibSaves.length > 1 ? " — the overview shows each faction's deterministic starting-governor economy" : ""}:\n${armyCalibSaves.map(s => s.split(/[\\/]/).pop()).join("\n")}\nClick to clear.`
+                      : "Pick one or MORE fresh turn-1 saves as calibration: the engine randomizes personality traits at campaign start and each save records that campaign's roll. Pick several and the Balance overview shows each faction's deterministic value across them, dropping the lone played-faction roll."}
                     style={{ background: armyCalibSaves.length ? "rgba(143,180,110,0.25)" : "rgba(60,60,60,0.7)", color: armyCalibSaves.length ? "#b8d38f" : "#9ab", border: "1px solid " + (armyCalibSaves.length ? "#7a9a5a" : "rgba(255,255,255,0.25)"), borderRadius: 5, padding: "2px 10px", cursor: "pointer", fontSize: "0.74rem" }}>
-                    🎯 {armyCalibSaves.length ? (armyCalibSaves.length > 1 ? `${armyCalibSaves.length} saves (median) ✕` : "calibrated: " + armyCalibSave.split(/[\\/]/).pop().replace(/\.sav$/i, "").slice(0, 22) + " ✕") : "calibration save(s)…"}
+                    🎯 {armyCalibSaves.length ? (armyCalibSaves.length > 1 ? `${armyCalibSaves.length} saves (deterministic) ✕` : "calibrated: " + armyCalibSave.split(/[\\/]/).pop().replace(/\.sav$/i, "").slice(0, 22) + " ✕") : "calibration save(s)…"}
                   </button>
                   {armyOverview && !armyOverview.busy && armyOverview.rows.length > 0 && (
                     <button

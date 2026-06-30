@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1198",
+    date: "2026-06-30",
+    items: [
+      { type: "fix", text: "**Balance overview now reads the deterministic starting-governor economy.** The game engine only rolls a faction's start-of-campaign governor personalities for the faction you are PLAYING — every AI faction in any save carries only its fixed descr_strat starting traits. So a calibration save only ever calibrated its own played faction; for everyone else it returned the (identical) seed economy, which is why a faction's number swung between saves and the median sat on the low value. The overview now leans into that: with multiple saves it takes each faction's DETERMINISTIC value — the figure its AI-campaign saves agree on — dropping the one save where it was the lucky player. The result is a fair, reproducible designed-start economy for the whole map (Rome's true starting economy, not one campaign's favourable governor roll). Drill into a single faction with its own save to see that campaign's real rolled governors." },
+      { type: "fix", text: "**Public order shown in 5-point steps everywhere.** Two more readouts still printed the raw save value (e.g. 93, 108): the settlement info panel's \"Public order: NN%\" row and the Public Order map-mode hover. Both now snap to the nearest 5 (95, 110), matching the in-game scroll." },
+    ],
+  },
+  {
     version: "0.9.1197",
     date: "2026-06-30",
     items: [
