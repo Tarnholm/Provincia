@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1206",
+    date: "2026-07-01",
+    items: [
+      { type: "feature", text: "**Garrison recruitability — find & replace un-recruitable starting garrisons.** Army Setup now audits every town's starting garrison against its *current* recruit pool (full RIS gating) and, where the mod's area-of-recruitment rules no longer let it retrain those units, suggests the leanest recruitable replacement that keeps public order above the no-revolt floor (>70). One click drops the orphaned units and adds the right count of a role-matched recruitable unit to descr_strat — the general's bodyguard is never touched, CRLF preserved, a backup saved first. E.g. Neapolis's 2× aor campanian hoplites (no longer recruitable there) → 1× roman hastati early (PO 73, saves ~536/turn upkeep)." },
+      { type: "improvement", text: "Public-order garrison sizing now targets the **no-revolt floor (>70)**, not the comfortable green band — matching the in-game reality that a town above 70% holds (verified against the save's exact stored public order: Neapolis 88, Paestum 70)." },
+    ],
+  },
+  {
     version: "0.9.1205",
     date: "2026-07-01",
     items: [

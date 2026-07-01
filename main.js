@@ -6641,6 +6641,55 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
           const n = Math.max(1, Math.round(menGap / menPerUnit));  // round (not ceil): 1 unit that lands near the band is "good enough"
           return { unit: best.unit, n, soldiers: best.soldiers, menPerUnit, upkeep: best.upkeep, totalUpkeep: n * best.upkeep };
         };
+        // GARRISON-REPLACE (slim-to-minimum). A town's STARTING garrison can hold units it can no
+        // longer recruit there (mod AOR gating changed) — they can't be retrained. Suggest the
+        // leanest RECRUITABLE garrison that keeps PO above the user's no-revolt floor (>70, set
+        // 2026-07-01 from the live Neapolis read — NOT the 85 comfort band; 73 is "above 70 so
+        // fine"): drop the non-recruitable units, keep the bodyguard + any recruitable ones, add
+        // the fewest of a role-matched (dominant dropped cls) recruitable infantry to clear it.
+        // Garrison law: PO% = 5·min(16, floor(70·men/pop)); men = EDU soldiers ×4 (HUGE), 80% cap.
+        const _armySetup = require("./src/armySetup.js");
+        const FLOOR_PO = 70;
+        let _descrText = null, _regionToCity = {};
+        try { _descrText = fs.readFileSync(_armySetup.findDescrStrat(modDataDir), "latin1"); } catch { }
+        try { const dg = require("./src/descrStratGeneral.js"); _regionToCity = (dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "utf8")) || {}).regionToCity || {}; } catch { }
+        const _menOf = (u, us) => ((us[String(u).toLowerCase()] || {}).soldiers || 0) * 4;
+        const _garrPts = (men, pop) => Math.min(16, Math.floor(70 * men / pop));
+        const _recommendGarrisonReplace = (s, prow) => {
+          if (!_descrText || !prow || !prow.rows || !prow.rows.pop) return null;
+          const rp = require("./src/recruitPool.js");
+          const garr = _armySetup.getGarrisonUnits(_descrText, faction, s.settlement, _regionToCity);
+          if (garr.length < 2) return null;                  // need bodyguard + ≥1 unit
+          const pool = rp.poolForSettlement(modDataDir, faction, s.buildings, s.region, _garrCache);
+          if (!pool || !pool.length) return null;
+          const us = rp.parseUnitStats(modDataDir) || {};
+          const poolSet = new Set(pool.map(u => u.unit.toLowerCase()));
+          const rest = garr.slice(1);                        // [0] = general's bodyguard (kept)
+          const nonRecruit = rest.filter(u => !poolSet.has(u.toLowerCase()));
+          if (!nonRecruit.length) return null;
+          const pop = prow.rows.pop;
+          const base = (s.poAtSet != null ? s.poAtSet : prow.poAt.normal) - prow.rows.garrison;
+          const needPts = Math.max(0, Math.min(16, Math.ceil((FLOOR_PO + 1 - base) / 5)));
+          const minMen = Math.ceil(needPts * pop / 70);
+          const keptRecruit = rest.filter(u => poolSet.has(u.toLowerCase()));
+          const bgMen = prow.rows.men - rest.reduce((a, u) => a + _menOf(u, us), 0);
+          const keptMen = bgMen + keptRecruit.reduce((a, u) => a + _menOf(u, us), 0);
+          const gapMen = Math.max(0, minMen - keptMen);
+          const clsCount = {};
+          nonRecruit.forEach(u => { const c = (us[u.toLowerCase()] || {}).cls; if (c) clsCount[c] = (clsCount[c] || 0) + 1; });
+          const domCls = Object.keys(clsCount).sort((a, b) => clsCount[b] - clsCount[a])[0];
+          const inf = pool.filter(u => u.category === "infantry" && !/general|bodyguard|captain/i.test(u.unit));
+          if (!inf.length) return null;
+          const byCls = inf.filter(u => u.cls === domCls).sort((a, b) => _menOf(b.unit, us) - _menOf(a.unit, us));
+          const repl = byCls[0] || inf.slice().sort((a, b) => (a.upkeep || 0) - (b.upkeep || 0))[0];
+          const replMen = _menOf(repl.unit, us); if (!replMen) return null;
+          const addCount = Math.max(0, Math.ceil(gapMen / replMen));
+          const finalMen = keptMen + addCount * replMen;
+          const poAfter = Math.max(0, Math.min(200, Math.round(base + 5 * _garrPts(finalMen, pop))));
+          const dropUp = nonRecruit.reduce((a, u) => a + ((us[u.toLowerCase()] || {}).upkeep || 0), 0);
+          const addUp = addCount * (repl.upkeep || 0);
+          return { removeUnits: nonRecruit, addUnit: repl.unit, addCount, dropCount: nonRecruit.length, keepUnits: keptRecruit, poAfter, upkeepDelta: addUp - dropUp };
+        };
         for (const s of budget.settlements) {
           const br = s.optimalBracket || "normal";
           // The save's stored PO is exact ONLY for the save's own PLAYER faction; for every
@@ -6677,7 +6726,12 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
             // name a concrete fix: cheapest gated garrison-infantry unit covering the gap
             try { const gu = _recommendGarrisonUnit(s.buildings, s.region, s.garrisonFixMen); if (gu) { gu.poAfter = Math.min(200, Math.round((s.poAtSet + gu.n * gu.menPerUnit * 350 / s.pop) / 5) * 5); s.garrisonUnit = gu; } } catch { }
           }
+          // GARRISON-REPLACE: any town whose starting garrison holds non-recruitable units (mod
+          // AOR gating changed). The replace supersedes the add-fix (it sizes the garrison too).
+          try { const prow = po[s.settlement] || po[s.region]; const gr = _recommendGarrisonReplace(s, prow); if (gr) { s.garrisonReplace = gr; delete s.garrisonUnit; } } catch { }
         }
+        let replaceN = 0; for (const s of budget.settlements) if (s.garrisonReplace) replaceN++;
+        if (replaceN) _writeLog(`[turn1-budget] ${faction}: ${replaceN} town(s) have non-recruitable starting garrisons → replace suggestions attached`);
         if (exactN) _writeLog(`[turn1-budget] ${faction}: PO anchored EXACT from calibration save for ${exactN} towns`);
         if (flagged) _writeLog(`[turn1-budget] ${faction}: PO model flags ${flagged} revolt-risk towns (po<100 at set bracket)`);
       } catch (e) { _writeLog(`[turn1-budget] PO model failed (non-fatal): ${e && e.message}`); }
@@ -6769,6 +6823,30 @@ ipcMain.handle("apply-add-garrison", async (_event, modDataDir, faction, settlem
     return { ok: true, insertedAtLine: r.insertedAtLine, anchor: r.anchor, newLine: r.newLine, path: p };
   } catch (e) {
     _writeLog(`[add-garrison] failed: ${e && e.message}`);
+    return { error: e && e.message ? e.message : String(e) };
+  }
+});
+
+// IPC: replace a settlement garrison's non-recruitable units with a recruitable one in
+// descr_strat (drop removeUnits — never the bodyguard — add addCount× addUnit; CRLF-safe, backup).
+ipcMain.handle("apply-replace-garrison", async (_event, modDataDir, faction, settlementName, removeUnits, addUnit, addCount) => {
+  try {
+    if (!modDataDir || !faction || !settlementName || !addUnit) return { error: "missing args" };
+    const as = require("./src/armySetup.js");
+    const dg = require("./src/descrStratGeneral.js");
+    const p = as.findDescrStrat(modDataDir);
+    if (!p || !fs.existsSync(p)) return { error: "descr_strat.txt not found" };
+    let regionToCity = {};
+    try { const regPath = path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"); regionToCity = (dg.parseDescrRegions(fs.readFileSync(regPath, "utf8")) || {}).regionToCity || {}; } catch { }
+    const text = fs.readFileSync(p, "latin1");
+    const r = as.applyReplaceGarrison(text, faction, settlementName, removeUnits || [], addUnit, addCount || 0, regionToCity);
+    if (!r.ok) return { error: r.error };
+    try { fs.copyFileSync(p, p + ".provincia-bak"); } catch (e) { _writeLog(`[replace-garrison] backup failed: ${e && e.message}`); }
+    fs.writeFileSync(p, r.text, "latin1");
+    _writeLog(`[replace-garrison] ${faction} ${settlementName}: −${r.removedCount} non-recruitable, +${r.addedCount}× "${addUnit}" (${r.anchor}; lineΔ ${r.lineDelta})`);
+    return { ok: true, removedCount: r.removedCount, addedCount: r.addedCount, removedLines: r.removedLines, addedLine: r.addedLine, anchor: r.anchor, path: p };
+  } catch (e) {
+    _writeLog(`[replace-garrison] failed: ${e && e.message}`);
     return { error: e && e.message ? e.message : String(e) };
   }
 });

@@ -628,6 +628,85 @@ function applyAddGarrison(text, faction, settlementName, unitName, regionToCity)
   return { ok: true, text: lines.join(eol), insertedAtLine: lastUnit + 1, anchor: ";" + settlementName + " → character army", newLine };
 }
 
+// Read a settlement garrison's unit names in order ([0] is the general's bodyguard).
+// Same navigation as applyAddGarrison. Returns [] when no garrison/character/army block.
+function getGarrisonUnits(text, faction, settlementName, regionToCity) {
+  if (!text || !faction || !settlementName) return [];
+  const lines = text.split(/\r?\n/);
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const sNorm = settlementName.trim().toLowerCase();
+  let region = null;
+  if (regionToCity) for (const [reg, city] of Object.entries(regionToCity)) if (city && city.trim().toLowerCase() === sNorm) { region = reg; break; }
+  let fStart = -1, fEnd = lines.length;
+  const facRe = new RegExp("^faction\\s+" + esc(faction) + "\\b", "i");
+  for (let i = 0; i < lines.length; i++) if (facRe.test(lines[i])) { fStart = i; break; }
+  if (fStart < 0) return [];
+  for (let i = fStart + 1; i < lines.length; i++) if (/^faction\s+\S/i.test(lines[i])) { fEnd = i; break; }
+  const cRe = new RegExp("^;\\s*(" + esc(sNorm) + (region ? "|" + esc(region.trim().toLowerCase()) : "") + ")\\s*$", "i");
+  let cIdx = -1; for (let i = fStart; i < fEnd; i++) if (cRe.test(lines[i])) { cIdx = i; break; }
+  if (cIdx < 0) return [];
+  let chIdx = -1;
+  for (let i = cIdx + 1; i < fEnd; i++) { const t = lines[i].trim(); if (/^character\b|^character,/i.test(t)) { chIdx = i; break; } if (/^;\s*\S/.test(t) || /^settlement\b/i.test(t)) break; }
+  if (chIdx < 0) return [];
+  let armyIdx = -1;
+  for (let i = chIdx + 1; i < fEnd; i++) { const t = lines[i].trim(); if (/^army\b/i.test(t)) { armyIdx = i; break; } if (/^character\b|^character,|^;\s*\S|^settlement\b/i.test(t)) break; }
+  if (armyIdx < 0) return [];
+  const units = [];
+  for (let i = armyIdx + 1; i < fEnd; i++) { const t = lines[i].trim(); const m = t.match(/^unit\s+(.+?)\s+exp\b/i); if (m) units.push(m[1].trim()); else if (t === "" || /^character\b|^character,|^;\s*\S|^settlement\b|^army\b/i.test(t)) { if (units.length) break; } }
+  return units;
+}
+
+// Replace a settlement garrison's non-recruitable units with a recruitable one in
+// descr_strat. CRLF-safe; mirrors applyAddGarrison navigation. Removes each name in
+// removeUnitNames (honouring multiplicity — duplicate names each remove one line),
+// NEVER the bodyguard (army[0]), then appends addCount × addUnitName after the last
+// KEPT unit line (anchoring on a removed line would silently drop the additions).
+// Returns { ok, text, removedCount, addedCount, removedLines, addedLine, anchor, lineDelta, error }.
+function applyReplaceGarrison(text, faction, settlementName, removeUnitNames, addUnitName, addCount, regionToCity) {
+  if (!text || !faction || !settlementName) return { ok: false, error: "missing args" };
+  removeUnitNames = removeUnitNames || [];
+  addCount = addCount || 0;
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  const lines = text.split(/\r?\n/);
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const sNorm = settlementName.trim().toLowerCase();
+  let region = null;
+  if (regionToCity) for (const [reg, city] of Object.entries(regionToCity)) if (city && city.trim().toLowerCase() === sNorm) { region = reg; break; }
+  let fStart = -1, fEnd = lines.length;
+  const facRe = new RegExp("^faction\\s+" + esc(faction) + "\\b", "i");
+  for (let i = 0; i < lines.length; i++) if (facRe.test(lines[i])) { fStart = i; break; }
+  if (fStart < 0) return { ok: false, error: `faction ${faction} not found` };
+  for (let i = fStart + 1; i < lines.length; i++) if (/^faction\s+\S/i.test(lines[i])) { fEnd = i; break; }
+  const cRe = new RegExp("^;\\s*(" + esc(sNorm) + (region ? "|" + esc(region.trim().toLowerCase()) : "") + ")\\s*$", "i");
+  let cIdx = -1; for (let i = fStart; i < fEnd; i++) if (cRe.test(lines[i])) { cIdx = i; break; }
+  if (cIdx < 0) return { ok: false, error: `no garrison present at ${settlementName}` };
+  let chIdx = -1;
+  for (let i = cIdx + 1; i < fEnd; i++) { const t = lines[i].trim(); if (/^character\b|^character,/i.test(t)) { chIdx = i; break; } if (/^;\s*\S/.test(t) || /^settlement\b/i.test(t)) break; }
+  if (chIdx < 0) return { ok: false, error: `no garrison character at ${settlementName}` };
+  let armyIdx = -1;
+  for (let i = chIdx + 1; i < fEnd; i++) { const t = lines[i].trim(); if (/^army\b/i.test(t)) { armyIdx = i; break; } if (/^character\b|^character,|^;\s*\S|^settlement\b/i.test(t)) break; }
+  if (armyIdx < 0) return { ok: false, error: `${settlementName}'s garrison has no army block` };
+  const unitIdx = [];
+  for (let i = armyIdx + 1; i < fEnd; i++) { const t = lines[i].trim(); if (/^unit\b/i.test(t)) unitIdx.push(i); else if (t === "") { if (unitIdx.length) break; } else if (/^character\b|^character,|^;\s*\S|^settlement\b|^army\b/i.test(t)) break; }
+  if (!unitIdx.length) return { ok: false, error: `${settlementName}'s garrison has no units` };
+  const nameAt = i => { const m = lines[i].match(/^\s*unit\s+(.+?)\s+exp\b/i); return m ? m[1].trim().toLowerCase() : null; };
+  const want = {}; for (const u of removeUnitNames) { const k = String(u).trim().toLowerCase(); want[k] = (want[k] || 0) + 1; }
+  const toRemove = new Set();
+  for (let j = 1; j < unitIdx.length; j++) { const nm = nameAt(unitIdx[j]); if (nm && want[nm] > 0) { toRemove.add(unitIdx[j]); want[nm]--; } }  // j from 1: never the bodyguard
+  let appendAfter = armyIdx;
+  for (const li of unitIdx) if (!toRemove.has(li)) appendAfter = li;   // last KEPT unit line
+  const removedLines = [...toRemove].sort((a, b) => a - b).map(i => lines[i].trim());
+  const addLines = [];
+  for (let k = 0; k < (addCount || 0); k++) addLines.push("unit\t\t" + addUnitName + "\t\t\texp 0 armour 0 weapon_lvl 0");
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (toRemove.has(i)) continue;
+    out.push(lines[i]);
+    if (i === appendAfter && addLines.length) for (const al of addLines) out.push(al);
+  }
+  return { ok: true, text: out.join(eol), removedCount: toRemove.size, addedCount: addLines.length, removedLines, addedLine: addLines[0] || null, anchor: ";" + settlementName, lineDelta: addLines.length - toRemove.size };
+}
+
 function parseUnitStatsLocal(modDataDir, cache) {
   if (cache.unitStats) return cache.unitStats;
   return (cache.unitStats = recruitPool.parseUnitStats(modDataDir));
@@ -654,7 +733,7 @@ function dominantBracket(saveBuf, cracked, faction) {
 
 module.exports = {
   TAX_BRACKETS, BRACKET_ORDER,
-  findDescrStrat, parseFaction, balanceOf, projectNet, analyzeFaction, listCampaignFactions, applySwap, applyUpgradeFix, applyAddGarrison, attributeAllBudgets,
+  findDescrStrat, parseFaction, balanceOf, projectNet, analyzeFaction, listCampaignFactions, applySwap, applyUpgradeFix, applyAddGarrison, getGarrisonUnits, applyReplaceGarrison, attributeAllBudgets,
   optimalTaxPlan, optimalBracketForBase, TAX_GROWTH_MOD, TAX_ORDER_DELTA,
   parseUnitStats: recruitPool.parseUnitStats,
   poolForSettlement: recruitPool.poolForSettlement,

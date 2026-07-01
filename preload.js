@@ -104,6 +104,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   addRegionToMercPool: (modDataDir, poolName, region) => ipcRenderer.invoke("add-region-to-merc-pool", modDataDir, poolName, region),
   applyArmySwap: (modDataDir, faction, character, oldUnit, newUnit) => ipcRenderer.invoke("apply-army-swap", modDataDir, faction, character, oldUnit, newUnit),
   applyAddGarrison: (modDataDir, faction, settlementName, unitName) => ipcRenderer.invoke("apply-add-garrison", modDataDir, faction, settlementName, unitName),
+  applyReplaceGarrison: (modDataDir, faction, settlementName, removeUnits, addUnit, addCount) => ipcRenderer.invoke("apply-replace-garrison", modDataDir, faction, settlementName, removeUnits, addUnit, addCount),
   applyUpgradeFix: (modDataDir, faction, character, opts) => ipcRenderer.invoke("apply-upgrade-fix", modDataDir, faction, character, opts),
   // Per-faction fog-of-war / explored map (corrected 1020×700 grid). Returns
   // { faction, width:1020, height:700, grid: Uint8Array(714000), coverage, exploredCount }

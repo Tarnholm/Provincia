@@ -23216,6 +23216,15 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                       sugg.push({ garrison: true, ok: true, settlement: bs.settlement, garrUnit: gu,
                         text: `🛡 ${bs.settlement}: public order ${bs.poAtSet} (${bs.poRisk === "red" ? "revolt risk" : "shaky"}) — recruit ${gu.n}× ${gu.unit} there → ~${gu.poAfter} (+${gu.totalUpkeep}/turn upkeep).` });
                     }
+                    // GARRISON-REPLACE: towns whose STARTING garrison holds units they can no longer
+                    // recruit there (mod AOR gating changed) — un-retrainable. Slim to the leanest
+                    // recruitable garrison that clears the >70 no-revolt floor.
+                    for (const bs of _bset) {
+                      const gr = bs.garrisonReplace; if (!gr || !gr.removeUnits || !gr.removeUnits.length) continue;
+                      const keep = gr.keepUnits && gr.keepUnits.length ? `, keep ${gr.keepUnits.join(" + ")}` : "";
+                      sugg.push({ replace: true, ok: true, settlement: bs.settlement, repl: gr,
+                        text: `♻ ${bs.settlement}: ${gr.dropCount} garrison unit(s) no longer recruitable here — replace with ${gr.addCount}× ${gr.addUnit}${keep} → PO ~${gr.poAfter} (${gr.upkeepDelta >= 0 ? "+" : ""}${gr.upkeepDelta}/turn upkeep).` });
+                    }
                     for (const c of d.characters) {
                       if (!c.flags.some(f => /skirmisher-heavy|no heavy/.test(f))) continue;
                       const sk = c.army.find(u => { const p = pool.find(x => x.unit.toLowerCase() === u.unit.toLowerCase()); return p && (p.cls === "missile" || p.cls === "skirmish"); });
@@ -23263,6 +23272,17 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                               <span style={{ flex: 1, color: s.ok ? "#dfe" : "#e8a07a" }}>{s.text}</span>
                               <button
                                 onClick={async () => {
+                                  if (s.replace) {
+                                    if (!modDataDir) { alert("No mod loaded."); return; }
+                                    const rp = s.repl;
+                                    if (!confirm(`Replace ${rp.dropCount} non-recruitable unit(s) at ${s.settlement} with ${rp.addCount}× ${rp.addUnit}?\n\n(${d.faction}) Drops: ${rp.removeUnits.join(", ")}.\nWrites the campaign descr_strat.txt (a backup, descr_strat.txt.provincia-bak, is saved first). Reload the mod (🔄) or restart the game to see it.`)) return;
+                                    try {
+                                      const r = await window.electronAPI.applyReplaceGarrison(modDataDir, d.faction, s.settlement, rp.removeUnits, rp.addUnit, rp.addCount);
+                                      if (r && r.ok) { pushToast(`Replaced garrison at ${s.settlement} (−${r.removedCount}/+${r.addedCount}× ${rp.addUnit})`, "info", 6000); fetchFor(d.faction); }
+                                      else alert("Replace failed: " + (r?.error || "unknown"));
+                                    } catch (e) { alert(e?.message || String(e)); }
+                                    return;
+                                  }
                                   if (s.garrison) {
                                     if (!modDataDir) { alert("No mod loaded."); return; }
                                     const gunit = s.garrUnit ? s.garrUnit.unit : null;
@@ -23287,7 +23307,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                 }}
                                 title={s.ok ? "Write this swap to the campaign descr_strat.txt (backup taken first)" : "This swap exceeds your budget floor"}
                                 style={{ flexShrink: 0, background: s.ok ? "#5a9b88" : "#8a6a3a", color: "#fff", border: "1px solid " + (s.ok ? "#5a9b88" : "#a07a3a"), borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontSize: "0.76rem", fontWeight: 600 }}>
-                                {s.garrison ? "Recruit ↗" : "Apply"}
+                                {s.replace ? "Replace ♻" : s.garrison ? "Recruit ↗" : "Apply"}
                               </button>
                             </div>
                           ))}
