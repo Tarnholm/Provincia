@@ -662,10 +662,10 @@ function getGarrisonUnits(text, faction, settlementName, regionToCity) {
 // NEVER the bodyguard (army[0]), then appends addCount × addUnitName after the last
 // KEPT unit line (anchoring on a removed line would silently drop the additions).
 // Returns { ok, text, removedCount, addedCount, removedLines, addedLine, anchor, lineDelta, error }.
-function applyReplaceGarrison(text, faction, settlementName, removeUnitNames, addUnitName, addCount, regionToCity) {
+function applyReplaceGarrison(text, faction, settlementName, removeUnitNames, addUnits, regionToCity) {
   if (!text || !faction || !settlementName) return { ok: false, error: "missing args" };
   removeUnitNames = removeUnitNames || [];
-  addCount = addCount || 0;
+  addUnits = addUnits || [];  // flat list e.g. ["roman rorarii","roman rorarii","roman leves"]
   const eol = text.includes("\r\n") ? "\r\n" : "\n";
   const lines = text.split(/\r?\n/);
   const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -697,14 +697,14 @@ function applyReplaceGarrison(text, faction, settlementName, removeUnitNames, ad
   for (const li of unitIdx) if (!toRemove.has(li)) appendAfter = li;   // last KEPT unit line
   const removedLines = [...toRemove].sort((a, b) => a - b).map(i => lines[i].trim());
   const addLines = [];
-  for (let k = 0; k < (addCount || 0); k++) addLines.push("unit\t\t" + addUnitName + "\t\t\texp 0 armour 0 weapon_lvl 0");
+  for (const un of addUnits) addLines.push("unit\t\t" + un + "\t\t\texp 0 armour 0 weapon_lvl 0");
   const out = [];
   for (let i = 0; i < lines.length; i++) {
     if (toRemove.has(i)) continue;
     out.push(lines[i]);
     if (i === appendAfter && addLines.length) for (const al of addLines) out.push(al);
   }
-  return { ok: true, text: out.join(eol), removedCount: toRemove.size, addedCount: addLines.length, removedLines, addedLine: addLines[0] || null, anchor: ";" + settlementName, lineDelta: addLines.length - toRemove.size };
+  return { ok: true, text: out.join(eol), removedCount: toRemove.size, addedCount: addLines.length, removedLines, addedLines: addUnits.slice(), anchor: ";" + settlementName, lineDelta: addLines.length - toRemove.size };
 }
 
 function parseUnitStatsLocal(modDataDir, cache) {

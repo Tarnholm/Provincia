@@ -6666,30 +6666,44 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
           const poolSet = new Set(pool.map(u => u.unit.toLowerCase()));
           const rest = garr.slice(1);                        // [0] = general's bodyguard (kept)
           const nonRecruit = rest.filter(u => !poolSet.has(u.toLowerCase()));
-          if (!nonRecruit.length) return null;
+          // MONOTONY (user 2026-07-01): a garrison stacked with ≥3 of ONE unit is rebuilt into a
+          // diversified set even when every unit is recruitable (e.g. Paestum's 7× roman leves).
+          const dupCount = {}; rest.forEach(u => { const k = u.toLowerCase(); dupCount[k] = (dupCount[k] || 0) + 1; });
+          const monotonous = Object.values(dupCount).reduce((a, b) => Math.max(a, b), 0) >= 3;
+          if (!nonRecruit.length && !monotonous) return null;
+          const toDrop = monotonous ? rest.slice() : nonRecruit;  // rebuild all non-bodyguard when monotonous
           const pop = prow.rows.pop;
           const base = (s.poAtSet != null ? s.poAtSet : prow.poAt.normal) - prow.rows.garrison;
           const needPts = Math.max(0, Math.min(16, Math.ceil((FLOOR_PO + 1 - base) / 5)));
           const minMen = Math.ceil(needPts * pop / 70);
-          const keptRecruit = rest.filter(u => poolSet.has(u.toLowerCase()));
+          const keptRecruit = monotonous ? [] : rest.filter(u => poolSet.has(u.toLowerCase()));
           const bgMen = prow.rows.men - rest.reduce((a, u) => a + _menOf(u, us), 0);
           const keptMen = bgMen + keptRecruit.reduce((a, u) => a + _menOf(u, us), 0);
           const gapMen = Math.max(0, minMen - keptMen);
           const clsCount = {};
-          nonRecruit.forEach(u => { const c = (us[u.toLowerCase()] || {}).cls; if (c) clsCount[c] = (clsCount[c] || 0) + 1; });
+          toDrop.forEach(u => { const c = (us[u.toLowerCase()] || {}).cls; if (c) clsCount[c] = (clsCount[c] || 0) + 1; });
           const domCls = Object.keys(clsCount).sort((a, b) => clsCount[b] - clsCount[a])[0];
           const inf = pool.filter(u => u.category === "infantry" && !/general|bodyguard|captain/i.test(u.unit));
           if (!inf.length) return null;
-          const byCls = inf.filter(u => u.cls === domCls).sort((a, b) => _menOf(b.unit, us) - _menOf(a.unit, us));
-          const repl = byCls[0] || inf.slice().sort((a, b) => (a.upkeep || 0) - (b.upkeep || 0))[0];
-          const replMen = _menOf(repl.unit, us); if (!replMen) return null;
-          const minAdd = keptRecruit.length ? 0 : 1;  // never leave a replaced town with 0 recruitable garrison units
-          const addCount = Math.max(minAdd, Math.ceil(gapMen / replMen));
-          const finalMen = keptMen + addCount * replMen;
+          // DIVERSIFIED replacement (user 2026-07-01: "don't want 7 of the same unit"): round-robin
+          // across the DISTINCT recruitable infantry — dominant dropped cls first, then cheapest —
+          // adding one at a time until the garrison clears the men floor; always keep ≥1 unit.
+          const candidates = inf.slice().sort((a, b) => ((a.cls === domCls ? 0 : 1) - (b.cls === domCls ? 0 : 1)) || ((a.upkeep || 0) - (b.upkeep || 0)));
+          const addUnits = [];
+          let men = keptMen, gi = 0;
+          while ((men < minMen || (!addUnits.length && !keptRecruit.length)) && addUnits.length < 40) {
+            const u = candidates[gi % candidates.length];
+            addUnits.push(u.unit);
+            men += _menOf(u.unit, us);
+            gi++;
+          }
+          const finalMen = keptMen + addUnits.reduce((a, u) => a + _menOf(u, us), 0);
           const poAfter = Math.max(0, Math.min(200, Math.round(base + 5 * _garrPts(finalMen, pop))));
-          const dropUp = nonRecruit.reduce((a, u) => a + ((us[u.toLowerCase()] || {}).upkeep || 0), 0);
-          const addUp = addCount * (repl.upkeep || 0);
-          return { removeUnits: nonRecruit, addUnit: repl.unit, addCount, dropCount: nonRecruit.length, keepUnits: keptRecruit, poAfter, upkeepDelta: addUp - dropUp };
+          const dropUp = toDrop.reduce((a, u) => a + ((us[u.toLowerCase()] || {}).upkeep || 0), 0);
+          const addUp = addUnits.reduce((a, u) => a + ((us[u.toLowerCase()] || {}).upkeep || 0), 0);
+          const grp = new Map(); for (const u of addUnits) grp.set(u, (grp.get(u) || 0) + 1);
+          const addSummary = [...grp.entries()].map(([unit, count]) => ({ unit, count }));
+          return { removeUnits: toDrop, addUnits, addSummary, dropCount: toDrop.length, keepUnits: keptRecruit, monotonous, poAfter, upkeepDelta: addUp - dropUp };
         };
         for (const s of budget.settlements) {
           const br = s.optimalBracket || "normal";
@@ -6830,9 +6844,9 @@ ipcMain.handle("apply-add-garrison", async (_event, modDataDir, faction, settlem
 
 // IPC: replace a settlement garrison's non-recruitable units with a recruitable one in
 // descr_strat (drop removeUnits — never the bodyguard — add addCount× addUnit; CRLF-safe, backup).
-ipcMain.handle("apply-replace-garrison", async (_event, modDataDir, faction, settlementName, removeUnits, addUnit, addCount) => {
+ipcMain.handle("apply-replace-garrison", async (_event, modDataDir, faction, settlementName, removeUnits, addUnits) => {
   try {
-    if (!modDataDir || !faction || !settlementName || !addUnit) return { error: "missing args" };
+    if (!modDataDir || !faction || !settlementName) return { error: "missing args" };
     const as = require("./src/armySetup.js");
     const dg = require("./src/descrStratGeneral.js");
     const p = as.findDescrStrat(modDataDir);
@@ -6840,12 +6854,12 @@ ipcMain.handle("apply-replace-garrison", async (_event, modDataDir, faction, set
     let regionToCity = {};
     try { const regPath = path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"); regionToCity = (dg.parseDescrRegions(fs.readFileSync(regPath, "utf8")) || {}).regionToCity || {}; } catch { }
     const text = fs.readFileSync(p, "latin1");
-    const r = as.applyReplaceGarrison(text, faction, settlementName, removeUnits || [], addUnit, addCount || 0, regionToCity);
+    const r = as.applyReplaceGarrison(text, faction, settlementName, removeUnits || [], addUnits || [], regionToCity);
     if (!r.ok) return { error: r.error };
     try { fs.copyFileSync(p, p + ".provincia-bak"); } catch (e) { _writeLog(`[replace-garrison] backup failed: ${e && e.message}`); }
     fs.writeFileSync(p, r.text, "latin1");
-    _writeLog(`[replace-garrison] ${faction} ${settlementName}: −${r.removedCount} non-recruitable, +${r.addedCount}× "${addUnit}" (${r.anchor}; lineΔ ${r.lineDelta})`);
-    return { ok: true, removedCount: r.removedCount, addedCount: r.addedCount, removedLines: r.removedLines, addedLine: r.addedLine, anchor: r.anchor, path: p };
+    _writeLog(`[replace-garrison] ${faction} ${settlementName}: −${r.removedCount} non-recruitable, +${r.addedCount} unit(s) [${(r.addedLines || []).join(", ")}] (${r.anchor}; lineΔ ${r.lineDelta})`);
+    return { ok: true, removedCount: r.removedCount, addedCount: r.addedCount, removedLines: r.removedLines, addedLines: r.addedLines, anchor: r.anchor, path: p };
   } catch (e) {
     _writeLog(`[replace-garrison] failed: ${e && e.message}`);
     return { error: e && e.message ? e.message : String(e) };

@@ -23222,9 +23222,11 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     for (const bs of _bset) {
                       const gr = bs.garrisonReplace; if (!gr || !gr.removeUnits || !gr.removeUnits.length) continue;
                       const keep = gr.keepUnits && gr.keepUnits.length ? `, keep ${gr.keepUnits.join(" + ")}` : "";
-                      const action = gr.addCount > 0 ? `replace with ${gr.addCount}× ${gr.addUnit}${keep}` : `drop them${keep}`;
+                      const addStr = (gr.addSummary || []).map(a => `${a.count}× ${a.unit}`).join(" + ");
+                      const action = addStr ? `replace with ${addStr}${keep}` : `drop them${keep}`;
+                      const reason = gr.monotonous ? `${gr.dropCount} stacked identical units — diversify` : `${gr.dropCount} garrison unit(s) not recruitable here`;
                       sugg.push({ replace: true, ok: true, settlement: bs.settlement, repl: gr,
-                        text: `♻ ${bs.settlement}: ${gr.dropCount} garrison unit(s) no longer recruitable here — ${action} → PO ~${gr.poAfter} (${gr.upkeepDelta >= 0 ? "+" : ""}${gr.upkeepDelta}/turn upkeep).` });
+                        text: `♻ ${bs.settlement}: ${reason} — ${action} → PO ~${gr.poAfter} (${gr.upkeepDelta >= 0 ? "+" : ""}${gr.upkeepDelta}/turn upkeep).` });
                     }
                     for (const c of d.characters) {
                       if (!c.flags.some(f => /skirmisher-heavy|no heavy/.test(f))) continue;
@@ -23276,11 +23278,12 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                   if (s.replace) {
                                     if (!modDataDir) { alert("No mod loaded."); return; }
                                     const rp = s.repl;
-                                    const actMsg = rp.addCount > 0 ? `Replace ${rp.dropCount} non-recruitable unit(s) at ${s.settlement} with ${rp.addCount}× ${rp.addUnit}?` : `Drop ${rp.dropCount} non-recruitable unit(s) at ${s.settlement}?`;
+                                    const addStr2 = (rp.addSummary || []).map(a => `${a.count}× ${a.unit}`).join(" + ");
+                                    const actMsg = addStr2 ? `Replace ${rp.dropCount} non-recruitable unit(s) at ${s.settlement} with ${addStr2}?` : `Drop ${rp.dropCount} non-recruitable unit(s) at ${s.settlement}?`;
                                     if (!confirm(`${actMsg}\n\n(${d.faction}) Drops: ${rp.removeUnits.join(", ")}.\nWrites the campaign descr_strat.txt (a backup, descr_strat.txt.provincia-bak, is saved first). Reload the mod (🔄) or restart the game to see it.`)) return;
                                     try {
-                                      const r = await window.electronAPI.applyReplaceGarrison(modDataDir, d.faction, s.settlement, rp.removeUnits, rp.addUnit, rp.addCount);
-                                      if (r && r.ok) { pushToast(`Replaced garrison at ${s.settlement} (−${r.removedCount}/+${r.addedCount}× ${rp.addUnit})`, "info", 6000); fetchFor(d.faction); }
+                                      const r = await window.electronAPI.applyReplaceGarrison(modDataDir, d.faction, s.settlement, rp.removeUnits, rp.addUnits);
+                                      if (r && r.ok) { pushToast(`Replaced garrison at ${s.settlement} (−${r.removedCount}/+${r.addedCount})`, "info", 6000); fetchFor(d.faction); }
                                       else alert("Replace failed: " + (r?.error || "unknown"));
                                     } catch (e) { alert(e?.message || String(e)); }
                                     return;

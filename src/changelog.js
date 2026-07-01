@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1208",
+    date: "2026-07-01",
+    items: [
+      { type: "improvement", text: "**Garrison replace now diversifies instead of stacking one unit.** It spreads the replacement across the town's recruitable roster (round-robin by role), so you no longer get e.g. 7× the same unit — a stack like Paestum's rebuilds to a mix (2× leves + 2× rorarii + 1× funditores). It also now flags an *already-recruitable* garrison stacked with 3+ identical units and offers to rebuild it into a varied set — so garrisons you fixed with the earlier one-unit version can be re-diversified." },
+    ],
+  },
+  {
     version: "0.9.1207",
     date: "2026-07-01",
     items: [
