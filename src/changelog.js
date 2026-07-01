@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1212",
+    date: "2026-07-01",
+    items: [
+      { type: "fix", text: "**Trim no longer targets tax-crushed towns.** The over-garrison trim wrongly flagged Paestum — its last unit is redundant only because of the 80% garrison cap, but Paestum's base public order *without any garrison* is −15 (it's crushed at V.High tax and only reaches 70% *because* of the capped garrison). That's the opposite of over-garrisoned. Trim now fires only when a town's base PO already holds above the no-revolt floor with no garrison at all (genuinely over-provisioned): Epizephyrian_Locri (base 98) qualifies; Paestum, Thurii and Metapontum correctly don't — they need every unit or a tax cut." },
+    ],
+  },
+  {
     version: "0.9.1211",
     date: "2026-07-01",
     items: [

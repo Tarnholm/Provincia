@@ -6679,6 +6679,11 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
           // LOW bracket → high PO → few units needed). Keep the cheapest units up to the men floor
           // (min 1), suggest dropping the rest. Nothing added.
           if (!nonRecruit.length && !monotonous) {
+            // Only trim a town whose BASE public order (at its optimal tax, WITHOUT any garrison)
+            // already holds above the no-revolt floor — i.e. genuinely over-provisioned. A town at or
+            // below the floor (e.g. Paestum at V.High: base −15, only reaching PO 70 via the capped
+            // garrison) is NOT over-garrisoned — it needs every unit (or a tax cut). Never trim it.
+            if (base <= FLOOR_PO) return null;
             const items = rest.map((u, idx) => ({ u, idx, up: (us[u.toLowerCase()] || {}).upkeep || 0, m: _menOf(u, us) })).sort((a, b) => a.up - b.up);
             const keepIdx = new Set(); let tmen = bgMen;
             for (const it of items) { if (tmen >= minMen && keepIdx.size >= 1) break; keepIdx.add(it.idx); tmen += it.m; }
