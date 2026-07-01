@@ -6683,7 +6683,8 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
           const byCls = inf.filter(u => u.cls === domCls).sort((a, b) => _menOf(b.unit, us) - _menOf(a.unit, us));
           const repl = byCls[0] || inf.slice().sort((a, b) => (a.upkeep || 0) - (b.upkeep || 0))[0];
           const replMen = _menOf(repl.unit, us); if (!replMen) return null;
-          const addCount = Math.max(0, Math.ceil(gapMen / replMen));
+          const minAdd = keptRecruit.length ? 0 : 1;  // never leave a replaced town with 0 recruitable garrison units
+          const addCount = Math.max(minAdd, Math.ceil(gapMen / replMen));
           const finalMen = keptMen + addCount * replMen;
           const poAfter = Math.max(0, Math.min(200, Math.round(base + 5 * _garrPts(finalMen, pop))));
           const dropUp = nonRecruit.reduce((a, u) => a + ((us[u.toLowerCase()] || {}).upkeep || 0), 0);

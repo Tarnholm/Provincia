@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1207",
+    date: "2026-07-01",
+    items: [
+      { type: "fix", text: "**Recruitable-pool accuracy — major fix to unit gating.** The recruit-pool reader parsed the mod's building data flat: it ignored which government/colony building block each recruit line lives under and never expanded the `factions { all }` keyword — so it wrongly offered core Roman line units (e.g. `roman hastati early`) in area-of-recruitment towns that can only train local units, and it dropped every AOR unit. It now parses block-aware with a real condition evaluator (`and`/`or`/`not`, building-presence, and the gov/colony/aor tier aliases). **Neapolis now correctly resolves to `aor oscan spearmen`, not `roman hastati early`;** Rome and colony towns keep their proper rosters. This corrects every recruitability check across Army Setup, not just garrison replace." },
+      { type: "improvement", text: "Garrison replace now names the genuinely-recruitable local unit and never leaves a town with zero recruitable garrison units (keeps at least one). It also surfaces towns whose starting garrison holds core units they can't retrain (e.g. a `roman hastati early` parked in an AOR-only town)." },
+    ],
+  },
+  {
     version: "0.9.1206",
     date: "2026-07-01",
     items: [
