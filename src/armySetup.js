@@ -590,6 +590,15 @@ function applySwap(text, faction, characterName, oldUnit, newUnit) {
   return { ok: false, error: `unit '${oldUnit}' not found in ${characterName}'s army` };
 }
 
+// ;comment name pattern treating space and underscore interchangeably: RIS comments a
+// multi-word settlement with a SPACE (";Epizephyrian Locri") while the settlement/region
+// names use underscores ("Epizephyrian_Locri" / "Lokroi_Epizephyrioi"). Without this the
+// garrison locator misses multi-word towns and reads an empty garrison.
+function _namePat(name) {
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return esc(String(name).trim().toLowerCase()).replace(/[_\s]+/g, "[_\\s]+");
+}
+
 // Append ONE unit into a settlement's garrison army in descr_strat text. CRLF-safe; mirrors
 // applySwap. Resolves settlementName→region (via regionToCity), finds the ;<settlement> (or
 // ;<region>) garrison comment within the faction block, walks to the next character's `army`,
@@ -610,7 +619,7 @@ function applyAddGarrison(text, faction, settlementName, unitName, regionToCity)
   for (let i = 0; i < lines.length; i++) if (facRe.test(lines[i])) { fStart = i; break; }
   if (fStart < 0) return { ok: false, error: `faction ${faction} not found` };
   for (let i = fStart + 1; i < lines.length; i++) if (/^faction\s+\S/i.test(lines[i])) { fEnd = i; break; }
-  const cRe = new RegExp("^;\\s*(" + esc(sNorm) + (region ? "|" + esc(region.trim().toLowerCase()) : "") + ")\\s*$", "i");
+  const cRe = new RegExp("^;\\s*(" + _namePat(sNorm) + (region ? "|" + _namePat(region) : "") + ")\\s*$", "i");
   let cIdx = -1;
   for (let i = fStart; i < fEnd; i++) if (cRe.test(lines[i])) { cIdx = i; break; }
   if (cIdx < 0) return { ok: false, error: `no garrison present at ${settlementName} — station a general or captain there first, then re-run.` };
@@ -642,7 +651,7 @@ function getGarrisonUnits(text, faction, settlementName, regionToCity) {
   for (let i = 0; i < lines.length; i++) if (facRe.test(lines[i])) { fStart = i; break; }
   if (fStart < 0) return [];
   for (let i = fStart + 1; i < lines.length; i++) if (/^faction\s+\S/i.test(lines[i])) { fEnd = i; break; }
-  const cRe = new RegExp("^;\\s*(" + esc(sNorm) + (region ? "|" + esc(region.trim().toLowerCase()) : "") + ")\\s*$", "i");
+  const cRe = new RegExp("^;\\s*(" + _namePat(sNorm) + (region ? "|" + _namePat(region) : "") + ")\\s*$", "i");
   let cIdx = -1; for (let i = fStart; i < fEnd; i++) if (cRe.test(lines[i])) { cIdx = i; break; }
   if (cIdx < 0) return [];
   let chIdx = -1;
@@ -677,7 +686,7 @@ function applyReplaceGarrison(text, faction, settlementName, removeUnitNames, ad
   for (let i = 0; i < lines.length; i++) if (facRe.test(lines[i])) { fStart = i; break; }
   if (fStart < 0) return { ok: false, error: `faction ${faction} not found` };
   for (let i = fStart + 1; i < lines.length; i++) if (/^faction\s+\S/i.test(lines[i])) { fEnd = i; break; }
-  const cRe = new RegExp("^;\\s*(" + esc(sNorm) + (region ? "|" + esc(region.trim().toLowerCase()) : "") + ")\\s*$", "i");
+  const cRe = new RegExp("^;\\s*(" + _namePat(sNorm) + (region ? "|" + _namePat(region) : "") + ")\\s*$", "i");
   let cIdx = -1; for (let i = fStart; i < fEnd; i++) if (cRe.test(lines[i])) { cIdx = i; break; }
   if (cIdx < 0) return { ok: false, error: `no garrison present at ${settlementName}` };
   let chIdx = -1;

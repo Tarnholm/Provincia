@@ -6669,14 +6669,28 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
           // diversified set even when every unit is recruitable (e.g. Paestum's 7× roman leves).
           const dupCount = {}; rest.forEach(u => { const k = u.toLowerCase(); dupCount[k] = (dupCount[k] || 0) + 1; });
           const monotonous = Object.values(dupCount).reduce((a, b) => Math.max(a, b), 0) >= 3;
-          if (!nonRecruit.length && !monotonous) return null;
-          const toDrop = monotonous ? rest.slice() : nonRecruit;  // rebuild all non-bodyguard when monotonous
           const pop = prow.rows.pop;
           const base = (s.poAtSet != null ? s.poAtSet : prow.poAt.normal) - prow.rows.garrison;
           const needPts = Math.max(0, Math.min(16, Math.ceil((FLOOR_PO + 1 - base) / 5)));
           const minMen = Math.ceil(needPts * pop / 70);
-          const keptRecruit = monotonous ? [] : rest.filter(u => poolSet.has(u.toLowerCase()));
           const bgMen = prow.rows.men - rest.reduce((a, u) => a + _menOf(u, us), 0);
+          // TRIM (user 2026-07-01): fully-recruitable, non-monotonous, but OVER-garrisoned at the
+          // town's optimal ("perfect") tax — s.poAtSet already reflects it (a low-growth town gets a
+          // LOW bracket → high PO → few units needed). Keep the cheapest units up to the men floor
+          // (min 1), suggest dropping the rest. Nothing added.
+          if (!nonRecruit.length && !monotonous) {
+            const items = rest.map((u, idx) => ({ u, idx, up: (us[u.toLowerCase()] || {}).upkeep || 0, m: _menOf(u, us) })).sort((a, b) => a.up - b.up);
+            const keepIdx = new Set(); let tmen = bgMen;
+            for (const it of items) { if (tmen >= minMen && keepIdx.size >= 1) break; keepIdx.add(it.idx); tmen += it.m; }
+            const dropItems = items.filter(it => !keepIdx.has(it.idx));
+            if (!dropItems.length) return null;  // sized right — nothing to trim
+            const keepUnits = rest.filter((_, idx) => keepIdx.has(idx));
+            const finalMenT = bgMen + [...keepIdx].reduce((a, idx) => a + _menOf(rest[idx], us), 0);
+            const poAfterT = Math.max(0, Math.min(200, Math.round(base + 5 * _garrPts(finalMenT, pop))));
+            return { removeUnits: dropItems.map(it => it.u), addUnits: [], addSummary: [], trim: true, dropCount: dropItems.length, keepUnits, poAfter: poAfterT, upkeepDelta: -dropItems.reduce((a, it) => a + it.up, 0) };
+          }
+          const toDrop = monotonous ? rest.slice() : nonRecruit;  // rebuild all non-bodyguard when monotonous
+          const keptRecruit = monotonous ? [] : rest.filter(u => poolSet.has(u.toLowerCase()));
           const keptMen = bgMen + keptRecruit.reduce((a, u) => a + _menOf(u, us), 0);
           const gapMen = Math.max(0, minMen - keptMen);
           const clsCount = {};

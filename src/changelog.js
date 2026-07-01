@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1211",
+    date: "2026-07-01",
+    items: [
+      { type: "fix", text: "**Garrison reader now finds multi-word towns.** A settlement whose descr_strat comment uses a space (`;Epizephyrian Locri`) while its name uses underscores (`Epizephyrian_Locri` / region `Lokroi_Epizephyrioi`) was read as having an *empty* garrison, so it never appeared in the audit. Space and underscore are now matched interchangeably — Epizephyrian_Locri, Sena_Gallica and every other multi-word town read correctly." },
+      { type: "feature", text: "**Trim over-garrisoned towns.** The audit now flags a fully-recruitable, non-stacked garrison that's larger than public order needs *at the town's optimal (\"perfect\") tax* — a low-growth town whose optimal is Low has high PO and doesn't need a full garrison. It suggests dropping the excess (keeping the cheapest unit) with the upkeep saved. Because it uses each town's optimal bracket, a town you'd tax High (e.g. Paestum) isn't wrongly gutted — it only sheds genuine excess." },
+    ],
+  },
+  {
     version: "0.9.1210",
     date: "2026-07-01",
     items: [

@@ -23231,6 +23231,11 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                           text: `⚠ ${bs.settlement}: ${gr.removeUnits.join(", ")} can't be recruited here${gr.noMil ? " — and there's no military building to recruit any replacement (add a barracks, or drop the unit)" : " — and no infantry is recruitable here"}. Drop → PO ~${gr.poAfter}.` });
                         continue;
                       }
+                      if (gr.trim) {
+                        sugg.push({ replace: true, ok: true, trim: true, settlement: bs.settlement, repl: gr,
+                          text: `✂ ${bs.settlement}: over-garrisoned at its optimal tax — drop ${gr.dropCount} excess unit(s)${gr.keepUnits && gr.keepUnits.length ? ` (keep ${gr.keepUnits.join(" + ")})` : ""} → PO ~${gr.poAfter}, save ${-gr.upkeepDelta}/turn.` });
+                        continue;
+                      }
                       const keep = gr.keepUnits && gr.keepUnits.length ? `, keep ${gr.keepUnits.join(" + ")}` : "";
                       const addStr = (gr.addSummary || []).map(a => `${a.count}× ${a.unit}`).join(" + ");
                       const action = addStr ? `replace with ${addStr}${keep}` : `drop them${keep}`;
@@ -23326,7 +23331,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                 title={garrDone.has(s.text) ? "Applied — click 🔄 Reload when you're done" : (s.ok ? "Write this change to the campaign descr_strat.txt (backup taken first)" : "This swap exceeds your budget floor")}
                                 disabled={garrDone.has(s.text)}
                                 style={{ flexShrink: 0, background: garrDone.has(s.text) ? "#3a4a3a" : (s.ok ? "#5a9b88" : "#8a6a3a"), color: "#fff", border: "1px solid " + (garrDone.has(s.text) ? "#3a4a3a" : (s.ok ? "#5a9b88" : "#a07a3a")), borderRadius: 4, padding: "3px 10px", cursor: garrDone.has(s.text) ? "default" : "pointer", opacity: garrDone.has(s.text) ? 0.7 : 1, fontSize: "0.76rem", fontWeight: 600 }}>
-                                {garrDone.has(s.text) ? "✓ Applied" : (s.replace ? (s.noRecruit ? "Drop ✕" : "Replace ♻") : s.garrison ? "Recruit ↗" : "Apply")}
+                                {garrDone.has(s.text) ? "✓ Applied" : (s.replace ? (s.noRecruit ? "Drop ✕" : s.trim ? "Trim ✂" : "Replace ♻") : s.garrison ? "Recruit ↗" : "Apply")}
                               </button>
                             </div>
                           ))}
