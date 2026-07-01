@@ -6660,8 +6660,7 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
           const rp = require("./src/recruitPool.js");
           const garr = _armySetup.getGarrisonUnits(_descrText, faction, s.settlement, _regionToCity);
           if (garr.length < 2) return null;                  // need bodyguard + ≥1 unit
-          const pool = rp.poolForSettlement(modDataDir, faction, s.buildings, s.region, _garrCache);
-          if (!pool || !pool.length) return null;
+          const pool = rp.poolForSettlement(modDataDir, faction, s.buildings, s.region, _garrCache) || [];
           const us = rp.parseUnitStats(modDataDir) || {};
           const poolSet = new Set(pool.map(u => u.unit.toLowerCase()));
           const rest = garr.slice(1);                        // [0] = general's bodyguard (kept)
@@ -6684,7 +6683,15 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
           toDrop.forEach(u => { const c = (us[u.toLowerCase()] || {}).cls; if (c) clsCount[c] = (clsCount[c] || 0) + 1; });
           const domCls = Object.keys(clsCount).sort((a, b) => clsCount[b] - clsCount[a])[0];
           const inf = pool.filter(u => u.category === "infantry" && !/general|bodyguard|captain/i.test(u.unit));
-          if (!inf.length) return null;
+          if (!inf.length) {
+            // No recruitable infantry here — an EMPTY pool (no military building) or a cavalry-only
+            // pool. Can't offer a replacement, but still FLAG the town so the audit surfaces EVERY
+            // settlement with an un-retrainable garrison (user 2026-07-01: "check all settlements").
+            const dropUp0 = toDrop.reduce((a, u) => a + ((us[u.toLowerCase()] || {}).upkeep || 0), 0);
+            const poAfter0 = Math.max(0, Math.min(200, Math.round(base + 5 * _garrPts(keptMen, pop))));
+            const noMil = !(s.buildings || []).some(b => /military_industrial_complex|mic_\d|(^|[:\s])garrison([:\s]|$)/i.test(String(b)));
+            return { removeUnits: toDrop, addUnits: [], addSummary: [], noRecruit: true, noMil, dropCount: toDrop.length, keepUnits: keptRecruit, monotonous, poAfter: poAfter0, upkeepDelta: -dropUp0 };
+          }
           // DIVERSIFIED replacement (user 2026-07-01: "don't want 7 of the same unit"): round-robin
           // across the DISTINCT recruitable infantry — dominant dropped cls first, then cheapest —
           // adding one at a time until the garrison clears the men floor; always keep ≥1 unit.

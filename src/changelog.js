@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1209",
+    date: "2026-07-01",
+    items: [
+      { type: "fix", text: "**Garrison audit now surfaces EVERY settlement with an un-retrainable unit** — including towns that can't recruit any replacement. Previously a town with no military building (so an empty recruit pool) was silently skipped, so garrisons like Croton's `aor italiote hoplites` or Fregellae's `aor latin hastati` never appeared. They now show a ⚠ warning naming the un-recruitable unit(s), a note that the town has no military building (add a barracks, or drop the unit), and a Drop option. Checks all settlements of the selected faction." },
+    ],
+  },
+  {
     version: "0.9.1208",
     date: "2026-07-01",
     items: [

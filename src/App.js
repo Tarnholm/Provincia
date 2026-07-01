@@ -23221,6 +23221,11 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     // recruitable garrison that clears the >70 no-revolt floor.
                     for (const bs of _bset) {
                       const gr = bs.garrisonReplace; if (!gr || !gr.removeUnits || !gr.removeUnits.length) continue;
+                      if (gr.noRecruit) {
+                        sugg.push({ replace: true, ok: false, noRecruit: true, settlement: bs.settlement, repl: gr,
+                          text: `⚠ ${bs.settlement}: ${gr.removeUnits.join(", ")} can't be recruited here${gr.noMil ? " — and there's no military building to recruit any replacement (add a barracks, or drop the unit)" : " — and no infantry is recruitable here"}. Drop → PO ~${gr.poAfter}.` });
+                        continue;
+                      }
                       const keep = gr.keepUnits && gr.keepUnits.length ? `, keep ${gr.keepUnits.join(" + ")}` : "";
                       const addStr = (gr.addSummary || []).map(a => `${a.count}× ${a.unit}`).join(" + ");
                       const action = addStr ? `replace with ${addStr}${keep}` : `drop them${keep}`;
@@ -23312,7 +23317,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                 }}
                                 title={s.ok ? "Write this swap to the campaign descr_strat.txt (backup taken first)" : "This swap exceeds your budget floor"}
                                 style={{ flexShrink: 0, background: s.ok ? "#5a9b88" : "#8a6a3a", color: "#fff", border: "1px solid " + (s.ok ? "#5a9b88" : "#a07a3a"), borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontSize: "0.76rem", fontWeight: 600 }}>
-                                {s.replace ? "Replace ♻" : s.garrison ? "Recruit ↗" : "Apply"}
+                                {s.replace ? (s.noRecruit ? "Drop ✕" : "Replace ♻") : s.garrison ? "Recruit ↗" : "Apply"}
                               </button>
                             </div>
                           ))}
