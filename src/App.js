@@ -23212,6 +23212,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     const headroom = hasProj ? proj - armyBudgetFloor : null;
                     // find a skirmisher-heavy character + suggest swapping one skirmisher for a heavier line unit within headroom
                     const sugg = [];
+                    let hiddenTrimN = 0, hiddenTrimSave = 0;  // over-garrisoned towns hidden while under budget
                     // PO-risk garrison fixes rank ABOVE the cosmetic unit swaps — a red/orange town is
                     // an actual revolt risk, not a tuning tweak. Pull them from the turn-1 budget rows.
                     const _bset = (armyT1Budget && armyT1Budget.faction === d.faction && armyT1Budget.settlements) || [];
@@ -23232,6 +23233,10 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         continue;
                       }
                       if (gr.trim) {
+                        // BUDGET-AWARE (user 2026-07-01): an over-provisioned garrison is only worth
+                        // trimming when the faction is tight. With headroom to spare, keeping a few
+                        // non-essential units is fine — hide the trim, just tally it for a note.
+                        if (headroom != null && headroom > 0) { hiddenTrimN++; hiddenTrimSave += Math.max(0, -gr.upkeepDelta); continue; }
                         sugg.push({ replace: true, ok: true, trim: true, settlement: bs.settlement, repl: gr,
                           text: `✂ ${bs.settlement}: over-garrisoned at its optimal tax — drop ${gr.dropCount} excess unit(s)${gr.keepUnits && gr.keepUnits.length ? ` (keep ${gr.keepUnits.join(" + ")})` : ""} → PO ~${gr.poAfter}, save ${-gr.upkeepDelta}/turn.` });
                         continue;
@@ -23280,7 +23285,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                           text: `TRIM ${best.character}: swap ${best.oldUnit} → ${best.newUnit} — save ${best.save} upkeep → net ${best.net} (back within the floor)` });
                       }
                     }
-                    if (!sugg.length) return null;
+                    if (!sugg.length && !hiddenTrimN) return null;
                     return (
                       <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(120,170,90,0.10)", border: "1px solid rgba(120,170,90,0.35)" }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -23336,6 +23341,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                             </div>
                           ))}
                         </div>
+                        {hiddenTrimN > 0 && <div style={{ marginTop: 8, fontSize: "0.74rem", color: "#9fb88f" }}>✂ {hiddenTrimN} town{hiddenTrimN > 1 ? "s are" : " is"} over-garrisoned (could save ~{hiddenTrimSave}/turn), but you're under budget — keeping the extra garrison is fine.</div>}
                         <div style={{ marginTop: 6, fontSize: "0.7rem", color: "#8aa" }}>Each apply writes to descr_strat (CRLF-safe, backup saved) and marks the row ✓ — the panel does NOT reload per change. Apply as many as you like, then click <b>🔄 Reload</b> above (or restart the game) to refresh.</div>
                       </div>
                     );

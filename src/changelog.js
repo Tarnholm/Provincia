@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1213",
+    date: "2026-07-01",
+    items: [
+      { type: "improvement", text: "**Trim suggestions are now budget-aware.** An over-provisioned garrison is only worth trimming when the faction is tight on money — so when you have budget headroom to spare, the ✂ trim suggestions are hidden, replaced by a small note tallying how many towns and how much upkeep you *could* reclaim. Keeping a few non-essential garrison troops is fine when you can afford them; the trims reappear if a faction goes over budget." },
+    ],
+  },
+  {
     version: "0.9.1212",
     date: "2026-07-01",
     items: [
