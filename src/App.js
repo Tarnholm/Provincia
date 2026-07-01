@@ -9714,6 +9714,11 @@ function App() {
   // (src/incomeModel.js — taxes/farming/mining/trade − wages − corruption) at the
   // growth model's optimal brackets. { faction, settlements, totals:{armyBudget…} }.
   const [armyT1Budget, setArmyT1Budget] = useState(null);
+  // Deferred reload for descr_strat edits (user 2026-07-01): each apply marks the suggestion
+  // done in place and sets pendingReload instead of re-fetching, so a batch of fixes doesn't
+  // reload per-change; the user clicks 🔄 Reload once when finished.
+  const [garrDone, setGarrDone] = useState(() => new Set());
+  const [pendingReload, setPendingReload] = useState(false);
   // Editable, persisted max-deficit floor (default -500) for the army budget.
   const [armyBudgetFloor, setArmyBudgetFloor] = useState(() => {
     const v = parseInt(localStorage.getItem("armyBudgetFloor"), 10);
@@ -22755,7 +22760,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           if (!ff || !modDataDir) return;
           const calib = calibOverride !== undefined ? calibOverride : armyCalibSave;
           setArmyProjIncome("");
-          setArmySetupBusy(true); setArmySetupData(null); setArmyT1Budget(null); setArmyStratPlan(null);
+          setArmySetupBusy(true); setArmySetupData(null); setArmyT1Budget(null); setArmyStratPlan(null); setGarrDone(new Set()); setPendingReload(false);
           // per-campaign tax + corruption calibration: persisted per modDir+faction
           const taxH = taxCalibStored(modDataDir, ff);
           const corrCal = corrCalibStored(modDataDir, ff);
@@ -23273,11 +23278,14 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     if (!sugg.length) return null;
                     return (
                       <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(120,170,90,0.10)", border: "1px solid rgba(120,170,90,0.35)" }}>
-                        <strong style={{ color: "#a7d77f" }}>Suggestions</strong>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <strong style={{ color: "#a7d77f" }}>Suggestions</strong>
+                          {pendingReload && <button onClick={() => fetchFor(d.faction)} title="Re-read descr_strat and refresh — click when you've finished applying changes" style={{ background: "#5a7b9b", color: "#fff", border: "1px solid #6a8bab", borderRadius: 4, padding: "2px 10px", cursor: "pointer", fontSize: "0.72rem", fontWeight: 600 }}>🔄 Reload{garrDone.size ? ` (${garrDone.size} applied)` : ""}</button>}
+                        </div>
                         <div style={{ margin: "6px 0 0", display: "flex", flexDirection: "column", gap: 6 }}>
                           {sugg.map((s, i) => (
                             <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.8rem" }}>
-                              <span style={{ flex: 1, color: s.ok ? "#dfe" : "#e8a07a" }}>{s.text}</span>
+                              <span style={{ flex: 1, color: garrDone.has(s.text) ? "#6f7f6f" : (s.ok ? "#dfe" : "#e8a07a"), textDecoration: garrDone.has(s.text) ? "line-through" : "none" }}>{s.text}</span>
                               <button
                                 onClick={async () => {
                                   if (s.replace) {
@@ -23288,7 +23296,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                     if (!confirm(`${actMsg}\n\n(${d.faction}) Drops: ${rp.removeUnits.join(", ")}.\nWrites the campaign descr_strat.txt (a backup, descr_strat.txt.provincia-bak, is saved first). Reload the mod (🔄) or restart the game to see it.`)) return;
                                     try {
                                       const r = await window.electronAPI.applyReplaceGarrison(modDataDir, d.faction, s.settlement, rp.removeUnits, rp.addUnits);
-                                      if (r && r.ok) { pushToast(`Replaced garrison at ${s.settlement} (−${r.removedCount}/+${r.addedCount})`, "info", 6000); fetchFor(d.faction); }
+                                      if (r && r.ok) { pushToast(`Replaced garrison at ${s.settlement} (−${r.removedCount}/+${r.addedCount})`, "info", 6000); setPendingReload(true); setGarrDone(prev => new Set(prev).add(s.text)); }
                                       else alert("Replace failed: " + (r?.error || "unknown"));
                                     } catch (e) { alert(e?.message || String(e)); }
                                     return;
@@ -23300,7 +23308,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                     if (!confirm(`Add 1× ${gunit} to ${s.settlement}'s garrison in descr_strat?\n\n(${d.faction}) Writes the campaign descr_strat.txt (a backup, descr_strat.txt.provincia-bak, is saved first). Reload the mod (🔄) or restart the game to see it.`)) return;
                                     try {
                                       const r = await window.electronAPI.applyAddGarrison(modDataDir, d.faction, s.settlement, gunit);
-                                      if (r && r.ok) { pushToast(`Added 1× ${gunit} to ${s.settlement}'s garrison (line ${r.insertedAtLine})`, "info", 6000); fetchFor(d.faction); }
+                                      if (r && r.ok) { pushToast(`Added 1× ${gunit} to ${s.settlement}'s garrison (line ${r.insertedAtLine})`, "info", 6000); setPendingReload(true); setGarrDone(prev => new Set(prev).add(s.text)); }
                                       else if (r && /no garrison present/i.test(r.error || "")) pushToast(`No garrison at ${s.settlement} — station a general or captain there first, then re-run.`, "info", 7000);
                                       else alert("Add garrison failed: " + (r?.error || "unknown"));
                                     } catch (e) { alert(e?.message || String(e)); }
@@ -23311,18 +23319,19 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                   if (!confirm(`Apply this swap to descr_strat?\n\nIn ${s.character}'s army (${d.faction}):\n  ${s.oldUnit} → ${s.newUnit}${warn}\n\nWrites the campaign descr_strat.txt (a backup, descr_strat.txt.provincia-bak, is saved first). Reload the mod / restart the game to see it.`)) return;
                                   try {
                                     const r = await window.electronAPI.applyArmySwap(modDataDir, d.faction, s.character, s.oldUnit, s.newUnit);
-                                    if (r && r.ok) { pushToast(`Applied: ${s.oldUnit} → ${s.newUnit} (line ${r.changedLine})`, "info", 6000); fetchFor(d.faction); }
+                                    if (r && r.ok) { pushToast(`Applied: ${s.oldUnit} → ${s.newUnit} (line ${r.changedLine})`, "info", 6000); setPendingReload(true); setGarrDone(prev => new Set(prev).add(s.text)); }
                                     else alert("Swap failed: " + (r?.error || "unknown"));
                                   } catch (e) { alert(e?.message || String(e)); }
                                 }}
-                                title={s.ok ? "Write this swap to the campaign descr_strat.txt (backup taken first)" : "This swap exceeds your budget floor"}
-                                style={{ flexShrink: 0, background: s.ok ? "#5a9b88" : "#8a6a3a", color: "#fff", border: "1px solid " + (s.ok ? "#5a9b88" : "#a07a3a"), borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontSize: "0.76rem", fontWeight: 600 }}>
-                                {s.replace ? (s.noRecruit ? "Drop ✕" : "Replace ♻") : s.garrison ? "Recruit ↗" : "Apply"}
+                                title={garrDone.has(s.text) ? "Applied — click 🔄 Reload when you're done" : (s.ok ? "Write this change to the campaign descr_strat.txt (backup taken first)" : "This swap exceeds your budget floor")}
+                                disabled={garrDone.has(s.text)}
+                                style={{ flexShrink: 0, background: garrDone.has(s.text) ? "#3a4a3a" : (s.ok ? "#5a9b88" : "#8a6a3a"), color: "#fff", border: "1px solid " + (garrDone.has(s.text) ? "#3a4a3a" : (s.ok ? "#5a9b88" : "#a07a3a")), borderRadius: 4, padding: "3px 10px", cursor: garrDone.has(s.text) ? "default" : "pointer", opacity: garrDone.has(s.text) ? 0.7 : 1, fontSize: "0.76rem", fontWeight: 600 }}>
+                                {garrDone.has(s.text) ? "✓ Applied" : (s.replace ? (s.noRecruit ? "Drop ✕" : "Replace ♻") : s.garrison ? "Recruit ↗" : "Apply")}
                               </button>
                             </div>
                           ))}
                         </div>
-                        <div style={{ marginTop: 6, fontSize: "0.7rem", color: "#8aa" }}>Apply writes one unit line to descr_strat (CRLF-safe, backup saved). Reload the mod (🔄) or restart the game to see it.</div>
+                        <div style={{ marginTop: 6, fontSize: "0.7rem", color: "#8aa" }}>Each apply writes to descr_strat (CRLF-safe, backup saved) and marks the row ✓ — the panel does NOT reload per change. Apply as many as you like, then click <b>🔄 Reload</b> above (or restart the game) to refresh.</div>
                       </div>
                     );
                   })()}

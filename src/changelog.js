@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1210",
+    date: "2026-07-01",
+    items: [
+      { type: "improvement", text: "**Batch your garrison edits — no more reload after every apply.** Applying a suggestion (replace / diversify / drop / recruit / swap) now marks that row ✓ Applied in place and defers the refresh instead of reloading the whole panel. A 🔄 Reload button appears at the top of Suggestions once you've applied anything — apply as many fixes as you like, then reload once when you're done." },
+    ],
+  },
+  {
     version: "0.9.1209",
     date: "2026-07-01",
     items: [
