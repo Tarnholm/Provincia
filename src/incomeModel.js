@@ -2617,6 +2617,8 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     corruption = Math.round(corruption / CALIB.difficultyIncome * CALIB.aiFarmBonus * (CALIB.aiCorrFixByTier[F.tier] != null ? CALIB.aiCorrFixByTier[F.tier] : 1.0));
     admin = Math.round(admin * (CALIB.aiAdminFixByTier[F.tier] != null ? CALIB.aiAdminFixByTier[F.tier] : 1.0));
   } else if (opts && opts.humanDifficulty === "normal") {
+    // (humanDifficulty:"hard" — the all-human default since 2026-07-02 — is the identity:
+    // the base model is H/H-calibrated, so only "normal" needs the un-divide below.)
     // NORMAL difficulty (human): no 0.92 income malus — Hard/V.Hard only, but the base
     // lines bake in H/H. Un-divide it from every income line that scales with it: farming,
     // taxes, admin and corruption (all ride the populace gross). Validated per-town vs the

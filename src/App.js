@@ -22764,7 +22764,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           // per-campaign tax + corruption calibration: persisted per modDir+faction
           const taxH = taxCalibStored(modDataDir, ff);
           const corrCal = corrCalibStored(modDataDir, ff);
-          const t1Promise = ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, calib || undefined, armyEcoMode === "ai" || undefined, taxH || undefined, corrCal || undefined, armyEcoMode === "human" ? "normal" : undefined), "turn-1 budget");
+          const t1Promise = ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, calib || undefined, armyEcoMode === "ai" || undefined, taxH || undefined, corrCal || undefined, armyEcoMode === "human" ? "hard" : undefined), "turn-1 budget");
           // auto-compute the tax plan too (no button press needed)
           const planPromise = ipcWithTimeout(window.electronAPI.getStratTaxPlan?.(modDataDir, ff, calib || undefined), "strat tax plan");
           try {
@@ -22821,7 +22821,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
               // The overview honors the attached calibration save(s) like fetchFor does.
               const perSave = [];
               for (const sv of calibList) {
-                const t1 = await ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, sv || undefined, armyEcoMode === "ai" || undefined, taxCalibStored(modDataDir, ff) || undefined, corrCalibStored(modDataDir, ff) || undefined, armyEcoMode === "human" ? "normal" : undefined), "turn-1 budget (" + ff + (sv ? " · " + sv.split(/[\\/]/).pop().slice(0, 10) : "") + ")");
+                const t1 = await ipcWithTimeout(window.electronAPI.getTurn1Budget?.(modDataDir, ff, sv || undefined, armyEcoMode === "ai" || undefined, taxCalibStored(modDataDir, ff) || undefined, corrCalibStored(modDataDir, ff) || undefined, armyEcoMode === "human" ? "hard" : undefined), "turn-1 budget (" + ff + (sv ? " · " + sv.split(/[\\/]/).pop().slice(0, 10) : "") + ")");
                 if (t1 && t1.error) setArmyOverview(prev => ({ ...(prev || {}), error: t1.error }));
                 if (t1 && !t1.error && t1.totals) perSave.push(t1);
               }
@@ -22857,12 +22857,12 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                   </button>
                   {armyOverview && !armyOverview.busy && <button onClick={() => setArmyOverview(null)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.2)", color: "#9aa", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>hide</button>}
                   <button
-                    onClick={() => { const order = ["human", "player", "ai"]; const next = order[(order.indexOf(armyEcoMode) + 1) % order.length]; setArmyEcoMode(next); pushToast(next === "ai" ? "Modeling factions under AI rules (no human malus + empire-size bonus)" : next === "human" ? "Modeling factions all-human at Normal (no 0.92 malus, no AI bonus) — the 'if you played each' view" : "Modeling factions under human-player HARD rules (H/H ×0.92 income)", "info", 4500); if (fac) setTimeout(() => fetchFor(fac), 0); }}
+                    onClick={() => { const order = ["human", "player", "ai"]; const next = order[(order.indexOf(armyEcoMode) + 1) % order.length]; setArmyEcoMode(next); pushToast(next === "ai" ? "Modeling factions under AI rules (no human malus + empire-size bonus)" : next === "human" ? "Modeling factions all-human at HARD (H/H ×0.92, no AI bonus, optimal taxes for every faction) — the 'if you played each' view" : "Modeling factions under human-player HARD rules (H/H ×0.92 income)", "info", 4500); if (fac) setTimeout(() => fetchFor(fac), 0); }}
                     title={armyEcoMode === "ai"
                       ? "AI RULES: no 0.92 human income malus + the tiered empire-size AI income bonus (≈×1.8 city-states → ×1.0 big empires, from 215 AI ledgers). Click to cycle → player (Hard)."
                       : armyEcoMode === "human"
-                      ? "ALL-HUMAN, NORMAL: no 0.92 malus, no AI bonus — what each faction makes if YOU played it on Normal and set taxes by hand (the balance-harness view). Click to cycle → AI rules."
-                      : "HUMAN-PLAYER, HARD (H/H: 92% tax+farm income, no AI bonus). Click to cycle → all-human."}
+                      ? "ALL-HUMAN, HARD (H/H ×0.92 income like the player, no AI bonus) — what each faction makes if YOU played it and set its 0-growth-optimal taxes; ignores in-game set rates so every faction is compared on equal footing. Click to cycle → AI rules."
+                      : "HUMAN-PLAYER, HARD (H/H: 92% tax+farm income, no AI bonus; honors the tax rates you set in-game via the calibration save). Click to cycle → all-human."}
                     style={{ background: armyEcoMode === "ai" ? "rgba(120,140,200,0.25)" : armyEcoMode === "human" ? "rgba(90,150,110,0.22)" : "rgba(60,60,60,0.7)", color: armyEcoMode === "ai" ? "#9fb6e8" : armyEcoMode === "human" ? "#9ed6ad" : "#9ab", border: "1px solid " + (armyEcoMode === "ai" ? "#5a72b0" : armyEcoMode === "human" ? "#4a9a6a" : "rgba(255,255,255,0.25)"), borderRadius: 5, padding: "2px 10px", cursor: "pointer", fontSize: "0.74rem" }}>
                     {armyEcoMode === "ai" ? "🤖 AI rules" : armyEcoMode === "human" ? "🧑 all-human" : "👤 player (Hard)"}
                   </button>
@@ -23034,16 +23034,17 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                           <span style={{ fontSize: "0.7rem", color: "#8aa" }}>{armyT1Budget.saveAware ? "calibration save applied (save governor traits + pops) + mod-file income model" : "computed from the mod files alone (no save)"} · empire size {armyT1Budget.tier} · {armyT1Budget.settlements.length} settlements</span>
                           {armyT1Budget.saveWarning && <span style={{ fontSize: "0.7rem", color: "#e0a050" }} title="A calibration save is attached but could not be used — the numbers below are the no-save model.">⚠ {armyT1Budget.saveWarning}</span>}
                           {(() => {
-                            // DIFFICULTY-MODE MISMATCH (user 2026-07-02: Rome modeled +5054 in all-human
-                            // mode vs +2699 in the game): the attached save IS this faction's campaign,
-                            // but the harness mode models Normal difficulty (no ×0.92) — flag it loudly.
+                            // MODEL-vs-LEDGER DIVERGENCE (user 2026-07-02: the Rome +5054-vs-+2699 report;
+                            // all-human has modeled H/H since v0.9.1216, so a big gap on the save's OWN
+                            // faction now means the mode's optimal-tax plan differs from the rates actually
+                            // set in-game (all-human ignores set rates) — point at the 🎮 ledger number.
                             const led = armyT1Budget.saveLedger;
                             if (!(led && led.isPlayer && armyEcoMode === "human" && netAfterArmy != null)) return null;
                             const diff = netAfterArmy - led.net;
                             if (Math.abs(diff) <= Math.max(300, 0.10 * Math.abs(led.net))) return null;
                             return <span style={{ fontSize: "0.7rem", color: "#e8806a", fontWeight: 600 }}
-                              title={`This save's campaign is played BY this faction, but the panel is in 🧑 all-human mode, which models NORMAL difficulty (no ×0.92 income malus) — on an H/H campaign that over-reads income by ≈9%. Model net ${netAfterArmy} vs the save's own ledger ${led.net}. Cycle the mode button to 👤 player (Hard) to match the game, or take the 🎮 number.`}>
-                              ⚠ all-human mode ≠ this campaign's difficulty (model {netAfterArmy} vs game {led.net}) — switch to 👤 player (Hard)</span>;
+                              title={`This save's campaign is played BY this faction, but the panel is in 🧑 all-human mode, which budgets every faction at its OPTIMAL tax plan and ignores the rates set in-game. Model net ${netAfterArmy} vs the save's own ledger ${led.net}. Switch to 👤 player (Hard) to honor your in-game rates, set the plan's brackets in-game, or take the 🎮 number.`}>
+                              ⚠ all-human plan ≠ this campaign's rates (model {netAfterArmy} vs game {led.net}) — 👤 player mode honors them</span>;
                           })()}
                           <input value={armySetSearch} onChange={(e) => setArmySetSearch(e.target.value)} placeholder="Filter settlements…"
                             style={{ marginLeft: "auto", width: 140, background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 5, padding: "2px 7px", fontSize: "0.72rem" }} />

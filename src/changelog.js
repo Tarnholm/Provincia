@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1216",
+    date: "2026-07-02",
+    items: [
+      { type: "change", text: "**All-human mode now models Hard/Hard.** The 🧑 all-human balance view previously modeled Normal difficulty (no ×0.92 income malus), which read ≈9% high against the H/H campaigns the team actually plays — the root of yesterday's +5054-vs-+2699 confusion. It now uses the same H/H income rules as 👤 player mode; what still distinguishes it is the comparison footing: every faction is budgeted at its 0-growth-optimal tax plan (in-game set rates ignored) with no AI bonus and the deterministic component-model PO. Republic of Rome with your save now reads net ≈2621 in both modes vs the game's 2699. The mode tooltips and the ledger-mismatch warning were reworded to match." },
+    ],
+  },
+  {
     version: "0.9.1215",
     date: "2026-07-02",
     items: [
