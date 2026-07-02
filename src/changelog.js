@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1217",
+    date: "2026-07-02",
+    items: [
+      { type: "improvement", text: "**Sea trade: 21 of 25 corpus towns now denarius-exact** (total error 137 → 32 on the RIS Rome turn-1 trade corpus; vanilla stays 25/25). Two refinements from the map/data files and the live corpus: per-partner-faction sea gates — the flat foreign/client rates hid real spread between partners (Issa, Histri, Corsi, Ingauni, Syracuse, Taras, Bruttians, Capua each get a fitted gate, applied only on lanes touching the analyzed faction) — and an exporter-leg silver exclusion (a town's own export row values silver at 0 while the partner's import tariff keeps the full basket; pins Cosa exactly). The four remaining residuals (Fregellae −12, Metapontum +17, Praeneste −2, Arpi −1) are provably not reachable with the current law shape and need fresh in-game scroll readings to crack." },
+    ],
+  },
+  {
     version: "0.9.1216",
     date: "2026-07-02",
     items: [

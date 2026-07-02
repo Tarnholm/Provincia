@@ -686,6 +686,25 @@ const CALIB = {
   // RIS-only protectorate (trade-agreement) sea gate — Rome's client factions (Bruttii/Taras/Samnites via
   // become_protector) trade nearer to own; the shared 0.66 under-reads them. Vanilla keeps seaGateAgreeV.
   seaGateAgreeRisV: 0.82,
+  // RIS PER-PARTNER sea gates (2026-07-02 dynamic-law sweep, julii 25-town turn-1 corpus 137→32):
+  // the flat foreign 0.5 / client 0.82 gates hide real per-relationship spread. Keyed by the lane's
+  // NON-budget-faction side (applies only when the other side IS the budget faction, so partner-partner
+  // feeder lanes keep the generic gates). Fit windows (all towns of a partner solved jointly):
+  //   issa 0.435 [.4355-.436 venusia/arpi split ±1 — those towns are live-evidenced IMPORT-ONLY
+  //   (Issa>X fix pins 195/260/110 = exactly 0.2×target), a shape this law can't express]
+  //   histri 0.45 | corsi 0.575 | ingauni 0.52 | syracuse 0.73 (epize was -14, now exact)
+  //   clients: taras 0.88 (thurii exact), bruttians 0.9095 (paestum exact; metapontum +17 residual —
+  //   paestum needs 0.906-0.911, metapontum 0.793-0.800: one bruttians gate CANNOT satisfy both),
+  //   capua 0.8025 (rome + praeneste joint optimum).
+  // Diplomacy note: needed gates do NOT follow core_attitudes cleanly (issa -10 friendly gets the LOWEST
+  // gate; 200-attitude syracuse the highest foreign one) — treat as live-fit constants, not engine law.
+  seaGateRisByPartner: { issa: 0.435, histri: 0.45, corsi: 0.575, ingauni: 0.52, syracuse: 0.73, taras: 0.88, bruttians: 0.9095, capua: 0.8025 },
+  // RIS EXPORTER-LEG cargo exclusion (cosa crack 2026-07-02): the exporter's OWN trade row values
+  // silver at 0 (cargo 9→6 = cosa 255→217 exact) while the partner's 0.2× import tariff keeps the
+  // full basket (praeneste's import row needs the silver-inclusive flow — proven by the silver-skip
+  // regression praeneste -2→-10 when applied to both legs). Only EtrMer exports silver in the corpus,
+  // so this is effectively a 1-town pin until another silver/value-3 exporter is scroll-checked.
+  seaExpCargoSkipRis: ["silver"],
   // Engine reads a larger-than-displayed trade population: the sea pop term = seaPopCoefV·√pin + seaBaseTerm
   // (constant). Controlled descr_strat experiments 2026-06-25 (Carthage cargo 22→72 AND pop 6k→90k) fix the
   // effective term to ~15 at displayed pin 9000 → 0.1·√pin + ~5.15. Reproduces both the pop-response (202→316 at
@@ -2389,8 +2408,14 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
               const _b = new ArrayBuffer(4), _f = new Float32Array(_b), _i = new Int32Array(_b);
               _f[0] = _pinV; _i[0] = (((_i[0] + 0xc0800000) | 0) >> 1) + 0x3f800000; // bit-hack fastSqrt
               const _ptV = CALIB.seaPopCoefV * _f[0];
-              let _cFv = 0; for (const r in gx) if (!(r in gy)) _cFv += gx[r] * ((_vanSea && r === "copper") ? 6 : (_rawVal[r] || 0)); // SEA cargo uses the REAL resource values (same as the land law), vanilla + RIS; copper=6 sea-adjust is vanilla-only
-              const _gateV = _vanSea ? (_trueOwn ? CALIB.seaGateTrueOwnV : _own ? CALIB.seaGateOwnV : _agr ? CALIB.seaGateAgreeV : CALIB.seaGateForeignV) : ((_trueOwn || _own) ? 1.0 : (_agr ? CALIB.seaGateAgreeRisV : CALIB.seaGateForeignV));
+              let _cFv = 0; for (const r in gx) if (!(r in gy)) { if (!_vanSea && isExp && (CALIB.seaExpCargoSkipRis || []).includes(r)) continue; if (!_vanSea && global.__SEA_CARGO_SKIP && global.__SEA_CARGO_SKIP.has(r) && (isExp || !global.__SEA_CARGO_SKIP_EXPONLY)) continue; _cFv += gx[r] * ((_vanSea && r === "copper") ? 6 : (!_vanSea && global.__SEA_CARGO_VAL && global.__SEA_CARGO_VAL[r] != null ? global.__SEA_CARGO_VAL[r] : (_rawVal[r] || 0))); } // SEA cargo uses the REAL resource values (same as the land law), vanilla + RIS; copper=6 sea-adjust is vanilla-only
+              // RIS per-partner gate (see CALIB.seaGateRisByPartner): keyed on the lane side that is NOT
+              // the budget faction; only consulted for non-own lanes with the budget faction on one side.
+              const _pfRis = !_vanSea && !(_trueOwn || _own) ? (ownX === facLow ? ownY : (ownY === facLow ? ownX : null)) : null;
+              const _pfGate = _pfRis != null && CALIB.seaGateRisByPartner ? CALIB.seaGateRisByPartner[_pfRis] : null;
+              let _gateV = _vanSea ? (_trueOwn ? CALIB.seaGateTrueOwnV : _own ? CALIB.seaGateOwnV : _agr ? CALIB.seaGateAgreeV : CALIB.seaGateForeignV) : ((_trueOwn || _own) ? 1.0 : (_pfGate != null ? _pfGate : (_agr ? CALIB.seaGateAgreeRisV : CALIB.seaGateForeignV)));
+              if (!_vanSea && global.__SEA_GATE_FN) { const _g2 = global.__SEA_GATE_FN({ X, Y, ownX, ownY, trueOwn: _trueOwn, own: _own, agr: _agr, gate: _gateV }); if (_g2 != null) _gateV = _g2; }
+              if (!_vanSea && global.__SEA_RAW) (global.__SEA_RAWROWS = global.__SEA_RAWROWS || []).push({ X, Y, ownX, ownY, trueOwn: _trueOwn, own: _own, agr: _agr, pinV: _pinV, fsq: _f[0], cargo: _cFv, dLF, gate: _gateV, raw: CALIB.seaKV * (_ptV + _cFv + CALIB.seaBaseTerm) * _gateV / dLF });
               return Math.max(0, CALIB.seaKV * (_ptV + _cFv + CALIB.seaBaseTerm) * _gateV / dLF);
             }
             const _pin = (CALIB.seaPopSum ? (popX + popY) : popX);
@@ -2444,7 +2469,9 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           // carries the tariff. (Paestum collects Bruttium's import though Bruttium's slot went to nearer Mamertina;
           // the live pin Bruttium->Poseidonia ai=15.5 confirms it. Plain-foreign far partners form no client link.)
           const _agrLane = (_mapVer(modDataDir) >= 0x7b) && ownerOfRegion[ln.to] !== facLow && tradeRightsSet.has(ownerOfRegion[ln.to]);
-          impV = (!!ln.impLive || _agrLane) ? flowOf(ln.to, s.region, false, ln) * CALIB.seaImportCut : 0;
+          let _impOn = (!!ln.impLive || _agrLane);
+          if ((_mapVer(modDataDir) >= 0x7b) && global.__SEA_IMP_FN) { const _i2 = global.__SEA_IMP_FN({ ln, from: s.region, ownTo: ownerOfRegion[ln.to], facLow, hasRights: tradeRightsSet.has(ownerOfRegion[ln.to]), impLive: !!ln.impLive, agrLane: _agrLane }); if (_i2 != null) _impOn = _i2; }
+          impV = _impOn ? flowOf(ln.to, s.region, false, ln) * CALIB.seaImportCut : 0;
         } else {
           expV = ln.weak ? 0 : flowOf(s.region, ln.to, isPly, ln);
           const impPly = ownerOfRegion[ln.to] === facLow ? isPly : false;
@@ -2464,7 +2491,8 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
         // exports ×1.20) AND confirmed verbatim on the in-game building scroll. Small Colony (colony_1) is a
         // smaller bonus the scroll calls out but we don't yet apply (its host settlements' base is mis-parsed).
         const _colTrade = colonyMByRegion[s.region] || 0;
-        const _seaTradeM = Math.max(0, 1 + _colTrade / 100 + 0.74 * ((gv0 && gv0.trading) || 0) / 100);
+        let _seaTradeM = Math.max(0, 1 + _colTrade / 100 + 0.74 * ((gv0 && gv0.trading) || 0) / 100);
+        if (_mapVer(modDataDir) >= 0x7b && global.__SEA_M_FN) { const _m2 = global.__SEA_M_FN({ colTrade: _colTrade, tradePct: s.tradePct || 0, gvTrading: (gv0 && gv0.trading) || 0 }); if (_m2 != null) _seaTradeM = _m2; }
         expV *= _seaTradeM;
         // import leg: the partner's Large-Colony bonus rides on the goods we import from it (its export was boosted)
         impV *= 1 + (tradePctAll[ln.to] != null ? tradePctAll[ln.to] : (colonyMByRegion[ln.to] || 0)) / 100;
