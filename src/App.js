@@ -23033,6 +23033,18 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                           <strong style={{ color: "#b8d38f" }}>💰 Turn-1 budget @ optimal taxes</strong>
                           <span style={{ fontSize: "0.7rem", color: "#8aa" }}>{armyT1Budget.saveAware ? "calibration save applied (save governor traits + pops) + mod-file income model" : "computed from the mod files alone (no save)"} · empire size {armyT1Budget.tier} · {armyT1Budget.settlements.length} settlements</span>
                           {armyT1Budget.saveWarning && <span style={{ fontSize: "0.7rem", color: "#e0a050" }} title="A calibration save is attached but could not be used — the numbers below are the no-save model.">⚠ {armyT1Budget.saveWarning}</span>}
+                          {(() => {
+                            // DIFFICULTY-MODE MISMATCH (user 2026-07-02: Rome modeled +5054 in all-human
+                            // mode vs +2699 in the game): the attached save IS this faction's campaign,
+                            // but the harness mode models Normal difficulty (no ×0.92) — flag it loudly.
+                            const led = armyT1Budget.saveLedger;
+                            if (!(led && led.isPlayer && armyEcoMode === "human" && netAfterArmy != null)) return null;
+                            const diff = netAfterArmy - led.net;
+                            if (Math.abs(diff) <= Math.max(300, 0.10 * Math.abs(led.net))) return null;
+                            return <span style={{ fontSize: "0.7rem", color: "#e8806a", fontWeight: 600 }}
+                              title={`This save's campaign is played BY this faction, but the panel is in 🧑 all-human mode, which models NORMAL difficulty (no ×0.92 income malus) — on an H/H campaign that over-reads income by ≈9%. Model net ${netAfterArmy} vs the save's own ledger ${led.net}. Cycle the mode button to 👤 player (Hard) to match the game, or take the 🎮 number.`}>
+                              ⚠ all-human mode ≠ this campaign's difficulty (model {netAfterArmy} vs game {led.net}) — switch to 👤 player (Hard)</span>;
+                          })()}
                           <input value={armySetSearch} onChange={(e) => setArmySetSearch(e.target.value)} placeholder="Filter settlements…"
                             style={{ marginLeft: "auto", width: 140, background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 5, padding: "2px 7px", fontSize: "0.72rem" }} />
                           <button onClick={() => setArmyProjIncome(String(netAfterArmy != null ? netAfterArmy : t.armyBudget))}
@@ -23040,6 +23052,13 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                             style={{ background: "rgba(60,60,60,0.7)", color: "#b8d38f", border: "1px solid #7a9a5a", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
                             use as budget{netAfterArmy != null ? `: ${netAfterArmy}` : `: ${t.armyBudget}`}
                           </button>
+                          {armyT1Budget.saveLedger && armyT1Budget.saveLedger.isPlayer && (
+                            <button onClick={() => setArmyProjIncome(String(armyT1Budget.saveLedger.net))}
+                              title={`The attached save's OWN financial ledger for this faction — the authoritative in-game net (${armyT1Budget.saveLedger.net}/turn) at the rates currently set in the game${armyT1Budget.saveLedger.verified ? " (treasury-verified)" : ""}. The model estimate above is at the RECOMMENDED tax plan instead, so the two legitimately differ; when in doubt, the game's number wins.`}
+                              style={{ background: "rgba(60,60,60,0.7)", color: "#9fd3ff", border: "1px solid #5a82a0", borderRadius: 5, padding: "2px 8px", cursor: "pointer", fontSize: "0.72rem" }}>
+                              🎮 game says: {armyT1Budget.saveLedger.net} — use
+                            </button>
+                          )}
                           <button
                             onClick={() => {
                               const BRN = { low: "Low", normal: "Normal", high: "High", very_high: "V.High" };
@@ -23285,6 +23304,91 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                           text: `TRIM ${best.character}: swap ${best.oldUnit} → ${best.newUnit} — save ${best.save} upkeep → net ${best.net} (back within the floor)` });
                       }
                     }
+                    // SPEND HEADROOM (user 2026-07-02): with room to the floor, propose concrete
+                    // recruitable spends that USE UP the budget instead of leaving it idle.
+                    // Order: composition gaps (no cavalry / no line infantry) → garrison top-ups
+                    // for 85–99 PO towns (red/orange already get fixes above) → reinforcement
+                    // fill of the smallest armies. The upkeep of the un-applied fixes above is
+                    // RESERVED first, so applying every suggestion still lands on the floor side.
+                    let spendUsed = 0, spendLeft = null;
+                    if (hasProj && headroom != null && headroom > 0) {
+                      let remaining = headroom;
+                      for (const s of sugg) {
+                        if (garrDone.has(s.text)) continue;
+                        if (s.garrison && s.garrUnit) remaining -= (s.garrUnit.totalUpkeep || 0);
+                        else if (s.replace && s.repl && s.repl.upkeepDelta > 0) remaining -= s.repl.upkeepDelta;
+                      }
+                      // distinct recruitable units across ALL the faction's settlements — each
+                      // settlement pool is already fully RIS-gated, so everything here is a unit
+                      // the faction can genuinely recruit somewhere.
+                      const cands = []; const seenCand = new Set();
+                      for (const st of d.settlements) for (const u of (st.pool || [])) {
+                        if (u.upkeep == null || /general|bodyguard|captain/i.test(u.unit)) continue;
+                        const k = u.unit.toLowerCase();
+                        if (!seenCand.has(k)) { seenCand.add(k); cands.push({ ...u, at: st.region }); }
+                      }
+                      const byUpAsc = cands.slice().sort((a, b) => a.upkeep - b.upkeep);
+                      const byUpDesc = cands.slice().sort((a, b) => b.upkeep - a.upkeep);
+                      const cheapest = byUpAsc.length ? byUpAsc[0].upkeep : Infinity;
+                      // per-army working state (20-unit engine cap incl. the bodyguard);
+                      // admirals excluded — their "army" is the fleet's cargo.
+                      const armies = d.characters
+                        .filter(c => (c.army || []).length > 0 && c.role !== "admiral")
+                        .map(c => { const cnt = {}; for (const u of c.army) { const k = u.unit.toLowerCase(); cnt[k] = (cnt[k] || 0) + 1; } return { c, size: c.army.length, cnt, adds: [], addUp: 0 }; });
+                      const planAdd = (a, u) => { a.adds.push(u.unit); a.addUp += u.upkeep; a.size++; const k = u.unit.toLowerCase(); a.cnt[k] = (a.cnt[k] || 0) + 1; remaining -= u.upkeep; };
+                      // 1) composition gaps: fix the balance flags first
+                      for (const a of armies) {
+                        for (const f of a.c.flags || []) {
+                          if (a.size >= 20 || remaining < cheapest) break;
+                          let pick = null;
+                          if (f === "no cavalry") pick = byUpAsc.find(u => u.category === "cavalry" && u.upkeep <= remaining);
+                          else if (f === "no heavy/spear line infantry") pick = byUpAsc.find(u => u.category === "infantry" && (u.cls === "heavy" || u.cls === "spearmen") && u.upkeep <= remaining);
+                          if (pick) planAdd(a, pick);
+                        }
+                      }
+                      // 2) garrison top-ups: towns modeled at PO 85–99 → push toward 100 with the
+                      // town's OWN pool (never cross-region; exact garrison law ΔPO ≈ men·350/pop)
+                      const garrSpends = [];
+                      for (const bs of _bset) {
+                        if (remaining < cheapest) break;
+                        if (bs.poAtSet == null || bs.poAtSet < 85 || bs.poAtSet >= 100 || !bs.pop) continue;
+                        const st = d.settlements.find(x => x.region === bs.region);
+                        const inf = ((st && st.pool) || []).filter(u => u.category === "infantry" && u.upkeep != null && u.soldiers && !/general|bodyguard|captain/i.test(u.unit)).sort((a, b) => a.upkeep - b.upkeep);
+                        if (!inf.length) continue;
+                        const u = inf[0]; const menPer = u.soldiers * 4;
+                        const n = Math.min(3, Math.max(1, Math.ceil((100 - bs.poAtSet) / (menPer * 350 / bs.pop))));
+                        if (n * u.upkeep > remaining) continue;
+                        const poAfter = Math.min(200, Math.round(bs.poAtSet + n * menPer * 350 / bs.pop));
+                        garrSpends.push({ settlement: bs.settlement, adds: Array(n).fill(u.unit), n, unit: u.unit, up: n * u.upkeep, poAfter });
+                        remaining -= n * u.upkeep;
+                      }
+                      // 3) reinforcement fill: smallest armies first, round-robin; quality-first
+                      // (highest-upkeep affordable), max 2 copies of a unit per army for diversity
+                      let guard = 0;
+                      while (remaining >= cheapest && guard++ < 60) {
+                        const open = armies.filter(a => a.size < 20).sort((x, y) => x.size - y.size);
+                        if (!open.length) break;
+                        const a = open[0];
+                        const pick = byUpDesc.find(u => u.upkeep <= remaining && (a.cnt[u.unit.toLowerCase()] || 0) < 2)
+                          || byUpDesc.find(u => u.upkeep <= remaining);
+                        if (!pick) break;
+                        planAdd(a, pick);
+                      }
+                      for (const g of garrSpends) {
+                        spendUsed += g.up;
+                        sugg.push({ spendGarr: true, ok: true, settlement: g.settlement, addUnits: g.adds,
+                          text: `💰 ${g.settlement}: top up the garrison with ${g.n}× ${g.unit} → PO ~${g.poAfter} (+${g.up}/turn upkeep).` });
+                      }
+                      for (const a of armies) {
+                        if (!a.adds.length) continue;
+                        const grp = new Map(); for (const u of a.adds) grp.set(u, (grp.get(u) || 0) + 1);
+                        const addStr = [...grp.entries()].map(([u, n]) => `${n}× ${u}`).join(" + ");
+                        spendUsed += a.addUp;
+                        sugg.push({ spendArmy: true, ok: true, character: a.c.name, addUnits: a.adds.slice(),
+                          text: `💰 Reinforce ${a.c.name}'s army: add ${addStr} (+${a.addUp}/turn upkeep).` });
+                      }
+                      if (spendUsed > 0) spendLeft = remaining;
+                    }
                     if (!sugg.length && !hiddenTrimN) return null;
                     return (
                       <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(120,170,90,0.10)", border: "1px solid rgba(120,170,90,0.35)" }}>
@@ -23298,6 +23402,20 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                               <span style={{ flex: 1, color: garrDone.has(s.text) ? "#6f7f6f" : (s.ok ? "#dfe" : "#e8a07a"), textDecoration: garrDone.has(s.text) ? "line-through" : "none" }}>{s.text}</span>
                               <button
                                 onClick={async () => {
+                                  if (s.spendArmy || s.spendGarr) {
+                                    if (!modDataDir) { alert("No mod loaded."); return; }
+                                    const target = s.spendArmy ? `${s.character}'s army` : `${s.settlement}'s garrison`;
+                                    if (!confirm(`Add ${s.addUnits.length} unit(s) to ${target} in descr_strat?\n\n(${d.faction}) Adds: ${s.addUnits.join(", ")}.\nWrites the campaign descr_strat.txt (a backup, descr_strat.txt.provincia-bak, is saved first). Reload the mod (🔄) or restart the game to see it.`)) return;
+                                    try {
+                                      const r = s.spendArmy
+                                        ? await window.electronAPI.applyAddArmyUnits(modDataDir, d.faction, s.character, s.addUnits)
+                                        : await window.electronAPI.applyReplaceGarrison(modDataDir, d.faction, s.settlement, [], s.addUnits);
+                                      if (r && r.ok) { pushToast(`Added ${r.addedCount ?? s.addUnits.length} unit(s) to ${target}${r.capClipped ? " (clipped at the 20-unit cap)" : ""}`, "info", 6000); setPendingReload(true); setGarrDone(prev => new Set(prev).add(s.text)); }
+                                      else if (r && /no garrison present|no garrison character/i.test(r.error || "")) pushToast(`No garrison at ${s.settlement} — station a general or captain there first, then re-run.`, "info", 7000);
+                                      else alert("Add failed: " + (r?.error || "unknown"));
+                                    } catch (e) { alert(e?.message || String(e)); }
+                                    return;
+                                  }
                                   if (s.replace) {
                                     if (!modDataDir) { alert("No mod loaded."); return; }
                                     const rp = s.repl;
@@ -23336,11 +23454,14 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                                 title={garrDone.has(s.text) ? "Applied — click 🔄 Reload when you're done" : (s.ok ? "Write this change to the campaign descr_strat.txt (backup taken first)" : "This swap exceeds your budget floor")}
                                 disabled={garrDone.has(s.text)}
                                 style={{ flexShrink: 0, background: garrDone.has(s.text) ? "#3a4a3a" : (s.ok ? "#5a9b88" : "#8a6a3a"), color: "#fff", border: "1px solid " + (garrDone.has(s.text) ? "#3a4a3a" : (s.ok ? "#5a9b88" : "#a07a3a")), borderRadius: 4, padding: "3px 10px", cursor: garrDone.has(s.text) ? "default" : "pointer", opacity: garrDone.has(s.text) ? 0.7 : 1, fontSize: "0.76rem", fontWeight: 600 }}>
-                                {garrDone.has(s.text) ? "✓ Applied" : (s.replace ? (s.noRecruit ? "Drop ✕" : s.trim ? "Trim ✂" : "Replace ♻") : s.garrison ? "Recruit ↗" : "Apply")}
+                                {garrDone.has(s.text) ? "✓ Applied" : ((s.spendArmy || s.spendGarr) ? "Add ➕" : s.replace ? (s.noRecruit ? "Drop ✕" : s.trim ? "Trim ✂" : "Replace ♻") : s.garrison ? "Recruit ↗" : "Apply")}
                               </button>
                             </div>
                           ))}
                         </div>
+                        {spendUsed > 0 && <div style={{ marginTop: 8, fontSize: "0.74rem", color: "#9fb88f" }}
+                          title={`Headroom ${headroom} − upkeep reserved for the fixes above − the 💰 spend rows = ~${spendLeft} left. Every unit is drawn from the faction's own RIS-gated recruit pools.`}>
+                          💰 Spend plan: the 💰 rows add ~<b>{spendUsed}</b>/turn of new troops, using up the budget headroom — ~<b>{spendLeft}</b>/turn would remain above your {armyBudgetFloor} floor after applying everything.</div>}
                         {hiddenTrimN > 0 && <div style={{ marginTop: 8, fontSize: "0.74rem", color: "#9fb88f" }}>✂ {hiddenTrimN} town{hiddenTrimN > 1 ? "s are" : " is"} over-garrisoned (could save ~{hiddenTrimSave}/turn), but you're under budget — keeping the extra garrison is fine.</div>}
                         <div style={{ marginTop: 6, fontSize: "0.7rem", color: "#8aa" }}>Each apply writes to descr_strat (CRLF-safe, backup saved) and marks the row ✓ — the panel does NOT reload per change. Apply as many as you like, then click <b>🔄 Reload</b> above (or restart the game) to refresh.</div>
                       </div>

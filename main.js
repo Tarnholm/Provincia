@@ -6776,6 +6776,23 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
         if (exactN) _writeLog(`[turn1-budget] ${faction}: PO anchored EXACT from calibration save for ${exactN} towns`);
         if (flagged) _writeLog(`[turn1-budget] ${faction}: PO model flags ${flagged} revolt-risk towns (po<100 at set bracket)`);
       } catch (e) { _writeLog(`[turn1-budget] PO model failed (non-fatal): ${e && e.message}`); }
+      // SAVE LEDGER (user 2026-07-02, the Rome +5054-vs-+2699 report): when a calibration
+      // save is attached, read the faction's OWN econ ledger from it and ship it along —
+      // the authoritative in-game net at the save's CURRENT tax rates. The renderer offers
+      // it as a one-click budget and uses it to flag a difficulty-mode mismatch (the report
+      // was the all-human/Normal mode read on an H/H campaign: ÷0.92 ⇒ ≈ +9% income).
+      if (savePath) {
+        try {
+          const as2 = require("./src/armySetup.js");
+          const ab = as2.attributeAllBudgets(fs.readFileSync(savePath), modDataDir, null);
+          const led = ab && ab.byFaction && ab.byFaction[String(faction).toLowerCase()];
+          if (led && Number.isFinite(led.net)) {
+            budget.saveLedger = { net: led.net, incomeTotal: led.income && led.income.total, taxes: led.income && led.income.taxes,
+              armyUpkeep: led.armyUpkeep, isPlayer: ab.player === String(faction).toLowerCase(), player: ab.player, verified: !!led.verified };
+            _writeLog(`[turn1-budget] ${faction}: save ledger net=${led.net} (player=${ab.player}${budget.saveLedger.isPlayer ? ", THIS faction" : ""}) vs model net=${budget.totals && (budget.totals.armyBudget - budget.totals.armyUpkeep)}`);
+          }
+        } catch (e) { _writeLog(`[turn1-budget] save-ledger read failed (non-fatal): ${e && e.message}`); }
+      }
       budget.staleWarning = _modCopyWarning(modDataDir);
       if (budget.staleWarning) _writeLog(`[turn1-budget] STALE-MOD WARNING: ${budget.staleWarning}`);
       const t = budget.totals;
@@ -6864,6 +6881,27 @@ ipcMain.handle("apply-add-garrison", async (_event, modDataDir, faction, settlem
     return { ok: true, insertedAtLine: r.insertedAtLine, anchor: r.anchor, newLine: r.newLine, path: p };
   } catch (e) {
     _writeLog(`[add-garrison] failed: ${e && e.message}`);
+    return { error: e && e.message ? e.message : String(e) };
+  }
+});
+
+// IPC: append units to a NAMED CHARACTER's army in descr_strat (spend-headroom
+// suggestions; CRLF-safe, backup, 20-unit cap enforced in armySetup).
+ipcMain.handle("apply-add-army-units", async (_event, modDataDir, faction, character, unitNames) => {
+  try {
+    if (!modDataDir || !faction || !character || !Array.isArray(unitNames) || !unitNames.length) return { error: "missing args" };
+    const as = require("./src/armySetup.js");
+    const p = as.findDescrStrat(modDataDir);
+    if (!p || !fs.existsSync(p)) return { error: "descr_strat.txt not found" };
+    const text = fs.readFileSync(p, "latin1");
+    const r = as.applyAddArmyUnits(text, faction, character, unitNames);
+    if (!r.ok) return { error: r.error };
+    try { fs.copyFileSync(p, p + ".provincia-bak"); } catch (e) { _writeLog(`[add-army-units] backup failed: ${e && e.message}`); }
+    fs.writeFileSync(p, r.text, "latin1");
+    _writeLog(`[add-army-units] ${faction}/${character}: +${r.addedCount} unit(s) [${unitNames.slice(0, r.addedCount).join(", ")}] @line ${r.insertedAtLine}${r.capClipped ? ` (CLIPPED from ${r.requested} — 20-unit cap)` : ""}`);
+    return { ok: true, addedCount: r.addedCount, capClipped: r.capClipped, insertedAtLine: r.insertedAtLine, path: p };
+  } catch (e) {
+    _writeLog(`[add-army-units] failed: ${e && e.message}`);
     return { error: e && e.message ? e.message : String(e) };
   }
 });

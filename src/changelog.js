@@ -8,6 +8,21 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1215",
+    date: "2026-07-02",
+    items: [
+      { type: "fix", text: "**Army Setup now sees ALL of a faction's armies.** The army analysis only recognized the minority comma-separated `character,` lines in descr_strat and missed the main tab-separated format (914 of 1014 character lines) — so Rome showed 4 commanders with 54 units when it actually has 34 with 93. Fixed across the character parser, the swap/upgrade/add-units editors' boundary checks (an edit could previously have run past an unrecognized character line into the *next* army), and agents (spies, diplomats…) are now skipped while admirals are properly tagged so fleet cargo never counts as an army. The local upkeep sum now lands within 2% of the save's own ledger, and the balance flags, swap suggestions and spend-the-headroom fills cover every army instead of a sliver." },
+    ],
+  },
+  {
+    version: "0.9.1214",
+    date: "2026-07-02",
+    items: [
+      { type: "feature", text: "**Spend-the-headroom suggestions.** When a faction has budget room to the floor, the Suggestions panel now proposes concrete recruits that *use it up* instead of leaving it idle — in priority order: composition gaps first (an army with no cavalry or no line infantry gets the missing piece), then garrison top-ups for towns sitting at 85–99 public order (pushed toward 100 with the town's own recruit pool), then quality reinforcements round-robined into the smallest armies (max 2 copies of a unit per army, 20-unit cap respected). Every unit comes from the faction's own fully-gated recruit pools, the upkeep already reserved by the panel's garrison fixes is deducted first, and a summary line shows how much of the headroom the plan uses. Each 💰 row has an **Add ➕** button that writes the units straight into descr_strat (armies via a new append-to-army edit, garrisons via the existing garrison writer)." },
+      { type: "fix", text: "**Budget no longer over-reads your own campaign in all-human mode.** Report: Republic of Rome auto-filled +5054 while the game showed +2699. The model was fine (player-mode net 2621 vs the game's 2699) — the panel was in 🧑 all-human mode, which models *Normal* difficulty (no ×0.92 income malus) for cross-faction balance, ≈9% high for an H/H campaign. Two guards now: when your calibration save's *own faction* is analyzed in all-human mode and the numbers diverge, a red warning names both figures and tells you to switch to 👤 player (Hard); and a new **🎮 game says: N — use** button reads the save's own financial ledger (treasury-verified) so you can budget from the game's exact number in one click." },
+    ],
+  },
+  {
     version: "0.9.1213",
     date: "2026-07-01",
     items: [

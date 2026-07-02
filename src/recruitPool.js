@@ -239,7 +239,7 @@ function recruitablePool(edb, faction, micTier, regionRes, unitStats, opts) {
     const tier = cond.match(/mic_tier_(\d)/);
     if (!pool.has(unit)) {
       const st = unitStats[unit.toLowerCase()] || {};
-      pool.set(unit, { unit, upkeep: st.upkeep ?? null, recruit: st.recruit ?? null, category: st.category || null, cls: st.cls || null, tier: tier ? +tier[1] : 0 });
+      pool.set(unit, { unit, upkeep: st.upkeep ?? null, recruit: st.recruit ?? null, category: st.category || null, cls: st.cls || null, soldiers: st.soldiers ?? null, tier: tier ? +tier[1] : 0 });
     }
   }
   return [...pool.values()];

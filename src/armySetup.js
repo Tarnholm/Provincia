@@ -56,10 +56,17 @@ function listCampaignFactions(modDataDir) {
 // name was misread as "sub_faction athens" (and swap/upgrade matching failed).
 // Returns { name, subFaction } — subFaction null when the field is absent.
 function parseCharacterLine(ln) {
-  const parts = ln.split(",").map((s) => s.trim());
-  let i = 1, subFaction = null;
-  const sm = parts[1] && parts[1].match(/^sub_faction\s+(\S+)/i);
-  if (sm) { subFaction = sm[1].toLowerCase(); i = 2; }
+  // TWO RIS line shapes (2026-07-02): "character\tName, named character, …" is the
+  // MAIN format (914 lines); "character,\t[sub_faction X,\t]Name, …" the minority
+  // (100 lines). The old parts[1]-after-comma read only handled the comma shape, so
+  // tab-format characters got name "named character" and the whole army analysis
+  // saw 4 of Rome's ~50 characters. Strip the keyword first, then field 0 is the
+  // name — unless a sub_faction field shifts it one to the right.
+  const rest = ln.replace(/^character[,\s]+/i, "");
+  const parts = rest.split(",").map((s) => s.trim());
+  let i = 0, subFaction = null;
+  const sm = parts[0] && parts[0].match(/^sub_faction\s+(\S+)/i);
+  if (sm) { subFaction = sm[1].toLowerCase(); i = 1; }
   return { name: parts[i] || "?", subFaction };
 }
 
@@ -98,10 +105,12 @@ function parseFaction(modDataDir, faction) {
       if (/\}/.test(ln)) { settleDepth -= (ln.match(/\}/g) || []).length; if (settleDepth <= 0) { out.settlements.push(curSettle); curSettle = null; } }
       continue;
     }
-    const cm = ln.match(/^character,\s*([^,]+?),\s*(named character|general|spy|assassin|diplomat|merchant|admiral|princess)[^x]*?(?:age\s+(\d+))?[^x]*?(?:x\s+(\d+)\s*,\s*y\s+(\d+))?/);
-    if (/^character,/.test(ln)) {
+    if (/^character[,\s]/.test(ln)) {
       const { name, subFaction } = parseCharacterLine(ln);
-      const role = /\bleader\b/.test(ln) ? "leader" : /\bheir\b/.test(ln) ? "heir" : "general";
+      const ty = (ln.match(/,\s*(named character|general|spy|assassin|diplomat|merchant|admiral|princess)\s*,/i) || [])[1] || "general";
+      // agents carry no army — skip them so the army analysis lists only commanders
+      if (/^(spy|assassin|diplomat|merchant|princess)$/i.test(ty)) { curChar = null; inArmy = false; continue; }
+      const role = /\bleader\b/.test(ln) ? "leader" : /\bheir\b/.test(ln) ? "heir" : ty.toLowerCase() === "admiral" ? "admiral" : "general";
       const ax = ln.match(/x\s+(\d+)/), ay = ln.match(/y\s+(\d+)/), aa = ln.match(/age\s+(\d+)/);
       curChar = { name, subFaction, role, age: aa ? +aa[1] : null, x: ax ? +ax[1] : null, y: ay ? +ay[1] : null, army: [] };
       out.characters.push(curChar);
@@ -112,7 +121,7 @@ function parseFaction(modDataDir, faction) {
     if (inArmy && curChar) {
       const um = ln.match(/^unit\s+(.+?)\s+exp\s+(\d+)\s+armour\s+(\d+)\s+weapon_lvl\s+(\d+)/);
       if (um) { curChar.army.push({ unit: um[1].trim(), exp: +um[2], armour: +um[3], weapon_lvl: +um[4] }); continue; }
-      if (/^character_record|^character,|^;/.test(ln)) inArmy = false;
+      if (/^character_record|^character[,\s]|^;/.test(ln)) inArmy = false;
     }
   }
   return out;
@@ -269,7 +278,7 @@ function attributeAllBudgets(saveBuf, modDataDir, playerHint) {
       if (!cur) continue;
       const dm = ln.match(/^denari\s+(\d+)/); if (dm) { den[cur] = +dm[1]; continue; }
       if (/^army\b/.test(ln)) { inArmy = true; continue; }
-      if (/^character,|^character_record/.test(ln)) inArmy = false;
+      if (/^character[,\s]|^character_record/.test(ln)) inArmy = false;
       if (inArmy) { const u = ln.match(/^unit\s+(.+?)\s+exp\b/); if (u) auF[cur] += (us[u[1].trim().toLowerCase()] || {}).upkeep || 0; }
     }
   }
@@ -535,12 +544,12 @@ function applyUpgradeFix(text, faction, characterName, opts) {
   let fe = lines.length;
   for (let i = fs0 + 1; i < lines.length; i++) { if (/^faction\s+[a-z_0-9]+\s*,/i.test(lines[i])) { fe = i; break; } }
   let ci = -1;
-  for (let i = fs0; i < fe; i++) { if (/^character,/.test(lines[i]) && parseCharacterLine(lines[i]).name.toLowerCase() === cname) { ci = i; break; } }
+  for (let i = fs0; i < fe; i++) { if (/^character[,\s]/.test(lines[i]) && parseCharacterLine(lines[i]).name.toLowerCase() === cname) { ci = i; break; } }
   if (ci < 0) return { ok: false, error: `character '${characterName}' not found` };
   let inArmy = false, fixed = 0;
   for (let i = ci + 1; i < fe; i++) {
     const ln = lines[i];
-    if (/^character,|^character_record\b/.test(ln)) break;
+    if (/^character[,\s]|^character_record\b/.test(ln)) break;
     if (/^army\b/.test(ln)) { inArmy = true; continue; }
     if (!inArmy) continue;
     if (!/^\s*unit\s+/.test(ln)) continue;
@@ -571,14 +580,14 @@ function applySwap(text, faction, characterName, oldUnit, newUnit) {
   // character within the faction block
   let ci = -1;
   for (let i = fs0; i < fe; i++) {
-    if (/^character,/.test(lines[i]) && parseCharacterLine(lines[i]).name.toLowerCase() === cname) { ci = i; break; }
+    if (/^character[,\s]/.test(lines[i]) && parseCharacterLine(lines[i]).name.toLowerCase() === cname) { ci = i; break; }
   }
   if (ci < 0) return { ok: false, error: `character '${characterName}' not found in ${faction}` };
   // its army → first matching unit line (stop at next character/record)
   let inArmy = false;
   for (let i = ci + 1; i < fe; i++) {
     const ln = lines[i];
-    if (/^character,|^character_record\b/.test(ln)) break;
+    if (/^character[,\s]|^character_record\b/.test(ln)) break;
     if (/^army\b/.test(ln)) { inArmy = true; continue; }
     if (!inArmy) continue;
     const m = ln.match(/^(\s*unit\s+)(.*?)(\s+exp\b.*)$/);
@@ -588,6 +597,46 @@ function applySwap(text, faction, characterName, oldUnit, newUnit) {
     }
   }
   return { ok: false, error: `unit '${oldUnit}' not found in ${characterName}'s army` };
+}
+
+// Append units to a NAMED CHARACTER's army in descr_strat text (the spend-headroom
+// suggestions reinforce field armies; garrisons go through applyAddGarrison /
+// applyReplaceGarrison instead). Mirrors applySwap's navigation: faction block →
+// character line by name → its army block → insert after the last unit line.
+// Enforces the engine's 20-unit army cap (bodyguard included): adds are CLIPPED to
+// the remaining room, never silently over-filled. CRLF-safe.
+// Returns { ok, text, addedCount, requested, capClipped, insertedAtLine, error }.
+function applyAddArmyUnits(text, faction, characterName, unitNames) {
+  if (!text || !faction || !characterName || !Array.isArray(unitNames) || !unitNames.length) return { ok: false, error: "missing args" };
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  const lines = text.split(/\r?\n/);
+  const fac = String(faction).toLowerCase();
+  const cname = String(characterName).trim().toLowerCase();
+  let fs0 = -1;
+  for (let i = 0; i < lines.length; i++) { const m = lines[i].match(/^faction\s+([a-z_0-9]+)\s*,/i); if (m && m[1].toLowerCase() === fac) { fs0 = i; break; } }
+  if (fs0 < 0) return { ok: false, error: `faction '${faction}' not found` };
+  let fe = lines.length;
+  for (let i = fs0 + 1; i < lines.length; i++) { if (/^faction\s+[a-z_0-9]+\s*,/i.test(lines[i])) { fe = i; break; } }
+  let ci = -1;
+  for (let i = fs0; i < fe; i++) {
+    if (/^character[,\s]/.test(lines[i]) && parseCharacterLine(lines[i]).name.toLowerCase() === cname) { ci = i; break; }
+  }
+  if (ci < 0) return { ok: false, error: `character '${characterName}' not found in ${faction}` };
+  let inArmy = false, lastUnit = -1, unitCount = 0;
+  for (let i = ci + 1; i < fe; i++) {
+    const ln = lines[i];
+    if (/^character[,\s]|^character_record\b/.test(ln)) break;
+    if (/^army\b/.test(ln)) { inArmy = true; continue; }
+    if (!inArmy) continue;
+    if (/^\s*unit\s+/.test(ln)) { lastUnit = i; unitCount++; }
+  }
+  if (lastUnit < 0) return { ok: false, error: `${characterName} has no army block` };
+  const room = Math.max(0, 20 - unitCount);
+  if (!room) return { ok: false, error: `${characterName}'s army is already at the 20-unit cap` };
+  const toAdd = unitNames.slice(0, room);
+  const addLines = toAdd.map(u => "unit\t\t" + u + "\t\t\texp 0 armour 0 weapon_lvl 0");
+  lines.splice(lastUnit + 1, 0, ...addLines);
+  return { ok: true, text: lines.join(eol), addedCount: toAdd.length, requested: unitNames.length, capClipped: toAdd.length < unitNames.length, insertedAtLine: lastUnit + 2 };
 }
 
 // ;comment name pattern treating space and underscore interchangeably: RIS comments a
@@ -742,7 +791,7 @@ function dominantBracket(saveBuf, cracked, faction) {
 
 module.exports = {
   TAX_BRACKETS, BRACKET_ORDER,
-  findDescrStrat, parseFaction, balanceOf, projectNet, analyzeFaction, listCampaignFactions, applySwap, applyUpgradeFix, applyAddGarrison, getGarrisonUnits, applyReplaceGarrison, attributeAllBudgets,
+  findDescrStrat, parseFaction, balanceOf, projectNet, analyzeFaction, listCampaignFactions, applySwap, applyUpgradeFix, applyAddGarrison, applyAddArmyUnits, getGarrisonUnits, applyReplaceGarrison, attributeAllBudgets,
   optimalTaxPlan, optimalBracketForBase, TAX_GROWTH_MOD, TAX_ORDER_DELTA,
   parseUnitStats: recruitPool.parseUnitStats,
   poolForSettlement: recruitPool.poolForSettlement,
