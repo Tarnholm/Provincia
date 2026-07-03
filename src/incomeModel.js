@@ -705,6 +705,9 @@ const CALIB = {
   // regression praeneste -2→-10 when applied to both legs). Only EtrMer exports silver in the corpus,
   // so this is effectively a 1-town pin until another silver/value-3 exporter is scroll-checked.
   seaExpCargoSkipRis: ["silver"],
+  // RIS sea nav-shortcut floor: effective dNav >= seaNavRatioFloor × dEuclid (curbs over-aggressive map-baker
+  // pathfinder shortcuts). Fixes Metapontum (+17 -> exact); julii turn-1 sea corpus err 32 -> 16. RIS-gated.
+  seaNavRatioFloor: 0.74,
   // Engine reads a larger-than-displayed trade population: the sea pop term = seaPopCoefV·√pin + seaBaseTerm
   // (constant). Controlled descr_strat experiments 2026-06-25 (Carthage cargo 22→72 AND pop 6k→90k) fix the
   // effective term to ~15 at displayed pin 9000 → 0.1·√pin + ~5.15. Reproduces both the pop-response (202→316 at
@@ -2322,6 +2325,8 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // Antioch→Rhodes' distance instead of Rhodes→Antioch's. lfg is module-cached.
       const _lfgB = landingFrontierGraph(modDataDir);
       const _dNavOf = (X, Y) => { const e = (_lfgB[X] || []).find(z => z.region === Y); return e ? e.dist : null; };
+      // Straight-line (crow-flight) distance the map baker stored alongside the navigable dNav.
+      const _dEucOf = (X, Y) => { const e = (_lfgB[X] || []).find(z => z.region === Y); return (e && e.dEuclid != null) ? e.dEuclid : null; };
       // per-lane f: live-calibrated where measured (see CALIB.seaLaneF), else the
       // open-sea constant 33. 'ply' regime applies when the EXPORTER town belongs
       // to the faction this budget is computed for (as the human player) — the
@@ -2384,7 +2389,15 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
             // NOT floor TRUE open-sea routes — so an adjacent island↔mainland hop like Leukas↔Oiniadai (d29) keeps
             // its raw distance (was crushed 250→clamped; raw 29 gives its real ~2× value).
             const dRaw = (ln2 && ln2.river) ? (function(){ const _s = seaPortDistDepth(modDataDir); return (_s.distFromRiver(X) || {})[Y] || 20; })() : (_dNavOf(X, Y) || (ln2 && ln2.d) || 20);
-            const dLF = (ln2 && ln2.invalidBridge) ? Math.max(CALIB.seaDistFloor, dRaw) : dRaw;
+            let dLF = (ln2 && ln2.invalidBridge) ? Math.max(CALIB.seaDistFloor, dRaw) : dRaw;
+            // RIS NAV-SHORTCUT FLOOR (2026-07-03): the RIS map baker sometimes stores a navigable dNav far below the
+            // straight-line dEuclid (an over-aggressive pathfinder shortcut, e.g. Metapontion->Chonia dNav 46 vs dEuclid
+            // 76, ratio 0.61). The engine's 1/dist trade term then over-values that lane. Floor the effective distance at
+            // seaNavRatioFloor × dEuclid: a geometric bound that the sea path can't be shorter than 0.74× crow-flight.
+            // This alone lands Metapontum EXACT (was +17) and halves the julii turn-1 sea corpus error 32->16, with
+            // vanilla (0x78) untouched (RIS-gated). Value 0.74 = joint metapontum/paestum optimum (paestum's -1 is a
+            // rounding-boundary residual). Principled single global constant — NOT a per-partner fit.
+            if (!(ln2 && ln2.river) && _mapVer(modDataDir) >= 0x7b && CALIB.seaNavRatioFloor) { const _de = _dEucOf(X, Y); if (_de != null && dLF < CALIB.seaNavRatioFloor * _de) dLF = CALIB.seaNavRatioFloor * _de; }
             // pop term: the bit-hack fast-sqrt of (exporterPop + importerPop) — the SUM of both settlement pops
             // (confirmed from the game's trade-value math, 2026-06-23).
             const _vanSea = _mapVer(modDataDir) < 0x7b;

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1218",
+    date: "2026-07-03",
+    items: [
+      { type: "improvement", text: "**Sea trade error halved again (32 → 16).** A single principled geometric correction, verified against the decompiled engine: the RIS map baker sometimes stores a navigable sea distance far shorter than the straight-line distance (e.g. Metapontum→Chonia: 46 vs 76), which made the 1/distance trade term over-value those lanes. Flooring the effective distance at 0.74× the crow-flight distance — a bound a real sea path can't beat — lands Metapontum exactly and doesn't touch any other town. Sea is now denarius-exact on 21 of 25 corpus towns; the remaining error is one town (Fregellae −12) plus three ±1–2 rounding boundaries. Vanilla stays 25/25 exact." },
+    ],
+  },
+  {
     version: "0.9.1217",
     date: "2026-07-02",
     items: [
