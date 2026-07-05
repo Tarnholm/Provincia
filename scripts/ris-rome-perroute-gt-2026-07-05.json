@@ -18,6 +18,14 @@
     "sea": { "Petelia": { "export": 81, "import": 34, "_region": "Chonia", "_gate": "client/bruttians" } },
     "_model_was": "Metapontion->Chonia sea export 88; ACTUAL 81"
   },
+  "Pisae":            { "total": 77,  "rows": { "Apua": 3, "Bononia": 5, "Volaterrae": 15, "Cosa": 41, "Ingaunum": 13 }, "_foreign_sea": { "Ingaunum": 13 } },
+  "Volaterrae":       { "total": 104, "rows": { "Pisae": 14, "Bononia": 4, "Arretium": 9, "Cosa": 12, "Rome": 49, "Venicum": 16 }, "_foreign_sea": { "Venicum?": 16 } },
+  "Sena_Gallica":     { "total": 72,  "rows": { "Sarsina": 5, "Iguvium": 13, "Asculum": 6, "Nesactium": 48 }, "_foreign_sea": { "Nesactium(Histria)": 48 } },
+  "Epizephyrian_Locri": { "total": 53, "rows": { "Consentia": 10, "Petelia": 43 }, "_foreign_sea": { "Petelia(Chonia)": 43 } },
+  "Venusia":          { "total": 193, "rows": { "Canusium": 26, "Arpi": 27, "Brundisium": 11, "Potentia": 25, "Metapontum": 18, "Tarentum": 34, "Issa": 52 }, "_foreign_sea": { "Issa": 52 }, "_note": "Issa 52 = IMPORT = 0.2x Issa->Peucetia export 260" },
+  "Canusium":         { "total": 32,  "rows": { "Venusia": 10, "Issa": 22 }, "_foreign_sea": { "Issa": 22 }, "_note": "Issa 22 = 0.2x Issa->Kanysion 110 (matches June stale pin Issa>Kanysion:110)" },
+  "Arpi":             { "total": 94,  "rows": { "Larinum": 14, "Bovianum": 13, "Compsa": 14, "Venusia": 14, "Issa": 39 }, "_foreign_sea": { "Issa": 39 }, "_note": "Issa 39 = 0.2x Issa->Daunia 195 (matches June stale pin Issa>Daunia:195)" },
+  "Neapolis":         { "total": 221, "rows": { "Capua": 22, "Maleventum": 21, "Compsa": 19, "Paestum": 18, "Fregellae": 126, "Grumentum": 15 }, "_own_sea": { "Fregellae": 126 }, "_note": "Neapolis->Fregellae 126 -> Fregellae imports ceil(0.2x)=26 (confirms Fregellae scroll)" },
   "Rome": {
     "rows": [
       { "partner": "Camerinum", "value": 64 },

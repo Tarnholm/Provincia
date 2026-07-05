@@ -2413,12 +2413,13 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
               // do NOT dominate selection — Carthage still picks its own Lilybaeum over foreign Syracuse on distance).
               // pin = popX + popY (BOTH settlement pops, byte-confirmed from routeValue's two vtable+0x130 reads —
               // the portless partner's pop IS included, unlike the old popX-only heuristic).
-              // pin = popX + popY (the exe/vanilla routeValue). RIS was drifted to popX-only; gov-corrected per-route
-              // scrolls (2026-07-05) proved popX+popY right — fitting the July Rome/Fregellae/Cosa/Metapontum rows
-              // (governors applied) recovers coef 0.107 ≈ the exe's hard-coded 0.1, vs a nonsense 0.079+big-baseTerm
-              // under popX-only. STAGED behind __SEA_PINSUM_RIS (default OFF = shipped popX-only) pending the full
-              // fresh gov-aware corpus needed to re-fit the per-partner gates under the corrected pop law (the current
-              // gates overfit the stale gov-OFF June corpus). See scripts/sea-refit-sweep.js + ris-rome-perroute-gt.
+              // RIS export leg keys on popX only (vanilla uses popX+popY). popX+popY was investigated 2026-07-05
+              // and REFUTED on fresh data: against the 11-town gov-AWARE July corpus the shipped popX-only model is
+              // 9/11 EXACT (only arpi -1), while popX+popY drops to ~4/11 (it breaks the exact towns). The earlier
+              // "popX+popY recovers coef 0.1" signal was an underdetermined 4-lane per-route fit; the total-level
+              // fresh corpus is decisive. The one seam is the Rome<->Fregellae lane (extreme 6:1 pop ratio) — the
+              // only place popX-only vs popX+popY diverges enough to matter. __SEA_PINSUM_RIS kept as a default-OFF
+              // calibration toggle (see scripts/sea-refit-fresh.js + ris-rome-perroute-gt-2026-07-05.json).
               const _pinV = (_vanSea || global.__SEA_PINSUM_RIS) ? (popX + popY) : popX;
               const _b = new ArrayBuffer(4), _f = new Float32Array(_b), _i = new Int32Array(_b);
               _f[0] = _pinV; _i[0] = (((_i[0] + 0xc0800000) | 0) >> 1) + 0x3f800000; // bit-hack fastSqrt
