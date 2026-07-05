@@ -1540,7 +1540,7 @@ function seaLanesByRegion(modDataDir) {
     }
     // ★ RIS (map 0x7b) SEA-LANE SELECTION — ROW-CRACKED 2026-07-05 against the fresh 12-town per-route
     // ground truth (scripts/ris-rome-perroute-gt-2026-07-05.json, scored by scripts/sea-row-diff.js).
-    // It is the SAME greedy exe rule as the vanilla branch above, with the RIS specifics pinned row-exact:
+    // It is the SAME greedy engine rule as the vanilla branch above, with the RIS specifics pinned row-exact:
     //   POOL: landing-frontier partners (map.rwm, dNav>0) whose region has a BUILT port chain. There is
     //     NO own/ally portless exception in RIS (Locri does NOT export to portless own Croton; Issa
     //     ignores its own portless islands and ships to its one ported town) — unlike vanilla Lilybaeum.
