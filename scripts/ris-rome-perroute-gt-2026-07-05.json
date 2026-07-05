@@ -1,0 +1,36 @@
+{
+  "_comment": "RIS per-route trade GROUND TRUTH, gov-OFF, from in-game Settlement Income scrolls (new 2-column UI), Republic of Rome turn 1, save_05-07-2026. Captured 2026-07-05 to re-fit the sea pop-term + lock foreign gates. Values are denarius-exact per-partner rows (export = the town's own export row; import = 0.2x the partner's export). Settlement names as shown on the scroll (map to region separately).",
+  "Fregellae": {
+    "sea": {
+      "Rome":     { "export": 183, "import": 98 },
+      "Neapolis": { "import": 26 }
+    }
+  },
+  "Cosa": {
+    "total": 415,
+    "land_all_exact": { "Volaterrae": 36, "Arretium": 37, "Volsinii": 36, "Falerii": 37, "Rome": 53 },
+    "sea": { "Praeneste": { "export": 207, "_region": "Latium", "_gate": "own" }, "Pisae": { "import": 9 } },
+    "_model_was": "Cosa->Latium sea export 245 (raw) / 217 (silver-skip); ACTUAL 207 -> silver-skip over-corrected"
+  },
+  "Metapontum": {
+    "total": 159,
+    "land_all_exact": { "Venusia": 8, "Potentia": 10, "Tarentum": 14, "Brundisium": 4, "Thurii": 8 },
+    "sea": { "Petelia": { "export": 81, "import": 34, "_region": "Chonia", "_gate": "client/bruttians" } },
+    "_model_was": "Metapontion->Chonia sea export 88; ACTUAL 81"
+  },
+  "Rome": {
+    "rows": [
+      { "partner": "Camerinum", "value": 64 },
+      { "partner": "Reate",     "value": 62 },
+      { "partner": "Cosa",      "value": 163 },
+      { "partner": "Falerii",   "value": 102 },
+      { "partner": "Praeneste", "value": 61 },
+      { "partner": "Fregellae", "value": 489, "note": "export (sea, Latium_Novum)" },
+      { "partner": "Capua",     "value": 288, "note": "export (sea, Campania)" },
+      { "partner": "Capua",     "value": 67,  "note": "import" },
+      { "partner": "Volaterrae","value": 10,  "note": "import" },
+      { "partner": "Fregellae", "value": 37,  "note": "import = 0.2x Fregellae->Rome 183" }
+    ],
+    "_note": "Two rows each for Fregellae and Capua = export + import. Single rows (Camerinum/Reate/Cosa/Falerii/Praeneste) are land exports; direction/region to be resolved. Cross-check vs model: Rome->Campania(Capua) 239 model vs 288 actual (UNDER 49); Rome->Latium(Praeneste) 112 model vs 61 actual (OVER 51) -- flag."
+  }
+}

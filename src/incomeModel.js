@@ -2413,11 +2413,13 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
               // do NOT dominate selection — Carthage still picks its own Lilybaeum over foreign Syracuse on distance).
               // pin = popX + popY (BOTH settlement pops, byte-confirmed from routeValue's two vtable+0x130 reads —
               // the portless partner's pop IS included, unlike the old popX-only heuristic).
-              // RIS: the EXPORT leg keys on the EXPORTER pop only (popX), not the popX+popY sum vanilla uses. Validated
-              // against the engine's own per-route pins (Thourioi->Taras export 69 vs pin-target 71; Metapontion->Chonia
-              // 88 — both popX-exact): a one-way export carries only the exporter's pop; the asm's popX+popY is the
-              // selection/combined value (the partner pop re-enters only via the separate mutual-only import leg).
-              const _pinV = _vanSea ? (popX + popY) : popX;
+              // pin = popX + popY (the exe/vanilla routeValue). RIS was drifted to popX-only; gov-corrected per-route
+              // scrolls (2026-07-05) proved popX+popY right — fitting the July Rome/Fregellae/Cosa/Metapontum rows
+              // (governors applied) recovers coef 0.107 ≈ the exe's hard-coded 0.1, vs a nonsense 0.079+big-baseTerm
+              // under popX-only. STAGED behind __SEA_PINSUM_RIS (default OFF = shipped popX-only) pending the full
+              // fresh gov-aware corpus needed to re-fit the per-partner gates under the corrected pop law (the current
+              // gates overfit the stale gov-OFF June corpus). See scripts/sea-refit-sweep.js + ris-rome-perroute-gt.
+              const _pinV = (_vanSea || global.__SEA_PINSUM_RIS) ? (popX + popY) : popX;
               const _b = new ArrayBuffer(4), _f = new Float32Array(_b), _i = new Int32Array(_b);
               _f[0] = _pinV; _i[0] = (((_i[0] + 0xc0800000) | 0) >> 1) + 0x3f800000; // bit-hack fastSqrt
               const _ptV = CALIB.seaPopCoefV * _f[0];
@@ -2426,10 +2428,16 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
               // the budget faction; only consulted for non-own lanes with the budget faction on one side.
               const _pfRis = !_vanSea && !(_trueOwn || _own) ? (ownX === facLow ? ownY : (ownY === facLow ? ownX : null)) : null;
               const _pfGate = _pfRis != null && CALIB.seaGateRisByPartner ? CALIB.seaGateRisByPartner[_pfRis] : null;
-              let _gateV = _vanSea ? (_trueOwn ? CALIB.seaGateTrueOwnV : _own ? CALIB.seaGateOwnV : _agr ? CALIB.seaGateAgreeV : CALIB.seaGateForeignV) : ((_trueOwn || _own) ? 1.0 : (_pfGate != null ? _pfGate : (_agr ? CALIB.seaGateAgreeRisV : CALIB.seaGateForeignV)));
+              let _gateV;
+              if (_vanSea) _gateV = (_trueOwn ? CALIB.seaGateTrueOwnV : _own ? CALIB.seaGateOwnV : _agr ? CALIB.seaGateAgreeV : CALIB.seaGateForeignV);
+              else if (global.__SEA_CLEAN_GATES) _gateV = (_trueOwn || _own || _agr) ? 1.0 : CALIB.seaGateForeignV;
+              else _gateV = (_trueOwn || _own) ? 1.0 : (_pfGate != null ? _pfGate : (_agr ? CALIB.seaGateAgreeRisV : CALIB.seaGateForeignV));
               if (!_vanSea && global.__SEA_GATE_FN) { const _g2 = global.__SEA_GATE_FN({ X, Y, ownX, ownY, trueOwn: _trueOwn, own: _own, agr: _agr, gate: _gateV }); if (_g2 != null) _gateV = _g2; }
-              if (!_vanSea && global.__SEA_RAW) (global.__SEA_RAWROWS = global.__SEA_RAWROWS || []).push({ X, Y, ownX, ownY, trueOwn: _trueOwn, own: _own, agr: _agr, pinV: _pinV, fsq: _f[0], cargo: _cFv, dLF, gate: _gateV, raw: CALIB.seaKV * (_ptV + _cFv + CALIB.seaBaseTerm) * _gateV / dLF });
-              return Math.max(0, CALIB.seaKV * (_ptV + _cFv + CALIB.seaBaseTerm) * _gateV / dLF);
+              const _baseT = _vanSea ? CALIB.seaBaseTerm : (global.__SEA_BASE_RIS != null ? global.__SEA_BASE_RIS : (CALIB.seaBaseTermRis != null ? CALIB.seaBaseTermRis : CALIB.seaBaseTerm));
+              const _coefV = (!_vanSea && global.__SEA_COEF_RIS != null) ? global.__SEA_COEF_RIS : CALIB.seaPopCoefV;
+              const _ptV2 = _coefV * _f[0];
+              if (!_vanSea && global.__SEA_RAW) (global.__SEA_RAWROWS = global.__SEA_RAWROWS || []).push({ X, Y, ownX, ownY, trueOwn: _trueOwn, own: _own, agr: _agr, pinV: _pinV, fsq: _f[0], cargo: _cFv, dLF, gate: _gateV, raw: CALIB.seaKV * (_ptV2 + _cFv + _baseT) * _gateV / dLF });
+              return Math.max(0, CALIB.seaKV * (_ptV2 + _cFv + _baseT) * _gateV / dLF);
             }
             const _pin = (CALIB.seaPopSum ? (popX + popY) : popX);
             let _pt;
