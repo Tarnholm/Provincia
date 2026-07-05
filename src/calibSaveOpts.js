@@ -58,11 +58,24 @@ function buildCalibSaveOpts(modDataDir, savePath) {
       if (TB[tr]) setBracketByCity[c] = TB[tr];
       const p = sf[c].publicOrder;
       if (typeof p === "number" && isFinite(p) && Math.abs(p) < 100000 && TB[tr]) {
-        poAnchorByCity[c] = { po: Math.round(p), bracket: TB[tr] };
+        // Keep the save's FRACTIONAL public order (2026-07-06): RTW PO is fractional (Volaterrae
+        // 134.5) — the graduated CULTURE penalty is a fraction of a pip (−0.5% = 0.1 pip). Rounding
+        // the anchor dropped exactly that half-point. The unrounded stored PO IS the in-game % and
+        // carries the exact culture/religion penalty already, so the anchor path needs no separate
+        // culture term. Round only where a component-model consumer needs an integer.
+        poAnchorByCity[c] = { po: p, bracket: TB[tr] };
       }
     }
     if (!Object.keys(poAnchorByCity).length) poAnchorByCity = null;
     out.setBracketByCity = Object.keys(setBracketByCity).length ? setBracketByCity : null;
+    // EXACT per-settlement CULTURE penalty from the save (order-breakdown slot 12 = culture/religion
+    // unrest, in pips → ×5 for the poModel's % unit). Graduated (Volaterrae 0.1→0.5%, a foreign town
+    // →22%+), so the component PO gets the real value instead of the flat foreign estimate.
+    const cultPenByCity = {};
+    for (const c of Object.keys(sf)) {
+      const ob = sf[c].orderBreakdown;
+      if (Array.isArray(ob) && typeof ob[12] === "number" && isFinite(ob[12])) cultPenByCity[c] = ob[12] * 5;
+    }
     // governor trait effects (incl. follower/ancillary folds) per settlement
     let govEffectByCity = {};
     try {
@@ -93,6 +106,7 @@ function buildCalibSaveOpts(modDataDir, savePath) {
     const opts = {};
     if (Object.keys(govEffectByCity).length) opts.govEffectByCity = govEffectByCity;
     if (Object.keys(popByCity).length) opts.popByCity = popByCity;
+    if (Object.keys(cultPenByCity).length) opts.cultPenByCity = cultPenByCity;
     out.opts = Object.keys(opts).length ? opts : null;
     out.poAnchorByCity = poAnchorByCity;
     out.growthDevByCity = Object.keys(growthDevByCity).length ? growthDevByCity : null;

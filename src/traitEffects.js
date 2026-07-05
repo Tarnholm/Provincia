@@ -1,5 +1,9 @@
 // src/traitEffects.js
 //
+// EFF2KEY: EDCT effect name → the lowercase key the ancillary consumer reads. Any effect NOT
+// listed (existing exotic or mod-added) is captured under its RAW name so nothing is dropped.
+const EFF2KEY = { Farming: "farm", Fertility: "fert", Health: "health", Squalor: "squalor", TaxCollection: "tax", Trading: "trading", Mining: "mining", Influence: "influence", Law: "law", Unrest: "unrest", LocalPopularity: "localPop", Management: "mgmt" };
+//
 // Parse export_descr_character_traits.txt (EDCT) and compute a governor's net
 // GROWTH-relevant trait effect. Per the user (2026-06-08): generals' traits DO
 // affect settlement growth, so the growth estimate must always account for them.
@@ -46,12 +50,16 @@ function parseAncillaryEffects(modDataDir) {
     let m;
     if ((m = ln.match(/^Ancillary\s+(\w+)/))) { cur = m[1]; out[cur] = { farm: 0, fert: 0, health: 0, squalor: 0, tax: 0, trading: 0, mining: 0, influence: 0, law: 0, unrest: 0, localPop: 0, mgmt: 0 }; continue; }
     if (!cur) continue;
-    if ((m = ln.match(/^\s*Effect\s+(Farming|Fertility|Health|Squalor|TaxCollection|Trading|Mining|Influence|Law|Unrest|LocalPopularity|Management)\s+(-?\d+)/))) {
-      const k = { Farming: "farm", Fertility: "fert", Health: "health", Squalor: "squalor", TaxCollection: "tax", Trading: "trading", Mining: "mining", Influence: "influence", Law: "law", Unrest: "unrest", LocalPopularity: "localPop", Management: "mgmt" }[m[1]];
-      out[cur][k] += +m[2];
+    // Capture EVERY `Effect <Name> <N>` generically (2026-07-06, user: "read all traits and new
+    // ones we make/alter"). Known settlement effects fold into their lowercase key; any OTHER
+    // effect (existing or a mod-added one) is captured under its raw name so nothing is silently
+    // dropped and new settlement effects can be wired without touching the parser.
+    if ((m = ln.match(/^\s*Effect\s+(\w+)\s+(-?\d+)/))) {
+      const k = EFF2KEY[m[1]] || m[1];
+      out[cur][k] = (out[cur][k] || 0) + +m[2];
     }
   }
-  for (const k of Object.keys(out)) if (!(out[k].farm || out[k].fert || out[k].health || out[k].squalor || out[k].tax || out[k].trading || out[k].mining || out[k].influence || out[k].law || out[k].unrest || out[k].localPop || out[k].mgmt)) delete out[k];
+  for (const k of Object.keys(out)) if (!Object.keys(out[k]).some(e => out[k][e])) delete out[k];
   return out;
 }
 
@@ -85,12 +93,16 @@ function parseTraitEffectsUncached(modDataDir) {
     if ((m = ln.match(/^\s*Level\s+(\w+)/))) { lvl = { threshold: 1, Farming: 0, Fertility: 0, Health: 0, Squalor: 0, TaxCollection: 0, Trading: 0, Mining: 0, Influence: 0, Law: 0, Unrest: 0, LocalPopularity: 0, Management: 0 }; traits[cur].push(lvl); continue; }
     if (!lvl) continue;
     if ((m = ln.match(/^\s*Threshold\s+(-?\d+)/))) { lvl.threshold = +m[1]; continue; }
-    if ((m = ln.match(/^\s*Effect\s+(Farming|Fertility|Health|Squalor|TaxCollection|Trading|Mining|Influence|Law|Unrest|LocalPopularity|Management)\s+(-?\d+)/))) lvl[m[1]] += +m[2];
+    // Capture EVERY effect by its own name (2026-07-06): known settlement effects keep their
+    // pre-zeroed capitalized keys (consumer reads chosen.Squalor etc.); any new/altered effect
+    // type is captured under its raw name so it is never silently dropped.
+    if ((m = ln.match(/^\s*Effect\s+(\w+)\s+(-?\d+)/))) lvl[m[1]] = (lvl[m[1]] || 0) + +m[2];
   }
   for (const t of Object.keys(traits)) traits[t].sort((a, b) => a.threshold - b.threshold);
-  // drop traits with no settlement effect at any level (keep the map small) — but KEEP the
-  // anti-trait map complete (a no-effect trait like Feck can still cancel Prim levels)
-  for (const t of Object.keys(traits)) if (!traits[t].some(L => L.Farming || L.Fertility || L.Health || L.Squalor || L.TaxCollection || L.Trading || L.Mining || L.Influence || L.Law || L.Unrest || L.LocalPopularity)) delete traits[t];
+  // Drop only traits with NO effect at all (keep the map small). A trait with ANY effect —
+  // settlement, combat, or a mod-added type — is retained so "read all traits" holds; the
+  // anti-trait map stays complete regardless (a no-effect trait like Feck still cancels Prim).
+  for (const t of Object.keys(traits)) if (!traits[t].some(L => Object.keys(L).some(e => e !== "threshold" && L[e]))) delete traits[t];
   Object.defineProperty(traits, "_anti", { value: anti, enumerable: false });
   return traits;
 }

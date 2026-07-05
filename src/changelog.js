@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1221",
+    date: "2026-07-06",
+    items: [
+      { type: "fix", text: "**Graduated culture penalty + fractional public order.** The culture/religion penalty was all-or-nothing (a foreign town got a flat −37, a same-culture-group town got 0), but a partially-converted settlement carries only a fraction — Volaterrae (Etruscan, mostly Romanised) reads just −0.5% in-game. When a save is loaded, the exact per-settlement culture penalty is now read straight from it, and public order is kept fractional (RTW public order isn't whole numbers). Volaterrae at low tax now reads the correct **164.5%** instead of 165." },
+      { type: "improvement", text: "**Trait reading now captures every effect, including new/altered ones.** The governor-trait and ancillary parsers previously recognised only a fixed list of effect names and silently dropped anything else — so a custom or newly-added effect on a modded trait would be invisible. They now capture every `Effect` line generically: known settlement effects fold in as before, and any other effect (existing exotic ones, or ones the mod team adds later) is preserved under its own name, ready to wire up. Altered values on existing effects are already picked up on the next read." },
+    ],
+  },
+  {
     version: "0.9.1220",
     date: "2026-07-06",
     items: [

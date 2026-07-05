@@ -245,12 +245,19 @@ function computeStartingPO(modDataDir, faction, opts = {}) {
     let colonyLvl = 0;
     for (const b of s.buildings) { const m = b.match(/^colony:.*?(\d+)?$/); if (m) colonyLvl = m[1] ? +m[1] : 1; }
     const foreign = !!(maj && facRel && maj !== facRel && colonyLvl < 2);
-    const cultPen = foreign ? 37 : 0;  // 22 settlement-culture + 10 leader-differs + 5 governor-differs (Neapolis scroll 2026-07-01)
+    // GRADUATED CULTURE PENALTY (2026-07-06): the real culture/religion unrest scales with the
+    // settlement's un-converted foreign-culture population %, not a binary — Volaterrae (Etruscan,
+    // mostly Roman-converted) reads only −0.5% in-game, not the flat foreign −37. When a save is
+    // attached, use its EXACT stored per-settlement culture penalty (order-breakdown slot 12, in
+    // pips → ×5 for %); this covers both a nearly-converted town (0.5) and a foreign one to the
+    // denarius. Fall back to the flat estimate only with no save.
+    const savedCult = opts.cultPenByCity && (opts.cultPenByCity[region.settlement] != null ? opts.cultPenByCity[region.settlement] : opts.cultPenByCity[s.settlement]);
+    const cultPen = savedCult != null ? savedCult : (foreign ? 37 : 0);
     const poNormal = 100 + 5 * (gar + law + hap + infl + health - sq - dist) - cultPen;
     const poAt = {};
     for (const b of Object.keys(TAX_ORDER_DELTA)) {
       const v = poNormal + (TAX_ORDER_DELTA[b] - TAX_ORDER_DELTA.normal);
-      poAt[b] = Math.max(0, Math.min(200, Math.round(v)));  // integer, NOT 5-snapped — culture penalties make PO non-5 (Neapolis 88)
+      poAt[b] = Math.max(0, Math.min(200, Math.round(v * 10) / 10));  // keep 0.1% — RTW PO is fractional (graduated culture −0.5% → 164.5, not 5-snapped)
     }
     out[region.settlement] = {
       poAt,
