@@ -683,31 +683,23 @@ const CALIB = {
   // TRUE same-faction sea gate (Carthage→own Lilybaeum, market-removed isolation 2026-06-25: base 168 vs the
   // SPQR-internal 0.36's 175) is a hair lower than the SPQR-group gate (Julii/Brutii/Scipii trade as 0.36).
   seaGateTrueOwnV: 0.33,
-  // RIS-only protectorate (trade-agreement) sea gate — Rome's client factions (Bruttii/Taras/Samnites via
-  // become_protector) trade nearer to own; the shared 0.66 under-reads them. Vanilla keeps seaGateAgreeV.
-  seaGateAgreeRisV: 0.82,
-  // RIS PER-PARTNER sea gates (2026-07-02 dynamic-law sweep, julii 25-town turn-1 corpus 137→32):
-  // the flat foreign 0.5 / client 0.82 gates hide real per-relationship spread. Keyed by the lane's
-  // NON-budget-faction side (applies only when the other side IS the budget faction, so partner-partner
-  // feeder lanes keep the generic gates). Fit windows (all towns of a partner solved jointly):
-  //   issa 0.435 [.4355-.436 venusia/arpi split ±1 — those towns are live-evidenced IMPORT-ONLY
-  //   (Issa>X fix pins 195/260/110 = exactly 0.2×target), a shape this law can't express]
-  //   histri 0.45 | corsi 0.575 | ingauni 0.52 | syracuse 0.73 (epize was -14, now exact)
-  //   clients: taras 0.88 (thurii exact), bruttians 0.9095 (paestum exact; metapontum +17 residual —
-  //   paestum needs 0.906-0.911, metapontum 0.793-0.800: one bruttians gate CANNOT satisfy both),
-  //   capua 0.8025 (rome + praeneste joint optimum).
-  // Diplomacy note: needed gates do NOT follow core_attitudes cleanly (issa -10 friendly gets the LOWEST
-  // gate; 200-attitude syracuse the highest foreign one) — treat as live-fit constants, not engine law.
-  seaGateRisByPartner: { issa: 0.435, histri: 0.45, corsi: 0.575, ingauni: 0.52, syracuse: 0.73, taras: 0.88, bruttians: 0.9095, capua: 0.8025 },
-  // RIS EXPORTER-LEG cargo exclusion (cosa crack 2026-07-02): the exporter's OWN trade row values
-  // silver at 0 (cargo 9→6 = cosa 255→217 exact) while the partner's 0.2× import tariff keeps the
-  // full basket (praeneste's import row needs the silver-inclusive flow — proven by the silver-skip
-  // regression praeneste -2→-10 when applied to both legs). Only EtrMer exports silver in the corpus,
-  // so this is effectively a 1-town pin until another silver/value-3 exporter is scroll-checked.
-  seaExpCargoSkipRis: ["silver"],
-  // RIS sea nav-shortcut floor: effective dNav >= seaNavRatioFloor × dEuclid (curbs over-aggressive map-baker
-  // pathfinder shortcuts). Fixes Metapontum (+17 -> exact); julii turn-1 sea corpus err 32 -> 16. RIS-gated.
-  seaNavRatioFloor: 0.74,
+  // ★ RIS SEA LAW — ROW-CRACKED 2026-07-05 on the fresh 12-town per-route ground truth
+  // (ris-rome-perroute-gt-2026-07-05.json; 18 independent flows, ALL exact to the denarius):
+  //   displayed export row = ceil( M_X · 800 · (0.1·fastSqrt(popX+popY) + cargoFull + 1) · gate / dNav )
+  //   import row at the partner = ceil(0.2 × that value);  M_X = 1 + tradePct_X/10 + govTrading_X/100.
+  //   gate: own/SPQR/rights (alliance 199 or become_protector protectorate) = 1.0, plain foreign = 0.5
+  //   — the foreign gate pins at exactly 0.500 on three independent lanes (Sena→Nesactium, Ingaunum→
+  //   Pisae, Venicum→Volaterrae) and the base term at exactly 1.0 (feasible window 0.998..1.001 across
+  //   all 18 flows; pop coef exactly 0.1; ceil display confirmed by the Roma→Capua 288 upper edge).
+  // The July-2 fit artifacts this replaces (per-partner gates seaGateRisByPartner, client gate 0.82,
+  // silver cargo skip, nav-ratio floor) were compensating for WRONG lane selection + the missing popY
+  // pin term on the STALE gov-off June corpus:
+  //   seaExpCargoSkipRis [] — cargo is the FULL exclusion basket on both legs (Cosa 207 exact w/ silver);
+  //   seaNavRatioFloor 0 — raw map.rwm dNav is what the engine prices (Metapontum 81 exact at dNav 46.1);
+  //   seaBaseTermRis 1.0 — RIS's flat +1 term (vanilla keeps its own seaBaseTerm 5.15).
+  seaExpCargoSkipRis: [],
+  seaNavRatioFloor: 0,
+  seaBaseTermRis: 1.0,
   // Engine reads a larger-than-displayed trade population: the sea pop term = seaPopCoefV·√pin + seaBaseTerm
   // (constant). Controlled descr_strat experiments 2026-06-25 (Carthage cargo 22→72 AND pop 6k→90k) fix the
   // effective term to ~15 at displayed pin 9000 → 0.1·√pin + ~5.15. Reproduces both the pop-response (202→316 at
@@ -1546,216 +1538,78 @@ function seaLanesByRegion(modDataDir) {
       }
       return (_seaLaneCache[modDataDir] = out2);
     }
-    // sea-body membership per region + body pixel sizes (full-res) for river detection
-    const bodiesOf = {}, bodySize = {};
-    for (let y = 0; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
-      const o = y * W + x;
-      if (!isSea(o)) continue;
-      const bid = buf[dataOff + o * 3];
-      bodySize[bid] = (bodySize[bid] || 0) + 1;
-      for (const no of [o + 1, o - 1, o + W, o - W]) {
-        if (isSea(no)) continue;
-        const reg = rgbToRegion[buf[dataOff + no * 3 + 2] + "," + buf[dataOff + no * 3 + 1] + "," + buf[dataOff + no * 3]];
-        if (reg) { const l = (bodiesOf[reg] = bodiesOf[reg] || []); if (!l.includes(bid)) l.push(bid); }
-      }
-    }
-    // SEA-PATH distances between port tiles (coarse 4px BFS over sea pixels) —
-    // euclidean pairs ports across the peninsula (Neapolis↔Arpi bug); ships sail.
-    // PER SEA BODY (2026-06-11, Nile crack): map_regions' 16 sea colors are separate
-    // BODIES (Nile delta water 41,140,235 vs Mediterranean 41,140,236). Lanes form
-    // WITHIN one body — the BFS only connects same-body cells. This both forms the
-    // Nile river-lane network and severs cross-body strait phantoms (Locri⇄Messana).
-    const ST = 4, GW = Math.ceil(W / ST), GH = Math.ceil(H / ST);
-    const seaGrid = new Uint8Array(GW * GH); // 0 = land, else body id (B value + 1)
-    for (let gy = 0; gy < GH; gy++) for (let gx = 0; gx < GW; gx++) {
-      const x = Math.min(W - 1, gx * ST), y = Math.min(H - 1, gy * ST);
-      const o = (y * W + x) * 3;
-      if (buf[dataOff + o + 2] === 41 && buf[dataOff + o + 1] === 140) seaGrid[gy * GW + gx] = 1 + buf[dataOff + o];
-    }
-    const portCell = {};
-    for (const p of ports) {
-      const c = cent[p.region]; if (!c) continue;
-      let best = null, bd = 1e9;
-      const gx0 = Math.round(c[0] / ST), gy0 = Math.round(c[1] / ST);
-      for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
-        const gx = gx0 + dx, gy = gy0 + dy;
-        if (gx < 0 || gy < 0 || gx >= GW || gy >= GH || !seaGrid[gy * GW + gx]) continue;
-        const d = dx * dx + dy * dy;
-        if (d < bd) { bd = d; best = gy * GW + gx; }
-      }
-      if (best != null) portCell[p.region] = best;
-    }
-    const seaDist = {}; // region -> Map(otherRegion -> pathDist)
-    const cellPorts = {};
-    for (const p of ports) if (portCell[p.region] != null) (cellPorts[portCell[p.region]] = cellPorts[portCell[p.region]] || []).push(p.region);
-    for (const p of ports) {
-      const start = portCell[p.region]; if (start == null || seaDist[p.region]) continue;
-      const dist = new Int32Array(GW * GH).fill(-1);
-      dist[start] = 0;
-      let frontier = [start];
-      const found = new Map();
-      while (frontier.length) {
-        const next = [];
-        for (const c of frontier) {
-          if (cellPorts[c]) for (const r of cellPorts[c]) if (r !== p.region) found.set(r, dist[c] * ST);
-          const cx = c % GW, cy = (c / GW) | 0;
-          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-            const nx = cx + dx, ny = cy + dy;
-            if (nx < 0 || ny < 0 || nx >= GW || ny >= GH) continue;
-            const nc = ny * GW + nx;
-            if (!seaGrid[nc] || dist[nc] >= 0) continue;
-            dist[nc] = dist[c] + 1;
-            next.push(nc);
-          }
+    // ★ RIS (map 0x7b) SEA-LANE SELECTION — ROW-CRACKED 2026-07-05 against the fresh 12-town per-route
+    // ground truth (scripts/ris-rome-perroute-gt-2026-07-05.json, scored by scripts/sea-row-diff.js).
+    // It is the SAME greedy exe rule as the vanilla branch above, with the RIS specifics pinned row-exact:
+    //   POOL: landing-frontier partners (map.rwm, dNav>0) whose region has a BUILT port chain. There is
+    //     NO own/ally portless exception in RIS (Locri does NOT export to portless own Croton; Issa
+    //     ignores its own portless islands and ships to its one ported town) — unlike vanilla Lilybaeum.
+    //   SKIP: any region-frontier land neighbour, BOTH type-0 and type-1 edges (Canusium skips its t1
+    //     Daunia frontier; every corpus town skips all its land partners — Rome never sea-trades Ostia→
+    //     Praeneste/Cosa, Neapolis never →Capua).
+    //   VALUE: (0.1·fastSqrt(popX+popY) + cargoFull + 1) · gate / dNav, gate = own/SPQR/rights 1.0,
+    //     plain-foreign 0.5, war excluded. The gate IS part of the selection (Pisae picks own Cosa d142
+    //     over foreign Ingaunia d75; Volaterrae picks own Rome d120 over Corsica d78) and "rights" =
+    //     alliance (descr_strat 199) or protectorate (campaign-script become_protector — lucanians).
+    //   SLOTS: built port chain level (port 1 / shipwright 2 / dockyard 3): Rome & Capua export 2 lanes,
+    //     Petelia/Issa/every port-1 town exports 1. Locri's "no export" was a myth — it exports 43 to
+    //     Petelia (the scroll shows the row in the import column; the value is its own export).
+    // Every export X→Y also creates Y's import-only lane (the ceil(0.2×) tariff row; Rome shows Capua 67
+    // + Volaterrae 10 + Fregellae 37 = exactly its three inbound exporters).
+    {
+      const lfg = landingFrontierGraph(modDataDir);
+      const fg = frontierGraph(modDataDir);
+      const prot = parseProtectorates(modDataDir);
+      const { qty: _GQ, rawValues: _RV } = tradeQtyMapsByRegion(modDataDir);
+      const portBy = {}; for (const p of ports) portBy[p.region] = p;
+      const _fsq = (x) => { const b = new ArrayBuffer(4), f = new Float32Array(b), i = new Int32Array(b); f[0] = x; i[0] = (((i[0] + 0xc0800000) | 0) >> 1) + 0x3f800000; return f[0]; };
+      const _cargoRis = (X, Y) => { const a = _GQ[X] || {}, b2 = _GQ[Y] || {}; let c = 0; for (const r in a) if (!(r in b2)) c += a[r] * (_RV[r] || 0); return c; };
+      const _rights = (fa, fb) => fa === fb || (/^romans?_/.test(fa) && /^romans?_/.test(fb)) ||
+        (allies[fa] && allies[fa].has(fb)) || prot.suzerainOf[fa] === fb || prot.suzerainOf[fb] === fa;
+      const exportPick = {}; // region -> [{to, d}] greedy value-ranked picks
+      for (const p of ports) {
+        const F = p.fac, A = p.region;
+        if (F === "slave") continue;
+        const skip = new Set(); for (const e of (fg[A] || [])) skip.add(e.region); // land frontier neighbours (t0 + t1)
+        const cands = [];
+        for (const fr of (lfg[A] || [])) {
+          const r = fr.region;
+          if (r === A || !(fr.dist > 0) || skip.has(r) || !portBy[r]) continue;
+          const o = ownerOfRegion[r];
+          if (!o || o === "slave") continue;
+          if (o !== F && wars[F] && wars[F].has(o)) continue;
+          const gate = _rights(F, o) ? 1.0 : 0.5;
+          const val = (0.1 * _fsq((popOfRegion[A] || 1500) + (popOfRegion[r] || 1500)) + _cargoRis(A, r) + 1) * gate / fr.dist;
+          cands.push({ r, d: fr.dist, val });
         }
-        frontier = next;
+        cands.sort((x, y) => y.val - x.val);
+        exportPick[A] = cands.slice(0, Math.max(1, p.level)).map(c => ({ to: c.r, d: c.d }));
       }
-      seaDist[p.region] = found;
-    }
-    // ENGINE SEA GRAPH (2026-06-22): replace the pixel-BFS distances with the LANDING-FRONTIER graph
-    // from map.rwm — the engine's exact sea candidates + distances. Each port then fills its slots with
-    // the highest-PROFIT landing-frontier partners (value-ranked), matching the game (Epirus: Kichyros
-    // picks rich Korkyra+Stratos over the nearer-but-poor Leukas). Falls back to the BFS if no graph.
-    const _useLF = CALIB.useLandingFrontiers && !process.env.NO_LANDING_FRONTIERS;
-    if (_useLF) {
-      const lf = landingFrontierGraph(modDataDir);
-      if (Object.keys(lf).length) {
-        const portSet = new Set(ports.map(p => p.region));
-        for (const p of ports) {
-          const m = new Map();
-          for (const e of (lf[p.region] || [])) if (portSet.has(e.region)) m.set(e.region, e.dist);
-          seaDist[p.region] = m;
+      const inbound = {}; // P -> [{from, d}] exporters that picked P
+      for (const A in exportPick) for (const c of exportPick[A]) (inbound[c.to] = inbound[c.to] || []).push({ from: A, d: c.d });
+      const ranksBack = (P, A) => (exportPick[P] || []).some(c => c.to === A);
+      const out2r = {};
+      for (const A of new Set([...Object.keys(exportPick), ...Object.keys(inbound)])) {
+        const p = portBy[A];
+        const picks = exportPick[A] || [], pickedSet = new Set(picks.map(c => c.to));
+        const ownPop = popOfRegion[A] || 1500, ownPort = p ? p.basePort : 0;
+        const lanes = picks.map(c => ({
+          to: c.to, d: c.d, weak: false, inWeak: false, impLive: ranksBack(c.to, A),
+          toPop: popOfRegion[c.to] || 1500, toPort: portBy[c.to] ? portBy[c.to].basePort : 0,
+          ownPop, ownPort, invalidBridge: false, toNearest: true,
+        }));
+        for (const { from: B, d } of (inbound[A] || [])) {
+          if (pickedSet.has(B)) continue; // mutual pair carries its own import (impLive above)
+          lanes.push({
+            to: B, d, weak: true, inWeak: false, impLive: true,
+            toPop: popOfRegion[B] || 1500, toPort: portBy[B] ? portBy[B].basePort : 0,
+            ownPop, ownPort, invalidBridge: false, toNearest: true,
+          });
         }
+        out2r[A] = lanes;
       }
+      return (_seaLaneCache[modDataDir] = out2r);
     }
-    const _seaInvalid = new Set();
-    if (_useLF) { const _van = _mapVer(modDataDir) < 0x7b; const _fg = frontierGraph(modDataDir); for (const rg in _fg) for (const e of _fg[rg]) if (e.type === 0 && (_van ? e.bord <= 2 : e.f10 > CALIB.seaInvalidF10)) _seaInvalid.add(rg + "|" + e.region); }
-    // eligible pairs (sea-path ordered)
-    const pairs = [];
-    for (let i = 0; i < ports.length; i++) for (let j = i + 1; j < ports.length; j++) {
-      const a = ports[i], b = ports[j];
-      // eligibility = NOT AT WAR (like land trade — Sena Gallica lanes with neutral
-      // Histria's Nesactium across the Adriatic rather than own far-away Pisae)
-      if (a.fac !== b.fac && wars[a.fac] && wars[a.fac].has(b.fac)) continue;
-      if (a.fac === "slave" || b.fac === "slave") continue;
-      // Land-adjacency exclusion RE-CONFIRMED live (2026-06-11 cyrene scrolls): the
-      // coastal chain Euesperidai–Taucheira–Barke–Kyrenaike lanes exactly as the rule
-      // predicts (Kyrene⇄Arsinoe and Euesperides⇄Ptolemais both SKIP their adjacent
-      // neighbor; no adjacent pair lanes).
-      const adjA = adjacency[a.region];
-      const _inval = _seaInvalid.has(a.region + "|" + b.region) || _seaInvalid.has(b.region + "|" + a.region);
-      if (!_inval && adjA && (adjA.has ? adjA.has(b.region) : adjA.includes(b.region))) continue;
-      const sd = seaDist[a.region] && seaDist[a.region].get(b.region);
-      if (sd == null) continue; // no sea path
-      // With the landing-frontier graph the engine has NO hard distance cap (it profit-ranks every
-      // sea-reachable port and the slot limit caps the count); the old 40-tile cap was a BFS-era kludge
-      // that wrongly killed far-but-rich routes (Epirus→Stratos d53, →Uria d108). Use a generous bound.
-      if (sd > (_useLF ? CALIB.seaLaneMaxDistLF : CALIB.seaLaneMaxDist)) continue;
-      // RIVER LANES (2026-06-11 Nile crack): the Nile is its own small sea body
-      // (41,140,235); river ports lane near-all-pairs without consuming sea slots
-      // (Sebennytos holds 3 lanes on a level-0 port). Pairs sharing a SMALL body
-      // (< riverBodyMaxCells at 4px) lane unconditionally.
-      const shared = (bodiesOf[a.region] || []).filter(x => (bodiesOf[b.region] || []).includes(x));
-      const river = shared.some(bid => (bodySize[bid] || 1e9) < CALIB.riverBodyMaxCells);
-      pairs.push({ a, b, d: sd, river, inval: _inval });
-    }
-    pairs.sort((x, y) => x.d - y.d);
-    // SEEDED LIVE LANES (probe corpora 2026-06-11/12: capua t1 trio, julii 26-town
-    // t1, mamertines, kyzikos): the greedy matcher's distance metric misses the
-    // engine's (movement-cost pathing, port-side choice, ally-tier preference —
-    // directed-slot model, see memory). Where a campaign's lane set was READ LIVE
-    // it is pinned here; seeded ports take ONLY their seeded lanes, the unseeded
-    // world keeps the greedy law. exA/exB = that side exports (live strength).
-    const seeded = new Set();
-    const portOf = {};
-    for (const p of ports) portOf[p.region] = p;
-    for (const sd of (CALIB.dynamicTradeOnly ? [] : (CALIB.seaLaneSeeds || []))) {
-      const A = portOf[sd.a], B = portOf[sd.b];
-      if (!A || !B) continue;
-      seeded.add(sd.a); seeded.add(sd.b);
-      const d = (seaDist[sd.a] && seaDist[sd.a].get(sd.b)) != null ? seaDist[sd.a].get(sd.b) : 24;
-      // impLive: this side's import row (partner flow ÷5) observed live at t1
-      // (seeded lanes carry the corpus truth; default true — see seaLaneSeeds note)
-      (out[sd.a] = out[sd.a] || []).push({ to: sd.b, weak: !sd.exA, inWeak: !sd.exB, impLive: sd.impA !== false, toPop: B.pop, toPort: B.basePort, ownPop: A.pop, ownPort: A.basePort, d, seeded: true });
-      (out[sd.b] = out[sd.b] || []).push({ to: sd.a, weak: !sd.exB, inWeak: !sd.exA, impLive: sd.impB !== false, toPop: A.pop, toPort: A.basePort, ownPop: B.pop, ownPort: B.basePort, d, seeded: true });
-    }
-    const slots = {};
-    // SLOTS = built port chain level (live 2026-06-18: Carthage dockyard = 3 sea exports, not 4 —
-    // the symmetric scroll shows 3 exports + 3 imports, and the value law can't produce Hadrumetum's
-    // 21 as a d28 export so it's an import). Was 1+level (over by one).
-    for (const p of ports) slots[p.region] = Math.max(1, p.level);
-    // PER-EXPORTER lane formation (live-cracked 2026-06-18, Carthage→Hippo Diarrhytus): the engine
-    // is per-exporter, NOT bidirectional pairing. Each port forms EXPORT lanes to its nearest
-    // slots[X] eligible partners INDEPENDENTLY of the partner's own slot usage (Carthage claims
-    // nearby Xupon_Zaxyir even though that port's 2 slots are spent on its own nearer Karaly/Sulky).
-    // A lane out[X]→Y exports iff Y ∈ nearestSet[X]; it carries X's IMPORT from Y iff X ∈ nearestSet[Y].
-    const partnersOf = {};
-    for (const pr of pairs) {
-      const A = pr.a.region, B = pr.b.region;
-      if (pr.river) {
-        (out[A] = out[A] || []).push({ to: B, weak: false, inWeak: false, toPop: pr.b.pop, toPort: pr.b.basePort, ownPop: pr.a.pop, ownPort: pr.a.basePort, river: true, d: pr.d });
-        (out[B] = out[B] || []).push({ to: A, weak: false, inWeak: false, toPop: pr.a.pop, toPort: pr.a.basePort, ownPop: pr.b.pop, ownPort: pr.b.basePort, river: true, d: pr.d });
-        continue;
-      }
-      if (seeded.has(A) || seeded.has(B)) continue; // pinned ports don't re-match
-      // DIRECTIONAL distance: the navigable sea distance is ASYMMETRIC (A→B ≠ B→A around coastlines), and a
-      // port's EXPORT is valued/ranked over the EXPORTER→partner path. Using the shared pair distance (the
-      // a<b-ordered direction) picked the wrong partner — Kichyros ranked Leukas (Leukas→Kichyros 45.9) over
-      // Stratos, but Kichyros→Stratos (47.8) is actually NEARER than Kichyros→Leukas (48.5). Use seaDist[X][Y].
-      const _dAB = (seaDist[A] && seaDist[A].get(B)) || pr.d, _dBA = (seaDist[B] && seaDist[B].get(A)) || pr.d;
-      (partnersOf[A] = partnersOf[A] || []).push({ to: B, d: _dAB, pop: pr.b.pop, port: pr.b.basePort, ownPop: pr.a.pop, ownPort: pr.a.basePort, inval: pr.inval });
-      (partnersOf[B] = partnersOf[B] || []).push({ to: A, d: _dBA, pop: pr.a.pop, port: pr.a.basePort, ownPop: pr.b.pop, ownPort: pr.b.basePort, inval: pr.inval });
-    }
-    // PROFIT-RANKED selection (live 2026-06-18): the engine fills each port's slots with its most
-    // PROFITABLE partners (trade value), not its nearest — Carthage takes Arik(Eryx) over the closer
-    // Epikrateia/Adrumet because cargo wins. Rank by the export value's per-partner factors (the
-    // exporter-constant K·landRateX·popX cancel): dist^seaDist · (export+0.35·import+const) · popY^.06 · rights.
-    const { qty: _GQ, rawValues: _RV } = tradeQtyMapsByRegion(modDataDir);
-    const _spd = seaPortDistDepth(modDataDir);
-    const _ownerFac = {}; for (const p of ports) _ownerFac[p.region] = p.fac;
-    const _cargoVal = (A, B, exportOnly) => { const a = _GQ[A] || {}, b = _GQ[B] || {}; let e = 0, i = 0; for (const r in a) if (!(r in b)) e += a[r] * (_RV[r] || 0); if (exportOnly) return e; for (const r in b) if (!(r in a)) i += b[r] * (_RV[r] || 0); return e + CALIB.seaImportFrac * i; };
-    const nearestSet = {};
-    for (const X in partnersOf) {
-      const dFromX = _spd.distFrom(X) || {};
-      for (const pp of partnersOf[X]) {
-        const dw = dFromX[pp.to], dist = Math.max(1, (dw != null && isFinite(dw)) ? dw : pp.d);
-        // NOTE: lane SELECTION ranks by profit potential WITHOUT the trade-rights penalty (live 2026-06-18:
-        // Rome picks foreign Capua d21 over same-faction Neapolis d27.7 — rights only scale realized VALUE,
-        // not which lanes form).
-        // SELECTION pop-weight: with the landing-frontier graph the engine prefers BIGGER partners over
-        // nearer-but-smaller ones (Epirus Kichyros picks Stratos+Korkyra pop-3500 over Leukas pop-2300);
-        // the value-fit popY (0.06) is far too weak for that. seaSelPopY is a separate selection weight.
-        if (_useLF) {
-          // ENGINE selection ranks export candidates by route value / dist_navigable (popX constant per X).
-          // Rank by the EXPORT cargo (what X ships out) over the EXPORTER→partner navigable distance — NOT
-          // the import cargo (which belongs to the partner's own export decision). With equal export cargo the
-          // nearer partner wins: Kichyros→Stratos (47.8) correctly beats Kichyros→Leukas (48.5), matching the
-          // game (which trades Kichyros↔Stratos, not Leukas). Including the import made the poorer-but-richer-
-          // imports Leukas wrongly win.
-          pp.profit = (_cargoVal(X, pp.to, true) + CALIB.seaConst_LF) / Math.max(1, pp.d);
-        } else {
-          pp.profit = Math.pow(dist, CALIB.seaDist) * (_cargoVal(X, pp.to) + CALIB.seaConst) * Math.pow(Math.max(400, pp.pop), CALIB.seaPopY);
-        }
-      }
-      partnersOf[X].sort((u, v) => v.profit - u.profit);
-      nearestSet[X] = new Set(partnersOf[X].slice(0, slots[X] || 1).map(p => p.to));
-    }
-    for (const X in partnersOf) for (const pp of partnersOf[X]) {
-      const Y = pp.to, isExp = nearestSet[X].has(Y), isImp = !!(nearestSet[Y] && nearestSet[Y].has(X));
-      if (!isExp && !isImp) continue;
-      (out[X] = out[X] || []).push({ to: Y, weak: !isExp, inWeak: false, impLive: isImp, toPop: pp.pop, toPort: pp.port, ownPop: pp.ownPop, ownPort: pp.ownPort, d: pp.d, invalidBridge: pp.inval });
-    }
-    // TURN-1 ACTIVATION (Capua t1/t2 probe 2026-06-11 night): a partner's REVERSE flow
-    // is live at turn 1 only if our port is that partner's NEAREST open-sea lane
-    // (Praeneste→Capua live at t1 — Capua is its lane #1; Rome→Capua appears at t2 —
-    // Capua is Rome's lane #2). toNearest = this lane is the PARTNER's nearest lane.
-    const nearestOf = {};
-    for (const r of Object.keys(out)) {
-      let best = null;
-      for (const l of out[r]) if (!l.river && (best == null || l.d < best.d)) best = l;
-      if (best) nearestOf[r] = best.to;
-    }
-    for (const r of Object.keys(out)) for (const l of out[r]) l.toNearest = nearestOf[l.to] === r;
   } catch { /* none */ }
   return (_seaLaneCache[modDataDir] = out);
 }
@@ -1962,6 +1816,18 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   let govFx = {};
   if (opts && opts.govEffectByCity) govFx = opts.govEffectByCity;
   else { try { const te = require("./traitEffects.js"); govFx = te.govEffectByCityFromStrat(modDataDir, te.parseTraitEffects(modDataDir)) || {}; } catch { } }
+  // region -> city-name lookup (lazy; for PARTNER-side governor effects on sea import legs — govFx is
+  // keyed by settlement name, but a sea lane's far side is known only by region).
+  let _r2cMap = null;
+  const _cityOfRegion = (r) => {
+    if (!_r2cMap) {
+      try {
+        const dg2 = require("./descrStratGeneral.js");
+        _r2cMap = (dg2.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1")) || {}).regionToCity || {};
+      } catch { _r2cMap = {}; }
+    }
+    return _r2cMap[r];
+  };
   const wonders = wonderOwners(modDataDir);
   const mineQty = mineQtyValByRegion(modDataDir);
   const { ownerOfRegion, allies, wars, portTowns, popOfRegion, roadOfRegion } = tradePartnerCtx(modDataDir);
@@ -2234,7 +2100,9 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // VANILLA: the trader/market band is applied PER-ROUTE with truncation — the engine computes
       // ⌊band·base⌋ for each land row, so Σ⌊M·row⌋ < (Σrow)·M by the dropped fractions. Live-confirmed:
       // Hatra 110→107, Sinope 178→177, Mazaka 100→99 (each route ⌊1.10·base⌋). RIS keeps its calibrated total-band law.
-      const _landM = Math.max(0, 1 + (colonyMByRegion[s.region] || 0) / 100 + 0.74 * ((gv0 && gv0.trading) || 0) / 100);
+      // Governor trading at FULL 1.0 coefficient (row-cracked 2026-07-05: Rome's +10% trading governor
+      // lands all 5 GT land rows exactly at 1.0; the June 0.74 was a stale-corpus fit).
+      const _landM = Math.max(0, 1 + (colonyMByRegion[s.region] || 0) / 100 + ((gv0 && gv0.trading) || 0) / 100);
       const _vanLandM = true; // RIS now uses the same exe-cracked land law + per-route trunc as vanilla (engine is identical; only the data differs)
       for (const n of landNeighbors) {
         const own = ownerOfRegion[n];
@@ -2296,7 +2164,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // multiplies ALL its trade — LAND as well as sea. M = 1 + tradePct/10 (= colonyMByRegion/100). The model
       // already applied this to sea export; it was missing on land (Corduba 89→97 with its +10% trader).
       // GOVERNOR TRADING (Alexandria GoodTrader probe): +trading% scales the export component on top.
-      if (!_vanLandM) landTrade *= Math.max(0, 1 + (colonyMByRegion[s.region] || 0) / 100 + 0.74 * ((gv0 && gv0.trading) || 0) / 100);
+      if (!_vanLandM) landTrade *= Math.max(0, 1 + (colonyMByRegion[s.region] || 0) / 100 + ((gv0 && gv0.trading) || 0) / 100);
     }
     tradeLandSum += landTrade;
     // SEA = PER-LANE FLOWS. OPEN-SEA LAW (Capua t1/t2 probes 2026-06-11 night +
@@ -2372,7 +2240,9 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           // RELATIONSHIP BAND (engine: 0.5/0.66/0.33). LF uses it directly; own-faction internal trade is its
           // own factor — calibrated on Epirus (own routes were over, foreign under = a flat 1.0/0.5 artifact).
           const _trueOwn = ownX === ownY; // genuinely the same faction
-          const _own = _trueOwn || (/^romans?_/.test(ownX || "") && /^romans?_/.test(ownY || "")), _agr = tradeRightsSet.has(ownY) || tradeRightsSet.has(ownX);
+          // rights = protectorate/senate set (per budget faction) OR a plain 199 alliance between the two
+          // lane owners (symmetric — covers partner-side lanes on AI budgets too).
+          const _own = _trueOwn || (/^romans?_/.test(ownX || "") && /^romans?_/.test(ownY || "")), _agr = tradeRightsSet.has(ownY) || tradeRightsSet.has(ownX) || !!(ownX && ownY && allies[ownX] && allies[ownX].has(ownY));
           const rights = CALIB.useLandingFrontiers
             ? (_own ? CALIB.seaBandOwn : _agr ? CALIB.seaBandAgree : CALIB.seaBandForeign)
             : ((_own || _agr) ? 1.0 : CALIB.seaRightsForeign);
@@ -2413,26 +2283,19 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
               // do NOT dominate selection — Carthage still picks its own Lilybaeum over foreign Syracuse on distance).
               // pin = popX + popY (BOTH settlement pops, byte-confirmed from routeValue's two vtable+0x130 reads —
               // the portless partner's pop IS included, unlike the old popX-only heuristic).
-              // RIS export leg keys on popX only (vanilla uses popX+popY). popX+popY was investigated 2026-07-05
-              // and REFUTED on fresh data: against the 11-town gov-AWARE July corpus the shipped popX-only model is
-              // 9/11 EXACT (only arpi -1), while popX+popY drops to ~4/11 (it breaks the exact towns). The earlier
-              // "popX+popY recovers coef 0.1" signal was an underdetermined 4-lane per-route fit; the total-level
-              // fresh corpus is decisive. The one seam is the Rome<->Fregellae lane (extreme 6:1 pop ratio) — the
-              // only place popX-only vs popX+popY diverges enough to matter. __SEA_PINSUM_RIS kept as a default-OFF
-              // calibration toggle (see scripts/sea-refit-fresh.js + ris-rome-perroute-gt-2026-07-05.json).
-              const _pinV = (_vanSea || global.__SEA_PINSUM_RIS) ? (popX + popY) : popX;
+              // RIS pin = popX+popY too — ROW-CRACKED 2026-07-05 on the fresh per-route GT: the mutual
+              // Roma↔Fregellae pair differs by EXACTLY its cargo difference (Δ7.98 vs cargo Δ8), which is
+              // only possible with a symmetric pop term; the earlier "popX-only, popX+popY refuted" result
+              // was fit against the wrong lane selection + round display (the engine CEILs the row).
+              const _pinV = popX + popY;
               const _b = new ArrayBuffer(4), _f = new Float32Array(_b), _i = new Int32Array(_b);
               _f[0] = _pinV; _i[0] = (((_i[0] + 0xc0800000) | 0) >> 1) + 0x3f800000; // bit-hack fastSqrt
-              const _ptV = CALIB.seaPopCoefV * _f[0];
               let _cFv = 0; for (const r in gx) if (!(r in gy)) { if (!_vanSea && isExp && (CALIB.seaExpCargoSkipRis || []).includes(r)) continue; if (!_vanSea && global.__SEA_CARGO_SKIP && global.__SEA_CARGO_SKIP.has(r) && (isExp || !global.__SEA_CARGO_SKIP_EXPONLY)) continue; _cFv += gx[r] * ((_vanSea && r === "copper") ? 6 : (!_vanSea && global.__SEA_CARGO_VAL && global.__SEA_CARGO_VAL[r] != null ? global.__SEA_CARGO_VAL[r] : (_rawVal[r] || 0))); } // SEA cargo uses the REAL resource values (same as the land law), vanilla + RIS; copper=6 sea-adjust is vanilla-only
-              // RIS per-partner gate (see CALIB.seaGateRisByPartner): keyed on the lane side that is NOT
-              // the budget faction; only consulted for non-own lanes with the budget faction on one side.
-              const _pfRis = !_vanSea && !(_trueOwn || _own) ? (ownX === facLow ? ownY : (ownY === facLow ? ownX : null)) : null;
-              const _pfGate = _pfRis != null && CALIB.seaGateRisByPartner ? CALIB.seaGateRisByPartner[_pfRis] : null;
+              // RIS gates (row-cracked): own/SPQR/rights 1.0, plain foreign 0.5 — three independent foreign
+              // lanes pin 0.500 exactly; ally/protectorate lanes (capua, bruttians, lucanians) pin 1.0.
               let _gateV;
               if (_vanSea) _gateV = (_trueOwn ? CALIB.seaGateTrueOwnV : _own ? CALIB.seaGateOwnV : _agr ? CALIB.seaGateAgreeV : CALIB.seaGateForeignV);
-              else if (global.__SEA_CLEAN_GATES) _gateV = (_trueOwn || _own || _agr) ? 1.0 : CALIB.seaGateForeignV;
-              else _gateV = (_trueOwn || _own) ? 1.0 : (_pfGate != null ? _pfGate : (_agr ? CALIB.seaGateAgreeRisV : CALIB.seaGateForeignV));
+              else _gateV = (_trueOwn || _own || _agr) ? 1.0 : CALIB.seaGateForeignV;
               if (!_vanSea && global.__SEA_GATE_FN) { const _g2 = global.__SEA_GATE_FN({ X, Y, ownX, ownY, trueOwn: _trueOwn, own: _own, agr: _agr, gate: _gateV }); if (_g2 != null) _gateV = _g2; }
               const _baseT = _vanSea ? CALIB.seaBaseTerm : (global.__SEA_BASE_RIS != null ? global.__SEA_BASE_RIS : (CALIB.seaBaseTermRis != null ? CALIB.seaBaseTermRis : CALIB.seaBaseTerm));
               const _coefV = (!_vanSea && global.__SEA_COEF_RIS != null) ? global.__SEA_COEF_RIS : CALIB.seaPopCoefV;
@@ -2490,9 +2353,12 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           // the landing-frontier profit-ranker spent its one export slot on a nearer port — the trade agreement
           // carries the tariff. (Paestum collects Bruttium's import though Bruttium's slot went to nearer Mamertina;
           // the live pin Bruttium->Poseidonia ai=15.5 confirms it. Plain-foreign far partners form no client link.)
-          const _agrLane = (_mapVer(modDataDir) >= 0x7b) && ownerOfRegion[ln.to] !== facLow && tradeRightsSet.has(ownerOfRegion[ln.to]);
-          let _impOn = (!!ln.impLive || _agrLane);
-          if ((_mapVer(modDataDir) >= 0x7b) && global.__SEA_IMP_FN) { const _i2 = global.__SEA_IMP_FN({ ln, from: s.region, ownTo: ownerOfRegion[ln.to], facLow, hasRights: tradeRightsSet.has(ownerOfRegion[ln.to]), impLive: !!ln.impLive, agrLane: _agrLane }); if (_i2 != null) _impOn = _i2; }
+          // ROW-CRACK 2026-07-05: the import row exists IFF the partner actually exports to me (impLive —
+          // mutual pick or an inbound-only lane). The old RIS "client tariff without reverse export"
+          // (_agrLane) exception is REMOVED: it was a stale-corpus artifact and creates phantom imports
+          // (Locri shows NO Petelia import — Petelia's one slot went to Metapontum).
+          let _impOn = !!ln.impLive;
+          if ((_mapVer(modDataDir) >= 0x7b) && global.__SEA_IMP_FN) { const _i2 = global.__SEA_IMP_FN({ ln, from: s.region, ownTo: ownerOfRegion[ln.to], facLow, hasRights: tradeRightsSet.has(ownerOfRegion[ln.to]), impLive: !!ln.impLive }); if (_i2 != null) _impOn = _i2; }
           impV = _impOn ? flowOf(ln.to, s.region, false, ln) * CALIB.seaImportCut : 0;
         } else {
           expV = ln.weak ? 0 : flowOf(s.region, ln.to, isPly, ln);
@@ -2513,11 +2379,21 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
         // exports ×1.20) AND confirmed verbatim on the in-game building scroll. Small Colony (colony_1) is a
         // smaller bonus the scroll calls out but we don't yet apply (its host settlements' base is mis-parsed).
         const _colTrade = colonyMByRegion[s.region] || 0;
-        let _seaTradeM = Math.max(0, 1 + _colTrade / 100 + 0.74 * ((gv0 && gv0.trading) || 0) / 100);
+        // GOVERNOR trading coefficient = FULL 1.0 (row-cracked 2026-07-05: Rome's +10% trading governor
+        // lands all 5 land rows AND both sea exports exactly at 1.0; the old 0.74 was a stale-corpus fit).
+        let _seaTradeM = Math.max(0, 1 + _colTrade / 100 + ((gv0 && gv0.trading) || 0) / 100);
         if (_mapVer(modDataDir) >= 0x7b && global.__SEA_M_FN) { const _m2 = global.__SEA_M_FN({ colTrade: _colTrade, tradePct: s.tradePct || 0, gvTrading: (gv0 && gv0.trading) || 0 }); if (_m2 != null) _seaTradeM = _m2; }
         expV *= _seaTradeM;
-        // import leg: the partner's Large-Colony bonus rides on the goods we import from it (its export was boosted)
-        impV *= 1 + (tradePctAll[ln.to] != null ? tradePctAll[ln.to] : (colonyMByRegion[ln.to] || 0)) / 100;
+        // import leg: the partner's Large-Colony/trade-building bonus rides on the goods we import from it
+        // (its export was boosted) — and on RIS so does the partner's GOVERNOR trading trait, ADDITIVELY in
+        // the same M (row-crack: Fregellae's import from Rome is ⌈0.2·489⌉ = 98 where 489 = raw × (1 + 5/10
+        // + 10/100) — the additive 1.6, not the multiplicative 1.65).
+        {
+          const _pPct = (tradePctAll[ln.to] != null ? tradePctAll[ln.to] : (colonyMByRegion[ln.to] || 0)) / 100;
+          let _pGv = 0;
+          if (_mapVer(modDataDir) >= 0x7b) { const _pc = _cityOfRegion(ln.to); const _pgv = (_pc && govFx[_pc]) || govFx[ln.to]; if (_pgv && _pgv.trading) _pGv = _pgv.trading / 100; }
+          impV *= Math.max(0, 1 + _pPct + _pGv);
+        }
         // COLOSSUS rides on the EXPORTER, not the importer. A partner whose faction owns the Colossus exports at
         // the +20% wonder rate (faction-wide sea boost), so the 0.2x import we collect from it carries that boost.
         // In-game proof: Antioch's import from Rhodes is +25% (12→15) ONLY because Rhodes (the partner) has the
@@ -2527,11 +2403,13 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
         // the model's round-of-the-total was losing (Thessalonica→Rhodes import 0.2·82=16.4 → ⌈⌉17, model gave 16).
         // Exports stay summed-raw: their float sits a hair high, so the total round already matches and ceiling them
         // double-counts (over-shot Thessalonica/Arretium/Sinope/Rhodes by 1). So ceil imports only.
-        seaTrade += (_mapVer(modDataDir) < 0x7b) ? (Math.round(expV) + Math.ceil(impV)) : (expV + impV);
+        // RIS (row-crack 2026-07-05): the scroll CEILS BOTH row kinds — export = ⌈v⌉ (Roma→Capua 288 sits
+        // at 287.98, and round-display is infeasible across the 18-flow corpus), import = ⌈0.2·v⌉.
+        seaTrade += (_mapVer(modDataDir) < 0x7b) ? (Math.round(expV) + Math.ceil(impV)) : (Math.ceil(expV) + Math.ceil(impV));
         if (process.env.TRADE_DEBUG) (global.__TDBG = global.__TDBG || []).push({
           kind: ln.river ? "river" : "sea", from: s.settlement, fromRegion: s.region, toRegion: ln.to,
           cargo: (lanePts[s.region + ">" + ln.to] || 0), d: ln.d, popFrom: s.pop, popTo: ln.toPop,
-          exp: Math.round(expV), imp: (_mapVer(modDataDir) < 0x7b) ? Math.ceil(impV) : Math.round(impV), weak: !!ln.weak,
+          exp: (_mapVer(modDataDir) < 0x7b) ? Math.round(expV) : Math.ceil(expV), imp: Math.ceil(impV), weak: !!ln.weak,
           tradePctF: s.tradePct || 0, portF: s.portLevel || 0, rvF: tradeQtyVal[s.region] || 0,
           tradePctT: 0, portT: ln.toPort || 0,
           pinned: !!(CALIB.seaLaneF || {})[s.region + ">" + ln.to]

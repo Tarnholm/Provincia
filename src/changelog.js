@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1219",
+    date: "2026-07-06",
+    items: [
+      { type: "improvement", text: "**RIS sea trade is now EXACT — every route, every town, to the denarius.** Cracked from the map/data files against a complete fresh per-route corpus (12 towns, all 67 scroll rows, governors on): row error 0, 67/67 rows exact, the old 25-town totals corpus also lands 25/25, and vanilla stays 25/25. The final law needed NO per-partner fudge factors — all of them (the 8 fitted partner gates, the silver exclusion, the 0.82 client gate, the nav-distance floor, the popX-only export leg) turned out to be artifacts compensating for two real errors, now fixed: the lane SELECTION rule (ports rank partners by the full route value with diplomatic gates, skip all land-neighbour regions, slots = port chain level — this is why Pisae really trades with Cosa, not Ingaunum) and the value law itself: ceil(M × 800 × (0.1·√(popX+popY) + cargo + 1) × gate / navDistance), where M = 1 + tradeBonus/10 + governorTrading/100 and the gate is simply 1.0 for own/ally/protectorate and 0.5 for foreign. Net result: 122 lines of special-casing deleted, and the model now generalizes to every faction." },
+    ],
+  },
+  {
     version: "0.9.1218",
     date: "2026-07-03",
     items: [
