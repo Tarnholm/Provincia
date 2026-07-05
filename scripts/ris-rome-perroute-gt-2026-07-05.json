@@ -1,44 +1,107 @@
 {
-  "_comment": "RIS per-route trade GROUND TRUTH, gov-OFF, from in-game Settlement Income scrolls (new 2-column UI), Republic of Rome turn 1, save_05-07-2026. Captured 2026-07-05 to re-fit the sea pop-term + lock foreign gates. Values are denarius-exact per-partner rows (export = the town's own export row; import = 0.2x the partner's export). Settlement names as shown on the scroll (map to region separately).",
-  "Fregellae": {
-    "sea": {
-      "Rome":     { "export": 183, "import": 98 },
-      "Neapolis": { "import": 26 }
-    }
+  "_comment": "RIS per-route trade GROUND TRUTH, Republic of Rome turn 1, save_05-07-2026, GOVERNORS ON (traits in the save; score with buildCalibSaveOpts govEffectByCity). Every row of every captured settlement scroll (new 2-column UI). kind: land = wheel icon rows (land export from this town), sea_exp = anchor-icon export row, sea_imp = anchor-icon import row (= ceil(0.2 x partner's export)). Partner names are SETTLEMENT names as shown; map to regions via descr_regions regionToCity. Totals verified = sum of rows for every town.",
+  "towns": {
+    "Rome": { "total": 1408, "rows": [
+      { "partner": "Camerinum", "kind": "land", "v": 64 },
+      { "partner": "Reate", "kind": "land", "v": 68 },
+      { "partner": "Cosa", "kind": "land", "v": 163 },
+      { "partner": "Falerii", "kind": "land", "v": 102 },
+      { "partner": "Praeneste", "kind": "land", "v": 120 },
+      { "partner": "Fregellae", "kind": "sea_exp", "v": 489 },
+      { "partner": "Capua", "kind": "sea_exp", "v": 288 },
+      { "partner": "Capua", "kind": "sea_imp", "v": 67 },
+      { "partner": "Volaterrae", "kind": "sea_imp", "v": 10 },
+      { "partner": "Fregellae", "kind": "sea_imp", "v": 37 }
+    ]},
+    "Fregellae": { "total": 378, "rows": [
+      { "partner": "Praeneste", "kind": "land", "v": 18 },
+      { "partner": "Bovianum", "kind": "land", "v": 16 },
+      { "partner": "Capua", "kind": "land", "v": 37 },
+      { "partner": "Rome", "kind": "sea_exp", "v": 183 },
+      { "partner": "Rome", "kind": "sea_imp", "v": 98 },
+      { "partner": "Neapolis", "kind": "sea_imp", "v": 26 }
+    ]},
+    "Cosa": { "total": 415, "rows": [
+      { "partner": "Volaterrae", "kind": "land", "v": 36 },
+      { "partner": "Arretium", "kind": "land", "v": 37 },
+      { "partner": "Volsinii", "kind": "land", "v": 36 },
+      { "partner": "Falerii", "kind": "land", "v": 37 },
+      { "partner": "Rome", "kind": "land", "v": 53 },
+      { "partner": "Praeneste", "kind": "sea_exp", "v": 207 },
+      { "partner": "Pisae", "kind": "sea_imp", "v": 9 }
+    ]},
+    "Metapontum": { "total": 159, "rows": [
+      { "partner": "Venusia", "kind": "land", "v": 8 },
+      { "partner": "Potentia", "kind": "land", "v": 10 },
+      { "partner": "Tarentum", "kind": "land", "v": 14 },
+      { "partner": "Brundisium", "kind": "land", "v": 4 },
+      { "partner": "Thurii", "kind": "land", "v": 8 },
+      { "partner": "Petelia", "kind": "sea_exp", "v": 81 },
+      { "partner": "Petelia", "kind": "sea_imp", "v": 34 }
+    ]},
+    "Neapolis": { "total": 221, "rows": [
+      { "partner": "Capua", "kind": "land", "v": 22 },
+      { "partner": "Maleventum", "kind": "land", "v": 21 },
+      { "partner": "Compsa", "kind": "land", "v": 19 },
+      { "partner": "Paestum", "kind": "land", "v": 18 },
+      { "partner": "Fregellae", "kind": "sea_exp", "v": 126 },
+      { "partner": "Grumentum", "kind": "sea_imp", "v": 15 }
+    ]},
+    "Pisae": { "total": 77, "rows": [
+      { "partner": "Apua", "kind": "land", "v": 3 },
+      { "partner": "Bononia", "kind": "land", "v": 5 },
+      { "partner": "Volaterrae", "kind": "land", "v": 15 },
+      { "partner": "Cosa", "kind": "sea_exp", "v": 41 },
+      { "partner": "Ingaunum", "kind": "sea_imp", "v": 13 }
+    ]},
+    "Volaterrae": { "total": 104, "rows": [
+      { "partner": "Pisae", "kind": "land", "v": 14 },
+      { "partner": "Bononia", "kind": "land", "v": 4 },
+      { "partner": "Arretium", "kind": "land", "v": 9 },
+      { "partner": "Cosa", "kind": "land", "v": 12 },
+      { "partner": "Rome", "kind": "sea_exp", "v": 49 },
+      { "partner": "Venicum", "kind": "sea_imp", "v": 16 }
+    ]},
+    "Sena_Gallica": { "total": 72, "rows": [
+      { "partner": "Sarsina", "kind": "land", "v": 5 },
+      { "partner": "Iguvium", "kind": "land", "v": 13 },
+      { "partner": "Asculum", "kind": "land", "v": 6 },
+      { "partner": "Nesactium", "kind": "sea_exp", "v": 48 }
+    ]},
+    "Epizephyrian_Locri": { "total": 53, "rows": [
+      { "partner": "Consentia", "kind": "land", "v": 10 },
+      { "partner": "Petelia", "kind": "sea_imp", "v": 43 }
+    ]},
+    "Venusia": { "total": 193, "rows": [
+      { "partner": "Canusium", "kind": "land", "v": 26 },
+      { "partner": "Arpi", "kind": "land", "v": 27 },
+      { "partner": "Brundisium", "kind": "land", "v": 11 },
+      { "partner": "Potentia", "kind": "land", "v": 25 },
+      { "partner": "Metapontum", "kind": "land", "v": 18 },
+      { "partner": "Tarentum", "kind": "land", "v": 34 },
+      { "partner": "Issa", "kind": "sea_imp", "v": 52 }
+    ]},
+    "Canusium": { "total": 32, "rows": [
+      { "partner": "Venusia", "kind": "land", "v": 10 },
+      { "partner": "Issa", "kind": "sea_imp", "v": 22 }
+    ]},
+    "Arpi": { "total": 94, "rows": [
+      { "partner": "Larinum", "kind": "land", "v": 14 },
+      { "partner": "Bovianum", "kind": "land", "v": 13 },
+      { "partner": "Compsa", "kind": "land", "v": 14 },
+      { "partner": "Venusia", "kind": "land", "v": 14 },
+      { "partner": "Issa", "kind": "sea_imp", "v": 39 }
+    ]}
   },
-  "Cosa": {
-    "total": 415,
-    "land_all_exact": { "Volaterrae": 36, "Arretium": 37, "Volsinii": 36, "Falerii": 37, "Rome": 53 },
-    "sea": { "Praeneste": { "export": 207, "_region": "Latium", "_gate": "own" }, "Pisae": { "import": 9 } },
-    "_model_was": "Cosa->Latium sea export 245 (raw) / 217 (silver-skip); ACTUAL 207 -> silver-skip over-corrected"
-  },
-  "Metapontum": {
-    "total": 159,
-    "land_all_exact": { "Venusia": 8, "Potentia": 10, "Tarentum": 14, "Brundisium": 4, "Thurii": 8 },
-    "sea": { "Petelia": { "export": 81, "import": 34, "_region": "Chonia", "_gate": "client/bruttians" } },
-    "_model_was": "Metapontion->Chonia sea export 88; ACTUAL 81"
-  },
-  "Pisae":            { "total": 77,  "rows": { "Apua": 3, "Bononia": 5, "Volaterrae": 15, "Cosa": 41, "Ingaunum": 13 }, "_foreign_sea": { "Ingaunum": 13 } },
-  "Volaterrae":       { "total": 104, "rows": { "Pisae": 14, "Bononia": 4, "Arretium": 9, "Cosa": 12, "Rome": 49, "Venicum": 16 }, "_foreign_sea": { "Venicum?": 16 } },
-  "Sena_Gallica":     { "total": 72,  "rows": { "Sarsina": 5, "Iguvium": 13, "Asculum": 6, "Nesactium": 48 }, "_foreign_sea": { "Nesactium(Histria)": 48 } },
-  "Epizephyrian_Locri": { "total": 53, "rows": { "Consentia": 10, "Petelia": 43 }, "_foreign_sea": { "Petelia(Chonia)": 43 } },
-  "Venusia":          { "total": 193, "rows": { "Canusium": 26, "Arpi": 27, "Brundisium": 11, "Potentia": 25, "Metapontum": 18, "Tarentum": 34, "Issa": 52 }, "_foreign_sea": { "Issa": 52 }, "_note": "Issa 52 = IMPORT = 0.2x Issa->Peucetia export 260" },
-  "Canusium":         { "total": 32,  "rows": { "Venusia": 10, "Issa": 22 }, "_foreign_sea": { "Issa": 22 }, "_note": "Issa 22 = 0.2x Issa->Kanysion 110 (matches June stale pin Issa>Kanysion:110)" },
-  "Arpi":             { "total": 94,  "rows": { "Larinum": 14, "Bovianum": 13, "Compsa": 14, "Venusia": 14, "Issa": 39 }, "_foreign_sea": { "Issa": 39 }, "_note": "Issa 39 = 0.2x Issa->Daunia 195 (matches June stale pin Issa>Daunia:195)" },
-  "Neapolis":         { "total": 221, "rows": { "Capua": 22, "Maleventum": 21, "Compsa": 19, "Paestum": 18, "Fregellae": 126, "Grumentum": 15 }, "_own_sea": { "Fregellae": 126 }, "_note": "Neapolis->Fregellae 126 -> Fregellae imports ceil(0.2x)=26 (confirms Fregellae scroll)" },
-  "Rome": {
-    "rows": [
-      { "partner": "Camerinum", "value": 64 },
-      { "partner": "Reate",     "value": 62 },
-      { "partner": "Cosa",      "value": 163 },
-      { "partner": "Falerii",   "value": 102 },
-      { "partner": "Praeneste", "value": 61 },
-      { "partner": "Fregellae", "value": 489, "note": "export (sea, Latium_Novum)" },
-      { "partner": "Capua",     "value": 288, "note": "export (sea, Campania)" },
-      { "partner": "Capua",     "value": 67,  "note": "import" },
-      { "partner": "Volaterrae","value": 10,  "note": "import" },
-      { "partner": "Fregellae", "value": 37,  "note": "import = 0.2x Fregellae->Rome 183" }
-    ],
-    "_note": "Two rows each for Fregellae and Capua = export + import. Single rows (Camerinum/Reate/Cosa/Falerii/Praeneste) are land exports; direction/region to be resolved. Cross-check vs model: Rome->Campania(Capua) 239 model vs 288 actual (UNDER 49); Rome->Latium(Praeneste) 112 model vs 61 actual (OVER 51) -- flag."
-  }
+  "_structural_findings": [
+    "LANE SELECTION is the model's real error, not law constants. Actual selections vs model:",
+    "Pisae EXPORTS to Cosa (own, 41) not Ingaunia; imports 13 from Ingaunum. Cross-check: Cosa's import 'Pisae 9' = ceil(0.2x41).",
+    "Volaterrae EXPORTS to Rome (own, 49) not Corsica; imports 16 from Venicum(Corsica city). Cross-check: Rome's import 'Volaterrae 10' = ceil(0.2x49).",
+    "Epizephyrian_Locri exports NOWHERE (no export row); only imports 43 from Petelia(Chonia).",
+    "Arpi/Venusia/Canusium have NO exports to Issa: they IMPORT from Issa (39/52/22 = 0.2 x Issa exports 195/260/110).",
+    "Metapontum<->Petelia is MUTUAL (exp 81 / imp 34 => Petelia->Metapontion export 168).",
+    "Sena_Gallica exports 48 to Nesactium(Histria).",
+    "Rome exports Fregellae 489 + Capua 288; imports Capua 67 (=> Capua->Roma export ~331-335), Volaterrae 10, Fregellae 37.",
+    "Own-faction/big-partner lanes dominate selection over foreign lanes -- consistent with exe: selection ranks by the popX+popY COMBINED routeValue (asm) while the realized export leg is popX-only; also exe skips sea lanes to regions that already share a LAND route."
+  ]
 }
