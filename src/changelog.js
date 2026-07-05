@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1220",
+    date: "2026-07-06",
+    items: [
+      { type: "fix", text: "**Governor Estates squalor was read one level too high, throwing off public order and growth.** When a save is attached, a governor's Estates trait was decoded from its accumulated points (which had crossed the Large Estate threshold → +2 squalor), but a turn-1 governor is seeded at the level descr_strat specifies (Estates 2 = *Medium* Estate = +1 squalor) and the game keeps it there — confirmed in-game by moving the general out and reading the trait card. The extra phantom squalor pip was making public order read 5% low and growth 0.5% low on every settlement with an Estates governor. Now the seeded ordinal level is used. Rome, for example, goes from PO 115 / growth 1.5% to the correct **PO 120 / growth 2.0%** at very-high tax. (A small graduated culture penalty on partially-converted towns like Volaterrae, ~0.5%, is still modeled as 0 — a separate refinement.)" },
+    ],
+  },
+  {
     version: "0.9.1219",
     date: "2026-07-06",
     items: [

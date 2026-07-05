@@ -67,7 +67,28 @@ function buildCalibSaveOpts(modDataDir, savePath) {
     let govEffectByCity = {};
     try {
       const te = require("./traitEffects.js");
-      govEffectByCity = te.govEffectByCityFromSave(cr, te.parseTraitEffects(modDataDir), modDataDir) || {};
+      const fx = te.parseTraitEffects(modDataDir);
+      govEffectByCity = te.govEffectByCityFromSave(cr, fx, modDataDir) || {};
+      // ESTATES SQUALOR CORRECTION (2026-07-06, A/B-confirmed on Rome + Volaterrae): the save
+      // stores accumulated Estates POINTS (e.g. 26) that threshold-decode to Large_Estate
+      // (Squalor +2), but a descr_strat-seeded governor sits at the SEEDED ORDINAL level
+      // (descr_strat "Estates 2" = Medium_Estate = Squalor +1) and the engine keeps it there on
+      // turn 1 (in-game trait card reads "Medium Estate +1 squalor"). Since Provincia is a
+      // turn-1 planner and every governor is exactly as seeded, the descr_strat ordinal is
+      // authoritative for the Estates land-holding squalor. Overlay it: correct the total
+      // squalor by the Estates delta and pin squalorEstates to the seeded value (this fixes
+      // BOTH the PO squalor row and the growth Estates-squalor whitelist).
+      try {
+        const stratGov = te.govEffectByCityFromStrat(modDataDir, fx) || {};
+        for (const city of Object.keys(govEffectByCity)) {
+          const g = govEffectByCity[city], s = stratGov[city];
+          if (!g || !s || s.squalorEstates == null || g.squalorEstates == null) continue;
+          if (s.squalorEstates !== g.squalorEstates) {
+            g.squalor = (g.squalor || 0) - g.squalorEstates + s.squalorEstates;
+            g.squalorEstates = s.squalorEstates;
+          }
+        }
+      } catch { /* strat overlay best-effort */ }
     } catch (e) { out.saveError = "governor-trait read failed: " + (e && e.message ? e.message : String(e)); }
     const opts = {};
     if (Object.keys(govEffectByCity).length) opts.govEffectByCity = govEffectByCity;
