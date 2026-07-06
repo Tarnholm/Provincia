@@ -199,22 +199,22 @@ describe("incomeModel — fixture mod", () => {
   });
   afterAll(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch { } });
 
-  test("armyUpkeepEDU: regular raw; bodyguard scales by men (LH doubled, +2 men/command)", () => {
-    // EXACT LAW (Capua disband probe 2026-06-11): regular units = raw stat_cost[2];
-    // bodyguard = upkeep × men/(soldiers×4); men = soldiers×4 + officers (+2×command),
-    // leader/heir men doubled. General: 45 × 54/24 = 101.25 → 101 each for LH;
-    // ordinary with command 2: 45 × 31/24 = 58.125 → 58.
+  // Bodyguard law (Roman turn-1 army-upkeep scroll, 2026-07-06): regular units = raw stat_cost[2];
+  // every descr_strat-placed general's bodyguard = raw × STARTING_BG (=2109/1457), a flat starting-
+  // retinue factor. Command and leader/heir status do NOT change the live upkeep (in-game give_trait
+  // test), so there is no per-general men scaling and no leader/heir doubling. General raw = 45.
+  const STARTING_BG = 2109 / 1457;
+
+  test("armyUpkeepEDU: regular raw; bodyguards a flat starting-retinue factor", () => {
     const r = im.armyUpkeepEDU(dir, "testfac");
     expect(r.units).toBe(6);
-    expect(r.upkeep).toBe(101 + 101 + 58 + 100 + 200 + 300);
+    expect(r.upkeep).toBe(Math.round(3 * (45 * STARTING_BG) + 100 + 200 + 300)); // 795
   });
 
-  test("armyUpkeepEDU: engine auto-heir when descr_strat has leader but no heir", () => {
-    // cyrene case: only `leader` flagged → engine promotes an ordinary general to heir
-    // at game start, doubling his bodyguard too.
+  test("armyUpkeepEDU: leader/heir bodyguards use the same flat factor (no doubling)", () => {
     const r = im.armyUpkeepEDU(dir, "testfac2");
     expect(r.units).toBe(2);
-    expect(r.upkeep).toBe(101 + 101);
+    expect(r.upkeep).toBe(Math.round(2 * (45 * STARTING_BG))); // 130
   });
 
   test("parseProtectorates reads become_protector pairs from the campaign script", () => {

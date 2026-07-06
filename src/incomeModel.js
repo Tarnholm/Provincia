@@ -285,7 +285,15 @@ function _commandOfTraitsLine(traitsLine, table) {
 //   Factions with no `heir` flag in descr_strat get an engine auto-heir at game start.
 // Validation vs live ledgers: capua +0.5, julii +6 (0.02%), egypt +28 (0.06%),
 // cyrene +13 (0.16%). Replaces the ×1.0122 global constant + leader/heir ×2 law.
-const UPKEEP_SIZE_MULT = 4; // huge
+const UPKEEP_SIZE_MULT = 4; // huge (legacy, retained for reference)
+// Starting (descr_strat-placed) generals carry a LARGER bodyguard than a freshly-recruited one:
+// a fresh roman general recruits at EDU upkeep 47, but every campaign-start general reads 68 in the
+// game's Army-upkeep panel — a flat ~1.4475× of the raw upkeep. Cracked from the Roman turn-1 scroll
+// (2026-07-06): the 31 "Roman General's Bodyguard" line = 2109 exactly (every regular unit already
+// matched the raw EDU upkeep to the denarius). Command / leader status do NOT move the live upkeep
+// (in-game give_trait test on a general showed no change), so it's a flat starting-retinue size
+// factor, not the old per-general men/command scaling.
+const STARTING_BG_UPKEEP_MULT = 2109 / 1457;
 function armyUpkeepEDU(modDataDir, faction) {
   const stratPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
   if (!fs.existsSync(stratPath)) return null;
@@ -330,12 +338,7 @@ function armyUpkeepEDU(modDataDir, faction) {
     if (promote) promote.lh = true;
   }
   let sum = regular;
-  for (const b of bodyguards) {
-    if (!b.soldiers) { sum += b.upkeep; continue; }
-    const base = b.soldiers * UPKEEP_SIZE_MULT;
-    const men = b.lh ? 2 * (base + b.officers) : base + b.officers + 2 * b.cmd;
-    sum += Math.round(b.upkeep * men / base);
-  }
+  for (const b of bodyguards) sum += b.upkeep * STARTING_BG_UPKEEP_MULT; // flat starting-retinue factor
   return { upkeep: Math.round(sum), units };
 }
 

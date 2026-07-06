@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1227",
+    date: "2026-07-06",
+    items: [
+      { type: "fix", text: "**Army upkeep now exact.** Every regular unit already matched the game to the denarius, but the model under-charged the generals' bodyguards — it read their fresh-recruit upkeep (47 each) and scaled by command, when in fact every campaign-start general fields a larger standing retinue charged at a flat ~1.45× (68 each in-game). Cracked from the Roman army-upkeep panel (the 31 bodyguards read 2109 exactly) and confirmed in-game that command/leader status don't move a bodyguard's live upkeep. Rome's total army upkeep now lands on the game's figure exactly (27627), up from 27367." },
+    ],
+  },
+  {
     version: "0.9.1226",
     date: "2026-07-06",
     items: [
