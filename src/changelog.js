@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1231",
+    date: "2026-07-06",
+    items: [
+      { type: "fix", text: "**Corruption is now exact with a save loaded.** Corruption is the one money figure that can't be computed from the mod files — it's driven by in-game *road distance* to the capital (pathfinding), so the per-town model is inherently ±5-9% (governor Law traits, which cut corruption, are already modeled — the residual is euclidean-vs-road distance). When a save is loaded, the model now calibrates to the exact corruption total stored in the save's Financial Overview, guarded so a mis-decoded save can't replace a sane estimate. With this, a loaded save's financials are denarius-exact on farming, taxes, wages, army upkeep and corruption; only trade carries a ~0.5% sea-lane residual." },
+    ],
+  },
+  {
     version: "0.9.1230",
     date: "2026-07-06",
     items: [

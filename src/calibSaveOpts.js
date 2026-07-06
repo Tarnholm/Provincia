@@ -37,7 +37,8 @@ function buildCalibSaveOpts(modDataDir, savePath) {
   try {
     if (!fs.existsSync(savePath)) throw new Error("calibration save not found: " + savePath);
     const { crackSave } = require("./saveCracker.js");
-    const cr = crackSave(fs.readFileSync(savePath), modDataDir);
+    const _saveBuf = fs.readFileSync(savePath);
+    const cr = crackSave(_saveBuf, modDataDir);
     const sf = (cr && cr.settlementFields) || {};
     // committed pops from the calibration save → the tax base tracks the actual
     // campaign state (turn-1 saves equal descr_strat; mid-campaign saves diverge).
@@ -108,11 +109,26 @@ function buildCalibSaveOpts(modDataDir, savePath) {
     // by BUFFER BLOCK (units are stored grouped by faction in the save), which catches field armies
     // the region tagger misfiles under rebels — so every general is present and no scaling is needed.
     const bodyguardUnitsByFaction = require("./incomeModel.js").bodyguardBlockByFaction(cr.units || {});
+    // Stored CORRUPTION per faction (Financial Overview "Other" expenditure). Corruption depends on
+    // in-game ROAD distance to the capital, which is NOT in the mod files — the per-town model is
+    // ±5-9% (governor Law traits, which DO cut corruption, are already modeled; the residual is the
+    // euclidean-vs-pathfinding distance). With a save loaded, calibrate to the exact stored value.
+    let storedCorruptionByFaction = null;
+    try {
+      const bf = require("./economyParser.js").parseFinancialOverview(_saveBuf, cr).byFaction || {};
+      storedCorruptionByFaction = {};
+      for (const fn of Object.keys(bf)) {
+        const o = bf[fn] && bf[fn].expenditure && bf[fn].expenditure.other;
+        if (Number.isFinite(o) && o > 0) storedCorruptionByFaction[fn] = o;
+      }
+      if (!Object.keys(storedCorruptionByFaction).length) storedCorruptionByFaction = null;
+    } catch { /* best-effort */ }
     const opts = {};
     if (Object.keys(govEffectByCity).length) opts.govEffectByCity = govEffectByCity;
     if (Object.keys(popByCity).length) opts.popByCity = popByCity;
     if (Object.keys(cultPenByCity).length) opts.cultPenByCity = cultPenByCity;
     if (Object.keys(bodyguardUnitsByFaction).length) opts.bodyguardUnitsByFaction = bodyguardUnitsByFaction;
+    if (storedCorruptionByFaction) opts.storedCorruptionByFaction = storedCorruptionByFaction;
     out.opts = Object.keys(opts).length ? opts : null;
     out.poAnchorByCity = poAnchorByCity;
     out.growthDevByCity = Object.keys(growthDevByCity).length ? growthDevByCity : null;

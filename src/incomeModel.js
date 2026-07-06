@@ -2636,6 +2636,17 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   if (opts && opts.storedOtherIncome != null && Number.isFinite(opts.storedOtherIncome)) {
     admin = Math.floor(opts.storedOtherIncome);
   }
+  // SAVE-AWARE corruption: the per-town model is ±5-9% (euclidean vs in-game ROAD distance to the
+  // capital — not recoverable from the mod files; governor Law traits ARE already modeled). When a
+  // save provides the exact stored total (Financial Overview "Other" expenditure), calibrate to it
+  // so the loaded-save financials are denarius-exact. Skipped when the user pasted per-town
+  // corrByCity (that already IS the exact per-town truth).
+  if (!corrByCity && opts && opts.storedCorruptionByFaction && Number.isFinite(opts.storedCorruptionByFaction[faction])) {
+    const _stCorr = opts.storedCorruptionByFaction[faction];
+    // guard: only calibrate when the stored value is within 50% of the model — a mis-decoded save
+    // breakdown (the economy parser can misread some saves) must not replace a sane estimate.
+    if (corruption > 0 && _stCorr > 0 && Math.abs(_stCorr - corruption) < 0.5 * corruption) corruption = Math.round(_stCorr);
+  }
   const income = Math.round(taxes + farming + mining + trade + admin);
   const army = armyUpkeepEDU(modDataDir, faction, opts && opts.bodyguardUnitsByFaction && opts.bodyguardUnitsByFaction[faction]);
   const preNet = army ? (income - wages - corruption - army.upkeep) : null;
