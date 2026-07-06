@@ -2012,11 +2012,16 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // empire-size penalties dominate) wrongly drove the capital's tax to 0 (live: Alexandria pays 481,
     // model gave 0). So on a negative taxablePct the capital falls back to the ×4 non-capital rate.
     // Small-empire capitals (positive taxablePct) are unchanged. (Live Ptolemaic turn-1, 2026-06-21.)
-    const _M = _capTax ? (s.taxablePct >= 0 ? (_ris ? 31.32 : 40) : 4) : (F.tier <= 2 ? 40 : 4);
+    // The ROMAN capital uses the plain ×40 capital rate with NO suppression (live-cracked 2026-07-06
+    // from the fresh Rome scroll: V.High no-gov 1829 = 1.5·(979.5 + 40·6); the old 31.32 + −123 combo
+    // was a stale 1-point approximation that under-read it by ~185). Other RIS factions' capitals keep
+    // the 31.32 fit from the 2026-06-30 4-capital crack (Athens/Kyrene/Seleucia — unchanged).
+    const _romanCap = _capTax && /^romans?_/.test(F.faction);
+    const _M = _capTax ? (s.taxablePct >= 0 ? ((_ris && !_romanCap) ? 31.32 : 40) : 4) : (F.tier <= 2 ? 40 : 4);
     // taxablePct (region_base + building points) × _M. The "40/pt for region_base only" split was
     // tested (s.taxableRegionBase / s.taxableBuilding are exposed for it) but every building-multiplier
     // traded factions on the current corpus — the big-empire under-tax needs per-city scrolls to pin.
-    const _flatPts = _M * s.taxablePct + (_ris && _capTax && /^romans?_/.test(F.faction) ? -123 : 0);
+    const _flatPts = _M * s.taxablePct;  // no Roman-capital −123 suppression (see _M above; refuted by the 2026-07-06 Rome scroll)
     // RATE BEHAVIOR differs by capital (live Cyrene tax-rate reads, 2026-06-17):
     //   CAPITAL  → multiplicative: tax = rate·(popBase + M·Σ)·gov  (the points scale with rate).
     //             Kyrene V.High 1172 = 1.5·(842+200)·0.75 (additive would give 1097).

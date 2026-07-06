@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1222",
+    date: "2026-07-06",
+    items: [
+      { type: "fix", text: "**Roman capital tax was ~15% low, throwing off the faction tax total.** Rome's tax used a stale approximation (a 31.32× rate plus a −123 suppression) that under-read it by ~185 denarii; a fresh in-game reading (V.High, no governor = 1829) shows the Roman capital simply uses the plain ×40 capital rate with no suppression: 1.5 × (populace 979.5 + 40 × taxable 6) = 1829, then ×1.05 for the faction leader's tax trait = 1920 — exact both ways. This closed nearly the entire faction tax gap the total was showing (was ~271 low at matching brackets, now within a few denarii of rounding). Other factions' capitals are unchanged." },
+    ],
+  },
+  {
     version: "0.9.1221",
     date: "2026-07-06",
     items: [
