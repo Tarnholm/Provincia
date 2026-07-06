@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1226",
+    date: "2026-07-06",
+    items: [
+      { type: "fix", text: "**Faction tax total now matches the game to the denarius.** The last stray denarius was Metapontum — its populace base at population 2500 was measured half a point high (629.5 → 629.0, confirmed by its exact in-game tax of 587). With that corrected, Rome's turn-1 tax total lands exactly on the game's figure, and every settlement's tax reads true." },
+    ],
+  },
+  {
     version: "0.9.1225",
     date: "2026-07-06",
     items: [
