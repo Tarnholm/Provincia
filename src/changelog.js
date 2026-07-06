@@ -8,13 +8,6 @@
  */
 const CHANGELOG = [
   {
-    version: "0.9.1224",
-    date: "2026-07-06",
-    items: [
-      { type: "fix", text: "**Per-town tax was a denarius high on many settlements (populace-base interpolation).** The tax populace base is measured at population breakpoints and interpolated in between — but the engine steps it in whole increments, while the app interpolated continuously, over-reading the base by up to 0.5 on any town whose population sits mid-step. That rounded the tax up a denarius (e.g. Cosa read 464 vs the game's 463). The interpolation now truncates to whole steps like the engine, fixing every affected town at once. Rome's faction tax total went from ~5 denarii high to within 1 of the game's exact figure." },
-    ],
-  },
-  {
     version: "0.9.1223",
     date: "2026-07-06",
     items: [

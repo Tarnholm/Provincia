@@ -1994,11 +1994,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const _pbT = (_pp >= CALIB.taxCliffPop && !(_ris && s.capital)) ? CALIB.popBasePost : CALIB.popBasePre;
     let _pb;
     if (_pp <= _pbT[0][0]) _pb = _pbT[0][1];
-    // The engine steps the populace base in WHOLE increments between breakpoints, not continuously —
-    // so TRUNCATE the interpolated delta (2026-07-06, Cosa: pop-2250 between 2200→612.5 and 2300→617.5
-    // gives 612.5 + trunc(2.5) = 614.5, not the linear 615.0; the 0.5 over-read floored Cosa's tax 1
-    // denarius high, 545→546). y0 is a half-integer so the base stays a half-integer.
-    else { let _hit = false; for (let i = 1; i < _pbT.length; i++) { if (_pp <= _pbT[i][0]) { const [x0, y0] = _pbT[i - 1], [x1, y1] = _pbT[i]; _pb = y0 + Math.trunc((y1 - y0) * (_pp - x0) / (x1 - x0)); _hit = true; break; } } if (!_hit) { const [x0, y0] = _pbT[_pbT.length - 2], [x1, y1] = _pbT[_pbT.length - 1]; _pb = y1 + Math.trunc((y1 - y0) * (_pp - x1) / (x1 - x0)); } }
+    else { let _hit = false; for (let i = 1; i < _pbT.length; i++) { if (_pp <= _pbT[i][0]) { const [x0, y0] = _pbT[i - 1], [x1, y1] = _pbT[i]; _pb = y0 + (y1 - y0) * (_pp - x0) / (x1 - x0); _hit = true; break; } } if (!_hit) { const [x0, y0] = _pbT[_pbT.length - 2], [x1, y1] = _pbT[_pbT.length - 1]; _pb = y1 + (y1 - y0) * (_pp - x1) / (x1 - x0); } }
     const _multi = F.settlements.length > 1;
     // NEW TAX LAW (2026-06-17, cracked via Bruttians/Cyrene/Julii/Carthage; ref gov-tax.js):
     //   multi-town  tax = floor( (rate·popBase + M·Σ) · (1 + govTax%) )
