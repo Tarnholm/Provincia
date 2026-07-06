@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1230",
+    date: "2026-07-06",
+    items: [
+      { type: "fix", text: "**Army upkeep is now denarius-exact with a save loaded.** Two fixes: (1) generals are read from the save by *faction block* — the save stores each faction's units together, so this catches the field armies the region-based tagger was mis-filing under rebels when a general stood on enemy ground (all 31 of Rome's generals now counted, not 29). (2) Each bodyguard's upkeep uses the engine's round-half-to-even rule (a 36-soldier retinue costs 70, not 71). Result: Rome turn-1 army upkeep matches the game exactly (27627 and 27603 on two test saves, diff 0), and the army-setup screen now uses the same save-aware figure the budget does." },
+    ],
+  },
+  {
     version: "0.9.1229",
     date: "2026-07-06",
     items: [

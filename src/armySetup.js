@@ -206,7 +206,17 @@ function analyzeFaction(modDataDir, faction, saveBuf, floor) {
   // matches the engine charge to 0.1% (julii live 19,629 vs 19,616; the local Σ here
   // undercounted by ~1,000 — caught live 2026-06-11, the "too much money" report).
   try {
-    const edu = require("./incomeModel.js").armyUpkeepEDU(modDataDir, faction);
+    // SAVE-AWARE bodyguards: read each general's actual retinue size from the loaded save via
+    // faction-BLOCK attribution (catches field armies the region tagger misfiles under rebels), so
+    // army upkeep is denarius-exact. No save → the descr_strat formula estimate inside armyUpkeepEDU.
+    let saveGens = null;
+    if (saveBuf) {
+      try {
+        const cr = require("./saveCracker.js").crackSave(saveBuf, modDataDir);
+        saveGens = require("./incomeModel.js").bodyguardBlockByFaction(cr.units || [])[faction] || null;
+      } catch { /* fall back to formula */ }
+    }
+    const edu = require("./incomeModel.js").armyUpkeepEDU(modDataDir, faction, saveGens);
     if (edu && typeof edu.upkeep === "number" && edu.upkeep > 0) armyUpkeep = edu.upkeep;
   } catch { /* keep local sum */ }
   return {

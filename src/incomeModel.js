@@ -293,6 +293,27 @@ function _inflPsecOfTraitsLine(traitsLine, table) {
   return { influence, psec };
 }
 
+// round-half-to-EVEN (banker's rounding) — the engine's per-unit upkeep rule. A 36-soldier
+// roman-general bodyguard costs 36×47/24 = 70.5 → 70 (even), not JS Math.round's 71.
+function _bankersRound(x) { const f = Math.floor(x), d = x - f; if (d < 0.5) return f; if (d > 0.5) return f + 1; return (f % 2 === 0) ? f : f + 1; }
+// Per-faction general bodyguard units from a cracked save, by BUFFER BLOCK. Units are stored
+// grouped by faction in the save (factionId order); the region tagger misfiles a faction's field
+// armies sitting on rebel ("slave") ground. Each faction's block = its contiguous run ∪ the slave
+// misattributions inside it, bounded by the next named faction — so ALL generals are caught,
+// including ones standing in enemy territory. (Player faction = the first block.)
+function bodyguardBlockByFaction(units) {
+  const land = (units || []).filter(u => u.offset != null && !u.naval).sort((a, b) => a.offset - b.offset);
+  const out = {}; const seen = new Set();
+  for (let i = 0; i < land.length; i++) {
+    const f = land[i].faction;
+    if (!f || f === "slave" || seen.has(f)) continue;
+    seen.add(f);
+    const block = [];
+    for (let j = i; j < land.length && (land[j].faction === f || land[j].faction === "slave"); j++) block.push(land[j]);
+    out[f] = block.filter(b => /general|bodyguard/i.test(b.name || "")).map(b => ({ name: b.name, soldiers: b.soldiers }));
+  }
+  return out;
+}
 // Engine army upkeep (ledger f12) EXACT LAW (Capua disband probe 2026-06-11: faction
 // reduced to leader+heir bodyguards alone → ledger 202 = 2 × 45×2.25):
 //   regular units:   raw EDU stat_cost upkeep (no scaling — Capua 11-unit army exact)
@@ -359,18 +380,15 @@ function armyUpkeepEDU(modDataDir, faction, saveGenUnits) {
     if (promote) promote.heir = true;
   }
   let sum = regular;
-  if (saveGenUnits && saveGenUnits.length && bodyguards.length) {
-    // SAVE-AWARE: use the general bodyguards' ACTUAL soldier counts from the loaded save
-    // (exact — captures the start-assigned traits the formula can't see). upkeep per general =
-    // soldiers × rawUpkeep / (EDU_soldiers × unit-scale). The save tags units by REGION, so a
-    // general standing in rebel/other territory is filed under that faction and missing from
-    // ours — scale the summed save upkeep by descr_strat_count / save_count to cover them.
-    let saveBg = 0;
+  if (saveGenUnits && saveGenUnits.length) {
+    // SAVE-AWARE (exact): each general's ACTUAL bodyguard soldier count from the loaded save →
+    // upkeep = soldiers × rawUpkeep / (EDU_soldiers × unit-scale), banker's-rounded (the engine's
+    // round-half-to-even per-unit rule). saveGenUnits is faction-BLOCK attribution (catches field
+    // armies the region tagger misfiles under rebels), so all generals are present — no scaling.
     for (const g of saveGenUnits) {
       const st = us[String(g.name || "").toLowerCase()];
-      if (st && st.upkeep != null) saveBg += Math.round((g.soldiers || 0) * st.upkeep / ((st.soldiers || 6) * UPKEEP_SIZE_MULT));
+      if (st && st.upkeep != null) sum += _bankersRound((g.soldiers || 0) * st.upkeep / ((st.soldiers || 6) * UPKEEP_SIZE_MULT));
     }
-    sum += Math.round(saveBg * bodyguards.length / saveGenUnits.length);
   } else {
     // NO SAVE: documented bodyguard-size law → per-general upkeep = base × rawUpkeep / EDU_soldiers.
     for (const b of bodyguards) {
@@ -2681,4 +2699,4 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   };
 }
 
-module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, regionBorderLen, frontierGraph, landingFrontierGraph, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion, seaFlowPtsByLane, seaPortDistDepth };
+module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, bodyguardBlockByFaction, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, regionBorderLen, frontierGraph, landingFrontierGraph, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion, seaFlowPtsByLane, seaPortDistDepth };
