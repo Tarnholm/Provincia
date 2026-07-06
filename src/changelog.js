@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1229",
+    date: "2026-07-06",
+    items: [
+      { type: "fix", text: "**Army upkeep now matches the game when a save is loaded.** With a calibration save attached, general bodyguard upkeep is computed from each general's *actual* soldier count in the save (the engine's real retinue sizes, including the starting traits it assigns at spawn) rather than the descr_strat formula estimate. The save tags units by the region they occupy, so a general standing in rebel territory is filed under that faction — the model scales for those few mis-filed generals by the known general count. Result: Rome turn-1 army upkeep lands within 1–3 denarii of the game (27626 vs 27627), versus ~0.6% off from the formula alone. The documented formula remains the estimate when no save is loaded." },
+    ],
+  },
+  {
     version: "0.9.1228",
     date: "2026-07-06",
     items: [

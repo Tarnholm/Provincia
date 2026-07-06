@@ -103,10 +103,21 @@ function buildCalibSaveOpts(modDataDir, savePath) {
         }
       } catch { /* strat overlay best-effort */ }
     } catch (e) { out.saveError = "governor-trait read failed: " + (e && e.message ? e.message : String(e)); }
+    // General bodyguard units per faction from the save — actual soldier counts so army upkeep
+    // uses the engine's real retinue sizes (leader/heir rank + influence + PersonalSecurity incl.
+    // start-assigned traits) instead of the descr_strat formula estimate. Grouped by the faction
+    // the save attributes each unit to (region-owner based); incomeModel scales for mis-filed ones.
+    const bodyguardUnitsByFaction = {};
+    for (const u of (cr.units || [])) {
+      if (!u.faction || u.naval) continue;
+      if (!/general|bodyguard/i.test(u.name || "")) continue;
+      (bodyguardUnitsByFaction[u.faction] = bodyguardUnitsByFaction[u.faction] || []).push({ name: u.name, soldiers: u.soldiers });
+    }
     const opts = {};
     if (Object.keys(govEffectByCity).length) opts.govEffectByCity = govEffectByCity;
     if (Object.keys(popByCity).length) opts.popByCity = popByCity;
     if (Object.keys(cultPenByCity).length) opts.cultPenByCity = cultPenByCity;
+    if (Object.keys(bodyguardUnitsByFaction).length) opts.bodyguardUnitsByFaction = bodyguardUnitsByFaction;
     out.opts = Object.keys(opts).length ? opts : null;
     out.poAnchorByCity = poAnchorByCity;
     out.growthDevByCity = Object.keys(growthDevByCity).length ? growthDevByCity : null;

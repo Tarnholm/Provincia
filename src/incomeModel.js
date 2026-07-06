@@ -314,7 +314,7 @@ const UPKEEP_SIZE_MULT = 4; // huge unit-size setting (bodyguard soldiers = base
 // descr_strat influence/psec is a slight under-read for sparse generals (the engine grants extra
 // starting traits not in the file), so the exact per-general size comes from a loaded save when one
 // is attached; this formula is the no-save estimate.
-function armyUpkeepEDU(modDataDir, faction) {
+function armyUpkeepEDU(modDataDir, faction, saveGenUnits) {
   const stratPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
   if (!fs.existsSync(stratPath)) return null;
   let us;
@@ -358,12 +358,26 @@ function armyUpkeepEDU(modDataDir, faction) {
     const promote = bodyguards.find(b => !b.leader && !b.heir);
     if (promote) promote.heir = true;
   }
-  // documented bodyguard-size law → per-general upkeep = base × rawUpkeep / EDU_soldiers.
   let sum = regular;
-  for (const b of bodyguards) {
-    const edu = b.soldiers || 6;
-    const base = Math.max(4, Math.min(31, edu + (b.leader ? 6 : 0) + (b.heir ? 4 : 0) + Math.floor(b.infl / 2) + b.psec));
-    sum += Math.round(base * b.upkeep / edu);
+  if (saveGenUnits && saveGenUnits.length && bodyguards.length) {
+    // SAVE-AWARE: use the general bodyguards' ACTUAL soldier counts from the loaded save
+    // (exact — captures the start-assigned traits the formula can't see). upkeep per general =
+    // soldiers × rawUpkeep / (EDU_soldiers × unit-scale). The save tags units by REGION, so a
+    // general standing in rebel/other territory is filed under that faction and missing from
+    // ours — scale the summed save upkeep by descr_strat_count / save_count to cover them.
+    let saveBg = 0;
+    for (const g of saveGenUnits) {
+      const st = us[String(g.name || "").toLowerCase()];
+      if (st && st.upkeep != null) saveBg += Math.round((g.soldiers || 0) * st.upkeep / ((st.soldiers || 6) * UPKEEP_SIZE_MULT));
+    }
+    sum += Math.round(saveBg * bodyguards.length / saveGenUnits.length);
+  } else {
+    // NO SAVE: documented bodyguard-size law → per-general upkeep = base × rawUpkeep / EDU_soldiers.
+    for (const b of bodyguards) {
+      const edu = b.soldiers || 6;
+      const base = Math.max(4, Math.min(31, edu + (b.leader ? 6 : 0) + (b.heir ? 4 : 0) + Math.floor(b.infl / 2) + b.psec));
+      sum += Math.round(base * b.upkeep / edu);
+    }
   }
   return { upkeep: Math.round(sum), units };
 }
@@ -2605,7 +2619,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     admin = Math.floor(opts.storedOtherIncome);
   }
   const income = Math.round(taxes + farming + mining + trade + admin);
-  const army = armyUpkeepEDU(modDataDir, faction);
+  const army = armyUpkeepEDU(modDataDir, faction, opts && opts.bodyguardUnitsByFaction && opts.bodyguardUnitsByFaction[faction]);
   const preNet = army ? (income - wages - corruption - army.upkeep) : null;
   // ---- protectorate tribute (50% of client net profit, flows from turn 2) ----
   // Suzerains: + half of each client's modeled net (client at all-Normal brackets —
