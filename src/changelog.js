@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1225",
+    date: "2026-07-06",
+    items: [
+      { type: "fix", text: "**Per-town tax now exact at the common population sizes.** The tax populace base is measured at population breakpoints and interpolated between them, but at population 2250 — the most common RIS starting size — the interpolation read 0.2 too high, flooring several towns' tax a denarius over (Cosa). Adding the measured base at 2250, pinned by three towns across three different tax rates, lands them all exactly: Cosa 463, Arpi 650, Canusium 217, Iguvium 238, Falerii 183, Teate 155 — and Rome 1920. Faction tax total is now within 1 denarius of the game. (Supersedes a v0.9.1224 attempt that truncated the interpolation blanket-style and over-corrected some towns the other way.)" },
+    ],
+  },
+  {
     version: "0.9.1223",
     date: "2026-07-06",
     items: [
