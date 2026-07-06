@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1223",
+    date: "2026-07-06",
+    items: [
+      { type: "change", text: "**One capital-tax rule for every faction.** Following the Rome fix, the special-cased split (Rome ×40, other factions' capitals ×31.32) is gone — all capitals now use the same plain ×40 rate, which is what Rome and vanilla both prove and what the engine surely does. The old 31.32 came from a June calibration that was internally flawed (it needed the −123 term to make Rome fit) and whose other-capital readings are now stale, so a single clean rule anchored on fresh data is the right call. Rome is unchanged (still exact); the AI factions' capital taxes now use the unified rate. If any non-Roman capital ever reads high, that's a taxable-points detail the 31.32 was masking, not the rate — a fresh scroll of that capital would settle it." },
+    ],
+  },
+  {
     version: "0.9.1222",
     date: "2026-07-06",
     items: [

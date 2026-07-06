@@ -2012,12 +2012,14 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     // empire-size penalties dominate) wrongly drove the capital's tax to 0 (live: Alexandria pays 481,
     // model gave 0). So on a negative taxablePct the capital falls back to the ×4 non-capital rate.
     // Small-empire capitals (positive taxablePct) are unchanged. (Live Ptolemaic turn-1, 2026-06-21.)
-    // The ROMAN capital uses the plain ×40 capital rate with NO suppression (live-cracked 2026-07-06
-    // from the fresh Rome scroll: V.High no-gov 1829 = 1.5·(979.5 + 40·6); the old 31.32 + −123 combo
-    // was a stale 1-point approximation that under-read it by ~185). Other RIS factions' capitals keep
-    // the 31.32 fit from the 2026-06-30 4-capital crack (Athens/Kyrene/Seleucia — unchanged).
-    const _romanCap = _capTax && /^romans?_/.test(F.faction);
-    const _M = _capTax ? (s.taxablePct >= 0 ? ((_ris && !_romanCap) ? 31.32 : 40) : 4) : (F.tier <= 2 ? 40 : 4);
+    // ONE RULE for every faction capital (2026-07-06): the plain ×40 capital rate, no suppression.
+    // Live-cracked from the fresh Rome scroll (V.High no-gov 1829 = 1.5·(979.5 + 40·6), ×1.05 gov =
+    // 1920 — exact). This REPLACES the 2026-06-30 4-capital fit (M≈31.32 + a Roman −123 term): that
+    // crack was internally flawed (it needed the −123 to make Rome work at 31.32, now refuted) and its
+    // Athens/Kyrene/Seleucia scrolls are stale (the mod changes daily). ×40 also matches vanilla. If a
+    // non-Roman capital's tax ever reads high, it's a taxable-points miscount (which 31.32 was masking),
+    // NOT the rate — re-check with a fresh scroll of that capital. Negative taxablePct → ×4 (as before).
+    const _M = _capTax ? (s.taxablePct >= 0 ? 40 : 4) : (F.tier <= 2 ? 40 : 4);
     // taxablePct (region_base + building points) × _M. The "40/pt for region_base only" split was
     // tested (s.taxableRegionBase / s.taxableBuilding are exposed for it) but every building-multiplier
     // traded factions on the current corpus — the big-empire under-tax needs per-city scrolls to pin.
