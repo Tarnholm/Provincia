@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1228",
+    date: "2026-07-06",
+    items: [
+      { type: "fix", text: "**General bodyguard upkeep is now per-general via the documented engine law.** Each general's bodyguard size — and therefore its upkeep — follows the engine formula `base = clamp(unit_soldiers + 6·leader + 4·heir + floor(influence/2) + PersonalSecurity, 4, 31)`, with `upkeep = base × raw ÷ unit_soldiers`. This replaces the previous flat per-faction factor (which only fit Rome's total by luck and was wrong for other factions). Verified against a live turn-1 save: the faction leader lands exactly (60-man bodyguard), plain generals fall to base = raw upkeep. Command has no effect (confirmed in-game). A general's size varies with rank and the influence/security its traits confer, so a low-influence captain and a senior leader now read correctly different upkeeps. The no-save estimate is within ~0.6% of the game (the engine adds a few starting traits at spawn that aren't written in the mod files); when a general's traits are fully specified it is exact." },
+    ],
+  },
+  {
     version: "0.9.1227",
     date: "2026-07-06",
     items: [

@@ -250,10 +250,12 @@ function _commandTraitTable(modDataDir) {
     let m = ln.match(/^Trait\s+(\S+)/i);
     if (m) { cur = m[1].toLowerCase(); out[cur] = []; lvl = null; continue; }
     if (!cur) continue;
-    if (/^Level\s/i.test(ln)) { lvl = { threshold: 1, command: 0 }; out[cur].push(lvl); continue; }
+    if (/^Level\s/i.test(ln)) { lvl = { threshold: 1, command: 0, influence: 0, psec: 0 }; out[cur].push(lvl); continue; }
     if (!lvl) continue;
     m = ln.match(/^Threshold\s+(\d+)/i); if (m) { lvl.threshold = +m[1]; continue; }
     m = ln.match(/^Effect\s+Command\s+(-?\d+)/i); if (m) { lvl.command = +m[1]; continue; }
+    m = ln.match(/^Effect\s+Influence\s+(-?\d+)/i); if (m) { lvl.influence = +m[1]; continue; }
+    m = ln.match(/^Effect\s+PersonalSecurity\s+(-?\d+)/i); if (m) { lvl.psec = +m[1]; continue; }
   }
   _edctCmdCache.set(p, { mt, v: out });
   return out;
@@ -274,6 +276,22 @@ function _commandOfTraitsLine(traitsLine, table) {
   }
   return cmd;
 }
+// trait points → summed { influence, psec } for a character (same level-select law as command)
+function _inflPsecOfTraitsLine(traitsLine, table) {
+  let influence = 0, psec = 0;
+  for (const t of traitsLine.split(",")) {
+    const m = t.trim().match(/^(\S+)\s+(\d+)/);
+    if (!m) continue;
+    const L = table[m[1].toLowerCase()];
+    if (!L || !L.length) continue;
+    const pts = +m[2];
+    let lev = 0;
+    for (let i = 0; i < L.length; i++) if (pts >= L[i].threshold) lev = i + 1;
+    if (lev === 0 && L.length <= 3 && pts > 0) lev = 1;
+    if (lev > 0) { influence += L[lev - 1].influence; psec += L[lev - 1].psec; }
+  }
+  return { influence, psec };
+}
 
 // Engine army upkeep (ledger f12) EXACT LAW (Capua disband probe 2026-06-11: faction
 // reduced to leader+heir bodyguards alone → ledger 202 = 2 × 45×2.25):
@@ -285,15 +303,17 @@ function _commandOfTraitsLine(traitsLine, table) {
 //   Factions with no `heir` flag in descr_strat get an engine auto-heir at game start.
 // Validation vs live ledgers: capua +0.5, julii +6 (0.02%), egypt +28 (0.06%),
 // cyrene +13 (0.16%). Replaces the ×1.0122 global constant + leader/heir ×2 law.
-const UPKEEP_SIZE_MULT = 4; // huge (legacy, retained for reference)
-// Starting (descr_strat-placed) generals carry a LARGER bodyguard than a freshly-recruited one:
-// a fresh roman general recruits at EDU upkeep 47, but every campaign-start general reads 68 in the
-// game's Army-upkeep panel — a flat ~1.4475× of the raw upkeep. Cracked from the Roman turn-1 scroll
-// (2026-07-06): the 31 "Roman General's Bodyguard" line = 2109 exactly (every regular unit already
-// matched the raw EDU upkeep to the denarius). Command / leader status do NOT move the live upkeep
-// (in-game give_trait test on a general showed no change), so it's a flat starting-retinue size
-// factor, not the old per-general men/command scaling.
-const STARTING_BG_UPKEEP_MULT = 2109 / 1457;
+const UPKEEP_SIZE_MULT = 4; // huge unit-size setting (bodyguard soldiers = base × 4)
+// BODYGUARD SIZE — documented engine law (Feral RR docs, Battle_and_Campaign_Formulae):
+//   base = clamp(EDU_soldiers + 6·leader + 4·heir + floor(influence/2) + PersonalSecurity, 4, 31)
+//   in-game soldiers = base × unit-scale (×4 huge); upkeep = base × rawUpkeep / EDU_soldiers.
+// Verified 2026-07-06 against the Rome turn-1 save: leader Quintus (infl 3, psec 2) → base 15 =
+// 60 soldiers EXACT; a plain greek/thracian general with no influence/psec → base 6 = 24 soldiers
+// = raw upkeep. It is NOT command (in-game give_trait / GoodCommander-at-spawn tests moved nothing)
+// nor a flat factor — it's leader/heir rank + the influence & PersonalSecurity a general carries.
+// descr_strat influence/psec is a slight under-read for sparse generals (the engine grants extra
+// starting traits not in the file), so the exact per-general size comes from a loaded save when one
+// is attached; this formula is the no-save estimate.
 function armyUpkeepEDU(modDataDir, faction) {
   const stratPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
   if (!fs.existsSync(stratPath)) return null;
@@ -303,21 +323,23 @@ function armyUpkeepEDU(modDataDir, faction) {
   const want = String(faction || "").toLowerCase();
   const lines = _stratLines(stratPath);
   let inWanted = false, regular = 0, units = 0;
-  let pendingNamed = false, pendingLH = false, pendingCmd = 0;
-  const bodyguards = []; // {upkeep, soldiers, officers, cmd, lh}
+  let pendingNamed = false, pendingLeader = false, pendingHeir = false, pendingInfl = 0, pendingPsec = 0;
+  const bodyguards = []; // {upkeep, soldiers, officers, leader, heir, infl, psec}
   for (const ln of lines) {
     const m = ln.match(/^faction\s+([a-z_0-9]+)\s*,/i);
     if (m) { inWanted = m[1].toLowerCase() === want; continue; }
     if (!inWanted) continue;
-    if (/^character[\s,].*named character/i.test(ln)) {   // RIS writes `character\tName, named character` (tab, not comma) — match tab/space too, else every general's bodyguard is misread as a regular unit and the leader/heir miss the ×2
+    if (/^character[\s,].*named character/i.test(ln)) {   // RIS writes `character\tName, named character` (tab, not comma) — match tab/space too, else every general's bodyguard is misread as a regular unit and the leader/heir miss their rank bonus
       pendingNamed = true;
-      pendingLH = /,\s*(leader|heir)\s*,/i.test(ln);
-      pendingCmd = 0;
+      pendingLeader = /,\s*leader\s*,/i.test(ln);
+      pendingHeir = /,\s*heir\s*,/i.test(ln);
+      pendingInfl = 0; pendingPsec = 0;
       continue;
     }
     if (/^character[\s,]/i.test(ln)) { pendingNamed = false; continue; }
     if (pendingNamed && /^\s*traits\s/i.test(ln)) {
-      pendingCmd = _commandOfTraitsLine(ln.replace(/^\s*traits\s+/i, ""), cmdTable);
+      const ip = _inflPsecOfTraitsLine(ln.replace(/^\s*traits\s+/i, ""), cmdTable);
+      pendingInfl = ip.influence; pendingPsec = ip.psec;
       continue;
     }
     const u = ln.match(/^unit\s+(.+?)\s+exp\b/);
@@ -325,20 +347,24 @@ function armyUpkeepEDU(modDataDir, faction) {
     const st = us[u[1].trim().toLowerCase()];
     units++;
     if (st && st.upkeep != null) {
-      if (pendingNamed) bodyguards.push({ upkeep: st.upkeep, soldiers: st.soldiers, officers: st.officers || 0, cmd: pendingCmd, lh: pendingLH });
+      if (pendingNamed) bodyguards.push({ upkeep: st.upkeep, soldiers: st.soldiers || 6, officers: st.officers || 0, leader: pendingLeader, heir: pendingHeir, infl: pendingInfl, psec: pendingPsec });
       else regular += st.upkeep;
     }
     pendingNamed = false;
   }
-  // engine auto-heir: only one of leader/heir flagged in descr_strat (e.g. cyrene has
-  // no heir line) but ≥2 named generals → the engine promotes one at game start
-  const lhCount = bodyguards.filter(b => b.lh).length;
-  if (lhCount === 1 && bodyguards.length >= 2) {
-    const promote = bodyguards.find(b => !b.lh);
-    if (promote) promote.lh = true;
+  // engine auto-heir: leader flagged but no heir in descr_strat (e.g. cyrene) + ≥2 named
+  // generals → the engine promotes one to heir at game start (gains the +4 rank bonus).
+  if (bodyguards.some(b => b.leader) && !bodyguards.some(b => b.heir) && bodyguards.length >= 2) {
+    const promote = bodyguards.find(b => !b.leader && !b.heir);
+    if (promote) promote.heir = true;
   }
+  // documented bodyguard-size law → per-general upkeep = base × rawUpkeep / EDU_soldiers.
   let sum = regular;
-  for (const b of bodyguards) sum += b.upkeep * STARTING_BG_UPKEEP_MULT; // flat starting-retinue factor
+  for (const b of bodyguards) {
+    const edu = b.soldiers || 6;
+    const base = Math.max(4, Math.min(31, edu + (b.leader ? 6 : 0) + (b.heir ? 4 : 0) + Math.floor(b.infl / 2) + b.psec));
+    sum += Math.round(base * b.upkeep / edu);
+  }
   return { upkeep: Math.round(sum), units };
 }
 
