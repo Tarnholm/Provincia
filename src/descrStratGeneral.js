@@ -526,15 +526,37 @@ function parseDescrRegions(text) {
   return { regionToCity, rgbToRegion };
 }
 
+// Decode a 24bpp TGA into a raw uncompressed pixel buffer (3 bytes/px, storage order,
+// BGR). Handles both uncompressed (image type 2) AND run-length-encoded (type 10) — RIS
+// re-saved map_regions.tga as RLE in the 2026-07 "alternate maps" update, which the old
+// direct-pixel reader mis-parsed as garbage (every map pixel scan silently broke: no
+// settlement/coast tiles → sea trade collapsed to 0). Returns { W, H, desc, raw }.
+function tgaToRaw(buf) {
+  const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), imgType = buf[2], desc = buf[17];
+  const dataOff = 18 + buf[0] + (buf[1] === 1 ? buf.readUInt16LE(5) * (buf[7] >> 3) : 0);
+  if (imgType === 2) return { W, H, desc, raw: buf.slice(dataOff, dataOff + W * H * 3) };
+  if (imgType === 10) {
+    const raw = Buffer.alloc(W * H * 3);
+    let p = dataOff, o = 0, count = 0; const total = W * H;
+    while (count < total && p < buf.length) {
+      const hdr = buf[p++], n = (hdr & 0x7f) + 1;
+      if (hdr & 0x80) { for (let i = 0; i < n; i++) { raw[o] = buf[p]; raw[o + 1] = buf[p + 1]; raw[o + 2] = buf[p + 2]; o += 3; } p += 3; }
+      else { for (let i = 0; i < n * 3; i++) raw[o++] = buf[p++]; }
+      count += n;
+    }
+    return { W, H, desc, raw };
+  }
+  throw new Error("unsupported TGA image type " + imgType);
+}
+
 // Resolve every settlement's tile from map_regions.tga: each settlement is a
 // BLACK pixel; its region = the surrounding region colour. Returns region ->
-// {x,y} in descr_strat space (descr_y = H-1 - tga_y_top). 24bpp uncompressed,
-// bottom-left origin assumed (verified: 1020x700).
+// {x,y} in descr_strat space (descr_y = H-1 - tga_y_top). Bottom-left origin
+// assumed (verified: 1020x700). Decodes RLE-compressed TGAs (see tgaToRaw).
 function buildRegionCoords(tgaBuf, rgbToRegion) {
-  const W = tgaBuf.readUInt16LE(12), H = tgaBuf.readUInt16LE(14), desc = tgaBuf[17];
-  const dataOff = 18 + tgaBuf[0];
+  const { W, H, desc, raw } = tgaToRaw(tgaBuf);
   const bottomLeft = (desc & 0x20) === 0;
-  const px = (col, rowTop) => { const r = bottomLeft ? (H - 1 - rowTop) : rowTop; const o = dataOff + (r * W + col) * 3; return [tgaBuf[o + 2], tgaBuf[o + 1], tgaBuf[o]]; };
+  const px = (col, rowTop) => { const r = bottomLeft ? (H - 1 - rowTop) : rowTop; const o = (r * W + col) * 3; return [raw[o + 2], raw[o + 1], raw[o]]; };
   // MAJORITY-VOTE neighbour sampling (2026-06-10): the old first-neighbour-wins
   // could assign a settlement pixel sitting on a region BORDER to the NEIGHBOURING
   // region (then first-write-wins blocked the true pixel) — Iasonion's governor was
@@ -623,6 +645,6 @@ module.exports = {
   parseSmFactionNamelists, parseNamelistPools, insertNamelistTokens,
   resolveFreeToken, composeAddGeneral, isFamilyToken,
   buildSettlementCoordIndex, resolveSettlement,
-  parseDescrRegions, buildRegionCoords, factionOwnedSettlements,
+  parseDescrRegions, buildRegionCoords, tgaToRaw, factionOwnedSettlements,
   parseDiplomacy, diploLine,
 };

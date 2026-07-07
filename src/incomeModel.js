@@ -1471,8 +1471,8 @@ function seaLanesByRegion(modDataDir) {
     const dg = require("./descrStratGeneral.js");
     const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
     const buf = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga"));
-    const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), dataOff = 18 + buf[0];
-    const isSea = (o) => buf[dataOff + o * 3 + 2] === 41 && buf[dataOff + o * 3 + 1] === 140;
+    const { W, H, raw } = dg.tgaToRaw(buf); // decode RLE- OR uncompressed-TGA → raw BGR pixels (RIS re-saved the map RLE 2026-07)
+    const isSea = (o) => raw[o * 3 + 2] === 41 && raw[o * 3 + 1] === 140;
     // PORT TILE per region = the coastal pixel nearest the CITY tile (the engine
     // anchors the port structure there; near-tie lane ordering depends on it —
     // Cosa→Praeneste vs →Pisae differ by ~0.1 tile and flip the strength assignment).
@@ -1485,7 +1485,7 @@ function seaLanesByRegion(modDataDir) {
     for (let y = 0; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
       const o = y * W + x;
       if (isSea(o)) continue;
-      const reg = rgbToRegion[buf[dataOff + o * 3 + 2] + "," + buf[dataOff + o * 3 + 1] + "," + buf[dataOff + o * 3]];
+      const reg = rgbToRegion[raw[o * 3 + 2] + "," + raw[o * 3 + 1] + "," + raw[o * 3]];
       if (!reg || !cityPx[reg]) continue;
       if (isSea(o + 1) || isSea(o - 1) || isSea(o + W) || isSea(o - W)) {
         const d = Math.hypot(x - cityPx[reg][0], y - cityPx[reg][1]);

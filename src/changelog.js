@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1232",
+    date: "2026-07-07",
+    items: [
+      { type: "fix", text: "**Map reader now decodes RLE-compressed region maps (restores sea trade after the RIS map update).** The RIS \"alternate maps\" update re-saved `map_regions.tga` as RLE-compressed (image type 10); the model's pixel reader only handled uncompressed maps, so every settlement/coast pixel read garbage — settlements weren't resolved, coastal port tiles vanished, and sea trade silently collapsed to zero (Rome's entire sea trade was dropped). The TGA reader now decodes both compressed and uncompressed maps. Vanilla trade unchanged (25/25); RIS sea trade is restored. (A further pass is still needed to re-align the per-route land/sea values to the new map's redrawn region distances.)" },
+    ],
+  },
+  {
     version: "0.9.1231",
     date: "2026-07-06",
     items: [
