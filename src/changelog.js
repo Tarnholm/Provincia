@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1239",
+    date: "2026-07-07",
+    items: [
+      { type: "change", text: "**Budget panel cleanup.** Removed the old one-line income summary (taxes + farming + … = sustainable army upkeep) and the manual corruption override field — the game-style Financial Overview breakdown replaces both. The editable turn-1 budget box and its buttons stay." },
+    ],
+  },
+  {
     version: "0.9.1238",
     date: "2026-07-07",
     items: [

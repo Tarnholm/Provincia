@@ -9725,12 +9725,6 @@ function App() {
     return Number.isFinite(v) ? v : -500;
   });
   useEffect(() => { localStorage.setItem("armyBudgetFloor", String(armyBudgetFloor)); }, [armyBudgetFloor]);
-  // CORRUPTION override (2026-07-07): the game's DISPLAYED corruption ("Other" expenditure) is
-  // NOT stored in the save — the save keeps a different number (slot f22) that the game recomputes
-  // at display time, so it's unrecoverable to the denarius. Let the user paste the exact value off
-  // the in-game Financial Overview, keyed per faction, persisted.
-  const [corrOverrides, setCorrOverrides] = useState(() => { try { return JSON.parse(localStorage.getItem("corrOverridesV1") || "{}"); } catch { return {}; } });
-  useEffect(() => { try { localStorage.setItem("corrOverridesV1", JSON.stringify(corrOverrides)); } catch { /* quota */ } }, [corrOverrides]);
   // PER-CAMPAIGN TAX CALIBRATION (H lock, 2026-06-12): the user pastes the game's
   // live per-town tax readings; the app computes H = live/model snapped to the
   // engine's 0.05 grid (see src/taxCalib.js) and persists it per modDir+faction.
@@ -23085,35 +23079,13 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                             ⧉ copy plan
                           </button>
                         </div>
-                        <div style={{ marginTop: 6, fontSize: "0.8rem", color: "#cdc", display: "flex", gap: 14, flexWrap: "wrap" }}
-                          title={`Income model — live-cracked engine laws (validated: julii taxes −1.1% / trade −0.1%, capua trade exact, AI median 3.7% over 215 ledgers):\n· taxes = 0.456·400(ln pop − 4.4)·bracket·governor + 3.9·building-points·governor, × per-campaign H when calibrated (paste live readings below — H is the engine's hidden 5%-step campaign roll)\n· farming = 73.6 × (fertility + farm levels + governor) (exact)\n· admin = 2 × governor Management × town gross (the ledger's "other" row)\n· trade: live-pinned land lanes (julii/capua corpora) + per-lane sea cargo flows (shortfall-exclusion + saturation law)\n· corruption = linear distance % of gross minus 3%/law-point\n· wages = 200×general + 50×admiral (exact) · army upkeep = exact EDU law (±0.1%)`}>
-                          <span>taxes <b style={{ color: "#e8c873" }}>{t.taxes}</b></span>
-                          <span>+ farming <b style={{ color: "#9fd37f" }}>{t.farming}</b></span>
-                          {t.mining > 0 && <span>+ mining <b style={{ color: "#d3b67f" }}>{t.mining}</b></span>}
-                          <span>+ trade <b style={{ color: "#9fc3d3" }}>{t.trade}</b></span>
-                          {t.admin > 0 && <span title="Governor administration income (the settlement scroll's 'Admin' row = the ledger's 'other' income): admin% × town gross, admin% from the governor's management/law stats — live-cracked 2026-06-11 (julii: model 1,973 vs ledger 1,982).">+ admin <b style={{ color: "#d3c89f" }}>{t.admin}</b></span>}
-                          <span>= income <b>{t.income}</b></span>
-                          {armyT1Budget.protectorate && armyT1Budget.protectorate.clients && (
-                            <span title={`Protectorate tribute: each client pays 50% of its net profit per turn (exact engine rate, cracked from save ledgers). Flows from TURN 2. The number shown is a CONSERVATIVE FLOOR (client profits modeled at Normal tax; the model currently underestimates small-faction incomes — live tribute runs higher) and is NOT included in the budget.\n${(armyT1Budget.protectorate.clients || []).map(c => `${c.faction}: modeled net ≈${c.net} → +${c.tribute}`).join("\n")}`}
-                              style={{ cursor: "help" }}>♛ + tribute ≥<b style={{ color: "#d3a7e8" }}>{t.tributeIn}</b><span style={{ color: "#889", fontSize: "0.68rem" }}>from turn 2, not in budget</span></span>
-                          )}
-                          <span>− wages <b style={{ color: "#e8a07a" }}>{t.wages}</b></span>
-                          <span>− corruption <b style={{ color: "#e8a07a" }}>{t.corruption}</b></span>
-                          <span>= <b style={{ color: "#b8d38f", fontSize: "0.92rem" }}>{t.armyBudget}</b> <span style={{ color: "#8aa", fontSize: "0.7rem" }}>sustainable army upkeep</span></span>
-                          {armyT1Budget.protectorate && armyT1Budget.protectorate.suzerain && (
-                            <span title={`This faction is a PROTECTORATE of ${armyT1Budget.protectorate.suzerain} (set by the campaign script): it pays 50% of its net profit as tribute every turn from turn 2 (exact engine rate). Running a deficit pays nothing — but every denarius of profit is halved.`}
-                              style={{ cursor: "help", color: "#d3a7e8" }}>⚑ protectorate of {armyT1Budget.protectorate.suzerain}{t.tributeOut > 0 ? ` — pays ≈${t.tributeOut}` : ""} <span style={{ color: "#889", fontSize: "0.68rem" }}>(half its profit, from turn 2)</span></span>
-                          )}
-                        </div>
                         {/* GAME-STYLE Financial Overview (v0.9.1234) — Turn Income / Turn Expenditure like the in-game scroll */}
                         {(() => {
                           const army = (typeof t.armyUpkeep === "number") ? t.armyUpkeep : ((d && typeof d.armyUpkeep === "number") ? d.armyUpkeep : null); // save-aware total (not the army-setup no-save d)
                           const units = (typeof t.armyUnits === "number") ? t.armyUnits : ((d && d.summary && typeof d.summary.totalArmyUnits === "number") ? d.summary.totalArmyUnits : null);
                           const gens = (d && Array.isArray(d.characters)) ? d.characters.length : null;
                           const incTotal = t.income;
-                          const corrOv = corrOverrides[fac];
-                          const corrLocked = (typeof corrOv === "number" && Number.isFinite(corrOv) && corrOv >= 0);
-                          const corr = corrLocked ? corrOv : t.corruption;
+                          const corr = t.corruption;
                           const expTotal = t.wages + (army || 0) + corr;
                           const net = incTotal - expTotal;
                           const fmt = (n) => n == null ? "—" : Math.round(n).toLocaleString();
@@ -23146,19 +23118,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                               {row("Army upkeep", army, <span style={{ color: "#9a8f78" }}>Units: {units != null ? units : "—"}</span>)}
                               {row("Recruitment", 0, <span style={{ color: "#9a8f78" }}>Units: 0; Agents: 0</span>)}
                               {row("Construction", 0, <span style={{ color: "#9a8f78" }}>Buildings: 0</span>)}
-                              <div key="Other-corruption" style={{ display: "grid", gridTemplateColumns: "120px 1fr 70px", alignItems: "baseline", padding: "3px 10px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: "0.8rem" }}>
-                                <span style={{ color: "#cdbfa0", fontWeight: 600 }}>Other</span>
-                                <span style={{ fontSize: "0.67rem", lineHeight: 1.2, color: "#9a8f78" }}>
-                                  Corruption — distance-to-capital × income − law (exact engine table){" "}
-                                  <span style={{ color: "#8899aa" }} title="Computed directly from the engine's distance→% corruption table (validated to the denarius on the player faction vs the in-game Financial Overview). Optional override: type a value to pin it, or leave blank for the computed number.">
-                                    — <input type="number" value={corrLocked ? corrOv : ""} placeholder={`${Math.round(t.corruption)}`}
-                                      onChange={(ev) => { const raw = ev.target.value.trim(); setCorrOverrides((o) => { const n = { ...o }; if (raw === "") delete n[fac]; else { const v = parseInt(raw, 10); if (Number.isFinite(v)) n[fac] = v; } return n; }); }}
-                                      style={{ width: 58, background: "rgba(0,0,0,0.35)", color: corrLocked ? "#9fe89f" : "#eee", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 4, padding: "1px 4px", fontSize: "0.67rem" }} />
-                                    {corrLocked ? <span style={{ color: "#7fd17f", marginLeft: 4 }}>override ✓</span> : <span style={{ color: "#8899aa", marginLeft: 4 }}>computed (override optional)</span>}
-                                  </span>
-                                </span>
-                                <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: corrLocked ? "#9fe89f" : (corr ? "#eee" : "#778") }}>{fmt(corr)}</span>
-                              </div>
+                              {row("Other", corr, <span style={{ color: "#9a8f78" }}>Corruption — distance to capital × income − law</span>)}
                               <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 10px", background: "rgba(255,255,255,0.06)", borderTop: "1px solid rgba(255,255,255,0.16)" }}>
                                 <strong style={{ color: "#b8d38f" }}>Net income</strong>
                                 <strong style={{ color: net >= 0 ? "#7fd17f" : "#e8806a", fontVariantNumeric: "tabular-nums" }}>{net >= 0 ? "+" : ""}{fmt(net)}</strong>
