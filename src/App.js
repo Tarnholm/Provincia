@@ -23096,8 +23096,8 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                         </div>
                         {/* GAME-STYLE Financial Overview (v0.9.1234) — Turn Income / Turn Expenditure like the in-game scroll */}
                         {(() => {
-                          const army = (d && typeof d.armyUpkeep === "number") ? d.armyUpkeep : null;
-                          const units = (d && d.summary && typeof d.summary.totalArmyUnits === "number") ? d.summary.totalArmyUnits : null;
+                          const army = (typeof t.armyUpkeep === "number") ? t.armyUpkeep : ((d && typeof d.armyUpkeep === "number") ? d.armyUpkeep : null); // save-aware total (not the army-setup no-save d)
+                          const units = (typeof t.armyUnits === "number") ? t.armyUnits : ((d && d.summary && typeof d.summary.totalArmyUnits === "number") ? d.summary.totalArmyUnits : null);
                           const gens = (d && Array.isArray(d.characters)) ? d.characters.length : null;
                           const incTotal = t.income;
                           const expTotal = t.wages + (army || 0) + t.corruption;

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1235",
+    date: "2026-07-07",
+    items: [
+      { type: "fix", text: "**Financial Overview army upkeep now uses the save-aware value.** It was pulling the army-setup panel's figure, which isn't save-calibrated; it now shows the budget's save-aware army upkeep, which matches the game exactly (e.g. 27883)." },
+    ],
+  },
+  {
     version: "0.9.1234",
     date: "2026-07-07",
     items: [
