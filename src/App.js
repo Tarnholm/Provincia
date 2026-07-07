@@ -23094,6 +23094,52 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                               style={{ cursor: "help", color: "#d3a7e8" }}>⚑ protectorate of {armyT1Budget.protectorate.suzerain}{t.tributeOut > 0 ? ` — pays ≈${t.tributeOut}` : ""} <span style={{ color: "#889", fontSize: "0.68rem" }}>(half its profit, from turn 2)</span></span>
                           )}
                         </div>
+                        {/* GAME-STYLE Financial Overview (v0.9.1234) — Turn Income / Turn Expenditure like the in-game scroll */}
+                        {(() => {
+                          const army = (d && typeof d.armyUpkeep === "number") ? d.armyUpkeep : null;
+                          const units = (d && d.summary && typeof d.summary.totalArmyUnits === "number") ? d.summary.totalArmyUnits : null;
+                          const gens = (d && Array.isArray(d.characters)) ? d.characters.length : null;
+                          const incTotal = t.income;
+                          const expTotal = t.wages + (army || 0) + t.corruption;
+                          const net = incTotal - expTotal;
+                          const fmt = (n) => n == null ? "—" : Math.round(n).toLocaleString();
+                          const R = "#c0674a", G = "#7fae56"; // red = base (pop), green = modifiers, matching the game tooltip colours
+                          const secHdr = (label, val) => (
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "5px 10px", background: "rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.14)" }}>
+                              <strong style={{ fontSize: "0.92rem", color: "#e8dcc0" }}>{label}</strong>
+                              <strong style={{ fontSize: "0.92rem", color: "#e8dcc0", fontVariantNumeric: "tabular-nums" }}>{fmt(val)}</strong>
+                            </div>
+                          );
+                          const row = (name, val, parts) => (
+                            <div key={name} style={{ display: "grid", gridTemplateColumns: "120px 1fr 70px", alignItems: "baseline", padding: "3px 10px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: "0.8rem" }}>
+                              <span style={{ color: "#cdbfa0", fontWeight: 600 }}>{name}</span>
+                              <span style={{ fontSize: "0.67rem", lineHeight: 1.2 }}>{parts}</span>
+                              <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: val ? "#eee" : "#778" }}>{fmt(val)}</span>
+                            </div>
+                          );
+                          return (
+                            <div style={{ marginTop: 8, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(200,170,110,0.35)", background: "rgba(30,26,18,0.55)" }}
+                              title="Turn income & expenditure laid out like the in-game Financial Overview. Values are the model's (denarius-exact vs the game when a calibration save is attached).">
+                              {secHdr("Turn Income", incTotal)}
+                              {row("Farming", t.farming, <span style={{ color: R }}>Population growth per turn</span>)}
+                              {row("Mining", t.mining, <><span style={{ color: R }}>Population growth per turn</span> <span style={{ color: G }}>+ Governor's influence</span></>)}
+                              {row("Trade", t.trade, <><span style={{ color: R }}>Population growth per turn</span> <span style={{ color: G }}>+ Governor's influence + Trade routes</span></>)}
+                              {row("Merchants", 0, <span style={{ color: R }}>Population growth per turn</span>)}
+                              {row("Taxes", t.taxes, <><span style={{ color: R }}>Population growth per turn</span> <span style={{ color: G }}>+ Governor's influence + Tax Rate</span></>)}
+                              {row("Other", t.admin, <span style={{ color: R }}>Population growth per turn</span>)}
+                              {secHdr("Turn Expenditure", expTotal)}
+                              {row("Wages", t.wages, <span style={{ color: "#9a8f78" }}>Generals &amp; Admirals: {gens != null ? gens : "—"}; Agents: 0</span>)}
+                              {row("Army upkeep", army, <span style={{ color: "#9a8f78" }}>Units: {units != null ? units : "—"}</span>)}
+                              {row("Recruitment", 0, <span style={{ color: "#9a8f78" }}>Units: 0; Agents: 0</span>)}
+                              {row("Construction", 0, <span style={{ color: "#9a8f78" }}>Buildings: 0</span>)}
+                              {row("Other", t.corruption, <span style={{ color: "#9a8f78" }}>Corruption (distance from capital − law)</span>)}
+                              <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 10px", background: "rgba(255,255,255,0.06)", borderTop: "1px solid rgba(255,255,255,0.16)" }}>
+                                <strong style={{ color: "#b8d38f" }}>Net income</strong>
+                                <strong style={{ color: net >= 0 ? "#7fd17f" : "#e8806a", fontVariantNumeric: "tabular-nums" }}>{net >= 0 ? "+" : ""}{fmt(net)}</strong>
+                              </div>
+                            </div>
+                          );
+                        })()}
                         {netAfterArmy != null && (() => {
                           const room = netAfterArmy - armyBudgetFloor; // floor is the allowed max deficit (e.g. −500)
                           // ARMY-ONLY trim suggestions when over budget: greedily drop the

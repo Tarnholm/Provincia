@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1234",
+    date: "2026-07-07",
+    items: [
+      { type: "feature", text: "**Turn-1 budget now shows a game-style Financial Overview.** The budget panel adds a Turn Income / Turn Expenditure breakdown laid out like the in-game Financial Overview scroll — Farming, Mining, Trade, Merchants, Taxes, Other for income; Wages, Army upkeep, Recruitment, Construction, Other (corruption) for expenditure — each with the game's affected-by notes (base in red, modifiers in green), section totals, and a Net income line. The numbers are the model's, which are denarius-exact against the game when a calibration save is attached." },
+    ],
+  },
+  {
     version: "0.9.1233",
     date: "2026-07-07",
     items: [
