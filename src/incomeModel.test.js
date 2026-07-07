@@ -103,11 +103,12 @@ describe("incomeModel — cracked constants", () => {
     // 15.5→11.25 (live Fregellae d11 is corrupt → onset ~11); lawPct 3→2.5 (the
     // negative-law inflation was over-charging cyrene desert towns; HarshJustice
     // probe's 2.95pp/pt is at the high edge — 2.5 fits all three factions jointly).
-    expect(im.CALIB.corrD0).toBe(11.25);
-    expect(im.CALIB.corrA).toBeCloseTo(0.64, 3);
-    expect(im.CALIB.corrLawPct).toBe(2.5);
-    expect(im.CALIB.corrCap).toBe(60);
-    expect(im.CALIB.corrB).toBe(0); // linear — negative-b fits rejected (Egypt tail collapse)
+    // CORRUPTION now uses the EXACT engine distance→% table (CALIB.corrTable) instead of the
+    // polynomial fit; law is the exact 3%/point (0.03×gross). corrTileScale = save→engine tile factor.
+    expect(im.CALIB.corrLawPct).toBe(3);
+    expect(im.CALIB.corrTileScale).toBe(1.05);
+    expect(im.CALIB.corrTable[0]).toEqual([15, 0]);
+    expect(im.CALIB.corrTable[im.CALIB.corrTable.length - 1]).toEqual([100, 68.5]);
     // AI economy refit 2026-06-11 (215 current-vintage AI ledgers, median ratio 1.000/tier)
     expect(im.CALIB.aiFarmBonus).toBeCloseTo(1.188, 3);
     expect(im.CALIB.aiTaxFixByTier[1]).toBeCloseTo(1.976, 3);

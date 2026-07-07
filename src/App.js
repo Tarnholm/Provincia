@@ -23149,12 +23149,12 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                               <div key="Other-corruption" style={{ display: "grid", gridTemplateColumns: "120px 1fr 70px", alignItems: "baseline", padding: "3px 10px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: "0.8rem" }}>
                                 <span style={{ color: "#cdbfa0", fontWeight: 600 }}>Other</span>
                                 <span style={{ fontSize: "0.67rem", lineHeight: 1.2, color: "#9a8f78" }}>
-                                  Corruption (road distance from capital − law){" "}
-                                  <span style={{ color: "#8899aa" }} title="The game's DISPLAYED corruption isn't stored in the save (it's recomputed at display time), so it can't be read exactly. Type the value from the in-game Financial Overview to lock it; leave blank to use the estimate.">
-                                    — <input type="number" value={corrLocked ? corrOv : ""} placeholder={`est ${Math.round(t.corruption)}`}
+                                  Corruption — distance-to-capital × income − law (exact engine table){" "}
+                                  <span style={{ color: "#8899aa" }} title="Computed directly from the engine's distance→% corruption table (validated to the denarius on the player faction vs the in-game Financial Overview). Optional override: type a value to pin it, or leave blank for the computed number.">
+                                    — <input type="number" value={corrLocked ? corrOv : ""} placeholder={`${Math.round(t.corruption)}`}
                                       onChange={(ev) => { const raw = ev.target.value.trim(); setCorrOverrides((o) => { const n = { ...o }; if (raw === "") delete n[fac]; else { const v = parseInt(raw, 10); if (Number.isFinite(v)) n[fac] = v; } return n; }); }}
                                       style={{ width: 58, background: "rgba(0,0,0,0.35)", color: corrLocked ? "#9fe89f" : "#eee", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 4, padding: "1px 4px", fontSize: "0.67rem" }} />
-                                    {corrLocked ? <span style={{ color: "#7fd17f", marginLeft: 4 }}>locked ✓</span> : <span style={{ color: "#8899aa", marginLeft: 4 }}>paste game value</span>}
+                                    {corrLocked ? <span style={{ color: "#7fd17f", marginLeft: 4 }}>override ✓</span> : <span style={{ color: "#8899aa", marginLeft: 4 }}>computed (override optional)</span>}
                                   </span>
                                 </span>
                                 <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: corrLocked ? "#9fe89f" : (corr ? "#eee" : "#778") }}>{fmt(corr)}</span>

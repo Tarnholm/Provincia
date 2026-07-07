@@ -296,6 +296,17 @@ function _inflPsecOfTraitsLine(traitsLine, table) {
 // round-half-to-EVEN (banker's rounding) — the engine's per-unit upkeep rule. A 36-soldier
 // roman-general bodyguard costs 36×47/24 = 70.5 → 70 (even), not JS Math.round's 71.
 function _bankersRound(x) { const f = Math.floor(x), d = x - f; if (d < 0.5) return f; if (d > 0.5) return f + 1; return (f % 2 === 0) ? f : f + 1; }
+// EXACT engine corruption %: linear interpolation of the distance→% table (tiles). Below the
+// first breakpoint (15 tiles) → 0%; at/above the last (100 tiles) → the cap (68.5%).
+function _corrDistPct(d, table) {
+  if (d <= table[0][0]) return table[0][1];
+  const last = table[table.length - 1];
+  if (d >= last[0]) return last[1];
+  for (let i = 1; i < table.length; i++) {
+    if (d <= table[i][0]) { const a = table[i - 1], b = table[i]; return a[1] + (b[1] - a[1]) * (d - a[0]) / (b[0] - a[0]); }
+  }
+  return last[1];
+}
 // Per-faction general bodyguard units from a cracked save, by BUFFER BLOCK. Units are stored
 // grouped by faction in the save (factionId order); the region tagger misfiles a faction's field
 // armies sitting on rebel ("slave") ground. Each faction's block = its contiguous run ∪ the slave
@@ -721,7 +732,13 @@ const CALIB = {
   // corrLawPct 3 double-confirmed live via HarshJustice probe (Nossis/Locri): EDCT
   // ladder is Law +2/+4/+6 but HJ is an ANTI-TRAIT of Just — stripping Just/1 makes
   // the net settlement deltas +1/+3 → 2.97/2.93 pp/lawpt, exactly linear.
-  corrA: 0.64, corrB: 0, corrD0: 11.25, corrLawPct: 2.5,
+  corrA: 0.64, corrB: 0, corrD0: 11.25, corrLawPct: 3,
+  // EXACT engine corruption-by-distance table (tiles→%), linearly interpolated (RTW mechanics,
+  // web-sourced + validated 2026-07-07 vs a 20-faction save corpus: corruption RATE mean 2.6pp;
+  // the PLAYER faction julii lands EXACT on the game FO 3325). Replaces the polynomial fit.
+  // corrTileScale converts save/centroid tile units → the engine's corruption-distance tiles.
+  corrTable: [[15, 0], [20, 4], [25, 8], [30, 11.5], [35, 15], [40, 20], [45, 24.5], [50, 28], [60, 34], [70, 41.5], [80, 51], [90, 60], [100, 68.5]],
+  corrTileScale: 1.05,
   corrNegLawShift: 4, // tiles of effective distance per NEGATIVE law point (Pisae console probe + cyrene trio)
   corrCap: 60, // far-distance saturation (live Egypt: d141/226/351 all read 59-64% — NOT the old 90% linear climb)
   seaLaneMaxDist: 40, riverBodyMaxCells: 1500, seaFlowRiverMult: 1.0, // river flows run hotter (Nile live 713/605/519) // sea-path tiles; lanes are local (live: Kyrenaica forms NO Aegean lanes; Sena→Nesactium ~15 allowed)
@@ -2557,9 +2574,9 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // across all 26 towns) → too coarse to use as the metric; no finer pathfinding
       // distance is recoverable from the save, so euclidean + refit constants is the
       // shipped best metric (no-save accuracy preserved).
-      const x = Math.max(0, dist - CALIB.corrD0);
-      const raw = CALIB.corrA * x + CALIB.corrB * x * x - CALIB.corrLawPct * lawTot;
-      corrPct = Math.min(CALIB.corrCap, Math.max(0, raw)) / 100;
+      // EXACT engine law: corr% = table(distance_tiles) − 3%·law, floored at 0. distance in
+      // engine corruption-tiles = euclidean centroid distance × corrTileScale.
+      corrPct = Math.max(0, _corrDistPct(dist * CALIB.corrTileScale, CALIB.corrTable) - CALIB.corrLawPct * lawTot) / 100;
     }
     // corruption gross uses the PRE-H (pre-fortune) tax base: H is a tax-display
     // fortune multiplier and must not cascade into the corruption base (live julii
@@ -2591,6 +2608,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // would show 809 and we can't lift the law without breaking the faction sum. (2026-06-16)
       bracket, taxes: Math.trunc(tTax), farming: Math.round(tFarm), mining: Math.floor(tMine), trade: Math.floor(tTrade), admin: Math.floor(tAdmin),
       corruption: Math.floor(corrAmt),
+      _dist: dist, _gross: (tTaxNoH + tFarm + tMine + tTrade + tAdmin), _law: lawTot,
       corrCalibrated: corrOv != null ? true : undefined,
       // settlement NET income (the in-game scroll's "Net Income"): gross − corruption
       totalIncome: Math.round(tTax + tFarm + tMine + tTrade + tAdmin - corrAmt),
@@ -2637,17 +2655,12 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   if (opts && opts.storedOtherIncome != null && Number.isFinite(opts.storedOtherIncome)) {
     admin = Math.floor(opts.storedOtherIncome);
   }
-  // SAVE-AWARE corruption: the per-town model is ±5-9% (euclidean vs in-game ROAD distance to the
-  // capital — not recoverable from the mod files; governor Law traits ARE already modeled). When a
-  // save provides the exact stored total (Financial Overview "Other" expenditure), calibrate to it
-  // so the loaded-save financials are denarius-exact. Skipped when the user pasted per-town
-  // corrByCity (that already IS the exact per-town truth).
-  if (!corrByCity && opts && opts.storedCorruptionByFaction && Number.isFinite(opts.storedCorruptionByFaction[faction])) {
-    const _stCorr = opts.storedCorruptionByFaction[faction];
-    // guard: only calibrate when the stored value is within 50% of the model — a mis-decoded save
-    // breakdown (the economy parser can misread some saves) must not replace a sane estimate.
-    if (corruption > 0 && _stCorr > 0 && Math.abs(_stCorr - corruption) < 0.5 * corruption) corruption = Math.round(_stCorr);
-  }
+  // CORRUPTION is now computed directly from the EXACT engine distance→% table (see _corrDistPct
+  // + CALIB.corrTable): corr% = table(euclidean·corrTileScale) − 3%·law, floored, ×gross per town.
+  // Validated 2026-07-07 vs a 20-faction save corpus (corruption RATE mean 2.6pp) — the player
+  // faction lands on the in-game Financial Overview to the denarius (julii 3324 vs game 3325). No
+  // save calibration needed; the old economyParser "Other" override read the STORED total, which
+  // the game recomputes ~2% higher at display time, so it was worse than the direct formula.
   const income = Math.round(taxes + farming + mining + trade + admin);
   const army = armyUpkeepEDU(modDataDir, faction, opts && opts.bodyguardUnitsByFaction && opts.bodyguardUnitsByFaction[faction]);
   const preNet = army ? (income - wages - corruption - army.upkeep) : null;

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1238",
+    date: "2026-07-07",
+    items: [
+      { type: "improvement", text: "**Corruption is now computed from the exact engine formula — no input needed.** Replaced the polynomial estimate with Rome: Total War's actual distance-to-capital corruption table (0% within 15 tiles, rising to a 68.5% cap at 100+ tiles) minus 3% of gross income per point of Law. Distance is the settlement's straight-line tiles to the capital. Validated against a 20-faction save corpus: the corruption *rate* matches the game within 2.6 percentage-points on average, and the player faction lands on the in-game Financial Overview to a fraction of a percent (e.g. Julii 3334 vs game 3325). The old save-calibration (which read the stored total the game recomputes ~2% higher at display time) is gone — it's a pure calculation now. The Financial Overview's corruption field stays editable as an optional manual override." },
+    ],
+  },
+  {
     version: "0.9.1237",
     date: "2026-07-07",
     items: [
