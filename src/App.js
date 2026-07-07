@@ -9725,6 +9725,12 @@ function App() {
     return Number.isFinite(v) ? v : -500;
   });
   useEffect(() => { localStorage.setItem("armyBudgetFloor", String(armyBudgetFloor)); }, [armyBudgetFloor]);
+  // CORRUPTION override (2026-07-07): the game's DISPLAYED corruption ("Other" expenditure) is
+  // NOT stored in the save — the save keeps a different number (slot f22) that the game recomputes
+  // at display time, so it's unrecoverable to the denarius. Let the user paste the exact value off
+  // the in-game Financial Overview, keyed per faction, persisted.
+  const [corrOverrides, setCorrOverrides] = useState(() => { try { return JSON.parse(localStorage.getItem("corrOverridesV1") || "{}"); } catch { return {}; } });
+  useEffect(() => { try { localStorage.setItem("corrOverridesV1", JSON.stringify(corrOverrides)); } catch { /* quota */ } }, [corrOverrides]);
   // PER-CAMPAIGN TAX CALIBRATION (H lock, 2026-06-12): the user pastes the game's
   // live per-town tax readings; the app computes H = live/model snapped to the
   // engine's 0.05 grid (see src/taxCalib.js) and persists it per modDir+faction.
@@ -23105,7 +23111,10 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                           const units = (typeof t.armyUnits === "number") ? t.armyUnits : ((d && d.summary && typeof d.summary.totalArmyUnits === "number") ? d.summary.totalArmyUnits : null);
                           const gens = (d && Array.isArray(d.characters)) ? d.characters.length : null;
                           const incTotal = t.income;
-                          const expTotal = t.wages + (army || 0) + t.corruption;
+                          const corrOv = corrOverrides[fac];
+                          const corrLocked = (typeof corrOv === "number" && Number.isFinite(corrOv) && corrOv >= 0);
+                          const corr = corrLocked ? corrOv : t.corruption;
+                          const expTotal = t.wages + (army || 0) + corr;
                           const net = incTotal - expTotal;
                           const fmt = (n) => n == null ? "—" : Math.round(n).toLocaleString();
                           const R = "#c0674a", G = "#7fae56"; // red = base (pop), green = modifiers, matching the game tooltip colours
@@ -23137,7 +23146,19 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                               {row("Army upkeep", army, <span style={{ color: "#9a8f78" }}>Units: {units != null ? units : "—"}</span>)}
                               {row("Recruitment", 0, <span style={{ color: "#9a8f78" }}>Units: 0; Agents: 0</span>)}
                               {row("Construction", 0, <span style={{ color: "#9a8f78" }}>Buildings: 0</span>)}
-                              {row("Other", t.corruption, <span style={{ color: "#9a8f78" }}>Corruption (distance from capital − law)</span>)}
+                              <div key="Other-corruption" style={{ display: "grid", gridTemplateColumns: "120px 1fr 70px", alignItems: "baseline", padding: "3px 10px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: "0.8rem" }}>
+                                <span style={{ color: "#cdbfa0", fontWeight: 600 }}>Other</span>
+                                <span style={{ fontSize: "0.67rem", lineHeight: 1.2, color: "#9a8f78" }}>
+                                  Corruption (road distance from capital − law){" "}
+                                  <span style={{ color: "#8899aa" }} title="The game's DISPLAYED corruption isn't stored in the save (it's recomputed at display time), so it can't be read exactly. Type the value from the in-game Financial Overview to lock it; leave blank to use the estimate.">
+                                    — <input type="number" value={corrLocked ? corrOv : ""} placeholder={`est ${Math.round(t.corruption)}`}
+                                      onChange={(ev) => { const raw = ev.target.value.trim(); setCorrOverrides((o) => { const n = { ...o }; if (raw === "") delete n[fac]; else { const v = parseInt(raw, 10); if (Number.isFinite(v)) n[fac] = v; } return n; }); }}
+                                      style={{ width: 58, background: "rgba(0,0,0,0.35)", color: corrLocked ? "#9fe89f" : "#eee", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 4, padding: "1px 4px", fontSize: "0.67rem" }} />
+                                    {corrLocked ? <span style={{ color: "#7fd17f", marginLeft: 4 }}>locked ✓</span> : <span style={{ color: "#8899aa", marginLeft: 4 }}>paste game value</span>}
+                                  </span>
+                                </span>
+                                <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: corrLocked ? "#9fe89f" : (corr ? "#eee" : "#778") }}>{fmt(corr)}</span>
+                              </div>
                               <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 10px", background: "rgba(255,255,255,0.06)", borderTop: "1px solid rgba(255,255,255,0.16)" }}>
                                 <strong style={{ color: "#b8d38f" }}>Net income</strong>
                                 <strong style={{ color: net >= 0 ? "#7fd17f" : "#e8806a", fontVariantNumeric: "tabular-nums" }}>{net >= 0 ? "+" : ""}{fmt(net)}</strong>

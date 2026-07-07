@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1237",
+    date: "2026-07-07",
+    items: [
+      { type: "feature", text: "**Corruption in the Financial Overview is now editable.** The game's *displayed* corruption isn't stored in the save — it's recomputed at display time, differing from the stored value by a small amount — so it can't be read to the denarius automatically. The \"Other\" expenditure row now has an input: type the exact value off the in-game Financial Overview once (per faction, persisted) and it locks, recomputing the expenditure total and net income to match the game exactly. Leave it blank to use the model estimate." },
+    ],
+  },
+  {
     version: "0.9.1236",
     date: "2026-07-07",
     items: [
