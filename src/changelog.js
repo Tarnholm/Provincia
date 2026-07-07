@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1236",
+    date: "2026-07-07",
+    items: [
+      { type: "fix", text: "**Army upkeep is now save-aware everywhere in the budget panel** (header, the current-army line, and the Financial Overview), not just in some places. It was mixing the army-setup panel's no-save estimate (e.g. 27713) with the budget's save-calibrated value (27883, which matches the game); all of them now use the save-aware figure when a save is loaded." },
+    ],
+  },
+  {
     version: "0.9.1235",
     date: "2026-07-07",
     items: [

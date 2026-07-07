@@ -22773,8 +22773,10 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
             const t1 = await t1Promise;
             if (t1 && !t1.error && t1.totals) {
               setArmyT1Budget(t1);
-              if (typeof t1.totals.armyBudget === "number" && r && typeof r.armyUpkeep === "number") {
-                setArmyProjIncome(String(t1.totals.armyBudget - r.armyUpkeep));
+              if (typeof t1.totals.armyBudget === "number") {
+                // prefer the budget's save-aware army upkeep over the army-setup no-save formula
+                const au = (typeof t1.totals.armyUpkeep === "number" && t1.totals.armyUpkeep > 0) ? t1.totals.armyUpkeep : (r && typeof r.armyUpkeep === "number" ? r.armyUpkeep : null);
+                if (au != null) setArmyProjIncome(String(t1.totals.armyBudget - au));
               }
             } else {
               setArmyT1Budget({ error: (t1 && t1.error) || "turn-1 budget returned no result", faction: ff });
@@ -22990,7 +22992,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                       <input type="number" value={armyBudgetFloor} step={50}
                         onChange={(ev) => { const v = parseInt(ev.target.value, 10); if (Number.isFinite(v)) setArmyBudgetFloor(v); }}
                         style={{ width: 80, background: "rgba(0,0,0,0.4)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 4, padding: "2px 6px" }} />
-                      <span style={{ fontSize: "0.72rem", color: "#8aa" }}>treasury {d.denari ?? "—"} · army upkeep {d.armyUpkeep}</span>
+                      <span style={{ fontSize: "0.72rem", color: "#8aa" }}>treasury {d.denari ?? "—"} · army upkeep {(armyT1Budget && armyT1Budget.totals && armyT1Budget.faction === fac && typeof armyT1Budget.totals.armyUpkeep === "number" && armyT1Budget.totals.armyUpkeep > 0) ? armyT1Budget.totals.armyUpkeep : d.armyUpkeep}</span>
                     </div>
                     {(() => {
                       const proj = parseInt(armyProjIncome, 10);
@@ -23026,7 +23028,10 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                     const t = armyT1Budget.totals;
                     const BRB = { low: "Low", normal: "Normal", high: "High", very_high: "V.High" };
                     const BRC = { low: "#9fd3ff", normal: "#cfcf8f", high: "#e8b85a", very_high: "#e8806a" };
-                    const netAfterArmy = (d && typeof d.armyUpkeep === "number") ? t.armyBudget - d.armyUpkeep : null;
+                    // Prefer the budget's SAVE-AWARE army upkeep (t.armyUpkeep) over the army-setup
+                    // panel's no-save formula (d.armyUpkeep) — the save-aware one matches the game.
+                    const actualArmy = (typeof t.armyUpkeep === "number" && t.armyUpkeep > 0) ? t.armyUpkeep : ((d && typeof d.armyUpkeep === "number") ? d.armyUpkeep : null);
+                    const netAfterArmy = (actualArmy != null) ? t.armyBudget - actualArmy : null;
                     return (
                       <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(143,180,110,0.10)", border: "1px solid rgba(143,180,110,0.4)" }}>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
@@ -23160,8 +23165,8 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                           }
                           return (
                             <div style={{ marginTop: 6, fontSize: "0.88rem", padding: "5px 8px", borderRadius: 4, background: "rgba(0,0,0,0.25)" }}
-                              title={`Sustainable army budget ${t.armyBudget} − current starting army ≈${d.armyUpkeep} (EDU estimate) = net ≈${netAfterArmy}. With your deficit floor of ${armyBudgetFloor}, you can add roughly ${room} more upkeep of NEW troops before crossing it.`}>
-                              <span style={{ color: "#cdc" }}>− current army ≈<b>{d.armyUpkeep}</b> = net ≈<b style={{ color: netAfterArmy >= 0 ? "#7fd17f" : "#e8806a" }}>{netAfterArmy}</b>/turn</span>
+                              title={`Sustainable army budget ${t.armyBudget} − current starting army ≈${actualArmy} = net ≈${netAfterArmy}. With your deficit floor of ${armyBudgetFloor}, you can add roughly ${room} more upkeep of NEW troops before crossing it.`}>
+                              <span style={{ color: "#cdc" }}>− current army ≈<b>{actualArmy}</b> = net ≈<b style={{ color: netAfterArmy >= 0 ? "#7fd17f" : "#e8806a" }}>{netAfterArmy}</b>/turn</span>
                               {room >= 0
                                 ? <span style={{ marginLeft: 14, color: "#9fe89f", fontWeight: 700 }}>⚔ room for ≈{room} upkeep of new troops <span style={{ color: "#889", fontSize: "0.7rem", fontWeight: 400 }}>(to the {armyBudgetFloor} floor)</span></span>
                                 : <span style={{ marginLeft: 14, color: "#e8806a", fontWeight: 700 }}>⚠ OVER BUDGET by {-room} <span style={{ color: "#889", fontSize: "0.7rem", fontWeight: 400 }}>(vs the {armyBudgetFloor} floor)</span></span>}
