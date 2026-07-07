@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1240",
+    date: "2026-07-07",
+    items: [
+      { type: "improvement", text: "**Corruption now uses each settlement's exact Law bonus.** The engine reduces corruption by the settlement's public-order Law value, and the save stores that exactly (its order-breakdown array is indexed by penalty type — index 1 is Law). Provincia's building/trait Law estimate carried ±1 error, which was the main source of the corruption residual. With the exact Law wired in, per-town corruption lands on the game (e.g. Arretium 143 vs 141, Croton 257 vs 263 — was off by ~40), and the distance scale is corrected to straight-line tiles × 1.0. Remaining per-town gaps trace to income (tax bracket) differences, not the corruption formula." },
+    ],
+  },
+  {
     version: "0.9.1239",
     date: "2026-07-07",
     items: [

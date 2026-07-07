@@ -738,7 +738,10 @@ const CALIB = {
   // the PLAYER faction julii lands EXACT on the game FO 3325). Replaces the polynomial fit.
   // corrTileScale converts save/centroid tile units → the engine's corruption-distance tiles.
   corrTable: [[15, 0], [20, 4], [25, 8], [30, 11.5], [35, 15], [40, 20], [45, 24.5], [50, 28], [60, 34], [70, 41.5], [80, 51], [90, 60], [100, 68.5]],
-  corrTileScale: 1.05,
+  // straight-line euclidean centroid tiles ≈ the engine's distance metric (per-town live-validated:
+  // Arretium 0.995, Croton 1.016 vs exact game corruption). Was 1.05 to absorb the ±1 law-parse
+  // error; with the exact save law that error is gone, so the true scale is ~1.0.
+  corrTileScale: 1.0,
   corrNegLawShift: 4, // tiles of effective distance per NEGATIVE law point (Pisae console probe + cyrene trio)
   corrCap: 60, // far-distance saturation (live Egypt: d141/226/351 all read 59-64% — NOT the old 90% linear climb)
   seaLaneMaxDist: 40, riverBodyMaxCells: 1500, seaFlowRiverMult: 1.0, // river flows run hotter (Nile live 713/605/519) // sea-path tiles; lanes are local (live: Kyrenaica forms NO Aegean lanes; Sena→Nesactium ~15 allowed)
@@ -2554,7 +2557,11 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // Model law parses with ±1 noise (trait levels, task #16) — at EXACTLY 3 the
       // model half-weights the curve to absorb the boundary uncertainty.
       // Validation: julii Σ2,544/2,496 (+1.9%%), cyrene Σ1,019/1,009 (+1.0%%).
-      lawTot = (s.lawBonus || 0) + (gv0 ? (gv0.lawCorr != null ? gv0.lawCorr : (gv0.law || 0)) : 0);
+      // LAW for corruption = the settlement's exact PO "law" bonus (the save's public-order
+      // breakdown, index 1 = law). Live: read the authoritative value (opts.lawByCity, from
+      // orderBreakdown[1]) — the EDB/trait-computed law carried ±1 noise. No-save: computed estimate.
+      const _saveLaw = (opts && opts.lawByCity) ? (opts.lawByCity[s.settlement] != null ? opts.lawByCity[s.settlement] : opts.lawByCity[s.region]) : undefined;
+      lawTot = Number.isFinite(_saveLaw) ? _saveLaw : ((s.lawBonus || 0) + (gv0 ? (gv0.lawCorr != null ? gv0.lawCorr : (gv0.law || 0)) : 0));
       // GRAND REFIT (2026-06-11 evening, 91 towns with PANEL-READ law across julii/
       // cyrene/egypt + console probes): corruption is LAW-SUBTRACTIVE, not a threshold:
       // corr% = min(cap, max(0, a*x + b*x^2 - lawPct*lawPts)), x = d - d0. Joint refit on

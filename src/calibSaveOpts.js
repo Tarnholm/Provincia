@@ -77,6 +77,15 @@ function buildCalibSaveOpts(modDataDir, savePath) {
       const ob = sf[c].orderBreakdown;
       if (Array.isArray(ob) && typeof ob[12] === "number" && isFinite(ob[12])) cultPenByCity[c] = ob[12] * 5;
     }
+    // EXACT per-settlement LAW bonus for CORRUPTION (2026-07-07): the save's public-order breakdown
+    // array is indexed by penalty type, and index 1 = the settlement's "law" bonus. The engine's
+    // corruption reduction uses this exact PO Law bonus (pips); the descr_strat/EDB-computed law
+    // carried ±1 noise. Use the save's authoritative value in live mode.
+    const lawByCity = {};
+    for (const c of Object.keys(sf)) {
+      const ob = sf[c].orderBreakdown;
+      if (Array.isArray(ob) && typeof ob[1] === "number" && isFinite(ob[1])) lawByCity[c] = ob[1];
+    }
     // governor trait effects (incl. follower/ancillary folds) per settlement
     let govEffectByCity = {};
     try {
@@ -127,6 +136,7 @@ function buildCalibSaveOpts(modDataDir, savePath) {
     if (Object.keys(govEffectByCity).length) opts.govEffectByCity = govEffectByCity;
     if (Object.keys(popByCity).length) opts.popByCity = popByCity;
     if (Object.keys(cultPenByCity).length) opts.cultPenByCity = cultPenByCity;
+    if (Object.keys(lawByCity).length) opts.lawByCity = lawByCity;
     if (Object.keys(bodyguardUnitsByFaction).length) opts.bodyguardUnitsByFaction = bodyguardUnitsByFaction;
     if (storedCorruptionByFaction) opts.storedCorruptionByFaction = storedCorruptionByFaction;
     out.opts = Object.keys(opts).length ? opts : null;
