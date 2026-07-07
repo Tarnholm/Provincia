@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1233",
+    date: "2026-07-07",
+    items: [
+      { type: "fix", text: "**Trade fully restored after the RIS map update (denarius-exact again).** Following the RLE-map fix, the remaining map readers — trade-resource deposits, mining, region adjacency, sea bodies, and the ground-types map — were still reading the compressed maps raw, which zeroed out every settlement's export goods (so land AND sea routes read a fraction of the real value). All map readers now decode compressed maps. Result: Rome's turn-1 trade matches the game's scroll exactly (1408), and the faction trade total lands within a handful of the game (4502 vs 4508) — with no per-map re-calibration, because the model now reads the new map correctly and the engine's own trade logic flows through. Vanilla and RIS trade corpora both 25/25." },
+    ],
+  },
+  {
     version: "0.9.1232",
     date: "2026-07-07",
     items: [

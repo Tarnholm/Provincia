@@ -1142,9 +1142,9 @@ function regionAdjacency(modDataDir) {
   try {
     const dg = require("./descrStratGeneral.js");
     const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
-    const buf = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga"));
-    const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), desc = buf[17];
-    const dataOff = 18 + buf[0];
+    const _tga = require("./descrStratGeneral.js").tgaToRaw(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga")));
+    const W = _tga.W, H = _tga.H, desc = _tga.desc, buf = _tga.raw; // buf = DECODED raw pixels (handles RLE)
+    const dataOff = 0;
     const bottomLeft = (desc & 0x20) === 0;
     const key = (col, rowTop) => { const r = bottomLeft ? (H - 1 - rowTop) : rowTop; const o = dataOff + (r * W + col) * 3; return buf[o + 2] + "," + buf[o + 1] + "," + buf[o]; };
     const add = (a, b) => { (adj[a] = adj[a] || new Set()).add(b); (adj[b] = adj[b] || new Set()).add(a); const kk = a < b ? a + "|" + b : b + "|" + a; blen[kk] = (blen[kk] || 0) + 1; };
@@ -1176,9 +1176,9 @@ function regionSeaBodies(modDataDir) {
   try {
     const dg = require("./descrStratGeneral.js");
     const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
-    const buf = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga"));
-    const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), desc = buf[17];
-    const dataOff = 18 + buf[0];
+    const _tga = require("./descrStratGeneral.js").tgaToRaw(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga")));
+    const W = _tga.W, H = _tga.H, desc = _tga.desc, buf = _tga.raw; // buf = DECODED raw pixels (handles RLE)
+    const dataOff = 0;
     const bottomLeft = (desc & 0x20) === 0;
     const colorAt = (col, rowTop) => { const r = bottomLeft ? (H - 1 - rowTop) : rowTop; const o = dataOff + (r * W + col) * 3; return buf[o + 2] + "," + buf[o + 1] + "," + buf[o]; };
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -1207,9 +1207,9 @@ function mineQtyValByRegion(modDataDir) {
   try {
     const dg = require("./descrStratGeneral.js");
     const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
-    const buf = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga"));
-    const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), desc = buf[17];
-    const dataOff = 18 + buf[0];
+    const _tga = require("./descrStratGeneral.js").tgaToRaw(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga")));
+    const W = _tga.W, H = _tga.H, desc = _tga.desc, buf = _tga.raw; // buf = DECODED raw pixels (handles RLE)
+    const dataOff = 0;
     const bottomLeft = (desc & 0x20) === 0;
     const regionAt = (x, yGame) => {
       const rowTop = H - 1 - yGame;
@@ -1252,9 +1252,9 @@ function wonderOwners(modDataDir) {
   try {
     const dg = require("./descrStratGeneral.js");
     const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
-    const buf = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga"));
-    const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), desc = buf[17];
-    const dataOff = 18 + buf[0];
+    const _tga = require("./descrStratGeneral.js").tgaToRaw(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga")));
+    const W = _tga.W, H = _tga.H, desc = _tga.desc, buf = _tga.raw; // buf = DECODED raw pixels (handles RLE)
+    const dataOff = 0;
     const bottomLeft = (desc & 0x20) === 0;
     const regionAt = (x, yGame) => {
       const rowTop = H - 1 - yGame;
@@ -1346,9 +1346,9 @@ function tradeQtyValByRegion(modDataDir) {
   try {
     const dg = require("./descrStratGeneral.js");
     const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
-    const buf = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga"));
-    const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), desc = buf[17];
-    const dataOff = 18 + buf[0];
+    const _tga = require("./descrStratGeneral.js").tgaToRaw(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga")));
+    const W = _tga.W, H = _tga.H, desc = _tga.desc, buf = _tga.raw; // buf = DECODED raw pixels (handles RLE)
+    const dataOff = 0;
     const bottomLeft = (desc & 0x20) === 0;
     const regionAt = (x, yGame) => {
       const rowTop = H - 1 - yGame;
@@ -1399,9 +1399,9 @@ function tradeQtyMapsByRegion(modDataDir) {
   try {
     const dg = require("./descrStratGeneral.js");
     const { rgbToRegion } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
-    const buf = fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga"));
-    const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), desc = buf[17];
-    const dataOff = 18 + buf[0];
+    const _tga = require("./descrStratGeneral.js").tgaToRaw(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga")));
+    const W = _tga.W, H = _tga.H, desc = _tga.desc, buf = _tga.raw; // buf = DECODED raw pixels (handles RLE)
+    const dataOff = 0;
     const bottomLeft = (desc & 0x20) === 0;
     const regionAt = (x, yGame) => {
       const rowTop = H - 1 - yGame;
@@ -1689,10 +1689,11 @@ const _seaPortDistCache = {};
 function seaPortDistDepth(modDataDir) {
   if (_seaPortDistCache[modDataDir]) return _seaPortDistCache[modDataDir];
   const base = path.join(modDataDir, "world", "maps", "base");
-  const rbuf = fs.readFileSync(path.join(base, "map_regions.tga"));
-  const RW = rbuf.readUInt16LE(12), RH = rbuf.readUInt16LE(14), rOff = 18 + rbuf[0];
-  const gbuf = fs.readFileSync(path.join(base, "map_ground_types.tga"));
-  const GW2 = gbuf.readUInt16LE(12), GH2 = gbuf.readUInt16LE(14), gOff = 18 + gbuf[0], sxr = GW2 / RW, syr = GH2 / RH;
+  const _dgT = require("./descrStratGeneral.js");
+  const _rt = _dgT.tgaToRaw(fs.readFileSync(path.join(base, "map_regions.tga"))); // decode RLE
+  const RW = _rt.W, RH = _rt.H, rbuf = _rt.raw, rOff = 0;
+  const _gt = _dgT.tgaToRaw(fs.readFileSync(path.join(base, "map_ground_types.tga"))); // decode RLE
+  const GW2 = _gt.W, GH2 = _gt.H, gbuf = _gt.raw, gOff = 0, sxr = GW2 / RW, syr = GH2 / RH;
   const gw = RW, gh = RH, N = gw * gh;
   const sea = new Uint8Array(N), cls = new Uint8Array(N), body = new Uint8Array(N); // body = sea-color (B); rivers are their own bodies
   for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) { const o = rOff + (y * RW + x) * 3; if (rbuf[o + 2] === 41 && rbuf[o + 1] === 140) { const idx = y * gw + x; sea[idx] = 1; body[idx] = rbuf[o]; const go = gOff + (Math.round(y * syr) * GW2 + Math.round(x * sxr)) * 3, R = gbuf[go + 2]; cls[idx] = (gbuf[go + 1] || gbuf[go]) ? 1 : (R >= 180 ? 1 : R >= 100 ? 2 : 3); } }
