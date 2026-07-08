@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1242",
+    date: "2026-07-08",
+    items: [
+      { type: "improvement", text: "**One calibration save for everything.** There were two 🎯 buttons — the map's \"Calibrate\" (portraits/stats) and the Army Setup panel's \"calibration save\" (budget) — easy to confuse. Now attaching a save via the stats Calibrate also feeds the turn-1 budget, so army upkeep / taxes / corruption go save-aware from the same action. (The budget's own calibration-save button still works too.)" },
+    ],
+  },
+  {
     version: "0.9.1241",
     date: "2026-07-08",
     items: [

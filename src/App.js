@@ -12144,6 +12144,10 @@ function App() {
                   pushToast("Calibration failed: " + (res?.error || "unknown"), "warning");
                   return;
                 }
+                // 0.9.1242: UNIFY the two "🎯" saves — a stats-calibration save also becomes the
+                // turn-1 budget's calibration save, so army upkeep / taxes / corruption go save-aware
+                // from the same action (previously the budget had a separate 🎯 button, easy to miss).
+                try { setArmyCalibSaves([pick.path]); } catch { }
                 // 0.9.516: thread v1PortraitsByCoord through so the family
                 // tree picks up v1 portraits in calibrate mode (not just
                 // live save-watch). Without this, the family tree falls to
@@ -17117,6 +17121,8 @@ function App() {
                       pushToast("Calibration failed: " + (res?.error || "unknown"), "warning");
                       return { ok: false };
                     }
+                    // 0.9.1242: also feed the turn-1 budget (see note at the other calibrate site).
+                    try { setArmyCalibSaves([pick.path]); } catch { }
                     if (res.v1PortraitsByCoord) setV1PortraitsByCoord(res.v1PortraitsByCoord);
                     // 0.9.532: faction data from Calibrate (non-live) too.
                     if (res.factionTreasuries) setFactionTreasuries(res.factionTreasuries);
