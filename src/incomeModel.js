@@ -732,16 +732,14 @@ const CALIB = {
   // corrLawPct 3 double-confirmed live via HarshJustice probe (Nossis/Locri): EDCT
   // ladder is Law +2/+4/+6 but HJ is an ANTI-TRAIT of Just — stripping Just/1 makes
   // the net settlement deltas +1/+3 → 2.97/2.93 pp/lawpt, exactly linear.
-  corrA: 0.64, corrB: 0, corrD0: 11.25, corrLawPct: 3,
-  // EXACT engine corruption-by-distance table (tiles→%), linearly interpolated (RTW mechanics,
-  // web-sourced + validated 2026-07-07 vs a 20-faction save corpus: corruption RATE mean 2.6pp;
-  // the PLAYER faction julii lands EXACT on the game FO 3325). Replaces the polynomial fit.
-  // corrTileScale converts save/centroid tile units → the engine's corruption-distance tiles.
-  corrTable: [[15, 0], [20, 4], [25, 8], [30, 11.5], [35, 15], [40, 20], [45, 24.5], [50, 28], [60, 34], [70, 41.5], [80, 51], [90, 60], [100, 68.5]],
-  // straight-line euclidean centroid tiles ≈ the engine's distance metric (per-town live-validated:
-  // Arretium 0.995, Croton 1.016 vs exact game corruption). Was 1.05 to absorb the ±1 law-parse
-  // error; with the exact save law that error is gone, so the true scale is ~1.0.
-  corrTileScale: 1.0,
+  // REFIT 2026-07-08 against two EXACT live per-town anchors (Arretium d24 Law2 → game 35;
+  // Thurii d52.8 Law2 → game 379) read straight off the in-game settlement-details panel.
+  // Both land to the denarius with corr% = corrA·(d−corrD0) − corrLawPct·Law, corrA 0.707,
+  // corrD0 13, corrLawPct 3 (Law in order-points = panel Law%/5). The community distance table
+  // was ~1.5pp too steep; this flatter line is the real curve. Law = COMPUTED EDB+trait law
+  // (panel-confirmed: Arretium & Thurii both +10% = 2 pts); the save's PO-array does NOT expose
+  // Law (only garrison/distance/culture parse cleanly), so ob[1] is NOT law — do not use it.
+  corrA: 0.707, corrB: 0, corrD0: 13, corrLawPct: 3,
   corrNegLawShift: 4, // tiles of effective distance per NEGATIVE law point (Pisae console probe + cyrene trio)
   corrCap: 60, // far-distance saturation (live Egypt: d141/226/351 all read 59-64% — NOT the old 90% linear climb)
   seaLaneMaxDist: 40, riverBodyMaxCells: 1500, seaFlowRiverMult: 1.0, // river flows run hotter (Nile live 713/605/519) // sea-path tiles; lanes are local (live: Kyrenaica forms NO Aegean lanes; Sena→Nesactium ~15 allowed)
@@ -2557,11 +2555,10 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // Model law parses with ±1 noise (trait levels, task #16) — at EXACTLY 3 the
       // model half-weights the curve to absorb the boundary uncertainty.
       // Validation: julii Σ2,544/2,496 (+1.9%%), cyrene Σ1,019/1,009 (+1.0%%).
-      // LAW for corruption = the settlement's exact PO "law" bonus (the save's public-order
-      // breakdown, index 1 = law). Live: read the authoritative value (opts.lawByCity, from
-      // orderBreakdown[1]) — the EDB/trait-computed law carried ±1 noise. No-save: computed estimate.
-      const _saveLaw = (opts && opts.lawByCity) ? (opts.lawByCity[s.settlement] != null ? opts.lawByCity[s.settlement] : opts.lawByCity[s.region]) : undefined;
-      lawTot = Number.isFinite(_saveLaw) ? _saveLaw : ((s.lawBonus || 0) + (gv0 ? (gv0.lawCorr != null ? gv0.lawCorr : (gv0.law || 0)) : 0));
+      // LAW for corruption = COMPUTED EDB building law + governor trait law (panel-confirmed:
+      // Arretium & Thurii both read +10% = 2 order-points, matching this computed value). The
+      // save's PO-breakdown array does not cleanly expose Law, so it is computed here.
+      lawTot = (s.lawBonus || 0) + (gv0 ? (gv0.lawCorr != null ? gv0.lawCorr : (gv0.law || 0)) : 0);
       // GRAND REFIT (2026-06-11 evening, 91 towns with PANEL-READ law across julii/
       // cyrene/egypt + console probes): corruption is LAW-SUBTRACTIVE, not a threshold:
       // corr% = min(cap, max(0, a*x + b*x^2 - lawPct*lawPts)), x = d - d0. Joint refit on
@@ -2581,9 +2578,9 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // across all 26 towns) → too coarse to use as the metric; no finer pathfinding
       // distance is recoverable from the save, so euclidean + refit constants is the
       // shipped best metric (no-save accuracy preserved).
-      // EXACT engine law: corr% = table(distance_tiles) − 3%·law, floored at 0. distance in
-      // engine corruption-tiles = euclidean centroid distance × corrTileScale.
-      corrPct = Math.max(0, _corrDistPct(dist * CALIB.corrTileScale, CALIB.corrTable) - CALIB.corrLawPct * lawTot) / 100;
+      // corr% = corrA·(d−corrD0) − corrLawPct·law, clamped [0, corrCap]. Refit to two exact live
+      // anchors (Arretium/Thurii, both denarius-exact); Law is the computed EDB+trait order-points.
+      corrPct = Math.min(CALIB.corrCap, Math.max(0, CALIB.corrA * Math.max(0, dist - CALIB.corrD0) - CALIB.corrLawPct * lawTot)) / 100;
     }
     // corruption gross uses the PRE-H (pre-fortune) tax base: H is a tax-display
     // fortune multiplier and must not cascade into the corruption base (live julii

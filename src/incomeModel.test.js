@@ -106,9 +106,8 @@ describe("incomeModel — cracked constants", () => {
     // CORRUPTION now uses the EXACT engine distance→% table (CALIB.corrTable) instead of the
     // polynomial fit; law is the exact 3%/point (0.03×gross). corrTileScale = save→engine tile factor.
     expect(im.CALIB.corrLawPct).toBe(3);
-    expect(im.CALIB.corrTileScale).toBe(1.0);
-    expect(im.CALIB.corrTable[0]).toEqual([15, 0]);
-    expect(im.CALIB.corrTable[im.CALIB.corrTable.length - 1]).toEqual([100, 68.5]);
+    expect(im.CALIB.corrA).toBeCloseTo(0.707, 3);
+    expect(im.CALIB.corrD0).toBe(13);
     // AI economy refit 2026-06-11 (215 current-vintage AI ledgers, median ratio 1.000/tier)
     expect(im.CALIB.aiFarmBonus).toBeCloseTo(1.188, 3);
     expect(im.CALIB.aiTaxFixByTier[1]).toBeCloseTo(1.976, 3);

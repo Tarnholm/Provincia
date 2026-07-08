@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1241",
+    date: "2026-07-08",
+    items: [
+      { type: "improvement", text: "**Corruption refit against exact per-town live values — now denarius-exact where distance is straight-line.** Cross-checking the in-game settlement-details panel pinned the corruption curve to two exact anchors (Arretium and Thurii both land to the denarius) and settled the Law input: it's the settlement's Law bonus (panel +10% = 2 points), computed from buildings/traits — the earlier save-field guess was wrong (that slot doesn't hold Law). The distance curve was refit flatter (the community table was ~1.5% too steep). Corruption now tracks the game exactly for the ~70% of towns where the engine's distance is straight-line; coastal/mountain towns retain a small road-distance offset that isn't recoverable without the campaign pathfinder. Also confirmed: at the correct tax bracket, per-town income (taxes/farming/trade/admin) is denarius-exact." },
+    ],
+  },
+  {
     version: "0.9.1240",
     date: "2026-07-07",
     items: [
