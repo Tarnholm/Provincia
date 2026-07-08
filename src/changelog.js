@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1243",
+    date: "2026-07-08",
+    items: [
+      { type: "fix", text: "**Army upkeep is now save-aware (denarius-exact) in the budget.** The turn-1 budget handler was silently dropping the save's real bodyguard sizes — it forwarded governor traits and populations to the income model but not the bodyguard data — so army upkeep always fell back to the descr_strat formula estimate even with a calibration save attached (reading ~170 low, e.g. 27692 vs the game's 27862). It now forwards the save's bodyguards (and the exact culture-penalty), so army upkeep matches the game exactly." },
+    ],
+  },
+  {
     version: "0.9.1242",
     date: "2026-07-08",
     items: [

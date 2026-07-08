@@ -6596,6 +6596,11 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
     const budget = im.computeTurn1Budget(modDataDir, faction, bracketByCity,
       { ...(opts && opts.govEffectByCity ? { govEffectByCity: opts.govEffectByCity } : {}),
         ...(opts && opts.popByCity ? { popByCity: opts.popByCity } : {}),
+        // FIX 2026-07-08: forward the save's real bodyguard sizes so army upkeep is save-aware
+        // (denarius-exact). Previously dropped here → the budget always used the no-save formula
+        // even with a calibration save attached (army read ~170 low).
+        ...(opts && opts.bodyguardUnitsByFaction ? { bodyguardUnitsByFaction: opts.bodyguardUnitsByFaction } : {}),
+        ...(opts && opts.cultPenByCity ? { cultPenByCity: opts.cultPenByCity } : {}),
         ...(nTaxH ? { taxHByCity: taxH } : {}),
         ...(nCorr ? { corrByCity: corr } : {}),
         ...(asAI ? { asAI: true, isPlayer: false } : (humanDifficulty ? { humanDifficulty } : {})) });
