@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1244",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**Faster launch and a lighter app.** The release-notes history and several heavy panels (family tree, unit lists, save insights, the character info popup) now load on demand instead of up front, roughly halving the code the app parses at startup." },
+      { type: "improvement", text: "**Smoother during save loads.** Reading a campaign save (30-45 MB) no longer briefly freezes the window — the read happens in the background so the UI keeps responding." },
+      { type: "fix", text: "**Hardening.** Tightened the app's internal file access so it only reads/writes inside folders you've chosen (your mod and its save/config dirs), sandboxed the app windows, and pinned how the Scripts suite finds Python. No change to normal use." },
+    ],
+  },
+  {
     version: "0.9.1243",
     date: "2026-07-08",
     items: [

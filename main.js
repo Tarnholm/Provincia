@@ -5982,16 +5982,25 @@ ipcMain.handle("replace-building-icon", async (_event, modDataDir, culture, leve
 ipcMain.handle("revert-building-icon", async (_event, destPath, backupPath) => {
   console.log(`[icon-replace] revert IPC: dest=${destPath || "(none)"} backup=${backupPath || "(none)"}`);
   if (!destPath) return { ok: false, error: "no destination path" };
+  // CONTAINMENT (2026-07-15): both paths are a write+delete primitive. They
+  // were produced by replace-building-icon, which only ever writes under the
+  // active mod's ui tree — so require them to resolve inside activeModDataDir.
+  // Without this a compromised renderer could pass any paths to copy/unlink.
+  if (!activeModDataDir) return { ok: false, error: "no active mod" };
+  const safeDest = pathSafety.containedPath(activeModDataDir, destPath);
+  if (!safeDest) { console.warn(`[icon-replace] revert refused (dest outside mod): ${destPath}`); return { ok: false, error: "destination outside the active mod dir" }; }
+  const safeBackup = backupPath ? pathSafety.containedPath(activeModDataDir, backupPath) : null;
+  if (backupPath && !safeBackup) { console.warn(`[icon-replace] revert refused (backup outside mod): ${backupPath}`); return { ok: false, error: "backup outside the active mod dir" }; }
   try {
-    if (backupPath && fs.existsSync(backupPath)) {
-      fs.copyFileSync(backupPath, destPath);
-      try { fs.unlinkSync(backupPath); } catch {}
-      console.log(`[icon-replace] revert-restored: ${backupPath} → ${destPath}`);
+    if (safeBackup && fs.existsSync(safeBackup)) {
+      fs.copyFileSync(safeBackup, safeDest);
+      try { fs.unlinkSync(safeBackup); } catch {}
+      console.log(`[icon-replace] revert-restored: ${safeBackup} → ${safeDest}`);
       return { ok: true, restored: true };
     }
-    if (fs.existsSync(destPath)) {
-      fs.unlinkSync(destPath);
-      console.log(`[icon-replace] revert-deleted (no backup): ${destPath}`);
+    if (fs.existsSync(safeDest)) {
+      fs.unlinkSync(safeDest);
+      console.log(`[icon-replace] revert-deleted (no backup): ${safeDest}`);
       return { ok: true, restored: false, deleted: true };
     }
     return { ok: true, restored: false, deleted: false };

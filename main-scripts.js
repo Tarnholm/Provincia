@@ -1920,6 +1920,7 @@ ipcMain.handle('sps:get-mod-prefs', async () => {
 
 // Load mod files into config dir
 ipcMain.handle('sps:load-mod-files', async (_, dataDir, campaignName) => {
+  if (!safeProfileSegment(campaignName)) return { success: false, error: 'invalid campaign name' };
   try {
     const configDir = path.join(PROJECT_ROOT, 'config');
     const campaignDir = path.join(dataDir, 'world', 'maps', 'campaign', campaignName);
@@ -2128,6 +2129,10 @@ function findAllCampaignFileLocations(dataDir, campaignName, fileName) {
 
 // Save processed files back to the mod folder
 ipcMain.handle('sps:save-back-to-mod', async (_, dataDir, campaignName) => {
+  // campaignName is interpolated into write paths (…/campaign/<campaignName>/…);
+  // a `..` segment would let a processed file land outside the campaign tree.
+  // It is always one of the fixed campaign dir names, so require a safe segment.
+  if (!safeProfileSegment(campaignName)) return { success: false, error: 'invalid campaign name' };
   try {
     const configDir = path.join(PROJECT_ROOT, 'config');
     const outputDir = path.join(PROJECT_ROOT, 'processed_output');
