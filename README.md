@@ -1,77 +1,72 @@
 # Provincia
 
+**Provincia** is a desktop viewer and editor for *Rome: Total War Remastered*
+campaigns — an interactive province map with faction/culture/religion/economy
+overlays, deep settlement panels, family trees, save-game inspection and
+editing, and a reverse-engineered model of the game's economy.
+
 > **RIS engine-law reference:** [docs/LAWS.md](docs/LAWS.md) — the complete catalog of
 > cracked RTW:Remastered economy & public-order laws (farming/wages/army
 > upkeep/taxes + H roll/admin/corruption/sea & land trade/tribute/AI tiers/PO), with
 > probe evidence. Earlier income spec: [docs/INCOME_MODEL.md](docs/INCOME_MODEL.md).
+> Trade connectivity model: [docs/TRADE_MODEL.md](docs/TRADE_MODEL.md).
 
-# Getting Started with Create React App
+## Stack
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+- **Electron** (`main.js`, `preload.js`) — main process owns save parsing,
+  file IO, mod-data loading, watchers, and auto-update.
+- **React 18 + Vite** (`src/`) — the renderer. Source uses plain `.js` files
+  containing JSX (CRA convention); `vite.config.js` forces the esbuild `jsx`
+  loader for all `.js`.
+- **Embedded Python** (`python-runtime/`, `scripts-suite-py/`) — the
+  "Settlement Processor" Scripts suite (`main-scripts.js`), run through a
+  bundled interpreter fetched by `scripts/fetch-runtime.js`.
+- **Vitest** — unit tests for the parser/model layer (`src/*.test.js`).
 
-## Available Scripts
+## Development
 
-In the project directory, you can run:
+```sh
+npm install
 
-### `npm start`
+# Simple loop: build the renderer, then launch Electron against build/
+npm run build
+npm run electron
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+# HMR loop: Vite dev server on :3000 + Electron pointed at it
+npm start                        # terminal 1 (vite)
+DEV_USE_SERVER=1 npm run electron  # terminal 2 (PowerShell: $env:DEV_USE_SERVER="1"; npm run electron)
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+`npm test` runs the Vitest suite. Some accuracy suites need local calibration
+saves (not committed) and skip without them.
 
-### `npm test`
+## Building & releasing
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```sh
+npm run dist:win     # NSIS installer  → dist/
+npm run dist:mac     # DMG (x64 + arm64)
+npm run dist:linux   # AppImage
+```
 
-### `npm run build`
+`prebuild` runs automatically before `build`:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- `scripts/bundle-mod-data.js` — bundles RIS mod data files into `public/`
+- `scripts/fetch-runtime.js` — fetches the embeddable Python runtime + Monaco
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Release flow: the Windows installer is built locally with `npm run dist:win`
+and published as a GitHub release; the `build-mac.yml` GitHub Action then
+builds and attaches the mac DMG when the release is created. Auto-updates are
+served from GitHub Releases via `electron-updater`.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Repository layout
 
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+| Path | Purpose |
+|---|---|
+| `main.js` | Electron main process: IPC handlers, save cracking, watchers |
+| `main-scripts.js` | Scripts window backend (Python pipeline, `sps:*` IPC) |
+| `preload.js` / `preload-scripts.js` | contextBridge APIs for the two windows |
+| `src/` | React renderer + save parsers + economy/PO/growth models |
+| `docs/` | Cracked engine-law documentation and ground-truth corpora |
+| `scripts/` | Build scripts (`bundle-mod-data`, `fetch-runtime`, …) and research scratch |
+| `scripts-suite-py/` | Python Settlement Processor suite (bundled as `app_data`) |
+| `bundled-mod/` | Minimal mod data shipped inside the installer |

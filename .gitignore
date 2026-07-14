@@ -57,4 +57,11 @@ __pycache__/
 /derived/treasury_run_imperial/
 
 tmp-*.json
+tmp_*
 _scratch/
+
+# Generated outputs of the Python Scripts suite (regenerated each run)
+/scripts-suite-py/processed_output/
+
+# Regenerated descr_strat exports (named after local save files)
+/derived/*.txt

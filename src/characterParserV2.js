@@ -1,6 +1,10 @@
 // src/characterParserV2.js
 //
-// v2 character record parser for RTW: Alexander saves.
+// v2 character record parser. Originally cracked against RTW: Alexander
+// saves; now the PRIMARY named-character parser for RTW:R saves too —
+// main.js parseCharactersAndUnits() uses this parser for character data,
+// keeping v1 (characterParser.js) only for the per-unit-region resolver
+// (findCharacterRegion).
 //
 // Confirmed layout (scripted leader characters):
 //   +0-3:    uint32 firstName_index (into descr_names_lookup.txt)
