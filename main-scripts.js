@@ -6,8 +6,9 @@
 // bundled runtime (resolvePython), and the working dir lives under userData.
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn, execFileSync } = require('child_process');
 const fs = require('fs');
+const pathSafety = require('./src/pathSafety.js');
 
 // The Scripts child window (created on demand) and a getter for Provincia's
 // currently-loaded mod (wired by registerScriptSuite).
@@ -36,13 +37,56 @@ const SCRIPTS_DIR = app.isPackaged
 // Always under userData so it survives updates and isn't inside the asar.
 const PROJECT_ROOT = path.join(app.getPath('userData'), 'scripts-suite', 'project');
 
-// Resolve the bundled Python interpreter; fall back to system `python` in dev.
+// Containment check for renderer-supplied paths (mirrors main.js resolveInside).
+// Every path the Suite renderer passes to read-file/write-file/read-output-file
+// originates from OUR listings (list-scripts / list-config-files /
+// get-latest-output), and those all hand out paths under PROJECT_ROOT — the
+// .py scripts are seeded into it, config lives in config/, outputs in
+// processed_output/. Mod-dir work goes through dedicated dataDir handlers, and
+// save-file-as gets user consent via a dialog. So anything outside
+// PROJECT_ROOT here is a forged/compromised-renderer request: reject it.
+function insideProject(p) {
+  return pathSafety.containedPath(PROJECT_ROOT, p);
+}
+
+// Resolve the Python interpreter for the .py pipeline.
+// PACKAGED: the bundled runtime, falling back to PATH `python` — UNCHANGED
+// legacy behavior (the runtime ships as an extraResource, so the fallback
+// only ever triggers on a broken install).
+// DEV (pinned 2026-07-15): a bare PATH `python` fallback silently picks up
+// whatever shadows that name (wrong version, a venv, or a planted binary), so
+// resolution is now explicit, in order:
+//   1) repo python-runtime/ (populate via `npm run fetch-runtime`),
+//   2) PROVINCIA_PYTHON env var (explicit pin to an interpreter path),
+//   3) the Windows `py -3` launcher's registered interpreter (absolute path),
+//   4) well-known absolute python3 locations (POSIX dev),
+// and otherwise throws a clear error (surfaces to the Suite console via the
+// rejected run-step IPC) instead of spawning an unpinned PATH lookup.
+let cachedPython = null;
 function resolvePython() {
+  if (cachedPython) return cachedPython;
   const exe = process.platform === 'win32' ? 'python.exe' : path.join('bin', 'python3');
   const bundled = app.isPackaged
     ? path.join(process.resourcesPath, 'python-runtime', exe)
     : path.join(__dirname, 'python-runtime', exe);
-  return fs.existsSync(bundled) ? bundled : 'python';
+  if (fs.existsSync(bundled)) return (cachedPython = bundled);
+  if (app.isPackaged) return (cachedPython = 'python');
+  const pinned = process.env.PROVINCIA_PYTHON;
+  if (pinned && fs.existsSync(pinned)) return (cachedPython = pinned);
+  if (process.platform === 'win32') {
+    try {
+      const out = execFileSync('py', ['-3', '-c', 'import sys; print(sys.executable)'], { encoding: 'utf8', timeout: 10000 }).trim();
+      if (out && fs.existsSync(out)) return (cachedPython = out);
+    } catch { /* py launcher not installed — fall through to the error */ }
+  } else {
+    for (const p of ['/usr/local/bin/python3', '/opt/homebrew/bin/python3', '/usr/bin/python3']) {
+      if (fs.existsSync(p)) return (cachedPython = p);
+    }
+  }
+  throw new Error(
+    'No Python interpreter found for the scripts suite. Run `npm run fetch-runtime` ' +
+    'to fetch the bundled runtime, or set PROVINCIA_PYTHON to a python executable path.'
+  );
 }
 
 // Seed the working dir from the bundle: refresh .py every launch (match the
@@ -110,10 +154,17 @@ function openScriptsWindow() {
       preload: path.join(__dirname, 'preload-scripts.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false,
+      // sandbox on (2026-07-15): preload-scripts.js requires only "electron".
+      sandbox: true,
     },
   });
   scriptsWin.setMenuBarVisibility(false);
+  // Defense-in-depth: the Scripts window never opens child windows or
+  // navigates away from its bundled document.
+  scriptsWin.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  scriptsWin.webContents.on('will-navigate', (e, url) => {
+    if (!url.startsWith('file:')) e.preventDefault();
+  });
   scriptsWin.loadFile(path.join(__dirname, 'scripts-suite', 'index.html'));
   scriptsWin.on('closed', () => { scriptsWin = null; });
   // Replay any pending sps:jump-to once the renderer is up — supports the
@@ -2173,24 +2224,28 @@ ipcMain.handle('sps:list-config-files', async () => {
   }
 });
 
-// Read file
+// Read file (contained: only paths under PROJECT_ROOT — see insideProject)
 ipcMain.handle('sps:read-file', async (_, filePath) => {
+  const safe = insideProject(filePath);
+  if (!safe) return `Error reading file: path outside the scripts-suite project dir`;
   try {
-    return fs.readFileSync(filePath, 'utf-8');
+    return fs.readFileSync(safe, 'utf-8');
   } catch (e) {
     // Try other encodings
     try {
-      return fs.readFileSync(filePath, 'utf-16le');
+      return fs.readFileSync(safe, 'utf-16le');
     } catch (e2) {
       return `Error reading file: ${e.message}`;
     }
   }
 });
 
-// Write file
+// Write file (contained: only paths under PROJECT_ROOT — see insideProject)
 ipcMain.handle('sps:write-file', async (_, filePath, content) => {
+  const safe = insideProject(filePath);
+  if (!safe) return { success: false, error: 'path outside the scripts-suite project dir' };
   try {
-    fs.writeFileSync(filePath, content, 'utf-8');
+    fs.writeFileSync(safe, content, 'utf-8');
     return { success: true };
   } catch (e) {
     return { success: false, error: e.message };
@@ -2292,9 +2347,16 @@ ipcMain.handle('sps:list-profiles', async () => {
   }
 });
 
+// A profile name must be a single path segment — no separators, no `..`, no
+// drive/absolute. Rejects the traversal that turned load-profile into a
+// script-overwrite → run-step RCE chain. Returns the safe name, or null.
+const safeProfileSegment = pathSafety.safeSegment;
+
 // Save rule profile (snapshot all Python scripts)
 ipcMain.handle('sps:save-profile', async (_, profileName, description) => {
-  const profileDir = path.join(PROJECT_ROOT, 'rule_profiles', profileName);
+  const safe = safeProfileSegment(profileName);
+  if (!safe) return { success: false, error: 'invalid profile name' };
+  const profileDir = path.join(PROJECT_ROOT, 'rule_profiles', safe);
   try {
     fs.mkdirSync(profileDir, { recursive: true });
     for (const script of SCRIPT_FILES) {
@@ -2315,7 +2377,9 @@ ipcMain.handle('sps:save-profile', async (_, profileName, description) => {
 
 // Load rule profile (restore Python scripts from snapshot)
 ipcMain.handle('sps:load-profile', async (_, profileName) => {
-  const profileDir = path.join(PROJECT_ROOT, 'rule_profiles', profileName);
+  const safe = safeProfileSegment(profileName);
+  if (!safe) return { success: false, error: 'invalid profile name' };
+  const profileDir = path.join(PROJECT_ROOT, 'rule_profiles', safe);
   try {
     for (const script of SCRIPT_FILES) {
       const src = path.join(profileDir, script);
@@ -2424,7 +2488,7 @@ ipcMain.handle('sps:restore-config', async () => {
 });
 
 // Run pipeline step
-ipcMain.handle('sps:run-step', async (event, stepId, configOverrides) => {
+ipcMain.handle('sps:run-step', async (event, stepId) => {
   const step = PIPELINE_STEPS.find(s => s.id === stepId);
   if (!step) return { success: false, error: 'Unknown step' };
 
@@ -2434,9 +2498,12 @@ ipcMain.handle('sps:run-step', async (event, stepId, configOverrides) => {
   }
 
   return new Promise((resolve) => {
+    // No renderer-supplied env: letting the renderer set PYTHONSTARTUP /
+    // PYTHONPATH / PATH for the child would be an injection surface, and the
+    // only caller (scripts-suite/renderer.js runStep) never passed overrides.
     const proc = spawn(resolvePython(), [scriptPath], {
       cwd: PROJECT_ROOT,
-      env: { ...process.env, ...configOverrides },
+      env: { ...process.env },
     });
 
     let stdout = '';
@@ -2469,8 +2536,6 @@ ipcMain.handle('sps:run-pipeline', async (event, stepIds) => {
   const results = {};
   for (const stepId of stepIds) {
     sendToScripts('pipeline-step-start', stepId);
-    const result = await ipcMain.emit('run-step', event, stepId, {});
-    // We call run-step handler directly
     const step = PIPELINE_STEPS.find(s => s.id === stepId);
     const scriptPath = path.join(PROJECT_ROOT, step.script);
 
@@ -2737,17 +2802,26 @@ ipcMain.handle('sps:get-latest-output', async () => {
 });
 
 // Read output file
+// (contained: get-latest-output only hands out processed_output/ paths)
 ipcMain.handle('sps:read-output-file', async (_, relPath) => {
+  const safe = insideProject(relPath);
+  if (!safe) return `Error: path outside the scripts-suite project dir`;
   try {
-    return fs.readFileSync(relPath, 'utf-8');
+    return fs.readFileSync(safe, 'utf-8');
   } catch (e) {
     return `Error: ${e.message}`;
   }
 });
 
-// Open folder in explorer
+// Open folder in explorer. Contained: only an existing DIRECTORY inside
+// PROJECT_ROOT. openPath() on an arbitrary path would launch it via OS file
+// association (a .exe/.bat path would execute); requiring a real subdirectory
+// of the project dir removes that vector. (No renderer currently calls this.)
 ipcMain.handle('sps:open-folder', async (_, folderPath) => {
-  shell.openPath(folderPath);
+  const safe = insideProject(folderPath);
+  if (!safe) { console.warn('[sps] open-folder refused (outside project):', folderPath); return; }
+  try { if (!fs.statSync(safe).isDirectory()) return; } catch { return; }
+  shell.openPath(safe);
 });
 
 // Building chain → category mapping

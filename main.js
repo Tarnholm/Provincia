@@ -3,6 +3,7 @@ const { app, BrowserWindow, Menu, session, dialog, ipcMain, shell, nativeImage }
 const path = require("path");
 const fs = require("fs");
 const { Worker } = require("worker_threads");
+const pathSafety = require("./src/pathSafety.js");
 
 // RTW:R game TEXT files MUST be written with CRLF line endings. Writing LF
 // silently breaks the engine's descr_* parsers ("Expected faction list starting
@@ -2511,7 +2512,9 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false,
+      // sandbox on (2026-07-15): preload.js requires only "electron"
+      // (contextBridge/ipcRenderer), which the sandboxed preload shim provides.
+      sandbox: true,
       preload: path.join(__dirname, "preload.js"),
     },
   };
@@ -2522,6 +2525,14 @@ function createWindow() {
   const win = new BrowserWindow(winOptions);
   win.setMenuBarVisibility(false);
   if (saved?.maximized) win.maximize();
+
+  // Defense-in-depth: the app never opens child windows or navigates away
+  // from its own document — deny window.open and off-app navigation outright.
+  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  win.webContents.on("will-navigate", (e, url) => {
+    const allowed = useDevServer ? url.startsWith(devServerURL) : url.startsWith("file:");
+    if (!allowed) e.preventDefault();
+  });
 
   // 0.9.865: AUTO-RECOVER from a dead renderer. When a teammate's game CTDs
   // during a live run, the save-watch thrash (workers timing out → sync
@@ -2592,6 +2603,34 @@ function createWindow() {
 // separately so that after selecting a save, the import dialog doesn't open
 // in the saves directory (Electron/Windows otherwise shares state).
 let lastImportDir = null;
+
+// ── Dialog-consented read roots (2026-07-15) ──────────────────────────────
+// The generic read-file / read-file-binary IPC used to read ANY path the
+// renderer asked for. Audit of the renderer call sites (App.js ×3, all in the
+// campaign-import flow) shows every legitimate path comes from a folder the
+// user picked via the select-folder dialog — either this session, or a
+// previous one (the renderer persists lastImport_*.folder in localStorage and
+// re-scans it via scan-folder on launch). So: every dialog pick registers the
+// folder as a consented root, persisted in userData; reads and scans outside
+// consented roots are refused. One-time migration: on the first launch where
+// the store file doesn't exist yet, scan-folder grandfathers the dirs it is
+// asked to scan (they can only come from the app's own saved-import restore),
+// then the store exists and consent becomes strict.
+// Store logic lives in src/consentRoots.js (electron-free, unit-tested in
+// consentRoots.test.js); this is just the app-wired singleton.
+let _consentStore = null;
+function consentStore() {
+  if (!_consentStore) {
+    const { createConsentStore } = require("./src/consentRoots.js");
+    _consentStore = createConsentStore({
+      storePath: path.join(app.getPath("userData"), "consented-read-roots.json"),
+      fs,
+    });
+  }
+  return _consentStore;
+}
+function addConsentedRoot(dir) { consentStore().add(dir); }
+function isConsentedPath(p) { return consentStore().isConsented(p); }
 // Scan a known folder for campaign data — same scan logic as
 // select-folder but skips the dialog. Used by auto-reimport on launch.
 async function scanFolderForCampaigns(dir) {
@@ -2646,6 +2685,13 @@ async function scanFolderForCampaigns(dir) {
 // Scan a known path (no dialog) — used by auto-reimport on launch.
 ipcMain.handle("scan-folder", async (_evt, dir) => {
   if (!dir || !fs.existsSync(dir)) return null;
+  // allowScan: strict consent check, with a one-time grandfather on the first
+  // launch where no store exists (the only callers then are the app's own
+  // saved-import restore paths). See src/consentRoots.js + its tests.
+  if (!consentStore().allowScan(dir)) {
+    console.warn("[consent] scan-folder refused for non-consented dir:", dir);
+    return null;
+  }
   return await scanFolderForCampaigns(dir);
 });
 
@@ -2658,6 +2704,7 @@ ipcMain.handle("select-folder", async () => {
   if (result.canceled || !result.filePaths.length) return null;
   const dir = result.filePaths[0];
   lastImportDir = dir;
+  addConsentedRoot(dir); // user picked it — read-file may now read inside it
 
   const campaignFiles = ["descr_regions.txt", "descr_strat.txt", "descr_win_conditions.txt", "map_regions.tga"];
   const sharedFiles = ["descr_sm_factions.txt"];
@@ -2762,9 +2809,15 @@ ipcMain.handle("find-faction-icons-dir", async (_event, modDir) => {
   return null;
 });
 
-// IPC: read a faction icon TGA file and return as ArrayBuffer
+// IPC: read a faction icon TGA file and return as ArrayBuffer.
+// Narrowed (2026-07-15): only existing *.tga files. Faction icons legitimately
+// live across many trees (every imported mod + the auto-detected vanilla
+// install), so this isn't consent-gated like read-file; the extension guard
+// still stops it being a general "read any file's raw bytes" exfil primitive.
 ipcMain.handle("read-faction-icon", async (_event, filePath) => {
   try {
+    if (!filePath || !/\.tga$/i.test(String(filePath))) return null;
+    if (!fs.statSync(filePath).isFile()) return null;
     const buf = fs.readFileSync(filePath);
     return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
   } catch { return null; }
@@ -6215,13 +6268,16 @@ ipcMain.handle("resolve-unit-card", async (_event, modDataDir, faction, unitName
   return null;
 });
 
-// IPC: read file as text
+// IPC: read file as text (contained: only inside dialog-consented roots —
+// see the consent-store block above scan-folder)
 ipcMain.handle("read-file", async (_event, filePath) => {
+  if (!isConsentedPath(filePath)) { console.warn("[consent] read-file refused:", filePath); return null; }
   try { return fs.readFileSync(filePath, "utf8"); } catch { return null; }
 });
 
-// IPC: read file as binary (returns ArrayBuffer via Buffer)
+// IPC: read file as binary (returns ArrayBuffer via Buffer; same containment)
 ipcMain.handle("read-file-binary", async (_event, filePath) => {
+  if (!isConsentedPath(filePath)) { console.warn("[consent] read-file-binary refused:", filePath); return null; }
   try {
     const buf = fs.readFileSync(filePath);
     return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
@@ -6280,7 +6336,7 @@ ipcMain.handle("write-autosaves", async (_e, json) => {
 ipcMain.handle("crack-save", async (_event, savePath, modDataDir) => {
   try {
     const { crackSave } = require("./src/saveCracker.js");
-    const buf = fs.readFileSync(savePath);
+    const buf = await fs.promises.readFile(savePath); // async: saves are 30-45 MB — don't block the event loop on I/O
     const cracked = crackSave(buf, modDataDir);
     // 0.9.860: attach the per-faction Financial Overview breakdown (income by
     // category, expenditure by category, net) read from the stored econ-history
@@ -6311,7 +6367,7 @@ ipcMain.handle("get-save-economy", async (_event, savePath, modDataDir) => {
     if (!savePath) return { error: "no save path" };
     const { crackSave } = require("./src/saveCracker.js");
     const { parseFinancialOverview } = require("./src/economyParser.js");
-    const buf = fs.readFileSync(savePath);
+    const buf = await fs.promises.readFile(savePath); // async: saves are 30-45 MB — don't block the event loop on I/O
     const cracked = crackSave(buf, modDataDir);
     const economy = parseFinancialOverview(buf, cracked);
     const pf = economy && economy.playerFaction;
@@ -6332,7 +6388,7 @@ ipcMain.handle("get-save-economy", async (_event, savePath, modDataDir) => {
 ipcMain.handle("get-save-player-budget", async (_event, savePath) => {
   try {
     if (!savePath) return { error: "no save path" };
-    const buf = fs.readFileSync(savePath);
+    const buf = await fs.promises.readFile(savePath); // async: saves are 30-45 MB — don't block the event loop on I/O
     const x = require("./src/saveCrackerExtras.js");
     const eco = require("./src/economyParser.js");
     const recs = x.parseFactionTreasuries(buf);
@@ -6350,7 +6406,7 @@ ipcMain.handle("get-save-player-budget", async (_event, savePath) => {
 ipcMain.handle("get-all-faction-budgets", async (_event, savePath, modDataDir, playerHint) => {
   try {
     if (!savePath || !modDataDir) return { error: "savePath + modDataDir required" };
-    const buf = fs.readFileSync(savePath);
+    const buf = await fs.promises.readFile(savePath); // async: saves are 30-45 MB — don't block the event loop on I/O
     const as = require("./src/armySetup.js");
     const r = as.attributeAllBudgets(buf, modDataDir, playerHint);
     if (r && r.byFaction) _writeLog(`[budgets] ${path.basename(savePath)} player=${r.player} located=${r.playerLocated}${r.hinted ? "(hint)" : ""} confidence=${(r.confidence * 100).toFixed(0)}% (${r.matched}/${r.total})`);
@@ -6367,7 +6423,7 @@ ipcMain.handle("get-all-faction-budgets", async (_event, savePath, modDataDir, p
 ipcMain.handle("get-optimal-taxes", async (_event, savePath, modDataDir, playerHint, economyPath) => {
   try {
     if (!savePath || !modDataDir) return { error: "savePath + modDataDir required" };
-    const buf = fs.readFileSync(savePath);
+    const buf = await fs.promises.readFile(savePath); // async: saves are 30-45 MB — don't block the event loop on I/O
     const as = require("./src/armySetup.js");
     const { crackSave } = require("./src/saveCracker.js");
     const cracked = crackSave(buf, modDataDir);
@@ -6404,7 +6460,7 @@ ipcMain.handle("get-strat-tax-plan", async (_event, modDataDir, faction, savePat
     if (savePath && fs.existsSync(savePath)) {
       try {
         const { crackSave } = require("./src/saveCracker.js");
-        const cr = crackSave(fs.readFileSync(savePath), modDataDir);
+        const cr = crackSave(await fs.promises.readFile(savePath), modDataDir);
         const growthDevByCity = {};
         const sf = (cr && cr.settlementFields) || {};
         // committed pops from the calibration save → the tax base tracks the actual
@@ -6790,7 +6846,7 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
       if (savePath) {
         try {
           const as2 = require("./src/armySetup.js");
-          const ab = as2.attributeAllBudgets(fs.readFileSync(savePath), modDataDir, null);
+          const ab = as2.attributeAllBudgets(await fs.promises.readFile(savePath), modDataDir, null);
           const led = ab && ab.byFaction && ab.byFaction[String(faction).toLowerCase()];
           if (led && Number.isFinite(led.net)) {
             budget.saveLedger = { net: led.net, incomeTotal: led.income && led.income.total, taxes: led.income && led.income.taxes,
@@ -7003,7 +7059,7 @@ ipcMain.handle("get-faction-vision", async (_event, savePath, modDataDir, factio
     if (!factionName) return { error: "no faction" };
     const { findFactionRecords, parseFactionKnowledge } = require("./src/factionKnowledgeParser.js");
     const { deriveEngineFactionOrder } = require("./src/saveCrackerExtras.js");
-    const buf = fs.readFileSync(savePath);
+    const buf = await fs.promises.readFile(savePath); // async: saves are 30-45 MB — don't block the event loop on I/O
     const recs = findFactionRecords(buf);
     if (!recs.length) return { error: "no faction records" };
     const GRID_W = 1020, GRID_H = 700, CELLS = GRID_W * GRID_H;
@@ -7094,7 +7150,7 @@ ipcMain.handle("get-vision-faction-list", async (_event, savePath, modDataDir) =
     if (!savePath || !fs.existsSync(savePath)) return { error: "no save path" };
     const { findFactionRecords } = require("./src/factionKnowledgeParser.js");
     const { deriveEngineFactionOrder } = require("./src/saveCrackerExtras.js");
-    const buf = fs.readFileSync(savePath);
+    const buf = await fs.promises.readFile(savePath); // async: saves are 30-45 MB — don't block the event loop on I/O
     const recs = findFactionRecords(buf);
     const GRID_W = 1020, GRID_H = 700, CELLS = GRID_W * GRID_H;
     const stratOrder = readStratFactionOrder(modDataDir);
@@ -7141,7 +7197,7 @@ ipcMain.handle("crack-trade-network", async (_event, savePath, modDataDir, campa
     const { computeTradeNetwork } = require("./src/tradeNetwork.js");
     let buf;
     if (savePath && fs.existsSync(savePath)) {
-      buf = fs.readFileSync(savePath);
+      buf = await fs.promises.readFile(savePath);
     } else if (lastSaveBuf) {
       buf = lastSaveBuf; // live-watch path: reuse the buffer already in memory
     } else {
@@ -7202,16 +7258,28 @@ ipcMain.handle("save-file-as", async (_event, defaultName, content, filterDesc, 
   return result.filePath;
 });
 
+// Resolve `name` inside `baseDir`, rejecting path-traversal escapes
+// (e.g. "..\\..\\x" or an absolute path). Returns the absolute path, or
+// null when the joined path lands outside baseDir. Every IPC handler that
+// takes a renderer-supplied file NAME (not a user-picked path) must route
+// through this — the renderer only ever passes plain names/subpaths.
+function resolveInside(baseDir, name) {
+  return pathSafety.containedPath(baseDir, name);
+}
+
 ipcMain.handle("save-file", async (_event, name, content) => {
   try {
     const userDir = path.join(app.getPath("userData"), "campaign_data");
     if (!fs.existsSync(userDir)) fs.mkdirSync(userDir, { recursive: true });
-    fs.writeFileSync(path.join(userDir, name), gameTextCRLF(name, content), "utf8");
+    const dest = resolveInside(userDir, name);
+    if (!dest) return false;
+    fs.writeFileSync(dest, gameTextCRLF(name, content), "utf8");
     fs.writeFileSync(path.join(userDir, ".version_stamp"), app.getVersion(), "utf8");
     if (!app.isPackaged) {
       try {
         const buildDir = path.join(__dirname, "build");
-        fs.writeFileSync(path.join(buildDir, name), gameTextCRLF(name, content), "utf8");
+        const buildDest = resolveInside(buildDir, name);
+        if (buildDest) fs.writeFileSync(buildDest, gameTextCRLF(name, content), "utf8");
       } catch {}
     }
     return true;
@@ -7224,13 +7292,16 @@ ipcMain.handle("write-binary-file", async (_event, name, dataBuf) => {
   try {
     const userDir = path.join(app.getPath("userData"), "campaign_data");
     if (!fs.existsSync(userDir)) fs.mkdirSync(userDir, { recursive: true });
+    const dest = resolveInside(userDir, name);
+    if (!dest) return false;
     const buf = Buffer.isBuffer(dataBuf) ? dataBuf : Buffer.from(dataBuf);
-    fs.writeFileSync(path.join(userDir, name), buf);
+    fs.writeFileSync(dest, buf);
     fs.writeFileSync(path.join(userDir, ".version_stamp"), app.getVersion(), "utf8");
     if (!app.isPackaged) {
       try {
         const buildDir = path.join(__dirname, "build");
-        fs.writeFileSync(path.join(buildDir, name), buf);
+        const buildDest = resolveInside(buildDir, name);
+        if (buildDest) fs.writeFileSync(buildDest, buf);
       } catch {}
     }
     return true;
@@ -7242,12 +7313,17 @@ ipcMain.handle("copy-file", async (_event, src, destName) => {
   try {
     const userDir = path.join(app.getPath("userData"), "campaign_data");
     if (!fs.existsSync(userDir)) fs.mkdirSync(userDir, { recursive: true });
-    fs.copyFileSync(src, path.join(userDir, destName));
+    // src may be anywhere (it comes from user-picked mod folders); only the
+    // destination NAME is renderer-controlled and must stay inside userDir.
+    const dest = resolveInside(userDir, destName);
+    if (!dest) return false;
+    fs.copyFileSync(src, dest);
     fs.writeFileSync(path.join(userDir, ".version_stamp"), app.getVersion(), "utf8");
     if (!app.isPackaged) {
       try {
         const buildDir = path.join(__dirname, "build");
-        fs.copyFileSync(src, path.join(buildDir, destName));
+        const buildDest = resolveInside(buildDir, destName);
+        if (buildDest) fs.copyFileSync(src, buildDest);
       } catch {}
     }
     return true;
@@ -7256,8 +7332,8 @@ ipcMain.handle("copy-file", async (_event, src, destName) => {
 
 // IPC: read a campaign data file — checks userData first, then build/ (bundled fallback)
 ipcMain.handle("read-campaign-file", async (_event, name) => {
-  const userPath = path.join(app.getPath("userData"), "campaign_data", name);
-  if (fs.existsSync(userPath)) {
+  const userPath = resolveInside(path.join(app.getPath("userData"), "campaign_data"), name);
+  if (userPath && fs.existsSync(userPath)) {
     try {
       if (name.endsWith(".tga") || name.endsWith(".png")) {
         const buf = fs.readFileSync(userPath);
@@ -7272,7 +7348,8 @@ ipcMain.handle("read-campaign-file", async (_event, name) => {
 // IPC: save a file to the userData directory (persists across reloads)
 ipcMain.handle("save-user-file", async (_event, name, content) => {
   try {
-    const filePath = path.join(app.getPath("userData"), name);
+    const filePath = resolveInside(app.getPath("userData"), name);
+    if (!filePath) return false;
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(filePath, gameTextCRLF(filePath, content), "utf8");
@@ -7283,7 +7360,8 @@ ipcMain.handle("save-user-file", async (_event, name, content) => {
 // IPC: read a file from the userData directory
 ipcMain.handle("read-user-file", async (_event, name) => {
   try {
-    const filePath = path.join(app.getPath("userData"), name);
+    const filePath = resolveInside(app.getPath("userData"), name);
+    if (!filePath) return null;
     return fs.readFileSync(filePath, "utf8");
   } catch { return null; }
 });
@@ -7325,7 +7403,7 @@ ipcMain.handle("calibrate-from-save", async (_event, savePath) => {
     return { ok: false, error: "mod data not loaded — pick a mod folder first" };
   }
   try {
-    const saveBuf = fs.readFileSync(savePath);
+    const saveBuf = await fs.promises.readFile(savePath);
     const extras = parseCharactersAndUnits(saveBuf, null);
     if (!extras || !extras.characters) return { ok: false, error: "parse returned no characters" };
     const out = [];
@@ -8221,7 +8299,7 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
   // the file from disk. On a 30MB save that's ~100-300ms saved per
   // parse — both reparseLatestSave and saveWatchStart had already read
   // the file before calling this, so the duplicate read was pure waste.
-  const data = providedBuf || fs.readFileSync(filePath);
+  const data = providedBuf || await fs.promises.readFile(filePath);
   const len = data.length;
 
   // ── 1. Parse building records ──
@@ -8732,7 +8810,10 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
         const treasury = data.readInt32LE(i);
         const turnStartOff = i + 92 + 4 * regions;
         const turnStart = turnStartOff + 4 <= data.length ? data.readInt32LE(turnStartOff) : null;
-        records.push({ pos: i, treasury, turnStart, regionCount: regions });
+        // `regions` here is the record's KNOWLEDGE-SIZE count, not owned
+        // regions (canonical: 4 for Carthage T1 when it owns 41) — expose it
+        // under the honest name and keep regionCount null so nothing trusts it.
+        records.push({ pos: i, treasury, turnStart, knowledgeSize: regions, regionCount: null });
         // Skip ahead by the record's known minimum span to avoid double
         // matching inside the same record.
         i = Math.min(data.length - 64, i + 92 + 4 * regions);
@@ -9453,7 +9534,7 @@ async function reparseLatestSave() {
   try {
     emitSaveProgress("Reading save file", 5);
     await _yield();
-    const saveBuf = fs.readFileSync(full);
+    const saveBuf = await fs.promises.readFile(full); // 30-45 MB — async so the event loop keeps serving IPC
     lastSaveBuf = saveBuf;
 
     // Kick off v1 character scan AND building scan in parallel workers
@@ -9795,7 +9876,7 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
       // stage emits a `save-progress` event with a human-readable label.
       emitSaveProgress("Reading save file", 5);
       await _yield();
-      const saveBuf = fs.readFileSync(full);
+      const saveBuf = await fs.promises.readFile(full); // 30-45 MB — async, see reparseLatestSave
       lastSaveBuf = saveBuf;
       try { lastSaveMtime = fs.statSync(full).mtimeMs; } catch {}
 
@@ -10262,7 +10343,7 @@ ipcMain.handle("characters-init", async (_event, modDataDir) => {
       // disk if the cache was cleared (e.g. save-watch-stop ran). Saves
       // a 30MB read on the common path where characters-init fires
       // right after save-watch-start.
-      const saveBuf = lastSaveBuf || fs.readFileSync(full);
+      const saveBuf = lastSaveBuf || await fs.promises.readFile(full);
       lastSaveBuf = saveBuf;
       // Run the v1 char scan AND building scan in parallel workers.
       const charsP = (modNameLookup && modTraitNames)
@@ -10676,6 +10757,21 @@ ipcMain.handle("vc-region-owners-csv", async (_event, modDataDir, campaign) => {
     return { error: e.message };
   }
 });
+
+// Single-instance lock: a second launch would run duplicate save/log watchers
+// against the same files and the same provincia.log fd — focus the existing
+// window instead.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    const win = BrowserWindow.getAllWindows()[0];
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    }
+  });
+}
 
 app.whenReady().then(() => {
   applyContentSecurityPolicy();
