@@ -1,0 +1,48 @@
+# CI: test + renderer build on every push/PR to master.
+#
+# Fixture-gated tests (live RTW saves, the local RIS mod install, calibration
+# corpora) skip automatically on machines where those paths don't exist —
+# on CI only the committed-fixture tests run. See e.g. the vintage guard in
+# src/poModel.test.js and loadSaveIfPresent in src/saveCrackerExtras.test.js.
+#
+# `npx vite build` is used instead of `npm run build` deliberately: the npm
+# `prebuild` hook (bundle-mod-data + fetch-runtime) re-bundles mod data from a
+# local RIS install and downloads the embeddable Python runtime + Monaco —
+# neither is needed to validate that the renderer compiles. The committed
+# `public/*` bundles are sufficient (same reasoning as build-mac.yml).
+
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  test-and-build:
+    strategy:
+      fail-fast: false
+      matrix:
+        # ubuntu for speed; windows mirrors the dev environment (paths, CRLF).
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build renderer (vite)
+        run: npx vite build
