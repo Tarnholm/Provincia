@@ -9,7 +9,7 @@
 //   - identifyPlayerFactionFromSave returns "antigonid" for that save
 //   - parseFactionTreasuries returns 23 NPC major-faction records
 
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, beforeAll } from "vitest";
 import fs from "fs";
 import { createRequire } from "node:module";
 import {
@@ -353,14 +353,14 @@ const ROME_T1 = `${SAVE_DIR}\\save_Autosave   Republic of Rome   Turn 1.sav`;
 const romeT1 = loadSaveIfPresent(ROME_T1);
 const describeIfRomeT1 = (romeT1 && factionOrder) ? describe : describe.skip;
 describeIfRomeT1("parseDiplomacyMatrix — live Republic of Rome Turn 1 player war list", () => {
-  test("romans_julii war list includes both rebel houses + slave + italics (matches game)", () => {
+  test("romans_julii war list includes both rebel houses + slave + italics (matches game)", (ctx) => {
     // PRECONDITION: this is a LIVE save the user re-saves while playing. The
     // exact turn-1 war list only holds for a fresh Republic-of-Rome turn-1
-    // state. Skip (visibly) if the loaded save has drifted from that.
+    // state. Skip (reported as SKIPPED, not a vacuous pass) if it has drifted.
     const probe = crackSave(romeT1, "C:\\RIS\\RIS\\data");
     if (probe.playerFaction !== "romans_julii" || probe.turn !== 1) {
       console.warn(`[test-skip] Rome T1 player war list: save not in expected state (player=${probe.playerFaction}, turn=${probe.turn}; expected romans_julii turn 1)`);
-      return;
+      ctx.skip();
     }
     const m = parseDiplomacyMatrix(romeT1, factionOrder);
     expect(m).toBeTruthy();
@@ -472,18 +472,26 @@ describeIfJulii("parseFactionTreasuryHistory — correct faction keying (julii1/
     expect(hist.carthage.length).toBeGreaterThanOrEqual(1);
     expect(hist.antigonid.length).toBeGreaterThanOrEqual(1);
     expect(hist.carthage[0]).not.toBe(hist.antigonid[0]);
+  });
 
+  // Split from the keying-invariant test above (2026-07-15): the absolute-value
+  // cribs are vintage-bound while the invariant is not. Keeping them together
+  // meant a drifted save either vacuously greened the cribs (old early-return)
+  // or would falsely mark the verified invariant as skipped (ctx.skip on both).
+  test("canonical-campaign treasury cribs (carthage ≈25250, antigonid ≈21454)", (ctx) => {
+    const recs3 = parseFactionTreasuries(julii3);
+    const hist = parseFactionTreasuryHistory(julii3, recs3, factionOrder);
     // PRECONDITION for the pinned crib windows: these only hold for the
     // canonical fresh-start campaign (carthage's turn-1 checkpoint ≈25250,
     // antigonid ≈21454). The user re-saves these live files during play, so
-    // skip the absolute-value cribs (NOT the keying invariant above) when the
-    // loaded julii3 has drifted off that campaign.
+    // skip (reported as SKIPPED) when the loaded julii3 has drifted off it.
     const onCanonicalCampaign =
+      Array.isArray(hist.carthage) && Array.isArray(hist.antigonid) &&
       hist.carthage[0] > 24000 && hist.carthage[0] < 26500 &&
       hist.antigonid[0] > 20000 && hist.antigonid[0] < 23000;
     if (!onCanonicalCampaign) {
-      console.warn(`[test-skip] treasury-history cribs: julii3 not on canonical campaign (carthage[0]=${hist.carthage[0]}, antigonid[0]=${hist.antigonid[0]}; keying invariant still verified)`);
-      return;
+      console.warn(`[test-skip] treasury-history cribs: julii3 not on canonical campaign (carthage[0]=${hist.carthage && hist.carthage[0]}, antigonid[0]=${hist.antigonid && hist.antigonid[0]}; keying invariant verified separately)`);
+      ctx.skip();
     }
     // Pre-fix, carthage's [25250,39900] timeline was emitted under "antigonid".
     // Post-fix carthage owns it and antigonid owns [21454,41624].
@@ -512,10 +520,14 @@ const describeIfT34 = (t34 && fs.existsSync(MOD_DATA)) ? describe : describe.ski
 
 describeIfT34("crackSave — current-treasury attribution keying (T34 Republic of Rome)", () => {
   // The T34 save is ~45 MB; crack it ONCE and share the result (a per-test
-  // crack blows the default 5s timeout).
+  // crack blows the default 5s timeout). Must live in beforeAll, NOT the
+  // describe body: vitest executes skipped suites' factory functions during
+  // collection, so an eager crackSave(null, …) crashes the whole file when
+  // the fixture is absent. Hooks don't run for skipped suites.
   let factions;
-  const cracked = crackSave(t34, MOD_DATA);
-  factions = cracked.factions;
+  beforeAll(() => {
+    factions = crackSave(t34, MOD_DATA).factions;
+  }, 30000);
 
   test("major empires are keyed to their knowledge-signature-confirmed treasuries", () => {
     // These values are pinned by each major faction's STABLE engine knowledge
@@ -571,17 +583,17 @@ try {
 } catch { }
 const describeIfCarthage1 = (carthage1 && fs.existsSync(MOD_DATA) && carthage1Fresh) ? describe : describe.skip;
 describeIfCarthage1("crackSave — player-swap treasury keying (Carthage T1)", () => {
-  test("player carthage keeps 25500 and displaced romans_julii keeps 17500", () => {
+  test("player carthage keeps 25500 and displaced romans_julii keeps 17500", (ctx) => {
     const { factions, playerFaction, turn } = crackSave(carthage1, MOD_DATA);
     // PRECONDITION: the pinned 25500/17500 are the fresh Carthage turn-1
     // STARTING treasuries. save_Carthage1.sav is a LIVE file the user re-saves;
-    // skip (visibly) if it's no longer that exact fresh-start state. The
-    // player-swap keying invariant (player record swapped to position 0, julii
-    // displaced to its natural slot) is what's under test, and it only has a
-    // known ground-truth value pair on this canonical save.
+    // skip (reported as SKIPPED, not a vacuous pass) if it's no longer that
+    // exact fresh-start state. The player-swap keying invariant (player record
+    // swapped to position 0, julii displaced to its natural slot) is what's
+    // under test, and it only has known ground truth on this canonical save.
     if (playerFaction !== "carthage" || turn !== 1) {
       console.warn(`[test-skip] Carthage T1 player-swap: save not in expected state (player=${playerFaction}, turn=${turn}; expected carthage turn 1)`);
-      return;
+      ctx.skip();
     }
     expect(factions.carthage.treasury).toBe(25500);
     expect(factions.romans_julii.treasury).toBe(17500);
