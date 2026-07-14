@@ -1,13 +1,22 @@
-import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import React, { useRef, useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
 import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect, subscribeWidgets, getWidgetSnapshot } from "./Movable";
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, invalidateBuildingIcon } from "./buildingIcons";
 import { getCachedUnitIcon, prefetchUnitIcons } from "./unitIcons";
-import InfoPopup from "./InfoPopup";
-import ArmyUnitsModal from "./ArmyUnitsModal";
+// Heavy, single-use panels are code-split (2026-07-15): each is loaded as its
+// own async chunk the first time it renders. Module-scope Suspense wrappers
+// keep the JSX call sites identical to the old static imports. (RegionInfo
+// stays static — its setBuildingsGetter side-channel is timing-sensitive.)
+const InfoPopupLazy = lazy(() => import("./InfoPopup"));
+const InfoPopup = (props) => <Suspense fallback={null}><InfoPopupLazy {...props} /></Suspense>;
+const ArmyUnitsModalLazy = lazy(() => import("./ArmyUnitsModal"));
+const ArmyUnitsModal = (props) => <Suspense fallback={null}><ArmyUnitsModalLazy {...props} /></Suspense>;
+const SaveInsightsPanelLazy = lazy(() => import("./SaveInsightsPanel"));
+const SaveInsightsPanel = (props) => <Suspense fallback={null}><SaveInsightsPanelLazy {...props} /></Suspense>;
+const FamilyTreeLazy = lazy(() => import("./FamilyTree"));
+const FamilyTree = (props) => <Suspense fallback={null}><FamilyTreeLazy {...props} /></Suspense>;
 import SearchPalette from "./SearchPalette";
-import SaveInsightsPanel from "./SaveInsightsPanel";
 import FactionIcon, { preloadIcon, preloadModIcon } from "./FactionIcon";
 import Tooltip from "./Tooltip";
 import "./App.css";
@@ -35,7 +44,7 @@ const buildNonLivePortraitMap = nonLiveCommanderResolver.buildNonLivePortraitMap
 const resolveNonLiveCommanderInfoApp = nonLiveCommanderResolver.resolveNonLiveCommanderInfo;
 const lookupNonLivePortraitApp = nonLiveCommanderResolver.lookupNonLivePortrait;
 import UpdateBanner from "./UpdateBanner";
-import FamilyTree from "./FamilyTree";
+// FamilyTree is code-split — see the lazy wrappers above.
 import Toasts from "./Toasts";
 import VolumeControl from "./VolumeControl";
 import { AnimationLayoutProvider, useEnterExit } from "./AnimationLayout";
@@ -1651,6 +1660,99 @@ function buildColoredCanvas(pixelData, width, height, regions, getColor, upscale
   off.getContext("2d").putImageData(new ImageData(d, outW, outH), 0, 0);
   return off;
 }
+
+// ── Hoisted panel sub-components (2026-07-15) ─────────────────────────────
+// These were defined INSIDE App()'s render (in per-panel IIFEs), which gave
+// them a new function identity every render — React then unmounted and
+// remounted their whole subtree each time (losing <details> open state,
+// scroll positions, and churning the DOM). They are pure functions of their
+// props, so they live at module scope; the render sites alias them locally
+// (e.g. `const Section = DashSection;`) to keep the JSX unchanged.
+
+// Mod-validation dashboard: collapsible section.
+const DashSection = ({ title, count, color, children }) => (
+  <details data-dash-section={title} style={{ marginTop: 8 }}>
+    <summary style={{ cursor: "pointer", padding: "6px 8px", borderRadius: 4, fontSize: "0.82rem", background: count > 0 ? "rgba(255,255,255,0.04)" : "transparent" }}>
+      <span style={{ color, fontWeight: 600 }}>● </span>
+      <b>{title}</b> <span style={{ color: "#888", fontVariantNumeric: "tabular-nums" }}>({count})</span>
+    </summary>
+    {count > 0 && <div style={{ padding: "6px 6px 0", maxHeight: 280, overflowY: "auto" }}>{children}</div>}
+  </details>
+);
+
+// Mod-validation dashboard: clickable finding row.
+const DashRow = ({ label, file, line, text, onClick }) => (
+  <div
+    onClick={onClick}
+    title={file ? `Open ${file}:${line}` : ""}
+    style={{
+      display: "flex", gap: 10, padding: "3px 8px", fontSize: "0.74rem",
+      cursor: onClick ? "pointer" : "default", borderRadius: 3, fontFamily: "monospace",
+    }}
+    onMouseEnter={onClick ? (e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)" : undefined}
+    onMouseLeave={onClick ? (e) => e.currentTarget.style.background = "transparent" : undefined}
+  >
+    <span style={{ flex: 1, color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+    {file && <span style={{ color: "#7fd1b9", fontSize: "0.7rem" }}>{file}:{line}</span>}
+  </div>
+);
+
+// AI-economy diagnostics: faction list section. `disp` (display-name resolver)
+// and `onPick` (select faction + close panel) were App-closure captures — now props.
+const AiDiagSection = ({ title, color, rows, render, empty, disp, onPick }) => (
+  <div>
+    <div style={{ fontWeight: 700, color, fontSize: "0.8rem", borderBottom: `1px solid ${color}44`, paddingBottom: 2, marginBottom: 4 }}>{title} <span style={{ color: "#888", fontWeight: 400 }}>({rows.length})</span></div>
+    {rows.length === 0 ? <div style={{ color: "#667", fontStyle: "italic", fontSize: "0.74rem" }}>{empty}</div> : (
+      <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        {rows.map((r) => (
+          <div key={r.faction} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.78rem", padding: "2px 6px", borderRadius: 4, cursor: "pointer" }}
+            onClick={() => onPick(r.faction)}
+            title="Click to select this faction on the map">
+            <span style={{ flex: 1, textTransform: "capitalize", color: "#ddd" }}>{disp(r.faction)}</span>
+            <span style={{ color: "#9aa", fontVariantNumeric: "tabular-nums", fontSize: "0.72rem" }}>{render(r)}</span>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+);
+
+// Lua-counters stats panel: grouped counter section.
+const StatsSection = ({ title, hint, rows }) => {
+  if (rows.length === 0) return null;
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{
+        fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.04em",
+        color: "#dca64a", padding: "6px 12px 4px",
+        textTransform: "uppercase",
+      }}>
+        {title}
+        <span style={{ marginLeft: 8, fontWeight: 400, color: "#888", textTransform: "none", letterSpacing: 0 }}>
+          {rows.length} {hint ? `· ${hint}` : ""}
+        </span>
+      </div>
+      {rows.map(([name, value]) => (
+        <div key={name} style={{
+          display: "grid", gridTemplateColumns: "1fr 90px",
+          alignItems: "center", padding: "2px 12px",
+          fontSize: "0.8rem", fontFamily: "Consolas, monospace",
+        }}>
+          <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {name}
+          </span>
+          <span style={{
+            textAlign: "right", fontVariantNumeric: "tabular-nums",
+            color: value === 0 ? "#666" : value < 0 ? "#e85050" : "#9ec78a",
+            fontWeight: 600,
+          }}>
+            {value.toLocaleString()}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 function App() {
   useSystemDarkMode();
@@ -15827,15 +15929,7 @@ function App() {
       {showDashboard && (() => {
         const r = dashResult;
         const jumpTo = (file, snippet, line) => window.electronAPI?.scriptsJumpTo?.(file, snippet || null, line || null);
-        const Section = ({ title, count, color, children }) => (
-          <details data-dash-section={title} style={{ marginTop: 8 }}>
-            <summary style={{ cursor: "pointer", padding: "6px 8px", borderRadius: 4, fontSize: "0.82rem", background: count > 0 ? "rgba(255,255,255,0.04)" : "transparent" }}>
-              <span style={{ color, fontWeight: 600 }}>● </span>
-              <b>{title}</b> <span style={{ color: "#888", fontVariantNumeric: "tabular-nums" }}>({count})</span>
-            </summary>
-            {count > 0 && <div style={{ padding: "6px 6px 0", maxHeight: 280, overflowY: "auto" }}>{children}</div>}
-          </details>
-        );
+        const Section = DashSection; // stable module-scope identity — see hoist note above App()
         // Tile → Section bridge. Each tile carries the prefix of its target
         // Section's title; click forces it open and scrolls it into view.
         // Substring match keeps tiles working when a section gets a suffix
@@ -15852,21 +15946,7 @@ function App() {
             }
           }
         };
-        const Row = ({ label, file, line, text, onClick }) => (
-          <div
-            onClick={onClick}
-            title={file ? `Open ${file}:${line}` : ""}
-            style={{
-              display: "flex", gap: 10, padding: "3px 8px", fontSize: "0.74rem",
-              cursor: onClick ? "pointer" : "default", borderRadius: 3, fontFamily: "monospace",
-            }}
-            onMouseEnter={onClick ? (e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)" : undefined}
-            onMouseLeave={onClick ? (e) => e.currentTarget.style.background = "transparent" : undefined}
-          >
-            <span style={{ flex: 1, color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
-            {file && <span style={{ color: "#7fd1b9", fontSize: "0.7rem" }}>{file}:{line}</span>}
-          </div>
-        );
+        const Row = DashRow; // stable module-scope identity
         return (
           <div onClick={() => setShowDashboard(false)} style={{
             position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
@@ -22058,29 +22138,14 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
               {(() => {
                 const fmt = (v) => (v == null ? "—" : Number(v).toLocaleString());
                 const disp = (f) => (factionDisplayNames && (factionDisplayNames[f] || factionDisplayNames[String(f).toLowerCase()])) || String(f).replace(/_/g, " ");
-                const Section = ({ title, color, rows, render, empty }) => (
-                  <div>
-                    <div style={{ fontWeight: 700, color, fontSize: "0.8rem", borderBottom: `1px solid ${color}44`, paddingBottom: 2, marginBottom: 4 }}>{title} <span style={{ color: "#888", fontWeight: 400 }}>({rows.length})</span></div>
-                    {rows.length === 0 ? <div style={{ color: "#667", fontStyle: "italic", fontSize: "0.74rem" }}>{empty}</div> : (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                        {rows.map((r) => (
-                          <div key={r.faction} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.78rem", padding: "2px 6px", borderRadius: 4, cursor: "pointer" }}
-                            onClick={() => { setSelectedFaction(r.faction); setAiDiagOpen(false); }}
-                            title="Click to select this faction on the map">
-                            <span style={{ flex: 1, textTransform: "capitalize", color: "#ddd" }}>{disp(r.faction)}</span>
-                            <span style={{ color: "#9aa", fontVariantNumeric: "tabular-nums", fontSize: "0.72rem" }}>{render(r)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
+                const Section = AiDiagSection; // stable module-scope identity; closure captures became disp/onPick props
+                const pick = (f) => { setSelectedFaction(f); setAiDiagOpen(false); };
                 return (
                   <>
-                    <Section title={`💀 Bankrupt (treasury below ${Number(aiDiagConfig.lowTreasury || 0).toLocaleString()})`} color="#e85050" rows={aiDiagnostics.bankrupt} empty="None below the threshold." render={(r) => `treasury ${fmt(r.treasury)} · net ${fmt(r.net)}/turn`} />
-                    <Section title="📉 Will go bankrupt next turn" color="#e0913a" rows={aiDiagnostics.willBankrupt} empty="None projected to cross 0 next turn." render={(r) => `${fmt(r.treasury)} ${r.net < 0 ? "−" : "+"} ${fmt(Math.abs(r.net))} → ${fmt(r.after)}`} />
-                    <Section title="🩸 Bleeding (negative income)" color="#d06a6a" rows={aiDiagnostics.bleeding} empty="Everyone's net income is ≥ 0." render={(r) => `net ${fmt(r.net)}/turn · treasury ${fmt(r.treasury)}`} />
-                    <Section title="😴 Hoarding / passed-out (has money, not using it)" color="#caa84a" rows={aiDiagnostics.hoarding} empty="No idle-cash factions detected." render={(r) => `${fmt(r.treasury)} (cap ${fmt(Math.round(r.threshold))}) · ${r.settlements} setl · recruit ${fmt(r.recruitment)} / build ${fmt(r.construction)}${r.growth != null ? ` · ${r.growth >= 0 ? "+" : "−"}${fmt(Math.abs(r.growth))}/turn` : ""}`} />
+                    <Section disp={disp} onPick={pick} title={`💀 Bankrupt (treasury below ${Number(aiDiagConfig.lowTreasury || 0).toLocaleString()})`} color="#e85050" rows={aiDiagnostics.bankrupt} empty="None below the threshold." render={(r) => `treasury ${fmt(r.treasury)} · net ${fmt(r.net)}/turn`} />
+                    <Section disp={disp} onPick={pick} title="📉 Will go bankrupt next turn" color="#e0913a" rows={aiDiagnostics.willBankrupt} empty="None projected to cross 0 next turn." render={(r) => `${fmt(r.treasury)} ${r.net < 0 ? "−" : "+"} ${fmt(Math.abs(r.net))} → ${fmt(r.after)}`} />
+                    <Section disp={disp} onPick={pick} title="🩸 Bleeding (negative income)" color="#d06a6a" rows={aiDiagnostics.bleeding} empty="Everyone's net income is ≥ 0." render={(r) => `net ${fmt(r.net)}/turn · treasury ${fmt(r.treasury)}`} />
+                    <Section disp={disp} onPick={pick} title="😴 Hoarding / passed-out (has money, not using it)" color="#caa84a" rows={aiDiagnostics.hoarding} empty="No idle-cash factions detected." render={(r) => `${fmt(r.treasury)} (cap ${fmt(Math.round(r.threshold))}) · ${r.settlements} setl · recruit ${fmt(r.recruitment)} / build ${fmt(r.construction)}${r.growth != null ? ` · ${r.growth >= 0 ? "+" : "−"}${fmt(Math.abs(r.growth))}/turn` : ""}`} />
                   </>
                 );
               })()}
@@ -23993,41 +24058,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
         groups.campaign.sort(sortByName);
         const totalShown = Object.values(groups).reduce((s, g) => s + g.length, 0);
         const idHashCount = entries.filter(([k]) => /^id_/.test(k)).length;
-        const Section = ({ title, hint, rows }) => {
-          if (rows.length === 0) return null;
-          return (
-            <div style={{ marginBottom: 10 }}>
-              <div style={{
-                fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.04em",
-                color: "#dca64a", padding: "6px 12px 4px",
-                textTransform: "uppercase",
-              }}>
-                {title}
-                <span style={{ marginLeft: 8, fontWeight: 400, color: "#888", textTransform: "none", letterSpacing: 0 }}>
-                  {rows.length} {hint ? `· ${hint}` : ""}
-                </span>
-              </div>
-              {rows.map(([name, value]) => (
-                <div key={name} style={{
-                  display: "grid", gridTemplateColumns: "1fr 90px",
-                  alignItems: "center", padding: "2px 12px",
-                  fontSize: "0.8rem", fontFamily: "Consolas, monospace",
-                }}>
-                  <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {name}
-                  </span>
-                  <span style={{
-                    textAlign: "right", fontVariantNumeric: "tabular-nums",
-                    color: value === 0 ? "#666" : value < 0 ? "#e85050" : "#9ec78a",
-                    fontWeight: 600,
-                  }}>
-                    {value.toLocaleString()}
-                  </span>
-                </div>
-              ))}
-            </div>
-          );
-        };
+        const Section = StatsSection; // stable module-scope identity
         return createPortal(
           <div onClick={() => setShowStatsPanel(false)} style={{
             position: "fixed", inset: 0, zIndex: 9990,

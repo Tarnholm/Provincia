@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import CHANGELOG from "./changelog";
+// CHANGELOG is dynamically imported (see useChangelog) — it's ~0.8 MB of
+// release-notes text and was the single largest piece of the main bundle.
+// The dynamic import makes Vite split it into its own async chunk, fetched
+// only when the WelcomeScreen actually mounts.
 import "./WelcomeScreen.css";
 
 const PUBLIC_URL = import.meta.env.BASE_URL || ".";
@@ -145,9 +148,27 @@ function compareVersions(a, b) {
   return 0;
 }
 
-function getNewEntries(lastVersion) {
-  if (!lastVersion) return CHANGELOG;
-  return CHANGELOG.filter((e) => compareVersions(e.version, lastVersion) > 0);
+function getNewEntries(lastVersion, changelog) {
+  if (!lastVersion) return changelog;
+  return changelog.filter((e) => compareVersions(e.version, lastVersion) > 0);
+}
+
+// Lazy changelog loader. Returns null while the chunk is in flight (callers
+// must treat null as "not ready", NOT as "no new entries" — otherwise the
+// what's-new screen would be skipped on a slow load). Cached module-level so
+// remounts don't refetch.
+let _changelogCache = null;
+function useChangelog() {
+  const [data, setData] = useState(_changelogCache);
+  useEffect(() => {
+    if (_changelogCache) return undefined;
+    let alive = true;
+    import("./changelog.js")
+      .then((m) => { _changelogCache = m.default || []; if (alive) setData(_changelogCache); })
+      .catch(() => { _changelogCache = []; if (alive) setData(_changelogCache); });
+    return () => { alive = false; };
+  }, []);
+  return data;
 }
 
 // Strip the 4th+ segment ("edition" counter) for UI display.
@@ -166,6 +187,8 @@ export default function WelcomeScreen({ currentVersion, lastSeenVersion, onboard
   // app's own version when the user dismisses, and once the app version
   // outpaces the latest changelog entry that check would re-fire onboarding
   // every launch. Drop it.)
+  const changelogData = useChangelog(); // null while the async chunk loads
+  const CHANGELOG = changelogData || [];
   const previousEntry = CHANGELOG[1]?.version;
   const effectiveLastSeen = lastSeenVersion;
   const effectiveOnboardingDone = onboardingDone;
@@ -177,17 +200,20 @@ export default function WelcomeScreen({ currentVersion, lastSeenVersion, onboard
   const newEntries = FORCE_TEST_MODE
     ? CHANGELOG
     : forceOnboarding
-      ? (previousEntry ? getNewEntries(previousEntry) : CHANGELOG.slice(0, 1))
-      : (effectiveLastSeen ? getNewEntries(effectiveLastSeen) : CHANGELOG);
+      ? (previousEntry ? getNewEntries(previousEntry, CHANGELOG) : CHANGELOG.slice(0, 1))
+      : (effectiveLastSeen ? getNewEntries(effectiveLastSeen, CHANGELOG) : CHANGELOG);
   const [phase, setPhase] = useState(shouldShowOnboarding ? "onboarding" : "whatsnew");
 
   // Let the parent know which phase is currently active (used to gate music).
   useEffect(() => { if (onPhaseChange) onPhaseChange(phase); }, [phase, onPhaseChange]);
 
-  // If nothing to show, skip entirely
+  // If nothing to show, skip entirely. MUST wait for the changelog chunk —
+  // while it's loading newEntries is [] and firing onDone here would silently
+  // skip the what's-new screen.
   useEffect(() => {
+    if (changelogData == null) return;
     if (!FORCE_TEST_MODE && !shouldShowOnboarding && newEntries.length === 0) onDone();
-  }, [shouldShowOnboarding, newEntries.length, onDone]);
+  }, [changelogData, shouldShowOnboarding, newEntries.length, onDone]);
 
   const handleFinish = useCallback(() => {
     // Save the max of (currentVersion, highest changelog version we just showed).
@@ -212,13 +238,18 @@ export default function WelcomeScreen({ currentVersion, lastSeenVersion, onboard
   const handleOnboardingDone = useCallback(() => {
     try { sessionStorage.removeItem("onboardingPage"); } catch {}
     if (onHighlight) onHighlight(null);
-    if (FORCE_TEST_MODE || newEntries.length > 0) {
+    // changelogData == null → chunk still loading: go to whatsnew (which
+    // renders nothing until loaded) rather than finishing with unseen entries.
+    if (FORCE_TEST_MODE || changelogData == null || newEntries.length > 0) {
       setPhase("whatsnew");
     } else {
       handleFinish();
     }
-  }, [newEntries.length, handleFinish, onHighlight]);
+  }, [changelogData, newEntries.length, handleFinish, onHighlight]);
 
+  // While the changelog chunk loads, render nothing for the what's-new path
+  // (onboarding below doesn't need it and proceeds immediately).
+  if (changelogData == null && !shouldShowOnboarding) return null;
   if (!FORCE_TEST_MODE && !shouldShowOnboarding && newEntries.length === 0) return null;
 
   if (phase === "onboarding") {
@@ -234,6 +265,7 @@ export default function WelcomeScreen({ currentVersion, lastSeenVersion, onboard
     );
   }
 
+  if (changelogData == null) return null; // whatsnew phase, chunk still loading
   return (
     <WhatsNew
       entries={newEntries}
