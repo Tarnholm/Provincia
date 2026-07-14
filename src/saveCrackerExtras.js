@@ -39,7 +39,7 @@ function readCampaignName(buf) {
 
 // Read header essentials. Cheap; safe to call once per save load.
 function parseHeader(buf) {
-  if (buf.length < 0x100) return null;
+  if (!buf || buf.length < 0x100) return null; // null-safe: a missing/short buffer is "not a save", not a crash
   const magic = buf.readUInt32LE(0x00);
   if (magic !== 0x070a) return null;
   const campaignUuid = buf.readUInt32LE(0x04);
@@ -531,7 +531,12 @@ function parseFactionTreasuries(buf) {
         treasury,
         turnStartTreasury: turnStart,
         netThisTurn: treasury - turnStart,
-        regionCount: rc <= 500 ? rc : 0,
+        // Like the sub=6 layout, +52 is NOT verified as owned-region count
+        // (the sub=6 equivalent is the knowledge-size). Expose under the
+        // honest name; regionCount stays null — use crackSave().factions[*]
+        // .regionCount (ownerByCity tally) for real region counts.
+        knowledgeSize: rc <= 500 ? rc : 0,
+        regionCount: null,
         regionIds: [],
         factionId: out.length,   // record position == descr_sm_factions index
         aiPersonalityIndex: null,
