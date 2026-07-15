@@ -37,6 +37,29 @@ function registerSaveAnalysisHandlers(ipcMain, { _writeLog, getLastSaveBuf }) {
     worker.postMessage({ mode, ...payload });
   });
 
+  // The economy and trade-network panels BOTH fire on a save-file change and
+  // BOTH need the same tradeOnly crack (~3s). Coalesce it: the first handler to
+  // ask spawns ONE "economy" worker (which does the shared tradeOnly crack +
+  // Financial Overview and returns { cr, economy }); the other handler awaits the
+  // same in-flight promise and reuses `cr`. This is IN-FLIGHT ONLY — the entry is
+  // deleted the moment the crack settles — so there is NO persistent cache and
+  // therefore no mod-edit staleness risk (the next save load re-cracks fresh).
+  // Keyed by (savePath, mtime, size, modDataDir); mtime+size change if the save
+  // is rewritten, modDataDir if the mod changes.
+  const _inflightCrack = new Map();
+  const getSharedEconomyCrack = async (savePath, modDataDir) => {
+    const st = await fs.promises.stat(savePath);
+    const key = `${savePath}|${st.mtimeMs}|${st.size}|${modDataDir}`;
+    let p = _inflightCrack.get(key);
+    if (!p) {
+      p = runCrackWorker("economy", { savePath, modDataDir });
+      _inflightCrack.set(key, p);
+      const done = () => { _inflightCrack.delete(key); };
+      p.then(done, done);
+    }
+    return p;
+  };
+
   // Crack + extract ONE timeline row in a worker. Resolves { ok:true, row } or
   // { ok:false, error, file } for a per-save crack failure (mirrors the CLI's
   // per-file try/catch); REJECTS only on worker-infra failure (spawn/'error'),
@@ -118,13 +141,12 @@ ipcMain.handle("crack-save", async (_event, savePath, modDataDir) => {
 ipcMain.handle("get-save-economy", async (_event, savePath, modDataDir) => {
   try {
     if (!savePath) return { error: "no save path" };
-    // Off-main-thread: the worker reads the save + runs the economyOnly crack +
-    // Financial Overview, so the main process stays responsive during the parse.
-    // economyOnly skips the character/unit/family/siege/agent/event/diplomacy
-    // parses the economy panel never reads (verified identical output).
+    // Off-main-thread + coalesced: getSharedEconomyCrack runs ONE worker that does
+    // the shared tradeOnly crack + Financial Overview; the trade-network handler
+    // (which fires on the same save load) reuses that crack instead of re-cracking.
     let economy;
     try {
-      economy = await runCrackWorker("economy", { savePath, modDataDir });
+      economy = (await getSharedEconomyCrack(savePath, modDataDir)).economy;
     } catch (werr) {
       // Fallback: worker unavailable/failed → run synchronously (blocks briefly,
       // but never breaks the panel). Identical to the pre-worker behaviour.
@@ -961,11 +983,17 @@ ipcMain.handle("crack-trade-network", async (_event, savePath, modDataDir, campa
     const hasPath = !!(savePath && fs.existsSync(savePath));
     const liveBuf = hasPath ? null : getLastSaveBuf(); // live-watch path: reuse the buffer already in memory
     if (!hasPath && !liveBuf) return { error: "no save buffer available" };
-    // Off-main-thread: the worker reads the save (or uses the live buffer) and
-    // runs computeTradeNetwork (tradeOnly crack + network compute), keeping the
-    // main process responsive during the ~5s parse.
+    // Off-main-thread + crack reuse: when we have a savePath, reuse the economy
+    // panel's shared tradeOnly crack (both panels fire on the same save load), so
+    // this worker skips its own ~3s re-crack and only does the network compute.
+    // Best-effort — if the shared crack isn't available, the trade worker cracks
+    // itself. The live-buffer path (no savePath) always cracks in-worker.
     try {
-      return await runCrackWorker("trade", { savePath: hasPath ? savePath : null, saveBuf: liveBuf, modDataDir, campaign });
+      let preCracked = null;
+      if (hasPath) {
+        try { preCracked = (await getSharedEconomyCrack(savePath, modDataDir)).cr; } catch { preCracked = null; }
+      }
+      return await runCrackWorker("trade", { savePath: hasPath ? savePath : null, saveBuf: liveBuf, modDataDir, campaign, preCracked });
     } catch (werr) {
       // Fallback: worker unavailable/failed → run synchronously (never a regression).
       _writeLog(`[trade] worker fallback (${werr && werr.message}) — running on main thread`);

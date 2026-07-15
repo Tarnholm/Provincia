@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1268",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**Less duplicated work when a save loads.** The economy panel and the trade-network panel both need the same decode of the save file, and each used to do its own — decoding the same save twice on every load. They now share a single decode: the first one to run does it, the other reuses the result. Same numbers, roughly a third less background CPU per save load (cooler, quieter, better on battery), and no caching pitfalls — the sharing lasts only for that one load." },
+    ],
+  },
+  {
     version: "0.9.1267",
     date: "2026-07-15",
     items: [

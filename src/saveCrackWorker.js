@@ -32,7 +32,7 @@ parentPort.on("message", (payload) => {
   const origLog = console.log;
   console.log = (...args) => { try { logs.push(args.map((a) => (typeof a === "string" ? a : String(a))).join(" ")); } catch { /* logging must never throw */ } };
   try {
-    const { mode, savePath, saveBuf, modDataDir, campaign } = payload;
+    const { mode, savePath, saveBuf, modDataDir, campaign, preCracked } = payload;
     // postMessage delivers Buffers as Uint8Array on the worker side — wrap back
     // into a real Buffer so the byte-reading parsers work.
     let buf;
@@ -46,13 +46,19 @@ parentPort.on("message", (payload) => {
 
     let result;
     if (mode === "economy") {
+      // Do the tradeOnly crack (a SUPERSET that serves BOTH panels — it keeps
+      // diplomacy, which economyOnly drops) and return BOTH the crack and the
+      // Financial Overview. The handler caches this crack in-flight so the trade
+      // panel, which fires on the same save load, reuses it instead of re-cracking.
       const { crackSave } = require("./saveCracker.js");
       const { parseFinancialOverview } = require("./economyParser.js");
-      const cracked = crackSave(buf, modDataDir, { economyOnly: true });
-      result = parseFinancialOverview(buf, cracked);
+      const cracked = crackSave(buf, modDataDir, { tradeOnly: true });
+      result = { cr: cracked, economy: parseFinancialOverview(buf, cracked) };
     } else if (mode === "trade") {
+      // preCracked: reuse the economy panel's shared tradeOnly crack when present,
+      // skipping this worker's own ~3s re-crack.
       const { computeTradeNetwork } = require("./tradeNetwork.js");
-      result = computeTradeNetwork(buf, modDataDir, campaign ? { campaign } : {});
+      result = computeTradeNetwork(buf, modDataDir, campaign ? { campaign } : {}, preCracked || null);
     } else {
       throw new Error("unknown crack-worker mode: " + mode);
     }

@@ -252,15 +252,23 @@ const haveMod = (() => { try { return fs.existsSync(path.join(MOD_DIR, "export_d
     const { computeTradeNetwork } = require("./tradeNetwork.js");
     const buf = fs.readFileSync(saveFile);
 
+    // economy mode returns { cr, economy }: cr is the shared tradeOnly crack (a
+    // superset that gives the SAME Financial Overview as an economyOnly crack),
+    // economy is that Financial Overview.
     const ecoSync = parseFinancialOverview(buf, crackSave(buf, MOD_DIR, { economyOnly: true }));
     const ecoWorker = await runWorker("economy", { savePath: saveFile, modDataDir: MOD_DIR });
-    expect(ecoWorker).toEqual(ecoSync);
+    expect(ecoWorker.economy).toEqual(ecoSync);
+    expect(ecoWorker.cr && ecoWorker.cr.settlementFields).toBeTruthy(); // shared crack present for the trade panel
 
+    // trade mode: computing from the shared crack (preCracked) must match cracking itself.
     const trSync = computeTradeNetwork(buf, MOD_DIR, { campaign: "imperial_campaign" });
     const trWorker = await runWorker("trade", { savePath: saveFile, modDataDir: MOD_DIR, campaign: "imperial_campaign" });
     const stripTiming = ({ stats, ...rest }) => rest; // stats.ms varies run-to-run
     expect(stripTiming(trWorker)).toEqual(stripTiming(trSync));
     expect(trWorker.trade && trWorker.trade.settlements).toBeTruthy();
+    // Reusing the shared crack (preCracked) yields identical trade output to self-cracking.
+    const trPre = await runWorker("trade", { savePath: saveFile, modDataDir: MOD_DIR, campaign: "imperial_campaign", preCracked: ecoWorker.cr });
+    expect(stripTiming(trPre)).toEqual(stripTiming(trWorker));
   });
 
   // Regression: scan-saves-timeline require path + packaging. The extraction of

@@ -753,7 +753,7 @@ function computeTradeConnectivity(geometry, settlements, ownerByCity, region2set
 // computeTradeNetwork(saveBuf, modDataDir, opts) -> {
 //   geometry, flags, diplomacy, trade, stats
 // }
-function computeTradeNetwork(saveBuf, modDataDir, opts = {}) {
+function computeTradeNetwork(saveBuf, modDataDir, opts = {}, preCracked = null) {
   const t0 = Date.now();
   const { chains, edbPath } = loadEdbChains(modDataDir);
 
@@ -763,7 +763,12 @@ function computeTradeNetwork(saveBuf, modDataDir, opts = {}) {
   // ownerByCity / playerFaction / turn — so skip the character/unit/family/
   // siege/agent/event/knowledge parses (keeps the diplomacy matrix, which the
   // trade-rights gating needs). Cuts this ~8s main-thread block to ~2.5s.
-  const cr = crackSave(saveBuf, modDataDir, { tradeOnly: true });
+  //
+  // preCracked: the economy + trade panels both fire on a save load and both
+  // need this same tradeOnly crack. When the caller already has it (from the
+  // shared in-flight crack in saveAnalysisHandlers), reuse it and skip the ~3s
+  // re-crack entirely. Must be a { tradeOnly:true }-shaped crack (keeps diplomacy).
+  const cr = preCracked || crackSave(saveBuf, modDataDir, { tradeOnly: true });
   const { parseSettlements } = require("./buildingParser.js");
   const settlements = (chains.size ? parseSettlements(saveBuf, chains, null).settlements : cr.settlements);
 
