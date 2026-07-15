@@ -4,6 +4,15 @@ const path = require("path");
 const fs = require("fs");
 const { Worker } = require("worker_threads");
 const pathSafety = require("./src/pathSafety.js");
+const {
+  parseWorldObjectPositions,
+  parseCharacterMetadataByUuid,
+  findDescrStratAnchorEnd, // eslint-disable-line no-unused-vars
+  readCurrentYearFromSave,
+  readTurnFromSave,
+  readUtf16Name,
+} = require("./src/saveBinaryReaders.js");
+const { encodeTga32BGRA } = require("./src/tgaCodec.js");
 
 // RTW:R game TEXT files MUST be written with CRLF line endings. Writing LF
 // silently breaks the engine's descr_* parsers ("Expected faction list starting
@@ -1231,132 +1240,9 @@ function loadModCharacterData(modDataDir) {
 //   N:    uint32 = x (0..200)
 //   N+4:  uint32 = y (0..100)
 // Discovered by diffing Parmenion (21,45), Alexander (11,49) in Alex turn 1.
-function parseWorldObjectPositions(buf) {
-  const map = new Map();
-  for (let N = 24; N < buf.length - 8; N++) {
-    if (buf.readUInt32LE(N - 12) !== 6) continue;
-    if (buf.readUInt32LE(N - 4) !== N - 4) continue;
-    const x = buf.readUInt32LE(N);
-    // Bounds raised 2026-05-09: RIS imperial map is 1020x700, vanilla RTW
-    // ~200x150. Old bounds rejected 99.6% of legit position records on
-    // imperial-campaign saves, hiding most armies from the map.
-    if (x < 0 || x > 1100) continue;
-    const y = buf.readUInt32LE(N + 4);
-    if (y < 0 || y > 800) continue;
-    const uuid = buf.readUInt32LE(N - 8);
-    if (uuid === 0) continue;
-    map.set(uuid, { x, y });
-  }
-  return map;
-}
-
-// Save-cracker session 110 (2026-05-16): each character has a companion
-// metadata record carrying a class name (ASCII "roman general", etc.) and
-// the character's current region as a UTF-16 string. Linked to the position
-// record by shared UUID. Validated across all 15 fixture saves: every
-// "<faction> general/captain/admiral/diplomat/spy/.../priest"-class record
-// has a region AND a matching position record (100% hit rate).
-// Returns Map<uuid, { className, regionName }>.
-function parseCharacterMetadataByUuid(buf) {
-  const CHAR_CLASS_RE = /\b(general|captain|admiral|diplomat|spy|assassin|merchant|princess|priest)\b/i;
-  const out = new Map();
-  for (let i = 0; i < buf.length - 64; i++) {
-    // Record-type marker: u32 LE = 0xef (239)
-    if (buf.readUInt32LE(i) !== 0xef) continue;
-    const uuid = buf.readUInt32LE(i + 4);
-    if (!uuid || uuid === 0xffffffff) continue;
-    // Walk forward looking for an ASCIIZ pstr16 in window i+0x10..i+0x40.
-    // Padding length varies (record header layout isn't fixed-width).
-    let classStr = null, classEnd = -1;
-    for (let p = i + 0x10; p < i + 0x40 && p + 2 < buf.length; p++) {
-      const lenP1 = buf.readUInt16LE(p);
-      if (lenP1 < 4 || lenP1 > 50) continue;
-      if (p + 2 + lenP1 > buf.length) continue;
-      let ok = true;
-      for (let j = 0; j < lenP1 - 1; j++) {
-        const c = buf[p + 2 + j];
-        if (c < 0x20 || c > 0x7e) { ok = false; break; }
-      }
-      if (!ok) continue;
-      if (buf[p + 2 + lenP1 - 1] !== 0) continue;
-      const s = buf.slice(p + 2, p + 2 + lenP1 - 1).toString("latin1");
-      if (CHAR_CLASS_RE.test(s) && /^[a-z][a-z _0-9]*[a-z0-9]$/i.test(s)) {
-        classStr = s;
-        classEnd = p + 2 + lenP1;
-        break;
-      }
-    }
-    if (!classStr) continue;
-    // Region name follows the class string within ~80 bytes as a UTF-16
-    // length-prefixed string.
-    let regionStr = null;
-    for (let p = classEnd; p < classEnd + 80 && p + 2 < buf.length; p++) {
-      const lenChars = buf.readUInt16LE(p);
-      if (lenChars < 3 || lenChars > 40) continue;
-      if (p + 2 + lenChars * 2 > buf.length) continue;
-      const chars = [];
-      let ok = true;
-      for (let j = 0; j < lenChars; j++) {
-        const c = buf.readUInt16LE(p + 2 + j * 2);
-        if (c < 0x20 || c > 0x7e) { ok = false; break; }
-        chars.push(String.fromCharCode(c));
-      }
-      if (!ok) continue;
-      const s = chars.join("");
-      if (/^[A-Z][A-Za-z _0-9-]*$/.test(s)) {
-        regionStr = s;
-        break;
-      }
-    }
-    out.set(uuid, { className: classStr, regionName: regionStr });
-  }
-  return out;
-}
-
-// Read the current in-game year directly from the save header.
-// Confirmed across the Alex-campaign archive: file offset 3972 is an int32
-// signed year (negative for BC). Offset 3968 is the turn counter (turn-1)
-// in the same header block. We prefer reading the year directly because
-// it's stored by the engine and works for any campaign configuration.
-// Turn + year live in the header relative to the `descr_strat` path string —
-// turn = u32 at anchorEnd+5, year = i32 at anchorEnd+9 (BC negative). Session
-// 175 (2026-05-22) crack: this is MOD-ROBUST. The old hardcoded 0x44e3/0x44e7
-// only worked for RIS-imperial saves (whose anchorEnd happens to be 0x44de);
-// vanilla/other-mod saves shift the offset by the mod-path length, so the
-// hardcode read zeros/garbage there. Validated 29 saves across RIS + vanilla.
-// (0x44e3 retained as a fallback if the anchor isn't found.)
-function findDescrStratAnchorEnd(saveBuf) {
-  const needle = Buffer.from("d\0e\0s\0c\0r\0_\0s\0t\0r\0a\0t\0", "binary");
-  const lim = Math.min(saveBuf.length, 0x10000);
-  let idx = -1, p = 0;
-  while (true) {
-    const f = saveBuf.indexOf(needle, p);
-    if (f === -1 || f > lim) break;
-    idx = f; p = f + 2;
-  }
-  if (idx < 0) return -1;
-  let e = idx;
-  while (e + 1 < saveBuf.length && saveBuf[e] >= 0x20 && saveBuf[e] <= 0x7e && saveBuf[e + 1] === 0) e += 2;
-  return e;
-}
-
-function readCurrentYearFromSave(saveBuf) {
-  const a = findDescrStratAnchorEnd(saveBuf);
-  const off = (a >= 0 && saveBuf[a + 4] === 0x01) ? a + 9 : 0x44e7;
-  if (saveBuf.length < off + 4) return null;
-  const year = saveBuf.readInt32LE(off);
-  if (year < -2000 || year > 3000) return null;
-  return year;
-}
-
-function readTurnFromSave(saveBuf) {
-  const a = findDescrStratAnchorEnd(saveBuf);
-  const off = (a >= 0 && saveBuf[a + 4] === 0x01) ? a + 5 : 0x44e3;
-  if (saveBuf.length < off + 4) return null;
-  const turnCounter = saveBuf.readUInt32LE(off);
-  if (turnCounter > 10000) return null;
-  return turnCounter + 1; // displayed turn number (save stores turn-1)
-}
+// parseWorldObjectPositions, parseCharacterMetadataByUuid,
+// findDescrStratAnchorEnd, readCurrentYearFromSave, readTurnFromSave moved to
+// src/saveBinaryReaders.js (pure buffer readers, unit-tested). Imported at top.
 
 function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
   if (!modNameLookup || !modTraitNames) return null;
@@ -5867,29 +5753,7 @@ ipcMain.handle("resolve-building-icon", async (_event, modDataDir, culture, leve
 //   sourceFile   — absolute path of the dropped file on disk
 //
 // Returns: { ok: true, destPath, backupPath } or { ok: false, error }.
-function encodeTga32BGRA(width, height, bgraBuf) {
-  // RTW accepts uncompressed 32-bit TGAs. Layout:
-  //   18-byte header → pixel data (BGRA, bottom-up by default; we flip to
-  //   top-down by setting image-descriptor bit 5).
-  // Header bytes:
-  //   0    idLength       (0 = no image id)
-  //   1    colorMapType   (0 = none)
-  //   2    imageType      (2 = uncompressed true-color)
-  //   3-7  colorMap spec  (5 bytes, all zero)
-  //   8-9  x-origin       (u16 LE, 0)
-  //  10-11 y-origin       (u16 LE, 0)
-  //  12-13 width          (u16 LE)
-  //  14-15 height         (u16 LE)
-  //  16    pixel depth    (32)
-  //  17    image descr    (8 = 8 alpha bits; |0x20 = top-down)
-  const header = Buffer.alloc(18);
-  header.writeUInt16LE(width, 12);
-  header.writeUInt16LE(height, 14);
-  header[2] = 2;
-  header[16] = 32;
-  header[17] = 8 | 0x20;
-  return Buffer.concat([header, bgraBuf]);
-}
+// encodeTga32BGRA moved to src/tgaCodec.js (pure, imported at top).
 
 ipcMain.handle("replace-building-icon", async (_event, modDataDir, culture, levelName, chainName, sourceFile) => {
   console.log(`[icon-replace] IPC invoked: culture=${culture} level=${levelName} chain=${chainName || "(none)"} src=${sourceFile || "(none)"}`);
@@ -8272,25 +8136,7 @@ for (const suf of ['aeolian','arab','arcadian','armenian','assyrian','baltic','b
   KNOWN_BUILDINGS.add('temple_complex_' + suf);
 }
 
-// Helper: read a UTF-16LE name at a given position in the buffer.
-// Expects [uint8 nchars] [0x00] [nchars * 2 bytes of UTF-16LE] [0x00 0x00].
-// Returns { name, end } or null.
-function readUtf16Name(data, pos, len) {
-  if (pos + 4 >= len) return null;
-  const nchars = data[pos];
-  if (nchars < 3 || nchars > 32 || data[pos + 1] !== 0x00) return null;
-  const strStart = pos + 2;
-  const strEnd = strStart + nchars * 2;
-  if (strEnd + 2 > len || data[strEnd] !== 0x00 || data[strEnd + 1] !== 0x00) return null;
-  let decoded = '';
-  for (let j = strStart; j < strEnd; j += 2) {
-    const lo = data[j], hi = data[j + 1];
-    if (hi !== 0x00 || lo < 0x20 || lo > 0x7e) return null;
-    decoded += String.fromCharCode(lo);
-  }
-  if (decoded[0] < 'A' || decoded[0] > 'Z') return null;
-  return { name: decoded, end: strEnd + 2 };
-}
+// readUtf16Name moved to src/saveBinaryReaders.js (pure, imported at top).
 
 async function parseSaveData(filePath, onProgress, providedBuf = null) {
   const _yieldHere = () => new Promise(resolve => setImmediate(resolve));
