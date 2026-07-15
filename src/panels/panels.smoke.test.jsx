@@ -20,6 +20,7 @@ import AddRegionModal from "./AddRegionModal.js";
 import CompareModal from "./CompareModal.js";
 import CommandPalette from "./CommandPalette.js";
 import WealthPanel from "./WealthPanel.js";
+import ArmySetupModal from "./ArmySetupModal.js";
 import DashboardModal from "./DashboardModal.js";
 
 // Stand-ins for the DashSection/DashRow module components that App.js passes in.
@@ -264,5 +265,24 @@ describe("panels render smoke-test", () => {
     expect(c.textContent).toContain("Mod-validation dashboard");
     // summary all-zero + null audits → the all-clear path, not the error path.
     expect(c.textContent).not.toContain("undefined");
+  });
+
+  it("ArmySetupModal renders with empty data (no throw; search props are strings)", async () => {
+    const noop = () => {};
+    const props = {
+      activeIconsDir: null, armyBudgetFloor: null, armyCalibSave: null, armyCalibSaves: [],
+      armyEcoMode: null, armyFacSearch: "", armyOverview: null, armyOverviewRunning: false,
+      armyProjIncome: null, armySetSearch: "", armySetupBusy: false, armySetupData: null,
+      armySetupFactions: [], armyT1Budget: null, corrCalibStored: null, factionDisplayNames: {},
+      garrDone: false, modDataDir: "C:/x", pendingReload: false, pushToast: noop,
+      setArmyBudgetFloor: noop, setArmyCalibSaves: noop, setArmyEcoMode: noop, setArmyFacSearch: noop,
+      setArmyOverview: noop, setArmyProjIncome: noop, setArmySetSearch: noop, setArmySetupBusy: noop,
+      setArmySetupData: noop, setArmyStratPlan: noop, setArmyT1Budget: noop, setGarrDone: noop,
+      setPendingReload: noop, setShowArmySetup: noop, taxCalibStored: null,
+    };
+    const c = await mount(<ArmySetupModal {...props} />);
+    // Portals into document.body.
+    expect(document.body.textContent).toMatch(/Army Setup|Budget|Tax/);
+    void c;
   });
 });
