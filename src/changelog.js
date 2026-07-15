@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1263",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**Trade Network panel loads faster too.** Same win as the economy panel, applied to the trade-network view: it used to re-parse the entire save (characters, armies, families, sieges) even though it only needs settlements, diplomacy, ownership and population. It now skips that unused work, cutting its main-thread compute from ~8 seconds to ~5.8 seconds with identical results. Between this and the economy change, the app now frees up several seconds sooner after each save loads." },
+    ],
+  },
+  {
     version: "0.9.1262",
     date: "2026-07-15",
     items: [

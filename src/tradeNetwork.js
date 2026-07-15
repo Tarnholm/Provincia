@@ -759,7 +759,11 @@ function computeTradeNetwork(saveBuf, modDataDir, opts = {}) {
 
   // crackSave parses settlements WITHOUT a whitelist; re-parse buildings with the
   // EDB whitelist so event pseudo-buildings don't pollute road/port detection.
-  const cr = crackSave(saveBuf, modDataDir);
+  // tradeOnly: we use only cr.settlements / diplomacy / settlementFields /
+  // ownerByCity / playerFaction / turn — so skip the character/unit/family/
+  // siege/agent/event/knowledge parses (keeps the diplomacy matrix, which the
+  // trade-rights gating needs). Cuts this ~8s main-thread block to ~2.5s.
+  const cr = crackSave(saveBuf, modDataDir, { tradeOnly: true });
   const { parseSettlements } = require("./buildingParser.js");
   const settlements = (chains.size ? parseSettlements(saveBuf, chains, null).settlements : cr.settlements);
 

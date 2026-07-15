@@ -183,9 +183,19 @@ function crackSave(saveBuf, modDataDir, opts = {}) {
   // the Electron main thread — the full crack blocks the process for ~5.6s on a
   // 34 MB save; economyOnly cuts that to ~1.5s. The returned object keeps the
   // SAME shape (skipped fields are empty arrays / null), so downstream code and
-  // parseFinancialOverview behave identically. The default (economyOnly=false)
-  // path is unchanged: every guard below is a no-op when economyOnly is false.
+  // parseFinancialOverview behave identically. The default path is unchanged:
+  // every guard below is a no-op when neither flag is set.
+  //
+  // tradeOnly: the same idea for the Trade Network panel — computeTradeNetwork
+  // needs settlements, diplomacy, settlementFields, ownerByCity, playerFaction,
+  // turn, and NONE of the character/unit/family/siege/agent/event/knowledge
+  // parses. It differs from economyOnly in ONE respect: it KEEPS the diplomacy
+  // matrix (used for trade-rights gating), which economyOnly drops. `skipHeavy`
+  // is the union — the expensive parses both modes skip; diplomacy is guarded by
+  // economyOnly alone so tradeOnly retains it.
   const economyOnly = !!(opts && opts.economyOnly);
+  const tradeOnly = !!(opts && opts.tradeOnly);
+  const skipHeavy = economyOnly || tradeOnly;
 
   // ── mod-side context (small, cached on disk reads) ────────────────────
   const stratOrder    = readFactionOrderFromStrat(modDataDir);
@@ -226,11 +236,11 @@ function crackSave(saveBuf, modDataDir, opts = {}) {
   } catch (e) { /* whitelist optional — parse degrades to unfiltered */ }
   const settlements   = parseSettlements(saveBuf, edbChainSet, edbChainMax); // returns { settlements: [...], ... }
   const diplomacy     = economyOnly ? null : x.parseDiplomacyMatrix(saveBuf, diploOrder);
-  const v2Chars       = economyOnly ? [] : x.parseCharacterExtras(saveBuf);
+  const v2Chars       = skipHeavy ? [] : x.parseCharacterExtras(saveBuf);
   // Attach extX/extY to v2 records so role-string agents (if any) can be named
   // by tile-coord join against v1. Cheap; no-op on saves smaller than the
   // portrait-pool offset. (Same coord bridge bridgeV1Traits relies on.)
-  try { if (!economyOnly) x.attachMapCoords(saveBuf, v2Chars); } catch (e) { /* coords optional */ }
+  try { if (!skipHeavy) x.attachMapCoords(saveBuf, v2Chars); } catch (e) { /* coords optional */ }
 
   // findCharacterRecords returns FULLY-PARSED records (firstName, age, role,
   // stats, traits, etc) — no separate parseCharacter call needed. The records
@@ -238,7 +248,7 @@ function crackSave(saveBuf, modDataDir, opts = {}) {
   // marker trick used by save-to-descr-strat.
   let v1Chars = [];
   let factionMarkers = [];
-  if (!economyOnly) {
+  if (!skipHeavy) {
     if (nameLookup.length && traitNames.length) {
       v1Chars = findCharacterRecords(saveBuf, nameLookup, traitNames, null);
       factionMarkers = findFactionMarkers(saveBuf);
@@ -261,7 +271,7 @@ function crackSave(saveBuf, modDataDir, opts = {}) {
   //       attributed by the same nearest-captain_card rule as v1 generals.
   // We expose the union as `characters.agents`, and also stamp `.type` onto the
   // matching v1 character record so downstream UI can colour/filter by class.
-  const cardAgents = economyOnly ? [] : x.parseTypedAgents(saveBuf, factionMarkers);
+  const cardAgents = skipHeavy ? [] : x.parseTypedAgents(saveBuf, factionMarkers);
   // Tally the role-anchored class breakdown (confirmed for general/captain;
   // other roles surface here too if a save ever contains them).
   const roleBreakdown = {};
@@ -332,7 +342,7 @@ function crackSave(saveBuf, modDataDir, opts = {}) {
   // UUID links. Family HEADS (adult male generals) are in v1, not here, so we
   // resolve link names against BOTH this table and the v1 character set.
   let family = [];
-  if (nameLookup.length && !economyOnly) {
+  if (nameLookup.length && !skipHeavy) {
     family = parseFamilyRecords(saveBuf, nameLookup);
     // Build a uuid->name map from v1 generals so father/spouse links that
     // point at a trait-anchored head still resolve to a name.
@@ -359,12 +369,12 @@ function crackSave(saveBuf, modDataDir, opts = {}) {
   // Active sieges — siege-ID links the besieging army to the besieged
   // settlement (cracked 2026-05-30, src/siegeParser.js). Empty when none active.
   const settlementList = (settlements && settlements.settlements) || [];
-  const sieges = economyOnly ? [] : parseSieges(saveBuf, settlementList);
+  const sieges = skipHeavy ? [] : parseSieges(saveBuf, settlementList);
 
   // End-of-turn event log — sieges/captures/births/deaths/marriages/defeats,
   // each tagged with the owning faction (cracked 2026-05-31, src/eventLogParser.js).
   // diffTurn() against the previous save yields "what happened last turn".
-  const events = economyOnly ? [] : parseEventLog(saveBuf, stratOrder);
+  const events = skipHeavy ? [] : parseEventLog(saveBuf, stratOrder);
 
   // Per-settlement runtime fields (population growth, income, public order,
   // governor) — cracked 2026-05-31, src/settlementFieldsParser.js. Keyed by name.
@@ -395,14 +405,14 @@ function crackSave(saveBuf, modDataDir, opts = {}) {
   // 2026-05-31, src/eventScheduleParser.js. Static historical events + appended
   // runtime random disasters; "pending" = records dated after the current turn.
   let eventSchedule = null;
-  try { if (!economyOnly) eventSchedule = parseEventSchedule(saveBuf); } catch (e) { /* leave null */ }
+  try { if (!skipHeavy) eventSchedule = parseEventSchedule(saveBuf); } catch (e) { /* leave null */ }
 
   // RIS campaign-script state — Lua persistent counters bucketed into
   // factionIds / scriptState (reform/rebellion/battle timers) / engineCounters.
   // NB engineCounters.turn_number is a RIS season-toggle, NOT the turn index
   // (use `turn` above). See luaCounterParser.classifyCounters.
   let scriptCounters = null;
-  try { if (!economyOnly) scriptCounters = classifyCounters(findLuaCounters(saveBuf)); } catch (e) { /* leave null */ }
+  try { if (!skipHeavy) scriptCounters = classifyCounters(findLuaCounters(saveBuf)); } catch (e) { /* leave null */ }
 
   // Per-faction AI world-knowledge summary — how many map settlements each
   // faction has scouted (FACTION_RECORD_TAIL, cracked 2026-05-31,
@@ -419,7 +429,7 @@ function crackSave(saveBuf, modDataDir, opts = {}) {
   // engineOrder[237] = slave = the global revealed-area record.
   let factionKnowledge = null;
   try {
-    if (economyOnly) throw 0; // skip — economy panel doesn't use faction knowledge
+    if (skipHeavy) throw 0; // skip — economy/trade panels don't use faction knowledge
     const fk = parseFactionKnowledge(saveBuf, stratOrder); // stratOrder → tuple ownerName
     const perFaction = {};
     for (const r of fk.records) {
@@ -435,7 +445,7 @@ function crackSave(saveBuf, modDataDir, opts = {}) {
   // armies by commanderUuid, commander-less units are settlement garrisons.
   let units = [], armies = [];
   try {
-    if (economyOnly) throw 0; // skip — economy panel doesn't use unit/army detail
+    if (skipHeavy) throw 0; // skip — economy/trade panels don't use unit/army detail
     const own = ownersOut.ownerByCity || {};
     // unit.region is a REGION name; ownerByCity is keyed by SETTLEMENT name —
     // map region→settlement via descr_regions, then look up the owner.

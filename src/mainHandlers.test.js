@@ -214,6 +214,25 @@ const haveMod = (() => { try { return fs.existsSync(path.join(MOD_DIR, "export_d
     expect(full.characters.v1.length).toBeGreaterThan(0);
   });
 
+  // Locks the tradeOnly fast-path invariant: crack-trade-network runs crackSave
+  // with { tradeOnly: true } — same heavy-parse skip as economyOnly, but KEEPS
+  // the diplomacy matrix (trade-rights gating needs it). computeTradeNetwork
+  // uses only settlements/diplomacy/settlementFields/ownerByCity/playerFaction/
+  // turn, so those must match the full crack byte-for-byte.
+  it.runIf(saveFile)("crackSave tradeOnly matches the full crack on every field computeTradeNetwork reads", { timeout: 40000 }, () => {
+    const { crackSave } = require("./saveCracker.js");
+    const buf = fs.readFileSync(saveFile);
+    const full = crackSave(buf, MOD_DIR);
+    const trade = crackSave(buf, MOD_DIR, { tradeOnly: true });
+    for (const k of ["settlements", "diplomacy", "settlementFields", "ownerByCity", "playerFaction", "turn"]) {
+      expect(trade[k]).toEqual(full[k]);
+    }
+    // tradeOnly KEEPS diplomacy (unlike economyOnly) but still skips the heavy parses.
+    expect(trade.diplomacy).not.toBeNull();
+    expect(trade.characters.v1.length).toBe(0);
+    expect(trade.units.length).toBe(0);
+  });
+
   it("portraitHandlers domain: trait/ancillary/portrait resolvers run and degrade gracefully", async () => {
     // All three return a structured result (never throw) for the real mod.
     const ti = await H.invoke("resolve-trait-icon", MOD_DIR, "roman", "GoodCommander");
