@@ -28,4 +28,33 @@ describe("parseSaveData (extracted from main.js)", () => {
       expect(d, `missing ${k}`).toHaveProperty(k);
     }
   });
+
+  // Locks the worker-offload invariant: the live-load parse runs in
+  // src/parseSaveDataWorker.js (off the Electron main thread so a turn no longer
+  // freezes the window). The worker output MUST be byte-identical to the
+  // synchronous parse, and it must stream progress + forward diagnostics back.
+  it.runIf(saveFile)("parseSaveDataWorker output is identical to the synchronous parse", { timeout: 40000 }, async () => {
+    const { Worker } = require("worker_threads");
+    const WORKER = require.resolve("./parseSaveDataWorker.js");
+    const KB = new Set(["core_building", "farms", "market", "barracks", "temples_of_trade"]);
+    const deps = { KNOWN_BUILDINGS: KB, getModAiByFaction: () => ({}), getModAiPersonalityOrder: () => [], getModFactionOrder: () => [] };
+    const sync = await makeParseSaveData(deps)(saveFile, () => {}, null);
+
+    const runWorker = () => new Promise((resolve, reject) => {
+      const w = new Worker(WORKER);
+      let progress = 0;
+      w.on("message", (m) => {
+        if (m && m.type === "progress") { progress++; return; }
+        w.terminate();
+        (m && m.ok) ? resolve({ result: m.result, logs: m.logs, progress }) : reject(new Error((m && m.error) || "worker failed"));
+      });
+      w.once("error", (e) => { w.terminate(); reject(e); });
+      w.postMessage({ savePath: saveFile, saveBuf: null, knownBuildings: Array.from(KB), modAiByFaction: {}, modAiPersonalityOrder: [], modFactionOrder: [] });
+    });
+
+    const wk = await runWorker();
+    expect(wk.result).toEqual(sync);            // byte-identical parse
+    expect(wk.progress).toBeGreaterThan(0);      // progress streamed back
+    expect(wk.logs.length).toBeGreaterThan(0);   // diagnostics forwarded for provincia.log
+  });
 });

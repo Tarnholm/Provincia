@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1265",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**No more freeze when a new turn's save loads (Live mode).** Detecting a new save reparses the whole 30-45 MB file — about 1.6 seconds of work that used to run on the app's main thread, freezing the window every turn. That parse now runs on a background thread, so the app stays responsive while the new turn's data is read and the map updates the moment it's ready. Identical data; the load bar still animates; falls back to the old path automatically if the background thread is ever unavailable." },
+    ],
+  },
+  {
     version: "0.9.1264",
     date: "2026-07-15",
     items: [

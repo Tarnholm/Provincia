@@ -84,6 +84,41 @@ function parseBuildingsInWorker(saveBuf) {
   });
 }
 
+// Run the live-load save parse (parseSaveData) in a worker so it doesn't block
+// the main thread (~1.6s per reload). Streams progress stages back to onProgress
+// and replays the parse's [perf]/[diplomacy]/… diagnostics into provincia.log.
+// Rejects on worker failure so the caller can fall back to the synchronous
+// parse. See src/parseSaveDataWorker.js.
+function parseSaveDataInWorker(savePath, saveBuf, onProgress) {
+  return new Promise((resolve, reject) => {
+    const workerPath = path.join(__dirname, "src", "parseSaveDataWorker.js");
+    let worker;
+    try { worker = new Worker(workerPath); }
+    catch (e) { reject(e); return; }
+    worker.on("message", (msg) => {
+      if (!msg) return;
+      if (msg.type === "progress") { try { if (onProgress) onProgress({ stage: msg.stage }); } catch { /* */ } return; }
+      // type === "done"
+      worker.terminate();
+      if (Array.isArray(msg.logs)) { for (const line of msg.logs) { try { _writeLog(line); } catch { /* */ } } }
+      if (msg.ok) resolve(msg.result);
+      else reject(new Error(msg.error || "parse worker failed"));
+    });
+    worker.once("error", (err) => { worker.terminate(); reject(err); });
+    // Pass CURRENT mod-state snapshots (stable during a parse) + KNOWN_BUILDINGS
+    // as an array (worker rebuilds the Set). Prefer savePath so the worker
+    // re-reads from the OS cache rather than us cloning the 34 MB buffer across.
+    worker.postMessage({
+      savePath: savePath || null,
+      saveBuf: savePath ? null : saveBuf,
+      knownBuildings: Array.from(KNOWN_BUILDINGS),
+      modAiByFaction: modAiByFaction || {},
+      modAiPersonalityOrder: modAiPersonalityOrder || [],
+      modFactionOrder: modFactionOrder || [],
+    });
+  });
+}
+
 // Pin the AppUserModelID so taskbar / Start-Menu pins survive updates.
 // NSIS sets the installed shortcut's AppUserModelID from package.json's
 // `appId`. Without an explicit call here, the running Electron process
@@ -3225,12 +3260,22 @@ for (const suf of ['aeolian','arab','arcadian','armenian','assyrian','baltic','b
 // Save-file binary parser — heavy logic in src/parseSaveData.js; bound here to the
 // shared KNOWN_BUILDINGS set + mod-state getters so the callers stay unchanged.
 const { makeParseSaveData } = require("./src/parseSaveData.js");
-const parseSaveData = makeParseSaveData({
+const parseSaveDataSync = makeParseSaveData({
   KNOWN_BUILDINGS,
   getModAiByFaction: () => modAiByFaction,
   getModAiPersonalityOrder: () => modAiPersonalityOrder,
   getModFactionOrder: () => modFactionOrder,
 });
+// parseSaveData runs the ~1.6s live-load parse in a worker thread (off the main
+// thread, so a turn no longer freezes the window) with an AUTOMATIC fall back to
+// the synchronous parse on any worker failure — same signature, same result, so
+// the two call sites (reparseLatestSave + save-watch-start) are unchanged.
+function parseSaveData(filePath, onProgress, providedBuf) {
+  return parseSaveDataInWorker(filePath, providedBuf, onProgress).catch((e) => {
+    _writeLog(`[parse] worker fallback (${e && e.message}) — parsing on main thread`);
+    return parseSaveDataSync(filePath, onProgress, providedBuf);
+  });
+}
 
 // diffSaveData moved to src/saveDiff.js (pure, imported at top).
 
