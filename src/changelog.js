@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1258",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**Main-process cleanup — no behaviour changes.** The app's file read/write plumbing (saving campaign data, reading bundled files, autosave persistence) moved into its own focused module, verified end-to-end against a throwaway sandbox — including the path-traversal defence that keeps every write inside its intended folder. The main process file is now ~130 lines smaller." },
+    ],
+  },
+  {
     version: "0.9.1257",
     date: "2026-07-15",
     items: [
