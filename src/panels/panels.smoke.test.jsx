@@ -14,6 +14,7 @@ import XrefModal from "./XrefModal.js";
 import RevertAutosaveModal from "./RevertAutosaveModal.js";
 import SettlementAuditModal from "./SettlementAuditModal.js";
 import LoadModModal from "./LoadModModal.js";
+import AiDiagModal from "./AiDiagModal.js";
 
 beforeAll(() => {
   if (!window.electronAPI) window.electronAPI = { scriptsJumpTo: () => {}, selectFolder: () => Promise.resolve(null), findFactionIconsDir: () => Promise.resolve(null) };
@@ -95,5 +96,28 @@ describe("panels render smoke-test", () => {
     const c = await mount(<LoadModModal onClose={() => {}} onSetModIconsDir={() => {}} pushToast={() => {}} />);
     expect(c.textContent).toContain("Load your mod to edit");
     expect(c.textContent).toContain("Load mod folder");
+  });
+
+  it("AiDiagModal renders diagnostics sections + editable thresholds", async () => {
+    const props = {
+      saveEconomy: { turn: 12 },
+      aiDiagConfig: { hoardMode: "scaled", hoardPerSettlement: 1000, hoardPerTier: 0, hoardPerPop: 0, hoardTreasury: 50000, hoardInvest: 500, lowTreasury: 0, dormantTurns: 5 },
+      setAiDiagConfig: () => {},
+      aiDiagnostics: {
+        bankrupt: [{ faction: "gaul", treasury: -100, net: -50 }],
+        willBankrupt: [],
+        bleeding: [{ faction: "spain", net: -30, treasury: 200 }],
+        hoarding: [{ faction: "egypt", treasury: 90000, threshold: 60000, settlements: 8, recruitment: 0, construction: 0, growth: 5 }],
+      },
+      factionDisplayNames: { gaul: "Gaul", spain: "Spain", egypt: "Egypt" },
+      onClose: () => {},
+      onPickFaction: () => {},
+    };
+    const c = await mount(<AiDiagModal {...props} />);
+    expect(c.textContent).toContain("AI Diagnostics");
+    expect(c.textContent).toContain("turn 12");
+    expect(c.textContent).toContain("Bankrupt");
+    expect(c.textContent).toContain("Gaul");
+    expect(c.textContent).toContain("Egypt");
   });
 });
