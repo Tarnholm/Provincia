@@ -91,6 +91,7 @@
       "src/consentRoots.js",
       "src/saveBinaryReaders.js",
       "src/tgaCodec.js",
+      "src/lastTurnSummary.js",
       "src/saveDiff.js",
       "src/mainUtils.js",
       "src/iconDirCache.js",

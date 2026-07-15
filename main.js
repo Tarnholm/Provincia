@@ -216,7 +216,8 @@ const { parseLandmarks } = require("./src/landmarkParser.js");
 //  - event LOG (end-of-turn scroll) → "last turn" diff (src/eventLogParser.js)
 //  - event SCHEDULE (disaster / scripted-event table) → list + map markers
 //  - faction KNOWLEDGE (per-faction scouting summary) → AI fog readout
-const { parseEventLog: cxParseEventLog, diffTurn: cxDiffTurn } = require("./src/eventLogParser.js");
+const { parseEventLog: cxParseEventLog } = require("./src/eventLogParser.js");
+const { buildLastTurnSummary } = require("./src/lastTurnSummary.js");
 const { parseEventSchedule: cxParseEventSchedule } = require("./src/eventScheduleParser.js");
 const { parseFactionKnowledge: cxParseFactionKnowledge } = require("./src/factionKnowledgeParser.js");
 const { findFactionRecords, summarizeFactionArray } = require("./src/factionRecordParser.js");
@@ -9065,20 +9066,6 @@ function getStratFactionOrder(modDataDir) {
 // already tagged with `.faction` (descr_strat order) by parseEventLog. We pass
 // through the raw type so the panel can label/icon precisely. Returns null when
 // there is no previous snapshot to diff against (UI shows "—").
-function buildLastTurnSummary(prevEventLog, currEventLog) {
-  if (!Array.isArray(prevEventLog) || !Array.isArray(currEventLog)) return null;
-  const newEvents = cxDiffTurn(prevEventLog, currEventLog);
-  // Keep the shape close to the parser's records so the renderer can group.
-  return newEvents.map((e) => ({
-    type: e.type,
-    recordClass: e.recordClass,
-    faction: e.faction || null,
-    subject: e.subject,
-    title: e.title || null,
-    body: e.body || null,
-  }));
-}
-
 // Map the live `newData` snapshot into the src/diagnostics.js input shape. Pure
 // + read-only — uses the SAME resolved fields the renderer consumes (no
 // re-derive). Garrison classification happens in the renderer (App.js applies
