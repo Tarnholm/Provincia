@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1252",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**Further internal modularization — no behaviour changes.** The trait / ancillary / portrait icon-resolution handlers moved into their own module, each verified by automated tests against a real mod. The main-process file is now about 17% smaller than at the start of today's cleanup, with a test harness covering the extracted handlers directly." },
+    ],
+  },
+  {
     version: "0.9.1251",
     date: "2026-07-15",
     items: [
