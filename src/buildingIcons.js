@@ -12,8 +12,73 @@ import TGA from "./tga.js";
 
 const cache = new Map();    // `${culture}|${level}` → blobUrl | "none"
 const inflight = new Map(); // `${culture}|${level}` → Promise
+// Decoded-blob cache keyed by SOURCE FILE PATH (2026-07-15). Icon resolution
+// collapses many (culture,level) keys onto the same file (e.g. 20+ cultures
+// fall back to the same #roman_*.tga), so the whole-map warm-up was decoding +
+// PNG-encoding the identical image dozens of times — the startup bottleneck.
+// Decode each unique file ONCE to a Blob here; every cache key that resolves to
+// it gets its own object URL from the shared Blob (revoking one key's URL never
+// touches the Blob or other keys' URLs, so icon-replace stays correct).
+const pathToBlob = new Map(); // resolvedPath → Blob | "none"
 
-function pixelsToBlobUrl({ width, height, pixels }) {
+// ── Worker pool for off-main-thread icon decode (2026-07-15) ──────────────
+// Each worker does the FULL TGA→PNG pipeline (decode + OffscreenCanvas encode)
+// off the main thread, so N icons decode in PARALLEL across cores during the
+// startup warm-up instead of the single main thread doing all ~900 serially
+// (the startup icon-lag). Falls back to main-thread decode if workers can't be
+// created (older/edge environments).
+const _ICON_WORKER_COUNT = Math.min(6, Math.max(2, (typeof navigator !== "undefined" && navigator.hardwareConcurrency) || 4));
+let _iconWorkers = null;      // Worker[] | null(=use main thread)
+let _iconWorkersTried = false;
+let _iconRR = 0;              // round-robin index
+let _iconReqId = 0;
+const _iconPending = new Map(); // reqId → resolve(pngArrayBuffer | null)
+
+function ensureIconWorkers() {
+  if (_iconWorkersTried) return _iconWorkers;
+  _iconWorkersTried = true;
+  try {
+    if (typeof Worker !== "function" || typeof OffscreenCanvas === "undefined") {
+      console.log(`[icon-workers] main-thread fallback (Worker=${typeof Worker}, OffscreenCanvas=${typeof OffscreenCanvas})`);
+      return (_iconWorkers = null);
+    }
+    const url = ((import.meta.env && import.meta.env.BASE_URL) || "") + "/icon-decode-worker.js";
+    const ws = [];
+    for (let i = 0; i < _ICON_WORKER_COUNT; i++) {
+      const w = new Worker(url);
+      w.onmessage = (ev) => {
+        const { id, ok, png } = ev.data || {};
+        const r = _iconPending.get(id);
+        if (!r) return;
+        _iconPending.delete(id);
+        r(ok && png ? png : null);
+      };
+      w.onerror = (e) => { console.warn("[icon-workers] worker error:", e && (e.message || e.filename || "?")); };
+      ws.push(w);
+    }
+    console.log(`[icon-workers] decode pool: ${ws.length} workers`);
+    _iconWorkers = ws;
+  } catch (e) { console.warn("[icon-workers] pool creation FAILED → main thread:", e && e.message); _iconWorkers = null; }
+  return _iconWorkers;
+}
+
+// Decode a TGA ArrayBuffer to a PNG ArrayBuffer on a pool worker. The buffer is
+// TRANSFERRED (zero-copy). Resolves null on decode failure. Returns null
+// synchronously if no worker pool (caller then decodes on the main thread).
+function decodePngInWorker(buffer) {
+  const ws = ensureIconWorkers();
+  if (!ws) return null;
+  const ab = buffer instanceof ArrayBuffer ? buffer : buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+  const id = ++_iconReqId;
+  const w = ws[_iconRR++ % ws.length];
+  return new Promise((resolve) => {
+    _iconPending.set(id, resolve);
+    try { w.postMessage({ id, buffer: ab }, [ab]); }
+    catch (e) { console.warn("[icon-workers] postMessage failed:", e && e.message); _iconPending.delete(id); resolve(null); }
+  });
+}
+
+function pixelsToBlob({ width, height, pixels }) {
   // tga.js already normalises orientation to top-down during parse, so
   // the buffer is row-major with row 0 = top. Don't re-flip.
   const rowMajor = new Uint8ClampedArray(pixels);
@@ -25,8 +90,12 @@ function pixelsToBlobUrl({ width, height, pixels }) {
   img.data.set(rowMajor);
   ctx.putImageData(img, 0, 0);
   return new Promise((resolve) => {
-    canvas.toBlob((b) => resolve(b ? URL.createObjectURL(b) : null), "image/png");
+    canvas.toBlob((b) => resolve(b || null), "image/png");
   });
+}
+
+function pixelsToBlobUrl(args) {
+  return pixelsToBlob(args).then((b) => (b ? URL.createObjectURL(b) : null));
 }
 
 // Get the icon URL for a building level. Returns a blob URL, or null if
@@ -148,33 +217,68 @@ export async function prefetchBuildingIconsBulk(modDataDir, triples, onEach) {
   } catch {
     res = null;
   }
-  await Promise.all(req.map(async (r, i) => {
-    const item = res && res[i];
+
+  // Decode each UNIQUE source file once (pathToBlob), then assign every key
+  // that resolves to it its own object URL — so the identical roman-fallback
+  // art isn't decoded/encoded 20× across cultures. Returns the shared Blob (or
+  // "none") for a path, decoding on first sight.
+  const decodePath = async (srcPath, buffer) => {
+    if (srcPath && pathToBlob.has(srcPath)) return pathToBlob.get(srcPath);
+    let out = "none";
     try {
-      if (item && item.buffer) {
-        let tga;
-        try { tga = new TGA(new Uint8Array(item.buffer)); } catch { tga = null; }
-        if (tga && tga.width && tga.height && tga.pixels) {
-          // Timeout-guard the toBlob decode: a canvas.toBlob callback that
-          // never fires would otherwise hang this whole batch (and any hover
-          // that triggered it). On timeout, treat as "none" and move on.
-          const url = await Promise.race([
-            pixelsToBlobUrl({ width: tga.width, height: tga.height, pixels: tga.pixels }),
-            new Promise((res2) => setTimeout(() => res2(null), 2000)),
-          ]);
-          cache.set(r.key, url || "none");
-        } else {
-          cache.set(r.key, "none");
-        }
+      const workerP = decodePngInWorker(buffer); // null if no pool → main-thread path
+      if (workerP) {
+        // OFF-THREAD: worker decodes TGA + encodes PNG in parallel with others.
+        const png = await Promise.race([workerP, new Promise((r2) => setTimeout(() => r2(undefined), 4000))]);
+        if (png) out = new Blob([png], { type: "image/png" });
+        // png === null (worker decode failed) or undefined (timeout) → "none"
       } else {
-        cache.set(r.key, "none");
+        // MAIN-THREAD fallback (no OffscreenCanvas/Worker support).
+        let tga = null;
+        try { tga = new TGA(new Uint8Array(buffer)); } catch { tga = null; }
+        if (tga && tga.width && tga.height && tga.pixels) {
+          const blob = await Promise.race([
+            pixelsToBlob({ width: tga.width, height: tga.height, pixels: tga.pixels }),
+            new Promise((r2) => setTimeout(() => r2(null), 3000)),
+          ]);
+          out = blob || "none";
+        }
       }
-    } catch {
-      cache.set(r.key, "none");
-    } finally {
+    } catch { out = "none"; }
+    if (srcPath) pathToBlob.set(srcPath, out);
+    return out;
+  };
+
+  // Group req items by resolved path so each unique file decodes once even
+  // within this batch.
+  const byPath = new Map(); // path → { buffer, items: [req] }
+  const noArt = [];
+  for (let i = 0; i < req.length; i++) {
+    const item = res && res[i];
+    const r = req[i];
+    if (item && item.buffer && item.path) {
+      let g = byPath.get(item.path);
+      if (!g) { g = { buffer: item.buffer, items: [] }; byPath.set(item.path, g); }
+      g.items.push(r);
+    } else {
+      noArt.push(r);
+    }
+  }
+
+  await Promise.all([...byPath.entries()].map(async ([srcPath, g]) => {
+    const blob = await decodePath(srcPath, g.buffer);
+    for (const r of g.items) {
+      const url = blob === "none" ? "none" : URL.createObjectURL(blob);
+      cache.set(r.key, url);
       inflight.delete(r.key);
-      r._resolve(cache.get(r.key) === "none" ? null : cache.get(r.key));
+      r._resolve(url === "none" ? null : url);
       if (onEach) onEach();
     }
   }));
+  for (const r of noArt) {
+    cache.set(r.key, "none");
+    inflight.delete(r.key);
+    r._resolve(null);
+    if (onEach) onEach();
+  }
 }

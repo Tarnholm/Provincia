@@ -134,7 +134,7 @@ const RIGHT_MIN_WIDTH = 220;
 const ICON_DROP_SHADOW =
   "drop-shadow(0 0 1.25px rgba(0,0,0,0.85)) drop-shadow(0 0 2.5px rgba(0,0,0,0.45))";
 const SPLASH_MIN_MS = 0;     // no artificial floor — splash vanishes the instant assets are ready (user: "no splashscreen if possible")
-const SPLASH_HARD_MAX_MS = 30000; // safety cap if something gets wedged
+const SPLASH_HARD_MAX_MS = 35000; // safety cap if something gets wedged (allows the whole-map icon warm-up to finish)
 const THUMB_MIN_PX = Math.round(ICON_SIZE * 0.46);
 const SCROLL_SKIN = {
   img: (import.meta.env.BASE_URL || "./") + "/feral_slider_composite.png",
@@ -7486,36 +7486,30 @@ function App() {
   // main-process resolver, so this is a one-time cost. Robust logging so the
   // timing/coverage is visible in the app log.
   const iconWarmupKeyRef = useRef(null);
+  const warmupRunRef = useRef(null); // { cancelled } of the in-flight warm-up; cancelled only on campaign change / unmount, NOT on every effect re-run
   const colorizedOnceRef = useRef(false); // false until the first colored overlay is built for the current map
+  // Set true once every settlement's building icons are warm. The splash HOLDS
+  // for this (user: icons must be loaded for the whole map before the splash
+  // lifts), so no settlement ever shows without its icons.
+  const [priorityIconsWarm, setPriorityIconsWarm] = useState(false);
   useEffect(() => {
-    // Background warm-up: runs AFTER the splash lifts so it never competes with
-    // the map load/colorize (warming ~900 icons is inherently ~10s of read +
-    // transfer + decode; doing it during boot starved the map). The map appears
-    // immediately; icons fill in over the next several seconds, priority
-    // (settlement) icons first. Anything the user hovers before the sweep
-    // reaches it is covered instantly by the per-region BULK prefetch in
-    // getBuildings. (2026-07-15.)
-    if (showSplash) return;
+    // Runs DURING the splash, but only AFTER the map has decoded AND colorized
+    // (offscreen + overlay ready). Sequencing after colorize is what keeps the
+    // icon work from starving the map load — the earlier failure. Once the map
+    // is ready, the splash is just a static image, so an aggressively-busy
+    // renderer here is invisible: we warm every settlement icon at full tilt,
+    // then release the splash. (2026-07-15, user: load ALL map icons before the
+    // splash ends.)
+    if (!offscreen) return;
+    const overlayDone = !!coloredOffscreen || ["resource", "victory", "region"].includes(colorMode);
+    if (!overlayDone) return;
     if (!buildingLevelsLookup || !factionCultures) return;
-    const owners = Object.keys(factionRegionsMap || {});
-    let cultures;
-    if (owners.length > 0) {
-      cultures = [...new Set(owners.map((f) => factionCultures[f]).filter(Boolean))];
-    } else {
-      cultures = [...new Set(Object.values(factionCultures).filter(Boolean))];
-    }
-    const chains = Object.keys(buildingLevelsLookup);
-    if (cultures.length === 0 || chains.length === 0) return;
-    const warmKey = `${modDataDir || ""}|${mapCampaign}|${cultures.sort().join(",")}|${chains.length}|bd${Array.isArray(buildingsData) ? buildingsData.length : 0}`;
+    const warmKey = `${modDataDir || ""}|${mapCampaign}|bd${Array.isArray(buildingsData) ? buildingsData.length : 0}`;
     if (iconWarmupKeyRef.current === warmKey) return;
     iconWarmupKeyRef.current = warmKey;
 
-    // Warm ONLY the icons of buildings that ACTUALLY exist in settlements
-    // (what the user will hover). The full speculative catalog (every culture ×
-    // every chain level, ~4800 more) is deliberately NOT pre-warmed here —
-    // decoding that many TGAs froze the renderer for ~15-20s. Those load on
-    // demand via the per-region BULK prefetch in getBuildings (fast, bounded to
-    // a settlement's ~10 icons) when the user hovers. (2026-07-15.)
+    // The icons of buildings that ACTUALLY exist in settlements across the WHOLE
+    // map (every faction's settlements, keyed by that owner's culture). Deduped.
     const seen = new Set();
     const priority = [];
     if (Array.isArray(buildingsData)) {
@@ -7524,7 +7518,7 @@ function App() {
         if (!culture) continue;
         for (const s of (fObj.settlements || [])) {
           for (const b of (s.buildings || [])) {
-            if (!culture || !b.level) continue;
+            if (!b.level) continue;
             const k = `${culture}|${b.level}`;
             if (seen.has(k)) continue;
             seen.add(k);
@@ -7533,44 +7527,77 @@ function App() {
         }
       }
     }
-    if (priority.length === 0) return;
-    const t0 = (performance && performance.now) ? performance.now() : Date.now();
-    console.log(`[icon-warmup] START priority=${priority.length} (trickle, bulk IPC)`);
+    if (priority.length === 0) { setPriorityIconsWarm(true); return; } // nothing to warm → don't block splash
 
-    // Trickle small bulk chunks with a breathe between them. Chunks of 8 keep
-    // each burst of decode work tiny (~a frame), and the 50 ms setTimeout gap
-    // lets the renderer paint/handle input in between — so the background warm
-    // NEVER freezes panning/hovering (the tight 48-chunk version did). Reliable
-    // (setTimeout always fires, unlike requestIdleCallback under load) and
-    // cancellable. Anything hovered before it finishes is covered by the
-    // per-region bulk prefetch in getBuildings.
-    const CHUNK = 8, GAP_MS = 50;
-    let cancelled = false, i = 0, timer = null, refreshTimer = null;
+    // The speculative full catalog (buildings that could be constructed) — warmed
+    // in the background AFTER the splash, so it never delays the reveal.
+    const cultures = [...new Set(Object.values(factionCultures).filter(Boolean))];
+    const chains = Object.keys(buildingLevelsLookup);
+    const rest = [];
+    for (const culture of cultures) {
+      for (const chain of chains) {
+        for (const level of (buildingLevelsLookup[chain] || [])) {
+          if (!level) continue;
+          const k = `${culture}|${level}`;
+          if (seen.has(k)) continue;
+          seen.add(k);
+          rest.push([culture, level, chain]);
+        }
+      }
+    }
+
+    const t0 = (performance && performance.now) ? performance.now() : Date.now();
+    console.log(`[icon-warmup] START (during splash) priority=${priority.length} rest=${rest.length} — holding splash until priority warm`);
+
+    // CRITICAL (2026-07-15): the warm-up must survive effect RE-RUNS. This
+    // effect depends on coloredOffscreen, which changes several times during
+    // load (colorize re-runs) — a normal cleanup would cancel the in-flight
+    // warm-up on each, and the re-run early-returns on the matching warmKey, so
+    // it never resumed (it wedged after ~1 chunk). Instead we track the run on
+    // a ref and cancel the PRIOR run only when a genuinely new one starts (new
+    // map) or on unmount — NOT on ordinary re-renders.
+    const run = { cancelled: false };
+    if (warmupRunRef.current) { console.log("[icon-warmup] superseding a prior run"); warmupRunRef.current.cancelled = true; }
+    warmupRunRef.current = run;
+    let refreshTimer = null;
     const scheduleRefresh = () => {
       if (refreshTimer) return;
-      refreshTimer = setTimeout(() => { refreshTimer = null; setIconCacheVersion((v) => v + 1); }, 150);
+      refreshTimer = setTimeout(() => { refreshTimer = null; setIconCacheVersion((v) => v + 1); }, 120);
     };
-    const step = async () => {
-      if (cancelled) return;
-      const slice = priority.slice(i, i + CHUNK);
-      i += slice.length;
-      try { await prefetchBuildingIconsBulk(modDataDir, slice, null); } catch { /* keep going */ }
-      if (cancelled) return;
-      scheduleRefresh();
-      if (i < priority.length) {
-        timer = setTimeout(step, GAP_MS);
-      } else {
-        const dt = ((performance && performance.now) ? performance.now() : Date.now()) - t0;
-        console.log(`[icon-warmup] priority warmed ${priority.length} (${dt.toFixed(0)}ms)`);
+    // Large bulk chunks (one IPC round-trip each). CRITICAL: during the PRIORITY
+    // pass (behind the splash) we do NOT bump iconCacheVersion — a bump
+    // re-renders the whole 24k-line App, which clogs the main thread so it can't
+    // process the decode workers' responses, and the warm-up stalled (~55 icons
+    // then wedged to the hard cap). Nothing is visible behind the splash, so we
+    // skip re-renders entirely and bump ONCE at the reveal. The background
+    // (rest) pass IS visible, so it refreshes per chunk (refreshEach).
+    const runBatches = async (list, chunkSize, gapMs, refreshEach, label) => {
+      let done = 0;
+      for (let i = 0; i < list.length && !run.cancelled; i += chunkSize) {
+        const slice = list.slice(i, i + chunkSize);
+        try { await prefetchBuildingIconsBulk(modDataDir, slice, null); } catch (e) { console.warn(`[icon-warmup] ${label} chunk error:`, e && e.message); }
+        done += slice.length;
+        if (refreshEach) scheduleRefresh();
+        if (gapMs) await new Promise((r) => setTimeout(r, gapMs));
+        else await new Promise((r) => setTimeout(r, 0));
       }
+      if (run.cancelled) console.log(`[icon-warmup] ${label} CANCELLED at ${done}/${list.length}`);
     };
-    timer = setTimeout(step, 300); // small initial delay so first paints land first
-    return () => {
-      cancelled = true;
-      if (timer) clearTimeout(timer);
-      if (refreshTimer) clearTimeout(refreshTimer);
-    };
-  }, [showSplash, buildingLevelsLookup, factionCultures, factionRegionsMap, modDataDir, mapCampaign, buildingsData]);
+    (async () => {
+      await runBatches(priority, 64, 0, false, "priority"); // full tilt behind splash, NO re-renders
+      if (run.cancelled) return;
+      const dt = ((performance && performance.now) ? performance.now() : Date.now()) - t0;
+      console.log(`[icon-warmup] priority warmed ${priority.length} (${dt.toFixed(0)}ms) — releasing splash`);
+      setPriorityIconsWarm(true);
+      setIconCacheVersion((v) => v + 1); // single refresh at the reveal
+      // Background: the speculative catalog, gently (splash already lifted).
+      await runBatches(rest, 32, 24, true, "rest");
+      if (!run.cancelled) console.log(`[icon-warmup] rest warmed ${rest.length}`);
+    })();
+    // NO cancelling cleanup: the warm-up intentionally outlives effect re-runs
+    // (see the run/warmupRunRef note above). It is superseded only when a new
+    // map's warm-up starts, or cancelled by the campaign-change reset.
+  }, [offscreen, coloredOffscreen, colorMode, buildingLevelsLookup, factionCultures, modDataDir, mapCampaign, buildingsData]);
 
   // Load victory conditions
   useEffect(() => {
@@ -7650,6 +7677,9 @@ function App() {
     setColoredOffscreen(null);
     pixelDataRef.current = null;
     colorizedOnceRef.current = false; // new map → next overlay build takes the fast (prompt) path
+    iconWarmupKeyRef.current = null;  // re-warm icons for the new campaign
+    if (warmupRunRef.current) { warmupRunRef.current.cancelled = true; warmupRunRef.current = null; } // stop the old map's warm-up
+    setPriorityIconsWarm(false);      // re-gate the splash on the new map's icons
   }, [mapCampaign]);
   useEffect(() => { localStorage.setItem("mapVariant", mapVariant); }, [mapVariant]);
   useEffect(() => {
@@ -8970,14 +9000,18 @@ function App() {
     // below still guarantees the splash can't hang if colorize stalls.
     const NON_OVERLAY_SPLASH = new Set(["resource", "victory", "region"]);
     const overlayReady = NON_OVERLAY_SPLASH.has(colorMode) || !!coloredOffscreen;
-    const uiReady = essentialsReady && iconsPreloaded && overlayReady;
+    // Hold the splash until EVERY settlement's building icons are warm (user
+    // request 2026-07-15): the map behind the splash is fully drawn and all its
+    // icons cached before the reveal, so nothing pops in afterward.
+    const uiReady = essentialsReady && iconsPreloaded && overlayReady && priorityIconsWarm;
     const elapsed = Date.now() - splashStartRef.current;
     const remaining = Math.max(0, SPLASH_MIN_MS - elapsed);
-    // Hard cap: whichever comes first — SPLASH_HARD_MAX_MS total, or 5s after
-    // essentials showed up (in case icon preload / colorize stalls).
+    // Hard cap: whichever comes first — SPLASH_HARD_MAX_MS total, or 25s after
+    // essentials showed up (giving the whole-map icon warm-up room to finish; if
+    // it ever wedges, the splash still lifts rather than hang).
     const hardCapDelay = Math.max(
       0,
-      Math.min(SPLASH_HARD_MAX_MS - elapsed, (essentialsReady ? 5000 : SPLASH_HARD_MAX_MS))
+      Math.min(SPLASH_HARD_MAX_MS - elapsed, (essentialsReady ? 25000 : SPLASH_HARD_MAX_MS))
     );
     const hardCap = setTimeout(hideSplash, hardCapDelay);
     if (uiReady || assetError) {
@@ -8988,7 +9022,7 @@ function App() {
       };
     }
     return () => clearTimeout(hardCap);
-  }, [offscreen, imgSize, iconsPreloaded, assetError, hideSplash, coloredOffscreen, colorMode]);
+  }, [offscreen, imgSize, iconsPreloaded, assetError, hideSplash, coloredOffscreen, colorMode, priorityIconsWarm]);
 
   // Draw map
   useEffect(() => {

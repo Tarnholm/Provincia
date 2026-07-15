@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1260",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**Every settlement's building icons are ready the moment the map appears.** The splash now holds for the ~3 seconds it takes to pre-decode all of the map's building icons — done in parallel across CPU cores (a pool of background decoders) with identical icons decoded only once — so nothing pops in or loads late once you're looking at the map." },
+    ],
+  },
+  {
     version: "0.9.1259",
     date: "2026-07-15",
     items: [
