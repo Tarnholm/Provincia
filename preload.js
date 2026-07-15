@@ -1,5 +1,33 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
+// 0.9.1269: freeze forensics — report every click/dblclick target to the main
+// process (which keeps the last 15). When the renderer hangs or crashes, main
+// logs this trail, so "what did the user click right before the freeze?" is
+// answerable from provincia.log. Lives in the preload (not App.js) so it works
+// from the very first paint and survives renderer-side refactors.
+window.addEventListener("DOMContentLoaded", () => {
+  const describe = (el) => {
+    if (!el || !el.tagName) return "?";
+    const btn = el.closest ? el.closest("button") : null;
+    const t = btn || el;
+    const label =
+      (t.textContent || "").trim().replace(/\s+/g, " ").slice(0, 40) ||
+      t.getAttribute?.("title") ||
+      t.getAttribute?.("data-anim-id") ||
+      "";
+    return `<${t.tagName.toLowerCase()}${t.className && typeof t.className === "string" ? "." + t.className.split(/\s+/)[0] : ""}>${label ? ` "${label}"` : ""}`;
+  };
+  for (const type of ["click", "dblclick"]) {
+    window.addEventListener(
+      type,
+      (e) => {
+        try { ipcRenderer.send("ui-action", `${type} ${describe(e.target)}`); } catch {}
+      },
+      { capture: true, passive: true }
+    );
+  }
+});
+
 contextBridge.exposeInMainWorld("electronAPI", {
   // Open the embedded Settlement Processor (Scripts) window (dev pill).
   openScriptsWindow: () => ipcRenderer.invoke("sps:open-window"),

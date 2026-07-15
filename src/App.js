@@ -2227,6 +2227,13 @@ function App() {
   // relaunch) with no further click. Survives past the "available" event that
   // stops the visible watch loop, and is disarmed if the user cancels watching.
   const autoInstallRef = useRef(false);
+  // 0.9.1269: while auto-install is armed, a download error no longer kills the
+  // flow silently (the watch interval already stopped at "available", so an
+  // error left NOTHING retrying — the promised auto-install just never came).
+  // Retry the check on a timer instead, capped so a permanent failure can't
+  // loop forever. Cleared on success states and when the user cancels.
+  const updateRetryTimerRef = useRef(null);
+  const updateRetryCountRef = useRef(0);
   // Set when the user clicked the version label to manually check; cleared when the result toast fires.
   // Used so we toast "You're on the latest" ONLY for manual checks (not the silent startup check).
   const manualUpdateCheckRef = useRef(false);
@@ -2238,10 +2245,12 @@ function App() {
         pushToast(`Update ${s.version} available — downloading in background.`, "info");
         setUpdateDownloadPct(0);
         manualUpdateCheckRef.current = false;
+        updateRetryCountRef.current = 0;
         // Found one — the background watch loop's job is done.
         if (updateWatchRef.current) { clearInterval(updateWatchRef.current); updateWatchRef.current = null; setWatchingUpdates(false); }
       } else if (s.state === "downloading") {
         setUpdateDownloadPct(typeof s.percent === "number" ? s.percent : 0);
+        updateRetryCountRef.current = 0;
       } else if (s.state === "downloaded") {
         setUpdateReady({ version: s.version });
         setUpdateDownloadPct(null);
@@ -2265,6 +2274,27 @@ function App() {
           const t = updateErrToast(s.message);
           pushToast(t.text, t.kind);
           manualUpdateCheckRef.current = false;
+        } else if (autoInstallRef.current) {
+          // Auto-install is armed (user double-clicked to watch) but the check
+          // or download errored AFTER the watch interval already stopped —
+          // without a retry the auto-install would silently never happen.
+          // Retry in the background, capped at 20 attempts (~5 min).
+          console.warn("[updater] error while auto-install armed:", s.message);
+          if (updateRetryCountRef.current < 20) {
+            updateRetryCountRef.current++;
+            if (updateRetryCountRef.current === 1) {
+              pushToast("Update hit an error — retrying in the background…", "info");
+            }
+            if (updateRetryTimerRef.current) clearTimeout(updateRetryTimerRef.current);
+            updateRetryTimerRef.current = setTimeout(() => {
+              updateRetryTimerRef.current = null;
+              if (autoInstallRef.current) { try { window.electronAPI?.updaterCheck?.(); } catch {} }
+            }, 15000);
+          } else {
+            autoInstallRef.current = false;
+            const t = updateErrToast(s.message);
+            pushToast(`Auto-update gave up after repeated errors. ${t.text}`, t.kind);
+          }
         } else {
           // Auto-check errors are usually noise (placeholder publish feed, no network) — log only.
           console.warn("[updater] error (silenced):", s.message);
@@ -2301,6 +2331,8 @@ function App() {
     if (updateWatchRef.current) { clearInterval(updateWatchRef.current); updateWatchRef.current = null; }
     setWatchingUpdates(false);
     autoInstallRef.current = false; // user cancelled — disarm auto-install
+    if (updateRetryTimerRef.current) { clearTimeout(updateRetryTimerRef.current); updateRetryTimerRef.current = null; }
+    updateRetryCountRef.current = 0;
     if (!silent) pushToast("Stopped watching for updates.", "info");
   }, [pushToast]);
   const toggleUpdateWatch = useCallback(() => {
@@ -2309,13 +2341,38 @@ function App() {
     setWatchingUpdates(true);
     autoInstallRef.current = true; // arm: auto-install once an update downloads
     pushToast("Watching for updates — will download and install automatically once one appears.", "info");
-    const poll = () => { try { window.electronAPI.updaterCheck(); } catch (e) { console.warn("[updater] watch poll failed:", e); } };
+    // 0.9.1269: polls used to ignore the check result entirely, so a watch
+    // that could never succeed (dev build, broken feed, no network) spun
+    // silently forever and looked exactly like "double-click does nothing".
+    // Now: a dev build stops immediately with an explanation; repeated
+    // failures (~1 min) stop with the reason.
+    let consecutiveFailures = 0;
+    const poll = async () => {
+      try {
+        const r = await window.electronAPI.updaterCheck();
+        if (r && !r.ok) {
+          consecutiveFailures++;
+          if (r.reason === "dev build") {
+            stopUpdateWatch(true);
+            pushToast("Update watch is unavailable in dev builds.", "info");
+          } else if (consecutiveFailures >= 12) {
+            stopUpdateWatch(true);
+            pushToast(`Update checks keep failing (${r.reason || "unknown"}) — stopped watching.`, "error");
+          }
+        } else {
+          consecutiveFailures = 0;
+        }
+      } catch (e) { console.warn("[updater] watch poll failed:", e); }
+    };
     poll(); // check immediately, then on an interval
     updateWatchRef.current = setInterval(poll, 5000);
     console.log("[updater] background watch started (5s interval)");
   }, [pushToast, stopUpdateWatch]);
-  // Clear the interval if the component unmounts mid-watch.
-  useEffect(() => () => { if (updateWatchRef.current) clearInterval(updateWatchRef.current); }, []);
+  // Clear the interval + retry timer if the component unmounts mid-watch.
+  useEffect(() => () => {
+    if (updateWatchRef.current) clearInterval(updateWatchRef.current);
+    if (updateRetryTimerRef.current) clearTimeout(updateRetryTimerRef.current);
+  }, []);
   // Distinguish a single click (one-off check) from a double click (toggle the
   // background watch) so the watch gesture doesn't also fire a manual check.
   const versionClickTimerRef = useRef(null);

@@ -8,6 +8,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1269",
+    date: "2026-07-16",
+    items: [
+      { type: "fix", text: "**The app now recovers itself from a frozen window.** On 2026-07-15 a rare freeze locked the whole UI overnight — every click (the Dev button, the version label…) was silently eaten, and the only way out was killing the app. Provincia already auto-reloaded after a *crashed* window, but a *hung* one was left hanging forever. Two watchdogs now cover it: if the window reports unresponsive while you're clicking it and doesn't recover within 45 seconds, it's force-restarted and reloaded automatically; and a background ping catches even unattended hangs within ~2 minutes (both with the same anti-loop guard the crash recovery uses)." },
+      { type: "improvement", text: "**Freezes are now diagnosable after the fact.** The app keeps a short trail of your last 15 clicks (outside the window process), and writes it to provincia.log the moment the window hangs or crashes — so \"what did I click right before it froze?\" has an answer. Log lines from these events also carry proper timestamps now (they used to be mashed together unstamped, which made the freeze above much harder to reconstruct)." },
+      { type: "fix", text: "**Update-watch (double-clicking the version number) no longer dies silently.** If a check or download errors while the watch is armed — e.g. you started watching before the release finished uploading — it now retries in the background (up to ~5 minutes) instead of never installing; in dev builds it tells you watching is unavailable instead of spinning forever; and if checks keep failing it stops and tells you why." },
+    ],
+  },
+  {
     version: "0.9.1268",
     date: "2026-07-15",
     items: [

@@ -154,6 +154,16 @@ function _flushLog() {
     try { fs.fsyncSync(_logFd); _logDirty = false; } catch {}
   }
 }
+// Timestamped single-line write for direct callers. _writeLog is raw (the
+// console hook adds its own stamp+newline); handlers that logged through
+// _writeLog directly produced unstamped lines mashed together on one line,
+// which made the 0.9.1268 renderer-freeze forensics needlessly painful.
+function _logLine(str) {
+  try {
+    _writeLog(`[${new Date().toISOString().slice(11, 23)}] ${str}\n`);
+    _flushLog();
+  } catch {}
+}
 function initLogging() {
   try {
     _logPath = path.join(app.getPath("userData"), "provincia.log");
@@ -211,6 +221,26 @@ initLogging();
 let _appQuitting = false;
 try { app.on("before-quit", () => { _appQuitting = true; _flushLog(); }); } catch {}
 try { app.on("will-quit", () => { _appQuitting = true; }); } catch {}
+
+// 0.9.1269: forensic trail for renderer freezes. The preload reports every
+// click/dblclick (a short target label) via 'ui-action'; we keep the last 15
+// here in main — OUTSIDE the renderer — so when the renderer hangs or dies we
+// can log what the user actually did right before. The 2026-07-15 freeze was
+// undiagnosable because the renderer's console (our only click trail) froze
+// with it.
+const _lastUiActions = [];
+function formatLastUiActions() {
+  if (_lastUiActions.length === 0) return "(none recorded)";
+  return _lastUiActions
+    .map((a) => `${new Date(a.ts).toISOString().slice(11, 19)} ${a.label}`)
+    .join(" → ");
+}
+try {
+  ipcMain.on("ui-action", (_event, label) => {
+    _lastUiActions.push({ ts: Date.now(), label: String(label || "?").slice(0, 80) });
+    if (_lastUiActions.length > 15) _lastUiActions.shift();
+  });
+} catch {}
 
 // Logging IPC handlers — see src/logHandlers.js. Inject the log internals via a
 // wrapper + getter so a later _writeLog/_logPath reassignment is still seen.
@@ -1649,20 +1679,135 @@ function createWindow() {
   let _rendererReloads = 0;
   let _reloadWindowStart = 0;
   win.webContents.on("render-process-gone", (_e, details) => {
-    try { _writeLog(`[renderer-gone] reason=${details && details.reason} exitCode=${details && details.exitCode} — attempting reload`); } catch {}
+    _logLine(`[renderer-gone] reason=${details && details.reason} exitCode=${details && details.exitCode} — attempting reload`);
+    _logLine(`[renderer-gone] last UI actions: ${formatLastUiActions()}`);
     if (_appQuitting || win.isDestroyed()) return;
     const now = Date.now();
     if (now - _reloadWindowStart > 60000) { _reloadWindowStart = now; _rendererReloads = 0; }
     _rendererReloads++;
     if (_rendererReloads > 3) {
-      try { _writeLog(`[renderer-gone] ${_rendererReloads} reloads in <60s — giving up auto-reload (likely a deterministic crash)`); } catch {}
+      _logLine(`[renderer-gone] ${_rendererReloads} reloads in <60s — giving up auto-reload (likely a deterministic crash)`);
       return;
     }
     // Small delay lets the crashed process fully tear down before reloading.
     setTimeout(() => { try { if (!win.isDestroyed()) win.reload(); } catch {} }, 400);
   });
-  win.webContents.on("unresponsive", () => { try { _writeLog("[renderer-unresponsive] webContents reported unresponsive (likely a long sync parse) — not killing"); } catch {} });
-  win.webContents.on("responsive", () => { try { _writeLog("[renderer-responsive] recovered"); } catch {} });
+  // 0.9.1269: AUTO-RECOVER from a PERMANENTLY hung renderer, not just a dead
+  // one. On 2026-07-15 an infinite loop in the renderer froze the whole UI and
+  // it stayed frozen overnight — 'unresponsive' fired, we logged it and did
+  // nothing, and every click (Dev button, version label…) was silently eaten
+  // until the renderer eventually died on its own. A long sync parse can
+  // legitimately look unresponsive for a few seconds, so give it a generous
+  // 45s to recover ('responsive' cancels the timer); past that it's a hang,
+  // not a parse. forcefullyCrashRenderer() then fires render-process-gone,
+  // whose handler above reloads the window (with its 3-strikes loop guard).
+  let _unresponsiveSince = null;
+  let _unresponsiveKillTimer = null;
+  win.webContents.on("unresponsive", () => {
+    if (!_unresponsiveSince) _unresponsiveSince = Date.now();
+    _logLine(`[renderer-unresponsive] webContents reported unresponsive — auto-recover in 45s unless it comes back`);
+    _logLine(`[renderer-unresponsive] last UI actions: ${formatLastUiActions()}`);
+    _captureHangStack(); // log WHERE the renderer is stuck (hoisted; defined below)
+    if (_unresponsiveKillTimer) return;
+    _unresponsiveKillTimer = setTimeout(() => {
+      _unresponsiveKillTimer = null;
+      if (_appQuitting || win.isDestroyed()) return;
+      const stuckFor = Math.round((Date.now() - _unresponsiveSince) / 1000);
+      _unresponsiveSince = null;
+      _logLine(`[renderer-unresponsive] still stuck after ${stuckFor}s — force-killing renderer to trigger auto-reload`);
+      try { win.webContents.forcefullyCrashRenderer(); } catch (e) { _logLine(`[renderer-unresponsive] force-kill failed: ${e && e.message}`); }
+    }, 45000);
+  });
+  win.webContents.on("responsive", () => {
+    if (_unresponsiveKillTimer) { clearTimeout(_unresponsiveKillTimer); _unresponsiveKillTimer = null; }
+    const stuck = _unresponsiveSince ? ` after ${Math.round((Date.now() - _unresponsiveSince) / 1000)}s` : "";
+    _unresponsiveSince = null;
+    _stackCaptured = false; // next hang episode gets its own stack
+    _logLine(`[renderer-responsive] recovered${stuck}`);
+  });
+  // Second hang trigger: Electron's 'unresponsive' event is INPUT-driven — it
+  // only fires while the user is actively clicking the hung window (verified
+  // against a synthetic 240s main-thread loop: zero events without real input).
+  // So an unattended hang would never trip the recovery above. This ping does:
+  // executeJavaScript("1") every 15s; while the renderer main thread is stuck
+  // the promise simply never settles, and after 8 unanswered pings (~2 min —
+  // far beyond any legit sync work now that parses run in workers) we
+  // force-kill the renderer, which lands in the render-process-gone reload
+  // path. Rejections (navigation, reload in flight) are NOT counted as misses.
+  // When a hang is detected, capture the renderer's actual JS stack via the
+  // built-in CDP debugger and log it — the 2026-07-15 freeze was
+  // unattributable because nothing recorded WHERE the renderer was stuck.
+  //
+  // The session MUST be pre-armed (attach + Debugger.enable) while the
+  // renderer is healthy: Debugger.pause interrupts a spinning main thread
+  // only on an already-enabled session (verified against a synthetic busy
+  // loop — lazy attach, Debugger.enable-on-demand and the sampling profiler
+  // all queue behind the hung main thread and never respond).
+  const _dbg = win.webContents.debugger;
+  function _armHangDebugger() {
+    try {
+      if (!_dbg.isAttached()) _dbg.attach("1.3");
+      _dbg.sendCommand("Debugger.enable").catch(() => {});
+    } catch (e) {
+      // e.g. DevTools already attached in a dev run — stack capture degrades
+      // gracefully to "not available"; the watchdog reload still works.
+      _logLine(`[renderer-hang-stack] pre-arm failed: ${e && e.message}`);
+    }
+  }
+  _dbg.on("message", (_e, method, params) => {
+    if (method !== "Debugger.paused") return;
+    const frames = (params && params.callFrames) || [];
+    const s = frames.slice(0, 15).map((f) => {
+      const loc = f.location || {};
+      return `${f.functionName || "(anon)"}@${(f.url || "?").split("/").pop()}:${loc.lineNumber}:${loc.columnNumber}`;
+    }).join(" <- ");
+    _logLine(`[renderer-hang-stack] ${s || "(empty stack)"}`);
+    _dbg.sendCommand("Debugger.resume").catch(() => {});
+  });
+  _dbg.on("detach", (_e, reason) => {
+    _logLine(`[renderer-hang-stack] debugger detached (${reason}) — re-arming on next load`);
+  });
+  // (Re-)arm on every load: the session dies with the renderer process when
+  // the watchdog force-kills it, and did-finish-load covers boot + reloads.
+  win.webContents.on("did-finish-load", () => { if (!_appQuitting && !win.isDestroyed()) _armHangDebugger(); });
+  _armHangDebugger();
+  let _stackCaptured = false;
+  function _captureHangStack() {
+    if (_stackCaptured) return; // once per hang episode
+    _stackCaptured = true;
+    try {
+      if (!_dbg.isAttached()) { _logLine("[renderer-hang-stack] debugger not attached — no stack available"); return; }
+      // The paused event handler above logs the stack and resumes.
+      _dbg.sendCommand("Debugger.pause").catch((e) => _logLine(`[renderer-hang-stack] pause failed: ${e && e.message}`));
+    } catch (e) {
+      _logLine(`[renderer-hang-stack] capture failed: ${e && e.message}`);
+    }
+  }
+  let _pingMisses = 0;
+  let _pingBusy = false;
+  const _pingTimer = setInterval(() => {
+    if (_appQuitting || win.isDestroyed()) return;
+    if (_pingBusy) {
+      _pingMisses++;
+      if (_pingMisses === 2) _captureHangStack(); // ~30s stuck: log WHERE
+      if (_pingMisses >= 8) {
+        _pingMisses = 0;
+        _pingBusy = false;
+        _logLine("[renderer-ping] renderer hasn't answered for ~2 min — force-killing it to trigger auto-reload");
+        _logLine(`[renderer-ping] last UI actions: ${formatLastUiActions()}`);
+        try { win.webContents.forcefullyCrashRenderer(); } catch (e) { _logLine(`[renderer-ping] force-kill failed: ${e && e.message}`); }
+      }
+      return;
+    }
+    _pingBusy = true;
+    try {
+      win.webContents.executeJavaScript("1", true)
+        .then(() => { _pingBusy = false; _pingMisses = 0; _stackCaptured = false; })
+        .catch(() => { _pingBusy = false; });
+    } catch { _pingBusy = false; }
+  }, 15000);
+  if (_pingTimer.unref) _pingTimer.unref();
+  win.on("closed", () => clearInterval(_pingTimer));
 
   // Debounced save on move/resize so we capture position changes that
   // happen while the user is dragging without thrashing the disk. close

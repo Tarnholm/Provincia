@@ -19,7 +19,12 @@ export default defineConfig({
     outDir: "build",
     emptyOutDir: true,
     assetsDir: "static",
-    sourcemap: false,
+    // Hidden sourcemaps (no sourceMappingURL comment in the bundle): the
+    // 0.9.1269 hang watchdog logs renderer stack frames as bundle line:col;
+    // the .map file alongside build/static/ lets those be resolved to real
+    // source locations after the fact. "hidden" keeps DevTools behavior and
+    // bundle bytes identical for users.
+    sourcemap: "hidden",
     // src/diagnostics.js is a CommonJS module (main.js require()s it at runtime;
     // it's listed in package.json build.files). The renderer (App.js) also imports
     // it. Rollup's CJS interop only runs on node_modules by default, so opt this
