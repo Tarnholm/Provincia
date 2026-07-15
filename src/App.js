@@ -7512,10 +7512,11 @@ function App() {
     // map (every faction's settlements, keyed by that owner's culture). Deduped.
     const seen = new Set();
     const priority = [];
+    const _skippedFactions = new Set(); // DIAG: settlement-owning factions with no culture → their icons are NOT in priority
     if (Array.isArray(buildingsData)) {
       for (const fObj of buildingsData) {
         const culture = factionCultures[fObj.faction] || null;
-        if (!culture) continue;
+        if (!culture) { if (fObj.faction && (fObj.settlements || []).length) _skippedFactions.add(fObj.faction); continue; }
         for (const s of (fObj.settlements || [])) {
           for (const b of (s.buildings || [])) {
             if (!b.level) continue;
@@ -7527,11 +7528,18 @@ function App() {
         }
       }
     }
+    if (_skippedFactions.size) console.warn(`[icon-warmup] SKIPPED ${_skippedFactions.size} settlement-owning factions with NO culture (their icons pop in!): ${[...(_skippedFactions)].slice(0, 20).join(", ")}`);
     if (priority.length === 0) { setPriorityIconsWarm(true); return; } // nothing to warm → don't block splash
 
-    // The speculative full catalog (buildings that could be constructed) — warmed
-    // in the background AFTER the splash, so it never delays the reveal.
-    const cultures = [...new Set(Object.values(factionCultures).filter(Boolean))];
+    // The speculative full catalog (buildings that could be constructed). Only
+    // cultures that actually OWN regions can appear on the map, so restrict to
+    // those (trims the set vs all defined cultures) — still covers every owner,
+    // and any conquest in a loaded save is a subset of the starting owners' set
+    // plus the player. Fall back to all cultures if ownership isn't loaded.
+    const _ownerFactions = Object.keys(factionRegionsMap || {});
+    const cultures = _ownerFactions.length > 0
+      ? [...new Set(_ownerFactions.map((f) => factionCultures[f]).filter(Boolean))]
+      : [...new Set(Object.values(factionCultures).filter(Boolean))];
     const chains = Object.keys(buildingLevelsLookup);
     const rest = [];
     for (const culture of cultures) {
@@ -7584,20 +7592,28 @@ function App() {
       if (run.cancelled) console.log(`[icon-warmup] ${label} CANCELLED at ${done}/${list.length}`);
     };
     (async () => {
-      await runBatches(priority, 64, 0, false, "priority"); // full tilt behind splash, NO re-renders
+      // Warm the settlement icons FIRST (what's on the map now), then the FULL
+      // speculative catalog (every culture × every buildable level) — ALL behind
+      // the splash. Holding for the full catalog guarantees ZERO pop-ins for any
+      // region, any owner, any save state (user: "after the splash there should
+      // be 0 popins"), since every (culture,level) getBuildings could request is
+      // already cached. Big chunks + workers keep it fast; the hard cap is the
+      // safety net if it ever runs long.
+      await runBatches(priority, 64, 0, false, "priority");
+      if (run.cancelled) return;
+      const dtp = ((performance && performance.now) ? performance.now() : Date.now()) - t0;
+      console.log(`[icon-warmup] priority warmed ${priority.length} (${dtp.toFixed(0)}ms), now the full catalog…`);
+      await runBatches(rest, 96, 0, false, "rest");
       if (run.cancelled) return;
       const dt = ((performance && performance.now) ? performance.now() : Date.now()) - t0;
-      console.log(`[icon-warmup] priority warmed ${priority.length} (${dt.toFixed(0)}ms) — releasing splash`);
+      console.log(`[icon-warmup] ALL warmed ${priority.length + rest.length} (${dt.toFixed(0)}ms) — releasing splash, 0 pop-ins`);
       setPriorityIconsWarm(true);
       setIconCacheVersion((v) => v + 1); // single refresh at the reveal
-      // Background: the speculative catalog, gently (splash already lifted).
-      await runBatches(rest, 32, 24, true, "rest");
-      if (!run.cancelled) console.log(`[icon-warmup] rest warmed ${rest.length}`);
     })();
     // NO cancelling cleanup: the warm-up intentionally outlives effect re-runs
     // (see the run/warmupRunRef note above). It is superseded only when a new
     // map's warm-up starts, or cancelled by the campaign-change reset.
-  }, [offscreen, coloredOffscreen, colorMode, buildingLevelsLookup, factionCultures, modDataDir, mapCampaign, buildingsData]);
+  }, [offscreen, coloredOffscreen, colorMode, buildingLevelsLookup, factionCultures, factionRegionsMap, modDataDir, mapCampaign, buildingsData]);
 
   // Load victory conditions
   useEffect(() => {

@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1261",
+    date: "2026-07-15",
+    items: [
+      { type: "fix", text: "**Zero building-icon pop-ins after the splash.** The splash now holds until the FULL set of building icons is pre-decoded (every on-map culture × every building level, ~5.7k icons, in parallel across CPU cores) — not just the icons that currently exist in settlements. So no matter where you scroll or which faction owns a settlement (including in a loaded save), every icon is already cached the instant the map appears. Adds a couple of seconds to the splash; a persistent cache to make repeat launches instant is coming next." },
+    ],
+  },
+  {
     version: "0.9.1260",
     date: "2026-07-15",
     items: [
