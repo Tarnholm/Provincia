@@ -13,7 +13,7 @@ const ONBOARDING_PAGES = [
   {
     title: "Welcome to Provincia",
     body: "Provincia is a living map and companion for Rome: Total War and its mods. Load a mod, point it at your campaign, and watch it unfold turn by turn \u2014 armies on the march, borders redrawn, treasuries and diplomacy shifting in real time. Dig into any faction, province, building, character or resource, and when you want to tinker, the built-in editor reshapes the mod and writes it straight back.",
-    image: `${PUBLIC_URL}/splash.png`,
+    image: `${PUBLIC_URL}/splash.webp`,
     highlight: null,
   },
   {

@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, useCallback, useMemo, lazy, Suspens
 import { createPortal } from "react-dom";
 import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
 import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect, subscribeWidgets, getWidgetSnapshot } from "./Movable";
-import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, invalidateBuildingIcon } from "./buildingIcons";
+import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, prefetchBuildingIconsBulk, invalidateBuildingIcon } from "./buildingIcons";
 import { getCachedUnitIcon, prefetchUnitIcons } from "./unitIcons";
 // Heavy, single-use panels are code-split (2026-07-15): each is loaded as its
 // own async chunk the first time it renders. Module-scope Suspense wrappers
@@ -1810,15 +1810,17 @@ function App() {
   const [cultureBorderPath, setCultureBorderPath] = useState(null);
   const [factionBorderPath, setFactionBorderPath] = useState(null);
   const [showSplash, setShowSplash] = useState(true);
-  // splash.png is 3.5 MB — rendered directly via <img src>, the browser paints
-  // it progressively while decoding (users saw a half-loaded picture,
-  // 2026-07-15). Pre-decode it off-DOM and only render the <img> once fully
-  // decoded: it then appears in one complete paint from the decoded cache.
+  // The splash art was 3.5 MB rendered directly via <img src>, so the browser
+  // painted it progressively while decoding (users saw a half-loaded picture,
+  // 2026-07-15). Now: (1) it's a lossless WebP (bit-identical, ~26% smaller),
+  // (2) index.html preloads it during page load, and (3) we pre-decode it
+  // off-DOM here and only render the <img> once fully decoded — so it appears
+  // in one complete paint from the (already-warm) decoded cache.
   const [splashImgReady, setSplashImgReady] = useState(false);
   useEffect(() => {
     let alive = true;
     const img = new window.Image();
-    img.src = (import.meta.env.BASE_URL || "./") + "/splash.png";
+    img.src = (import.meta.env.BASE_URL || "./") + "/splash.webp";
     const done = () => { if (alive) setSplashImgReady(true); };
     if (typeof img.decode === "function") img.decode().then(done).catch(done);
     else { img.onload = done; img.onerror = done; }
@@ -7176,7 +7178,12 @@ function App() {
       // game installs so users who haven't selected a mod still get icons.
       if (culture) {
         const triples = merged.map((b) => [culture, b.level, b.type]).filter(([, l]) => l);
-        prefetchBuildingIcons(modDataDir, triples, () => {
+        // BULK (2026-07-15): fetch THIS settlement's icons in one IPC round-trip
+        // so hovering a city shows all its icons together, fast — instead of one
+        // round-trip per building (the visible "icons pop in one by one" lag).
+        // Directly answers the on-hover complaint regardless of how far the
+        // background warm-up has progressed.
+        prefetchBuildingIconsBulk(modDataDir, triples, null).then(() => {
           setIconCacheVersion((v) => v + 1);
         });
       }
@@ -7473,17 +7480,15 @@ function App() {
   const iconWarmupKeyRef = useRef(null);
   const colorizedOnceRef = useRef(false); // false until the first colored overlay is built for the current map
   useEffect(() => {
-    // CRITICAL: only warm AFTER the splash lifts. During boot the map TGA load
-    // + colorize compete for the same main-process IPC; flooding it with icon
-    // requests here starved the map load (it never rendered). Post-splash the
-    // map is already up, so this runs as true background work before the user
-    // can hover. (2026-07-15.)
+    // Background warm-up: runs AFTER the splash lifts so it never competes with
+    // the map load/colorize (warming ~900 icons is inherently ~10s of read +
+    // transfer + decode; doing it during boot starved the map). The map appears
+    // immediately; icons fill in over the next several seconds, priority
+    // (settlement) icons first. Anything the user hovers before the sweep
+    // reaches it is covered instantly by the per-region BULK prefetch in
+    // getBuildings. (2026-07-15.)
     if (showSplash) return;
     if (!buildingLevelsLookup || !factionCultures) return;
-    // Only warm cultures that are actually ON THE MAP (factions owning
-    // regions), not every culture the mod defines — cuts the RIS set from ~24
-    // cultures (6500+ triples) to the handful actually visible. Fall back to
-    // all cultures only if ownership isn't loaded yet.
     const owners = Object.keys(factionRegionsMap || {});
     let cultures;
     if (owners.length > 0) {
@@ -7493,81 +7498,69 @@ function App() {
     }
     const chains = Object.keys(buildingLevelsLookup);
     if (cultures.length === 0 || chains.length === 0) return;
-    // buildingsData.length is part of the key: when it arrives after the first
-    // warm run, the effect re-runs to get the priority ordering — already-warm
-    // icons dedup against the cache, so the second pass only queues the rest.
     const warmKey = `${modDataDir || ""}|${mapCampaign}|${cultures.sort().join(",")}|${chains.length}|bd${Array.isArray(buildingsData) ? buildingsData.length : 0}`;
     if (iconWarmupKeyRef.current === warmKey) return;
     iconWarmupKeyRef.current = warmKey;
 
-    // PRIORITY FIRST (2026-07-15, "Alexandria's buildings don't show right
-    // away"): warm the icons of buildings that ACTUALLY exist in settlements
-    // (descr_strat buildingsData, with the owner faction's culture) before the
-    // speculative full catalog. Hovering any settlement early then hits warm
-    // cache for its real buildings instead of waiting for the breadth-first
-    // sweep to reach them.
+    // Warm ONLY the icons of buildings that ACTUALLY exist in settlements
+    // (what the user will hover). The full speculative catalog (every culture ×
+    // every chain level, ~4800 more) is deliberately NOT pre-warmed here —
+    // decoding that many TGAs froze the renderer for ~15-20s. Those load on
+    // demand via the per-region BULK prefetch in getBuildings (fast, bounded to
+    // a settlement's ~10 icons) when the user hovers. (2026-07-15.)
     const seen = new Set();
-    const triples = [];
-    const pushTriple = (culture, level, chain) => {
-      if (!culture || !level) return;
-      const k = `${culture}|${level}`;
-      if (seen.has(k)) return;
-      seen.add(k);
-      triples.push([culture, level, chain || null]);
-    };
-    let priorityCount = 0;
+    const priority = [];
     if (Array.isArray(buildingsData)) {
       for (const fObj of buildingsData) {
         const culture = factionCultures[fObj.faction] || null;
         if (!culture) continue;
         for (const s of (fObj.settlements || [])) {
-          for (const b of (s.buildings || [])) pushTriple(culture, b.level, b.type);
+          for (const b of (s.buildings || [])) {
+            if (!culture || !b.level) continue;
+            const k = `${culture}|${b.level}`;
+            if (seen.has(k)) continue;
+            seen.add(k);
+            priority.push([culture, b.level, b.type || null]);
+          }
         }
       }
-      priorityCount = triples.length;
     }
-    for (const culture of cultures) {
-      for (const chain of chains) {
-        const levels = buildingLevelsLookup[chain] || [];
-        for (const level of levels) pushTriple(culture, level, chain);
-      }
-    }
+    if (priority.length === 0) return;
     const t0 = (performance && performance.now) ? performance.now() : Date.now();
-    console.log(`[icon-warmup] START (post-splash) cultures=${cultures.length}[${cultures.join(",")}] chains=${chains.length} triples=${triples.length} (priority built-in-settlements=${priorityCount}) campaign=${mapCampaign}`);
+    console.log(`[icon-warmup] START priority=${priority.length} (trickle, bulk IPC)`);
 
-    // THROTTLED dispatch (2026-07-15): firing all N prefetches at once floods
-    // the main-process IPC and starved requestIdleCallback for ~26s (delaying
-    // map recolors). Dispatch in small batches with a gap so the main thread
-    // stays responsive; the on-hover lazy prefetch still covers anything the
-    // user reaches before the background warm gets to it. Cancellable.
-    const BATCH = 24, GAP_MS = 40;
-    let idx = 0, done = 0, refreshTimer = null, batchTimer = null, cancelled = false;
-    const total = triples.length;
+    // Trickle small bulk chunks with a breathe between them. Chunks of 8 keep
+    // each burst of decode work tiny (~a frame), and the 50 ms setTimeout gap
+    // lets the renderer paint/handle input in between — so the background warm
+    // NEVER freezes panning/hovering (the tight 48-chunk version did). Reliable
+    // (setTimeout always fires, unlike requestIdleCallback under load) and
+    // cancellable. Anything hovered before it finishes is covered by the
+    // per-region bulk prefetch in getBuildings.
+    const CHUNK = 8, GAP_MS = 50;
+    let cancelled = false, i = 0, timer = null, refreshTimer = null;
     const scheduleRefresh = () => {
       if (refreshTimer) return;
       refreshTimer = setTimeout(() => { refreshTimer = null; setIconCacheVersion((v) => v + 1); }, 150);
     };
-    const pump = () => {
+    const step = async () => {
       if (cancelled) return;
-      const slice = triples.slice(idx, idx + BATCH);
-      idx += slice.length;
-      prefetchBuildingIcons(modDataDir, slice, () => {
-        if (cancelled) return;
-        done++;
-        scheduleRefresh();
-        if (done === total || done % 200 === 0) {
-          const dt = ((performance && performance.now) ? performance.now() : Date.now()) - t0;
-          console.log(`[icon-warmup] progress ${done}/${total} (${dt.toFixed(0)}ms)`);
-        }
-      });
-      if (idx < total) batchTimer = setTimeout(pump, GAP_MS);
-      else console.log(`[icon-warmup] all ${total} dispatched in batches of ${BATCH}`);
+      const slice = priority.slice(i, i + CHUNK);
+      i += slice.length;
+      try { await prefetchBuildingIconsBulk(modDataDir, slice, null); } catch { /* keep going */ }
+      if (cancelled) return;
+      scheduleRefresh();
+      if (i < priority.length) {
+        timer = setTimeout(step, GAP_MS);
+      } else {
+        const dt = ((performance && performance.now) ? performance.now() : Date.now()) - t0;
+        console.log(`[icon-warmup] priority warmed ${priority.length} (${dt.toFixed(0)}ms)`);
+      }
     };
-    pump();
+    timer = setTimeout(step, 300); // small initial delay so first paints land first
     return () => {
       cancelled = true;
+      if (timer) clearTimeout(timer);
       if (refreshTimer) clearTimeout(refreshTimer);
-      if (batchTimer) clearTimeout(batchTimer);
     };
   }, [showSplash, buildingLevelsLookup, factionCultures, factionRegionsMap, modDataDir, mapCampaign, buildingsData]);
 
@@ -17096,7 +17089,7 @@ function App() {
                 splashImgReady) so it appears in ONE paint, never scanlines. */}
             {splashImgReady && (
               <img
-                src={(import.meta.env.BASE_URL || "./") + "/splash.png"}
+                src={(import.meta.env.BASE_URL || "./") + "/splash.webp"}
                 alt="Splash"
                 style={{
                   display: "block",

@@ -114,3 +114,67 @@ export function prefetchBuildingIcons(modDataDir, triples, onLoaded) {
     });
   }
 }
+
+// BULK warm-up (2026-07-15): resolve a batch of icons in ONE IPC round-trip
+// (resolveBuildingIconsBulk) instead of one call each — the per-icon IPC hop
+// was the startup bottleneck when warming ~900 settlement icons. Decodes each
+// returned TGA buffer to a blob URL and populates the SAME cache the single
+// loader uses, so getCachedBuildingIcon/loadBuildingIcon see the results.
+// Returns a Promise that resolves when the whole batch is cached. `onEach` is
+// called once per icon settled (for progress). Falls back to per-icon prefetch
+// if the bulk IPC isn't available (older main process).
+export async function prefetchBuildingIconsBulk(modDataDir, triples, onEach) {
+  const api = window.electronAPI;
+  if (!api?.resolveBuildingIconsBulk) {
+    // Fallback: fan out to the single loader.
+    await Promise.all(triples.map(([culture, level, chainName]) =>
+      loadBuildingIcon(modDataDir, culture, level, chainName).then(() => { if (onEach) onEach(); })));
+    return;
+  }
+  // Only request icons not already cached/inflight; mark them inflight so a
+  // concurrent single-load doesn't duplicate the work.
+  const req = [];
+  for (const [culture, level, chain] of triples) {
+    if (!culture || !level) continue;
+    const key = `${modDataDir || ""}|${culture}|${level}`;
+    if (cache.has(key) || inflight.has(key)) continue;
+    const p = new Promise((res) => { req.push({ culture, level, chain, key, _resolve: res }); });
+    inflight.set(key, p);
+  }
+  if (req.length === 0) return;
+  let res;
+  try {
+    res = await api.resolveBuildingIconsBulk(modDataDir, req.map((r) => ({ culture: r.culture, level: r.level, chain: r.chain || null })));
+  } catch {
+    res = null;
+  }
+  await Promise.all(req.map(async (r, i) => {
+    const item = res && res[i];
+    try {
+      if (item && item.buffer) {
+        let tga;
+        try { tga = new TGA(new Uint8Array(item.buffer)); } catch { tga = null; }
+        if (tga && tga.width && tga.height && tga.pixels) {
+          // Timeout-guard the toBlob decode: a canvas.toBlob callback that
+          // never fires would otherwise hang this whole batch (and any hover
+          // that triggered it). On timeout, treat as "none" and move on.
+          const url = await Promise.race([
+            pixelsToBlobUrl({ width: tga.width, height: tga.height, pixels: tga.pixels }),
+            new Promise((res2) => setTimeout(() => res2(null), 2000)),
+          ]);
+          cache.set(r.key, url || "none");
+        } else {
+          cache.set(r.key, "none");
+        }
+      } else {
+        cache.set(r.key, "none");
+      }
+    } catch {
+      cache.set(r.key, "none");
+    } finally {
+      inflight.delete(r.key);
+      r._resolve(cache.get(r.key) === "none" ? null : cache.get(r.key));
+      if (onEach) onEach();
+    }
+  }));
+}

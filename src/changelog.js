@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1248",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**Sharper splash on high-resolution and 4K displays.** The launch artwork is now a native 3840×2160 image (was 1920×1080, which looked soft when scaled up on 4K screens) — encoded so it's visually indistinguishable from the original yet about 9× smaller than the source, so it also loads faster." },
+      { type: "improvement", text: "**Building icons appear much faster.** Hovering a settlement now fetches all of its building icons in a single batched request instead of one-at-a-time, and the icon lookup itself is faster (each art folder is scanned once and remembered). Settlement icons also pre-warm gently in the background after launch, without slowing the map." },
+    ],
+  },
+  {
     version: "0.9.1247",
     date: "2026-07-15",
     items: [

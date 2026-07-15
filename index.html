@@ -7,6 +7,11 @@
     <meta name="theme-color" content="#000000" />
     <meta name="description" content="Interactive campaign map viewer" />
     <link rel="manifest" href="./manifest.json" />
+    <!-- Start fetching + decoding the splash art during initial page load, in
+         parallel with the JS bundle, so it's in the decoded cache by the time
+         React mounts (img.decode() then resolves near-instantly). Lossless
+         WebP: bit-identical to the old PNG, ~26% smaller / faster to decode. -->
+    <link rel="preload" as="image" href="./splash.webp" fetchpriority="high" />
     <title>Provincia</title>
     <meta http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self' data:;" />

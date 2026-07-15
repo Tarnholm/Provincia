@@ -5385,6 +5385,32 @@ ipcMain.handle("get-building-display-names", async (_event, modDataDir) => {
 //      e.g., `temple_of_battle_shrine shrine` → use the `shrine` icon.
 // Returned shape: { cultureFallbacks: { roman: [eastern, greek, ...], ... },
 //                   levelAliases: { temple_of_battle_shrine: "shrine", ... } }
+// Directory-listing cache for icon resolution (2026-07-15). The icon resolver
+// probes the same ~40 candidate dirs for EVERY icon; with fs.existsSync per
+// candidate file that was hundreds of thousands of syscalls when warming ~900
+// icons (the startup icon-lag bottleneck on Windows, where existsSync is slow).
+// Instead we readdir each dir ONCE and answer file lookups from an in-memory
+// Map<lowercased filename → actual filename> (Windows FS is case-insensitive,
+// so this matches the resolver's multi-casing attempts exactly). Cleared for a
+// dir after an icon is written there (replace/revert), and wholesale on mod
+// switch, so freshly-dropped icons still resolve.
+const _iconDirListing = new Map(); // dirPath → Map(lowerName→actualName) | null(dir absent)
+function iconDirFiles(dir) {
+  if (_iconDirListing.has(dir)) return _iconDirListing.get(dir);
+  let m = null;
+  try {
+    const names = fs.readdirSync(dir);
+    m = new Map();
+    for (const n of names) m.set(n.toLowerCase(), n);
+  } catch { m = null; } // ENOENT / not a dir → treated as absent
+  _iconDirListing.set(dir, m);
+  return m;
+}
+function clearIconDirCache(dir) {
+  if (dir == null) { _iconDirListing.clear(); return; }
+  _iconDirListing.delete(dir);
+}
+
 const _uiBuildingsCache = makeLRU(16);
 function parseDescrUiBuildings(modDataDir) {
   const cacheKey = modDataDir || "";
@@ -5438,7 +5464,10 @@ function parseDescrUiBuildings(modDataDir) {
   return result;
 }
 
-ipcMain.handle("resolve-building-icon", async (_event, modDataDir, culture, levelName, chainName) => {
+// Core icon resolver (synchronous file lookups). Extracted from the IPC
+// handler so the single AND bulk handlers share one implementation. Returns
+// { buffer, path, mime } or null.
+function resolveBuildingIconCore(modDataDir, culture, levelName, chainName) {
   if (!culture || !levelName) return null;
   const c = String(culture).toLowerCase();
   const l = String(levelName).toLowerCase();
@@ -5555,9 +5584,12 @@ ipcMain.handle("resolve-building-icon", async (_event, modDataDir, culture, leve
   const VANILLA_PLACEHOLDER_SIZE = 2567;
   const MIN_CARD_DIMENSION = 100;
   const readTga = (dir, fn, strict) => {
-    if (!fs.existsSync(dir)) return null;
-    const full = path.join(dir, fn);
-    if (!fs.existsSync(full)) return null;
+    // Cached directory listing → in-memory membership test (see iconDirFiles).
+    const files = iconDirFiles(dir);
+    if (!files) return null;
+    const actual = files.get(fn.toLowerCase());
+    if (!actual) return null;
+    const full = path.join(dir, actual);
     try {
       const buf = fs.readFileSync(full);
       if (strict) {
@@ -5692,6 +5724,27 @@ ipcMain.handle("resolve-building-icon", async (_event, modDataDir, culture, leve
   // Genuinely missing — log via the renderer's MISSING ICON line so they
   // can be added deliberately.
   return null;
+}
+
+ipcMain.handle("resolve-building-icon", async (_event, modDataDir, culture, levelName, chainName) =>
+  resolveBuildingIconCore(modDataDir, culture, levelName, chainName));
+
+// IPC: resolve MANY building icons in ONE round-trip (2026-07-15). The
+// per-icon handler cost one IPC hop each; warming ~900 settlement icons that
+// way was the startup icon-lag bottleneck. The renderer chunks its warm list
+// and calls this so N icons resolve in one call. `list` = [{culture, level,
+// chain}]; returns [{culture, level, buffer|null, path|null}] in the same
+// order. Buffers are transferable ArrayBuffers (structured-clone as usual).
+ipcMain.handle("resolve-building-icons-bulk", async (_event, modDataDir, list) => {
+  if (!Array.isArray(list)) return [];
+  const out = new Array(list.length);
+  for (let i = 0; i < list.length; i++) {
+    const it = list[i];
+    if (!it || !it.culture || !it.level) { out[i] = null; continue; }
+    const r = resolveBuildingIconCore(modDataDir, it.culture, it.level, it.chain || null);
+    out[i] = { culture: it.culture, level: it.level, buffer: r ? r.buffer : null, path: r ? r.path : null };
+  }
+  return out;
 });
 
 // IPC: replace a building icon by dropping a PNG / JPG / TGA file onto its
@@ -5792,6 +5845,7 @@ ipcMain.handle("replace-building-icon", async (_event, modDataDir, culture, leve
     console.warn(`[icon-replace] failed: ${e.message}`);
     return { ok: false, error: e.message || String(e) };
   }
+  clearIconDirCache(path.dirname(destPath)); // new/updated icon → refresh listing cache
   return { ok: true, destPath, backupPath, destFilename: destFn };
 });
 
@@ -5815,11 +5869,13 @@ ipcMain.handle("revert-building-icon", async (_event, destPath, backupPath) => {
     if (safeBackup && fs.existsSync(safeBackup)) {
       fs.copyFileSync(safeBackup, safeDest);
       try { fs.unlinkSync(safeBackup); } catch {}
+      clearIconDirCache(path.dirname(safeDest));
       console.log(`[icon-replace] revert-restored: ${safeBackup} → ${safeDest}`);
       return { ok: true, restored: true };
     }
     if (fs.existsSync(safeDest)) {
       fs.unlinkSync(safeDest);
+      clearIconDirCache(path.dirname(safeDest));
       console.log(`[icon-replace] revert-deleted (no backup): ${safeDest}`);
       return { ok: true, restored: false, deleted: true };
     }
