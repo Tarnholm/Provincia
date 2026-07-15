@@ -1,6 +1,6 @@
 // Tests for the pure main-process utilities extracted from main.js.
 import { describe, test, expect } from "vitest";
-import { gameTextCRLF, hashName, makeLRU } from "./mainUtils.js";
+import { gameTextCRLF, hashName, makeLRU, parseTextDictionary } from "./mainUtils.js";
 
 describe("gameTextCRLF", () => {
   test("normalizes LF and lone CR to CRLF for .txt paths", () => {
@@ -61,5 +61,26 @@ describe("makeLRU", () => {
     expect(c.get("a")).toBe(10);
     expect(c.has("b")).toBe(false);
     expect(c.has("c")).toBe(true);
+  });
+});
+
+describe("parseTextDictionary", () => {
+  test("parses {key}value lines", () => {
+    const d = parseTextDictionary("{forum}Forum\n{agora}Agora");
+    expect(d).toEqual({ forum: "Forum", agora: "Agora" });
+  });
+  test("continuation lines append to the current value; trims result", () => {
+    const d = parseTextDictionary("{desc}line one\nline two\n{next}x");
+    expect(d.desc).toBe("line one\nline two");
+    expect(d.next).toBe("x");
+  });
+  test("literal \\n escapes become real newlines", () => {
+    expect(parseTextDictionary("{k}a\\nb").k).toBe("a\nb");
+  });
+  test("leading text before the first key is ignored", () => {
+    expect(parseTextDictionary("junk header\n{k}v")).toEqual({ k: "v" });
+  });
+  test("empty input → empty object", () => {
+    expect(parseTextDictionary("")).toEqual({});
   });
 });

@@ -14,7 +14,7 @@ const {
 } = require("./src/saveBinaryReaders.js");
 const { encodeTga32BGRA } = require("./src/tgaCodec.js");
 const { diffSaveData, isEndAutosave } = require("./src/saveDiff.js");
-const { gameTextCRLF, hashName, makeLRU } = require("./src/mainUtils.js");
+const { gameTextCRLF, hashName, makeLRU, parseTextDictionary } = require("./src/mainUtils.js");
 
 // RTW:R game TEXT files MUST be written with CRLF line endings. Writing LF
 // silently breaks the engine's descr_* parsers ("Expected faction list starting
@@ -2916,25 +2916,7 @@ function readTextDictionary(filePath) {
     if (buf[0] === 0xff && buf[1] === 0xfe) text = buf.toString("utf16le", 2);
     else if (buf[0] === 0xfe && buf[1] === 0xff) text = buf.swap16().toString("utf16le", 2);
     else text = buf.toString("utf8");
-    const entries = {};
-    let curKey = null, curBuf = "";
-    const flush = () => {
-      if (curKey != null) {
-        entries[curKey] = curBuf.replace(/\\n/g, "\n").trim();
-      }
-      curKey = null; curBuf = "";
-    };
-    for (const line of text.split(/\r?\n/)) {
-      const m = line.match(/^\s*\{([^}]+)\}(.*)$/);
-      if (m) {
-        flush();
-        curKey = m[1].trim();
-        curBuf = m[2];
-      } else if (curKey != null) {
-        curBuf += "\n" + line;
-      }
-    }
-    flush();
+    const entries = parseTextDictionary(text); // pure parser in src/mainUtils.js
     _textDictCache.set(filePath, entries);
     return entries;
   } catch (e) {

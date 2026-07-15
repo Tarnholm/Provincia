@@ -44,4 +44,24 @@ function makeLRU(limit) {
   };
 }
 
-module.exports = { gameTextCRLF, hashName, makeLRU };
+// Parse an RTW `{key}text` dictionary (already decoded to a string) into
+// { key: text }. A key line is `{KEY}rest`; subsequent non-key lines continue
+// the previous value. `\n` escapes become real newlines; values are trimmed.
+// Pure — the file read + BOM/utf16 decode + caching stay in the caller.
+function parseTextDictionary(text) {
+  const entries = {};
+  let curKey = null, curBuf = "";
+  const flush = () => {
+    if (curKey != null) entries[curKey] = curBuf.replace(/\\n/g, "\n").trim();
+    curKey = null; curBuf = "";
+  };
+  for (const line of String(text).split(/\r?\n/)) {
+    const m = line.match(/^\s*\{([^}]+)\}(.*)$/);
+    if (m) { flush(); curKey = m[1].trim(); curBuf = m[2]; }
+    else if (curKey != null) curBuf += "\n" + line;
+  }
+  flush();
+  return entries;
+}
+
+module.exports = { gameTextCRLF, hashName, makeLRU, parseTextDictionary };
