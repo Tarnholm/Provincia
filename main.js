@@ -14,6 +14,7 @@ const {
 } = require("./src/saveBinaryReaders.js");
 const { encodeTga32BGRA } = require("./src/tgaCodec.js");
 const { diffSaveData, isEndAutosave } = require("./src/saveDiff.js");
+const { gameTextCRLF, hashName, makeLRU } = require("./src/mainUtils.js");
 
 // RTW:R game TEXT files MUST be written with CRLF line endings. Writing LF
 // silently breaks the engine's descr_* parsers ("Expected faction list starting
@@ -22,12 +23,7 @@ const { diffSaveData, isEndAutosave } = require("./src/saveDiff.js");
 // of the source file's or caller's line endings; binary/JSON writes pass through
 // untouched. Route any game-text writeFileSync through this — never trust the
 // caller or a "preserve source EOL" heuristic (that's what kept re-shipping LF).
-function gameTextCRLF(filePath, content) {
-  if (typeof content === "string" && /\.txt$/i.test(String(filePath))) {
-    return content.replace(/\r\n?|\n/g, "\r\n");
-  }
-  return content;
-}
+// gameTextCRLF moved to src/mainUtils.js (pure, imported at top).
 const { autoUpdater } = require("electron-updater");
 
 // Spawn the v1-character parser in a worker so it runs in parallel with
@@ -262,26 +258,7 @@ let modNameLookup = null;
 // bound the cache grows every time the user switches mods (each path is a
 // unique key, parsed result is held forever). 16 entries is plenty —
 // covers vanilla + Alexander + a handful of mod variants.
-function makeLRU(limit) {
-  const m = new Map();
-  return {
-    has: (k) => m.has(k),
-    get: (k) => {
-      if (!m.has(k)) return undefined;
-      const v = m.get(k);
-      m.delete(k); m.set(k, v); // touch
-      return v;
-    },
-    set: (k, v) => {
-      if (m.has(k)) m.delete(k);
-      m.set(k, v);
-      while (m.size > limit) {
-        const oldest = m.keys().next().value;
-        m.delete(oldest);
-      }
-    },
-  };
-}
+// makeLRU moved to src/mainUtils.js (pure, imported at top).
 let modTraitNames = null;
 let modDescrStratSurnames = null;
 let modDescrStratCharByName = null; // "firstName|faction" → { x, y, lastName, faction } from descr_strat
@@ -3106,11 +3083,7 @@ function resolvePortraitPool(bucketDir) {
 // Deterministic per-character portrait index: DJB2 hash of the character's
 // firstName modulo the pool's file count. Same character always picks the
 // same portrait, regardless of campaign turn or save reload.
-function hashName(name) {
-  let h = 5381;
-  for (let i = 0; i < name.length; i++) h = ((h << 5) + h + name.charCodeAt(i)) | 0;
-  return h >>> 0;
-}
+// hashName moved to src/mainUtils.js (pure, imported at top).
 
 // 0.9.417: trait-level data (description, effects, threshold) for the
 // right-click character info panel. Renderer fetches once after mod init

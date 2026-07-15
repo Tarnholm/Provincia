@@ -92,6 +92,7 @@
       "src/saveBinaryReaders.js",
       "src/tgaCodec.js",
       "src/saveDiff.js",
+      "src/mainUtils.js",
       "src/turnParser.js",
       "src/diagnostics.js",
       "src/startingArmiesBuilder.js",
