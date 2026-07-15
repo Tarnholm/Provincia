@@ -87,6 +87,17 @@ describe("file-writing handlers — sandbox-driven (real mod untouched)", () => 
     expect(edited).toContain("age 40"); // Hannibalus (40) untouched
   });
 
+  it("backup-mod-files writes a timestamped descr_strat .bak into the sandbox", async () => {
+    sb = makeModSandbox([{ rel: DS_REL, content: SYNTH_DS }]);
+    prevDir = H.main.__setActiveModDataDir(sb.dir);
+    const r = await H.invoke("backup-mod-files");
+    expect(r.ok).toBe(true);
+    expect(r.files).toBeGreaterThan(0);
+    const dir = path.dirname(sb.path(DS_REL));
+    const baks = fs.readdirSync(dir).filter((f) => /descr_strat\.txt\.provincia-.*\.bak$/.test(f));
+    expect(baks.length).toBeGreaterThan(0); // a real backup was created
+  });
+
   it("refuses cleanly when there is no active mod (returns { ok:false }, writes nothing)", async () => {
     prevDir = H.main.__setActiveModDataDir(null);
     const r = await H.invoke("update-character-traits", "Testus", "romans_julii", []);
