@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1245",
+    date: "2026-07-15",
+    items: [
+      { type: "fix", text: "**The map now appears fully coloured on the first frame.** Before, startup briefly showed the raw region-colour map before the faction colours filled in, so it looked like the map loaded in stages. The splash now holds until the coloured map is ready, and that colouring is computed immediately on load instead of waiting for idle time." },
+      { type: "fix", text: "**Building icons are ready before you hover.** Icons used to load on demand the first time you moved over each settlement, so you'd see buildings without their icons for a moment. They're now warmed up in the background right after launch — throttled so it never slows the map down." },
+    ],
+  },
+  {
     version: "0.9.1244",
     date: "2026-07-15",
     items: [

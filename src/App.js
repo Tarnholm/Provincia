@@ -7459,6 +7459,90 @@ function App() {
     return [...out];
   }, [buildingRecruits, buildingLevelsLookup, unitOwnership, resourcesData, getBuildings]);
 
+  // EAGER building-icon warm-up (2026-07-15, fixes "icons pop in when you first
+  // hover regions"). Previously icons were prefetched lazily per-region inside
+  // getBuildings — so the FIRST hover of each region kicked off an async icon
+  // load and you saw iconless buildings for a moment. Here we enumerate the
+  // FULL catalog (every culture × every chain level) once the building levels
+  // and culture map are loaded, and warm the whole cache up front. The set is
+  // bounded (~cultures × chain-levels) and misses are cached as "none" by the
+  // main-process resolver, so this is a one-time cost. Robust logging so the
+  // timing/coverage is visible in the app log.
+  const iconWarmupKeyRef = useRef(null);
+  const colorizedOnceRef = useRef(false); // false until the first colored overlay is built for the current map
+  useEffect(() => {
+    // CRITICAL: only warm AFTER the splash lifts. During boot the map TGA load
+    // + colorize compete for the same main-process IPC; flooding it with icon
+    // requests here starved the map load (it never rendered). Post-splash the
+    // map is already up, so this runs as true background work before the user
+    // can hover. (2026-07-15.)
+    if (showSplash) return;
+    if (!buildingLevelsLookup || !factionCultures) return;
+    // Only warm cultures that are actually ON THE MAP (factions owning
+    // regions), not every culture the mod defines — cuts the RIS set from ~24
+    // cultures (6500+ triples) to the handful actually visible. Fall back to
+    // all cultures only if ownership isn't loaded yet.
+    const owners = Object.keys(factionRegionsMap || {});
+    let cultures;
+    if (owners.length > 0) {
+      cultures = [...new Set(owners.map((f) => factionCultures[f]).filter(Boolean))];
+    } else {
+      cultures = [...new Set(Object.values(factionCultures).filter(Boolean))];
+    }
+    const chains = Object.keys(buildingLevelsLookup);
+    if (cultures.length === 0 || chains.length === 0) return;
+    const warmKey = `${modDataDir || ""}|${mapCampaign}|${cultures.sort().join(",")}|${chains.length}`;
+    if (iconWarmupKeyRef.current === warmKey) return;
+    iconWarmupKeyRef.current = warmKey;
+
+    const triples = [];
+    for (const culture of cultures) {
+      for (const chain of chains) {
+        const levels = buildingLevelsLookup[chain] || [];
+        for (const level of levels) {
+          if (level) triples.push([culture, level, chain]);
+        }
+      }
+    }
+    const t0 = (performance && performance.now) ? performance.now() : Date.now();
+    console.log(`[icon-warmup] START (post-splash) cultures=${cultures.length}[${cultures.join(",")}] chains=${chains.length} triples=${triples.length} campaign=${mapCampaign}`);
+
+    // THROTTLED dispatch (2026-07-15): firing all N prefetches at once floods
+    // the main-process IPC and starved requestIdleCallback for ~26s (delaying
+    // map recolors). Dispatch in small batches with a gap so the main thread
+    // stays responsive; the on-hover lazy prefetch still covers anything the
+    // user reaches before the background warm gets to it. Cancellable.
+    const BATCH = 24, GAP_MS = 40;
+    let idx = 0, done = 0, refreshTimer = null, batchTimer = null, cancelled = false;
+    const total = triples.length;
+    const scheduleRefresh = () => {
+      if (refreshTimer) return;
+      refreshTimer = setTimeout(() => { refreshTimer = null; setIconCacheVersion((v) => v + 1); }, 150);
+    };
+    const pump = () => {
+      if (cancelled) return;
+      const slice = triples.slice(idx, idx + BATCH);
+      idx += slice.length;
+      prefetchBuildingIcons(modDataDir, slice, () => {
+        if (cancelled) return;
+        done++;
+        scheduleRefresh();
+        if (done === total || done % 200 === 0) {
+          const dt = ((performance && performance.now) ? performance.now() : Date.now()) - t0;
+          console.log(`[icon-warmup] progress ${done}/${total} (${dt.toFixed(0)}ms)`);
+        }
+      });
+      if (idx < total) batchTimer = setTimeout(pump, GAP_MS);
+      else console.log(`[icon-warmup] all ${total} dispatched in batches of ${BATCH}`);
+    };
+    pump();
+    return () => {
+      cancelled = true;
+      if (refreshTimer) clearTimeout(refreshTimer);
+      if (batchTimer) clearTimeout(batchTimer);
+    };
+  }, [showSplash, buildingLevelsLookup, factionCultures, factionRegionsMap, modDataDir, mapCampaign]);
+
   // Load victory conditions
   useEffect(() => {
     (async () => {
@@ -7536,6 +7620,7 @@ function App() {
     devBorderModeRef.current = null;
     setColoredOffscreen(null);
     pixelDataRef.current = null;
+    colorizedOnceRef.current = false; // new map → next overlay build takes the fast (prompt) path
   }, [mapCampaign]);
   useEffect(() => { localStorage.setItem("mapVariant", mapVariant); }, [mapVariant]);
   useEffect(() => {
@@ -7753,12 +7838,26 @@ function App() {
     }
     // Clear stripe overlay for non-culture modes
     if (colorMode !== "culture") setStripeOverlay(null);
-    const schedule = typeof window.requestIdleCallback === "function"
-      ? (cb) => window.requestIdleCallback(cb, { timeout: 3000 })
-      : (cb) => setTimeout(cb, 0);
+    // FIRST build after a map load (tracked by a ref to avoid dep loops) runs
+    // on the next tick so the colored map is ready ASAP and the splash — which
+    // now waits for it — lifts onto the correct map. SUBSEQUENT recolors (mode
+    // switches while the user watches) defer to idle to keep interactions
+    // smooth. Before this the initial colorize could wait up to 3000ms
+    // (requestIdleCallback timeout), flashing the raw region-colour map first.
+    const firstBuild = !colorizedOnceRef.current;
+    colorizedOnceRef.current = true; // set after reading, so the next run defers to idle
+    const schedule = firstBuild
+      ? (cb) => setTimeout(cb, 0)
+      : (typeof window.requestIdleCallback === "function"
+        ? (cb) => window.requestIdleCallback(cb, { timeout: 3000 })
+        : (cb) => setTimeout(cb, 0));
+    const _tSched = (performance && performance.now) ? performance.now() : Date.now();
+    console.log(`[colorize] scheduled for colorMode=${colorMode} (via ${typeof window.requestIdleCallback === "function" ? "requestIdleCallback" : "setTimeout"})`);
     schedule(() => {
       const pxData = pixelDataRef.current;
       if (!pxData) return;
+      const _tRun = (performance && performance.now) ? performance.now() : Date.now();
+      console.log(`[colorize] RUN colorMode=${colorMode} after ${(_tRun - _tSched).toFixed(0)}ms idle-wait — building colored overlay now`);
       const W = imgSize.width, H = imgSize.height;
       if (colorMode === "faction") {
         // Build rgbKey → owner faction.
@@ -8834,11 +8933,19 @@ function App() {
   }, [showWelcome]);
   useEffect(() => {
     const essentialsReady = !!offscreen && imgSize.width > 0 && imgSize.height > 0;
-    const uiReady = essentialsReady && iconsPreloaded;
+    // Also wait for the COLORED overlay when the active color mode uses one
+    // (faction/culture/etc). Without this the splash lifted showing the raw
+    // region-colour map, which then swapped to faction colours ~0.5s later —
+    // the "map loads in stages" symptom (2026-07-15). NON_OVERLAY modes render
+    // straight from the raw offscreen, so they don't wait. The 5s hard cap
+    // below still guarantees the splash can't hang if colorize stalls.
+    const NON_OVERLAY_SPLASH = new Set(["resource", "victory", "region"]);
+    const overlayReady = NON_OVERLAY_SPLASH.has(colorMode) || !!coloredOffscreen;
+    const uiReady = essentialsReady && iconsPreloaded && overlayReady;
     const elapsed = Date.now() - splashStartRef.current;
     const remaining = Math.max(0, SPLASH_MIN_MS - elapsed);
     // Hard cap: whichever comes first — SPLASH_HARD_MAX_MS total, or 5s after
-    // essentials showed up (in case icon preload stalls).
+    // essentials showed up (in case icon preload / colorize stalls).
     const hardCapDelay = Math.max(
       0,
       Math.min(SPLASH_HARD_MAX_MS - elapsed, (essentialsReady ? 5000 : SPLASH_HARD_MAX_MS))
@@ -8852,7 +8959,7 @@ function App() {
       };
     }
     return () => clearTimeout(hardCap);
-  }, [offscreen, imgSize, iconsPreloaded, assetError, hideSplash]);
+  }, [offscreen, imgSize, iconsPreloaded, assetError, hideSplash, coloredOffscreen, colorMode]);
 
   // Draw map
   useEffect(() => {
@@ -8868,6 +8975,13 @@ function App() {
     ctx.setTransform(totalScale, 0, 0, totalScale, baseOffsetX + offset.x, baseOffsetY + offset.y);
     ctx.imageSmoothingEnabled = false;
     const src = coloredOffscreen || offscreen;
+    // Diagnostic (2026-07-15): trace first map paints to catch the "top part
+    // only" symptom — logs canvas size, scale, and whether the colored overlay
+    // is ready. Only the first ~6 paints, to avoid log spam on pan/zoom.
+    window.__mapDrawN = (window.__mapDrawN || 0) + 1;
+    if (window.__mapDrawN <= 6) {
+      console.log(`[map-draw] #${window.__mapDrawN} canvas=${canvas.width}x${canvas.height} src=${coloredOffscreen ? "colored" : "raw"} srcDims=${src.width}x${src.height} scale=${totalScale.toFixed(3)} colorMode=${colorMode}`);
+    }
     ctx.drawImage(src, 0, 0);
 
     // Draw stripe overlay (high-res, scaled down with smoothing for clean lines)
@@ -9505,8 +9619,10 @@ function App() {
         if (campaign.mapType === "tga" || r.binary) {
           const buffer = r.binary || (typeof r.text === "string" ? null : r.text);
           if (!buffer) throw new Error("No binary data for TGA");
+          const _tDec = (performance && performance.now) ? performance.now() : Date.now();
           const decoded = await decodeTgaAsync(buffer);
           if (cancelled) return;
+          console.log(`[map-load] decoded ${campaign.mapFile} ${decoded.width}x${decoded.height} in ${(((performance && performance.now) ? performance.now() : Date.now()) - _tDec).toFixed(0)}ms`);
           const off = document.createElement("canvas");
           off.width = decoded.width;
           off.height = decoded.height;
@@ -9518,6 +9634,7 @@ function App() {
           setCampaignMapHeights((prev) => prev[mapCampaign] === decoded.height ? prev : { ...prev, [mapCampaign]: decoded.height });
           setOffscreen(off);
           setAssetError(null);
+          console.log(`[map-load] offscreen SET (full ${decoded.width}x${decoded.height}) — atomic putImageData, no partial rows`);
         } else {
           // PNG — need to load via Image element; fall back to fetch URL
           const srcUrl = PUBLIC_URL + "/" + campaign.mapFile;
