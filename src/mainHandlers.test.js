@@ -110,3 +110,27 @@ describe("campaign_data file handlers — traversal rejection (real handlers)", 
     for (const n of travNames) expect(await H.invoke("read-campaign-file", n)).toBeNull();
   });
 });
+
+// Behavioral coverage of the cache-backed read handlers, driven against the
+// real local mod via main.js's exported loadModCharacterData. Skips cleanly
+// where C:/RIS is absent (CI, other machines). Thresholds, not exact counts,
+// so a mod update doesn't break the gate — this guards the save-editing read
+// path (families / starting roster) against a refactor silently zeroing it.
+const MOD_DIR = "C:/RIS/RIS/data";
+const haveMod = (() => { try { return fs.existsSync(path.join(MOD_DIR, "export_descr_buildings.txt")); } catch { return false; } })();
+
+(haveMod ? describe : describe.skip)("mod-data read handlers (real local mod)", () => {
+  beforeAll(() => { H.main.loadModCharacterData(MOD_DIR); }, 30000);
+
+  it("get-descr-strat-families returns a populated faction→family map", async () => {
+    const fam = await H.invoke("get-descr-strat-families");
+    expect(fam.ok).toBe(true);
+    expect(Object.keys(fam.byFaction).length).toBeGreaterThan(50);
+  });
+
+  it("get-starting-characters returns the descr_strat roster", async () => {
+    const sc = await H.invoke("get-starting-characters");
+    expect(sc.ok).toBe(true);
+    expect(sc.characters.length).toBeGreaterThan(100);
+  });
+});

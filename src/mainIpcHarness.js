@@ -71,8 +71,9 @@ function loadMainHandlers() {
     if (request === "electron-updater") return updater;
     return origLoad.call(this, request, ...rest);
   };
+  let mainExports;
   try {
-    require(path.join(__dirname, "..", "main.js"));
+    mainExports = require(path.join(__dirname, "..", "main.js"));
   } finally {
     Module._load = origLoad;
   }
@@ -81,7 +82,10 @@ function loadMainHandlers() {
     if (!fn) throw new Error(`no IPC handler registered for channel: ${channel}`);
     return fn({ sender: { send: () => {} } }, ...args);
   };
-  cached = { channels: [...captured.keys()], invoke, electron };
+  // mainExports = main.js's module.exports ({ parseCharactersAndUnits,
+  // loadModCharacterData }) — lets tests populate the mod caches from a real
+  // mod dir before driving cache-backed read handlers.
+  cached = { channels: [...captured.keys()], invoke, electron, main: mainExports || {} };
   return cached;
 }
 
