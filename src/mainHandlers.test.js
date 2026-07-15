@@ -24,6 +24,9 @@ describe("main.js IPC surface", () => {
       "get-app-version", "get-app-paths", "crack-save", "get-turn1-budget",
       "save-file", "read-user-file", "save-user-file", "write-binary-file",
       "copy-file", "read-campaign-file", "scan-folder", "select-folder",
+      // extracted domain modules — must survive the extraction
+      "get-user-data-path", "select-log-folder",
+      "read-vanilla-strat", "read-vanilla-sm-factions", "get-vanilla-faction-display-names",
     ]) {
       expect(H.channels, `missing channel: ${ch}`).toContain(ch);
     }

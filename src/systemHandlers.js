@@ -7,6 +7,8 @@
 function registerSystemHandlers(ipcMain, { app, dialog }) {
   ipcMain.handle("get-app-version", () => app.getVersion());
 
+  ipcMain.handle("get-user-data-path", () => app.getPath("userData"));
+
   // Platform-specific app data paths, for the renderer's save/mod auto-detection.
   ipcMain.handle("get-app-paths", () => {
     return {

@@ -2703,54 +2703,9 @@ ipcMain.handle("get-vanilla-icons-dir", async () => {
 
 // IPC: the vanilla imperial-campaign descr_strat.txt text, read live from the
 // install — so the playable-nations editor shows VANILLA factions on Slot 1.
-ipcMain.handle("read-vanilla-strat", async () => {
-  try {
-    const dd = getVanillaDataDir();
-    if (!dd) return null;
-    const p = path.join(dd, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
-    return fs.existsSync(p) ? fs.readFileSync(p, "latin1") : null;
-  } catch { return null; }
-});
-
-// IPC: vanilla descr_sm_factions.txt text — gives the bundled vanilla Slot 1 its
-// real faction COLOURS (and names), instead of the mod's shared copy.
-ipcMain.handle("read-vanilla-sm-factions", async () => {
-  try {
-    const dd = getVanillaDataDir();
-    if (!dd) return null;
-    const p = path.join(dd, "descr_sm_factions.txt");
-    return fs.existsSync(p) ? fs.readFileSync(p, "latin1") : null;
-  } catch { return null; }
-});
-
-// IPC: vanilla faction display names ({THRACE} Thrace, …) read from ONLY the
-// vanilla text/expanded*.txt — NOT merged with BI/Alexander, whose overrides
-// shift the names (Thrace→Dacia etc.) on the vanilla Slot 1.
-ipcMain.handle("get-vanilla-faction-display-names", async () => {
-  const dd = getVanillaDataDir();
-  if (!dd) return {};
-  const map = {};
-  for (const fname of ["expanded.txt", "expanded_bi.txt"]) { // bi last → its faction names win
-    const src = path.join(dd, "text", fname);
-    if (!fs.existsSync(src)) continue;
-    try {
-      const buf = fs.readFileSync(src);
-      const text = (buf[0] === 0xff && buf[1] === 0xfe) ? buf.toString("utf16le") : buf.toString("utf8");
-      for (const line of text.split(/\r?\n/)) {
-        const m = line.match(/^\{([A-Z][A-Z0-9_]*)\}\s*(.+?)\s*$/);
-        if (!m) continue;
-        const key = m[1];
-        if (key.includes("_DESCR") || key.startsWith("EMT_") || key.startsWith("SMW_") ||
-            key.endsWith("_LABEL") || key.endsWith("_ORDER") || key.endsWith("_UNREST") ||
-            key.endsWith("_TITLE") || key.endsWith("_BODY") || key.endsWith("_MESSAGE")) continue;
-        const display = m[2].trim();
-        if (!display || display.length > 60) continue;
-        map[key.toLowerCase()] = display;
-      }
-    } catch {}
-  }
-  return map;
-});
+// Vanilla RTW:R game-data read handlers — see src/vanillaDataHandlers.js.
+const { registerVanillaDataHandlers } = require("./src/vanillaDataHandlers.js");
+registerVanillaDataHandlers(ipcMain, { getVanillaDataDir });
 
 // IPC: resolve a building-chain icon for the currently-loaded mod.
 // Given a culture (e.g., "greek", "roman") and a level name (e.g., "odeon",
@@ -6175,9 +6130,6 @@ ipcMain.handle("read-file-binary", async (_event, filePath) => {
 })();
 
 // IPC: get the app's user data path for persistent storage
-ipcMain.handle("get-user-data-path", () => {
-  return app.getPath("userData");
-});
 
 // IPC: persist the dev autosave history to a file (not localStorage — 30 full
 // state snapshots blow past the ~5MB localStorage cap). Stored in userData so it

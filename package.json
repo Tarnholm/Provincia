@@ -93,6 +93,7 @@
       "src/tgaCodec.js",
       "src/lastTurnSummary.js",
       "src/systemHandlers.js",
+      "src/vanillaDataHandlers.js",
       "src/saveDiff.js",
       "src/mainUtils.js",
       "src/iconDirCache.js",
