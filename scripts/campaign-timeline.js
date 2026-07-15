@@ -278,25 +278,20 @@ function reportCampaign(player, rows, args) {
 }
 
 // ── main ─────────────────────────────────────────────────────────────────────
-function buildTimeline(inputs, mod, factionOverride, allCampaigns) {
-  // Discover + crack.
+// Collect + de-dup .sav files from a list of dir/file inputs. Split out so the
+// in-app handler can discover the same file list before cracking in parallel.
+function collectUniqueSaves(inputs) {
   const files = [];
   for (const inp of inputs) files.push(...collectSaves(inp));
-  // de-dup
   const seen = new Set();
-  const uniqFiles = files.filter((f) => { const k = path.resolve(f); if (seen.has(k)) return false; seen.add(k); return true; });
+  return files.filter((f) => { const k = path.resolve(f); if (seen.has(k)) return false; seen.add(k); return true; });
+}
 
-  const rows = [];
-  const errors = [];
-  for (const f of uniqFiles) {
-    try {
-      const cracked = crackSave(fs.readFileSync(f), mod);
-      rows.push(extractRow(cracked, f, factionOverride));
-    } catch (e) {
-      errors.push({ file: path.basename(f), error: e.message });
-    }
-  }
-
+// Group already-extracted rows into campaigns + sort by turn. This is the CHEAP
+// tail of buildTimeline, separated so the crack loop (the expensive part) can be
+// run serially here (CLI) OR in parallel workers (the in-app handler) and feed
+// the SAME assembly — one source of truth for grouping/sorting.
+function assembleTimeline(rows, errors, scanned, factionOverride, allCampaigns) {
   const groups = groupByCampaign(rows);
   let campaigns;
   if (allCampaigns || factionOverride) {
@@ -308,7 +303,22 @@ function buildTimeline(inputs, mod, factionOverride, allCampaigns) {
     const [player, rs] = entries[0];
     campaigns = [{ player, rows: sortByTurn(rs) }];
   }
-  return { campaigns, errors, scanned: uniqFiles.length };
+  return { campaigns, errors, scanned };
+}
+
+function buildTimeline(inputs, mod, factionOverride, allCampaigns) {
+  const uniqFiles = collectUniqueSaves(inputs);
+  const rows = [];
+  const errors = [];
+  for (const f of uniqFiles) {
+    try {
+      const cracked = crackSave(fs.readFileSync(f), mod);
+      rows.push(extractRow(cracked, f, factionOverride));
+    } catch (e) {
+      errors.push({ file: path.basename(f), error: e.message });
+    }
+  }
+  return assembleTimeline(rows, errors, uniqFiles.length, factionOverride, allCampaigns);
 }
 
 function main() {
@@ -339,7 +349,7 @@ function main() {
   for (const c of campaigns) reportCampaign(c.player, c.rows, args);
 }
 
-module.exports = { sortByTurn, computeDelta, extractRow, phaseRank, groupByCampaign, buildTimeline };
+module.exports = { sortByTurn, computeDelta, extractRow, phaseRank, groupByCampaign, buildTimeline, collectUniqueSaves, assembleTimeline };
 
 // Run only as a CLI, not when required by tests.
 if (require.main === module) main();

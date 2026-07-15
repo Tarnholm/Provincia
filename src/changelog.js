@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1267",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**Campaign Timeline scans are much faster and no longer freeze the app.** Building a timeline reads and decodes every save in the folder — previously one at a time on the main thread, freezing the whole window (potentially for minutes on a big folder). It now decodes the saves in parallel across your CPU cores on background threads: measured ~3.7× faster on a 4-save folder (and it scales with more cores), with the app staying fully responsive throughout. Identical results to before." },
+    ],
+  },
+  {
     version: "0.9.1266",
     date: "2026-07-15",
     items: [

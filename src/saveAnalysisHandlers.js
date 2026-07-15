@@ -9,9 +9,11 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const { Worker } = require("worker_threads");
 
 const CRACK_WORKER_PATH = path.join(__dirname, "saveCrackWorker.js");
+const TIMELINE_WORKER_PATH = path.join(__dirname, "timelineRowWorker.js");
 
 function registerSaveAnalysisHandlers(ipcMain, { _writeLog, getLastSaveBuf }) {
   // Run a heavy save crack in a worker thread so it never blocks the Electron
@@ -34,6 +36,54 @@ function registerSaveAnalysisHandlers(ipcMain, { _writeLog, getLastSaveBuf }) {
     worker.once("error", (err) => { worker.terminate(); reject(err); });
     worker.postMessage({ mode, ...payload });
   });
+
+  // Crack + extract ONE timeline row in a worker. Resolves { ok:true, row } or
+  // { ok:false, error, file } for a per-save crack failure (mirrors the CLI's
+  // per-file try/catch); REJECTS only on worker-infra failure (spawn/'error'),
+  // which the caller treats as "fall back to the serial main-thread scan".
+  const crackRowInWorker = (savePath, mod, factionOverride) => new Promise((resolve, reject) => {
+    let worker;
+    try { worker = new Worker(TIMELINE_WORKER_PATH); }
+    catch (e) { reject(e); return; }
+    worker.once("message", (msg) => { worker.terminate(); resolve(msg || { ok: false, error: "no message", file: path.basename(savePath) }); });
+    worker.once("error", (err) => { worker.terminate(); reject(err); });
+    worker.postMessage({ savePath, mod, factionOverride });
+  });
+
+  // Fan the per-save cracks out across CPU cores (bounded concurrency), so a
+  // folder of N saves scans in ~N/cores × the per-save time instead of N× on the
+  // frozen main thread. Order doesn't matter — assembleTimeline sorts by turn.
+  const crackRowsInParallel = async (files, mod, factionOverride) => {
+    const cap = Math.max(1, Math.min(files.length, ((os.cpus() && os.cpus().length) || 4) - 1));
+    const rows = [], errors = [];
+    let idx = 0;
+    const runOne = async () => {
+      while (idx < files.length) {
+        const f = files[idx++];
+        const r = await crackRowInWorker(f, mod, factionOverride); // rejects → propagates → sync fallback
+        if (r.ok) rows.push(r.row);
+        else errors.push({ file: r.file || path.basename(f), error: r.error });
+      }
+    };
+    await Promise.all(Array.from({ length: cap }, runOne));
+    return { rows, errors };
+  };
+
+  // Shape a { campaigns, errors, scanned } timeline into the renderer payload
+  // (strip internal-only fields, attach per-turn deltas). Same as the serial path.
+  const finalizeTimeline = ({ campaigns, errors, scanned }, computeDelta) => {
+    const strip = (r) => { const { _ownerByCity, _diplomacy, _family, ...keep } = r; return keep; };
+    return {
+      scanned,
+      errors,
+      campaigns: campaigns.map((c) => ({
+        player: c.player,
+        saves: c.rows.length,
+        turns: c.rows.map(strip),
+        deltas: c.rows.slice(1).map((r, i) => ({ fromTurn: c.rows[i].turn, toTurn: r.turn, ...computeDelta(c.rows[i], r) })),
+      })),
+    };
+  };
 
 
 ipcMain.handle("crack-save", async (_event, savePath, modDataDir) => {
@@ -944,24 +994,25 @@ ipcMain.handle("scan-saves-timeline", async (_event, dir, modDataDir, opts) => {
     // "./scripts/" when this code was in main.js at the repo root; the extraction
     // to src/ silently broke it. campaign-timeline.js + its ../src deps are in
     // build.files so it also resolves inside the packaged asar.)
-    const { buildTimeline, computeDelta } = require("../scripts/campaign-timeline.js");
+    const { buildTimeline, computeDelta, collectUniqueSaves, assembleTimeline } = require("../scripts/campaign-timeline.js");
     if (!dir || !fs.existsSync(dir)) return { error: "Folder not found: " + dir };
     const factionOverride = opts && opts.faction ? opts.faction : null;
     const allCampaigns = !!(opts && opts.allCampaigns);
-    const { campaigns, errors, scanned } = buildTimeline([dir], modDataDir, factionOverride, allCampaigns);
-    // Strip the internal-only fields (mirrors campaign-timeline.js --json) and
-    // attach per-turn deltas so the renderer doesn't need the parser modules.
-    const strip = (r) => { const { _ownerByCity, _diplomacy, _family, ...keep } = r; return keep; };
-    return {
-      scanned,
-      errors,
-      campaigns: campaigns.map((c) => ({
-        player: c.player,
-        saves: c.rows.length,
-        turns: c.rows.map(strip),
-        deltas: c.rows.slice(1).map((r, i) => ({ fromTurn: c.rows[i].turn, toTurn: r.turn, ...computeDelta(c.rows[i], r) })),
-      })),
-    };
+
+    const files = collectUniqueSaves([dir]);
+    if (files.length === 0) return { scanned: 0, errors: [], campaigns: [] };
+
+    // Crack every save in parallel worker threads — off the main thread AND
+    // ~cores× faster than the old serial main-thread loop (which froze the app
+    // for minutes on a big folder). On any worker-infra failure, fall back to
+    // the serial buildTimeline so the scan still completes.
+    try {
+      const { rows, errors } = await crackRowsInParallel(files, modDataDir, factionOverride);
+      return finalizeTimeline(assembleTimeline(rows, errors, files.length, factionOverride, allCampaigns), computeDelta);
+    } catch (werr) {
+      _writeLog(`[timeline] worker fallback (${werr && werr.message}) — cracking on main thread`);
+      return finalizeTimeline(buildTimeline([dir], modDataDir, factionOverride, allCampaigns), computeDelta);
+    }
   } catch (e) {
     return { error: e && e.message ? e.message : String(e) };
   }
