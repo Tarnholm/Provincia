@@ -27,6 +27,7 @@ describe("main.js IPC surface", () => {
       // extracted domain modules — must survive the extraction
       "get-user-data-path", "select-log-folder",
       "read-vanilla-strat", "read-vanilla-sm-factions", "get-vanilla-faction-display-names",
+      "log-message", "get-log-path", "reveal-log-file",
     ]) {
       expect(H.channels, `missing channel: ${ch}`).toContain(ch);
     }
@@ -50,6 +51,13 @@ describe("main.js IPC surface", () => {
   it("select-log-folder returns null when the dialog is canceled (extracted domain module)", async () => {
     // The harness's dialog mock returns { canceled: true }.
     expect(await H.invoke("select-log-folder")).toBeNull();
+  });
+
+  it("log handlers: get-log-path returns a string, log-message + reveal don't throw", async () => {
+    expect(typeof H.invoke("get-log-path")).toBe("string");
+    await expect(H.invoke("log-message", "info", "harness log line")).resolves.toBeUndefined();
+    // reveal-log-file → true (the harness initLogging opened a real log under tmp).
+    expect(H.invoke("reveal-log-file")).toBe(true);
   });
 });
 

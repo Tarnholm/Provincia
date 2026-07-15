@@ -177,24 +177,10 @@ let _appQuitting = false;
 try { app.on("before-quit", () => { _appQuitting = true; _flushLog(); }); } catch {}
 try { app.on("will-quit", () => { _appQuitting = true; }); } catch {}
 
-// IPC: receive log messages from the renderer and write to the same log.
-ipcMain.handle("log-message", async (_event, level, text) => {
-  try {
-    const stamp = new Date().toISOString().slice(11, 23);
-    _writeLog(`[${stamp}] [RENDERER-${(level || "log").toUpperCase()}] ${text}\n`);
-  } catch {}
-});
-
-// IPC: return the log file path (renderer can show it to the user).
-ipcMain.handle("get-log-path", () => _logPath);
-
-// IPC: open the log file's containing folder in the OS file manager.
-ipcMain.handle("reveal-log-file", () => {
-  try {
-    if (_logPath && fs.existsSync(_logPath)) shell.showItemInFolder(_logPath);
-    return true;
-  } catch { return false; }
-});
+// Logging IPC handlers — see src/logHandlers.js. Inject the log internals via a
+// wrapper + getter so a later _writeLog/_logPath reassignment is still seen.
+const { registerLogHandlers } = require("./src/logHandlers.js");
+registerLogHandlers(ipcMain, { writeLog: (s) => _writeLog(s), getLogPath: () => _logPath, shell });
 // ─────────────────────────────────────────────────────────────────────
 
 // Save-file parsers — decode characters (names, traits, family, region),

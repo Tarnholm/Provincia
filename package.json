@@ -94,6 +94,7 @@
       "src/lastTurnSummary.js",
       "src/systemHandlers.js",
       "src/vanillaDataHandlers.js",
+      "src/logHandlers.js",
       "src/saveDiff.js",
       "src/mainUtils.js",
       "src/iconDirCache.js",
