@@ -70,3 +70,27 @@ describe("userData file handlers — containment + round-trip (real handlers)", 
     expect(fs.existsSync(escaped)).toBe(false);
   });
 });
+
+describe("campaign_data file handlers — traversal rejection (real handlers)", () => {
+  // Only the rejection paths are exercised (they return before any write), so
+  // these don't touch the repo build/ dir the success path also writes to.
+  const travNames = ["..\\..\\..\\Windows\\System32\\x.txt", "../../../etc/x", "..\\escape.tga"];
+
+  it("save-file rejects traversal names (returns false)", async () => {
+    for (const n of travNames) expect(await H.invoke("save-file", n, "x")).toBe(false);
+  });
+
+  it("write-binary-file rejects traversal names (returns false)", async () => {
+    const buf = new Uint8Array([1, 2, 3]);
+    for (const n of travNames) expect(await H.invoke("write-binary-file", n, buf)).toBe(false);
+  });
+
+  it("copy-file rejects a traversal destination name (returns false)", async () => {
+    // src can be anything; only the destName is renderer-controlled + contained.
+    for (const n of travNames) expect(await H.invoke("copy-file", os.tmpdir() + "/whatever.bin", n)).toBe(false);
+  });
+
+  it("read-campaign-file returns null for a traversal name", async () => {
+    for (const n of travNames) expect(await H.invoke("read-campaign-file", n)).toBeNull();
+  });
+});
