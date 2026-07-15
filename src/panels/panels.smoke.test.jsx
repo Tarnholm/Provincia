@@ -20,6 +20,11 @@ import AddRegionModal from "./AddRegionModal.js";
 import CompareModal from "./CompareModal.js";
 import CommandPalette from "./CommandPalette.js";
 import WealthPanel from "./WealthPanel.js";
+import DashboardModal from "./DashboardModal.js";
+
+// Stand-ins for the DashSection/DashRow module components that App.js passes in.
+const StubSection = ({ title, children }) => <div><span>{title}</span>{children}</div>;
+const StubRow = ({ label }) => <div>{label}</div>;
 
 beforeAll(() => {
   if (!window.electronAPI) window.electronAPI = { scriptsJumpTo: () => {}, selectFolder: () => Promise.resolve(null), findFactionIconsDir: () => Promise.resolve(null) };
@@ -236,5 +241,28 @@ describe("panels render smoke-test", () => {
     expect(document.body.textContent).toContain("Treasury"); // the row table rendered
     expect(document.body.textContent).toMatch(/25.?500/); // carthage starting denarii
     void c;
+  });
+
+  const dashProps = {
+    setShowDashboard: () => {},
+    portraitAudit: null, captainBannerAudit: null, modExtraAudit: null, descrRegionsAudit: null,
+    regionScrollsAudit: null, smFactionsAudit: null, aorCoverage: null, edbResAudit: null,
+    buildingImagesAudit: null, unitLocAudit: null, unitImagesAudit: null, logWarningsAudit: null,
+    textureDimsAudit: null, modDataDir: "C:/RIS/RIS/data",
+    PRIMARY_AOR_TAGS: new Set(), SECONDARY_AOR_TO_FACTION: {},
+    DashSection: StubSection, DashRow: StubRow,
+  };
+
+  it("DashboardModal shows the scanning state while loading", async () => {
+    const c = await mount(<DashboardModal {...dashProps} dashLoading={true} dashResult={null} />);
+    expect(c.textContent).toContain("Mod-validation dashboard");
+    expect(c.textContent).toContain("Scanning");
+  });
+
+  it("DashboardModal renders a clean loaded result with all audits absent (no throw)", async () => {
+    const c = await mount(<DashboardModal {...dashProps} dashLoading={false} dashResult={{ summary: {} }} />);
+    expect(c.textContent).toContain("Mod-validation dashboard");
+    // summary all-zero + null audits → the all-clear path, not the error path.
+    expect(c.textContent).not.toContain("undefined");
   });
 });
