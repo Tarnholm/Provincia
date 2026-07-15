@@ -34,6 +34,7 @@ describe("main.js IPC surface", () => {
       "get-building-display-names", "resolve-building-icon", "resolve-building-icons-bulk",
       "replace-building-icon", "revert-building-icon", "resolve-building-banner",
       "resolve-unit-info", "resolve-unit-card",
+      "resolve-trait-icon", "resolve-ancillary-icon", "resolve-portrait",
     ]) {
       expect(H.channels, `missing channel: ${ch}`).toContain(ch);
     }
@@ -168,6 +169,16 @@ const haveMod = (() => { try { return fs.existsSync(path.join(MOD_DIR, "export_d
     const icon = await H.invoke("resolve-building-icon", MOD_DIR, "roman", "core_building", null);
     expect(icon && icon.buffer).toBeTruthy(); // resolved a real TGA
     expect(await H.invoke("get-building-recruits", MOD_DIR)).toBeTruthy();
+  });
+
+  it("portraitHandlers domain: trait/ancillary/portrait resolvers run and degrade gracefully", async () => {
+    // All three return a structured result (never throw) for the real mod.
+    const ti = await H.invoke("resolve-trait-icon", MOD_DIR, "roman", "GoodCommander");
+    expect(ti).toHaveProperty("ok");
+    const ai = await H.invoke("resolve-ancillary-icon", MOD_DIR, "philosopher");
+    expect(ai).toHaveProperty("ok");
+    const pt = await H.invoke("resolve-portrait", MOD_DIR, "roman", "young", { faction: "romans_julii" });
+    expect(pt === null || typeof pt === "object").toBe(true); // resolved image, or graceful null/{ok:false}
   });
 });
 
