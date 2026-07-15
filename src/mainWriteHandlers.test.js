@@ -54,6 +54,17 @@ describe("file-writing handlers — sandbox-driven (real mod untouched)", () => 
     expect(edited).toContain("traits GoodAttacker 2");
   });
 
+  it("update-character-position moves a character's x,y in the sandbox only", async () => {
+    sb = makeModSandbox([{ rel: DS_REL, content: SYNTH_DS }]);
+    prevDir = H.main.__setActiveModDataDir(sb.dir);
+    const r = await H.invoke("update-character-position", "romans_julii", 100, 100, 150, 150);
+    expect(r.ok).toBe(true);
+    const edited = sb.read(DS_REL);
+    expect(edited).toContain("x 150, y 150");
+    expect(edited).not.toMatch(/x 100, y 100/); // Testus moved
+    expect(edited).toContain("x 200, y 200"); // carthage character untouched
+  });
+
   it("refuses cleanly when there is no active mod (returns { ok:false }, writes nothing)", async () => {
     prevDir = H.main.__setActiveModDataDir(null);
     const r = await H.invoke("update-character-traits", "Testus", "romans_julii", []);
