@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1257",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**More renderer modularization — no behaviour changes.** The 786-line Army Setup / tax-planning / garrison modal moved out of the giant App component into its own module, verified by a render test. The renderer's main source file is now smaller and easier to maintain." },
+    ],
+  },
+  {
     version: "0.9.1256",
     date: "2026-07-15",
     items: [
