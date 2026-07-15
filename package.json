@@ -95,6 +95,7 @@
       "src/systemHandlers.js",
       "src/vanillaDataHandlers.js",
       "src/logHandlers.js",
+      "src/buildingInfoHandlers.js",
       "src/saveDiff.js",
       "src/mainUtils.js",
       "src/iconDirCache.js",

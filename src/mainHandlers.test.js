@@ -28,6 +28,8 @@ describe("main.js IPC surface", () => {
       "get-user-data-path", "select-log-folder",
       "read-vanilla-strat", "read-vanilla-sm-factions", "get-vanilla-faction-display-names",
       "log-message", "get-log-path", "reveal-log-file",
+      "get-building-stats", "get-building-description", "get-building-chain-levels",
+      "find-edb-chain", "find-edu-type",
     ]) {
       expect(H.channels, `missing channel: ${ch}`).toContain(ch);
     }
@@ -132,5 +134,11 @@ const haveMod = (() => { try { return fs.existsSync(path.join(MOD_DIR, "export_d
     const sc = await H.invoke("get-starting-characters");
     expect(sc.ok).toBe(true);
     expect(sc.characters.length).toBeGreaterThan(100);
+  });
+
+  it("get-building-chain-levels parses the EDB chain→levels ladder (extracted domain)", async () => {
+    const chains = await H.invoke("get-building-chain-levels", MOD_DIR);
+    expect(chains && typeof chains).toBe("object");
+    expect(Object.keys(chains).length).toBeGreaterThan(10);
   });
 });
