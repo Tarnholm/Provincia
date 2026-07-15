@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1254",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**Save-analysis and economy handlers modularized — no behaviour changes.** The save-cracking, budget/tax, army-setup, vision, and trade-network handlers (~900 lines) moved into their own module, verified by automated tests that crack a real save. The main-process source file is now about 37% smaller than at the start of today's cleanup, and split across eight focused modules." },
+    ],
+  },
+  {
     version: "0.9.1253",
     date: "2026-07-15",
     items: [
