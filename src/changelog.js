@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1253",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**The save/mod editing handlers are now modularized too — no behaviour changes.** The character/army/region editors, the Add-General flow, mod backups, and diplomacy edits (~1,250 lines) moved into their own module. New test tooling drives these against a throwaway copy of a mod, so the editing paths are now verified automatically without ever touching real files. The main-process source file is about 29% smaller than at the start of today's cleanup." },
+    ],
+  },
+  {
     version: "0.9.1252",
     date: "2026-07-15",
     items: [
