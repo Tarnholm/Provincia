@@ -9,8 +9,33 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
+const { Worker } = require("worker_threads");
+
+const CRACK_WORKER_PATH = path.join(__dirname, "saveCrackWorker.js");
 
 function registerSaveAnalysisHandlers(ipcMain, { _writeLog, getLastSaveBuf }) {
+  // Run a heavy save crack in a worker thread so it never blocks the Electron
+  // main thread (a ~5s synchronous crack froze all IPC/window events). The
+  // worker reads the save file itself when given a savePath — keeping the 30-45
+  // MB read AND the parse off the main thread — or uses a passed live buffer.
+  // It returns the small result object and the crack's own [trade]/[diplo]
+  // diagnostics, which we replay into provincia.log. Rejects on worker
+  // failure so callers can fall back to a synchronous crack (never a regression).
+  const runCrackWorker = (mode, payload) => new Promise((resolve, reject) => {
+    let worker;
+    try { worker = new Worker(CRACK_WORKER_PATH); }
+    catch (e) { reject(e); return; }
+    worker.once("message", (msg) => {
+      worker.terminate();
+      if (msg && Array.isArray(msg.logs)) { for (const line of msg.logs) { try { _writeLog(line); } catch { /* */ } } }
+      if (msg && msg.ok) resolve(msg.result);
+      else reject(new Error(msg && msg.error ? msg.error : "crack worker failed"));
+    });
+    worker.once("error", (err) => { worker.terminate(); reject(err); });
+    worker.postMessage({ mode, ...payload });
+  });
+
+
 ipcMain.handle("crack-save", async (_event, savePath, modDataDir) => {
   try {
     const { crackSave } = require("./saveCracker.js");
@@ -43,16 +68,22 @@ ipcMain.handle("crack-save", async (_event, savePath, modDataDir) => {
 ipcMain.handle("get-save-economy", async (_event, savePath, modDataDir) => {
   try {
     if (!savePath) return { error: "no save path" };
-    const { crackSave } = require("./saveCracker.js");
-    const { parseFinancialOverview } = require("./economyParser.js");
-    const buf = await fs.promises.readFile(savePath); // async: saves are 30-45 MB — don't block the event loop on I/O
-    // economyOnly: this handler feeds ONLY parseFinancialOverview, which reads a
-    // small slice of the crack (treasuries, settlements, ownerByCity, turn). The
-    // full crack blocks the main thread ~5.7s on a 34 MB save; economyOnly skips
-    // the character/unit/family/siege/agent/event/diplomacy parses it never uses,
-    // cutting that to ~3.2s (verified identical FinOverview output on 3 saves).
-    const cracked = crackSave(buf, modDataDir, { economyOnly: true });
-    const economy = parseFinancialOverview(buf, cracked);
+    // Off-main-thread: the worker reads the save + runs the economyOnly crack +
+    // Financial Overview, so the main process stays responsive during the parse.
+    // economyOnly skips the character/unit/family/siege/agent/event/diplomacy
+    // parses the economy panel never reads (verified identical output).
+    let economy;
+    try {
+      economy = await runCrackWorker("economy", { savePath, modDataDir });
+    } catch (werr) {
+      // Fallback: worker unavailable/failed → run synchronously (blocks briefly,
+      // but never breaks the panel). Identical to the pre-worker behaviour.
+      _writeLog(`[economy] worker fallback (${werr && werr.message}) — running on main thread`);
+      const { crackSave } = require("./saveCracker.js");
+      const { parseFinancialOverview } = require("./economyParser.js");
+      const buf = await fs.promises.readFile(savePath);
+      economy = parseFinancialOverview(buf, crackSave(buf, modDataDir, { economyOnly: true }));
+    }
     const pf = economy && economy.playerFaction;
     const pe = pf && economy.byFaction ? economy.byFaction[pf] : null;
     if (pe) _writeLog(`[economy] ${path.basename(savePath)} ${pf} income=${pe.income?.total} expend=${pe.expenditure?.total} net=${pe.net} treasury=${pe.treasury}`);
@@ -877,17 +908,21 @@ ipcMain.handle("get-vision-faction-list", async (_event, savePath, modDataDir) =
 // the live watcher is active, omitted to use the last watched save buffer.
 ipcMain.handle("crack-trade-network", async (_event, savePath, modDataDir, campaign) => {
   try {
-    const { computeTradeNetwork } = require("./tradeNetwork.js");
-    let buf;
-    if (savePath && fs.existsSync(savePath)) {
-      buf = await fs.promises.readFile(savePath);
-    } else if (getLastSaveBuf()) {
-      buf = getLastSaveBuf(); // live-watch path: reuse the buffer already in memory
-    } else {
-      return { error: "no save buffer available" };
+    const hasPath = !!(savePath && fs.existsSync(savePath));
+    const liveBuf = hasPath ? null : getLastSaveBuf(); // live-watch path: reuse the buffer already in memory
+    if (!hasPath && !liveBuf) return { error: "no save buffer available" };
+    // Off-main-thread: the worker reads the save (or uses the live buffer) and
+    // runs computeTradeNetwork (tradeOnly crack + network compute), keeping the
+    // main process responsive during the ~5s parse.
+    try {
+      return await runCrackWorker("trade", { savePath: hasPath ? savePath : null, saveBuf: liveBuf, modDataDir, campaign });
+    } catch (werr) {
+      // Fallback: worker unavailable/failed → run synchronously (never a regression).
+      _writeLog(`[trade] worker fallback (${werr && werr.message}) — running on main thread`);
+      const { computeTradeNetwork } = require("./tradeNetwork.js");
+      const buf = hasPath ? await fs.promises.readFile(savePath) : liveBuf;
+      return computeTradeNetwork(buf, modDataDir, campaign ? { campaign } : {});
     }
-    const opts = campaign ? { campaign } : {};
-    return computeTradeNetwork(buf, modDataDir, opts);
   } catch (e) {
     return { error: e && e.message ? e.message : String(e) };
   }

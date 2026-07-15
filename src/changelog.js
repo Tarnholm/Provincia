@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1264",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**No more freeze when a save loads.** The economy and trade-network panels do heavy parsing of the save file — several seconds of work that used to run on the app's main thread, freezing the whole window (map, menus, icons all unresponsive) until it finished. That work now runs on a background thread, so the app stays fully responsive while the panels compute in the background and fill in when ready. The numbers are identical; only the freeze is gone. Falls back to the old path automatically if the background thread is ever unavailable." },
+    ],
+  },
+  {
     version: "0.9.1263",
     date: "2026-07-15",
     items: [

@@ -233,6 +233,36 @@ const haveMod = (() => { try { return fs.existsSync(path.join(MOD_DIR, "export_d
     expect(trade.units.length).toBe(0);
   });
 
+  // Locks the worker-offload invariant: get-save-economy / crack-trade-network
+  // run their cracks in src/saveCrackWorker.js (off the Electron main thread so
+  // a save load no longer freezes the app). The worker output MUST match the
+  // synchronous path — economy exactly; trade in everything except `stats`,
+  // which holds parse-timing (stats.ms) that naturally varies run-to-run.
+  it.runIf(saveFile)("saveCrackWorker output matches the synchronous crack (economy exact; trade modulo timing)", { timeout: 60000 }, async () => {
+    const { Worker } = require("worker_threads");
+    const WORKER = require.resolve("./saveCrackWorker.js");
+    const runWorker = (mode, payload) => new Promise((resolve, reject) => {
+      const w = new Worker(WORKER);
+      w.once("message", (m) => { w.terminate(); (m && m.ok) ? resolve(m.result) : reject(new Error((m && m.error) || "worker failed")); });
+      w.once("error", (e) => { w.terminate(); reject(e); });
+      w.postMessage({ mode, ...payload });
+    });
+    const { crackSave } = require("./saveCracker.js");
+    const { parseFinancialOverview } = require("./economyParser.js");
+    const { computeTradeNetwork } = require("./tradeNetwork.js");
+    const buf = fs.readFileSync(saveFile);
+
+    const ecoSync = parseFinancialOverview(buf, crackSave(buf, MOD_DIR, { economyOnly: true }));
+    const ecoWorker = await runWorker("economy", { savePath: saveFile, modDataDir: MOD_DIR });
+    expect(ecoWorker).toEqual(ecoSync);
+
+    const trSync = computeTradeNetwork(buf, MOD_DIR, { campaign: "imperial_campaign" });
+    const trWorker = await runWorker("trade", { savePath: saveFile, modDataDir: MOD_DIR, campaign: "imperial_campaign" });
+    const stripTiming = ({ stats, ...rest }) => rest; // stats.ms varies run-to-run
+    expect(stripTiming(trWorker)).toEqual(stripTiming(trSync));
+    expect(trWorker.trade && trWorker.trade.settlements).toBeTruthy();
+  });
+
   it("portraitHandlers domain: trait/ancillary/portrait resolvers run and degrade gracefully", async () => {
     // All three return a structured result (never throw) for the real mod.
     const ti = await H.invoke("resolve-trait-icon", MOD_DIR, "roman", "GoodCommander");
