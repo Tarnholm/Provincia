@@ -65,6 +65,28 @@ describe("file-writing handlers — sandbox-driven (real mod untouched)", () => 
     expect(edited).toContain("x 200, y 200"); // carthage character untouched
   });
 
+  it("rename-character changes the first name (keeping family) in the sandbox only", async () => {
+    sb = makeModSandbox([{ rel: DS_REL, content: SYNTH_DS }]);
+    prevDir = H.main.__setActiveModDataDir(sb.dir);
+    const r = await H.invoke("rename-character", "romans_julii", "Testus", "Renamedus");
+    expect(r.ok).toBe(true);
+    const edited = sb.read(DS_REL);
+    expect(edited).toContain("Renamedus Maximus");
+    expect(edited).not.toContain("Testus Maximus");
+    expect(edited).toContain("Hannibalus Barca"); // other faction untouched
+  });
+
+  it("update-character-fields updates a character's age in the sandbox only", async () => {
+    sb = makeModSandbox([{ rel: DS_REL, content: SYNTH_DS }]);
+    prevDir = H.main.__setActiveModDataDir(sb.dir);
+    const r = await H.invoke("update-character-fields", "Testus", "romans_julii", { age: 45 });
+    expect(r.ok).toBe(true);
+    const edited = sb.read(DS_REL);
+    expect(edited).toContain("age 45");
+    expect(edited).not.toContain("age 30"); // Testus was 30
+    expect(edited).toContain("age 40"); // Hannibalus (40) untouched
+  });
+
   it("refuses cleanly when there is no active mod (returns { ok:false }, writes nothing)", async () => {
     prevDir = H.main.__setActiveModDataDir(null);
     const r = await H.invoke("update-character-traits", "Testus", "romans_julii", []);
