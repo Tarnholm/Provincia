@@ -77,6 +77,7 @@ const GLOBALS = new Set([
   "clearInterval", "requestAnimationFrame", "localStorage", "navigator", "URL", "Intl",
   "Reflect", "Proxy", "WeakMap", "WeakSet", "createPortal", "arguments", "globalThis",
   "structuredClone", "atob", "btoa", "TextEncoder", "TextDecoder", "Buffer", "process",
+  "Uint8Array", "Uint16Array", "Uint32Array", "Int32Array", "Float64Array", "DataView", "ArrayBuffer",
   "require", "module", "exports", "__dirname", "__filename", "global", "queueMicrotask",
   "default", // esbuild lowers `export default` to a token acorn reads as this
 ]);

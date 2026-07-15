@@ -99,6 +99,7 @@
       "src/iconHandlers.js",
       "src/portraitHandlers.js",
       "src/modEditingHandlers.js",
+      "src/saveAnalysisHandlers.js",
       "src/saveDiff.js",
       "src/mainUtils.js",
       "src/iconDirCache.js",

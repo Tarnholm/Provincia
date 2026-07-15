@@ -35,6 +35,8 @@ describe("main.js IPC surface", () => {
       "replace-building-icon", "revert-building-icon", "resolve-building-banner",
       "resolve-unit-info", "resolve-unit-card",
       "resolve-trait-icon", "resolve-ancillary-icon", "resolve-portrait",
+      "crack-save", "get-save-economy", "get-turn1-budget", "crack-trade-network",
+      "get-faction-vision", "get-army-setup", "scan-saves-timeline",
     ]) {
       expect(H.channels, `missing channel: ${ch}`).toContain(ch);
     }
@@ -169,6 +171,19 @@ const haveMod = (() => { try { return fs.existsSync(path.join(MOD_DIR, "export_d
     const icon = await H.invoke("resolve-building-icon", MOD_DIR, "roman", "core_building", null);
     expect(icon && icon.buffer).toBeTruthy(); // resolved a real TGA
     expect(await H.invoke("get-building-recruits", MOD_DIR)).toBeTruthy();
+  });
+
+  const SAVE_DIR = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/saves";
+  const saveFile = (() => { try { const s = fs.readdirSync(SAVE_DIR).filter((f) => f.endsWith(".sav")); return s.length ? path.join(SAVE_DIR, s[0]) : null; } catch { return null; } })();
+
+  it.runIf(saveFile)("saveAnalysis domain: crack-save / get-save-economy / get-turn1-budget against a real save", { timeout: 40000 }, async () => {
+    const cr = await H.invoke("crack-save", saveFile, MOD_DIR);
+    expect(cr.factions && Object.keys(cr.factions).length).toBeGreaterThan(50);
+    const eco = await H.invoke("get-save-economy", saveFile, MOD_DIR);
+    expect(eco.byFaction && Object.keys(eco.byFaction).length).toBeGreaterThan(50);
+    const b = await H.invoke("get-turn1-budget", MOD_DIR, "romans_julii", saveFile, false, null, null, null);
+    expect(b && typeof b).toBe("object");
+    expect(b.error).toBeUndefined();
   });
 
   it("portraitHandlers domain: trait/ancillary/portrait resolvers run and degrade gracefully", async () => {
