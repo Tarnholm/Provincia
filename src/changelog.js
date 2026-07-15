@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1266",
+    date: "2026-07-15",
+    items: [
+      { type: "fix", text: "**Campaign Timeline scan works again.** Scanning a folder of saves to build a turn-by-turn timeline was failing silently with an internal \"module not found\" error (a file-path bug introduced when the save-analysis code was reorganised, and the timeline module wasn't included in the packaged app). Both are fixed and covered by tests so it can't break the same way again." },
+    ],
+  },
+  {
     version: "0.9.1265",
     date: "2026-07-15",
     items: [

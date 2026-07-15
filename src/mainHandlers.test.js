@@ -263,6 +263,29 @@ const haveMod = (() => { try { return fs.existsSync(path.join(MOD_DIR, "export_d
     expect(trWorker.trade && trWorker.trade.settlements).toBeTruthy();
   });
 
+  // Regression: scan-saves-timeline require path + packaging. The extraction of
+  // saveAnalysisHandlers to src/ left `require("./scripts/…")` unchanged, which
+  // resolves to the non-existent src/scripts/ — the handler died with "Cannot
+  // find module" for EVERY user. And scripts/ was never in build.files, so it
+  // would fail in the packaged app too. Both must hold.
+  it("scan-saves-timeline's campaign-timeline module resolves from src/ and is packaged", () => {
+    expect(() => require.resolve("../scripts/campaign-timeline.js")).not.toThrow();
+    expect(require("../package.json").build.files).toContain("scripts/campaign-timeline.js");
+  });
+
+  it.runIf(saveFile)("scan-saves-timeline cracks a real save folder without the module error", { timeout: 45000 }, async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "prov-tl-"));
+    fs.copyFileSync(saveFile, path.join(tmp, path.basename(saveFile)));
+    try {
+      const r = await H.invoke("scan-saves-timeline", tmp, MOD_DIR, {});
+      expect(r.error).toBeUndefined();
+      expect(r.scanned).toBeGreaterThanOrEqual(1);
+      expect(Array.isArray(r.campaigns)).toBe(true);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
   it("portraitHandlers domain: trait/ancillary/portrait resolvers run and degrade gracefully", async () => {
     // All three return a structured result (never throw) for the real mod.
     const ti = await H.invoke("resolve-trait-icon", MOD_DIR, "roman", "GoodCommander");

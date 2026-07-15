@@ -939,7 +939,12 @@ ipcMain.handle("crack-trade-network", async (_event, savePath, modDataDir, campa
 // save), so it's an explicit on-demand action, never on the hot live path.
 ipcMain.handle("scan-saves-timeline", async (_event, dir, modDataDir, opts) => {
   try {
-    const { buildTimeline, computeDelta } = require("./scripts/campaign-timeline.js");
+    // NOTE: this module lives at the repo-root scripts/, not src/scripts/ — so
+    // the path is "../scripts/" now that this handler lives in src/. (It was
+    // "./scripts/" when this code was in main.js at the repo root; the extraction
+    // to src/ silently broke it. campaign-timeline.js + its ../src deps are in
+    // build.files so it also resolves inside the packaged asar.)
+    const { buildTimeline, computeDelta } = require("../scripts/campaign-timeline.js");
     if (!dir || !fs.existsSync(dir)) return { error: "Folder not found: " + dir };
     const factionOverride = opts && opts.faction ? opts.faction : null;
     const allCampaigns = !!(opts && opts.allCampaigns);
