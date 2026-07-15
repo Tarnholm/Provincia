@@ -30,6 +30,10 @@ describe("main.js IPC surface", () => {
       "log-message", "get-log-path", "reveal-log-file",
       "get-building-stats", "get-building-description", "get-building-chain-levels",
       "find-edb-chain", "find-edu-type",
+      "get-unit-ownership", "get-unit-stats", "get-unit-upkeep-map", "get-building-recruits",
+      "get-building-display-names", "resolve-building-icon", "resolve-building-icons-bulk",
+      "replace-building-icon", "revert-building-icon", "resolve-building-banner",
+      "resolve-unit-info", "resolve-unit-card",
     ]) {
       expect(H.channels, `missing channel: ${ch}`).toContain(ch);
     }
@@ -155,5 +159,24 @@ const haveMod = (() => { try { return fs.existsSync(path.join(MOD_DIR, "export_d
     expect(Object.keys(uo).length).toBeGreaterThan(100);
     const bdn = await H.invoke("get-building-display-names", MOD_DIR);
     expect(Object.keys(bdn).length).toBeGreaterThan(100);
+  });
+
+  it("iconHandlers domain: unit stats/upkeep + building icon + banner resolve", async () => {
+    const someUnit = Object.keys(await H.invoke("get-unit-ownership", MOD_DIR))[0];
+    expect(await H.invoke("get-unit-stats", MOD_DIR, someUnit)).toBeTruthy();
+    expect(Object.keys(await H.invoke("get-unit-upkeep-map", MOD_DIR) || {}).length).toBeGreaterThan(100);
+    const icon = await H.invoke("resolve-building-icon", MOD_DIR, "roman", "core_building", null);
+    expect(icon && icon.buffer).toBeTruthy(); // resolved a real TGA
+    expect(await H.invoke("get-building-recruits", MOD_DIR)).toBeTruthy();
+  });
+});
+
+describe("iconHandlers write handlers — safe no-op path (no active mod)", () => {
+  it("revert-building-icon refuses when there is no active mod (getActiveModDataDir getter)", async () => {
+    // activeModDataDir is null in the harness → the injected getter returns null →
+    // the handler returns { ok:false } without touching the filesystem. This
+    // exercises the getter injection for the extracted write handler.
+    const r = await H.invoke("revert-building-icon", "C:/whatever/x.tga", null);
+    expect(r).toMatchObject({ ok: false });
   });
 });
