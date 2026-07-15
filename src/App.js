@@ -51,6 +51,7 @@ import RevertAutosaveModal from "./panels/RevertAutosaveModal";
 import SettlementAuditModal from "./panels/SettlementAuditModal";
 import LoadModModal from "./panels/LoadModModal";
 import AiDiagModal from "./panels/AiDiagModal";
+import ShortcutsModal from "./panels/ShortcutsModal";
 import Toasts from "./Toasts";
 import VolumeControl from "./VolumeControl";
 import { AnimationLayoutProvider, useEnterExit } from "./AnimationLayout";
@@ -13602,46 +13603,7 @@ function App() {
         )}
         {/* Keyboard shortcuts overlay */}
         {showShortcuts && (
-          <div style={{
-            position: "fixed", bottom: 52, right: 12, zIndex: 10,
-            background: "rgba(20,25,35,0.95)", backdropFilter: "blur(10px)",
-            border: "1px solid #555", borderRadius: 10,
-            padding: "12px 16px", minWidth: 260,
-            color: "#dde", fontSize: "0.75rem",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
-            pointerEvents: "auto",
-          }}>
-            <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 8, color: "#e8a030" }}>Keyboard Shortcuts</div>
-            {/* 3rd element = dev-only: hidden outside dev mode. The dev-mode
-                TOGGLE itself is always shown so non-dev users can find it. */}
-            {[
-              ["Ctrl+1 – 8", "Open map-mode group (1 Political … 7 Geography, 8 Overlays)"],
-              ["Ctrl+`", "Switch campaign slot"],
-              ["Ctrl+F", "Focus province search"],
-              ["Ctrl+K", "Search everywhere"],
-              [", / .", "Step through recent regions"],
-              ["Ctrl+Shift+D", "Toggle dev mode"],
-              ["Ctrl+Z", "Undo", true],
-              ["Ctrl+Shift+Z / Ctrl+Y", "Redo", true],
-              ["Escape", "Close open group, then deselect"],
-              ["Arrow keys", "Pan map"],
-              ["Scroll wheel", "Zoom in/out"],
-              ["Double-click map", "Zoom in"],
-              ["Shift+click faction", "Multi-select factions"],
-              ["Double-click faction", "Zoom to territory"],
-              ["Right-click campaign tab", "Import files into that slot", true],
-              ["Right-click save", "Rename save"],
-            ].filter(([, , dev]) => devMode || !dev).map(([key, desc]) => (
-              <div key={key} style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 3 }}>
-                <kbd style={{ background: "rgba(255,255,255,0.1)", padding: "1px 5px", borderRadius: 3, fontSize: "0.68rem", color: "#8bf", whiteSpace: "nowrap" }}>{key}</kbd>
-                <span style={{ color: "#aab" }}>{desc}</span>
-              </div>
-            ))}
-            <button onClick={() => setShowShortcuts(false)} style={{
-              marginTop: 6, padding: "3px 10px", borderRadius: 5, border: "1px solid #555",
-              background: "rgba(60,60,60,0.7)", color: "#aaa", fontSize: "0.7rem", cursor: "pointer", width: "100%",
-            }}>Close</button>
-          </div>
+          <ShortcutsModal devMode={devMode} onClose={() => setShowShortcuts(false)} />
         )}
         {/* Recovery banner — shown when dev mode opens with existing
             autosaves. 0.9.471: zIndex bumped above 10003 (the bottom-

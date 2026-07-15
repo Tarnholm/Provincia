@@ -15,6 +15,7 @@ import RevertAutosaveModal from "./RevertAutosaveModal.js";
 import SettlementAuditModal from "./SettlementAuditModal.js";
 import LoadModModal from "./LoadModModal.js";
 import AiDiagModal from "./AiDiagModal.js";
+import ShortcutsModal from "./ShortcutsModal.js";
 
 beforeAll(() => {
   if (!window.electronAPI) window.electronAPI = { scriptsJumpTo: () => {}, selectFolder: () => Promise.resolve(null), findFactionIconsDir: () => Promise.resolve(null) };
@@ -119,5 +120,18 @@ describe("panels render smoke-test", () => {
     expect(c.textContent).toContain("Bankrupt");
     expect(c.textContent).toContain("Gaul");
     expect(c.textContent).toContain("Egypt");
+  });
+
+  it("ShortcutsModal renders shortcuts; dev-only rows gated by devMode", async () => {
+    let c = await mount(<ShortcutsModal devMode={false} onClose={() => {}} />);
+    expect(c.textContent).toContain("Keyboard Shortcuts");
+    expect(c.textContent).toContain("Search everywhere");
+    expect(c.textContent).toContain("Toggle dev mode"); // always shown (not dev-gated)
+    // Undo/Redo ARE dev-only → hidden when devMode false
+    expect(c.textContent).not.toContain("Redo");
+    if (root) { root.unmount(); root = null; }
+    if (container?.parentNode) container.parentNode.removeChild(container);
+    c = await mount(<ShortcutsModal devMode={true} onClose={() => {}} />);
+    expect(c.textContent).toContain("Redo"); // dev-only row now visible
   });
 });
