@@ -16,6 +16,7 @@ import SettlementAuditModal from "./SettlementAuditModal.js";
 import LoadModModal from "./LoadModModal.js";
 import AiDiagModal from "./AiDiagModal.js";
 import ShortcutsModal from "./ShortcutsModal.js";
+import AddRegionModal from "./AddRegionModal.js";
 
 beforeAll(() => {
   if (!window.electronAPI) window.electronAPI = { scriptsJumpTo: () => {}, selectFolder: () => Promise.resolve(null), findFactionIconsDir: () => Promise.resolve(null) };
@@ -133,5 +134,22 @@ describe("panels render smoke-test", () => {
     if (container?.parentNode) container.parentNode.removeChild(container);
     c = await mount(<ShortcutsModal devMode={true} onClose={() => {}} />);
     expect(c.textContent).toContain("Redo"); // dev-only row now visible
+  });
+
+  it("AddRegionModal renders the form with faction options and the color swatch", async () => {
+    const form = { name: "Garamantia", city: "", faction: "", tags: "", rgb: "10,20,30" };
+    const c = await mount(
+      <AddRegionModal
+        form={form}
+        setForm={() => {}}
+        factionOptions={["romans_julii", "carthage"]}
+        onReroll={() => {}}
+        onSubmit={() => {}}
+        onClose={() => {}}
+      />,
+    );
+    expect(c.textContent).toContain("Add new region");
+    expect(c.textContent).toContain("romans julii"); // underscores → spaces in options
+    expect(c.querySelector('input[value="Garamantia"]')).toBeTruthy();
   });
 });
