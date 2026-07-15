@@ -2883,6 +2883,11 @@ function getMergedTextDictionary(modDataDir, relPath) {
 // Looks up the EDU `dictionary` key for the given unitName, then fetches
 // the matching `{<dict>}`, `{<dict>_descr_short}`, `{<dict>_descr}`
 // entries. Returns { displayName, short, long } or null.
+// modDataDir → unit-ownership map (also carries __dictionary per type). Shared
+// by get-unit-description / get-unit-ownership and cleared by clear-mod-caches,
+// so it lives here in main.js (was accidentally swept into buildingInfoHandlers
+// during the EDB-query extraction — regression fixed 2026-07-15).
+const _unitOwnershipCache = new Map();
 ipcMain.handle("get-unit-description", async (_event, modDataDir, unitName) => {
   if (!unitName) return null;
   // 1) Find the dictionary key. Reuse the unit-ownership cache where

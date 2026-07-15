@@ -207,7 +207,6 @@ ipcMain.handle("get-building-chain-levels", async (_event, modDataDir) => {
 // key `__dictionary` mapping unitName → dictionary (icon basename). AOR units
 // have type "aor X Y" but icons are keyed by dictionary "X_Y" — the renderer
 // uses this to resolve the right icon path.
-const _unitOwnershipCache = new Map();
 // Locate a building chain in export_descr_buildings.txt and a unit type in
 // export_descr_unit.txt. Returns the absolute path + 1-based line number.
 // Used by the dev right-click "Show in EDB / EDU" menu items.

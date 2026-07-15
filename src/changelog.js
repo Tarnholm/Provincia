@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1250",
+    date: "2026-07-15",
+    items: [
+      { type: "fix", text: "**Fixed unit info tooltips, the unit-ownership / areas-of-recruitment data, and the clear-caches action — all broken in 0.9.1249.** The internal refactor in the previous build accidentally moved a shared data cache into the wrong module, so anything that read it threw an error. The cache is back where it belongs, and a new automated check now exercises these handlers directly so it can't recur." },
+    ],
+  },
+  {
     version: "0.9.1249",
     date: "2026-07-15",
     items: [

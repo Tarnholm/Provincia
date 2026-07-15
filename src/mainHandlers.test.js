@@ -39,6 +39,14 @@ describe("main.js IPC surface", () => {
     expect(() => H.invoke("no-such-channel-xyz")).toThrow(/no IPC handler/);
   });
 
+  it("clear-mod-caches runs without throwing (guards against a leaked cache decl)", async () => {
+    // Regression guard: an extraction that sweeps a shared cache declaration into
+    // a domain module leaves clear-mod-caches referencing an undefined var — this
+    // catches that by actually invoking it (v0.9.1249 shipped with exactly this
+    // bug in _unitOwnershipCache; the structural registration check missed it).
+    expect(await H.invoke("clear-mod-caches")).toBe(true);
+  });
+
   it("get-app-version returns a version string", () => {
     expect(typeof H.invoke("get-app-version")).toBe("string");
   });
@@ -140,5 +148,12 @@ const haveMod = (() => { try { return fs.existsSync(path.join(MOD_DIR, "export_d
     const chains = await H.invoke("get-building-chain-levels", MOD_DIR);
     expect(chains && typeof chains).toBe("object");
     expect(Object.keys(chains).length).toBeGreaterThan(10);
+  });
+
+  it("get-unit-ownership + get-building-display-names return populated maps (use _unitOwnershipCache)", async () => {
+    const uo = await H.invoke("get-unit-ownership", MOD_DIR);
+    expect(Object.keys(uo).length).toBeGreaterThan(100);
+    const bdn = await H.invoke("get-building-display-names", MOD_DIR);
+    expect(Object.keys(bdn).length).toBeGreaterThan(100);
   });
 });
