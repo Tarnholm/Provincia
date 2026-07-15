@@ -19,6 +19,7 @@ import ShortcutsModal from "./ShortcutsModal.js";
 import AddRegionModal from "./AddRegionModal.js";
 import CompareModal from "./CompareModal.js";
 import CommandPalette from "./CommandPalette.js";
+import WealthPanel from "./WealthPanel.js";
 
 beforeAll(() => {
   if (!window.electronAPI) window.electronAPI = { scriptsJumpTo: () => {}, selectFolder: () => Promise.resolve(null), findFactionIconsDir: () => Promise.resolve(null) };
@@ -206,5 +207,34 @@ describe("panels render smoke-test", () => {
     const input = c.querySelector("input");
     input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
     expect(fired).toBe("rome");
+  });
+
+  it("WealthPanel renders faction rows (portal) with starting wealth and no save", async () => {
+    const props = {
+      factions: ["romans_julii", "carthage"],
+      factionRegionsMap: { romans_julii: ["Rome", "Capua"], carthage: ["Carthage"] },
+      factionWealth: { romans_julii: 17500, carthage: 25500 },
+      factionDisplayNames: { romans_julii: "Julii", carthage: "Carthage" },
+      saveLiveArmies: [],
+      currentOwnerByCity: null,
+      saveTreasuryRecords: null,
+      playerFaction: "romans_julii",
+      factionRecordOwners: null,
+      liveLogActive: false,
+      saveEconomy: null,
+      selectedFaction: "romans_julii",
+      treasuryHistory: null,
+      onJumpToFaction: () => {},
+      onClose: () => {},
+    };
+    const c = await mount(<WealthPanel {...props} />);
+    // Portal renders into document.body.
+    expect(document.body.textContent).toContain("Faction Wealth");
+    expect(document.body.textContent).toContain("Julii");
+    expect(document.body.textContent).toContain("Carthage");
+    // Locale-independent (jsdom/node omits the thousands separator that Chromium adds):
+    expect(document.body.textContent).toContain("Treasury"); // the row table rendered
+    expect(document.body.textContent).toMatch(/25.?500/); // carthage starting denarii
+    void c;
   });
 });
