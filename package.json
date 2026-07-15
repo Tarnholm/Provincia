@@ -101,6 +101,7 @@
       "src/modEditingHandlers.js",
       "src/saveAnalysisHandlers.js",
       "src/modDataLoader.js",
+      "src/parseSaveData.js",
       "src/saveDiff.js",
       "src/mainUtils.js",
       "src/iconDirCache.js",

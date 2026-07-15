@@ -74,7 +74,7 @@ const GLOBALS = new Set([
   "Boolean", "Set", "Map", "Infinity", "NaN", "undefined", "null", "console", "Date",
   "Promise", "parseInt", "parseFloat", "isNaN", "isFinite", "Symbol", "RegExp", "Error",
   "alert", "confirm", "prompt", "fetch", "setTimeout", "clearTimeout", "setInterval",
-  "clearInterval", "requestAnimationFrame", "localStorage", "navigator", "URL", "Intl",
+  "clearInterval", "setImmediate", "clearImmediate", "queueMicrotask", "requestAnimationFrame", "localStorage", "navigator", "URL", "Intl",
   "Reflect", "Proxy", "WeakMap", "WeakSet", "createPortal", "arguments", "globalThis",
   "structuredClone", "atob", "btoa", "TextEncoder", "TextDecoder", "Buffer", "process",
   "Uint8Array", "Uint16Array", "Uint32Array", "Int32Array", "Float64Array", "DataView", "ArrayBuffer",
