@@ -2218,7 +2218,14 @@ function parseSettlementBuildings(saveBuf) {
 // the renderer's LIVE-mode commander-info → portrait path — distinct from
 // src/saveCracker.js's crackSave. Exporting it lets scripts assert the
 // faction/culture propagation fix without spinning up the Electron GUI.
-module.exports = { parseCharactersAndUnits, loadModCharacterData };
+module.exports = {
+  parseCharactersAndUnits,
+  loadModCharacterData,
+  // TEST-ONLY hook: point the active-mod dir at a throwaway sandbox so the
+  // file-writing handlers can be driven without touching the real mod. Never
+  // called in production. Returns the previous value so tests can restore it.
+  __setActiveModDataDir: (d) => { const prev = activeModDataDir; activeModDataDir = d; return prev; },
+};
 
 const isDev = !app.isPackaged;
 // Toggle dev server usage (HMR). Set DEV_USE_SERVER=1 to load http://localhost:3000
