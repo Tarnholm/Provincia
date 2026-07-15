@@ -43,6 +43,11 @@ describe("main.js IPC surface", () => {
     expect(p).toHaveProperty("home");
     expect(p).toHaveProperty("appData");
   });
+
+  it("select-log-folder returns null when the dialog is canceled (extracted domain module)", async () => {
+    // The harness's dialog mock returns { canceled: true }.
+    expect(await H.invoke("select-log-folder")).toBeNull();
+  });
 });
 
 describe("userData file handlers — containment + round-trip (real handlers)", () => {

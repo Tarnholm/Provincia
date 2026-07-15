@@ -7241,27 +7241,9 @@ ipcMain.handle("read-user-file", async (_event, name) => {
 });
 
 // IPC: get app version
-ipcMain.handle("get-app-version", () => app.getVersion());
-
-// IPC: get platform-specific app data paths for auto-detection
-ipcMain.handle("get-app-paths", () => {
-  return {
-    home: app.getPath("home"),
-    appData: app.getPath("appData"),       // Roaming on Windows, ~/Library/Application Support on Mac
-    localAppData: process.env.LOCALAPPDATA || null,  // Windows only
-    platform: process.platform,
-  };
-});
-
-// IPC: simple folder picker (for log directory)
-ipcMain.handle("select-log-folder", async () => {
-  const result = await dialog.showOpenDialog({
-    properties: ["openDirectory"],
-    title: "Select Rome Remastered logs folder (contains message_log.txt)",
-  });
-  if (result.canceled || !result.filePaths.length) return null;
-  return result.filePaths[0];
-});
+// App/system info + log-folder picker IPC handlers — see src/systemHandlers.js.
+const { registerSystemHandlers } = require("./src/systemHandlers.js");
+registerSystemHandlers(ipcMain, { app, dialog });
 
 // IPC: pick a specific .sav to pin Live mode to. Opens the system file
 // dialog in the given saveDir. Returns just the filename (not full path)
