@@ -18,6 +18,7 @@ import AiDiagModal from "./AiDiagModal.js";
 import ShortcutsModal from "./ShortcutsModal.js";
 import AddRegionModal from "./AddRegionModal.js";
 import CompareModal from "./CompareModal.js";
+import CommandPalette from "./CommandPalette.js";
 
 beforeAll(() => {
   if (!window.electronAPI) window.electronAPI = { scriptsJumpTo: () => {}, selectFolder: () => Promise.resolve(null), findFactionIconsDir: () => Promise.resolve(null) };
@@ -187,5 +188,23 @@ describe("panels render smoke-test", () => {
       />,
     );
     expect(c.textContent).toContain("No factions loaded yet");
+  });
+
+  it("CommandPalette renders items, filters by query, and fires the top hit on Enter", async () => {
+    let fired = null;
+    const items = [
+      { kind: "mode", id: "faction", label: "Faction", sub: "map mode", action: () => { fired = "faction"; } },
+      { kind: "region", id: "1", label: "Rome", sub: "region", action: () => { fired = "rome"; } },
+    ];
+    const c = await mount(
+      <CommandPalette items={items} query="rom" setQuery={() => {}} selIdx={0} setSelIdx={() => {}} onClose={() => {}} />,
+    );
+    expect(c.textContent).toContain("Rome");
+    expect(c.textContent).not.toContain("Faction"); // filtered out by query "rom"
+    expect(c.textContent).toContain("1 of 2 indexed");
+    // Enter on the input fires the top hit's action (keyboard nav path).
+    const input = c.querySelector("input");
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(fired).toBe("rome");
   });
 });
