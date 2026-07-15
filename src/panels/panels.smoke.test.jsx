@@ -17,6 +17,7 @@ import LoadModModal from "./LoadModModal.js";
 import AiDiagModal from "./AiDiagModal.js";
 import ShortcutsModal from "./ShortcutsModal.js";
 import AddRegionModal from "./AddRegionModal.js";
+import CompareModal from "./CompareModal.js";
 
 beforeAll(() => {
   if (!window.electronAPI) window.electronAPI = { scriptsJumpTo: () => {}, selectFolder: () => Promise.resolve(null), findFactionIconsDir: () => Promise.resolve(null) };
@@ -151,5 +152,40 @@ describe("panels render smoke-test", () => {
     expect(c.textContent).toContain("Add new region");
     expect(c.textContent).toContain("romans julii"); // underscores → spaces in options
     expect(c.querySelector('input[value="Garamantia"]')).toBeTruthy();
+  });
+
+  it("CompareModal renders picked-faction rows with live/start values and an empty state", async () => {
+    const props = {
+      factions: ["romans_julii", "carthage"],
+      factionColors: { romans_julii: [200, 40, 40] },
+      factionRegionsMap: { romans_julii: ["Rome", "Capua"], carthage: ["Carthage"] },
+      factionWealth: { romans_julii: 17500, carthage: 25500 },
+      liveRegionsByFaction: { romans_julii: 3 },
+      liveArmiesByFaction: { romans_julii: 4 },
+      liveTreasuryByFaction: { romans_julii: { treasury: 20000 } },
+      factionDisplayNames: { romans_julii: "Julii", carthage: "Carthage" },
+      aiPersonalityByFaction: { carthage: "ai_balanced" },
+      liveLogActive: true,
+      selection: ["romans_julii", "carthage", null],
+      setSelection: () => {},
+      onClose: () => {},
+    };
+    const c = await mount(<CompareModal {...props} />);
+    expect(c.textContent).toContain("Compare factions");
+    expect(c.textContent).toContain("Julii");
+    expect(c.textContent).toContain("(live)"); // julii has a live treasury
+    expect(c.textContent).toContain("Pick a faction above."); // third column empty
+  });
+
+  it("CompareModal degrades gracefully with all data slices absent", async () => {
+    const c = await mount(
+      <CompareModal
+        factions={null} factionColors={null} factionRegionsMap={null} factionWealth={null}
+        liveRegionsByFaction={null} liveArmiesByFaction={null} liveTreasuryByFaction={null}
+        factionDisplayNames={null} aiPersonalityByFaction={null} liveLogActive={false}
+        selection={[null, null, null]} setSelection={() => {}} onClose={() => {}}
+      />,
+    );
+    expect(c.textContent).toContain("No factions loaded yet");
   });
 });
