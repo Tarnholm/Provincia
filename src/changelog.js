@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1249",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**Behind-the-scenes hardening — no behaviour changes.** The app's two largest source files were split into focused modules: five map/settlement panels (add-region, compare-factions, the Ctrl-K command palette, the faction-wealth panel, and the mod-validation dashboard) and four main-process handler groups moved out of the monoliths. Automated test coverage grew substantially (now ~380 checks), including a new harness that exercises the app's internal handlers directly and locks in the file-path safety guards. Nothing you interact with changed — this makes future updates safer and less regression-prone." },
+    ],
+  },
+  {
     version: "0.9.1248",
     date: "2026-07-15",
     items: [
