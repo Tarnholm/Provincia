@@ -5394,22 +5394,10 @@ ipcMain.handle("get-building-display-names", async (_event, modDataDir) => {
 // so this matches the resolver's multi-casing attempts exactly). Cleared for a
 // dir after an icon is written there (replace/revert), and wholesale on mod
 // switch, so freshly-dropped icons still resolve.
-const _iconDirListing = new Map(); // dirPath → Map(lowerName→actualName) | null(dir absent)
-function iconDirFiles(dir) {
-  if (_iconDirListing.has(dir)) return _iconDirListing.get(dir);
-  let m = null;
-  try {
-    const names = fs.readdirSync(dir);
-    m = new Map();
-    for (const n of names) m.set(n.toLowerCase(), n);
-  } catch { m = null; } // ENOENT / not a dir → treated as absent
-  _iconDirListing.set(dir, m);
-  return m;
-}
-function clearIconDirCache(dir) {
-  if (dir == null) { _iconDirListing.clear(); return; }
-  _iconDirListing.delete(dir);
-}
+// Singleton over node fs; logic + tests live in src/iconDirCache.js.
+const _iconDirCache = require("./src/iconDirCache.js").createIconDirCache(fs);
+const iconDirFiles = (dir) => _iconDirCache.files(dir);
+const clearIconDirCache = (dir) => _iconDirCache.clear(dir);
 
 const _uiBuildingsCache = makeLRU(16);
 function parseDescrUiBuildings(modDataDir) {
