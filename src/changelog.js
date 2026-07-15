@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1256",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**The save-file parser is now its own module — no behaviour changes.** The ~800-line routine that decodes a save's binary format (characters, buildings, armies, economy, diplomacy) moved out of the main-process file, which is now about 52% smaller than at the start of today's cleanup — ten focused modules, every one verified by automated tests against real data." },
+    ],
+  },
+  {
     version: "0.9.1255",
     date: "2026-07-15",
     items: [
