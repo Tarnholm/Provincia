@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1259",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**Main-process cleanup — no behaviour changes.** The disk-discovery handlers (picking a mod/campaign folder, finding a mod's faction-icons directory, reading faction-icon images, locating the vanilla install's icons) moved into their own focused module, verified by driving them against a throwaway folder tree. Folder-pick consent behaviour is unchanged." },
+    ],
+  },
+  {
     version: "0.9.1258",
     date: "2026-07-15",
     items: [
