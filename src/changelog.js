@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1251",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**More internal modularization — no behaviour changes.** The building/unit info and icon-resolution handlers (~1,100 lines) moved out of the main-process file into a focused module, and every one of them is now exercised directly by automated tests against a real mod (including the cache-clear path). This continues shrinking the two big source files and tightening the safety net; nothing you interact with changed." },
+    ],
+  },
+  {
     version: "0.9.1250",
     date: "2026-07-15",
     items: [
