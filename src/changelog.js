@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1255",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**The mod-data loader is now a separate, tested module — no behaviour changes.** The ~800-line routine that loads all of a mod's characters, traits, buildings, and ownership data moved into its own module (returning a clean state object, assigned by a thin wrapper). The main-process source file is now about 44% smaller than at the start of today's cleanup — nine focused modules — and verified end-to-end against a real mod." },
+    ],
+  },
+  {
     version: "0.9.1254",
     date: "2026-07-15",
     items: [
