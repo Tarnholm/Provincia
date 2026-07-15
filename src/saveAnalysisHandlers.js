@@ -46,7 +46,12 @@ ipcMain.handle("get-save-economy", async (_event, savePath, modDataDir) => {
     const { crackSave } = require("./saveCracker.js");
     const { parseFinancialOverview } = require("./economyParser.js");
     const buf = await fs.promises.readFile(savePath); // async: saves are 30-45 MB — don't block the event loop on I/O
-    const cracked = crackSave(buf, modDataDir);
+    // economyOnly: this handler feeds ONLY parseFinancialOverview, which reads a
+    // small slice of the crack (treasuries, settlements, ownerByCity, turn). The
+    // full crack blocks the main thread ~5.7s on a 34 MB save; economyOnly skips
+    // the character/unit/family/siege/agent/event/diplomacy parses it never uses,
+    // cutting that to ~3.2s (verified identical FinOverview output on 3 saves).
+    const cracked = crackSave(buf, modDataDir, { economyOnly: true });
     const economy = parseFinancialOverview(buf, cracked);
     const pf = economy && economy.playerFaction;
     const pe = pf && economy.byFaction ? economy.byFaction[pf] : null;

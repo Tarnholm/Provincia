@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1262",
+    date: "2026-07-15",
+    items: [
+      { type: "improvement", text: "**Faster, smoother economy panel.** Loading a save used to freeze the app for ~5.7 seconds while the Financial Overview was computed, because it re-parsed everything in the save — characters, armies, families, sieges, diplomacy — none of which the economy panel uses. It now parses only what the economy needs, cutting that freeze to ~3.2 seconds (about 1.8× faster) with byte-for-byte identical numbers. The rest of the app stays responsive that much sooner after each save loads." },
+    ],
+  },
+  {
     version: "0.9.1261",
     date: "2026-07-15",
     items: [

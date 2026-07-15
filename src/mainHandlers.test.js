@@ -186,6 +186,34 @@ const haveMod = (() => { try { return fs.existsSync(path.join(MOD_DIR, "export_d
     expect(b.error).toBeUndefined();
   });
 
+  // Locks the economyOnly fast-path invariant: get-save-economy runs crackSave
+  // with { economyOnly: true } to skip the character/unit/family/siege/agent/
+  // event/diplomacy parses it never reads (~1.8x faster, less main-thread block).
+  // This MUST stay behaviour-identical for the Financial Overview — if a future
+  // edit makes parseFinancialOverview depend on a skipped field, this fails.
+  it.runIf(saveFile)("crackSave economyOnly yields identical Financial Overview to the full crack", { timeout: 40000 }, () => {
+    const { crackSave } = require("./saveCracker.js");
+    const { parseFinancialOverview } = require("./economyParser.js");
+    const buf = fs.readFileSync(saveFile);
+    const full = crackSave(buf, MOD_DIR);
+    const eco = crackSave(buf, MOD_DIR, { economyOnly: true });
+    expect(parseFinancialOverview(buf, eco)).toEqual(parseFinancialOverview(buf, full));
+    // Economy-relevant crack fields must match exactly (skipped fields — chars,
+    // units, family, sieges, diplomacy — are intentionally empty in economyOnly).
+    expect(eco.playerFaction).toEqual(full.playerFaction);
+    expect(eco.turn).toEqual(full.turn);
+    expect(eco.ownerByCity).toEqual(full.ownerByCity);
+    expect(eco.settlementFields).toEqual(full.settlementFields);
+    for (const name of Object.keys(full.factions)) {
+      expect(eco.factions[name].treasury).toEqual(full.factions[name].treasury);
+      expect(eco.factions[name].regionCount).toEqual(full.factions[name].regionCount);
+    }
+    // And the fast path is meaningfully cheaper on the skipped parses.
+    expect(eco.characters.v1.length).toBe(0);
+    expect(eco.units.length).toBe(0);
+    expect(full.characters.v1.length).toBeGreaterThan(0);
+  });
+
   it("portraitHandlers domain: trait/ancillary/portrait resolvers run and degrade gracefully", async () => {
     // All three return a structured result (never throw) for the real mod.
     const ti = await H.invoke("resolve-trait-icon", MOD_DIR, "roman", "GoodCommander");
