@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1246",
+    date: "2026-07-15",
+    items: [
+      { type: "fix", text: "**Live mode now correctly ignores “Turn N End” autosaves.** The engine writes a “Turn N End” autosave and then a fresher “Turn N+1 Start” moments later; auto-detect is meant to skip the End one and take the freshest, but a filename-matching bug meant the End autosaves were never actually skipped. Fixed, so Live mode loads the right snapshot." },
+    ],
+  },
+  {
     version: "0.9.1245",
     date: "2026-07-15",
     items: [

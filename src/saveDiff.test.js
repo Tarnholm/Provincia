@@ -62,24 +62,20 @@ describe("diffSaveData — robustness", () => {
 });
 
 describe("isEndAutosave", () => {
-  // Behavior locked exactly as extracted from main.js. NOTE: the regex begins
-  // with \bAutosave\b, and there is NO word boundary between the underscore in
-  // "save_Autosave" and the "A" (underscore is a \w char). So a leading
-  // "save_Autosave …" filename does NOT match — the End-skip only fires when
-  // "Autosave" sits at a real boundary (space/start). This is a LATENT bug in
-  // the original (End autosaves with the standard save_ prefix are not being
-  // skipped); preserved here rather than changed inside a refactor. Flagged to
-  // the maintainer — fix by anchoring on "Autosave" without the leading \b.
-  test("matches when 'Autosave' is at a word boundary", () => {
+  // The leading \bAutosave\b was fixed 2026-07-15: the standard "save_Autosave …"
+  // prefix has no word boundary before "Autosave" (underscore is \w), so End
+  // autosaves were never actually being skipped. Now they match.
+  test("skips the standard save_-prefixed 'Turn N End' autosave", () => {
+    expect(isEndAutosave("save_Autosave Republic of Rome Turn 5 End.sav")).toBe(true);
+    expect(isEndAutosave("save_Autosave   Republic of Rome   Turn 34 End.sav")).toBe(true);
+  });
+  test("also matches when 'Autosave' is at a plain boundary", () => {
     expect(isEndAutosave("Autosave Republic of Rome Turn 5 End.sav")).toBe(true);
     expect(isEndAutosave("my Autosave Turn 12 End.sav")).toBe(true);
   });
-  test("does NOT match the save_-prefixed form (documented latent bug)", () => {
-    expect(isEndAutosave("save_Autosave Republic of Rome Turn 5 End.sav")).toBe(false);
-  });
   test("keeps Start / bare-turn / manual saves", () => {
-    expect(isEndAutosave("Autosave Republic of Rome Turn 5 Start.sav")).toBe(false);
-    expect(isEndAutosave("Autosave Republic of Rome Turn 5.sav")).toBe(false);
+    expect(isEndAutosave("save_Autosave Republic of Rome Turn 5 Start.sav")).toBe(false);
+    expect(isEndAutosave("save_Autosave Republic of Rome Turn 5.sav")).toBe(false);
     expect(isEndAutosave("save_rome10.sav")).toBe(false);
   });
 });

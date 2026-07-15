@@ -76,8 +76,15 @@ function diffSaveData(prev, curr) {
 
 // "Turn N End" autosaves are superseded moments later by "Turn N+1 Start", so
 // auto-detection skips them (they stay selectable manually). True = skip.
+//
+// FIX (2026-07-15): the old pattern started with \bAutosave\b, but the standard
+// filename is "save_Autosave …" and the underscore is a word char, so there was
+// NO boundary before "Autosave" — the regex failed to match and End autosaves
+// were never actually skipped. Drop the leading boundary (keep the trailing one
+// so "Autosaves" wouldn't false-match) so the real "save_Autosave … Turn N End"
+// filenames match as intended.
 function isEndAutosave(filename) {
-  return /\bAutosave\b.*\bTurn\s+\d+\s+End\b/i.test(filename);
+  return /Autosave\b.*\bTurn\s+\d+\s+End\b/i.test(filename);
 }
 
 module.exports = { diffSaveData, isEndAutosave };
