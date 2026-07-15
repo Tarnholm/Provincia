@@ -13,6 +13,7 @@ const {
   readUtf16Name,
 } = require("./src/saveBinaryReaders.js");
 const { encodeTga32BGRA } = require("./src/tgaCodec.js");
+const { diffSaveData, isEndAutosave } = require("./src/saveDiff.js");
 
 // RTW:R game TEXT files MUST be written with CRLF line endings. Writing LF
 // silently breaks the engine's descr_* parsers ("Expected faction list starting
@@ -8948,83 +8949,7 @@ async function parseSaveData(filePath, onProgress, providedBuf = null) {
   };
 }
 
-function diffSaveData(prev, curr) {
-  const events = [];
-
-  // Diff buildings
-  const prevB = prev.buildings || {};
-  const currB = curr.buildings || {};
-  const allCities = new Set([...Object.keys(prevB), ...Object.keys(currB)]);
-  for (const city of allCities) {
-    const b1 = prevB[city] || {};
-    const b2 = currB[city] || {};
-    // Only report if both are in common settlements (reduce noise)
-    if (!prevB[city] || !currB[city]) continue;
-    const allBn = new Set([...Object.keys(b1), ...Object.keys(b2)]);
-    for (const bn of allBn) {
-      const v1 = b1[bn];
-      const v2 = b2[bn];
-      if (v1 === undefined && v2 !== undefined) {
-        events.push({ type: 'building_new', city, building: bn, level: v2.level, health: v2.health });
-      } else if (v1 !== undefined && v2 === undefined) {
-        events.push({ type: 'building_removed', city, building: bn, prevLevel: v1.level });
-      } else if (v1 && v2) {
-        if (v1.level !== v2.level && v1.level !== null && v2.level !== null) {
-          events.push({ type: 'building_upgrade', city, building: bn, from: v1.level, to: v2.level });
-        }
-        if (v1.health !== v2.health && v1.health !== null && v2.health !== null) {
-          events.push({ type: 'building_damaged', city, building: bn, from: v1.health, to: v2.health });
-        }
-      }
-    }
-  }
-
-  // Diff armies — detect movement, new armies, army changes
-  const prevA = prev.armies || {};
-  const currA = curr.armies || {};
-  const allRegions = new Set([...Object.keys(prevA), ...Object.keys(currA)]);
-  for (const region of allRegions) {
-    const u1 = prevA[region] || [];
-    const u2 = currA[region] || [];
-    const prevTotal = u1.reduce((s, u) => s + (u.soldiers || 0), 0);
-    const currTotal = u2.reduce((s, u) => s + (u.soldiers || 0), 0);
-    // New army appeared in region
-    if (u1.length === 0 && u2.length > 0) {
-      events.push({ type: 'army_arrived', region, units: u2.length, soldiers: currTotal });
-    }
-    // Army left region
-    else if (u1.length > 0 && u2.length === 0) {
-      events.push({ type: 'army_left', region, units: u1.length, soldiers: prevTotal });
-    }
-    // Army size changed significantly (new units added/removed)
-    else if (u1.length > 0 && u2.length > 0 && Math.abs(u2.length - u1.length) > 0) {
-      events.push({ type: 'army_changed', region, prevUnits: u1.length, units: u2.length,
-                     prevSoldiers: prevTotal, soldiers: currTotal });
-    }
-  }
-
-  // Diff construction queues — an entry that was present then disappeared means the building
-  // completed between snapshots. Only reports chains the parser could actually read (ASCII case).
-  const prevQ = prev.queues || {};
-  const currQ = curr.queues || {};
-  const allCities2 = new Set([...Object.keys(prevQ), ...Object.keys(currQ)]);
-  for (const city of allCities2) {
-    const before = new Set(prevQ[city] || []);
-    const after = new Set(currQ[city] || []);
-    for (const chain of before) {
-      if (!after.has(chain)) {
-        events.push({ type: 'building_completed', city, chain });
-      }
-    }
-    for (const chain of after) {
-      if (!before.has(chain)) {
-        events.push({ type: 'building_queued', city, chain });
-      }
-    }
-  }
-
-  return events;
-}
+// diffSaveData moved to src/saveDiff.js (pure, imported at top).
 
 let lastSaveData = null;
 let lastSaveFile = null;
@@ -9038,18 +8963,7 @@ let activePinnedSave = null; // exact filename the user chose to track, or null 
 let saveDirWatcher = null;
 let saveDebounceTimer = null;
 
-// "Turn N End" autosaves carry the state at end-of-player-turn — but RTW
-// writes a "Turn N+1 Start" autosave moments later that supersedes it (it's
-// the same state plus AI moves). User feedback 2026-05-10: don't auto-load
-// both, just take the freshest. Skip End autosaves in auto-detection paths
-// (keep them in the picker for manual selection though). Pattern matches:
-//   save_Autosave Republic of Rome Turn 5 End.sav   ← skip
-//   save_Autosave Republic of Rome Turn 5.sav       ← keep (no End suffix)
-//   save_Autosave Republic of Rome Turn 5 Start.sav ← keep
-//   save_rome10.sav                                 ← keep (manual)
-function isEndAutosave(filename) {
-  return /\bAutosave\b.*\bTurn\s+\d+\s+End\b/i.test(filename);
-}
+// isEndAutosave moved to src/saveDiff.js (pure, imported at top).
 
 // Return the most recently modified .sav in saveDir. Includes autosaves AND manual
 // saves so mid-turn manual saves also trigger live updates. Skips End-suffixed
