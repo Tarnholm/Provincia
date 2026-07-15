@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1247",
+    date: "2026-07-15",
+    items: [
+      { type: "fix", text: "**The splash image no longer appears half-loaded.** The launch artwork (a 3.5 MB image) used to paint progressively from the top as it decoded. It's now decoded fully off-screen first and appears in a single complete paint." },
+      { type: "improvement", text: "**Settlement buildings show their icons faster on hover.** The background icon warm-up now loads the icons of buildings that actually exist in settlements first (911 on the imperial campaign) before the speculative full catalog — so hovering a city like Alexandria right after launch finds its icons already cached." },
+    ],
+  },
+  {
     version: "0.9.1246",
     date: "2026-07-15",
     items: [

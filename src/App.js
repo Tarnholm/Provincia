@@ -1810,6 +1810,20 @@ function App() {
   const [cultureBorderPath, setCultureBorderPath] = useState(null);
   const [factionBorderPath, setFactionBorderPath] = useState(null);
   const [showSplash, setShowSplash] = useState(true);
+  // splash.png is 3.5 MB — rendered directly via <img src>, the browser paints
+  // it progressively while decoding (users saw a half-loaded picture,
+  // 2026-07-15). Pre-decode it off-DOM and only render the <img> once fully
+  // decoded: it then appears in one complete paint from the decoded cache.
+  const [splashImgReady, setSplashImgReady] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    const img = new window.Image();
+    img.src = (import.meta.env.BASE_URL || "./") + "/splash.png";
+    const done = () => { if (alive) setSplashImgReady(true); };
+    if (typeof img.decode === "function") img.decode().then(done).catch(done);
+    else { img.onload = done; img.onerror = done; }
+    return () => { alive = false; };
+  }, []);
   const [showWelcome, setShowWelcome] = useState(false); // shown after splash, before main UI
   const [welcomeHighlight, setWelcomeHighlight] = useState(null); // which UI element to highlight during onboarding
   const [appVersion, setAppVersion] = useState("0.0.0");
@@ -7479,21 +7493,47 @@ function App() {
     }
     const chains = Object.keys(buildingLevelsLookup);
     if (cultures.length === 0 || chains.length === 0) return;
-    const warmKey = `${modDataDir || ""}|${mapCampaign}|${cultures.sort().join(",")}|${chains.length}`;
+    // buildingsData.length is part of the key: when it arrives after the first
+    // warm run, the effect re-runs to get the priority ordering — already-warm
+    // icons dedup against the cache, so the second pass only queues the rest.
+    const warmKey = `${modDataDir || ""}|${mapCampaign}|${cultures.sort().join(",")}|${chains.length}|bd${Array.isArray(buildingsData) ? buildingsData.length : 0}`;
     if (iconWarmupKeyRef.current === warmKey) return;
     iconWarmupKeyRef.current = warmKey;
 
+    // PRIORITY FIRST (2026-07-15, "Alexandria's buildings don't show right
+    // away"): warm the icons of buildings that ACTUALLY exist in settlements
+    // (descr_strat buildingsData, with the owner faction's culture) before the
+    // speculative full catalog. Hovering any settlement early then hits warm
+    // cache for its real buildings instead of waiting for the breadth-first
+    // sweep to reach them.
+    const seen = new Set();
     const triples = [];
+    const pushTriple = (culture, level, chain) => {
+      if (!culture || !level) return;
+      const k = `${culture}|${level}`;
+      if (seen.has(k)) return;
+      seen.add(k);
+      triples.push([culture, level, chain || null]);
+    };
+    let priorityCount = 0;
+    if (Array.isArray(buildingsData)) {
+      for (const fObj of buildingsData) {
+        const culture = factionCultures[fObj.faction] || null;
+        if (!culture) continue;
+        for (const s of (fObj.settlements || [])) {
+          for (const b of (s.buildings || [])) pushTriple(culture, b.level, b.type);
+        }
+      }
+      priorityCount = triples.length;
+    }
     for (const culture of cultures) {
       for (const chain of chains) {
         const levels = buildingLevelsLookup[chain] || [];
-        for (const level of levels) {
-          if (level) triples.push([culture, level, chain]);
-        }
+        for (const level of levels) pushTriple(culture, level, chain);
       }
     }
     const t0 = (performance && performance.now) ? performance.now() : Date.now();
-    console.log(`[icon-warmup] START (post-splash) cultures=${cultures.length}[${cultures.join(",")}] chains=${chains.length} triples=${triples.length} campaign=${mapCampaign}`);
+    console.log(`[icon-warmup] START (post-splash) cultures=${cultures.length}[${cultures.join(",")}] chains=${chains.length} triples=${triples.length} (priority built-in-settlements=${priorityCount}) campaign=${mapCampaign}`);
 
     // THROTTLED dispatch (2026-07-15): firing all N prefetches at once floods
     // the main-process IPC and starved requestIdleCallback for ~26s (delaying
@@ -7529,7 +7569,7 @@ function App() {
       if (refreshTimer) clearTimeout(refreshTimer);
       if (batchTimer) clearTimeout(batchTimer);
     };
-  }, [showSplash, buildingLevelsLookup, factionCultures, factionRegionsMap, modDataDir, mapCampaign]);
+  }, [showSplash, buildingLevelsLookup, factionCultures, factionRegionsMap, modDataDir, mapCampaign, buildingsData]);
 
   // Load victory conditions
   useEffect(() => {
@@ -17052,20 +17092,24 @@ function App() {
       >
         {showSplash && !assetError && (
           <div className="splash" style={overlayBase}>
-            <img
-              src={(import.meta.env.BASE_URL || "./") + "/splash.png"}
-              alt="Splash"
-              style={{
-                display: "block",
-                width: "100%",
-                height: "auto",
-                maxWidth: "80vw",
-                maxHeight: "80vh",
-                borderRadius: 16,
-                boxShadow: "0 4px 32px rgba(0,0,0,0.2)",
-              }}
-              draggable={false}
-            />
+            {/* Rendered only after the 3.5 MB PNG is fully decoded (see
+                splashImgReady) so it appears in ONE paint, never scanlines. */}
+            {splashImgReady && (
+              <img
+                src={(import.meta.env.BASE_URL || "./") + "/splash.png"}
+                alt="Splash"
+                style={{
+                  display: "block",
+                  width: "100%",
+                  height: "auto",
+                  maxWidth: "80vw",
+                  maxHeight: "80vh",
+                  borderRadius: 16,
+                  boxShadow: "0 4px 32px rgba(0,0,0,0.2)",
+                }}
+                draggable={false}
+              />
+            )}
           </div>
         )}
 
