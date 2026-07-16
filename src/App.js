@@ -7887,7 +7887,7 @@ function App() {
       // and bumping every chunk produced the 1.5–5s main-thread stall train in
       // 0.9.1277's logs. Panels that need a just-warmed icon bump the
       // coalesced version themselves; one bump at the end covers the rest.
-      await runBatches(rest, 96, 25, false, "rest"); // 25ms gaps (was 50) — finish the catalog sooner, still yields input
+      await runBatches(rest, 128, 0, false, "rest"); // full tilt (2026-07-16): pipelined, no redraw bumps — zero pop-in ASAP
       if (run.cancelled) return;
       const dt = ((performance && performance.now) ? performance.now() : Date.now()) - t0;
       console.log(`[icon-warmup] ALL warmed ${priority.length + rest.length} (${dt.toFixed(0)}ms) — full catalog cached`);
@@ -8031,7 +8031,12 @@ function App() {
         }
       }
     }
-    const RECRUIT_WARM_CAP = 20000; // raised from 8k (2026-07-16): the all×owners product overflowed it, truncating AOR pairs
+    // Effectively uncapped (2026-07-16, "no pop-in as fast as humanly
+    // possible"): 20k still truncated on RIS (the all-ownership × owners
+    // product) and the truncated pairs were exactly the ones popping in.
+    // Per-file blob dedupe in prefetchUnitIconsBulk makes the marginal cost
+    // of extra keys tiny (an object URL to an already-decoded Blob).
+    const RECRUIT_WARM_CAP = 100000;
     let capped = false;
     for (const [unit, facs] of Object.entries(unitOwnership)) {
       if (unit === "__dictionary" || !Array.isArray(facs)) continue;
@@ -8080,10 +8085,10 @@ function App() {
       // was the post-reveal stall storm in 0.9.1277's logs; panels that need
       // a just-warmed icon bump the coalesced version themselves.
       if (recruitTriples.length && !cancelled) {
-        // 25ms gaps (was 150): with the main-side filename index a chunk costs
-        // ~nothing, and the user wants the whole map warm ASAP — the gap only
-        // needs to let input events through between chunks.
-        await runChunks(recruitTriples, 25, "recruit");
+        // FULL TILT (2026-07-16 user directive: zero pop-in ASAP). gapMs=0
+        // engages the depth-2 chunk pipeline; decode runs on the worker pool
+        // and there are no per-chunk redraws, so the main thread stays light.
+        await runChunks(recruitTriples, 0, "recruit");
         const dt = performance.now() - t0;
         console.log(`[unit-warmup] recruit cards warmed ${recruitTriples.length} (${dt.toFixed(0)}ms total)`);
         bumpIconCacheVersionCoalesced();
@@ -8210,7 +8215,7 @@ function App() {
       // DDS decode on this thread, so pacing keeps hover/typing responsive.
       for (let i = 0; i < jobs.length && !cancelled; i++) {
         try { await loadPortrait(modDataDir, jobs[i].cultureKey, "general", jobs[i].ctx); } catch {}
-        await new Promise((r) => setTimeout(r, 15));
+        await new Promise((r) => setTimeout(r, 5)); // minimal yield (was 15ms) — zero pop-in ASAP
       }
       if (!cancelled) console.log(`[portrait-warmup] warmed ${jobs.length} commander portraits (${(performance.now() - t0).toFixed(0)}ms)`);
     })();

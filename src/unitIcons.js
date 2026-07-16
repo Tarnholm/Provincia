@@ -12,8 +12,14 @@ import { decodePngInWorker } from "./buildingIcons.js";
 
 const cache = new Map();
 const inflight = new Map();
+// Decode each unique source FILE once, ever (2026-07-16): the recruit warm-up
+// requests the same unit's card under dozens of faction keys ("all"-ownership
+// units × every map owner), and each key resolves to the same TGA. Keys get
+// their own object URL, but the underlying Blob is shared — mirrors
+// buildingIcons' pathToBlob.
+const pathToBlob = new Map(); // resolved path → Blob | "none"
 
-function pixelsToBlobUrl({ width, height, pixels }) {
+function pixelsToBlob({ width, height, pixels }) {
   const rowMajor = new Uint8ClampedArray(pixels);
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -23,8 +29,11 @@ function pixelsToBlobUrl({ width, height, pixels }) {
   img.data.set(rowMajor);
   ctx.putImageData(img, 0, 0);
   return new Promise((resolve) => {
-    canvas.toBlob((b) => resolve(b ? URL.createObjectURL(b) : null), "image/png");
+    canvas.toBlob((b) => resolve(b || null), "image/png");
   });
+}
+function pixelsToBlobUrl(args) {
+  return pixelsToBlob(args).then((b) => (b ? URL.createObjectURL(b) : null));
 }
 
 export function loadUnitIcon(modDataDir, faction, unitName, dictionary) {
@@ -131,28 +140,36 @@ export async function prefetchUnitIconsBulk(modDataDir, triples) {
       noArt.push(r);
     }
   }
-  const decodeOne = async (buffer) => {
+  const decodeOne = async (srcPath, buffer) => {
+    // Global per-file dedupe: the same card art warms under many faction keys
+    // (the "all"-ownership × owners product) — decode it once, ever.
+    if (srcPath && pathToBlob.has(srcPath)) return pathToBlob.get(srcPath);
+    let out = "none";
     try {
       const workerP = decodePngInWorker(buffer);
       if (workerP) {
         const png = await Promise.race([workerP, new Promise((r2) => setTimeout(() => r2(undefined), 4000))]);
-        return png ? new Blob([png], { type: "image/png" }) : null;
+        if (png) out = new Blob([png], { type: "image/png" });
+      } else {
+        // Main-thread fallback (no Worker/OffscreenCanvas support).
+        let tga = null;
+        try { tga = new TGA(new Uint8Array(buffer)); } catch { tga = null; }
+        if (tga && tga.width && tga.height && tga.pixels) {
+          const blob = await pixelsToBlob({ width: tga.width, height: tga.height, pixels: tga.pixels });
+          if (blob) out = blob;
+        }
       }
-      // Main-thread fallback (no Worker/OffscreenCanvas support).
-      let tga = null;
-      try { tga = new TGA(new Uint8Array(buffer)); } catch { tga = null; }
-      if (!tga || !tga.width || !tga.height || !tga.pixels) return null;
-      const url = await pixelsToBlobUrl({ width: tga.width, height: tga.height, pixels: tga.pixels });
-      return url ? { __url: url } : null; // already a URL on this path
-    } catch { return null; }
+    } catch { out = "none"; }
+    if (srcPath) pathToBlob.set(srcPath, out);
+    return out;
   };
-  await Promise.all([...byPath.values()].map(async (g) => {
-    const blob = await decodeOne(g.buffer);
+  await Promise.all([...byPath.entries()].map(async ([srcPath, g]) => {
+    const blob = await decodeOne(srcPath, g.buffer);
     for (const r of g.items) {
-      const url = blob ? (blob.__url || URL.createObjectURL(blob)) : null;
+      const url = blob === "none" || !blob ? null : URL.createObjectURL(blob);
       cache.set(r.key, url || "none");
       inflight.delete(r.key);
-      r._resolve(url || null);
+      r._resolve(url);
     }
   }));
   for (const r of noArt) {

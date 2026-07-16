@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1282",
+    date: "2026-07-16",
+    items: [
+      { type: "fix", text: "**Zero pop-in, as fast as possible.** 0.9.1281's warm-up still truncated at 20,000 cards on large mods (the log showed it), and the background passes ran deliberately slowly — so cards could pop in for tens of seconds after the map appeared. Three changes: each unique card file is now decoded once ever and shared across all faction keys (most of those 20,000+ were the same art), the cap is effectively gone (100,000), and every post-splash pass now runs at full pipelined speed with no redraw storms. Commander-portrait warming is quicker too. The whole map should be warm within a few seconds of reveal." },
+    ],
+  },
+  {
     version: "0.9.1281",
     date: "2026-07-16",
     items: [
@@ -41,15 +48,7 @@ const CHANGELOG = [
       { type: "fix", text: "**Fixed the very slow launch 0.9.1277 introduced.** Three compounding causes, all measured in the logs: the new recruit-card warm-up held the splash for its entire run (105 seconds for 8,200 cards); each card lookup could fall into a full directory scan in the main process; and the background icon pass redrew the whole app every 120ms, causing seconds-long stalls after the map appeared. Now: card files are indexed once at startup (lookups are instant), the splash waits only for the on-map army cards like 0.9.1276 did, the recruit warm-up runs quietly in the background after the map appears, and background passes no longer force app redraws. Launch should be back to 0.9.1276 speed — with the recruit tab still fully drawn within a few seconds of the map appearing." },
     ],
   },
-  {
-    version: "0.9.1277",
-    date: "2026-07-16",
-    items: [
-      { type: "fix", text: "**Fixed the Terrain and Heights overlays on imported mods.** Both overlays sample map files (map_ground_types.tga / map_heights.tga) that the mod importer never copied — so on an imported slot they silently loaded nothing. The importer now brings both files along (the once-per-launch mod refresh picks them up automatically, so this self-heals on your next restart)." },
-      { type: "improvement", text: "**The settlement Recruits tab now opens fully drawn.** The splash warm-up now also loads the card of every unit each map faction can recruit — computed from unit ownership in one cheap pass, not the expensive per-settlement walk — so recruit lists no longer fill in card-by-card." },
-      { type: "improvement", text: "**Launch uses more CPU cores.** The icon decode pool was capped at 6 workers; it now scales with your machine (cores minus two, up to 12) and is fed bigger batches, so the behind-the-splash warm-up finishes noticeably faster on 8+ core machines." },
-    ],
-  },
+
 
 
 

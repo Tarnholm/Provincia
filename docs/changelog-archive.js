@@ -5,6 +5,15 @@
 // greppable in the working tree. Full authoritative history is in git.
 const CHANGELOG_ARCHIVE = [
   {
+    version: "0.9.1277",
+    date: "2026-07-16",
+    items: [
+      { type: "fix", text: "**Fixed the Terrain and Heights overlays on imported mods.** Both overlays sample map files (map_ground_types.tga / map_heights.tga) that the mod importer never copied — so on an imported slot they silently loaded nothing. The importer now brings both files along (the once-per-launch mod refresh picks them up automatically, so this self-heals on your next restart)." },
+      { type: "improvement", text: "**The settlement Recruits tab now opens fully drawn.** The splash warm-up now also loads the card of every unit each map faction can recruit — computed from unit ownership in one cheap pass, not the expensive per-settlement walk — so recruit lists no longer fill in card-by-card." },
+      { type: "improvement", text: "**Launch uses more CPU cores.** The icon decode pool was capped at 6 workers; it now scales with your machine (cores minus two, up to 12) and is fed bigger batches, so the behind-the-splash warm-up finishes noticeably faster on 8+ core machines." },
+    ],
+  },
+  {
     version: "0.9.1276",
     date: "2026-07-16",
     items: [
