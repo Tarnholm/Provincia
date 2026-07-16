@@ -4,6 +4,18 @@ import TGA from "./tga";
 // Cache for converted TGA → data URLs so we don't re-read each render
 const tgaCache = {};
 
+// Hot-reload support (2026-07-16): when the mod's icon TGAs change on disk
+// (mod-watch "faction_icons" event), App calls invalidateFactionIcons() —
+// the cache empties and every mounted FactionIcon re-reads its file fresh,
+// so updated mod icons appear live without an app restart.
+let _iconCacheVersion = 0;
+const _iconCacheListeners = new Set();
+export function invalidateFactionIcons() {
+  for (const k of Object.keys(tgaCache)) delete tgaCache[k];
+  _iconCacheVersion += 1;
+  for (const fn of _iconCacheListeners) { try { fn(_iconCacheVersion); } catch {} }
+}
+
 // Fetch + decode the icon at iconPath (e.g. "faction_icons/romans_julii.tga")
 // and populate the module-level tgaCache so a later <FactionIcon> mount renders
 // instantly. Call this during splash to preload.
@@ -57,6 +69,13 @@ export default function FactionIcon({ iconPath, alt = "", size = 84, tightCrop =
   const bundledUrl = (import.meta.env.BASE_URL || "./") + "/" + iconPath;
   const factionName = iconPath.replace("faction_icons/", "").replace(/\.(png|tga)$/, "");
   const isBundledTga = iconPath.endsWith(".tga");
+  // Re-run the load effect when invalidateFactionIcons() empties the cache.
+  const [cacheVer, setCacheVer] = useState(_iconCacheVersion);
+  useEffect(() => {
+    const fn = (v) => setCacheVer(v);
+    _iconCacheListeners.add(fn);
+    return () => { _iconCacheListeners.delete(fn); };
+  }, []);
 
   useEffect(() => {
     // Bundled fallback: if the faction-specific TGA isn't present, try the
@@ -127,7 +146,7 @@ export default function FactionIcon({ iconPath, alt = "", size = 84, tightCrop =
         setSrc(bundledUrl);
       }
     }).catch(() => setSrc(bundledUrl));
-  }, [modIconsDir, factionName, bundledUrl, isBundledTga]);
+  }, [modIconsDir, factionName, bundledUrl, isBundledTga, cacheVer]);
 
   // No source yet (loading) or failed — show placeholder
   if (!src) return (

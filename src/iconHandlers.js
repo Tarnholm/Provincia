@@ -1028,7 +1028,7 @@ ipcMain.handle("resolve-unit-info", async (_event, modDataDir, faction, unitName
 // larger info panels at `data/ui/unit_info/<faction>/<unit_name>_info.tga`.
 // Caller passes the unit's faction (from settlement ownership) and name.
 // Returns { buffer, path, mime } or null.
-ipcMain.handle("resolve-unit-card", async (_event, modDataDir, faction, unitName, dictionary) => {
+function resolveUnitCardSync(modDataDir, faction, unitName, dictionary) {
   if (!faction || !unitName) return null;
   const f = String(faction).toLowerCase().replace(/\s+/g, "_");
   // Strip apostrophes (e.g. "general's" → "generals"), keep word chars and
@@ -1118,6 +1118,22 @@ ipcMain.handle("resolve-unit-card", async (_event, modDataDir, faction, unitName
     }
   }
   return null;
+}
+
+ipcMain.handle("resolve-unit-card", async (_event, modDataDir, faction, unitName, dictionary) =>
+  resolveUnitCardSync(modDataDir, faction, unitName, dictionary));
+
+// Bulk variant (2026-07-16, splash unit-card warm-up): resolve a whole batch
+// in ONE IPC round-trip — the per-icon hop was the bottleneck when warming
+// every on-map army's unit cards behind the splash (same reasoning as
+// resolve-building-icons-bulk). items: [{ faction, unit, dictionary? }].
+// Returns an array aligned with items ({ buffer, path } | null each).
+ipcMain.handle("resolve-unit-cards-bulk", async (_event, modDataDir, items) => {
+  if (!Array.isArray(items)) return [];
+  return items.map((it) =>
+    it && it.faction && it.unit
+      ? resolveUnitCardSync(modDataDir, it.faction, it.unit, it.dictionary || null)
+      : null);
 });
 
 

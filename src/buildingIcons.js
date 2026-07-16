@@ -65,7 +65,8 @@ function ensureIconWorkers() {
 // Decode a TGA ArrayBuffer to a PNG ArrayBuffer on a pool worker. The buffer is
 // TRANSFERRED (zero-copy). Resolves null on decode failure. Returns null
 // synchronously if no worker pool (caller then decodes on the main thread).
-function decodePngInWorker(buffer) {
+// Exported for unitIcons' bulk warm-up (2026-07-16) — one shared pool.
+export function decodePngInWorker(buffer) {
   const ws = ensureIconWorkers();
   if (!ws) return null;
   const ab = buffer instanceof ArrayBuffer ? buffer : buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);

@@ -204,6 +204,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("revert-building-icon", destPath, backupPath),
   resolveUnitCard: (modDataDir, faction, unitName, dictionary) =>
     ipcRenderer.invoke("resolve-unit-card", modDataDir, faction, unitName, dictionary),
+  resolveUnitCardsBulk: (modDataDir, items) =>
+    ipcRenderer.invoke("resolve-unit-cards-bulk", modDataDir, items),
   resolveUnitInfo: (modDataDir, faction, unitName, dictionary) =>
     ipcRenderer.invoke("resolve-unit-info", modDataDir, faction, unitName, dictionary),
   getBuildingDisplayNames: (modDataDir) =>

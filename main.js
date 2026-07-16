@@ -450,6 +450,29 @@ function setupModWatcher(modDataDir) {
   } catch (e) {
     console.warn("[mod-watch] failed to watch", modDataDir, e && e.message);
   }
+  // Faction-icon watch (2026-07-16, user request): icon TGAs edited in the mod
+  // must show in a RUNNING app, not just after restart. On any .tga change in
+  // the mod's faction_icons dir, tell the renderer to drop its decoded-icon
+  // cache — mounted FactionIcons then re-read the files fresh.
+  try {
+    const iconsDir = [
+      path.join(modDataDir, "ui", "faction_icons"),
+      path.join(modDataDir, "data", "ui", "faction_icons"),
+    ].find((d) => fs.existsSync(d));
+    if (iconsDir) {
+      const wi = fs.watch(iconsDir, (_eventType, filename) => {
+        if (!filename || !/\.tga$/i.test(String(filename))) return;
+        clearTimeout(modWatchDebounce.__factionIcons);
+        modWatchDebounce.__factionIcons = setTimeout(() => {
+          const win = BrowserWindow.getAllWindows()[0];
+          if (win) win.webContents.send("mod-file-changed", { file: "faction_icons" });
+          console.log("[mod-watch] faction icon TGA changed on disk → notified renderer");
+        }, 400);
+      });
+      modFileWatchers.push(wi);
+      console.log(`[mod-watch] watching ${iconsDir} for icon TGA changes`);
+    }
+  } catch (e) { console.warn("[mod-watch] icons watch failed:", e && e.message); }
 }
 
 // characters-init parse cache (2026-07-16). The renderer's init effect fires

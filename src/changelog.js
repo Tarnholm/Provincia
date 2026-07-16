@@ -13,6 +13,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1276",
+    date: "2026-07-16",
+    items: [
+      { type: "improvement", text: "**Unit cards now load instantly.** Scrolling the map used to show blank unit cards for a moment while each portrait loaded one-by-one; the cards of every army on the map are now loaded up-front behind the splash (in one batch, decoded across CPU cores), so panels open fully drawn. Loading a save tops up any new units' cards quietly in the background. The splash can hold a touch longer to cover this — that's the intended tradeoff." },
+      { type: "improvement", text: "**Mod icon changes now apply live.** Updated faction icon TGAs in your mod folder are picked up by a running app the moment they change on disk — no restart needed. (New icons were always used after a restart; now they hot-swap in place.)" },
+      { type: "fix", text: "**Quieter launch.** The once-per-launch mod re-read no longer flashes the \"Reloading mod from disk…\" overlay or shows a toast — it runs silently. Manual reloads via the button keep their confirmation." },
+      { type: "change", text: "**The Loyalist map mode moved into Dev mode**, alongside the other editing-oriented modes." },
+      { type: "improvement", text: "**The Live button is now readable in dark mode** — its label shows in yellow when live mode is off (it used to render dark grey on dark, looking disabled)." },
+    ],
+  },
+  {
     version: "0.9.1275",
     date: "2026-07-16",
     items: [
@@ -44,13 +55,7 @@ const CHANGELOG = [
       { type: "fix", text: "**Found and killed the engine behind ALL the recent lock-ups: the app was silently redrawing itself ~10+ times per second, forever, whenever a region was selected.** Every redraw of a settlement panel asked for its building icons, and even when every icon was already cached the answer still triggered another full redraw — a perpetual loop. On a fast idle machine it just burned CPU; combined with anything expensive (faction switching, Dev mode, panels) it starved the window until nothing responded — including React's own 'maximum update depth exceeded' errors visible in provincia.log. The icon fetch now reports whether anything new was actually loaded, and the redraw only happens when the answer is yes: the loop cannot sustain itself anymore. Selecting factions, regions, and map modes should finally feel instant — and the app no longer burns a CPU core while sitting idle." },
     ],
   },
-  {
-    version: "0.9.1271",
-    date: "2026-07-16",
-    items: [
-      { type: "fix", text: "**Fixed the map lock-ups that survived 0.9.1270** (selecting a faction, switching to Areas of Recruitment, or just moving the mouse across the map with a region selected could freeze the window). Two remaining causes, both diagnosed directly from provincia.log's new hang forensics: (1) the empire-wide recruitment roster was still computed in one synchronous block — half a minute on a large RIS faction — and icon loads could re-trigger it; it now only computes when an army is actually selected for editing, runs in small time slices that never block clicks, and icon fill-ins no longer re-run it. (2) The selected-region panel's recruit list, character roster, and AOR roster were derived from scratch on EVERY app redraw — and the app redraws on every mouse-hover over the map. They're now cached and only recompute when the data they read actually changes." },
-    ],
-  },
+
 
 ];
 

@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
 import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect, subscribeWidgets, getWidgetSnapshot } from "./Movable";
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, prefetchBuildingIconsBulk, invalidateBuildingIcon } from "./buildingIcons";
-import { getCachedUnitIcon, prefetchUnitIcons } from "./unitIcons";
+import { getCachedUnitIcon, prefetchUnitIcons, prefetchUnitIconsBulk } from "./unitIcons";
 // Heavy, single-use panels are code-split (2026-07-15): each is loaded as its
 // own async chunk the first time it renders. Module-scope Suspense wrappers
 // keep the JSX call sites identical to the old static imports. (RegionInfo
@@ -17,7 +17,7 @@ const SaveInsightsPanel = (props) => <Suspense fallback={null}><SaveInsightsPane
 const FamilyTreeLazy = lazy(() => import("./FamilyTree"));
 const FamilyTree = (props) => <Suspense fallback={null}><FamilyTreeLazy {...props} /></Suspense>;
 import SearchPalette from "./SearchPalette";
-import FactionIcon, { preloadIcon, preloadModIcon } from "./FactionIcon";
+import FactionIcon, { preloadIcon, preloadModIcon, invalidateFactionIcons } from "./FactionIcon";
 import Tooltip from "./Tooltip";
 import "./App.css";
 import CustomScrollArea from "./CustomScrollArea";
@@ -3846,6 +3846,13 @@ function App() {
         console.log("[mod-watch] EDB changed externally → reloading recruit data");
         setModReloadTick((t) => t + 1);
         pushToast("Recruitment reloaded — Manipula saved the building file.", "info");
+      }
+      // Mod icon TGAs changed on disk → drop the decoded-icon cache so every
+      // mounted FactionIcon re-reads fresh. Silent: the icons updating IS the
+      // feedback (2026-07-16 user request — mod icon edits apply live).
+      if (data && data.file === "faction_icons") {
+        console.log("[mod-watch] faction icons changed on disk → refreshing icon cache");
+        invalidateFactionIcons();
       }
     });
     return typeof off === "function" ? off : undefined;
@@ -7886,6 +7893,157 @@ function App() {
     // map's warm-up starts, or cancelled by the campaign-change reset.
   }, [offscreen, coloredOffscreen, colorMode, buildingLevelsLookup, factionCultures, factionRegionsMap, modDataDir, mapCampaign, buildingsData]);
 
+  // Unit-card warm-up (2026-07-16, user request: unit cards must be instant —
+  // they rendered blank-first while scrolling; longer splash accepted). Warm
+  // the card of every unit in every on-map army (descr_strat starting armies)
+  // behind the splash, keyed exactly as the panel consumers key them: the
+  // army's own faction AND the region owner (garrison panels use ownerId).
+  // Bulk IPC + the shared decode-worker pool keep it fast; uiReady holds the
+  // splash until this finishes (unitIconsWarm).
+  const [unitIconsWarm, setUnitIconsWarm] = useState(false);
+  const unitWarmupKeyRef = useRef(null);
+  useEffect(() => {
+    if (!offscreen) return;
+    const overlayDone = !!coloredOffscreen || ["resource", "victory", "region"].includes(colorMode);
+    if (!overlayDone) return;
+    // Web build / older main process: no bulk IPC → no warm-up possible; don't
+    // hold the splash (unit cards lazy-load exactly as before this feature).
+    if (!(window.electronAPI && window.electronAPI.resolveUnitCardsBulk)) { setUnitIconsWarm(true); return; }
+    const regionKeys = Object.keys(startingArmiesByRegion || {});
+    if (!regions || !unitOwnership || regionKeys.length === 0) {
+      // Map is renderable but EDU/army data hasn't landed (startingArmies
+      // starts as {} before its JSON loads — can't tell "loading" from
+      // "empty") or never will (no game install detected). Grace period
+      // instead of a deadlocked splash: if the data arrives, the dep re-run
+      // clears this timer and warms for real; if not, release and let unit
+      // cards lazy-load exactly as before this feature.
+      const t = setTimeout(() => {
+        console.log("[unit-warmup] data not ready after 8s grace — releasing splash; warm-up runs when data lands");
+        setUnitIconsWarm(true);
+      }, 8000);
+      return () => clearTimeout(t);
+    }
+    const warmKey = `${activeDataDir || ""}|${mapCampaign}|r${regionKeys.length}`;
+    if (unitWarmupKeyRef.current === warmKey) return;
+    unitWarmupKeyRef.current = warmKey;
+
+    const dictMap = unitOwnership.__dictionary || {};
+    const ownerByRegion = {};
+    for (const rd of Object.values(regions)) {
+      if (!rd || !rd.region) continue;
+      const owner = ((currentOwnerByCity && currentOwnerByCity[rd.city])
+        || (initialOwnerByCity && initialOwnerByCity[rd.city])
+        || rd.faction || "").toLowerCase();
+      if (owner) ownerByRegion[rd.region] = owner;
+    }
+    const seen = new Set();
+    const triples = [];
+    const add = (fac, unit) => {
+      if (!fac || !unit) return;
+      const k = `${fac}|${unit}`;
+      if (seen.has(k)) return;
+      seen.add(k);
+      triples.push([fac, unit, dictMap[unit]]);
+    };
+    for (const regionKey of regionKeys) {
+      const regData = startingArmiesByRegion[regionKey];
+      const owner = ownerByRegion[regionKey] || null;
+      for (const army of [...(regData?.garrison || []), ...(regData?.field || [])]) {
+        const fac = (army.faction || "").toLowerCase();
+        for (const u of (army.units || [])) {
+          add(fac, u.name);
+          if (owner && owner !== fac) add(owner, u.name);
+        }
+      }
+    }
+    if (triples.length === 0) { setUnitIconsWarm(true); return; }
+    const t0 = performance.now();
+    console.log(`[unit-warmup] START (during splash) cards=${triples.length} — holding splash until warm`);
+    let cancelled = false;
+    (async () => {
+      // Same pipelined chunking as the building warm-up: chunk i+1's IPC is in
+      // flight while chunk i's decode pool drains. No iconCacheVersion bumps —
+      // nothing is visible behind the splash; one bump at the end.
+      const CHUNK = 96;
+      const chunks = [];
+      for (let i = 0; i < triples.length; i += CHUNK) chunks.push(triples.slice(i, i + CHUNK));
+      const fetchChunk = (c) => prefetchUnitIconsBulk(activeDataDir, c)
+        .catch((e) => { console.warn("[unit-warmup] chunk error:", e && e.message); });
+      let inFlight = chunks.length ? fetchChunk(chunks[0]) : null;
+      for (let i = 0; i < chunks.length && !cancelled; i++) {
+        const next = (i + 1 < chunks.length) ? fetchChunk(chunks[i + 1]) : null;
+        await inFlight;
+        await new Promise((r) => setTimeout(r, 0));
+        inFlight = next;
+      }
+      const dt = performance.now() - t0;
+      console.log(`[unit-warmup] warmed ${triples.length} unit cards (${dt.toFixed(0)}ms) — releasing`);
+      setUnitIconsWarm(true);
+      setIconCacheVersion((v) => v + 1);
+    })();
+    return undefined; // no cancel-on-rerun: warmKey ref guards, like icon-warmup
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offscreen, coloredOffscreen, colorMode, regions, startingArmiesByRegion, unitOwnership, currentOwnerByCity, initialOwnerByCity, activeDataDir, mapCampaign]);
+
+  // Live-mode follow-up: when a save's units land (saveUnitsByRegion), warm any
+  // cards the boot pass didn't cover — same keys the live panels use (region
+  // owner + each army commander's faction). Post-reveal, so background pace.
+  const liveUnitWarmKeyRef = useRef(null);
+  useEffect(() => {
+    if (!saveUnitsByRegion || !unitOwnership) return;
+    const regionKeys = Object.keys(saveUnitsByRegion);
+    if (regionKeys.length === 0) return;
+    const warmKey = `${activeDataDir || ""}|live|r${regionKeys.length}|a${(armiesToRender || []).length}`;
+    if (liveUnitWarmKeyRef.current === warmKey) return;
+    liveUnitWarmKeyRef.current = warmKey;
+    const dictMap = unitOwnership.__dictionary || {};
+    const facByCmd = new Map();
+    for (const a of (armiesToRender || [])) {
+      if (a.commanderUuid && a.faction) facByCmd.set(a.commanderUuid, String(a.faction).toLowerCase());
+    }
+    const ownerByRegion = {};
+    for (const rd of Object.values(regions || {})) {
+      if (!rd || !rd.region) continue;
+      const owner = ((currentOwnerByCity && currentOwnerByCity[rd.city])
+        || (initialOwnerByCity && initialOwnerByCity[rd.city])
+        || rd.faction || "").toLowerCase();
+      if (owner) ownerByRegion[rd.region] = owner;
+    }
+    const seen = new Set();
+    const triples = [];
+    const add = (fac, unit) => {
+      if (!fac || !unit) return;
+      const k = `${fac}|${unit}`;
+      if (seen.has(k)) return;
+      seen.add(k);
+      triples.push([fac, unit, dictMap[unit]]);
+    };
+    for (const regionKey of regionKeys) {
+      const owner = ownerByRegion[regionKey] || null;
+      for (const u of (saveUnitsByRegion[regionKey] || [])) {
+        const cmdFac = facByCmd.get(u.commanderUuid || u.inferredCmd) || null;
+        if (cmdFac) add(cmdFac, u.name);
+        if (owner) add(owner, u.name);
+      }
+    }
+    if (triples.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const CHUNK = 96;
+      let fresh = 0;
+      for (let i = 0; i < triples.length && !cancelled; i += CHUNK) {
+        try { fresh += (await prefetchUnitIconsBulk(activeDataDir, triples.slice(i, i + CHUNK))) || 0; } catch {}
+        await new Promise((r) => setTimeout(r, 50)); // gentle: UI is live
+      }
+      if (fresh > 0) {
+        console.log(`[unit-warmup] live pass warmed ${fresh} new cards`);
+        bumpIconCacheVersionCoalesced();
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saveUnitsByRegion, armiesToRender, unitOwnership, regions, currentOwnerByCity, initialOwnerByCity, activeDataDir]);
+
   // Load victory conditions
   useEffect(() => {
     (async () => {
@@ -7967,6 +8125,8 @@ function App() {
     iconWarmupKeyRef.current = null;  // re-warm icons for the new campaign
     if (warmupRunRef.current) { warmupRunRef.current.cancelled = true; warmupRunRef.current = null; } // stop the old map's warm-up
     setPriorityIconsWarm(false);      // re-gate the splash on the new map's icons
+    unitWarmupKeyRef.current = null;  // re-warm unit cards for the new campaign too
+    setUnitIconsWarm(false);
   }, [mapCampaign]);
   useEffect(() => { localStorage.setItem("mapVariant", mapVariant); }, [mapVariant]);
   useEffect(() => {
@@ -9307,7 +9467,7 @@ function App() {
     // Hold the splash until EVERY settlement's building icons are warm (user
     // request 2026-07-15): the map behind the splash is fully drawn and all its
     // icons cached before the reveal, so nothing pops in afterward.
-    const uiReady = essentialsReady && iconsPreloaded && overlayReady && priorityIconsWarm;
+    const uiReady = essentialsReady && iconsPreloaded && overlayReady && priorityIconsWarm && unitIconsWarm;
     const elapsed = Date.now() - splashStartRef.current;
     const remaining = Math.max(0, SPLASH_MIN_MS - elapsed);
     // Hard cap: whichever comes first — SPLASH_HARD_MAX_MS total, or 25s after
@@ -9326,7 +9486,7 @@ function App() {
       };
     }
     return () => clearTimeout(hardCap);
-  }, [offscreen, imgSize, iconsPreloaded, assetError, hideSplash, coloredOffscreen, colorMode, priorityIconsWarm]);
+  }, [offscreen, imgSize, iconsPreloaded, assetError, hideSplash, coloredOffscreen, colorMode, priorityIconsWarm, unitIconsWarm]);
 
   // Draw map
   useEffect(() => {
@@ -12901,7 +13061,7 @@ function App() {
       ]},
       { id: "government", title: "Government", members: [
         { key: "government", label: "Government", badge: "mode.government" },
-        { key: "loyalist", label: "Loyalist", badge: "mode.loyalist" },
+        { key: "loyalist", label: "Loyalist", badge: "mode.loyalist", dev: true }, // dev-only since 0.9.1276 (user request)
         { key: "public_order", label: "Public Order", badge: "devmode.public_order", dev: true },
         { key: "happiness", label: "Happiness", badge: "devmode.happiness", dev: true },
       ]},
@@ -13125,7 +13285,10 @@ function App() {
           })()}
           {/* 0.9.x: Live toggle — moved here from the controls pill so it sits
               next to the map-mode category tabs. onClick is handleLiveToggle. */}
-          <button data-ui-highlight="live" className="map-mode-btn" onClick={handleLiveToggle} style={{ ...btnStyle(liveLogActive), minWidth: 0, position: "relative", color: liveLogActive ? "#4f8" : undefined }}><MapBtnBadge k="view.live" />Live</button>
+          {/* Inactive color: yellow in dark mode (2026-07-16 user request — the
+              theme default read as dark grey and the button looked disabled);
+              light mode keeps the theme default. Active stays green. */}
+          <button data-ui-highlight="live" className="map-mode-btn" onClick={handleLiveToggle} style={{ ...btnStyle(liveLogActive), minWidth: 0, position: "relative", color: liveLogActive ? "#4f8" : (isDark ? "#ffd24a" : undefined) }}><MapBtnBadge k="view.live" />Live</button>
           {/* 0.9.423: Calibrate-for-mod button. Tells the user to start
               a new game + save at turn 0 so the auto-cache pass picks up
               real save-read stats and uses them in non-live mode. The
@@ -19539,15 +19702,23 @@ function App() {
                   const matching = scan.campaigns.find((c) => c.name === last.campaign) || scan.campaigns[0];
                   await importCampaignFiles(matching, camp);
                   if (reloadModCharacters) reloadModCharacters();
-                  pushToast(`Mod reloaded from ${last.folder}`, "info", 4000);
+                  // Startup auto-reload is silent (2026-07-16 user request):
+                  // it runs on every launch, so a routine success toast is
+                  // noise. Warnings/errors above still show — those need
+                  // action. The manual button keeps its confirmation.
+                  if (reloadModReq.reason !== "startup") pushToast(`Mod reloaded from ${last.folder}`, "info", 4000);
                 }
               }
             } catch (e) { pushToast(`Reload failed: ${e && e.message ? e.message : e}`, "error", 8000); }
             finally { reloadModRunningRef.current = false; setReloadModReq(null); setShowFileImport(false); }
           }, 0);
         }
-        // While auto-reloading (not the manual importer), show a slim status overlay.
+        // While auto-reloading (not the manual importer), show a slim status
+        // overlay — EXCEPT for the once-per-launch startup reload, which runs
+        // silently in the background (2026-07-16 user request: no "Reloading
+        // mod from disk" flash and no toast at launch).
         if (reloadModReq && !showFileImport) {
+          if (reloadModReq.reason === "startup") return null;
           return (
             <div style={{ position: "fixed", inset: 0, zIndex: 10020, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(2px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <div style={{ background: "#1a1a1a", border: "1px solid #e8a030", borderRadius: 10, padding: "16px 26px", color: "#eee", fontSize: "0.92rem", fontWeight: 600 }}>🔄 Reloading mod from disk…</div>

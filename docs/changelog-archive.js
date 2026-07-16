@@ -5,6 +5,13 @@
 // greppable in the working tree. Full authoritative history is in git.
 const CHANGELOG_ARCHIVE = [
   {
+    version: "0.9.1271",
+    date: "2026-07-16",
+    items: [
+      { type: "fix", text: "**Fixed the map lock-ups that survived 0.9.1270** (selecting a faction, switching to Areas of Recruitment, or just moving the mouse across the map with a region selected could freeze the window). Two remaining causes, both diagnosed directly from provincia.log's new hang forensics: (1) the empire-wide recruitment roster was still computed in one synchronous block — half a minute on a large RIS faction — and icon loads could re-trigger it; it now only computes when an army is actually selected for editing, runs in small time slices that never block clicks, and icon fill-ins no longer re-run it. (2) The selected-region panel's recruit list, character roster, and AOR roster were derived from scratch on EVERY app redraw — and the app redraws on every mouse-hover over the map. They're now cached and only recompute when the data they read actually changes." },
+    ],
+  },
+  {
     version: "0.9.1270",
     date: "2026-07-16",
     items: [
