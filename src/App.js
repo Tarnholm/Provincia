@@ -3868,6 +3868,24 @@ function App() {
       setIconCacheVersion((v) => v + 1);
     }, 150);
   }, []);
+  // Render-path memo for the big inline <RegionInfo> data props (2026-07-16
+  // freeze fix, round 2). Several of those props derive hundreds of ms of
+  // data (recruit pools, character merges, AOR rosters) inside inline IIFEs —
+  // re-executed on EVERY App render, and App re-renders on every map hover.
+  // useMemo can't be called mid-JSX and hoisting 300-line closures is riskier
+  // than caching them in place: memoInline reuses the previous value while
+  // every listed dep is Object.is-equal, exactly like useMemo.
+  const inlineMemoStore = useRef(new Map());
+  const memoInline = (key, deps, compute) => {
+    const prev = inlineMemoStore.current.get(key);
+    if (prev && prev.deps.length === deps.length && prev.deps.every((d, i) => Object.is(d, deps[i]))) return prev.value;
+    const t0 = performance.now();
+    const value = compute();
+    const dt = performance.now() - t0;
+    if (dt > 100) console.log(`[inline-memo] "${key}" recomputed in ${Math.round(dt)}ms`);
+    inlineMemoStore.current.set(key, { deps, value });
+    return value;
+  };
   const [gameDisplayNames, setGameDisplayNames] = useState(null); // from game's export_buildings.txt (culture-aware)
   // Derive the mod's data directory from modIconsDir and initialize the
   // character/unit parsers in the main process. Idempotent — safe to re-call.
@@ -7599,34 +7617,74 @@ function App() {
   }, [buildingRecruits, buildingLevelsLookup, unitOwnership, resourcesData, getBuildings]);
 
   // Dev army-edit pool: the selected region's FACTION roster — the UNION of
-  // units currently recruitable across EVERY region that faction owns. 2026-07-16
-  // freeze fix: this used to be an inline IIFE prop on <RegionInfo>, recomputed
-  // on EVERY App render — O(empire) chains×levels×recruit-regexes, seconds per
-  // pass for a big RIS faction, and the dominant cost of the re-render storm
-  // that froze the renderer. useMemo recomputes it only when its inputs change.
-  const recruitableAllMemo = useMemo(() => {
-    if (!devMode || !buildingRecruits) return null;
+  // units currently recruitable across EVERY region that faction owns.
+  //
+  // 2026-07-16 (v0.9.1270) made this a useMemo; the SAME DAY a follow-up freeze
+  // report showed that wasn't enough: one synchronous pass over a big RIS
+  // faction's empire took 30+s on the user's machine (sampled hang stacks put
+  // it inside availableRecruitsForRegion), and iconCacheVersion in the dep list
+  // re-ran that pass on every coalesced icon bump. Three changes:
+  //   1. Gated on selectedArmyKey — RegionInfo only uses this pool in army-edit
+  //      mode (devMode && selectedArmyKey), so browsing regions/factions in dev
+  //      mode no longer computes it at all.
+  //   2. The heavy name-union runs in a TIME-SLICED effect (≤40ms per slice,
+  //      yielding via setTimeout) — it can never block a click again; the pool
+  //      fills in when ready.
+  //   3. Icon fill-in (iconCacheVersion) only re-runs the cheap mapping layer,
+  //      never the union.
+  const [recruitableAllNames, setRecruitableAllNames] = useState(null); // { ownerId, names }
+  const recruitableAllNamesRef = useRef(null);
+  useEffect(() => { recruitableAllNamesRef.current = recruitableAllNames; }, [recruitableAllNames]);
+  useEffect(() => {
+    if (!devMode || !buildingRecruits || !selectedArmyKey) { setRecruitableAllNames(null); return; }
     const r = lockedRegionInfo || regionInfo;
-    if (!r) return null;
+    if (!r) { setRecruitableAllNames(null); return; }
     const ownerId = (
       (currentOwnerByCity && currentOwnerByCity[r.city])
       || (initialOwnerByCity && initialOwnerByCity[r.city])
       || r.faction || ""
     ).toLowerCase();
-    if (!ownerId) return null;
+    if (!ownerId) { setRecruitableAllNames(null); return; }
+    // Same owner already computed against the same regions data (e.g. the
+    // selection moved between two regions of one faction) — keep the existing
+    // pool, skip the recompute entirely. A regions identity change (building
+    // edit, live refresh) invalidates it.
+    if (recruitableAllNamesRef.current?.ownerId === ownerId
+        && recruitableAllNamesRef.current?.regionsRef === regions) return;
     const culture = factionCultures?.[ownerId] || null;
     const ownerOf = (reg) => (
       (currentOwnerByCity && currentOwnerByCity[reg.city])
       || (initialOwnerByCity && initialOwnerByCity[reg.city])
       || reg.faction || ""
     ).toLowerCase();
+    const regList = Object.values(regions || {}).filter((reg) => ownerOf(reg) === ownerId);
     const union = new Set();
-    for (const reg of Object.values(regions || {})) {
-      if (ownerOf(reg) !== ownerId) continue;
-      for (const name of availableRecruitsForRegion(reg, ownerId, culture)) union.add(name);
-    }
-    const names = [...union].sort((a, b) => a.localeCompare(b));
-    if (names.length === 0) return null;
+    let i = 0;
+    let cancelled = false;
+    let timer = null;
+    const t0 = performance.now();
+    const step = () => {
+      if (cancelled) return;
+      const sliceT0 = performance.now();
+      while (i < regList.length && performance.now() - sliceT0 < 40) {
+        for (const name of availableRecruitsForRegion(regList[i], ownerId, culture)) union.add(name);
+        i += 1;
+      }
+      if (i < regList.length) { timer = setTimeout(step, 0); return; }
+      const names = [...union].sort((a, b) => a.localeCompare(b));
+      console.log(`[recruit-pool] ${ownerId}: ${names.length} units across ${regList.length} regions in ${Math.round(performance.now() - t0)}ms (time-sliced)`);
+      setRecruitableAllNames({ ownerId, names, regionsRef: regions });
+    };
+    step();
+    return () => { cancelled = true; if (timer) clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [devMode, buildingRecruits, selectedArmyKey, lockedRegionInfo, regionInfo, currentOwnerByCity, initialOwnerByCity, factionCultures, regions, availableRecruitsForRegion]);
+
+  // Cheap layer: map the computed names to icon entries. iconCacheVersion only
+  // re-runs THIS, so icons filling in never re-triggers the empire-wide union.
+  const recruitableAllMemo = useMemo(() => {
+    if (!recruitableAllNames || recruitableAllNames.names.length === 0) return null;
+    const { ownerId, names } = recruitableAllNames;
     const dictMap = unitOwnership?.__dictionary || {};
     prefetchUnitIcons(activeDataDir, names.map((n) => [ownerId, n, dictMap[n]]), bumpIconCacheVersionCoalesced);
     return names.map((name) => ({
@@ -7639,7 +7697,7 @@ function App() {
       upgradeHint: null,
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [devMode, buildingRecruits, lockedRegionInfo, regionInfo, currentOwnerByCity, initialOwnerByCity, factionCultures, regions, availableRecruitsForRegion, unitOwnership, activeDataDir, iconCacheVersion, bumpIconCacheVersionCoalesced]);
+  }, [recruitableAllNames, unitOwnership, activeDataDir, iconCacheVersion, bumpIconCacheVersionCoalesced]);
 
   // EAGER building-icon warm-up (2026-07-15, fixes "icons pop in when you first
   // hover regions"). Previously icons were prefetched lazily per-region inside
@@ -18451,7 +18509,7 @@ function App() {
                         for (const a of arms) for (const u of a.units || []) out.push(u);
                         return out;
                       })()}
-                      aorUnits={(() => {
+                      aorUnits={memoInline("aorUnits", [colorMode, lockedRegionInfo, regionInfo, buildingRecruits, resourcesData, unitOwnership], () => {
                         // AOR MODE ONLY: the FULL Area-of-Recruitment roster a
                         // region's land enables — owner- and building-INDEPENDENT,
                         // so the correct AOR units show no matter who holds it.
@@ -18554,8 +18612,8 @@ function App() {
                           icon: ownerId ? getCachedUnitIcon(activeDataDir, ownerId, e.unit) : null,
                           aors: [...e.aors], only: [...e.only], except: [...e.except],
                         }));
-                      })()}
-                      recruitable={(() => {
+                      })}
+                      recruitable={memoInline("recruitable", [lockedRegionInfo, regionInfo, buildingRecruits, buildingLevelsLookup, unitOwnership, resourcesData, currentOwnerByCity, initialOwnerByCity, factionCultures, activeDataDir, getBuildings, iconCacheVersion], () => {
                         // Compute the union of recruit entries the city can
                         // currently train. RTW building chains are cumulative:
                         // owning level N satisfies the requirements for all
@@ -18918,7 +18976,7 @@ function App() {
                           available: availableSet.has(name),
                           upgradeHint: !availableSet.has(name) ? computeUpgradeHint(name) : null,
                         }));
-                      })()}
+                      })}
                       recruitableAll={recruitableAllMemo /* hoisted to a useMemo
                         (2026-07-16 freeze fix) — the empire-wide recruit union
                         used to recompute inline on every App render */}
@@ -19363,7 +19421,7 @@ function App() {
                          inline in the main Buildings grid as an orange-bordered
                          card with green progress overlay (see getBuildings). */
                       saveFile={liveLogActive ? liveSaveFile : null}
-                      characters={(() => {
+                      characters={memoInline("characters", [lockedRegionInfo, regionInfo, armiesToRender, saveCharactersByRegion, saveUnitsByRegion, startingArmiesByRegion, startingCharactersFromMod, statsCache, liveLogActive], () => {
                         const r = lockedRegionInfo || regionInfo;
                         if (!r) return null;
                         // Build a name → live region map from armiesToRender.
@@ -19662,7 +19720,7 @@ function App() {
                         }
                         const combined = [...filtered, ...incoming];
                         return combined.length > 0 ? combined : null;
-                      })()}
+                      })}
                       liveUnits={(() => {
                         if (!saveUnitsByRegion || !liveLogActive) return null;
                         const r = lockedRegionInfo || regionInfo;
