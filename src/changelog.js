@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1280",
+    date: "2026-07-16",
+    items: [
+      { type: "fix", text: "**Killed the last hover \"flash\": commander portraits.** Hovering a region swapped each bodyguard card for its general's portrait — resolved lazily, per character, the first time you hovered them, which read as a flash. All on-map commanders' portraits are now warmed quietly right after the map appears, so the panel's first render is already the portrait." },
+      { type: "improvement", text: "**Background icon warm-up finishes much sooner.** The post-splash passes (recruit cards, remaining building catalog) were deliberately slow-paced from the fix in 0.9.1278; now that card lookups are indexed they run at a brisker pace — the whole map should be fully warm within seconds of the map appearing, while input stays responsive." },
+    ],
+  },
+  {
     version: "0.9.1279",
     date: "2026-07-16",
     items: [
@@ -46,16 +54,7 @@ const CHANGELOG = [
       { type: "improvement", text: "**The Live button is now readable in dark mode** — its label shows in yellow when live mode is off (it used to render dark grey on dark, looking disabled)." },
     ],
   },
-  {
-    version: "0.9.1275",
-    date: "2026-07-16",
-    items: [
-      { type: "improvement", text: "**The splash now lifts ~4 seconds earlier.** It used to hold until every one of the ~5,700 possible building icons was loaded; it now waits only for the icons of settlements actually on the map, then finishes the rest quietly in the background. In rare cases a building icon can pop in a moment late (e.g. right after granting a settlement to a new faction in Dev mode) — the tradeoff for the faster start. Icon loading itself also got faster: the decode workers no longer sit idle between batches." },
-      { type: "improvement", text: "**Less background work while you use the app.** Dark-theme users no longer pay for the light-theme contrast watcher (it rescanned every panel element on every screen change, doing nothing useful in dark mode). Startup no longer parses the mod database twice in the app window (the six-times-per-launch main-process parse was fixed in 0.9.1273; this closes the remaining renderer-side double). And the Garrison and Field-armies panel data — the last two heavy panel computations that re-derived on every redraw — are now cached and only recompute when the underlying data changes. Two stale-cache edge cases in the recruit/character panel caches were fixed along the way." },
-      { type: "change", text: "**The in-app changelog now shows the last 5 versions** instead of the full 1,100+ entry history, which had grown to nearly a megabyte parsed on every post-update welcome screen. The full history lives on in the repository." },
-      { type: "change", text: "**Release plumbing (internal):** publishing is now one command that ends by verifying the update feed actually serves the new version, and a repository check fails loudly if a release commit ever lands unpublished — the 0.9.1269 \"committed but never shipped\" gap can't silently happen again. The app's main code file also shed ~1,500 lines into a tested module, groundwork for further splitting." },
-    ],
-  },
+
 
 
 

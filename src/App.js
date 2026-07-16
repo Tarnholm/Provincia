@@ -4,6 +4,7 @@ import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
 import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect, subscribeWidgets, getWidgetSnapshot } from "./Movable";
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, prefetchBuildingIconsBulk, invalidateBuildingIcon } from "./buildingIcons";
 import { getCachedUnitIcon, prefetchUnitIcons, prefetchUnitIconsBulk } from "./unitIcons";
+import { loadPortrait } from "./portraitIcons";
 // Heavy, single-use panels are code-split (2026-07-15): each is loaded as its
 // own async chunk the first time it renders. Module-scope Suspense wrappers
 // keep the JSX call sites identical to the old static imports. (RegionInfo
@@ -7886,7 +7887,7 @@ function App() {
       // and bumping every chunk produced the 1.5–5s main-thread stall train in
       // 0.9.1277's logs. Panels that need a just-warmed icon bump the
       // coalesced version themselves; one bump at the end covers the rest.
-      await runBatches(rest, 96, 50, false, "rest");
+      await runBatches(rest, 96, 25, false, "rest"); // 25ms gaps (was 50) — finish the catalog sooner, still yields input
       if (run.cancelled) return;
       const dt = ((performance && performance.now) ? performance.now() : Date.now()) - t0;
       console.log(`[icon-warmup] ALL warmed ${priority.length + rest.length} (${dt.toFixed(0)}ms) — full catalog cached`);
@@ -8025,7 +8026,10 @@ function App() {
       // was the post-reveal stall storm in 0.9.1277's logs; panels that need
       // a just-warmed icon bump the coalesced version themselves.
       if (recruitTriples.length && !cancelled) {
-        await runChunks(recruitTriples, 150, "recruit");
+        // 25ms gaps (was 150): with the main-side filename index a chunk costs
+        // ~nothing, and the user wants the whole map warm ASAP — the gap only
+        // needs to let input events through between chunks.
+        await runChunks(recruitTriples, 25, "recruit");
         const dt = performance.now() - t0;
         console.log(`[unit-warmup] recruit cards warmed ${recruitTriples.length} (${dt.toFixed(0)}ms total)`);
         bumpIconCacheVersionCoalesced();
@@ -8093,6 +8097,72 @@ function App() {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saveUnitsByRegion, armiesToRender, unitOwnership, regions, currentOwnerByCity, initialOwnerByCity, activeDataDir]);
+
+  // Commander-portrait prewarm (2026-07-16, "units still flash in on hover").
+  // The last hover flash: garrison/field bodyguard cards swap in the
+  // commander's portrait, resolved lazily per character on FIRST hover
+  // (CommanderPortraitImg → loadPortrait → IPC + DDS decode). Prewarm every
+  // on-map commander's portrait after the splash releases, using the SAME
+  // resolver + charContext fields the panel builds, so the cache key matches
+  // exactly and the panel's first render is a cache hit.
+  const portraitWarmKeyRef = useRef(null);
+  useEffect(() => {
+    if (!unitIconsWarm) return; // post-reveal only — never holds the splash
+    if (!startingArmiesByRegion || !modDataDir) return;
+    if (!statsCache || !startingCharactersFromMod) return; // resolver inputs the panel also uses
+    const regionKeys = Object.keys(startingArmiesByRegion);
+    if (regionKeys.length === 0) return;
+    const warmKey = `${modDataDir}|${mapCampaign}|r${regionKeys.length}|c${startingCharactersFromMod.length}`;
+    if (portraitWarmKeyRef.current === warmKey) return;
+    portraitWarmKeyRef.current = warmKey;
+    const jobs = [];
+    const seen = new Set();
+    for (const regionKey of regionKeys) {
+      const regData = startingArmiesByRegion[regionKey];
+      for (const army of [...(regData?.garrison || []), ...(regData?.field || [])]) {
+        if (!army.character) continue;
+        const parts = String(army.character).split(/\s+/);
+        const fn = parts[0];
+        const ln = parts.slice(1).join(" ") || null;
+        const fac = (army.faction || "").toLowerCase();
+        const dedupe = `${fn}|${ln || ""}|${fac}`;
+        if (!fn || seen.has(dedupe)) continue;
+        seen.add(dedupe);
+        const info = resolveNonLiveCommanderInfoApp(fn, ln, fac, statsCache, startingCharactersFromMod, nonLivePortraitMap);
+        if (!info || !(info.savePath || info.firstName)) continue;
+        // Same culture fallback chain as the panel (culture || info.faction).
+        const culture = info.faction
+          ? (factionCultures?.[String(info.faction).toLowerCase()] || factionCultures?.[info.faction])
+          : null;
+        const cultureKey = String(culture || info.faction || "").toLowerCase();
+        if (!cultureKey) continue;
+        jobs.push({
+          cultureKey,
+          ctx: {
+            name: info.firstName || "",
+            lastName: info.lastName || "",
+            faction: info.faction || "",
+            age: info.age != null ? Number(info.age) : null,
+            savePath: info.savePath || undefined,
+          },
+        });
+      }
+    }
+    if (jobs.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const t0 = performance.now();
+      // Sequential with a small gap: each portrait is an IPC + a synchronous
+      // DDS decode on this thread, so pacing keeps hover/typing responsive.
+      for (let i = 0; i < jobs.length && !cancelled; i++) {
+        try { await loadPortrait(modDataDir, jobs[i].cultureKey, "general", jobs[i].ctx); } catch {}
+        await new Promise((r) => setTimeout(r, 15));
+      }
+      if (!cancelled) console.log(`[portrait-warmup] warmed ${jobs.length} commander portraits (${(performance.now() - t0).toFixed(0)}ms)`);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unitIconsWarm, startingArmiesByRegion, modDataDir, mapCampaign, statsCache, startingCharactersFromMod, nonLivePortraitMap, factionCultures]);
 
   // Load victory conditions
   useEffect(() => {
