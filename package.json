@@ -1,6 +1,6 @@
 {
   "name": "provincia",
-  "version": "0.9.1274",
+  "version": "0.9.1275",
   "description": "Provincia — Rome: Total War mod data viewer",
   "author": "Tarnholm",
   "license": "MIT",
@@ -19,6 +19,7 @@
     "dist:win": "npm run build && electron-builder --win nsis",
     "dist:mac": "npm run build && electron-builder --mac dmg",
     "dist:linux": "npm run build && electron-builder --linux AppImage",
+    "ship": "node scripts/ship.js",
     "submit-fp": "node scripts/submit-false-positive.js"
   },
   "dependencies": {

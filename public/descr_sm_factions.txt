@@ -49,7 +49,7 @@
 			"rebel logo index": 45,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_julii.CAS",
+			"strat symbol model":       "data/models_strat/symbol_roman_julii.CAS",
 			"strat rebel symbol model": "data/models_strat/symbol_roman_rebel.CAS",
 		},
 
@@ -268,7 +268,7 @@
 			"rebel logo index": 45,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_julii.CAS",
+			"strat symbol model":       "data/models_strat/symbol_roman_senate.CAS",
 			"strat rebel symbol model": "data/models_strat/symbol_roman_rebel.CAS",
 		},
 
@@ -3306,7 +3306,7 @@
 			"rebel logo index": 47,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_gallic_rebel.CAS",
+			"strat symbol model":       "data/models_strat/symbol_aulerci.CAS",
 			"strat rebel symbol model": "data/models_strat/symbol_gallic_rebel.CAS",
 		},
 
@@ -4760,15 +4760,15 @@
 			"loading screen icon": "data/ui/faction_icons/cadurci.tga",
 
 			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       39,
+			"standard index":       204,
 			"rebel standard index": 39,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       47,
+			"logo index":       201,
 			"rebel logo index": 47,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_gallic_rebel.CAS",
+			"strat symbol model":       "data/models_strat/symbol_cadurci.CAS",
 			"strat rebel symbol model": "data/models_strat/symbol_gallic_rebel.CAS",
 		},
 
@@ -13518,15 +13518,15 @@
 			"loading screen icon": "data/ui/faction_icons/norici.tga",
 
 			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       39,
+			"standard index":       203,
 			"rebel standard index": 39,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       47,
+			"logo index":       200,
 			"rebel logo index": 47,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_gallic_rebel.CAS",
+			"strat symbol model":       "data/models_strat/symbol_norici.CAS",
 			"strat rebel symbol model": "data/models_strat/symbol_gallic_rebel.CAS",
 		},
 
@@ -16081,15 +16081,15 @@
 			"loading screen icon": "data/ui/faction_icons/sequani.tga",
 
 			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       39,
+			"standard index":       205,
 			"rebel standard index": 39,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       47,
+			"logo index":       202,
 			"rebel logo index": 47,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_gallic_rebel.CAS",
+			"strat symbol model":       "data/models_strat/symbol_sequani.CAS",
 			"strat rebel symbol model": "data/models_strat/symbol_gallic_rebel.CAS",
 		},
 

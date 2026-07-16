@@ -1,0 +1,58 @@
+# Ship-flow guard: a "Ship vX.Y.Z" commit on master must actually be published.
+#
+# Exists because of the v0.9.1269 gap: the release commit landed on master but
+# was never tagged/published, so the auto-update feed silently kept serving the
+# previous version and users never got the fix. scripts/ship.js prevents that
+# when used; this workflow catches the case where it wasn't (manual commit,
+# aborted ship run, push from another machine).
+#
+# Checks, with retries to give a still-running local publish time to finish:
+#   1. tag vX.Y.Z exists on the repo
+#   2. the latest.yml update feed serves version X.Y.Z
+# Fails the run (red X on the commit + email notification) if either is still
+# missing after ~10 minutes. Recovery: re-run `npm run ship` locally — its
+# completed steps skip themselves.
+
+name: ship-guard
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  verify-published:
+    # Only guard release commits; ordinary pushes pass trivially by skipping.
+    if: startsWith(github.event.head_commit.message, 'Ship v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify tag and update feed match the Ship commit
+        env:
+          MSG: ${{ github.event.head_commit.message }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -u
+          VERSION=$(printf '%s' "$MSG" | head -n1 | sed -n 's/^Ship v\([0-9.]*\).*/\1/p')
+          if [ -z "$VERSION" ]; then
+            echo "Commit message starts with 'Ship v' but no version parsed — check the message format." >&2
+            exit 1
+          fi
+          echo "Guarding release $VERSION"
+          FEED_URL="https://github.com/${{ github.repository }}/releases/latest/download/latest.yml"
+          for i in $(seq 1 20); do
+            TAG_OK=false
+            FEED_OK=false
+            if gh api "repos/${{ github.repository }}/git/refs/tags/v$VERSION" >/dev/null 2>&1; then
+              TAG_OK=true
+            fi
+            SERVED=$(curl -fsSL "$FEED_URL" 2>/dev/null | sed -n 's/^version:[[:space:]]*//p' | head -n1)
+            [ "$SERVED" = "$VERSION" ] && FEED_OK=true
+            echo "attempt $i/20: tag=$TAG_OK feed=${SERVED:-unreachable}"
+            if $TAG_OK && $FEED_OK; then
+              echo "OK: tag v$VERSION exists and the update feed serves $VERSION."
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "FAILED: release $VERSION is not fully published (tag present: $TAG_OK, feed serves: ${SERVED:-nothing})." >&2
+          echo "This is the v0.9.1269 gap — run 'npm run ship' locally to finish publishing." >&2
+          exit 1
