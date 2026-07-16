@@ -7928,7 +7928,10 @@ function App() {
       }, 8000);
       return () => clearTimeout(t);
     }
-    const warmKey = `${activeDataDir || ""}|${mapCampaign}|r${regionKeys.length}`;
+    // buildingRecruits/resourcesData arrive later than the armies data; keying
+    // them into warmKey re-runs the pass when they land (already-warmed pairs
+    // dedupe to no-ops inside prefetchUnitIconsBulk).
+    const warmKey = `${activeDataDir || ""}|${mapCampaign}|r${regionKeys.length}|br${buildingRecruits ? Object.keys(buildingRecruits).length : 0}|rs${resourcesData ? 1 : 0}`;
     if (unitWarmupKeyRef.current === warmKey) return;
     unitWarmupKeyRef.current = warmKey;
 
@@ -7977,7 +7980,58 @@ function App() {
       const c = factionCultures?.[o];
       if (c) { if (!cultureOwners.has(c)) cultureOwners.set(c, []); cultureOwners.get(c).push(o); }
     }
-    const RECRUIT_WARM_CAP = 8000; // safety bound; anything past it lazy-loads
+    // AOR pairs FIRST (2026-07-16, "some AOR units still load slowly"): the
+    // AOR roster keys cards by (regionOwner, unit), and AOR units are
+    // `ownership all` — the all×owners cross product below overflowed the old
+    // 8k cap, so exactly these pairs got truncated. Region-accurate pairs are
+    // small and exactly what deriveAorUnits requests: map each aor_ token /
+    // strategic resource to its units once (superset — per-region negative
+    // gates skipped on purpose), then match per region.
+    if (buildingRecruits) {
+      const unitsByGate = new Map(); // "aor_x" | "res:<type>" → Set(unit)
+      for (const chain of Object.keys(buildingRecruits)) {
+        if (chain === "__aliases") continue;
+        const lvls = buildingRecruits[chain];
+        if (!lvls || typeof lvls !== "object") continue;
+        for (const lvl of Object.keys(lvls)) {
+          const recs = lvls[lvl];
+          if (!Array.isArray(recs)) continue;
+          for (const rec of recs) {
+            const reqs = rec.requires || "";
+            if (!reqs || /\bnot\s+is_player\b/.test(reqs)) continue;
+            const positives = reqs.replace(/\bnot\s+hidden_resource\s+\S+/g, "").replace(/\bnot\s+resource\s+\S+/g, "");
+            for (const m of positives.matchAll(/\bhidden_resource\s+(aor_\w+)/g)) {
+              const k = m[1].toLowerCase();
+              if (!unitsByGate.has(k)) unitsByGate.set(k, new Set());
+              unitsByGate.get(k).add(rec.unit);
+            }
+            for (const m of positives.matchAll(/\bresource\s+(\S+)/g)) {
+              const k = `res:${m[1].toLowerCase()}`;
+              if (!unitsByGate.has(k)) unitsByGate.set(k, new Set());
+              unitsByGate.get(k).add(rec.unit);
+            }
+          }
+        }
+      }
+      if (unitsByGate.size) {
+        for (const rd of Object.values(regions)) {
+          if (!rd || !rd.region) continue;
+          const owner = ownerByRegion[rd.region];
+          if (!owner) continue;
+          for (const t of String(rd.tags || "").split(",")) {
+            const tag = t.trim().toLowerCase();
+            const set = tag.startsWith("aor_") ? unitsByGate.get(tag) : null;
+            if (set) for (const u of set) addTo(recruitTriples, owner, u);
+          }
+          const resList = (resourcesData && (resourcesData[rd.region] || resourcesData[rd.city])) || [];
+          for (const res of resList) {
+            const set = unitsByGate.get(`res:${String(res.type || "").toLowerCase()}`);
+            if (set) for (const u of set) addTo(recruitTriples, owner, u);
+          }
+        }
+      }
+    }
+    const RECRUIT_WARM_CAP = 20000; // raised from 8k (2026-07-16): the all×owners product overflowed it, truncating AOR pairs
     let capped = false;
     for (const [unit, facs] of Object.entries(unitOwnership)) {
       if (unit === "__dictionary" || !Array.isArray(facs)) continue;
@@ -8037,7 +8091,7 @@ function App() {
     })();
     return undefined; // no cancel-on-rerun: warmKey ref guards, like icon-warmup
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offscreen, coloredOffscreen, colorMode, regions, startingArmiesByRegion, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, activeDataDir, mapCampaign]);
+  }, [offscreen, coloredOffscreen, colorMode, regions, startingArmiesByRegion, unitOwnership, factionCultures, buildingRecruits, resourcesData, currentOwnerByCity, initialOwnerByCity, activeDataDir, mapCampaign]);
 
   // Live-mode follow-up: when a save's units land (saveUnitsByRegion), warm any
   // cards the boot pass didn't cover — same keys the live panels use (region

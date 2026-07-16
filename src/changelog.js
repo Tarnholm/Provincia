@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1281",
+    date: "2026-07-16",
+    items: [
+      { type: "fix", text: "**AOR unit cards no longer load in slowly.** The Areas-of-Recruitment roster keys its cards by region owner, and those pairs fell past the warm-up's safety cap (the log showed it truncating at 8,000 cards). The warm-up now computes each region's AOR units precisely and loads them first, and the cap is raised to 20,000 — AOR panels should open fully drawn like everything else." },
+    ],
+  },
+  {
     version: "0.9.1280",
     date: "2026-07-16",
     items: [
@@ -43,17 +50,7 @@ const CHANGELOG = [
       { type: "improvement", text: "**Launch uses more CPU cores.** The icon decode pool was capped at 6 workers; it now scales with your machine (cores minus two, up to 12) and is fed bigger batches, so the behind-the-splash warm-up finishes noticeably faster on 8+ core machines." },
     ],
   },
-  {
-    version: "0.9.1276",
-    date: "2026-07-16",
-    items: [
-      { type: "improvement", text: "**Unit cards now load instantly.** Scrolling the map used to show blank unit cards for a moment while each portrait loaded one-by-one; the cards of every army on the map are now loaded up-front behind the splash (in one batch, decoded across CPU cores), so panels open fully drawn. Loading a save tops up any new units' cards quietly in the background. The splash can hold a touch longer to cover this — that's the intended tradeoff." },
-      { type: "improvement", text: "**Mod icon changes now apply live.** Updated faction icon TGAs in your mod folder are picked up by a running app the moment they change on disk — no restart needed. (New icons were always used after a restart; now they hot-swap in place.)" },
-      { type: "fix", text: "**Quieter launch.** The once-per-launch mod re-read no longer flashes the \"Reloading mod from disk…\" overlay or shows a toast — it runs silently. Manual reloads via the button keep their confirmation." },
-      { type: "change", text: "**The Loyalist map mode moved into Dev mode**, alongside the other editing-oriented modes." },
-      { type: "improvement", text: "**The Live button is now readable in dark mode** — its label shows in yellow when live mode is off (it used to render dark grey on dark, looking disabled)." },
-    ],
-  },
+
 
 
 
