@@ -318,6 +318,14 @@ function usePrefersDark() {
 function useLightModePanelContrast(isDark) {
   useEffect(() => {
     const fix = () => {
+      // 2026-07-16 hang-hunt telemetry: this observer callback rewrites inline
+      // styles, which re-triggers the observer. Count calls/writes and log a
+      // rate snapshot every 200 calls so a self-sustaining loop is visible in
+      // provincia.log (a healthy session logs this a handful of times).
+      const stats = (window.__fixStats ||= { calls: 0, writes: 0, t0: performance.now(), lastLog: 0 });
+      stats.calls += 1;
+      const fixT0 = performance.now();
+      let fixWrites = 0;
       const dark = document.body.classList.contains("dark-mode");
       const panels = document.querySelectorAll(".panel, .panel *");
       for (const el of panels) {
@@ -330,6 +338,7 @@ function useLightModePanelContrast(isDark) {
           if (el.dataset.savedColor) {
             el.style.color = el.dataset.savedColor;
             delete el.dataset.savedColor;
+            fixWrites += 1;
           }
           continue;
         }
@@ -345,7 +354,14 @@ function useLightModePanelContrast(isDark) {
         if (lum < 130) continue; // already dark — nothing to do
         // Light mode: save original (if we haven't yet) and force near-black.
         if (!el.dataset.savedColor) el.dataset.savedColor = inline;
-        if (el.style.color !== "rgb(26, 26, 26)") el.style.color = "#1a1a1a";
+        if (el.style.color !== "rgb(26, 26, 26)") { el.style.color = "#1a1a1a"; fixWrites += 1; }
+      }
+      const stats2 = window.__fixStats;
+      stats2.writes += fixWrites;
+      const dt = performance.now() - fixT0;
+      if (stats2.calls % 200 === 0 || dt > 200) {
+        const since = ((performance.now() - stats2.t0) / 1000).toFixed(1);
+        console.log(`[fix-stats] calls=${stats2.calls} writes=${stats2.writes} over ${since}s — this pass: ${Math.round(dt)}ms, ${fixWrites} writes, ${panels.length} nodes scanned`);
       }
     };
     fix();
@@ -1215,6 +1231,21 @@ function splitAorsByLayer(tags, cityName) {
 }
 
 const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource", "aor", "happiness", "income", "public_order", "mercenaries"]);
+
+// Dev-toggle tracer (2026-07-16 "dev button does nothing" hunt). Every step of
+// the toggle logs to provincia.log so a dead click is attributable: handler
+// fired → state committed → first devMode render done. Module-scope so both
+// call sites (button + Ctrl+Shift+D) share the click timestamp.
+const devTrace = { clickT: 0, seq: 0, lastDrawLog: 0 };
+function devTraceClick(source, prev) {
+  devTrace.clickT = performance.now();
+  devTrace.seq += 1;
+  console.log(`[dev-toggle #${devTrace.seq}] ${source}: handler fired, devMode ${prev} -> ${!prev}`);
+}
+function devTraceStep(label) {
+  const dt = devTrace.clickT ? Math.round(performance.now() - devTrace.clickT) : -1;
+  console.log(`[dev-toggle #${devTrace.seq}] ${label} (+${dt}ms)`);
+}
 
 // Per-tile geography palette. Decoded from RTW's map_ground_types.tga whose
 // pixels carry one of ~14 fixed RGB values. The map_ground_types raw colors
@@ -3820,6 +3851,23 @@ function App() {
     return typeof off === "function" ? off : undefined;
   }, []);
   const [iconCacheVersion, setIconCacheVersion] = useState(0);
+  // 2026-07-16 freeze fix: the render-phase prefetchUnitIcons calls used to
+  // bump iconCacheVersion once PER LOADED ICON. A region select with many
+  // uncached unit cards queued hundreds of bumps, each a full App re-render
+  // (seconds each with a big RIS faction) — renders piled up faster than they
+  // finished and the main thread never yielded: the renderer froze for good
+  // (the "Dev button does nothing" hang; the click was just the first victim).
+  // Coalesce: any number of icon-loaded callbacks within 150ms become ONE
+  // version bump, and setTimeout schedules it as a task so the event loop
+  // breathes between re-renders.
+  const iconBumpTimerRef = useRef(null);
+  const bumpIconCacheVersionCoalesced = useCallback(() => {
+    if (iconBumpTimerRef.current) return;
+    iconBumpTimerRef.current = setTimeout(() => {
+      iconBumpTimerRef.current = null;
+      setIconCacheVersion((v) => v + 1);
+    }, 150);
+  }, []);
   const [gameDisplayNames, setGameDisplayNames] = useState(null); // from game's export_buildings.txt (culture-aware)
   // Derive the mod's data directory from modIconsDir and initialize the
   // character/unit parsers in the main process. Idempotent — safe to re-call.
@@ -6431,9 +6479,10 @@ function App() {
   // plain serialisable object — used both for autosave snapshots and to hold
   // the "pre-edit" state so reverting to an entry undoes that edit.
   const captureState = useCallback(() => {
+    const t0 = performance.now();
     const es = editStateRef.current || {};
     const mapEntries = (m) => (m instanceof Map ? [...m.entries()] : []);
-    return {
+    const out = {
       regions: { ...regions },
       resourcesData: JSON.parse(JSON.stringify(resourcesData)),
       populationData: { ...populationData },
@@ -6446,6 +6495,9 @@ function App() {
         dirty: es.dirty instanceof Set ? [...es.dirty] : [],
       },
     };
+    const dt = performance.now() - t0;
+    if (dt > 50) console.log(`[dev-toggle] captureState slow: ${Math.round(dt)}ms (regions=${Object.keys(regions).length} resourceRegions=${Object.keys(resourcesData || {}).length})`);
+    return out;
   }, [regions, resourcesData, populationData, victoryConditions]);
 
   // Save a snapshot to autosave history. Persists to localStorage so the last
@@ -6597,6 +6649,19 @@ function App() {
     }
     setTimelineIndex(null);
   }, []);
+
+  // Dev-toggle tracer: log when the devMode flip has committed, and again after
+  // the first post-commit paint (double rAF) — separates "state never
+  // committed" from "committed but the devMode render hung the main thread".
+  useEffect(() => {
+    if (!devTrace.seq) return;
+    devTraceStep(`devMode=${devMode} committed`);
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => devTraceStep(`devMode=${devMode} first frame painted`));
+    });
+    return () => { cancelAnimationFrame(raf1); if (raf2) cancelAnimationFrame(raf2); };
+  }, [devMode]);
 
   // Show recovery prompt when dev mode is enabled and autosaves exist
   const prevDevModeRef = useRef(false);
@@ -7533,6 +7598,49 @@ function App() {
     return [...out];
   }, [buildingRecruits, buildingLevelsLookup, unitOwnership, resourcesData, getBuildings]);
 
+  // Dev army-edit pool: the selected region's FACTION roster — the UNION of
+  // units currently recruitable across EVERY region that faction owns. 2026-07-16
+  // freeze fix: this used to be an inline IIFE prop on <RegionInfo>, recomputed
+  // on EVERY App render — O(empire) chains×levels×recruit-regexes, seconds per
+  // pass for a big RIS faction, and the dominant cost of the re-render storm
+  // that froze the renderer. useMemo recomputes it only when its inputs change.
+  const recruitableAllMemo = useMemo(() => {
+    if (!devMode || !buildingRecruits) return null;
+    const r = lockedRegionInfo || regionInfo;
+    if (!r) return null;
+    const ownerId = (
+      (currentOwnerByCity && currentOwnerByCity[r.city])
+      || (initialOwnerByCity && initialOwnerByCity[r.city])
+      || r.faction || ""
+    ).toLowerCase();
+    if (!ownerId) return null;
+    const culture = factionCultures?.[ownerId] || null;
+    const ownerOf = (reg) => (
+      (currentOwnerByCity && currentOwnerByCity[reg.city])
+      || (initialOwnerByCity && initialOwnerByCity[reg.city])
+      || reg.faction || ""
+    ).toLowerCase();
+    const union = new Set();
+    for (const reg of Object.values(regions || {})) {
+      if (ownerOf(reg) !== ownerId) continue;
+      for (const name of availableRecruitsForRegion(reg, ownerId, culture)) union.add(name);
+    }
+    const names = [...union].sort((a, b) => a.localeCompare(b));
+    if (names.length === 0) return null;
+    const dictMap = unitOwnership?.__dictionary || {};
+    prefetchUnitIcons(activeDataDir, names.map((n) => [ownerId, n, dictMap[n]]), bumpIconCacheVersionCoalesced);
+    return names.map((name) => ({
+      unit: name,
+      faction: ownerId,
+      icon: getCachedUnitIcon(activeDataDir, ownerId, name),
+      gatedBy: [],
+      hrGates: [],
+      available: true,
+      upgradeHint: null,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [devMode, buildingRecruits, lockedRegionInfo, regionInfo, currentOwnerByCity, initialOwnerByCity, factionCultures, regions, availableRecruitsForRegion, unitOwnership, activeDataDir, iconCacheVersion, bumpIconCacheVersionCoalesced]);
+
   // EAGER building-icon warm-up (2026-07-15, fixes "icons pop in when you first
   // hover regions"). Previously icons were prefetched lazily per-region inside
   // getBuildings — so the FIRST hover of each region kicked off an async icon
@@ -7854,6 +7962,7 @@ function App() {
         e.preventDefault();
         setDevMode(prev => {
           const next = !prev;
+          devTraceClick("Ctrl+Shift+D", prev);
           // If turning off dev mode while a dev color mode is active, reset to faction
           if (!next) setColorMode(cm => DEV_COLOR_MODES.has(cm) ? "faction" : cm);
           return next;
@@ -9209,6 +9318,7 @@ function App() {
     // Geography / etc.).
     const showResourceIcons = colorMode === "resource" || showResourcesOverlay;
     if (showResourceIcons && Object.keys(resourceImages).length > 0) {
+      const _resIconT0 = performance.now();
       const ICON_PX = Math.min(22, Math.max(8, 6 + zoom * 3)); // scales with zoom: 8–22px
       const iconSz = ICON_PX / totalScale;
       const half = iconSz / 2;
@@ -9278,6 +9388,13 @@ function App() {
           }
           ctx.restore();
         }
+      }
+      // Dev-toggle tracer: this pass runs per frame and iterates every
+      // resource in the mod — log when it stalls a frame, max once per 5s.
+      const _resIconDt = performance.now() - _resIconT0;
+      if (_resIconDt > 120 && performance.now() - devTrace.lastDrawLog > 5000) {
+        devTrace.lastDrawLog = performance.now();
+        console.log(`[dev-toggle] resource-icon draw pass slow: ${Math.round(_resIconDt)}ms (devMode=${devMode} regions=${Object.keys(resourcesData || {}).length})`);
       }
     }
 
@@ -13692,6 +13809,7 @@ function App() {
             className={`dev-btn${devMode ? " dev-btn--active" : ""}`}
             onClick={() => setDevMode(prev => {
               const next = !prev;
+              devTraceClick("Dev button", prev);
               if (!next) setColorMode(cm => DEV_COLOR_MODES.has(cm) ? "faction" : cm);
               return next;
             })}
@@ -18283,7 +18401,7 @@ function App() {
                         if (ownerId) {
                           const dictMap = unitOwnership?.__dictionary || {};
                           const triples = normalised.map((u) => [ownerId, u.unit, dictMap[u.unit]]).filter(([, n]) => n);
-                          prefetchUnitIcons(activeDataDir, triples, () => setIconCacheVersion((v) => v + 1));
+                          prefetchUnitIcons(activeDataDir, triples, bumpIconCacheVersionCoalesced);
                         }
                         return normalised.map((u) => ({
                           ...u,
@@ -18428,7 +18546,7 @@ function App() {
                         ).toLowerCase();
                         const dictMap = unitOwnership?.__dictionary || {};
                         if (ownerId) {
-                          prefetchUnitIcons(activeDataDir, names.map((n) => [ownerId, n, dictMap[n]]), () => setIconCacheVersion((v) => v + 1));
+                          prefetchUnitIcons(activeDataDir, names.map((n) => [ownerId, n, dictMap[n]]), bumpIconCacheVersionCoalesced);
                         }
                         return [...byUnit.values()].map(e => ({
                           unit: e.unit,
@@ -18754,7 +18872,7 @@ function App() {
                         if (result.length === 0) return null;
                         if (ownerId) {
                           const dictMap = unitOwnership?.__dictionary || {};
-                          prefetchUnitIcons(activeDataDir, result.map((n) => [ownerId, n, dictMap[n]]), () => setIconCacheVersion((v) => v + 1));
+                          prefetchUnitIcons(activeDataDir, result.map((n) => [ownerId, n, dictMap[n]]), bumpIconCacheVersionCoalesced);
                         }
                         // Sort: currently-available first, then upgrade-only.
                         result.sort((a, b) => {
@@ -18801,50 +18919,9 @@ function App() {
                           upgradeHint: !availableSet.has(name) ? computeUpgradeHint(name) : null,
                         }));
                       })()}
-                      recruitableAll={(() => {
-                        // Dev army-edit pool: the army's FACTION roster — the
-                        // UNION of units currently recruitable across EVERY region
-                        // that faction owns (each region's real buildings +
-                        // resources + AOR tags), so you can add anything the
-                        // faction can train somewhere in its empire (e.g. an
-                        // elephant unit from a province that has the resource),
-                        // but NOT other factions' units. "Rome's full roster +
-                        // the AOR for every region it owns, nothing more."
-                        // Dev-mode only so non-dev renders pay nothing.
-                        if (!devMode || !buildingRecruits) return null;
-                        const r = lockedRegionInfo || regionInfo;
-                        if (!r) return null;
-                        const ownerId = (
-                          (currentOwnerByCity && currentOwnerByCity[r.city])
-                          || (initialOwnerByCity && initialOwnerByCity[r.city])
-                          || r.faction || ""
-                        ).toLowerCase();
-                        if (!ownerId) return null;
-                        const culture = factionCultures?.[ownerId] || null;
-                        const ownerOf = (reg) => (
-                          (currentOwnerByCity && currentOwnerByCity[reg.city])
-                          || (initialOwnerByCity && initialOwnerByCity[reg.city])
-                          || reg.faction || ""
-                        ).toLowerCase();
-                        const union = new Set();
-                        for (const reg of Object.values(regions || {})) {
-                          if (ownerOf(reg) !== ownerId) continue;
-                          for (const name of availableRecruitsForRegion(reg, ownerId, culture)) union.add(name);
-                        }
-                        const names = [...union].sort((a, b) => a.localeCompare(b));
-                        if (names.length === 0) return null;
-                        const dictMap = unitOwnership?.__dictionary || {};
-                        prefetchUnitIcons(activeDataDir, names.map((n) => [ownerId, n, dictMap[n]]), () => setIconCacheVersion((v) => v + 1));
-                        return names.map((name) => ({
-                          unit: name,
-                          faction: ownerId,
-                          icon: getCachedUnitIcon(activeDataDir, ownerId, name),
-                          gatedBy: [],
-                          hrGates: [],
-                          available: true,
-                          upgradeHint: null,
-                        }));
-                      })()}
+                      recruitableAll={recruitableAllMemo /* hoisted to a useMemo
+                        (2026-07-16 freeze fix) — the empire-wide recruit union
+                        used to recompute inline on every App render */}
                       fieldArmies={(() => {
                         // Live mode: use commander coords (extracted from
                         // the save's world-object records) to classify each
@@ -19097,7 +19174,7 @@ function App() {
                               const bg2 = u2.commanderUuid ? 0 : 1;
                               return bg1 - bg2;
                             });
-                            prefetchUnitIcons(activeDataDir, sortedUnits.map((u) => [e.faction, u.name, dictMap[u.name]]), () => setIconCacheVersion((v) => v + 1));
+                            prefetchUnitIcons(activeDataDir, sortedUnits.map((u) => [e.faction, u.name, dictMap[u.name]]), bumpIconCacheVersionCoalesced);
                             // 0.9.651: surface (x, y) for the field-army edit
                             // selector / pendingArmyUnits keying. _pos came from
                             // cmdPos and survived mergeByTile; split it back
@@ -19157,7 +19234,7 @@ function App() {
                             // ADDED via the recruitable panel that the original
                             // buildEntry prefetch never saw — so edited armies don't
                             // show blank cards (0.9.881). Same dictMap as buildEntry.
-                            prefetchUnitIcons(activeDataDir, (pending.units || []).map((u) => [army.faction, u.unit, dictMap[u.unit]]), () => setIconCacheVersion((v) => v + 1));
+                            prefetchUnitIcons(activeDataDir, (pending.units || []).map((u) => [army.faction, u.unit, dictMap[u.unit]]), bumpIconCacheVersionCoalesced);
                             return {
                               ...army,
                               units: (pending.units || []).map((u) => ({
@@ -19203,7 +19280,7 @@ function App() {
                           const fac = (a.faction || "").toLowerCase();
                           for (const u of a.units || []) if (fac) triples.push([fac, u.name, dictMap[u.name]]);
                         }
-                        if (triples.length) prefetchUnitIcons(activeDataDir, triples, () => setIconCacheVersion((v) => v + 1));
+                        if (triples.length) prefetchUnitIcons(activeDataDir, triples, bumpIconCacheVersionCoalesced);
                         const own = [];
                         const others = [];
                         for (const a of armies) {
@@ -19256,7 +19333,7 @@ function App() {
                           // Prefetch icons for the STAGED units — including ones ADDED
                           // via the recruitable panel the original prefetch never saw —
                           // so edited armies don't show blank cards (0.9.881).
-                          prefetchUnitIcons(activeDataDir, (pending.units || []).map((u) => [army.faction, u.unit, dictMap[u.unit]]), () => setIconCacheVersion((v) => v + 1));
+                          prefetchUnitIcons(activeDataDir, (pending.units || []).map((u) => [army.faction, u.unit, dictMap[u.unit]]), bumpIconCacheVersionCoalesced);
                           return {
                             ...army,
                             units: (pending.units || []).map((u) => ({

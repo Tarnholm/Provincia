@@ -30,5 +30,23 @@ import "./App.css";
   });
 })();
 
+// Main-thread stall detector (2026-07-16 dev-button hunt). Logs every long
+// task >= 300ms with its attribution so "the UI ate my click" moments are
+// visible in provincia.log with a duration. A *permanently* hung thread never
+// reports here (the task must end to be observed) — that case is covered by
+// main.js's watchdogs + pre-armed CDP stack capture. Registered after the
+// console patch above so the lines reach the log file.
+try {
+  const po = new PerformanceObserver((list) => {
+    for (const e of list.getEntries()) {
+      if (e.duration < 300) continue;
+      const attr = e.attribution?.[0];
+      const src = attr ? `${attr.containerType || ""} ${attr.containerName || attr.containerSrc || ""}`.trim() : "";
+      console.warn(`[main-thread-stall] ${Math.round(e.duration)}ms long task at t+${Math.round(e.startTime)}ms${src ? ` (${src})` : ""}`);
+    }
+  });
+  po.observe({ entryTypes: ["longtask"] });
+} catch {}
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(<App />);

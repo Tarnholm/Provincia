@@ -8,6 +8,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1270",
+    date: "2026-07-16",
+    items: [
+      { type: "fix", text: "**Fixed the renderer freeze — the real cause of \"clicking the Dev button does nothing\".** The app wasn't ignoring your click: the whole window had silently frozen moments earlier, usually right after selecting a region. Root cause: whenever a region's panel showed unit cards that weren't cached yet, every single icon that finished loading triggered a full re-draw of the entire app — and with Dev mode on, each of those re-draws also recomputed the faction's complete empire-wide recruitment roster from scratch (seconds of work per pass on a large RIS faction). Hundreds of icon loads × seconds per re-draw = the window never got a chance to breathe again. Now all icon arrivals within 150ms coalesce into ONE re-draw, and the empire-wide roster is cached and only recomputed when something it depends on actually changes. Verified by replaying the exact freeze scenario (rapid region-hopping through Seleucid/Eastern provinces, Dev mode on): previously froze within ~10 selections, now survives 70+ with the UI responsive throughout." },
+      { type: "improvement", text: "**Better freeze forensics** (in case anything like this ever comes back): hang stack traces now name the exact source file (they were unresolvable before), are sampled 3× per hang episode so a tight loop is distinguishable from a slow task, and the renderer logs every main-thread stall over 300ms plus a step-by-step trace of the Dev-button toggle to provincia.log." },
+    ],
+  },
+  {
     version: "0.9.1269",
     date: "2026-07-16",
     items: [

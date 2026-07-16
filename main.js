@@ -1754,12 +1754,21 @@ function createWindow() {
       _logLine(`[renderer-hang-stack] pre-arm failed: ${e && e.message}`);
     }
   }
+  // scriptId → url map so logged frames name their bundle file (callFrames
+  // carry no url of their own — the 2026-07-16 hang hunt burned time on
+  // "fn@?:line:col" frames that couldn't be sourcemap-resolved to a chunk).
+  const _dbgScripts = new Map();
   _dbg.on("message", (_e, method, params) => {
+    if (method === "Debugger.scriptParsed") {
+      if (params && params.scriptId) _dbgScripts.set(params.scriptId, (params.url || "").split("/").pop() || "(inline)");
+      return;
+    }
     if (method !== "Debugger.paused") return;
     const frames = (params && params.callFrames) || [];
     const s = frames.slice(0, 15).map((f) => {
       const loc = f.location || {};
-      return `${f.functionName || "(anon)"}@${(f.url || "?").split("/").pop()}:${loc.lineNumber}:${loc.columnNumber}`;
+      const file = _dbgScripts.get(loc.scriptId) || (f.url || "?").split("/").pop() || "?";
+      return `${f.functionName || "(anon)"}@${file}:${loc.lineNumber}:${loc.columnNumber}`;
     }).join(" <- ");
     _logLine(`[renderer-hang-stack] ${s || "(empty stack)"}`);
     _dbg.sendCommand("Debugger.resume").catch(() => {});
@@ -1775,13 +1784,22 @@ function createWindow() {
   function _captureHangStack() {
     if (_stackCaptured) return; // once per hang episode
     _stackCaptured = true;
-    try {
-      if (!_dbg.isAttached()) { _logLine("[renderer-hang-stack] debugger not attached — no stack available"); return; }
-      // The paused event handler above logs the stack and resumes.
-      _dbg.sendCommand("Debugger.pause").catch((e) => _logLine(`[renderer-hang-stack] pause failed: ${e && e.message}`));
-    } catch (e) {
-      _logLine(`[renderer-hang-stack] capture failed: ${e && e.message}`);
-    }
+    // Three samples 2s apart: identical leaf frames = a tight loop; moving
+    // frames = a long-but-progressing task. One sample can't tell them apart.
+    let n = 0;
+    const sampleOnce = () => {
+      try {
+        if (!_dbg.isAttached()) { _logLine("[renderer-hang-stack] debugger not attached — no stack available"); return; }
+        // The paused event handler above logs the stack and resumes.
+        _dbg.sendCommand("Debugger.pause").catch((e) => _logLine(`[renderer-hang-stack] pause failed: ${e && e.message}`));
+      } catch (e) {
+        _logLine(`[renderer-hang-stack] capture failed: ${e && e.message}`);
+        return;
+      }
+      n += 1;
+      if (n < 3) setTimeout(sampleOnce, 2000);
+    };
+    sampleOnce();
   }
   let _pingMisses = 0;
   let _pingBusy = false;
