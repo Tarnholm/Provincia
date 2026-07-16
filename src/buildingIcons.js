@@ -21,6 +21,27 @@ const inflight = new Map(); // `${culture}|${level}` → Promise
 // touches the Blob or other keys' URLs, so icon-replace stays correct).
 const pathToBlob = new Map(); // resolvedPath → Blob | "none"
 
+// ── Persistent-cache write-back queue (2026-07-16) ─────────────────────────
+// Freshly decoded PNGs ship to the main process (icon-cache-put-bulk) so the
+// NEXT launch serves them from <userData>/icon-png-cache without any decode.
+// Shared by buildingIcons + unitIcons (imported there). Batched to keep IPC
+// chatter low.
+let _cachePutQueue = [];
+let _cachePutTimer = null;
+export function queueCachePut(srcPath, pngArrayBuffer) {
+  if (!srcPath || !pngArrayBuffer) return;
+  _cachePutQueue.push({ path: srcPath, png: pngArrayBuffer });
+  if (_cachePutQueue.length >= 64) flushCachePuts();
+  else if (!_cachePutTimer) _cachePutTimer = setTimeout(flushCachePuts, 1500);
+}
+export function flushCachePuts() {
+  if (_cachePutTimer) { clearTimeout(_cachePutTimer); _cachePutTimer = null; }
+  if (_cachePutQueue.length === 0) return;
+  const batch = _cachePutQueue;
+  _cachePutQueue = [];
+  try { window.electronAPI?.iconCachePutBulk?.(batch); } catch {}
+}
+
 // ── Worker pool for off-main-thread icon decode (2026-07-15) ──────────────
 // Each worker does the FULL TGA→PNG pipeline (decode + OffscreenCanvas encode)
 // off the main thread, so N icons decode in PARALLEL across cores during the
@@ -233,15 +254,21 @@ export async function prefetchBuildingIconsBulk(modDataDir, triples, onEach) {
   // that resolves to it its own object URL — so the identical roman-fallback
   // art isn't decoded/encoded 20× across cultures. Returns the shared Blob (or
   // "none") for a path, decoding on first sight.
-  const decodePath = async (srcPath, buffer) => {
+  const decodePath = async (srcPath, buffer, cachedPng) => {
     if (srcPath && pathToBlob.has(srcPath)) return pathToBlob.get(srcPath);
     let out = "none";
     try {
+      if (cachedPng) {
+        // Persistent-cache hit — already PNG bytes, no decode at all.
+        out = new Blob([cachedPng], { type: "image/png" });
+        if (srcPath) pathToBlob.set(srcPath, out);
+        return out;
+      }
       const workerP = decodePngInWorker(buffer); // null if no pool → main-thread path
       if (workerP) {
         // OFF-THREAD: worker decodes TGA + encodes PNG in parallel with others.
         const png = await Promise.race([workerP, new Promise((r2) => setTimeout(() => r2(undefined), 4000))]);
-        if (png) out = new Blob([png], { type: "image/png" });
+        if (png) { out = new Blob([png], { type: "image/png" }); queueCachePut(srcPath, png); }
         // png === null (worker decode failed) or undefined (timeout) → "none"
       } else {
         // MAIN-THREAD fallback (no OffscreenCanvas/Worker support).
@@ -262,14 +289,14 @@ export async function prefetchBuildingIconsBulk(modDataDir, triples, onEach) {
 
   // Group req items by resolved path so each unique file decodes once even
   // within this batch.
-  const byPath = new Map(); // path → { buffer, items: [req] }
+  const byPath = new Map(); // path → { buffer, png, items: [req] }
   const noArt = [];
   for (let i = 0; i < req.length; i++) {
     const item = res && res[i];
     const r = req[i];
-    if (item && item.buffer && item.path) {
+    if (item && (item.buffer || item.png) && item.path) {
       let g = byPath.get(item.path);
-      if (!g) { g = { buffer: item.buffer, items: [] }; byPath.set(item.path, g); }
+      if (!g) { g = { buffer: item.buffer || null, png: item.png || null, items: [] }; byPath.set(item.path, g); }
       g.items.push(r);
     } else {
       noArt.push(r);
@@ -277,7 +304,7 @@ export async function prefetchBuildingIconsBulk(modDataDir, triples, onEach) {
   }
 
   await Promise.all([...byPath.entries()].map(async ([srcPath, g]) => {
-    const blob = await decodePath(srcPath, g.buffer);
+    const blob = await decodePath(srcPath, g.buffer, g.png);
     for (const r of g.items) {
       const url = blob === "none" ? "none" : URL.createObjectURL(blob);
       cache.set(r.key, url);

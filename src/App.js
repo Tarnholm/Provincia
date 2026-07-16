@@ -7931,7 +7931,7 @@ function App() {
     // buildingRecruits/resourcesData arrive later than the armies data; keying
     // them into warmKey re-runs the pass when they land (already-warmed pairs
     // dedupe to no-ops inside prefetchUnitIconsBulk).
-    const warmKey = `${activeDataDir || ""}|${mapCampaign}|r${regionKeys.length}|br${buildingRecruits ? Object.keys(buildingRecruits).length : 0}|rs${resourcesData ? 1 : 0}`;
+    const warmKey = `${activeDataDir || ""}|${mapCampaign}|r${regionKeys.length}|br${buildingRecruits ? Object.keys(buildingRecruits).length : 0}|rs${resourcesData ? 1 : 0}|a${(armiesToRender || []).length}`;
     if (unitWarmupKeyRef.current === warmKey) return;
     unitWarmupKeyRef.current = warmKey;
 
@@ -7963,6 +7963,15 @@ function App() {
           addTo(armyTriples, fac, u.name);
           if (owner && owner !== fac) addTo(armyTriples, owner, u.name);
         }
+      }
+    }
+    // Navies too (2026-07-16, "boats flash"): fleets sit on SEA tiles, so they
+    // never land in the per-region army buckets above — pull every rendered
+    // army marker's units (covers navies and anything else off-region).
+    for (const a of (armiesToRender || [])) {
+      const fac = (a.faction || "").toLowerCase();
+      for (const u of (a.units || [])) {
+        addTo(armyTriples, fac, u.name || u.unit);
       }
     }
     // Recruit-tab warm-up: icons are keyed only by (faction, unit) — a
@@ -8096,7 +8105,7 @@ function App() {
     })();
     return undefined; // no cancel-on-rerun: warmKey ref guards, like icon-warmup
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offscreen, coloredOffscreen, colorMode, regions, startingArmiesByRegion, unitOwnership, factionCultures, buildingRecruits, resourcesData, currentOwnerByCity, initialOwnerByCity, activeDataDir, mapCampaign]);
+  }, [offscreen, coloredOffscreen, colorMode, regions, startingArmiesByRegion, armiesToRender, unitOwnership, factionCultures, buildingRecruits, resourcesData, currentOwnerByCity, initialOwnerByCity, activeDataDir, mapCampaign]);
 
   // Live-mode follow-up: when a save's units land (saveUnitsByRegion), warm any
   // cards the boot pass didn't cover — same keys the live panels use (region

@@ -7,6 +7,14 @@
 const fs = require("fs");
 const path = require("path");
 const { hashName } = require("./mainUtils.js");
+const { pngCacheGet } = require("./iconPngCache.js");
+// Serve the persistent PNG cache when it has this exact file (mtime-checked):
+// the renderer then skips the DDS/TGA decode entirely (2026-07-16).
+function cachedPngResponse(filePath) {
+  const png = pngCacheGet(filePath);
+  if (!png) return null;
+  return { ok: true, png: png.buffer.slice(png.byteOffset, png.byteOffset + png.byteLength), path: filePath };
+}
 
 function registerPortraitHandlers(ipcMain, { getVanillaDataDir, loadPortraitMapping, resolvePortraitPool }) {
 ipcMain.handle("resolve-trait-icon", async (_event, modDataDir, culture, levelName) => {
@@ -120,6 +128,8 @@ ipcMain.handle("resolve-portrait", async (_event, modDataDir, culture, slot, cha
     for (const candidate of candidates) {
       try {
         if (fs.existsSync(candidate)) {
+          const cached = cachedPngResponse(candidate);
+          if (cached) return cached;
           const buffer = fs.readFileSync(candidate);
           return {
             ok: true,
@@ -219,11 +229,14 @@ ipcMain.handle("resolve-portrait", async (_event, modDataDir, culture, slot, cha
       const isVanilla = pool.dir.includes("Total War ROME REMASTERED");
       console.log(`[portrait] hash-pool pick name="${charContext.name}" lastName="${charContext.lastName || ""}" faction="${charContext.faction || ""}" culture=${tc} (requested=${c}) bucket=${ageBucket} ageRaw=${charContext.age} source=${isVanilla ? "VANILLA" : "MOD"} layout=${pool.ext === ".tga.dds" && pool.dir.endsWith("generals") ? "A/generals-dds" : pool.ext === ".tga.dds" ? "B/bucket-dds" : "B/bucket-tga"} → idx=${idx}/${files.length} file=${file} dir="${pool.dir}"`);
       try {
-        const buf = fs.readFileSync(path.join(pool.dir, file));
+        const full = path.join(pool.dir, file);
+        const cached = cachedPngResponse(full);
+        if (cached) return cached;
+        const buf = fs.readFileSync(full);
         return {
           ok: true,
           buffer: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
-          path: path.join(pool.dir, file),
+          path: full,
           encoded: pool.ext === ".tga.dds" ? "rtw-tga-dds" : null,
         };
       } catch {}
@@ -246,6 +259,8 @@ ipcMain.handle("resolve-portrait", async (_event, modDataDir, culture, slot, cha
   for (const candidate of candidates) {
     try {
       if (fs.existsSync(candidate)) {
+        const cached = cachedPngResponse(candidate);
+        if (cached) return cached;
         const buffer = fs.readFileSync(candidate);
         return { ok: true, buffer: buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), path: candidate };
       }

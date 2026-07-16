@@ -5,6 +5,13 @@
 // greppable in the working tree. Full authoritative history is in git.
 const CHANGELOG_ARCHIVE = [
   {
+    version: "0.9.1278",
+    date: "2026-07-16",
+    items: [
+      { type: "fix", text: "**Fixed the very slow launch 0.9.1277 introduced.** Three compounding causes, all measured in the logs: the new recruit-card warm-up held the splash for its entire run (105 seconds for 8,200 cards); each card lookup could fall into a full directory scan in the main process; and the background icon pass redrew the whole app every 120ms, causing seconds-long stalls after the map appeared. Now: card files are indexed once at startup (lookups are instant), the splash waits only for the on-map army cards like 0.9.1276 did, the recruit warm-up runs quietly in the background after the map appears, and background passes no longer force app redraws. Launch should be back to 0.9.1276 speed — with the recruit tab still fully drawn within a few seconds of the map appearing." },
+    ],
+  },
+  {
     version: "0.9.1277",
     date: "2026-07-16",
     items: [

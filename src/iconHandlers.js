@@ -12,8 +12,10 @@ const fs = require("fs");
 const path = require("path");
 const { encodeTga32BGRA } = require("./tgaCodec.js");
 const pathSafety = require("./pathSafety.js");
+const { pngCacheGet, registerPngCacheIpc } = require("./iconPngCache.js");
 
 function registerIconHandlers(ipcMain, { _unitOwnershipCache, _unitStatsCache, _unitUpkeepMapCache, _buildingRecruitsCache, _buildingDisplayCache, _iconDirCache, _uiBuildingsCache, getEdbSourceFiles, findRelatedModDirs, getIconSearchRoots, nativeImage, getActiveModDataDir }) {
+registerPngCacheIpc(ipcMain);
 ipcMain.handle("get-unit-ownership", async (_event, modDataDir) => {
   const cacheKey = modDataDir || "";
   if (_unitOwnershipCache.has(cacheKey)) return _unitOwnershipCache.get(cacheKey);
@@ -709,7 +711,13 @@ ipcMain.handle("resolve-building-icons-bulk", async (_event, modDataDir, list) =
     const it = list[i];
     if (!it || !it.culture || !it.level) { out[i] = null; continue; }
     const r = resolveBuildingIconCore(modDataDir, it.culture, it.level, it.chain || null);
-    out[i] = { culture: it.culture, level: it.level, buffer: r ? r.buffer : null, path: r ? r.path : null };
+    if (!r) { out[i] = { culture: it.culture, level: it.level, buffer: null, path: null }; continue; }
+    // Persistent PNG cache (2026-07-16): serve the pre-decoded PNG when we
+    // have it — renderer skips the TGA decode entirely.
+    const png = pngCacheGet(r.path);
+    out[i] = png
+      ? { culture: it.culture, level: it.level, png: png.buffer.slice(png.byteOffset, png.byteOffset + png.byteLength), path: r.path }
+      : { culture: it.culture, level: it.level, buffer: r.buffer, path: r.path };
   }
   return out;
 });
@@ -1174,8 +1182,10 @@ function readUnitCardFile(full) {
 }
 // Index-backed resolve — same candidate priority as resolveUnitCardSync's
 // direct path (filename-major over the per-faction dir list), and the same
-// dir-major order for the brute-force fallback.
-function resolveUnitCardIndexed(roots, faction, unitName, dictionary) {
+// dir-major order for the brute-force fallback. Returns the resolved PATH
+// only (2026-07-16 cache rework) — reading/decoding is decided by the bulk
+// handler, which serves cached PNG bytes when available.
+function resolveUnitCardPathIndexed(roots, faction, unitName, dictionary) {
   if (!faction || !unitName) return null;
   const f = String(faction).toLowerCase().replace(/\s+/g, "_");
   const scrub = (s) => String(s).toLowerCase().replace(/['"`]/g, "").replace(/\s+/g, "_");
@@ -1206,31 +1216,53 @@ function resolveUnitCardIndexed(roots, faction, unitName, dictionary) {
     for (const dk of dirKeys) {
       const m = _cardDirIndex.get(dk);
       const full = m && m.get(fn);
-      if (full) return readUnitCardFile(full);
+      if (full) return full;
     }
   }
   for (const dk of _cardDirOrder) {
     const m = _cardDirIndex.get(dk);
     for (const fn of filenames) {
       const full = m.get(fn);
-      if (full) return readUnitCardFile(full);
+      if (full) return full;
     }
   }
   return null;
 }
 
-// Bulk variant (2026-07-16, splash unit-card warm-up): resolve a whole batch
-// in ONE IPC round-trip — the per-icon hop was the bottleneck when warming
-// every on-map army's unit cards behind the splash (same reasoning as
-// resolve-building-icons-bulk). items: [{ faction, unit, dictionary? }].
-// Returns an array aligned with items ({ buffer, path } | null each).
+// Bulk variant (2026-07-16, splash unit-card warm-up; v2 same day): resolve a
+// whole batch in ONE IPC round-trip. v2 response dedupes payloads — with the
+// "all"-ownership × owners warm the SAME file resolved under 100k keys and
+// v1 cloned its buffer per item (GBs of IPC). Shape:
+//   { items: (fileIndex|null)[], files: [{ path, png? , buffer? }] }
+// `png` is served from the persistent icon-png-cache (no renderer decode);
+// `buffer` is the raw TGA for files not cached yet.
 ipcMain.handle("resolve-unit-cards-bulk", async (_event, modDataDir, items) => {
-  if (!Array.isArray(items)) return [];
+  if (!Array.isArray(items)) return { items: [], files: [] };
   const roots = ensureUnitCardIndex(modDataDir);
-  return items.map((it) =>
-    it && it.faction && it.unit
-      ? resolveUnitCardIndexed(roots, it.faction, it.unit, it.dictionary || null)
-      : null);
+  const fileIdxByPath = new Map();
+  const files = [];
+  const out = new Array(items.length);
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    const p = it && it.faction && it.unit
+      ? resolveUnitCardPathIndexed(roots, it.faction, it.unit, it.dictionary || null)
+      : null;
+    if (!p) { out[i] = null; continue; }
+    let ix = fileIdxByPath.get(p);
+    if (ix == null) {
+      ix = files.length;
+      fileIdxByPath.set(p, ix);
+      const png = pngCacheGet(p);
+      if (png) {
+        files.push({ path: p, png: png.buffer.slice(png.byteOffset, png.byteOffset + png.byteLength) });
+      } else {
+        const r = readUnitCardFile(p);
+        files.push(r ? { path: p, buffer: r.buffer } : { path: p });
+      }
+    }
+    out[i] = ix;
+  }
+  return { items: out, files };
 });
 
 

@@ -16,6 +16,7 @@
 
 import TGA from "./tga.js";
 import { decodeRtwPortraitBytes } from "./portraitDecoder.js";
+import { queueCachePut } from "./buildingIcons.js";
 
 const cache = new Map();    // cacheKey -> blobUrl | "none"
 const inflight = new Map(); // cacheKey -> Promise
@@ -34,7 +35,7 @@ function makeKey(culture, slot, charContext) {
   return base;
 }
 
-async function pixelsToBlobUrl({ width, height, pixels }) {
+async function pixelsToBlobUrl({ width, height, pixels }, cachePath) {
   const rowMajor = new Uint8ClampedArray(pixels);
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -44,7 +45,14 @@ async function pixelsToBlobUrl({ width, height, pixels }) {
   img.data.set(rowMajor);
   ctx.putImageData(img, 0, 0);
   return new Promise((resolve) => {
-    canvas.toBlob((b) => resolve(b ? URL.createObjectURL(b) : null), "image/png");
+    canvas.toBlob((b) => {
+      if (b && cachePath) {
+        // Persist the freshly decoded PNG so the next launch skips the
+        // DDS/TGA decode for this portrait entirely (2026-07-16).
+        b.arrayBuffer().then((ab) => queueCachePut(cachePath, ab)).catch(() => {});
+      }
+      resolve(b ? URL.createObjectURL(b) : null);
+    }, "image/png");
   });
 }
 
@@ -61,9 +69,15 @@ export function loadPortrait(modDataDir, culture, slot, charContext) {
   const p = (async () => {
     try {
       const res = await api.resolvePortrait(modDataDir, culture, slot, charContext || null);
-      if (!res || !res.ok || !res.buffer) {
+      if (!res || !res.ok || (!res.buffer && !res.png)) {
         cache.set(key, "none");
         return null;
+      }
+      // Persistent-cache hit: pre-decoded PNG bytes — no DDS/TGA decode.
+      if (res.png) {
+        const url = URL.createObjectURL(new Blob([res.png], { type: "image/png" }));
+        cache.set(key, url || "none");
+        return url || null;
       }
       let width, height, pixels;
       if (res.encoded === "rtw-tga-dds") {
@@ -93,7 +107,7 @@ export function loadPortrait(modDataDir, culture, slot, charContext) {
         height = tga.height;
         pixels = tga.pixels;
       }
-      const url = await pixelsToBlobUrl({ width, height, pixels });
+      const url = await pixelsToBlobUrl({ width, height, pixels }, res.path || null);
       cache.set(key, url || "none");
       return url || null;
     } catch {

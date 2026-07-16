@@ -8,16 +8,18 @@
 "use strict";
 
 import TGA from "./tga.js";
-import { decodePngInWorker } from "./buildingIcons.js";
+import { decodePngInWorker, queueCachePut, flushCachePuts } from "./buildingIcons.js";
 
 const cache = new Map();
 const inflight = new Map();
 // Decode each unique source FILE once, ever (2026-07-16): the recruit warm-up
 // requests the same unit's card under dozens of faction keys ("all"-ownership
-// units × every map owner), and each key resolves to the same TGA. Keys get
-// their own object URL, but the underlying Blob is shared — mirrors
-// buildingIcons' pathToBlob.
+// units × every map owner), and each key resolves to the same TGA. Keys SHARE
+// one object URL per file (pathToUrl) — 100k keys cost 100k Map entries, not
+// 100k decodes or 100k URLs.
 const pathToBlob = new Map(); // resolved path → Blob | "none"
+const pathToUrl = new Map();  // resolved path → object URL | "none"
+// (cache write-back queue lives in buildingIcons.js — shared via import)
 
 function pixelsToBlob({ width, height, pixels }) {
   const rowMajor = new Uint8ClampedArray(pixels);
@@ -125,57 +127,57 @@ export async function prefetchUnitIconsBulk(modDataDir, triples) {
   } catch {
     res = null;
   }
-  // Decode each unique source file once (aliased factions share card files),
-  // then give every key its own object URL.
-  const byPath = new Map(); // path → { buffer, items }
-  const noArt = [];
-  for (let i = 0; i < req.length; i++) {
-    const item = res && res[i];
-    const r = req[i];
-    if (item && item.buffer && item.path) {
-      let g = byPath.get(item.path);
-      if (!g) { g = { buffer: item.buffer, items: [] }; byPath.set(item.path, g); }
-      g.items.push(r);
-    } else {
-      noArt.push(r);
+  // v2 response: { items: (fileIndex|null)[], files: [{path, png?|buffer?}] }
+  // — each unique file's bytes arrive ONCE per chunk; png means the
+  // persistent cache already had it (no decode needed).
+  const files = (res && Array.isArray(res.files)) ? res.files : [];
+  const itemIdx = (res && Array.isArray(res.items)) ? res.items : [];
+  // One shared object URL per file path, ever.
+  const urlForFile = async (f) => {
+    if (!f || !f.path) return null;
+    if (pathToUrl.has(f.path)) {
+      const u = pathToUrl.get(f.path);
+      return u === "none" ? null : u;
     }
-  }
-  const decodeOne = async (srcPath, buffer) => {
-    // Global per-file dedupe: the same card art warms under many faction keys
-    // (the "all"-ownership × owners product) — decode it once, ever.
-    if (srcPath && pathToBlob.has(srcPath)) return pathToBlob.get(srcPath);
-    let out = "none";
-    try {
-      const workerP = decodePngInWorker(buffer);
-      if (workerP) {
-        const png = await Promise.race([workerP, new Promise((r2) => setTimeout(() => r2(undefined), 4000))]);
-        if (png) out = new Blob([png], { type: "image/png" });
-      } else {
-        // Main-thread fallback (no Worker/OffscreenCanvas support).
-        let tga = null;
-        try { tga = new TGA(new Uint8Array(buffer)); } catch { tga = null; }
-        if (tga && tga.width && tga.height && tga.pixels) {
-          const blob = await pixelsToBlob({ width: tga.width, height: tga.height, pixels: tga.pixels });
-          if (blob) out = blob;
-        }
+    let blob = pathToBlob.get(f.path) || null;
+    if (!blob) {
+      if (f.png) {
+        blob = new Blob([f.png], { type: "image/png" });
+      } else if (f.buffer) {
+        try {
+          const workerP = decodePngInWorker(f.buffer);
+          if (workerP) {
+            const png = await Promise.race([workerP, new Promise((r2) => setTimeout(() => r2(undefined), 4000))]);
+            if (png) {
+              blob = new Blob([png], { type: "image/png" });
+              queueCachePut(f.path, png); // persist for the next launch
+            }
+          } else {
+            let tga = null;
+            try { tga = new TGA(new Uint8Array(f.buffer)); } catch { tga = null; }
+            if (tga && tga.width && tga.height && tga.pixels) {
+              blob = await pixelsToBlob({ width: tga.width, height: tga.height, pixels: tga.pixels });
+              if (blob) blob.arrayBuffer().then((ab) => queueCachePut(f.path, ab)).catch(() => {});
+            }
+          }
+        } catch { blob = null; }
       }
-    } catch { out = "none"; }
-    if (srcPath) pathToBlob.set(srcPath, out);
-    return out;
-  };
-  await Promise.all([...byPath.entries()].map(async ([srcPath, g]) => {
-    const blob = await decodeOne(srcPath, g.buffer);
-    for (const r of g.items) {
-      const url = blob === "none" || !blob ? null : URL.createObjectURL(blob);
-      cache.set(r.key, url || "none");
-      inflight.delete(r.key);
-      r._resolve(url);
+      pathToBlob.set(f.path, blob || "none");
     }
-  }));
-  for (const r of noArt) {
-    cache.set(r.key, "none");
+    if (blob === "none" || !blob) { pathToUrl.set(f.path, "none"); return null; }
+    const url = URL.createObjectURL(blob);
+    pathToUrl.set(f.path, url);
+    return url;
+  };
+  const urls = await Promise.all(files.map(urlForFile));
+  for (let i = 0; i < req.length; i++) {
+    const r = req[i];
+    const ix = itemIdx[i];
+    const url = (ix != null && ix >= 0) ? urls[ix] : null;
+    cache.set(r.key, url || "none");
     inflight.delete(r.key);
-    r._resolve(null);
+    r._resolve(url);
   }
+  flushCachePuts();
   return req.length;
 }
