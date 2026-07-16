@@ -7881,12 +7881,16 @@ function App() {
       setPriorityIconsWarm(true);
       setIconCacheVersion((v) => v + 1); // single refresh at the reveal
       // Post-reveal the UI is live: smaller chunks + a gap per chunk keep the
-      // background pass from crowding out interaction, and refreshEach lets any
-      // late-loading icon appear as soon as its chunk lands (coalesced 120ms).
-      await runBatches(rest, 96, 50, true, "rest");
+      // background pass from crowding out interaction. NO per-chunk version
+      // bumps (2026-07-16 launch-perf fix): each bump is a full App re-render,
+      // and bumping every chunk produced the 1.5–5s main-thread stall train in
+      // 0.9.1277's logs. Panels that need a just-warmed icon bump the
+      // coalesced version themselves; one bump at the end covers the rest.
+      await runBatches(rest, 96, 50, false, "rest");
       if (run.cancelled) return;
       const dt = ((performance && performance.now) ? performance.now() : Date.now()) - t0;
       console.log(`[icon-warmup] ALL warmed ${priority.length + rest.length} (${dt.toFixed(0)}ms) — full catalog cached`);
+      scheduleRefresh(); // single end-of-catalog refresh
     })();
     // NO cancelling cleanup: the warm-up intentionally outlives effect re-runs
     // (see the run/warmupRunRef note above). It is superseded only when a new
@@ -7937,13 +7941,14 @@ function App() {
       if (owner) ownerByRegion[rd.region] = owner;
     }
     const seen = new Set();
-    const triples = [];
-    const add = (fac, unit) => {
+    const armyTriples = [];
+    const recruitTriples = [];
+    const addTo = (list, fac, unit) => {
       if (!fac || !unit) return;
       const k = `${fac}|${unit}`;
       if (seen.has(k)) return;
       seen.add(k);
-      triples.push([fac, unit, dictMap[unit]]);
+      list.push([fac, unit, dictMap[unit]]);
     };
     for (const regionKey of regionKeys) {
       const regData = startingArmiesByRegion[regionKey];
@@ -7951,22 +7956,20 @@ function App() {
       for (const army of [...(regData?.garrison || []), ...(regData?.field || [])]) {
         const fac = (army.faction || "").toLowerCase();
         for (const u of (army.units || [])) {
-          add(fac, u.name);
-          if (owner && owner !== fac) add(owner, u.name);
+          addTo(armyTriples, fac, u.name);
+          if (owner && owner !== fac) addTo(armyTriples, owner, u.name);
         }
       }
     }
-    // Recruit-tab warm-up (2026-07-16, user request: recruitable cards still
-    // popped in). Icons are keyed only by (faction, unit) — a settlement's
-    // exact recruit list doesn't change WHICH card file loads — so warming
-    // every unit each map-owner faction can EVER recruit (EDU ownership, one
-    // cheap pass) covers the Recruits tab for every settlement without the
-    // per-region EDB walk that froze 0.9.1270 (30s+ on real machines). Extra
-    // cards beyond any one settlement's list are harmless; shared art decodes
-    // once via the per-path dedupe.
-    // EDU ownership entries may name a faction, a CULTURE ("roman"), or "all"
-    // (see availableRecruitsForRegion's owners.includes checks) — cover all
-    // three, since the panel requests the key (ownerId, unit) in every case.
+    // Recruit-tab warm-up: icons are keyed only by (faction, unit) — a
+    // settlement's exact recruit list doesn't change WHICH card file loads —
+    // so warming every unit each map-owner faction can EVER recruit (EDU
+    // ownership, one cheap pass) covers the Recruits tab without the
+    // per-region EDB walk that froze 0.9.1270. Ownership entries may name a
+    // faction, a CULTURE ("roman"), or "all" — cover all three.
+    // 2026-07-16 launch-perf fix: this superset (8k+ cards on RIS) held the
+    // splash for 105s. It now warms AFTER the reveal at background pace; the
+    // splash waits only for the on-map army cards below.
     const owners = new Set(Object.values(ownerByRegion));
     const cultureOwners = new Map(); // culture → [owner factions of that culture]
     for (const o of owners) {
@@ -7979,38 +7982,54 @@ function App() {
       if (unit === "__dictionary" || !Array.isArray(facs)) continue;
       for (const f of facs) {
         const fl = String(f).toLowerCase();
-        if (fl === "all") { for (const o of owners) add(o, unit); continue; }
-        if (owners.has(fl)) add(fl, unit);
+        if (fl === "all") { for (const o of owners) addTo(recruitTriples, o, unit); continue; }
+        if (owners.has(fl)) addTo(recruitTriples, fl, unit);
         const co = cultureOwners.get(fl);
-        if (co) for (const o of co) add(o, unit);
+        if (co) for (const o of co) addTo(recruitTriples, o, unit);
       }
-      if (triples.length > RECRUIT_WARM_CAP) { capped = true; break; }
+      if (recruitTriples.length > RECRUIT_WARM_CAP) { capped = true; break; }
     }
     if (capped) console.log(`[unit-warmup] recruit superset hit the ${RECRUIT_WARM_CAP}-card cap — remainder lazy-loads as before`);
-    if (triples.length === 0) { setUnitIconsWarm(true); return; }
+    if (armyTriples.length === 0 && recruitTriples.length === 0) { setUnitIconsWarm(true); return; }
     const t0 = performance.now();
-    console.log(`[unit-warmup] START (during splash) cards=${triples.length} — holding splash until warm`);
+    console.log(`[unit-warmup] START army=${armyTriples.length} (holds splash) recruit=${recruitTriples.length} (background after reveal)`);
     let cancelled = false;
     (async () => {
-      // Same pipelined chunking as the building warm-up: chunk i+1's IPC is in
-      // flight while chunk i's decode pool drains. No iconCacheVersion bumps —
-      // nothing is visible behind the splash; one bump at the end.
       const CHUNK = 128; // sized for the widened decode pool (2026-07-16)
-      const chunks = [];
-      for (let i = 0; i < triples.length; i += CHUNK) chunks.push(triples.slice(i, i + CHUNK));
-      const fetchChunk = (c) => prefetchUnitIconsBulk(activeDataDir, c)
-        .catch((e) => { console.warn("[unit-warmup] chunk error:", e && e.message); });
-      let inFlight = chunks.length ? fetchChunk(chunks[0]) : null;
-      for (let i = 0; i < chunks.length && !cancelled; i++) {
-        const next = (i + 1 < chunks.length) ? fetchChunk(chunks[i + 1]) : null;
-        await inFlight;
-        await new Promise((r) => setTimeout(r, 0));
-        inFlight = next;
-      }
-      const dt = performance.now() - t0;
-      console.log(`[unit-warmup] warmed ${triples.length} unit cards (${dt.toFixed(0)}ms) — releasing`);
+      const runChunks = async (list, gapMs, label) => {
+        const chunks = [];
+        for (let i = 0; i < list.length; i += CHUNK) chunks.push(list.slice(i, i + CHUNK));
+        const fetchChunk = (c) => prefetchUnitIconsBulk(activeDataDir, c)
+          .catch((e) => { console.warn(`[unit-warmup] ${label} chunk error:`, e && e.message); });
+        let inFlight = chunks.length ? fetchChunk(chunks[0]) : null;
+        for (let i = 0; i < chunks.length && !cancelled; i++) {
+          const next = (!gapMs && i + 1 < chunks.length) ? fetchChunk(chunks[i + 1]) : null;
+          await inFlight;
+          if (gapMs) {
+            await new Promise((r) => setTimeout(r, gapMs));
+            inFlight = (i + 1 < chunks.length) ? fetchChunk(chunks[i + 1]) : null;
+          } else {
+            await new Promise((r) => setTimeout(r, 0));
+            inFlight = next;
+          }
+        }
+      };
+      // Splash pass: only what's visible on the map at reveal.
+      await runChunks(armyTriples, 0, "army");
+      const dtA = performance.now() - t0;
+      console.log(`[unit-warmup] army cards warmed ${armyTriples.length} (${dtA.toFixed(0)}ms) — releasing splash`);
       setUnitIconsWarm(true);
       setIconCacheVersion((v) => v + 1);
+      // Background pass: the recruit superset, gently paced. NO per-chunk
+      // version bumps — a bump is a full App re-render and a train of them
+      // was the post-reveal stall storm in 0.9.1277's logs; panels that need
+      // a just-warmed icon bump the coalesced version themselves.
+      if (recruitTriples.length && !cancelled) {
+        await runChunks(recruitTriples, 150, "recruit");
+        const dt = performance.now() - t0;
+        console.log(`[unit-warmup] recruit cards warmed ${recruitTriples.length} (${dt.toFixed(0)}ms total)`);
+        bumpIconCacheVersionCoalesced();
+      }
     })();
     return undefined; // no cancel-on-rerun: warmKey ref guards, like icon-warmup
     // eslint-disable-next-line react-hooks/exhaustive-deps

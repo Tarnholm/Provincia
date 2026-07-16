@@ -5,6 +5,14 @@
 // greppable in the working tree. Full authoritative history is in git.
 const CHANGELOG_ARCHIVE = [
   {
+    version: "0.9.1273",
+    date: "2026-07-16",
+    items: [
+      { type: "improvement", text: "**Faster startup: the mod database is now parsed once per launch instead of six times.** Boot-time telemetry showed the full mod parse (the 2MB campaign file, building tree, 4,600+ character names, traits) running six times at every startup — each run blocking the app — because the startup sequence re-requests it as things settle. The result is now cached and reused until a mod file actually changes on disk (editing the mod, or Manipula writing the building file, still reloads exactly as before)." },
+      { type: "improvement", text: "**The colored map overlay is also built once per launch instead of 4–6 times.** Each startup step used to queue another full overlay build without cancelling the previous one; now only the final, fully-settled version builds. Together these two changes cut several seconds of redundant work from every launch." },
+    ],
+  },
+  {
     version: "0.9.1272",
     date: "2026-07-16",
     items: [

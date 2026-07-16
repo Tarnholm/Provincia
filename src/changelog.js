@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1278",
+    date: "2026-07-16",
+    items: [
+      { type: "fix", text: "**Fixed the very slow launch 0.9.1277 introduced.** Three compounding causes, all measured in the logs: the new recruit-card warm-up held the splash for its entire run (105 seconds for 8,200 cards); each card lookup could fall into a full directory scan in the main process; and the background icon pass redrew the whole app every 120ms, causing seconds-long stalls after the map appeared. Now: card files are indexed once at startup (lookups are instant), the splash waits only for the on-map army cards like 0.9.1276 did, the recruit warm-up runs quietly in the background after the map appears, and background passes no longer force app redraws. Launch should be back to 0.9.1276 speed — with the recruit tab still fully drawn within a few seconds of the map appearing." },
+    ],
+  },
+  {
     version: "0.9.1277",
     date: "2026-07-16",
     items: [
@@ -49,14 +56,7 @@ const CHANGELOG = [
       { type: "improvement", text: "**The splash art now appears the instant the window opens.** It used to wait for the app's whole JavaScript bundle to load and start (1–2 seconds of blank window); the splash is now part of the page itself and paints ~0.3s into window load, before any code runs — then the app takes over seamlessly, pixel-identical. The brief flash before the very first paint is now dark instead of white, too." },
     ],
   },
-  {
-    version: "0.9.1273",
-    date: "2026-07-16",
-    items: [
-      { type: "improvement", text: "**Faster startup: the mod database is now parsed once per launch instead of six times.** Boot-time telemetry showed the full mod parse (the 2MB campaign file, building tree, 4,600+ character names, traits) running six times at every startup — each run blocking the app — because the startup sequence re-requests it as things settle. The result is now cached and reused until a mod file actually changes on disk (editing the mod, or Manipula writing the building file, still reloads exactly as before)." },
-      { type: "improvement", text: "**The colored map overlay is also built once per launch instead of 4–6 times.** Each startup step used to queue another full overlay build without cancelling the previous one; now only the final, fully-settled version builds. Together these two changes cut several seconds of redundant work from every launch." },
-    ],
-  },
+
 
 
 

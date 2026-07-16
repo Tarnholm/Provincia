@@ -1123,6 +1123,102 @@ function resolveUnitCardSync(modDataDir, faction, unitName, dictionary) {
 ipcMain.handle("resolve-unit-card", async (_event, modDataDir, faction, unitName, dictionary) =>
   resolveUnitCardSync(modDataDir, faction, unitName, dictionary));
 
+// ── Unit-card filename index (2026-07-16 launch-perf fix) ─────────────────
+// The first bulk warm-up resolved thousands of cards through
+// resolveUnitCardSync, whose per-candidate existsSync chains and (on any
+// miss) full ui/units/* directory scans blocked the main process for minutes
+// (measured: 105s for 8,202 cards). One readdir sweep builds filename maps;
+// every bulk lookup is then a Map.get. The index lives until the search
+// roots change (mod switch). Single-card resolves keep the original
+// fresh-from-disk path (dev icon replacement etc.).
+let _cardIndexKey = null;
+let _cardDirIndex = null;  // Map<dirPathLower, Map<fileNameLower, fullPath>>
+let _cardDirOrder = null;  // dirPathLower[] in canonical scan order (fallback)
+function ensureUnitCardIndex(modDataDir) {
+  const roots = [];
+  if (modDataDir && fs.existsSync(modDataDir)) roots.push(modDataDir);
+  for (const r of getIconSearchRoots()) roots.push(r);
+  const key = roots.join(";").toLowerCase();
+  if (_cardIndexKey === key && _cardDirIndex) return roots;
+  const t0 = Date.now();
+  _cardIndexKey = key;
+  _cardDirIndex = new Map();
+  _cardDirOrder = [];
+  for (const root of roots) {
+    for (const subdir of ["units", "unit_info"]) {
+      const base = path.join(root, "ui", subdir);
+      let facs;
+      try { facs = fs.readdirSync(base, { withFileTypes: true }); } catch { continue; }
+      for (const fd of facs) {
+        if (!fd.isDirectory()) continue;
+        const facPath = path.join(base, fd.name);
+        let files;
+        try { files = fs.readdirSync(facPath); } catch { continue; }
+        const dirKey = facPath.toLowerCase();
+        if (_cardDirIndex.has(dirKey)) continue;
+        const m = new Map();
+        for (const file of files) m.set(file.toLowerCase(), path.join(facPath, file));
+        _cardDirIndex.set(dirKey, m);
+        _cardDirOrder.push(dirKey);
+      }
+    }
+  }
+  console.log(`[unit-card-index] built ${_cardDirIndex.size} dirs in ${Date.now() - t0}ms`);
+  return roots;
+}
+function readUnitCardFile(full) {
+  try {
+    const buf = fs.readFileSync(full);
+    return { buffer: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength), path: full, mime: "image/x-tga" };
+  } catch { return null; }
+}
+// Index-backed resolve — same candidate priority as resolveUnitCardSync's
+// direct path (filename-major over the per-faction dir list), and the same
+// dir-major order for the brute-force fallback.
+function resolveUnitCardIndexed(roots, faction, unitName, dictionary) {
+  if (!faction || !unitName) return null;
+  const f = String(faction).toLowerCase().replace(/\s+/g, "_");
+  const scrub = (s) => String(s).toLowerCase().replace(/['"`]/g, "").replace(/\s+/g, "_");
+  const uBase = scrub(unitName);
+  const uVariants = [];
+  const pushUnique = (v) => { if (v && !uVariants.includes(v)) uVariants.push(v); };
+  if (dictionary) pushUnique(scrub(dictionary));
+  pushUnique(uBase);
+  for (const v of [...uVariants]) {
+    if (/s$/.test(v)) pushUnique(v.slice(0, -1));
+    if (v.startsWith("aor_")) pushUnique(v.slice(4));
+    if (v.startsWith("merc_")) pushUnique(v.slice(5));
+  }
+  const factions = [f];
+  if (f === "greeks") factions.push("greek_cities");
+  if (f === "romans_julii" || f === "romans_brutii" || f === "romans_scipii" || f === "romans_senate") factions.push("romans");
+  factions.push("mercs");
+  const filenames = [];
+  for (const uv of uVariants) { filenames.push(`#${uv}.tga`); filenames.push(`${uv}_info.tga`); }
+  const dirKeys = [];
+  for (const fac of factions) {
+    for (const root of roots) {
+      dirKeys.push(path.join(root, "ui", "units", fac).toLowerCase());
+      dirKeys.push(path.join(root, "ui", "unit_info", fac).toLowerCase());
+    }
+  }
+  for (const fn of filenames) {
+    for (const dk of dirKeys) {
+      const m = _cardDirIndex.get(dk);
+      const full = m && m.get(fn);
+      if (full) return readUnitCardFile(full);
+    }
+  }
+  for (const dk of _cardDirOrder) {
+    const m = _cardDirIndex.get(dk);
+    for (const fn of filenames) {
+      const full = m.get(fn);
+      if (full) return readUnitCardFile(full);
+    }
+  }
+  return null;
+}
+
 // Bulk variant (2026-07-16, splash unit-card warm-up): resolve a whole batch
 // in ONE IPC round-trip — the per-icon hop was the bottleneck when warming
 // every on-map army's unit cards behind the splash (same reasoning as
@@ -1130,9 +1226,10 @@ ipcMain.handle("resolve-unit-card", async (_event, modDataDir, faction, unitName
 // Returns an array aligned with items ({ buffer, path } | null each).
 ipcMain.handle("resolve-unit-cards-bulk", async (_event, modDataDir, items) => {
   if (!Array.isArray(items)) return [];
+  const roots = ensureUnitCardIndex(modDataDir);
   return items.map((it) =>
     it && it.faction && it.unit
-      ? resolveUnitCardSync(modDataDir, it.faction, it.unit, it.dictionary || null)
+      ? resolveUnitCardIndexed(roots, it.faction, it.unit, it.dictionary || null)
       : null);
 });
 
