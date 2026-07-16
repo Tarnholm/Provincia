@@ -1643,6 +1643,10 @@ function createWindow() {
     useContentSize: true,
     minWidth: 1280,
     minHeight: 720,
+    // Matches the splash/body backdrop (#222) so the instant between the
+    // window appearing and the first renderer paint is dark, not white —
+    // part of the "splash appears right away" work (2026-07-16).
+    backgroundColor: "#222222",
     autoHideMenuBar: true,
     // Discord-style custom title bar. On macOS keep the normal native frame
     // (titleBarStyle 'default'); on Windows/Linux hide the OS title bar and

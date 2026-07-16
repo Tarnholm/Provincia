@@ -1888,6 +1888,19 @@ function App() {
   });
   const welcomeShownOnceRef = useRef(false); // hideSplash is one-shot for welcome firing
   const [assetError, setAssetError] = useState(null);
+  // Remove the STATIC boot splash from index.html once React's own splash
+  // <img> has actually painted (double rAF after splashImgReady) — or
+  // immediately if this render path skips the splash (assetError / splash
+  // already dismissed), so the static art can never linger over other UI.
+  const bootSplashGoneRef = useRef(false);
+  useEffect(() => {
+    if (bootSplashGoneRef.current) return;
+    if (!(splashImgReady || !showSplash || assetError)) return;
+    bootSplashGoneRef.current = true;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      try { document.getElementById("boot-splash")?.remove(); } catch {}
+    }));
+  }, [splashImgReady, showSplash, assetError]);
   const [proceedAnyway, setProceedAnyway] = useState(false);
   const [toasts, setToasts] = useState([]); // [{ id, message, kind, count }]
   // Deduplicate identical toasts: if the same (message, kind) is already

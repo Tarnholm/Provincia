@@ -18,6 +18,17 @@
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
+    <!-- Static boot splash (2026-07-16, user: splash should appear "right
+         away"): painted by the HTML parser the moment the window first
+         renders — BEFORE the ~1MB JS bundle parses and React mounts, which
+         used to be 1-2s of blank window. Geometry/backdrop mirror the React
+         splash in App.js exactly (centered, 80vw/80vh, radius 16, #222) so
+         the takeover is invisible; App.js removes #boot-splash once its own
+         splash <img> has painted. -->
+    <div id="boot-splash" style="position:fixed;inset:0;z-index:99999;background:#222;display:flex;align-items:center;justify-content:center">
+      <img src="./splash.webp" alt="" draggable="false"
+        style="display:block;width:100%;height:auto;max-width:80vw;max-height:80vh;border-radius:16px;box-shadow:0 4px 32px rgba(0,0,0,0.2)" />
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/index.js"></script>
   </body>
