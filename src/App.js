@@ -8149,14 +8149,23 @@ function App() {
     // (requestIdleCallback timeout), flashing the raw region-colour map first.
     const firstBuild = !colorizedOnceRef.current;
     colorizedOnceRef.current = true; // set after reading, so the next run defers to idle
-    const schedule = firstBuild
-      ? (cb) => setTimeout(cb, 0)
-      : (typeof window.requestIdleCallback === "function"
-        ? (cb) => window.requestIdleCallback(cb, { timeout: 3000 })
-        : (cb) => setTimeout(cb, 0));
+    // Cancellation (2026-07-16 boot-cost pass): this effect's 36 deps settle
+    // one by one during boot, and each re-run used to schedule ANOTHER full
+    // overlay build with the previous ones still queued — 4-6 identical
+    // multi-hundred-ms builds per launch. Now a re-run cancels the stale
+    // schedule so only the latest inputs actually build.
+    const useRIC = !firstBuild && typeof window.requestIdleCallback === "function";
+    let _cancelled = false;
+    let _handle = null;
+    const schedule = (cb) => {
+      _handle = useRIC
+        ? window.requestIdleCallback(cb, { timeout: 3000 })
+        : setTimeout(cb, 0);
+    };
     const _tSched = (performance && performance.now) ? performance.now() : Date.now();
-    console.log(`[colorize] scheduled for colorMode=${colorMode} (via ${typeof window.requestIdleCallback === "function" ? "requestIdleCallback" : "setTimeout"})`);
+    console.log(`[colorize] scheduled for colorMode=${colorMode} (via ${useRIC ? "requestIdleCallback" : "setTimeout"})`);
     schedule(() => {
+      if (_cancelled) return;
       const pxData = pixelDataRef.current;
       if (!pxData) return;
       const _tRun = (performance && performance.now) ? performance.now() : Date.now();
@@ -9048,6 +9057,13 @@ function App() {
         setColoredOffscreen(off);
       }
     });
+    return () => {
+      _cancelled = true;
+      if (_handle != null) {
+        if (useRIC) { try { window.cancelIdleCallback(_handle); } catch {} }
+        else clearTimeout(_handle);
+      }
+    };
   }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter]);
 
   // Cache the dimming overlay — active whenever provinces are selected.

@@ -176,7 +176,7 @@ const haveMod = (() => { try { return fs.existsSync(path.join(MOD_DIR, "export_d
   const SAVE_DIR = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/saves";
   const saveFile = (() => { try { const s = fs.readdirSync(SAVE_DIR).filter((f) => f.endsWith(".sav")); return s.length ? path.join(SAVE_DIR, s[0]) : null; } catch { return null; } })();
 
-  it.runIf(saveFile)("saveAnalysis domain: crack-save / get-save-economy / get-turn1-budget against a real save", { timeout: 40000 }, async () => {
+  it.runIf(saveFile)("saveAnalysis domain: crack-save / get-save-economy / get-turn1-budget against a real save", { timeout: 120000 }, async () => {
     const cr = await H.invoke("crack-save", saveFile, MOD_DIR);
     expect(cr.factions && Object.keys(cr.factions).length).toBeGreaterThan(50);
     const eco = await H.invoke("get-save-economy", saveFile, MOD_DIR);

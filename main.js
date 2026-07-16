@@ -439,6 +439,7 @@ function setupModWatcher(modDataDir) {
       if (!WATCHED_MOD_FILES.includes(base)) return;
       clearTimeout(modWatchDebounce[base]);
       modWatchDebounce[base] = setTimeout(() => {
+        _charInitCache.clear(); // mod changed on disk → next characters-init re-parses
         const win = BrowserWindow.getAllWindows()[0];
         if (win) win.webContents.send("mod-file-changed", { file: base });
         console.log(`[mod-watch] ${base} changed on disk → notified renderer`);
@@ -451,12 +452,22 @@ function setupModWatcher(modDataDir) {
   }
 }
 
+// characters-init parse cache (2026-07-16). The renderer's init effect fires
+// characters-init several times per boot as its inputs settle (icons dir,
+// campaign labels, slot switches) — 6 identical full parses of the mod
+// (2MB descr_strat, EDB, 4669 names, traits) were observed per launch, each
+// blocking the main process. The parse is pure per (dir, on-disk content), so
+// cache the summary per dir and skip re-parses until a watched mod file
+// actually changes (fs.watch clears the cache) or a direct load refreshes it.
+const _charInitCache = new Map(); // modDataDir → __summary
+
 function loadModCharacterData(modDataDir) {
   activeModDataDir = modDataDir;
   try { setupModWatcher(modDataDir); } catch (e) { console.warn("[mod-watch] setup failed:", e && e.message); }
   // Heavy parsing lives in src/modDataLoader.js (returns the mod-state object);
   // assign it onto the module vars the handlers read. Behaviour unchanged.
   const s = loadModData(modDataDir, { buildInitialOwnership, findRelatedModDirs, getIconSearchRoots });
+  _charInitCache.set(modDataDir, s.__summary); // direct parses refresh the cache too
   ({
     modAiByFaction, modAiPersonalityOrder, modAncillaryData, modAncillaryNames,
     modBuildingChains, modChainCategories, modChainMaxLevels, modDescrStratCharByName,
@@ -4580,6 +4591,15 @@ ipcMain.handle("get-rebel-factions", async (_event, modDataDir) => {
 
 ipcMain.handle("characters-init", async (_event, modDataDir) => {
   try {
+    // Skip the full re-parse (and the save-snapshot re-emit, which the first
+    // load already did with identical data) when this dir is already loaded
+    // and no watched mod file has changed since. The renderer fires this
+    // several times per boot as its inputs settle.
+    const cached = activeModDataDir === modDataDir ? _charInitCache.get(modDataDir) : null;
+    if (cached && cached.ok) {
+      console.log(`[characters] init cache hit for ${modDataDir} — skipping re-parse`);
+      return cached;
+    }
     const info = loadModCharacterData(modDataDir);
     console.log("[characters] loaded mod data:", info);
     // If we already have a cached save, re-emit the snapshot with the new data
@@ -4759,6 +4779,9 @@ ipcMain.handle("characters-init", async (_event, modDataDir) => {
       }
     } catch (e) { console.warn("[save-sync] detector failed:", e && e.message); }
 
+    // Cache the FULL response (incl. saveModSync) so a cache-hit return is
+    // byte-identical to what the first load told the renderer.
+    _charInitCache.set(modDataDir, { ok: true, ...info });
     return { ok: true, ...info };
   } catch (e) {
     return { ok: false, error: e.message };
