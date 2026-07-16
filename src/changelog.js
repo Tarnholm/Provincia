@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1279",
+    date: "2026-07-16",
+    items: [
+      { type: "improvement", text: "**The splash now says what it's doing.** A subtle loading line sits at the bottom of the splash from the very first paint — \"Loading map…\", \"Painting the map…\", \"Loading building icons…\", \"Loading unit cards…\" — so a longer hold never looks like a hang." },
+    ],
+  },
+  {
     version: "0.9.1278",
     date: "2026-07-16",
     items: [
@@ -49,13 +56,7 @@ const CHANGELOG = [
       { type: "change", text: "**Release plumbing (internal):** publishing is now one command that ends by verifying the update feed actually serves the new version, and a repository check fails loudly if a release commit ever lands unpublished — the 0.9.1269 \"committed but never shipped\" gap can't silently happen again. The app's main code file also shed ~1,500 lines into a tested module, groundwork for further splitting." },
     ],
   },
-  {
-    version: "0.9.1274",
-    date: "2026-07-16",
-    items: [
-      { type: "improvement", text: "**The splash art now appears the instant the window opens.** It used to wait for the app's whole JavaScript bundle to load and start (1–2 seconds of blank window); the splash is now part of the page itself and paints ~0.3s into window load, before any code runs — then the app takes over seamlessly, pixel-identical. The brief flash before the very first paint is now dark instead of white, too." },
-    ],
-  },
+
 
 
 

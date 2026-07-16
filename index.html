@@ -28,6 +28,10 @@
     <div id="boot-splash" style="position:fixed;inset:0;z-index:99999;background:#222;display:flex;align-items:center;justify-content:center">
       <img src="./splash.webp" alt="" draggable="false"
         style="display:block;width:100%;height:auto;max-width:80vw;max-height:80vh;border-radius:16px;box-shadow:0 4px 32px rgba(0,0,0,0.2)" />
+      <!-- Loading line (2026-07-16 user request): visible from the very first
+           paint; the React splash renders its own stage text at the same spot,
+           so the takeover stays seamless. -->
+      <div style="position:absolute;bottom:5vh;left:0;right:0;text-align:center;color:#9a9184;font:600 14px system-ui,sans-serif;letter-spacing:0.08em">Loading&hellip;</div>
     </div>
     <div id="root"></div>
     <script type="module" src="/src/index.js"></script>

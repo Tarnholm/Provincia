@@ -16792,6 +16792,31 @@ function App() {
                 draggable={false}
               />
             )}
+            {/* Loading stage line (2026-07-16 user request). Same spot as the
+                static #boot-splash's "Loading…" so the takeover is seamless;
+                names the phase the splash is actually waiting on. */}
+            {splashImgReady && (() => {
+              const overlayDone = !!coloredOffscreen || ["resource", "victory", "region"].includes(colorMode);
+              const stage = !offscreen ? "Loading map…"
+                : !overlayDone ? "Painting the map…"
+                : !priorityIconsWarm ? "Loading building icons…"
+                : !unitIconsWarm ? "Loading unit cards…"
+                : "Starting…";
+              return (
+                <div style={{
+                  position: "absolute", bottom: "5vh", left: 0, right: 0,
+                  textAlign: "center", fontWeight: 600, fontSize: 14,
+                  letterSpacing: "0.08em", fontFamily: "system-ui, sans-serif",
+                  backgroundImage: "linear-gradient(90deg, #9a9184 30%, #e8dcc0 50%, #9a9184 70%)",
+                  backgroundSize: "300% 100%",
+                  WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
+                  animation: "splash-shimmer 2.2s linear infinite",
+                }}>
+                  {stage}
+                  <style>{`@keyframes splash-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -100% 0; } }`}</style>
+                </div>
+              );
+            })()}
           </div>
         )}
 
