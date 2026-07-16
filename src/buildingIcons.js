@@ -189,16 +189,22 @@ export function prefetchBuildingIcons(modDataDir, triples, onLoaded) {
 // was the startup bottleneck when warming ~900 settlement icons. Decodes each
 // returned TGA buffer to a blob URL and populates the SAME cache the single
 // loader uses, so getCachedBuildingIcon/loadBuildingIcon see the results.
-// Returns a Promise that resolves when the whole batch is cached. `onEach` is
-// called once per icon settled (for progress). Falls back to per-icon prefetch
-// if the bulk IPC isn't available (older main process).
+// Returns a Promise resolving to the number of icons that were actually
+// NEWLY requested (0 when everything was already cached/in flight) — callers
+// use this to skip redraw-triggering state bumps on all-cached calls; an
+// unconditional bump from getBuildings' render-path prefetch was a perpetual
+// re-render loop (2026-07-16 "map lock-up" hunt). `onEach` is called once per
+// icon settled (for progress). Falls back to per-icon prefetch if the bulk
+// IPC isn't available (older main process).
 export async function prefetchBuildingIconsBulk(modDataDir, triples, onEach) {
   const api = window.electronAPI;
   if (!api?.resolveBuildingIconsBulk) {
     // Fallback: fan out to the single loader.
+    const fresh = triples.filter(([culture, level]) =>
+      culture && level && !cache.has(`${modDataDir || ""}|${culture}|${level}`)).length;
     await Promise.all(triples.map(([culture, level, chainName]) =>
       loadBuildingIcon(modDataDir, culture, level, chainName).then(() => { if (onEach) onEach(); })));
-    return;
+    return fresh;
   }
   // Only request icons not already cached/inflight; mark them inflight so a
   // concurrent single-load doesn't duplicate the work.
@@ -210,7 +216,7 @@ export async function prefetchBuildingIconsBulk(modDataDir, triples, onEach) {
     const p = new Promise((res) => { req.push({ culture, level, chain, key, _resolve: res }); });
     inflight.set(key, p);
   }
-  if (req.length === 0) return;
+  if (req.length === 0) return 0;
   let res;
   try {
     res = await api.resolveBuildingIconsBulk(modDataDir, req.map((r) => ({ culture: r.culture, level: r.level, chain: r.chain || null })));
@@ -281,4 +287,5 @@ export async function prefetchBuildingIconsBulk(modDataDir, triples, onEach) {
     r._resolve(null);
     if (onEach) onEach();
   }
+  return req.length;
 }

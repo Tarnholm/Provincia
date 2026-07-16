@@ -8,6 +8,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1272",
+    date: "2026-07-16",
+    items: [
+      { type: "fix", text: "**Found and killed the engine behind ALL the recent lock-ups: the app was silently redrawing itself ~10+ times per second, forever, whenever a region was selected.** Every redraw of a settlement panel asked for its building icons, and even when every icon was already cached the answer still triggered another full redraw — a perpetual loop. On a fast idle machine it just burned CPU; combined with anything expensive (faction switching, Dev mode, panels) it starved the window until nothing responded — including React's own 'maximum update depth exceeded' errors visible in provincia.log. The icon fetch now reports whether anything new was actually loaded, and the redraw only happens when the answer is yes: the loop cannot sustain itself anymore. Selecting factions, regions, and map modes should finally feel instant — and the app no longer burns a CPU core while sitting idle." },
+    ],
+  },
+  {
     version: "0.9.1271",
     date: "2026-07-16",
     items: [

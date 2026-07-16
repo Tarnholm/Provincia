@@ -7331,8 +7331,14 @@ function App() {
         // round-trip per building (the visible "icons pop in one by one" lag).
         // Directly answers the on-hover complaint regardless of how far the
         // background warm-up has progressed.
-        prefetchBuildingIconsBulk(modDataDir, triples, null).then(() => {
-          setIconCacheVersion((v) => v + 1);
+        // Bump ONLY when the batch actually requested something new. The old
+        // unconditional bump made this render-path call a PERPETUAL update
+        // loop (getBuildings runs during render → all-cached prefetch resolves
+        // → bump → re-render → getBuildings → …) — the standing ~143
+        // mutations/s churn behind the 2026-07-16 map lock-ups and the React
+        // #185 "maximum update depth" rejections in the user's log.
+        prefetchBuildingIconsBulk(modDataDir, triples, null).then((freshCount) => {
+          if (freshCount) bumpIconCacheVersionCoalesced();
         });
       }
 
@@ -7472,9 +7478,7 @@ function App() {
             }
           }
           if (!targetLevelName) continue;
-          prefetchBuildingIcons(modDataDir, [[culture, targetLevelName, chainName]], () => {
-            setIconCacheVersion((v) => v + 1);
-          });
+          prefetchBuildingIcons(modDataDir, [[culture, targetLevelName, chainName]], bumpIconCacheVersionCoalesced);
           let tLabel = null;
           if (gameDisplayNames) {
             if (culture && gameDisplayNames[`${targetLevelName}_${culture}`]) tLabel = gameDisplayNames[`${targetLevelName}_${culture}`];
