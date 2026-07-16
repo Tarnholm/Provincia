@@ -42,7 +42,10 @@ function registerFolderImportHandlers(ipcMain, deps) {
     lastImportDir = dir;
     addConsentedRoot(dir); // user picked it — read-file may now read inside it
 
-    const campaignFiles = ["descr_regions.txt", "descr_strat.txt", "descr_win_conditions.txt", "map_regions.tga"];
+    // map_heights.tga + map_ground_types.tga (2026-07-16): the Heights and
+    // Terrain overlays sample these; without importing them the overlays 404
+    // on imported slots (the bundle only ships the vanilla-slot copies).
+    const campaignFiles = ["descr_regions.txt", "descr_strat.txt", "descr_win_conditions.txt", "map_regions.tga", "map_heights.tga", "map_ground_types.tga"];
     const sharedFiles = ["descr_sm_factions.txt"];
     const allNeeded = [...campaignFiles, ...sharedFiles];
 

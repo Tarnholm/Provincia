@@ -7874,7 +7874,7 @@ function App() {
       // buildings that appear later (dev edits, save switches to new owners)
       // can pop in while the background pass finishes — the 2026-07-16 approved
       // tradeoff for lifting the splash ~4s earlier than the old hold-for-all.
-      await runBatches(priority, 64, 0, false, "priority");
+      await runBatches(priority, 128, 0, false, "priority"); // bigger chunks since the decode pool widened (2026-07-16)
       if (run.cancelled) return;
       const dtp = ((performance && performance.now) ? performance.now() : Date.now()) - t0;
       console.log(`[icon-warmup] priority warmed ${priority.length} (${dtp.toFixed(0)}ms) — releasing splash, full catalog continues in background`);
@@ -7956,6 +7956,37 @@ function App() {
         }
       }
     }
+    // Recruit-tab warm-up (2026-07-16, user request: recruitable cards still
+    // popped in). Icons are keyed only by (faction, unit) — a settlement's
+    // exact recruit list doesn't change WHICH card file loads — so warming
+    // every unit each map-owner faction can EVER recruit (EDU ownership, one
+    // cheap pass) covers the Recruits tab for every settlement without the
+    // per-region EDB walk that froze 0.9.1270 (30s+ on real machines). Extra
+    // cards beyond any one settlement's list are harmless; shared art decodes
+    // once via the per-path dedupe.
+    // EDU ownership entries may name a faction, a CULTURE ("roman"), or "all"
+    // (see availableRecruitsForRegion's owners.includes checks) — cover all
+    // three, since the panel requests the key (ownerId, unit) in every case.
+    const owners = new Set(Object.values(ownerByRegion));
+    const cultureOwners = new Map(); // culture → [owner factions of that culture]
+    for (const o of owners) {
+      const c = factionCultures?.[o];
+      if (c) { if (!cultureOwners.has(c)) cultureOwners.set(c, []); cultureOwners.get(c).push(o); }
+    }
+    const RECRUIT_WARM_CAP = 8000; // safety bound; anything past it lazy-loads
+    let capped = false;
+    for (const [unit, facs] of Object.entries(unitOwnership)) {
+      if (unit === "__dictionary" || !Array.isArray(facs)) continue;
+      for (const f of facs) {
+        const fl = String(f).toLowerCase();
+        if (fl === "all") { for (const o of owners) add(o, unit); continue; }
+        if (owners.has(fl)) add(fl, unit);
+        const co = cultureOwners.get(fl);
+        if (co) for (const o of co) add(o, unit);
+      }
+      if (triples.length > RECRUIT_WARM_CAP) { capped = true; break; }
+    }
+    if (capped) console.log(`[unit-warmup] recruit superset hit the ${RECRUIT_WARM_CAP}-card cap — remainder lazy-loads as before`);
     if (triples.length === 0) { setUnitIconsWarm(true); return; }
     const t0 = performance.now();
     console.log(`[unit-warmup] START (during splash) cards=${triples.length} — holding splash until warm`);
@@ -7964,7 +7995,7 @@ function App() {
       // Same pipelined chunking as the building warm-up: chunk i+1's IPC is in
       // flight while chunk i's decode pool drains. No iconCacheVersion bumps —
       // nothing is visible behind the splash; one bump at the end.
-      const CHUNK = 96;
+      const CHUNK = 128; // sized for the widened decode pool (2026-07-16)
       const chunks = [];
       for (let i = 0; i < triples.length; i += CHUNK) chunks.push(triples.slice(i, i + CHUNK));
       const fetchChunk = (c) => prefetchUnitIconsBulk(activeDataDir, c)
@@ -7983,7 +8014,7 @@ function App() {
     })();
     return undefined; // no cancel-on-rerun: warmKey ref guards, like icon-warmup
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offscreen, coloredOffscreen, colorMode, regions, startingArmiesByRegion, unitOwnership, currentOwnerByCity, initialOwnerByCity, activeDataDir, mapCampaign]);
+  }, [offscreen, coloredOffscreen, colorMode, regions, startingArmiesByRegion, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, activeDataDir, mapCampaign]);
 
   // Live-mode follow-up: when a save's units land (saveUnitsByRegion), warm any
   // cards the boot pass didn't cover — same keys the live panels use (region
@@ -19454,6 +19485,22 @@ function App() {
           if (sourcePaths && sourcePaths["map_regions.tga"]) {
             if (canSave) await window.electronAPI.copyFile(sourcePaths["map_regions.tga"], camp.out.map);
           }
+          // Heights + ground-types TGAs (2026-07-16 overlay fix): copy them to
+          // campaign_data like the region map, named per slot suffix. Without
+          // this the Heights hillshade and Terrain tint 404'd on imported
+          // slots (bundle only carries the vanilla-slot copies since 0.9.921).
+          // Reset the decoded pixel caches for the active slot so the next
+          // overlay toggle re-reads the fresh files.
+          if (sourcePaths && sourcePaths["map_heights.tga"] && canSave) {
+            await window.electronAPI.copyFile(sourcePaths["map_heights.tga"], camp.out.map.replace("map_regions", "map_heights"));
+            if (isActiveCampaign(camp)) { setHeightsPixels(null); setHeightsOverlayCanvas(null); setHeightsSize({ width: 0, height: 0 }); }
+            updated.push("heights map");
+          }
+          if (sourcePaths && sourcePaths["map_ground_types.tga"] && canSave) {
+            await window.electronAPI.copyFile(sourcePaths["map_ground_types.tga"], camp.out.map.replace("map_regions", "map_ground_types"));
+            if (isActiveCampaign(camp)) { setGroundTypesPixels(null); setGroundTypesSize({ width: 0, height: 0 }); }
+            updated.push("terrain map");
+          }
           if (tgaBinary && isActiveCampaign(camp)) {
             try {
               const decoded = await decodeTgaAsync(tgaBinary);
@@ -19486,6 +19533,10 @@ function App() {
               sourcePaths[name] = filePath;
               const buf = await window.electronAPI.readFileBinary(filePath);
               if (buf) binaryContents[name] = buf;
+            } else if (name === "map_heights.tga" || name === "map_ground_types.tga") {
+              // Binary overlay sources — copied to campaign_data below, never
+              // parsed here (the Heights/Terrain overlays lazy-decode them).
+              sourcePaths[name] = filePath;
             } else {
               const text = await window.electronAPI.readFile(filePath);
               if (text) fileContents[name] = text;

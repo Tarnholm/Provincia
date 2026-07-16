@@ -27,7 +27,11 @@ const pathToBlob = new Map(); // resolvedPath → Blob | "none"
 // startup warm-up instead of the single main thread doing all ~900 serially
 // (the startup icon-lag). Falls back to main-thread decode if workers can't be
 // created (older/edge environments).
-const _ICON_WORKER_COUNT = Math.min(6, Math.max(2, (typeof navigator !== "undefined" && navigator.hardwareConcurrency) || 4));
+// Pool width (2026-07-16, "use more cores at launch"): cores-2 leaves the
+// main/renderer threads breathing room, capped at 12 — beyond that the IPC
+// fetch side becomes the bottleneck, not decode. Old cap of 6 left half a
+// modern CPU idle during the splash warm-up.
+const _ICON_WORKER_COUNT = Math.min(12, Math.max(2, ((typeof navigator !== "undefined" && navigator.hardwareConcurrency) || 4) - 2));
 let _iconWorkers = null;      // Worker[] | null(=use main thread)
 let _iconWorkersTried = false;
 let _iconRR = 0;              // round-robin index

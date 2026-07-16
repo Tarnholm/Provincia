@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1277",
+    date: "2026-07-16",
+    items: [
+      { type: "fix", text: "**Fixed the Terrain and Heights overlays on imported mods.** Both overlays sample map files (map_ground_types.tga / map_heights.tga) that the mod importer never copied — so on an imported slot they silently loaded nothing. The importer now brings both files along (the once-per-launch mod refresh picks them up automatically, so this self-heals on your next restart)." },
+      { type: "improvement", text: "**The settlement Recruits tab now opens fully drawn.** The splash warm-up now also loads the card of every unit each map faction can recruit — computed from unit ownership in one cheap pass, not the expensive per-settlement walk — so recruit lists no longer fill in card-by-card." },
+      { type: "improvement", text: "**Launch uses more CPU cores.** The icon decode pool was capped at 6 workers; it now scales with your machine (cores minus two, up to 12) and is fed bigger batches, so the behind-the-splash warm-up finishes noticeably faster on 8+ core machines." },
+    ],
+  },
+  {
     version: "0.9.1276",
     date: "2026-07-16",
     items: [
@@ -48,13 +57,7 @@ const CHANGELOG = [
       { type: "improvement", text: "**The colored map overlay is also built once per launch instead of 4–6 times.** Each startup step used to queue another full overlay build without cancelling the previous one; now only the final, fully-settled version builds. Together these two changes cut several seconds of redundant work from every launch." },
     ],
   },
-  {
-    version: "0.9.1272",
-    date: "2026-07-16",
-    items: [
-      { type: "fix", text: "**Found and killed the engine behind ALL the recent lock-ups: the app was silently redrawing itself ~10+ times per second, forever, whenever a region was selected.** Every redraw of a settlement panel asked for its building icons, and even when every icon was already cached the answer still triggered another full redraw — a perpetual loop. On a fast idle machine it just burned CPU; combined with anything expensive (faction switching, Dev mode, panels) it starved the window until nothing responded — including React's own 'maximum update depth exceeded' errors visible in provincia.log. The icon fetch now reports whether anything new was actually loaded, and the redraw only happens when the answer is yes: the loop cannot sustain itself anymore. Selecting factions, regions, and map modes should finally feel instant — and the app no longer burns a CPU core while sitting idle." },
-    ],
-  },
+
 
 
 ];
