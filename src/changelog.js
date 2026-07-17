@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1288",
+    date: "2026-07-17",
+    items: [
+      { type: "feature", text: "**Two new player map modes (Military section).** *Armies* — regions heat-tinted by force size: blue = the owner's troops, red = a foreign army present, purple = both; hover for unit counts and factions. *War* (live mode) — battles and sieges from the game log glow by recency, so the active front is visible at a glance; hover a region for its recorded events. First two of the player-mode series — more coming." },
+    ],
+  },
+  {
     version: "0.9.1287",
     date: "2026-07-17",
     items: [

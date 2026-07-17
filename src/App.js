@@ -9460,6 +9460,66 @@ function App() {
           const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.5;
           return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
         }));
+      } else if (colorMode === "armyheat") {
+        // Army heat (2026-07-17, player mode 26): unit counts per region from
+        // the campaign-start army positions. Blue = only the owner's troops,
+        // red = foreign armies present, purple = both. v1 caveat: positions
+        // are descr_strat starting armies — live movement not yet folded in.
+        const ownerOf = {};
+        for (const rd2 of Object.values(regions)) {
+          if (rd2 && rd2.region) ownerOf[rd2.region] = ((currentOwnerByCity && currentOwnerByCity[rd2.city]) || rd2.faction || "").toLowerCase();
+        }
+        const counts = {};
+        let maxN = 1;
+        for (const [regionName, rd2] of Object.entries(startingArmiesByRegion || {})) {
+          let own = 0, foreign = 0;
+          for (const a of [...(rd2.garrison || []), ...(rd2.field || [])]) {
+            const n = (a.units || []).length || 1;
+            if ((a.faction || "").toLowerCase() === ownerOf[regionName]) own += n; else foreign += n;
+          }
+          if (own + foreign > 0) { counts[regionName] = { own, foreign }; maxN = Math.max(maxN, own + foreign); }
+        }
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          const e = counts[r.region];
+          let base;
+          if (!e) base = [45, 47, 52];
+          else {
+            const t = 0.35 + 0.65 * Math.sqrt((e.own + e.foreign) / maxN);
+            base = (e.foreign > 0 ? (e.own > 0 ? [170, 60, 190] : [225, 70, 50]) : [60, 125, 225]).map((c) => Math.round(c * t));
+          }
+          if (devFlatColors) return base;
+          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.5;
+          return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
+        }));
+      } else if (colorMode === "waractivity") {
+        // War activity (2026-07-17, player mode 27): battles/sieges from the
+        // live battle ledger, glowing by recency. Read from the ref, NOT a
+        // dep — the ledger updates ~1/s in live play and must not re-run this
+        // effect; the map refreshes on mode switch / any other recolor.
+        const events = (battleLedgerRef.current ? battleLedgerRef.current.snapshot().events : []) || [];
+        const toRegion = {};
+        for (const rd2 of Object.values(regions)) {
+          if (!rd2) continue;
+          if (rd2.city) toRegion[String(rd2.city).toLowerCase()] = rd2.region;
+          if (rd2.region) toRegion[String(rd2.region).toLowerCase()] = rd2.region;
+        }
+        const score = {};
+        events.forEach((e, i) => {
+          const loc = String(e.settlement || e.location || "").toLowerCase();
+          const reg = loc && toRegion[loc];
+          if (!reg) return;
+          const w = 1 - i / Math.max(1, events.length); // events are newest-first
+          score[reg] = Math.max(score[reg] || 0, w);
+        });
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          const s = score[r.region];
+          let base;
+          if (!s) base = [45, 47, 52];
+          else base = [Math.round(110 + 145 * s), Math.round(45 + 85 * s * 0.7), 28];
+          if (devFlatColors) return base;
+          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.5;
+          return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
+        }));
       }
       // ── Dev map modes ──────────────────────────────────────────────
       else if (DEV_COLOR_MODES.has(colorMode)) {
@@ -9574,7 +9634,7 @@ function App() {
         else clearTimeout(_handle);
       }
     };
-  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects]);
+  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, startingArmiesByRegion]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -13471,6 +13531,8 @@ function App() {
         { key: "rivertrade", label: "River Trade", badge: "devmode.rivertrade", dev: true },
       ]},
       { id: "military", title: "Military", members: [
+        { key: "armyheat", label: "Armies", badge: "mode.armyheat" },
+        { key: "waractivity", label: "War", badge: "mode.waractivity", live: true },
         { key: "recruitment", label: "Recruitment", badge: "devmode.recruitment", dev: true },
         { key: "hidden_resource", label: "Hidden Res.", badge: "devmode.hidden_resource", dev: true },
         { key: "aor", label: "AOR", badge: "devmode.aor", dev: true },
@@ -14842,6 +14904,24 @@ function App() {
       const max = 14;
       return { label: "Fertility", value: `${val} / ${max}` };
     }
+    if (colorMode === "armyheat") {
+      const rd2 = startingArmiesByRegion && startingArmiesByRegion[info.region];
+      if (!rd2) return { label: "Armies", value: "— none at campaign start" };
+      const all = [...(rd2.garrison || []), ...(rd2.field || [])];
+      if (!all.length) return { label: "Armies", value: "— none at campaign start" };
+      const units = all.reduce((a, x) => a + ((x.units || []).length || 1), 0);
+      const facs = [...new Set(all.map((a) => a.faction).filter(Boolean))];
+      return { label: `Armies · ${units} unit${units === 1 ? "" : "s"}`, value: `${rd2.garrison?.length || 0} garrison + ${rd2.field?.length || 0} field (${facs.join(", ")})` };
+    }
+    if (colorMode === "waractivity") {
+      const events = (battleLedgerRef.current ? battleLedgerRef.current.snapshot().events : []) || [];
+      const here = events.filter((e) => {
+        const loc = String(e.settlement || e.location || "").toLowerCase();
+        return loc && (loc === String(info.city || "").toLowerCase() || loc === String(info.region || "").toLowerCase());
+      });
+      if (!here.length) return { label: "War activity", value: "— nothing recorded here" };
+      return { label: `War activity · ${here.length} event${here.length === 1 ? "" : "s"}`, value: `latest: ${String(here[0].kind || "battle").replace(/_/g, " ")}${here[0].faction ? ` (${here[0].faction})` : ""}` };
+    }
     if (colorMode === "mining") {
       const mp = mineProspects && mineProspects[info.region];
       if (!mp || !mp.levels || !mp.levels.length) return { label: "Mining", value: "— no mineable deposits" };
@@ -15131,6 +15211,35 @@ function App() {
               <span>Fertility 7</span>
               <span>Fertility 14</span>
             </div>
+          </>}
+        </div>
+      );
+    }
+    if (colorMode === "armyheat") {
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Armies <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            <div style={{ display: "flex", gap: 6, alignItems: "center", fontSize: "0.72rem" }}>
+              <span style={{ width: 12, height: 12, borderRadius: 3, background: "rgb(60,125,225)", display: "inline-block" }} /> owner's troops
+              <span style={{ width: 12, height: 12, borderRadius: 3, background: "rgb(225,70,50)", display: "inline-block", marginLeft: 6 }} /> foreign army
+              <span style={{ width: 12, height: 12, borderRadius: 3, background: "rgb(170,60,190)", display: "inline-block", marginLeft: 6 }} /> both
+            </div>
+            <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>Brightness = force size (unit count). Positions are campaign-start armies.</div>
+          </>}
+        </div>
+      );
+    }
+    if (colorMode === "waractivity") {
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>War activity <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(45,47,52), rgb(150,70,28), rgb(255,130,28))" }} />
+            <div style={labelRow}>
+              <span>quiet</span><span>older</span><span>recent</span>
+            </div>
+            <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>Battles & sieges from the live game log (fills during play; see 🧰 Battle Ledger for the full record). Switch modes to refresh.</div>
           </>}
         </div>
       );
