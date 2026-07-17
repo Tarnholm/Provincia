@@ -14842,6 +14842,13 @@ function App() {
       const max = 14;
       return { label: "Fertility", value: `${val} / ${max}` };
     }
+    if (colorMode === "mining") {
+      const mp = mineProspects && mineProspects[info.region];
+      if (!mp || !mp.levels || !mp.levels.length) return { label: "Mining", value: "— no mineable deposits" };
+      const minerals = (mp.minerals || []).map((m) => `${m.name}${m.qty > 1 ? ` ×${m.qty}` : ""}`).join(", ");
+      const lv = mp.levels.map((l) => `${l.level.replace(/_/g, " ")}: +${l.income}/turn${l.built ? " ✓" : ""}`).join(" · ");
+      return { label: `Mining · ${minerals}`, value: lv };
+    }
     if (colorMode === "culture") {
       return info.culture ? { label: "Culture", value: info.culture } : null;
     }
@@ -15124,6 +15131,41 @@ function App() {
               <span>Fertility 7</span>
               <span>Fertility 14</span>
             </div>
+          </>}
+        </div>
+      );
+    }
+    if (colorMode === "mining") {
+      const entries = mineProspects ? Object.entries(mineProspects) : [];
+      const best = (mp) => (mp.levels || []).reduce((a, l) => Math.max(a, l.income), 0);
+      const maxV = entries.reduce((a, [, mp]) => Math.max(a, best(mp)), 0);
+      const top = entries
+        .map(([region, mp]) => ({ region, settlement: mp.settlement, income: best(mp), built: (mp.levels || []).some((l) => l.built) }))
+        .sort((a, b) => b.income - a.income)
+        .slice(0, 5);
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Mining income <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(52,54,60), rgb(140,90,45), rgb(190,190,195), rgb(255,205,60))" }} />
+            <div style={labelRow}>
+              <span>none</span>
+              <span>low</span>
+              <span>{maxV ? `+${maxV}/turn` : "—"}</span>
+            </div>
+            {!mineProspects && <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 4 }}>Computing deposits… (a few seconds after launch)</div>}
+            {top.length > 0 && (
+              <div style={{ marginTop: 6 }}>
+                <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>Richest deposits (best level):</div>
+                {top.map((t) => (
+                  <div key={t.region} style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem" }}>
+                    <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.settlement || t.region}</span>
+                    <span style={{ color: t.built ? "#8fd18f" : "#e8c873", whiteSpace: "nowrap" }}>+{t.income}/turn{t.built ? " ✓" : ""}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>Exact engine formula (deposit qty × trade value × mine strength). ✓ = mine built. Hover a region for its per-level numbers.</div>
           </>}
         </div>
       );

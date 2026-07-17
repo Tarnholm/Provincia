@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1287",
+    date: "2026-07-17",
+    items: [
+      { type: "improvement", text: "**The Mining map mode got its sidebar.** Legend with the bronze→silver→gold income scale, a 'Richest deposits' top-5 list (✓ = mine already built), and hovering any region now shows its minerals and exact per-level income — no deposits says so." },
+    ],
+  },
+  {
     version: "0.9.1286",
     date: "2026-07-17",
     items: [
