@@ -1838,6 +1838,7 @@ function App() {
   const [regions, setRegions] = useState({});
   const [regionInfo, setRegionInfo] = useState(null);
   const [miningView, setMiningView] = useState("potential"); // mining map mode: "current" earnings vs best-level "potential" (declared early — the colorize dep array reads it)
+  const [regionAdjacency, setRegionAdjacency] = useState(null); // { region: [neighbors] } for Threat/Reach modes (declared early — colorize dep array reads it)
   // 0.9.535: hover-to-inspect tooltip — { sx, sy, region, owner, terrain }.
   // Lightweight cursor readout updated only when the hovered tile changes
   // (gated via lastInspectKeyRef) so it doesn't re-render every pixel.
@@ -4150,6 +4151,11 @@ function App() {
     if (mineProspectsTimerRef.current) clearTimeout(mineProspectsTimerRef.current); // mod changed → drop the stale fetch
     if (api?.getMineProspects && modDataDir) {
       const t = setTimeout(() => {
+        if (api.getRegionAdjacency) {
+          api.getRegionAdjacency(modDataDir).then((r) => {
+            if (r && r.adjacency) setRegionAdjacency(r.adjacency);
+          }).catch(() => {});
+        }
         api.getMineProspects(modDataDir).then((r) => {
           if (r && r.prospects && Object.keys(r.prospects).length > 0) {
             console.log("[mine-prospects] regions with mineable deposits:", Object.keys(r.prospects).length);
@@ -9462,6 +9468,64 @@ function App() {
           const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.5;
           return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
         }));
+      } else if (colorMode === "threat" || colorMode === "reach") {
+        // Threat (mode 25) + Reach (mode 28), 2026-07-17. Perspective faction =
+        // selected faction (click one) falling back to the live player faction.
+        // Threat: your regions by border exposure — war neighbor red, hostile
+        // amber-orange, any foreign border yellow, interior green (war/hostile
+        // need the live diplomacy matrix; without it, foreign borders still show).
+        // Reach: your regions by graph distance from your nearest campaign-start
+        // army — green close, red far, purple = no land route.
+        const viewer = (selectedFaction || playerFaction || "").toLowerCase();
+        const ownerOf = {};
+        for (const rd2 of Object.values(regions)) {
+          if (rd2 && rd2.region) ownerOf[rd2.region] = ((currentOwnerByCity && currentOwnerByCity[rd2.city]) || rd2.faction || "").toLowerCase();
+        }
+        const valueByRegion = {};
+        if (viewer && regionAdjacency) {
+          if (colorMode === "threat") {
+            const dmRow = (diplomacyMatrix && diplomacyMatrix[viewer]) || null;
+            const warSet = new Set(((dmRow && dmRow.war) || []).map((s) => String(s).toLowerCase()));
+            const hostileSet = new Set(((dmRow && dmRow.hostile) || []).map((s) => String(s).toLowerCase()));
+            for (const [reg, owner] of Object.entries(ownerOf)) {
+              if (owner !== viewer) continue;
+              let lv = 0;
+              for (const nb of (regionAdjacency[reg] || [])) {
+                const no = ownerOf[nb];
+                if (!no || no === viewer) continue;
+                if (warSet.has(no)) { lv = 3; break; }
+                lv = Math.max(lv, hostileSet.has(no) ? 2 : 1);
+              }
+              valueByRegion[reg] = lv;
+            }
+          } else {
+            const q = [];
+            for (const [reg, rd2] of Object.entries(startingArmiesByRegion || {})) {
+              const armies = [...(rd2.field || []), ...(rd2.garrison || [])];
+              if (armies.some((a) => (a.faction || "").toLowerCase() === viewer)) { valueByRegion[reg] = 0; q.push(reg); }
+            }
+            for (let i = 0; i < q.length; i++) {
+              const d = valueByRegion[q[i]];
+              for (const nb of (regionAdjacency[q[i]] || [])) {
+                if (valueByRegion[nb] == null) { valueByRegion[nb] = d + 1; q.push(nb); }
+              }
+            }
+          }
+        }
+        const THREAT_COLS = [[55, 150, 70], [190, 170, 60], [220, 120, 40], [210, 55, 45]];
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          let base;
+          if (!viewer || ownerOf[r.region] !== viewer) base = [45, 47, 52];
+          else if (colorMode === "threat") base = THREAT_COLS[valueByRegion[r.region] || 0];
+          else {
+            const d = valueByRegion[r.region];
+            if (d == null) base = [140, 45, 125];
+            else { const t = Math.min(1, d / 5); base = [Math.round(60 + t * 160), Math.round(180 - t * 130), 45]; }
+          }
+          if (devFlatColors) return base;
+          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.5;
+          return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
+        }));
       } else if (colorMode === "armyheat") {
         // Army heat (2026-07-17, player mode 26): unit counts per region from
         // the campaign-start army positions. Blue = only the owner's troops,
@@ -9636,7 +9700,7 @@ function App() {
         else clearTimeout(_handle);
       }
     };
-  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion]);
+  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion, regionAdjacency, playerFaction, diplomacyMatrix]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -13535,6 +13599,8 @@ function App() {
       { id: "military", title: "Military", members: [
         { key: "armyheat", label: "Armies", badge: "mode.armyheat" },
         { key: "waractivity", label: "War", badge: "mode.waractivity", live: true },
+        { key: "threat", label: "Threat", badge: "mode.threat" },
+        { key: "reach", label: "Reach", badge: "mode.reach" },
         { key: "recruitment", label: "Recruitment", badge: "devmode.recruitment", dev: true },
         { key: "hidden_resource", label: "Hidden Res.", badge: "devmode.hidden_resource", dev: true },
         { key: "aor", label: "AOR", badge: "devmode.aor", dev: true },
@@ -15206,6 +15272,42 @@ function App() {
               <span>Fertility 7</span>
               <span>Fertility 14</span>
             </div>
+          </>}
+        </div>
+      );
+    }
+    if (colorMode === "threat") {
+      const sw = (c, label) => (
+        <div key={label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem" }}>
+          <span style={{ width: 12, height: 12, borderRadius: 3, background: `rgb(${c.join(",")})`, display: "inline-block" }} /> {label}
+        </div>
+      );
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Threat <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            {sw([55, 150, 70], "interior — safe")}
+            {sw([190, 170, 60], "foreign border")}
+            {sw([220, 120, 40], "hostile neighbor")}
+            {sw([210, 55, 45], "at-war neighbor")}
+            <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>{(selectedFaction || playerFaction) ? `Perspective: ${selectedFaction || playerFaction}. ` : "Click a faction to set the perspective. "}War/hostile detection needs a loaded save; without one, foreign borders still show.</div>
+          </>}
+        </div>
+      );
+    }
+    if (colorMode === "reach") {
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Reach <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(60,180,45), rgb(140,115,45), rgb(220,50,45))" }} />
+            <div style={labelRow}>
+              <span>army here</span><span>2-3 regions</span><span>5+ away</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem", marginTop: 2 }}>
+              <span style={{ width: 12, height: 12, borderRadius: 3, background: "rgb(140,45,125)", display: "inline-block" }} /> no land route
+            </div>
+            <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>{(selectedFaction || playerFaction) ? `Perspective: ${selectedFaction || playerFaction}. ` : "Click a faction to set the perspective. "}Distance from your nearest campaign-start army — roughly 1 region ≈ 1 turn on roads.</div>
           </>}
         </div>
       );

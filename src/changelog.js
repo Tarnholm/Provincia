@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1290",
+    date: "2026-07-17",
+    items: [
+      { type: "feature", text: "**Two more player map modes: Threat and Reach (Military section).** *Threat* — your regions colored by border exposure: green interior, yellow foreign border, orange hostile neighbor, red at-war neighbor (war/hostile read from the loaded save's diplomacy). *Reach* — your regions colored by how far your nearest army is (green = garrisoned, red = 5+ regions away, purple = no land route) — the 'which frontier towns would die alone' view. Both use the selected faction as the perspective, falling back to the live player faction." },
+    ],
+  },
+  {
     version: "0.9.1289",
     date: "2026-07-17",
     items: [

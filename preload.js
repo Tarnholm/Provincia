@@ -212,6 +212,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   iconCachePutBulk: (items) => ipcRenderer.invoke("icon-cache-put-bulk", items),
   iconCachePruneUnder: (dir) => ipcRenderer.invoke("icon-cache-prune-under", dir),
   getMineProspects: (modDataDir) => ipcRenderer.invoke("get-mine-prospects", modDataDir),
+  getRegionAdjacency: (modDataDir) => ipcRenderer.invoke("get-region-adjacency", modDataDir),
   explainSettlementIncome: (modDataDir, faction, region) =>
     ipcRenderer.invoke("explain-settlement-income", modDataDir, faction, region),
   econBaselineCapture: (modDataDir, name) => ipcRenderer.invoke("econ-baseline-capture", modDataDir, name),

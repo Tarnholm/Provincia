@@ -329,6 +329,20 @@ function _modCopyWarning(modDataDir) {
 // IPC: per-region mining prospects for the region panel (2026-07-17) — deposit
 // list + predicted income per mine level from the cracked mining formula
 // (incomeModel.mineProspects; validated to the denarius on live saves).
+// IPC: region adjacency graph (2026-07-17) — for the Threat/Reach map modes.
+// Sets → arrays for IPC. Cached inside incomeModel per modDataDir.
+ipcMain.handle("get-region-adjacency", async (_event, modDataDir) => {
+  try {
+    if (!modDataDir) return { error: "modDataDir required" };
+    const adj = require("./incomeModel.js").regionAdjacency(modDataDir);
+    const out = {};
+    for (const k of Object.keys(adj)) out[k] = [...adj[k]];
+    return { adjacency: out };
+  } catch (e) {
+    return { error: e && e.message ? e.message : "adjacency failed" };
+  }
+});
+
 ipcMain.handle("get-mine-prospects", async (_event, modDataDir) => {
   try {
     if (!modDataDir) return { error: "modDataDir required" };
