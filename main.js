@@ -2445,6 +2445,10 @@ registerSaveCompareHandlers(ipcMain, { _writeLog: (s) => _writeLog(s) });
 const { registerCampaignAutopsyHandlers } = require("./src/campaignAutopsyHandlers.js");
 registerCampaignAutopsyHandlers(ipcMain, { _writeLog: (s) => _writeLog(s) });
 
+// Build-order optimizer IPC — see src/buildOrderHandlers.js.
+const { registerBuildOrderHandlers } = require("./src/buildOrderHandlers.js");
+registerBuildOrderHandlers(ipcMain);
+
 // Mod-lint IPC handler — see src/modLintHandlers.js.
 const { registerModLintHandlers } = require("./src/modLintHandlers.js");
 registerModLintHandlers(ipcMain);

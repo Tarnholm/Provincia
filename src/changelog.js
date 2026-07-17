@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1299",
+    date: "2026-07-17",
+    items: [
+      { type: "feature", text: "**Build-Order Optimizer (🧰 Tools).** Select a settlement, and it ranks every structure you could build there by payback time — construction cost divided by the extra income per turn it would add (computed from the same cracked economy model as the income maps). Fastest-paying builds first; walls/happiness/recruitment-only buildings are flagged as non-income at the bottom. A toggle switches between the one settlement and the whole faction." },
+    ],
+  },
+  {
     version: "0.9.1298",
     date: "2026-07-17",
     items: [

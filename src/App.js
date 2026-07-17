@@ -74,6 +74,7 @@ import RecruitPlannerPanel from "./panels/RecruitPlannerPanel";
 import DiploHeatmapPanel from "./panels/DiploHeatmapPanel";
 import TraitExplorerPanel from "./panels/TraitExplorerPanel";
 import CampaignAutopsyPanel from "./panels/CampaignAutopsyPanel";
+import BuildOrderPanel from "./panels/BuildOrderPanel";
 import PopProjectionPanel from "./panels/PopProjectionPanel";
 import DefinitionLocatorPanel from "./panels/DefinitionLocatorPanel";
 import WhatIfPanel from "./panels/WhatIfPanel";
@@ -10992,6 +10993,7 @@ function App() {
   const [showDiploHeatmap, setShowDiploHeatmap] = useState(false); // 🕊 NxN diplomacy heatmap (2026-07-17)
   const [showTraitExplorer, setShowTraitExplorer] = useState(false); // 🎭 trait browser (2026-07-17)
   const [showCampaignAutopsy, setShowCampaignAutopsy] = useState(false); // ⚰ campaign post-mortem (2026-07-17)
+  const [showBuildOrder, setShowBuildOrder] = useState(false); // 🔨 build-order payback ranking (2026-07-17)
   const [showPopProjection, setShowPopProjection] = useState(false); // 📉 settlement growth projection (2026-07-17)
   const [showDefLocator, setShowDefLocator] = useState(false); // ⌖ "where is this defined?" (2026-07-17)
   const [showWhatIf, setShowWhatIf] = useState(false); // 🧪 in-shadow EDB/EDU tweak → economy diff (2026-07-17)
@@ -14222,6 +14224,7 @@ function App() {
                       { icon: "📉", label: "Population Projection", color: "#9ed6ad", desc: "Project every settlement N seasons forward; flag decline, stalls, tier-ups and unrest risk.", open: () => setShowPopProjection(true) },
                       { icon: "🎭", label: "Trait Explorer", color: "#c9b8e0", desc: "Browse every character trait — filter by effect (tax, law, command…), see levels/thresholds/effects, and in live mode who carries each.", open: () => setShowTraitExplorer(true) },
                       { icon: "⚰", label: "Campaign Autopsy", color: "#cf8f6a", desc: "Post-mortem over a scanned saves timeline — each faction's settlement/treasury/army arc, when they peaked, declined or were wiped, and who won.", open: () => setShowCampaignAutopsy(true) },
+                      { icon: "🔨", label: "Build-Order Optimizer", color: "#d8c088", desc: "For the selected settlement: rank its buildable structures by payback time (cost ÷ extra income per turn).", open: () => { if (lockedRegionInfo || regionInfo) setShowBuildOrder(true); else pushToast("Select a region first — the optimizer works on the selected settlement.", "info", 5000); } },
                       { icon: "⌖", label: "Find Definition", color: "#c8c8e8", desc: "Where is this unit/building/region defined? File + line across all mod files, click to open in editor.", open: () => setShowDefLocator(true) },
                       { icon: "⚔", label: "Battle Ledger", color: "#d8a08f", desc: "Live-mode battle history per faction — fought/won/lost, sieges, armies destroyed, opponents.", open: () => { setBattleLedgerSnap(battleLedgerRef.current ? battleLedgerRef.current.snapshot() : null); setShowBattleLedger(true); } },
                       { icon: "🧪", label: "What-If Sandbox", color: "#b8d8e8", desc: "Apply a hypothetical EDB/EDU tweak in a shadow copy and diff every faction's economy — the mod itself is never touched.", open: () => setShowWhatIf(true) },
@@ -21725,6 +21728,22 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           onClose={() => setShowCampaignAutopsy(false)}
         />
       )}
+      {showBuildOrder && (() => {
+        const info = lockedRegionInfo || regionInfo;
+        if (!info) return null;
+        const boFaction = ((currentOwnerByCity && currentOwnerByCity[info.city])
+          || (initialOwnerByCity && initialOwnerByCity[info.city])
+          || info.faction || "").toLowerCase() || null;
+        return (
+          <BuildOrderPanel
+            modDataDir={modDataDir}
+            faction={boFaction}
+            region={info.region}
+            factionDisplayNames={factionDisplayNames}
+            onClose={() => setShowBuildOrder(false)}
+          />
+        );
+      })()}
       {showRecruitPlanner && (() => {
         const r = lockedRegionInfo || regionInfo;
         if (!r) return null;
