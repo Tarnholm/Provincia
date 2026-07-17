@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1289",
+    date: "2026-07-17",
+    items: [
+      { type: "improvement", text: "**Mining map mode reworked per feedback.** The sidebar now lists EVERY settlement with mineable deposits (scrollable, sorted by income) with a Current / Potential toggle that also switches what the map colors show — what mines earn today vs what they could earn at best level. The mode no longer injects anything into the region info panel, and the formula note is gone." },
+    ],
+  },
+  {
     version: "0.9.1288",
     date: "2026-07-17",
     items: [

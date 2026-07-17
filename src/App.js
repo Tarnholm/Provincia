@@ -1837,6 +1837,7 @@ function App() {
 
   const [regions, setRegions] = useState({});
   const [regionInfo, setRegionInfo] = useState(null);
+  const [miningView, setMiningView] = useState("potential"); // mining map mode: "current" earnings vs best-level "potential" (declared early — the colorize dep array reads it)
   // 0.9.535: hover-to-inspect tooltip — { sx, sy, region, owner, terrain }.
   // Lightweight cursor readout updated only when the hovered tile changes
   // (gated via lastInspectKeyRef) so it doesn't re-render every pixel.
@@ -9439,6 +9440,7 @@ function App() {
         const bestIncome = (r) => {
           const mp = mineProspects && mineProspects[r.region];
           if (!mp || !mp.levels || !mp.levels.length) return 0;
+          if (miningView === "current") return mp.currentIncome || 0;
           let best = 0;
           for (const l of mp.levels) if (l.income > best) best = l.income;
           return best;
@@ -9634,7 +9636,7 @@ function App() {
         else clearTimeout(_handle);
       }
     };
-  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, startingArmiesByRegion]);
+  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -14922,13 +14924,6 @@ function App() {
       if (!here.length) return { label: "War activity", value: "— nothing recorded here" };
       return { label: `War activity · ${here.length} event${here.length === 1 ? "" : "s"}`, value: `latest: ${String(here[0].kind || "battle").replace(/_/g, " ")}${here[0].faction ? ` (${here[0].faction})` : ""}` };
     }
-    if (colorMode === "mining") {
-      const mp = mineProspects && mineProspects[info.region];
-      if (!mp || !mp.levels || !mp.levels.length) return { label: "Mining", value: "— no mineable deposits" };
-      const minerals = (mp.minerals || []).map((m) => `${m.name}${m.qty > 1 ? ` ×${m.qty}` : ""}`).join(", ");
-      const lv = mp.levels.map((l) => `${l.level.replace(/_/g, " ")}: +${l.income}/turn${l.built ? " ✓" : ""}`).join(" · ");
-      return { label: `Mining · ${minerals}`, value: lv };
-    }
     if (colorMode === "culture") {
       return info.culture ? { label: "Culture", value: info.culture } : null;
     }
@@ -15247,15 +15242,30 @@ function App() {
     if (colorMode === "mining") {
       const entries = mineProspects ? Object.entries(mineProspects) : [];
       const best = (mp) => (mp.levels || []).reduce((a, l) => Math.max(a, l.income), 0);
-      const maxV = entries.reduce((a, [, mp]) => Math.max(a, best(mp)), 0);
-      const top = entries
-        .map(([region, mp]) => ({ region, settlement: mp.settlement, income: best(mp), built: (mp.levels || []).some((l) => l.built) }))
-        .sort((a, b) => b.income - a.income)
-        .slice(0, 5);
+      const val = (mp) => (miningView === "current" ? (mp.currentIncome || 0) : best(mp));
+      const rows = entries
+        .map(([region, mp]) => ({ region, settlement: mp.settlement || region, income: val(mp), built: (mp.levels || []).some((l) => l.built) }))
+        .sort((a, b) => b.income - a.income || a.settlement.localeCompare(b.settlement));
+      const maxV = rows.length ? rows[0].income : 0;
+      const toggleBtn = (key, label) => (
+        <button
+          onClick={() => setMiningView(key)}
+          style={{
+            flex: 1, padding: "2px 6px", fontSize: "0.7rem", cursor: "pointer", borderRadius: 4,
+            background: miningView === key ? "rgba(220,166,74,0.35)" : "rgba(60,60,60,0.6)",
+            border: miningView === key ? "1px solid #e8c873" : "1px solid #555",
+            color: miningView === key ? "#ffd98a" : "#bbb",
+          }}
+        >{label}</button>
+      );
       return (
         <div style={panelStyle}>
           <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Mining income <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
           {!legendCollapsed && <>
+            <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
+              {toggleBtn("current", "Current")}
+              {toggleBtn("potential", "Potential")}
+            </div>
             <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(52,54,60), rgb(140,90,45), rgb(190,190,195), rgb(255,205,60))" }} />
             <div style={labelRow}>
               <span>none</span>
@@ -15263,18 +15273,17 @@ function App() {
               <span>{maxV ? `+${maxV}/turn` : "—"}</span>
             </div>
             {!mineProspects && <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 4 }}>Computing deposits… (a few seconds after launch)</div>}
-            {top.length > 0 && (
-              <div style={{ marginTop: 6 }}>
-                <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>Richest deposits (best level):</div>
-                {top.map((t) => (
+            {rows.length > 0 && (
+              <div style={{ marginTop: 6, maxHeight: "38vh", overflowY: "auto", paddingRight: 2 }}>
+                {rows.map((t) => (
                   <div key={t.region} style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem" }}>
-                    <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.settlement || t.region}</span>
-                    <span style={{ color: t.built ? "#8fd18f" : "#e8c873", whiteSpace: "nowrap" }}>+{t.income}/turn{t.built ? " ✓" : ""}</span>
+                    <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.settlement}</span>
+                    <span style={{ color: t.built ? "#8fd18f" : "#e8c873", whiteSpace: "nowrap" }}>{t.income ? `+${t.income}/turn` : "—"}{t.built ? " ✓" : ""}</span>
                   </div>
                 ))}
               </div>
             )}
-            <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>Exact engine formula (deposit qty × trade value × mine strength). ✓ = mine built. Hover a region for its per-level numbers.</div>
+            <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>✓ = mine built. All {rows.length} settlements with mineable deposits.</div>
           </>}
         </div>
       );
