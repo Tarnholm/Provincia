@@ -7681,15 +7681,15 @@
 			"loading screen icon": "data/ui/faction_icons/eburones.tga",
 
 			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       39,
+			"standard index":       206,
 			"rebel standard index": 39,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       47,
+			"logo index":       203,
 			"rebel logo index": 47,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_gallic_rebel.CAS",
+			"strat symbol model":       "data/models_strat/symbol_eburones.CAS",
 			"strat rebel symbol model": "data/models_strat/symbol_gallic_rebel.CAS",
 		},
 
@@ -13445,15 +13445,15 @@
 			"loading screen icon": "data/ui/faction_icons/nervii.tga",
 
 			;;standard index as declared in descr_standards (4 per page)
-			"standard index":       39,
+			"standard index":       207,
 			"rebel standard index": 39,
 
 			;;logo index as declared in descr_sm_faction_logos (1 per page)
-			"logo index":       47,
+			"logo index":       204,
 			"rebel logo index": 47,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_gallic_rebel.CAS",
+			"strat symbol model":       "data/models_strat/symbol_nervii.CAS",
 			"strat rebel symbol model": "data/models_strat/symbol_gallic_rebel.CAS",
 		},
 

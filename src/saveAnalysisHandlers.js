@@ -95,7 +95,9 @@ function registerSaveAnalysisHandlers(ipcMain, { _writeLog, getLastSaveBuf }) {
   // Shape a { campaigns, errors, scanned } timeline into the renderer payload
   // (strip internal-only fields, attach per-turn deltas). Same as the serial path.
   const finalizeTimeline = ({ campaigns, errors, scanned }, computeDelta) => {
-    const strip = (r) => { const { _ownerByCity, _diplomacy, _family, ...keep } = r; return keep; };
+    // _ownerByCity is KEPT since 2026-07-17 — the timeline player animates
+    // ownership per turn from it (~200 small entries/row, negligible payload).
+    const strip = (r) => { const { _diplomacy, _family, ...keep } = r; return keep; };
     return {
       scanned,
       errors,

@@ -5,6 +5,14 @@
 // greppable in the working tree. Full authoritative history is in git.
 const CHANGELOG_ARCHIVE = [
   {
+    version: "0.9.1280",
+    date: "2026-07-16",
+    items: [
+      { type: "fix", text: "**Killed the last hover \"flash\": commander portraits.** Hovering a region swapped each bodyguard card for its general's portrait — resolved lazily, per character, the first time you hovered them, which read as a flash. All on-map commanders' portraits are now warmed quietly right after the map appears, so the panel's first render is already the portrait." },
+      { type: "improvement", text: "**Background icon warm-up finishes much sooner.** The post-splash passes (recruit cards, remaining building catalog) were deliberately slow-paced from the fix in 0.9.1278; now that card lookups are indexed they run at a brisker pace — the whole map should be fully warm within seconds of the map appearing, while input stays responsive." },
+    ],
+  },
+  {
     version: "0.9.1279",
     date: "2026-07-16",
     items: [

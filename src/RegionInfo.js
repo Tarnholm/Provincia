@@ -7,6 +7,7 @@ import { displayFirstName, displayFullName } from "./displayName";
 import { loadBuildingIcon, invalidateBuildingIcon } from "./buildingIcons";
 import AddGeneralModal from "./AddGeneralModal";
 import DiplomacyEditor from "./DiplomacyEditor";
+import IncomeExplainer from "./panels/IncomeExplainer";
 // nonLiveCommanderResolver.js is CommonJS (the headless doctor + diagnostics
 // require() it). Rollup can't statically extract NAMED exports from
 // `module.exports = {...}`, so import the default object and pull the fn off it.
@@ -528,7 +529,7 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, recruitableAll, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, liveReligion, liveWonders, agentCensus, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, mineProspects, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, onDuplicateUnitInSelectedArmy, onReorderUnitInSelectedArmy, onMoveUnitBetweenArmies, onSetUnitUpgrade, onSetAllUnitsUpgrade, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, recruitableAll, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, liveReligion, liveWonders, agentCensus, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, mineProspects, incomeExplainData, onExplainIncome, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, onDuplicateUnitInSelectedArmy, onReorderUnitInSelectedArmy, onMoveUnitBetweenArmies, onSetUnitUpgrade, onSetAllUnitsUpgrade, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -1810,6 +1811,22 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               </span>
             )}
           </div>
+        )}
+        {/* Income explainer (2026-07-17): "≡ explain" opens the line-itemed
+            tax/farming/mining/trade breakdown from the cracked income model.
+            App.js owns the IPC + state (onExplainIncome / incomeExplainData);
+            gate is devMode || true — always available by design. */}
+        {(devMode || true) && onExplainIncome && (
+          <div style={{ marginBottom: 2 }}>
+            <button onClick={(e) => { e.stopPropagation(); onExplainIncome(); }}
+              title="Explain this settlement's income — line-itemed tax / farming / mining / trade from the cracked turn-1 income model (src/incomeModel.js)"
+              style={{ padding: "0 6px", fontSize: "0.65rem", background: "rgba(168, 134, 92, 0.18)", color: "#ffe6a8", border: "1px solid rgba(168, 134, 92, 0.6)", borderRadius: 3, cursor: "pointer", fontWeight: 600 }}>
+              ≡ explain income
+            </button>
+          </div>
+        )}
+        {incomeExplainData && (
+          <IncomeExplainer data={incomeExplainData} onClose={() => onExplainIncome && onExplainIncome(null)} />
         )}
         {Array.isArray(homelandFactions) && homelandFactions.length > 0 && (
           <div style={{ marginBottom: 2, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4 }}>

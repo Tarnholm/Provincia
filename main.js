@@ -2264,6 +2264,7 @@ ipcMain.handle("clear-mod-caches", async () => {
   try { _unitStatsCache.clear(); } catch {}
   try { _buildingStatsCache.clear(); } catch {}
   try { _textDictCache.clear(); } catch {}
+  try { require("./src/definitionLocator.js").clearDefinitionLocatorCache(); } catch {}
   try { clearFactionDisplayCaches(); } catch {} // display+culture LRUs live in src/factionDisplayHandlers.js
   return true;
 });
@@ -2419,6 +2420,42 @@ registerSaveAnalysisHandlers(ipcMain, { _writeLog: (s) => _writeLog(s), getLastS
 // App/system info + log-folder picker IPC handlers — see src/systemHandlers.js.
 const { registerSystemHandlers } = require("./src/systemHandlers.js");
 registerSystemHandlers(ipcMain, { app, dialog });
+
+// Submod drift checker IPC handlers — see src/submodDriftHandlers.js.
+const { registerSubmodDriftHandlers } = require("./src/submodDriftHandlers.js");
+registerSubmodDriftHandlers(ipcMain, { dialog });
+
+// Settlement income explainer IPC — see src/incomeExplainHandlers.js.
+const { registerIncomeExplainHandlers } = require("./src/incomeExplainHandlers.js");
+registerIncomeExplainHandlers(ipcMain);
+
+// Economy regression baseline IPC — see src/econBaselineHandlers.js.
+const { registerEconBaselineHandlers } = require("./src/econBaselineHandlers.js");
+registerEconBaselineHandlers(ipcMain, { app });
+
+// Shareable HTML report export IPC — see src/reportExportHandlers.js.
+const { registerReportExportHandlers } = require("./src/reportExportHandlers.js");
+registerReportExportHandlers(ipcMain, { dialog });
+
+// Save-to-save compare IPC — see src/saveCompareHandlers.js.
+const { registerSaveCompareHandlers } = require("./src/saveCompareHandlers.js");
+registerSaveCompareHandlers(ipcMain, { _writeLog: (s) => _writeLog(s) });
+
+// Mod-lint IPC handler — see src/modLintHandlers.js.
+const { registerModLintHandlers } = require("./src/modLintHandlers.js");
+registerModLintHandlers(ipcMain);
+
+// Population projection IPC — see src/popProjectionHandlers.js.
+const { registerPopProjectionHandlers } = require("./src/popProjectionHandlers.js");
+registerPopProjectionHandlers(ipcMain);
+
+// Definition locator IPC — see src/definitionLocatorHandlers.js.
+const { registerDefinitionLocatorHandlers } = require("./src/definitionLocatorHandlers.js");
+registerDefinitionLocatorHandlers(ipcMain);
+
+// What-if balance sandbox IPC — see src/whatIfHandlers.js.
+const { registerWhatIfHandlers } = require("./src/whatIfHandlers.js");
+registerWhatIfHandlers(ipcMain, { app });
 
 // IPC: pick a specific .sav to pin Live mode to. Opens the system file
 // dialog in the given saveDir. Returns just the filename (not full path)

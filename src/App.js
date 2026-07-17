@@ -62,6 +62,46 @@ import CommandPalette from "./panels/CommandPalette";
 import WealthPanel from "./panels/WealthPanel";
 import DashboardModal from "./panels/DashboardModal";
 import ArmySetupModal from "./panels/ArmySetupModal";
+import VictoryProgressPanel from "./panels/VictoryProgressPanel";
+import SubmodDriftPanel from "./panels/SubmodDriftPanel";
+import EconBaselinePanel from "./panels/EconBaselinePanel";
+import ReportExportPanel from "./panels/ReportExportPanel";
+import SaveComparePanel from "./panels/SaveComparePanel";
+import ModLintPanel from "./panels/ModLintPanel";
+import TimelinePlayerPanel from "./panels/TimelinePlayerPanel";
+import UnitComparePanel from "./panels/UnitComparePanel";
+import RecruitPlannerPanel from "./panels/RecruitPlannerPanel";
+import DiploHeatmapPanel from "./panels/DiploHeatmapPanel";
+import PopProjectionPanel from "./panels/PopProjectionPanel";
+import DefinitionLocatorPanel from "./panels/DefinitionLocatorPanel";
+import WhatIfPanel from "./panels/WhatIfPanel";
+
+// Error boundary around the 🧰 tool panels (2026-07-17): a runtime crash in
+// one panel renders a dismissable notice instead of white-screening the app.
+class ToolPanelBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error }; }
+  componentDidCatch(error, info) {
+    try { console.error("[tool-panel] crashed:", error, info && info.componentStack); } catch { /* */ }
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ position: "fixed", top: "20%", left: "50%", transform: "translateX(-50%)", zIndex: 9000, background: "rgba(40,20,20,0.97)", border: "1px solid #a05050", borderRadius: 8, padding: 16, color: "#e8c0c0", maxWidth: 460 }}>
+          <b>A tool panel crashed.</b>
+          <div style={{ fontSize: "0.8rem", margin: "6px 0", color: "#c09090" }}>{String((this.state.error && this.state.error.message) || this.state.error)}</div>
+          <div style={{ fontSize: "0.72rem", margin: "0 0 8px", color: "#a08080" }}>The rest of the app is unaffected. Details are in the log.</div>
+          <button onClick={() => { this.setState({ error: null }); if (this.props.onReset) this.props.onReset(); }} style={{ padding: "4px 10px", cursor: "pointer" }}>Close</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+import BattleLedgerPanel from "./panels/BattleLedgerPanel";
+import { createLedger } from "./battleLedger";
+import { planRecruitUpgrades } from "./recruitPlanner";
+import { computeVictoryProgress } from "./victoryProgress";
 import Toasts from "./Toasts";
 import VolumeControl from "./VolumeControl";
 import { AnimationLayoutProvider, useEnterExit } from "./AnimationLayout";
@@ -4171,6 +4211,24 @@ function App() {
   const [mineProspects, setMineProspects] = useState(null);
   const mineProspectsTimerRef = useRef(null);
   useEffect(() => () => { if (mineProspectsTimerRef.current) clearTimeout(mineProspectsTimerRef.current); }, []);
+  // Settlement income explainer (2026-07-17): fetched on demand from the
+  // region panel's "≡ explain" button; null = closed. First call per faction
+  // reparses descr_strat+EDB in the main process (seconds) — cached after.
+  const [incomeExplainData, setIncomeExplainData] = useState(null);
+  const onExplainIncome = useCallback(async (arg) => {
+    if (arg === null) { setIncomeExplainData(null); return; }
+    const r = lockedRegionInfo || regionInfo;
+    if (!r || !r.region || !modDataDir) return;
+    const owner = (currentOwnerByCity && currentOwnerByCity[r.city])
+      || (initialOwnerByCity && initialOwnerByCity[r.city]) || r.faction || null;
+    if (!owner) { setIncomeExplainData({ error: "no owning faction for this region" }); return; }
+    setIncomeExplainData({ loading: true });
+    try {
+      setIncomeExplainData(await window.electronAPI.explainSettlementIncome(modDataDir, owner, r.region));
+    } catch (e) { setIncomeExplainData({ error: e?.message || String(e) }); }
+  }, [lockedRegionInfo, regionInfo, modDataDir, currentOwnerByCity, initialOwnerByCity]);
+  // Selecting a different region closes a stale explainer.
+  useEffect(() => { setIncomeExplainData(null); }, [regionInfo?.region, lockedRegionInfo?.region]);
   const [unitOwnership, setUnitOwnership] = useState(null); // { unitName: [faction, ...] } — from export_descr_unit.txt
   // { rebelType: { units: [name, ...], category, chance, description } } from
   // descr_rebel_factions.txt. Used to surface the procedural rebel garrison
@@ -5732,6 +5790,17 @@ function App() {
 
     // Start watching
     api.logWatchStart(liveLogDir);
+    // Battle ledger backfill (2026-07-17): the watcher only streams NEW lines,
+    // so read the existing log once and ingest it — the ledger's dedupe makes
+    // the overlap with subsequent streaming safe.
+    if (api.logReadFull && battleLedgerRef.current) {
+      api.logReadFull(liveLogDir).then((r) => {
+        const txt = r && r.msg; // { msg, ai } — the ledger wants message_log only
+        if (txt && battleLedgerRef.current.ingest(txt) > 0) {
+          setBattleLedgerSnap(battleLedgerRef.current.snapshot());
+        }
+      }).catch(() => {});
+    }
 
     // Listen for live character moves — authoritative positions from the
     // engine's own movement events, used to keep army markers pixel-
@@ -5884,7 +5953,18 @@ function App() {
         }
         const resetApi = window.electronAPI;
         if (resetApi?.saveUserFile) resetApi.saveUserFile("live_history.json", "[]");
+        if (battleLedgerRef.current) { battleLedgerRef.current.reset(); setBattleLedgerSnap(null); }
         return;
+      }
+      // Battle ledger (2026-07-17): feed RAW message-log text only (its own
+      // parser is richer than parseLogLines for battle attribution; feeding
+      // both would double-count). Snapshot pushes throttled to ~1/s.
+      if (source === "message" && battleLedgerRef.current) {
+        const fresh = battleLedgerRef.current.ingest(text);
+        if (fresh > 0 && Date.now() - battleLedgerLastPush.current > 1000) {
+          battleLedgerLastPush.current = Date.now();
+          setBattleLedgerSnap(battleLedgerRef.current.snapshot());
+        }
       }
       const events = parseLogLines(source, text);
       if (events.length > 0) processLogEvents(events);
@@ -9350,6 +9430,36 @@ function App() {
           const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.5;
           return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
         }));
+      } else if (colorMode === "mining") {
+        // Mining potential (2026-07-17): colour by the region's best-level mine
+        // income from mineProspects (the cracked formula — see incomeModel.js).
+        // No deposits = dark slate; then bronze → silver → gold with income.
+        // sqrt scale: RIS incomes run ~30 to ~1200, linear would crush the
+        // mid-range where most build decisions live.
+        const bestIncome = (r) => {
+          const mp = mineProspects && mineProspects[r.region];
+          if (!mp || !mp.levels || !mp.levels.length) return 0;
+          let best = 0;
+          for (const l of mp.levels) if (l.income > best) best = l.income;
+          return best;
+        };
+        const max = Math.max(1, ...Object.values(regions).map(bestIncome));
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          const inc = bestIncome(r);
+          let base;
+          if (!inc) base = [52, 54, 60];
+          else {
+            const t = Math.sqrt(inc / max);
+            // bronze [140,90,45] → silver [190,190,195] → gold [255,205,60]
+            base = t < 0.5
+              ? [140 + (t * 2) * 50, 90 + (t * 2) * 100, 45 + (t * 2) * 150]
+              : [190 + (t - 0.5) * 2 * 65, 190 + (t - 0.5) * 2 * 15, 195 - (t - 0.5) * 2 * 135];
+            base = base.map(Math.round);
+          }
+          if (devFlatColors) return base;
+          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.5;
+          return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
+        }));
       }
       // ── Dev map modes ──────────────────────────────────────────────
       else if (DEV_COLOR_MODES.has(colorMode)) {
@@ -9464,7 +9574,7 @@ function App() {
         else clearTimeout(_handle);
       }
     };
-  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter]);
+  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -10651,6 +10761,64 @@ function App() {
   // Army Setup overlay (2026-06-07): virtual-tax budget vs editable floor +
   // current army/upkeep/balance + recruitable pool + swap suggestions.
   const [showArmySetup, setShowArmySetup] = useState(false);
+  const [showVictoryProgress, setShowVictoryProgress] = useState(false); // 🏆 per-faction win-condition progress (2026-07-17)
+  const [showSubmodDrift, setShowSubmodDrift] = useState(false); // 🧭 submod stale-override scanner (2026-07-17)
+  const [showEconBaseline, setShowEconBaseline] = useState(false); // 📈 economy regression baseline (2026-07-17)
+  const [showReportExport, setShowReportExport] = useState(false); // 📄 shareable HTML report (2026-07-17)
+  const [showSaveCompare, setShowSaveCompare] = useState(false); // ⇄ save-to-save diff (2026-07-17)
+  const [showModLint, setShowModLint] = useState(false); // 📏 mod consistency lint (2026-07-17)
+  const [showToolsMenu, setShowToolsMenu] = useState(false); // 🧰 popup listing the tool panels
+  const [showTimelinePlayer, setShowTimelinePlayer] = useState(false); // ▶ ownership animation over scanned saves (2026-07-17)
+  const [showUnitCompare, setShowUnitCompare] = useState(false); // ⚖ side-by-side EDU unit stats (2026-07-17)
+  const [showRecruitPlanner, setShowRecruitPlanner] = useState(false); // 🏗 what each building upgrade unlocks (2026-07-17)
+  const [showDiploHeatmap, setShowDiploHeatmap] = useState(false); // 🕊 NxN diplomacy heatmap (2026-07-17)
+  const [showPopProjection, setShowPopProjection] = useState(false); // 📉 settlement growth projection (2026-07-17)
+  const [showDefLocator, setShowDefLocator] = useState(false); // ⌖ "where is this defined?" (2026-07-17)
+  const [showWhatIf, setShowWhatIf] = useState(false); // 🧪 in-shadow EDB/EDU tweak → economy diff (2026-07-17)
+  // Crash fallback for the tool-panel boundary: close every tool panel.
+  const closeAllToolPanels = () => {
+    setShowVictoryProgress(false); setShowSubmodDrift(false); setShowEconBaseline(false);
+    setShowReportExport(false); setShowSaveCompare(false); setShowModLint(false);
+    setShowTimelinePlayer(false); setShowUnitCompare(false); setShowRecruitPlanner(false);
+    setShowDiploHeatmap(false); setShowPopProjection(false); setShowDefLocator(false);
+    setShowBattleLedger(false); setShowWhatIf(false);
+  };
+  // Battle ledger (2026-07-17): accumulates battle events from the raw live
+  // log feed. The ledger instance lives on a ref (survives renders); snapshots
+  // are pushed to state ~1/s from the onLogLines subscription.
+  const battleLedgerRef = useRef(null);
+  if (!battleLedgerRef.current) battleLedgerRef.current = createLedger();
+  const [battleLedgerSnap, setBattleLedgerSnap] = useState(null);
+  const [showBattleLedger, setShowBattleLedger] = useState(false);
+  const battleLedgerLastPush = useRef(0);
+  // Gathers whatever analysis data is loaded right now into the report
+  // contract (src/reportExport.js header). Sections missing their source
+  // state are simply omitted — the panel greys them out.
+  const collectReport = () => {
+    const modName = modDataDir ? String(modDataDir).replace(/[\\/]+$/, "").split(/[\\/]/).slice(-2, -1)[0] || modDataDir : "unknown mod";
+    const out = {
+      meta: { title: `${modName} — Provincia report`, modName, campaign: mapCampaign, appVersion, date: new Date().toISOString().slice(0, 10) },
+    };
+    try { const u = canvasRef.current?.toDataURL("image/png"); if (u) out.mapPngDataUrl = u; } catch {}
+    if (armyOverview && Array.isArray(armyOverview.rows) && armyOverview.rows.length) {
+      out.factionRows = armyOverview.rows.map((r) => {
+        const net = r.netAfterTribute ?? r.net;
+        return {
+          name: (factionDisplayNames && factionDisplayNames[r.fac]) || r.fac,
+          settlements: r.towns, income: r.income, upkeep: r.armyUpkeep, net,
+          verdict: net >= 0 ? `OK (+${net})` : `OVER by ${-net}`,
+        };
+      });
+    }
+    try {
+      const vp = computeVictoryProgress({ victoryConditions, regions, currentOwnerByCity, initialOwnerByCity });
+      if (vp && vp.length) out.victoryRows = vp.map((v) => ({
+        faction: (factionDisplayNames && factionDisplayNames[v.faction]) || v.faction,
+        pct: v.pct, held: v.heldCount, required: v.requiredCount,
+      }));
+    } catch {}
+    return out;
+  };
   const [armySetupData, setArmySetupData] = useState(null); // result of getArmySetup IPC
   const [armySetupBusy, setArmySetupBusy] = useState(false);
   // Current campaign's faction roster (descr_strat faction lines) for the picker.
@@ -13296,6 +13464,7 @@ function App() {
       { id: "economy", title: "Economy", members: [
         { key: "resource", label: "Resources", badge: "mode.resource" },
         { key: "farm", label: "Fertility", badge: "mode.farm" },
+        { key: "mining", label: "Mining", badge: "mode.mining" },
         { key: "wealth", label: "Wealth", badge: "devmode.wealth", dev: true },
         { key: "income", label: "Income", badge: "devmode.income", dev: true },
         { key: "port_level", label: "Port Level", badge: "devmode.port_level", dev: true },
@@ -13545,6 +13714,7 @@ function App() {
                 try {
                   const res = await window.electronAPI?.logWatchReset?.();
                   if (res?.ok) {
+                    if (battleLedgerRef.current) { battleLedgerRef.current.reset(); setBattleLedgerSnap(null); }
                     pushToast("Live tracking reset — log re-anchored to now", "info");
                   } else {
                     pushToast("Reset failed: " + (res?.reason || res?.error || "unknown"), "warning");
@@ -13789,6 +13959,50 @@ function App() {
                 title="Army Setup — virtual-tax budget vs your editable floor, current army + balance, recruitable pool, and swap suggestions for the selected (or player) faction."
                 style={{ ...btnStyle(false), background: "rgba(60,60,60,0.7)", color: "#cf8f6a", border: "1px solid #b9743f", minWidth: 72 }}
               >⚔ Army</button>
+              {/* 🧰 Tools (2026-07-17): the analysis/modding panels live in one
+                  popup so the toolbar doesn't grow a button per panel. Add new
+                  panels HERE, not as toolbar buttons. */}
+              <span style={{ position: "relative" }} onMouseLeave={() => setShowToolsMenu(false)}>
+                <button
+                  className="dev-btn"
+                  onClick={() => setShowToolsMenu((v) => !v)}
+                  title="Analysis & modding tools — victory progress, submod drift, economy baseline, save compare, mod lint, HTML report…"
+                  style={{ ...btnStyle(showToolsMenu), background: "rgba(60,60,60,0.7)", color: "#e8c873", border: "1px solid #a08a4a", minWidth: 72 }}
+                >🧰 Tools</button>
+                {showToolsMenu && (
+                  <div style={{
+                    position: "absolute", top: "105%", left: 0, zIndex: 5000,
+                    background: "rgba(26,22,18,0.98)", border: "1px solid #6a5a3a", borderRadius: 8,
+                    padding: 6, minWidth: 240, boxShadow: "0 6px 24px rgba(0,0,0,0.6)",
+                    display: "flex", flexDirection: "column", gap: 2,
+                  }}>
+                    {[
+                      { icon: "🏆", label: "Victory Progress", color: "#d9c964", desc: "Every faction's win-condition completion — held vs required, what's missing, who holds it.", open: () => setShowVictoryProgress(true) },
+                      { icon: "🧭", label: "Submod Drift", color: "#e8c873", desc: "Scan a submod folder for stale overrides of the base mod (the 'Could not find string' bug class).", open: () => setShowSubmodDrift(true) },
+                      { icon: "📏", label: "Mod Lint", color: "#e8a0a0", desc: "Consistency checks across EDB/EDU/strat/resources — undeclared hidden resources, missing units, dead conditions.", open: () => setShowModLint(true) },
+                      { icon: "📈", label: "Economy Baseline", color: "#8fd18f", desc: "Snapshot all faction economies; diff after mod edits to catch balance breakage (~20s on RIS).", open: () => setShowEconBaseline(true) },
+                      { icon: "⇄", label: "Compare Saves", color: "#c9a0dc", desc: "Diff two saves — ownership flips, treasury/army deltas, population changes (~15s).", open: () => setShowSaveCompare(true) },
+                      { icon: "📄", label: "HTML Report", color: "#9fb8d8", desc: "Export a self-contained shareable report of the current analysis.", open: () => setShowReportExport(true) },
+                      { icon: "▶", label: "Timeline Player", color: "#8fc9d8", desc: "Animate region ownership turn by turn across a scanned saves timeline.", open: () => setShowTimelinePlayer(true) },
+                      { icon: "⚖", label: "Unit Comparator", color: "#d8b88f", desc: "Side-by-side EDU stats for up to 6 units, best-in-row highlighting + cost-effectiveness ratios.", open: () => setShowUnitCompare(true) },
+                      { icon: "🏗", label: "Recruit Planner", color: "#a8d8a0", desc: "For the selected settlement: what each next building upgrade unlocks for recruitment.", open: () => { if (lockedRegionInfo || regionInfo) setShowRecruitPlanner(true); else pushToast("Select a region first — the planner works on the selected settlement.", "info", 5000); } },
+                      { icon: "🕊", label: "Diplomacy Heatmap", color: "#d8a0a0", desc: "NxN heatmap of the live diplomacy matrix — war blocs and alliance clusters at a glance.", open: () => setShowDiploHeatmap(true) },
+                      { icon: "📉", label: "Population Projection", color: "#9ed6ad", desc: "Project every settlement N seasons forward; flag decline, stalls, tier-ups and unrest risk.", open: () => setShowPopProjection(true) },
+                      { icon: "⌖", label: "Find Definition", color: "#c8c8e8", desc: "Where is this unit/building/region defined? File + line across all mod files, click to open in editor.", open: () => setShowDefLocator(true) },
+                      { icon: "⚔", label: "Battle Ledger", color: "#d8a08f", desc: "Live-mode battle history per faction — fought/won/lost, sieges, armies destroyed, opponents.", open: () => { setBattleLedgerSnap(battleLedgerRef.current ? battleLedgerRef.current.snapshot() : null); setShowBattleLedger(true); } },
+                      { icon: "🧪", label: "What-If Sandbox", color: "#b8d8e8", desc: "Apply a hypothetical EDB/EDU tweak in a shadow copy and diff every faction's economy — the mod itself is never touched.", open: () => setShowWhatIf(true) },
+                    ].map((t) => (
+                      <button
+                        key={t.label}
+                        className="dev-btn"
+                        onClick={() => { setShowToolsMenu(false); t.open(); }}
+                        title={t.desc}
+                        style={{ ...btnStyle(false), background: "transparent", border: "1px solid transparent", color: t.color, textAlign: "left", padding: "5px 8px", minWidth: 0 }}
+                      >{t.icon} {t.label}</button>
+                    ))}
+                  </div>
+                )}
+              </span>
               {/* Embedded Settlement Processor (Scripts) — opens the bundled
                   Suite window (Pipeline / Editor / Master / Compare). Electron
                   only; the IPC bridge is absent in browser builds. */}
@@ -18191,6 +18405,8 @@ function App() {
                       }}
                       modDataDir={modDataDir}
                       mineProspects={mineProspects}
+                      incomeExplainData={incomeExplainData}
+                      onExplainIncome={onExplainIncome}
                       factionCultures={factionCultures}
                       statsCache={statsCache}
                       nonLivePortraitMap={nonLivePortraitMap}
@@ -20979,6 +21195,68 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           modDataDir={modDataDir}
         />
       )}
+      <ToolPanelBoundary onReset={closeAllToolPanels}>
+      {showSubmodDrift && <SubmodDriftPanel modDataDir={modDataDir} onClose={() => setShowSubmodDrift(false)} />}
+      {showEconBaseline && <EconBaselinePanel modDataDir={modDataDir} onClose={() => setShowEconBaseline(false)} />}
+      {showReportExport && <ReportExportPanel collect={collectReport} onClose={() => setShowReportExport(false)} />}
+      {showSaveCompare && <SaveComparePanel modDataDir={modDataDir} onClose={() => setShowSaveCompare(false)} />}
+      {showModLint && <ModLintPanel modDataDir={modDataDir} onClose={() => setShowModLint(false)} />}
+      {showUnitCompare && <UnitComparePanel modDataDir={modDataDir} unitOwnership={unitOwnership} factionDisplayNames={factionDisplayNames} onClose={() => setShowUnitCompare(false)} />}
+      {showPopProjection && <PopProjectionPanel modDataDir={modDataDir} factions={factions} factionDisplayNames={factionDisplayNames} initialFaction={null} onClose={() => setShowPopProjection(false)} />}
+      {showDefLocator && <DefinitionLocatorPanel modDataDir={modDataDir} initialQuery="" onClose={() => setShowDefLocator(false)} />}
+      {showBattleLedger && <BattleLedgerPanel ledgerSnapshot={battleLedgerSnap} liveActive={liveLogActive} onClose={() => setShowBattleLedger(false)} />}
+      {showWhatIf && <WhatIfPanel modDataDir={modDataDir} onClose={() => setShowWhatIf(false)} />}
+      {showDiploHeatmap && (
+        <DiploHeatmapPanel
+          diplomacyMatrix={diplomacyMatrix}
+          allFactionDiplomacy={allFactionDiplomacy}
+          factionDisplayNames={factionDisplayNames}
+          factionCultures={factionCultures}
+          factionColors={factionColors}
+          liveActive={liveLogActive}
+          onClose={() => setShowDiploHeatmap(false)}
+        />
+      )}
+      {showRecruitPlanner && (() => {
+        const r = lockedRegionInfo || regionInfo;
+        if (!r) return null;
+        let builtRaw = null;
+        try { builtRaw = getBuildings(r, true); } catch { builtRaw = null; }
+        const plannerOwner = ((currentOwnerByCity && currentOwnerByCity[r.city])
+          || (initialOwnerByCity && initialOwnerByCity[r.city])
+          || r.faction || "").toLowerCase();
+        // recruitableNow: null → the planner recomputes its own baseline (same
+        // gating rules); avoids restructuring the region panel's memoInline.
+        const plan = planRecruitUpgrades({
+          info: r, buildings: builtRaw || [], buildingRecruits, buildingLevelsLookup,
+          unitOwnership, ownerFaction: plannerOwner, factionCultures,
+          recruitableNow: null, resourcesData,
+        });
+        return <RecruitPlannerPanel info={r} plan={plan} factionDisplayNames={factionDisplayNames} unitDict={null} onClose={() => setShowRecruitPlanner(false)} />;
+      })()}
+      {showTimelinePlayer && (
+        <TimelinePlayerPanel
+          timeline={campaignTimeline}
+          scanning={timelineScanning}
+          onScanTimeline={runTimelineScan}
+          offscreen={offscreen}
+          regions={regions}
+          factionColors={factionColors}
+          factionDisplayNames={factionDisplayNames}
+          onClose={() => setShowTimelinePlayer(false)}
+        />
+      )}
+      {showVictoryProgress && (
+        <VictoryProgressPanel
+          victoryConditions={victoryConditions}
+          regions={regions}
+          currentOwnerByCity={currentOwnerByCity}
+          initialOwnerByCity={initialOwnerByCity}
+          factionDisplayNames={factionDisplayNames}
+          onClose={() => setShowVictoryProgress(false)}
+        />
+      )}
+      </ToolPanelBoundary>
       {showArmySetup && (
         <ArmySetupModal
           activeIconsDir={activeIconsDir}

@@ -95,6 +95,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Victory-conditions helper: region-list CSV in → region,owner_faction CSV out.
   vcRegionOwnersCsv: (modDataDir, campaign) => ipcRenderer.invoke("vc-region-owners-csv", modDataDir, campaign),
   selectFolder: () => ipcRenderer.invoke("select-folder"),
+  // Submod drift checker: pick a submod folder + scan it for stale overrides of the base mod.
+  selectSubmodFolder: () => ipcRenderer.invoke("select-submod-folder"),
+  scanSubmodDrift: (baseDir, submodDir) => ipcRenderer.invoke("scan-submod-drift", baseDir, submodDir),
   // Export-instead-of-overwrite: when given a folder, subsequent "Save to Mod"
   // writes are redirected under it (the live mod is left untouched). Pass null
   // to turn it off (back to in-place overwrite). Returns { ok, dir }.
@@ -209,6 +212,17 @@ contextBridge.exposeInMainWorld("electronAPI", {
   iconCachePutBulk: (items) => ipcRenderer.invoke("icon-cache-put-bulk", items),
   iconCachePruneUnder: (dir) => ipcRenderer.invoke("icon-cache-prune-under", dir),
   getMineProspects: (modDataDir) => ipcRenderer.invoke("get-mine-prospects", modDataDir),
+  explainSettlementIncome: (modDataDir, faction, region) =>
+    ipcRenderer.invoke("explain-settlement-income", modDataDir, faction, region),
+  econBaselineCapture: (modDataDir, name) => ipcRenderer.invoke("econ-baseline-capture", modDataDir, name),
+  econBaselineList: () => ipcRenderer.invoke("econ-baseline-list"),
+  econBaselineDiff: (modDataDir, name, thresholdPct) => ipcRenderer.invoke("econ-baseline-diff", modDataDir, name, thresholdPct),
+  exportHtmlReport: (html, suggestedName) => ipcRenderer.invoke("export-html-report", html, suggestedName),
+  compareSaves: (modDataDir, savePathA, savePathB) => ipcRenderer.invoke("compare-saves", modDataDir, savePathA, savePathB),
+  lintMod: (modDataDir) => ipcRenderer.invoke("lint-mod", modDataDir),
+  projectPopulation: (modDataDir, faction, turns) => ipcRenderer.invoke("project-population", modDataDir, faction, turns),
+  locateDefinition: (modDataDir, query) => ipcRenderer.invoke("locate-definition", modDataDir, query),
+  runWhatIf: (modDataDir, edits, thresholdPct) => ipcRenderer.invoke("run-what-if", modDataDir, edits, thresholdPct),
   resolveUnitInfo: (modDataDir, faction, unitName, dictionary) =>
     ipcRenderer.invoke("resolve-unit-info", modDataDir, faction, unitName, dictionary),
   getBuildingDisplayNames: (modDataDir) =>

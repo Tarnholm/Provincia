@@ -13,6 +13,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1285",
+    date: "2026-07-17",
+    items: [
+      { type: "feature", text: "**The 🧰 Tools menu — fifteen new analysis and modding tools in one release.** A new Tools button in the toolbar collects everything below (the Mining map mode joins the Economy map modes). Every panel is crash-isolated: if one misbehaves it shows a notice, never takes down the app." },
+      { type: "feature", text: "**Mod safety net:** *Submod Drift* scans a submod folder for stale overrides of the base mod — the exact 'Could not find string' failure a teammate hit this week — and *Mod Lint* checks EDB/EDU/strat/resources for undeclared hidden resources (the fatal boot-crash class), missing units and dead conditions in ~200ms." },
+      { type: "feature", text: "**Balance workflow:** *Economy Baseline* snapshots all 239 factions' turn-1 economies and diffs after mod edits; the *What-If Sandbox* applies a hypothetical EDB/EDU tweak in a temp shadow copy and shows every faction's economy delta without touching the mod; the *Unit Comparator* puts up to 6 units side by side with cost-effectiveness ratios; the *Recruit Planner* shows what each next building upgrade unlocks in the selected settlement." },
+      { type: "feature", text: "**Campaign analysis:** *Compare Saves* diffs two saves (ownership flips, treasury/army deltas, population); the *Timeline Player* animates region ownership turn by turn across a scanned saves folder; the *Battle Ledger* reconstructs every battle from the live game log with per-faction win/loss records; *Victory Progress* tracks each faction's win conditions; the *Diplomacy Heatmap* shows war blocs as a sortable NxN grid; *Population Projection* simulates every settlement's squalor-aware growth N seasons ahead with decline/stall/unrest flags." },
+      { type: "feature", text: "**Everyday modding:** *Find Definition* locates any unit/building/region/string across all mod files with file+line and opens your editor there; the mining map mode colors regions bronze→silver→gold by predicted mine income; the region panel's income explainer itemizes where a settlement's tax/farm/mine/trade numbers come from." },
+    ],
+  },
+  {
     version: "0.9.1284",
     date: "2026-07-17",
     items: [
@@ -44,14 +55,6 @@ const CHANGELOG = [
     date: "2026-07-16",
     items: [
       { type: "fix", text: "**AOR unit cards no longer load in slowly.** The Areas-of-Recruitment roster keys its cards by region owner, and those pairs fell past the warm-up's safety cap (the log showed it truncating at 8,000 cards). The warm-up now computes each region's AOR units precisely and loads them first, and the cap is raised to 20,000 — AOR panels should open fully drawn like everything else." },
-    ],
-  },
-  {
-    version: "0.9.1280",
-    date: "2026-07-16",
-    items: [
-      { type: "fix", text: "**Killed the last hover \"flash\": commander portraits.** Hovering a region swapped each bodyguard card for its general's portrait — resolved lazily, per character, the first time you hovered them, which read as a flash. All on-map commanders' portraits are now warmed quietly right after the map appears, so the panel's first render is already the portrait." },
-      { type: "improvement", text: "**Background icon warm-up finishes much sooner.** The post-splash passes (recruit cards, remaining building catalog) were deliberately slow-paced from the fix in 0.9.1278; now that card lookups are indexed they run at a brisker pace — the whole map should be fully warm within seconds of the map appearing, while input stays responsive." },
     ],
   },
 
