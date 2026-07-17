@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1292",
+    date: "2026-07-17",
+    items: [
+      { type: "fix", text: "**Mining 'Current' list tightened** — only settlements with a mine built AND earning appear (settlements whose income came from governor-building mining bonuses without an actual mine no longer slip in). Note: the first version of this filter shipped in 0.9.1291 — if Current looks unfiltered, restart the app to pick up the update." },
+    ],
+  },
+  {
     version: "0.9.1291",
     date: "2026-07-17",
     items: [

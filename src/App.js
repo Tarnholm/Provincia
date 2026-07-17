@@ -15356,7 +15356,7 @@ function App() {
       const val = (mp) => (miningView === "current" ? (mp.currentIncome || 0) : best(mp));
       const rows = entries
         .map(([region, mp]) => ({ region, settlement: mp.settlement || region, income: val(mp), built: (mp.levels || []).some((l) => l.built) }))
-        .filter((t) => miningView !== "current" || t.built) // Current = only settlements with a mine BUILT (user 2026-07-17)
+        .filter((t) => miningView !== "current" || (t.built && t.income > 0)) // Current = ONLY settlements with a mine built and earning (user 2026-07-17 ×2)
         .sort((a, b) => b.income - a.income || a.settlement.localeCompare(b.settlement));
       const maxV = rows.length ? rows[0].income : 0;
       // Click a row → highlight the province; double-click → jump the map there
