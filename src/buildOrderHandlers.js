@@ -6,11 +6,13 @@
 // lazy require of the heavy model inside the handler).
 //
 // CACHE: rankBuildOrder is heavy — computeIncomeFeatures + computeTurn1Budget + a full
-// EDB parse each run (~1-3s per faction on RIS; the trade model dominates). Result is
-// cached per (modDataDir, faction) and the WHOLE faction result is sliced per region
-// request, so re-selecting settlements in one faction is instant. The cache is
-// invalidated on descr_strat OR export_descr_buildings mtime change (the two files that
-// determine every number), so a mod edit re-computes on the next request.
+// EDB parse each run. computeTurn1Budget runs the entire trade graph, so a large faction
+// costs ~5-15s COLD (romans_julii, 26 towns: ~12s on RIS). Result is cached per
+// (modDataDir, faction) and the WHOLE faction result is sliced per region request, so
+// re-selecting settlements in one faction — and single-settlement requests — are instant
+// after the first. The cache is invalidated on descr_strat OR export_descr_buildings
+// mtime change (the two files that determine every number), so a mod edit re-computes on
+// the next request. (Consider surfacing a "computing…" state in the UI for the cold run.)
 
 "use strict";
 

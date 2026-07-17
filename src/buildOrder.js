@@ -88,15 +88,23 @@ function parseConstructionCosts(edbPath) {
   const lines = fs.readFileSync(edbPath, "latin1").split(/\r?\n/);
   const out = {};
   let curBuilding = null, levelsList = [], curLevel = null, curIcon = null, curMeta = null;
+  let upgradesPending = false, inUpgrades = false;
   for (const raw of lines) {
     const ln = raw.replace(/;.*$/, "");
     const bm = ln.match(/^building\s+(\w+)/);
     if (bm) {
       curBuilding = bm[1]; levelsList = []; curLevel = null; curIcon = null; curMeta = null;
+      upgradesPending = false; inUpgrades = false;
       out[curBuilding] = { icon: null, levels: [], byLevel: {} };
       continue;
     }
     if (!curBuilding) continue;
+    // Skip the `upgrades { <levelname> }` sub-block — its tokens ARE level names and would
+    // otherwise be misread as phantom level declarations.
+    const trimmed = ln.trim();
+    if (inUpgrades) { if (trimmed === "}") inUpgrades = false; continue; }
+    if (trimmed === "upgrades") { upgradesPending = true; continue; }
+    if (upgradesPending) { if (trimmed === "{") { inUpgrades = true; upgradesPending = false; } continue; }
     const icm = ln.match(/^\s*icon\s+(\S+)/);
     if (icm && !curIcon) { curIcon = icm[1]; out[curBuilding].icon = curIcon; continue; }
     const lm = ln.match(/^\s*levels\s+(.+)$/);
@@ -209,6 +217,11 @@ function humanize(name) {
   return String(name || "").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
 
+// payback = cost / income-delta, one decimal; null when the delta returns nothing.
+function paybackOf(cost, incomeDeltaPerTurn) {
+  return incomeDeltaPerTurn > 0 ? Math.round((cost / incomeDeltaPerTurn) * 10) / 10 : null;
+}
+
 // ---- main entry ----
 function rankBuildOrder(modDataDir, faction, regionOrNull) {
   const stratPath = stratPathOf(modDataDir);
@@ -306,7 +319,7 @@ function rankBuildOrder(modDataDir, faction, regionOrNull) {
       // classify — mark economy intent so a zero-delta trade building still reads economy
       meta.category = (dTaxablePct || dTradePct || dMineSum || dFarmLevel) ? "economy" : undefined;
       const { category, note } = classify(meta, breakdown, incomeDeltaPerTurn);
-      const paybackTurns = incomeDeltaPerTurn > 0 ? Math.round((meta.cost / incomeDeltaPerTurn) * 10) / 10 : null;
+      const paybackTurns = paybackOf(meta.cost, incomeDeltaPerTurn);
 
       options.push({
         chain,
@@ -337,4 +350,4 @@ function rankBuildOrder(modDataDir, faction, regionOrNull) {
   return { faction: want, tier: F.tier, nSettlements: outSettlements.length, settlements: outSettlements };
 }
 
-module.exports = { rankBuildOrder, valueBuildingDelta, parseConstructionCosts, settlementTaxAt, popBaseOf };
+module.exports = { rankBuildOrder, valueBuildingDelta, parseConstructionCosts, settlementTaxAt, popBaseOf, paybackOf, classify, humanize };

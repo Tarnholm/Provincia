@@ -222,6 +222,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   econBaselineDiff: (modDataDir, name, thresholdPct) => ipcRenderer.invoke("econ-baseline-diff", modDataDir, name, thresholdPct),
   exportHtmlReport: (html, suggestedName) => ipcRenderer.invoke("export-html-report", html, suggestedName),
   compareSaves: (modDataDir, savePathA, savePathB) => ipcRenderer.invoke("compare-saves", modDataDir, savePathA, savePathB),
+  analyzeCampaign: (modDataDir, saveDirOrTimeline) => ipcRenderer.invoke("analyze-campaign", modDataDir, saveDirOrTimeline),
   lintMod: (modDataDir) => ipcRenderer.invoke("lint-mod", modDataDir),
   projectPopulation: (modDataDir, faction, turns) => ipcRenderer.invoke("project-population", modDataDir, faction, turns),
   locateDefinition: (modDataDir, query) => ipcRenderer.invoke("locate-definition", modDataDir, query),

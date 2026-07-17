@@ -2441,6 +2441,10 @@ registerReportExportHandlers(ipcMain, { dialog });
 const { registerSaveCompareHandlers } = require("./src/saveCompareHandlers.js");
 registerSaveCompareHandlers(ipcMain, { _writeLog: (s) => _writeLog(s) });
 
+// Campaign Autopsy IPC — see src/campaignAutopsyHandlers.js.
+const { registerCampaignAutopsyHandlers } = require("./src/campaignAutopsyHandlers.js");
+registerCampaignAutopsyHandlers(ipcMain, { _writeLog: (s) => _writeLog(s) });
+
 // Mod-lint IPC handler — see src/modLintHandlers.js.
 const { registerModLintHandlers } = require("./src/modLintHandlers.js");
 registerModLintHandlers(ipcMain);

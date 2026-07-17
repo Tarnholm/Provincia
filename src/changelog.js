@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1298",
+    date: "2026-07-17",
+    items: [
+      { type: "feature", text: "**Campaign Autopsy (🧰 Tools).** Point it at a scanned saves timeline and get a post-mortem: each faction's settlement/treasury/army arc over the campaign, when they peaked, when they started declining, when they were wiped out, and who won — with a sparkline and verdict badge per faction." },
+      { type: "improvement", text: "**Unrest map mode: pick a faction, see its provinces.** The sidebar now starts as a faction picker (worst revolt risk first); selecting one lists that faction's provinces with their public order, worst first — click to highlight, double-click to jump. Use '‹ all factions' to go back." },
+    ],
+  },
+  {
     version: "0.9.1297",
     date: "2026-07-17",
     items: [

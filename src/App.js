@@ -73,6 +73,7 @@ import UnitComparePanel from "./panels/UnitComparePanel";
 import RecruitPlannerPanel from "./panels/RecruitPlannerPanel";
 import DiploHeatmapPanel from "./panels/DiploHeatmapPanel";
 import TraitExplorerPanel from "./panels/TraitExplorerPanel";
+import CampaignAutopsyPanel from "./panels/CampaignAutopsyPanel";
 import PopProjectionPanel from "./panels/PopProjectionPanel";
 import DefinitionLocatorPanel from "./panels/DefinitionLocatorPanel";
 import WhatIfPanel from "./panels/WhatIfPanel";
@@ -10990,6 +10991,7 @@ function App() {
   const [showRecruitPlanner, setShowRecruitPlanner] = useState(false); // 🏗 what each building upgrade unlocks (2026-07-17)
   const [showDiploHeatmap, setShowDiploHeatmap] = useState(false); // 🕊 NxN diplomacy heatmap (2026-07-17)
   const [showTraitExplorer, setShowTraitExplorer] = useState(false); // 🎭 trait browser (2026-07-17)
+  const [showCampaignAutopsy, setShowCampaignAutopsy] = useState(false); // ⚰ campaign post-mortem (2026-07-17)
   const [showPopProjection, setShowPopProjection] = useState(false); // 📉 settlement growth projection (2026-07-17)
   const [showDefLocator, setShowDefLocator] = useState(false); // ⌖ "where is this defined?" (2026-07-17)
   const [showWhatIf, setShowWhatIf] = useState(false); // 🧪 in-shadow EDB/EDU tweak → economy diff (2026-07-17)
@@ -14219,6 +14221,7 @@ function App() {
                       { icon: "🕊", label: "Diplomacy Heatmap", color: "#d8a0a0", desc: "NxN heatmap of the live diplomacy matrix — war blocs and alliance clusters at a glance.", open: () => setShowDiploHeatmap(true) },
                       { icon: "📉", label: "Population Projection", color: "#9ed6ad", desc: "Project every settlement N seasons forward; flag decline, stalls, tier-ups and unrest risk.", open: () => setShowPopProjection(true) },
                       { icon: "🎭", label: "Trait Explorer", color: "#c9b8e0", desc: "Browse every character trait — filter by effect (tax, law, command…), see levels/thresholds/effects, and in live mode who carries each.", open: () => setShowTraitExplorer(true) },
+                      { icon: "⚰", label: "Campaign Autopsy", color: "#cf8f6a", desc: "Post-mortem over a scanned saves timeline — each faction's settlement/treasury/army arc, when they peaked, declined or were wiped, and who won.", open: () => setShowCampaignAutopsy(true) },
                       { icon: "⌖", label: "Find Definition", color: "#c8c8e8", desc: "Where is this unit/building/region defined? File + line across all mod files, click to open in editor.", open: () => setShowDefLocator(true) },
                       { icon: "⚔", label: "Battle Ledger", color: "#d8a08f", desc: "Live-mode battle history per faction — fought/won/lost, sieges, armies destroyed, opponents.", open: () => { setBattleLedgerSnap(battleLedgerRef.current ? battleLedgerRef.current.snapshot() : null); setShowBattleLedger(true); } },
                       { icon: "🧪", label: "What-If Sandbox", color: "#b8d8e8", desc: "Apply a hypothetical EDB/EDU tweak in a shadow copy and diff every faction's economy — the mod itself is never touched.", open: () => setShowWhatIf(true) },
@@ -15399,8 +15402,42 @@ function App() {
               <span>{CFG.labels[0]}</span><span>{CFG.labels[1]}</span><span>{CFG.labels[2]}</span>
             </div>
             {colorMode === "unrestrisk" && mapMetrics && (() => {
-              // Revolt risk PER FACTION (user 2026-07-17): risky = PO < 80
-              // (riot line is 70 — <80 leaves no headroom). Click = focus map.
+              // Revolt risk (user 2026-07-17): risky = PO < 80 (riot line 70).
+              // No faction picked → faction picker list. Faction picked → that
+              // faction's PROVINCES with their PO, worst-first (user follow-up).
+              const sel = selectedFaction && selectedFaction.toLowerCase();
+              // Click a province → highlight; double-click → jump (mining flow).
+              const jumpToProv = (regionName, dbl) => {
+                const hit = Object.entries(regions).find(([, rd2]) => rd2 && rd2.region === regionName);
+                if (!hit) return;
+                const [rgbKey, rd2] = hit;
+                if (dbl) onSearchActivate({ type: "region", payload: { region: rd2, rgbKey } });
+                else setSelectedProvinces([rgbKey]);
+              };
+              if (sel) {
+                const provs = Object.entries(mapMetrics.byRegion)
+                  .filter(([, e]) => e && e.po != null && e.faction === sel)
+                  .map(([region, e]) => ({ region, settlement: e.settlement || region, po: e.po }))
+                  .sort((a, b) => a.po - b.po || a.settlement.localeCompare(b.settlement));
+                return (
+                  <div style={{ marginTop: 6, maxHeight: "40vh", overflowY: "auto", paddingRight: 2 }}>
+                    <div onClick={() => setSelectedFaction(null)} style={{ fontSize: "0.7rem", color: "#8fc9d8", cursor: "pointer", marginBottom: 3 }}>‹ all factions</div>
+                    <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>{(factionDisplayNames && factionDisplayNames[sel]) || sel.replace(/_/g, " ")} — {provs.filter((p) => p.po < 80).length}/{provs.length} at risk:</div>
+                    {provs.map((p) => (
+                      <div
+                        key={p.region}
+                        onClick={() => jumpToProv(p.region, false)}
+                        onDoubleClick={() => jumpToProv(p.region, true)}
+                        title="Click: highlight · double-click: jump"
+                        style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer" }}
+                      >
+                        <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.settlement}</span>
+                        <span style={{ color: p.po < 80 ? "#e87a6a" : p.po < 100 ? "#e8c873" : "#8fd18f", whiteSpace: "nowrap" }}>PO {p.po}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
               const agg = {};
               for (const e of Object.values(mapMetrics.byRegion)) {
                 if (!e || e.po == null || !e.faction) continue;
@@ -15412,22 +15449,19 @@ function App() {
                 .sort((x, y) => y[1].risky - x[1].risky || (y[1].risky / y[1].total) - (x[1].risky / x[1].total) || x[0].localeCompare(y[0]));
               if (!rows.length) return null;
               return (
-                <div style={{ marginTop: 6, maxHeight: "34vh", overflowY: "auto", paddingRight: 2 }}>
-                  <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>{selectedFaction ? "Revolt risk by faction:" : "Select a faction to view its unrest:"}</div>
-                  {rows.map(([fac, a]) => {
-                    const active = selectedFaction && selectedFaction.toLowerCase() === fac;
-                    return (
-                      <div
-                        key={fac}
-                        onClick={() => setSelectedFaction(active ? null : fac)}
-                        title={active ? "Click to unfocus" : "Click to show only this faction's regions"}
-                        style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer", background: active ? "rgba(220,166,74,0.22)" : "transparent", borderRadius: 3, padding: "0 3px" }}
-                      >
-                        <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(factionDisplayNames && factionDisplayNames[fac]) || fac.replace(/_/g, " ")}</span>
-                        <span style={{ color: a.risky / a.total > 0.4 ? "#e87a6a" : "#e8c873", whiteSpace: "nowrap" }}>{a.risky}/{a.total}</span>
-                      </div>
-                    );
-                  })}
+                <div style={{ marginTop: 6, maxHeight: "40vh", overflowY: "auto", paddingRight: 2 }}>
+                  <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>Pick a faction (risk = at-risk / total):</div>
+                  {rows.map(([fac, a]) => (
+                    <div
+                      key={fac}
+                      onClick={() => setSelectedFaction(fac)}
+                      title="Show this faction's provinces"
+                      style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer", borderRadius: 3, padding: "0 3px" }}
+                    >
+                      <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(factionDisplayNames && factionDisplayNames[fac]) || fac.replace(/_/g, " ")}</span>
+                      <span style={{ color: a.risky / a.total > 0.4 ? "#e87a6a" : "#e8c873", whiteSpace: "nowrap" }}>{a.risky}/{a.total}</span>
+                    </div>
+                  ))}
                 </div>
               );
             })()}
@@ -21679,6 +21713,16 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           liveCharacters={saveCharactersByRegion ? Object.values(saveCharactersByRegion).flat() : null}
           factionDisplayNames={factionDisplayNames}
           onClose={() => setShowTraitExplorer(false)}
+        />
+      )}
+      {showCampaignAutopsy && (
+        <CampaignAutopsyPanel
+          modDataDir={modDataDir}
+          timeline={campaignTimeline}
+          scanning={timelineScanning}
+          onScanTimeline={runTimelineScan}
+          factionDisplayNames={factionDisplayNames}
+          onClose={() => setShowCampaignAutopsy(false)}
         />
       )}
       {showRecruitPlanner && (() => {
