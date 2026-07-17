@@ -72,6 +72,7 @@ import TimelinePlayerPanel from "./panels/TimelinePlayerPanel";
 import UnitComparePanel from "./panels/UnitComparePanel";
 import RecruitPlannerPanel from "./panels/RecruitPlannerPanel";
 import DiploHeatmapPanel from "./panels/DiploHeatmapPanel";
+import TraitExplorerPanel from "./panels/TraitExplorerPanel";
 import PopProjectionPanel from "./panels/PopProjectionPanel";
 import DefinitionLocatorPanel from "./panels/DefinitionLocatorPanel";
 import WhatIfPanel from "./panels/WhatIfPanel";
@@ -10988,6 +10989,7 @@ function App() {
   const [showUnitCompare, setShowUnitCompare] = useState(false); // ⚖ side-by-side EDU unit stats (2026-07-17)
   const [showRecruitPlanner, setShowRecruitPlanner] = useState(false); // 🏗 what each building upgrade unlocks (2026-07-17)
   const [showDiploHeatmap, setShowDiploHeatmap] = useState(false); // 🕊 NxN diplomacy heatmap (2026-07-17)
+  const [showTraitExplorer, setShowTraitExplorer] = useState(false); // 🎭 trait browser (2026-07-17)
   const [showPopProjection, setShowPopProjection] = useState(false); // 📉 settlement growth projection (2026-07-17)
   const [showDefLocator, setShowDefLocator] = useState(false); // ⌖ "where is this defined?" (2026-07-17)
   const [showWhatIf, setShowWhatIf] = useState(false); // 🧪 in-shadow EDB/EDU tweak → economy diff (2026-07-17)
@@ -14216,6 +14218,7 @@ function App() {
                       { icon: "🏗", label: "Recruit Planner", color: "#a8d8a0", desc: "For the selected settlement: what each next building upgrade unlocks for recruitment.", open: () => { if (lockedRegionInfo || regionInfo) setShowRecruitPlanner(true); else pushToast("Select a region first — the planner works on the selected settlement.", "info", 5000); } },
                       { icon: "🕊", label: "Diplomacy Heatmap", color: "#d8a0a0", desc: "NxN heatmap of the live diplomacy matrix — war blocs and alliance clusters at a glance.", open: () => setShowDiploHeatmap(true) },
                       { icon: "📉", label: "Population Projection", color: "#9ed6ad", desc: "Project every settlement N seasons forward; flag decline, stalls, tier-ups and unrest risk.", open: () => setShowPopProjection(true) },
+                      { icon: "🎭", label: "Trait Explorer", color: "#c9b8e0", desc: "Browse every character trait — filter by effect (tax, law, command…), see levels/thresholds/effects, and in live mode who carries each.", open: () => setShowTraitExplorer(true) },
                       { icon: "⌖", label: "Find Definition", color: "#c8c8e8", desc: "Where is this unit/building/region defined? File + line across all mod files, click to open in editor.", open: () => setShowDefLocator(true) },
                       { icon: "⚔", label: "Battle Ledger", color: "#d8a08f", desc: "Live-mode battle history per faction — fought/won/lost, sieges, armies destroyed, opponents.", open: () => { setBattleLedgerSnap(battleLedgerRef.current ? battleLedgerRef.current.snapshot() : null); setShowBattleLedger(true); } },
                       { icon: "🧪", label: "What-If Sandbox", color: "#b8d8e8", desc: "Apply a hypothetical EDB/EDU tweak in a shadow copy and diff every faction's economy — the mod itself is never touched.", open: () => setShowWhatIf(true) },
@@ -21668,6 +21671,14 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           factionColors={factionColors}
           liveActive={liveLogActive}
           onClose={() => setShowDiploHeatmap(false)}
+        />
+      )}
+      {showTraitExplorer && (
+        <TraitExplorerPanel
+          traitData={traitData}
+          liveCharacters={saveCharactersByRegion ? Object.values(saveCharactersByRegion).flat() : null}
+          factionDisplayNames={factionDisplayNames}
+          onClose={() => setShowTraitExplorer(false)}
         />
       )}
       {showRecruitPlanner && (() => {

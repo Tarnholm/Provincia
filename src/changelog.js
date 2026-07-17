@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1297",
+    date: "2026-07-17",
+    items: [
+      { type: "feature", text: "**Trait Explorer (🧰 Tools).** Browse every character trait in the mod: filter by effect (tax, law, command, trading…), see each trait's levels, thresholds, and effects (color-coded + / −), and — with a save loaded — who currently carries each trait, grouped by faction." },
+    ],
+  },
+  {
     version: "0.9.1296",
     date: "2026-07-17",
     items: [
