@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1294",
+    date: "2026-07-17",
+    items: [
+      { type: "feature", text: "**Revolt risk by faction.** The Unrest map mode's sidebar now ranks factions by settlements at revolt risk (public order under 80 — the riot line is 70), worst first. Click a faction to focus the map on just their regions; click again to unfocus." },
+    ],
+  },
+  {
     version: "0.9.1293",
     date: "2026-07-17",
     items: [

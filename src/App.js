@@ -9503,8 +9503,12 @@ function App() {
           let base = [45, 47, 52];
           if (e) {
             if (colorMode === "unrestrisk" && e.po != null) {
-              const t = Math.max(0, Math.min(1, (140 - e.po) / 70)); // PO 140+ green → 70 (riot line) red
-              base = [Math.round(60 + t * 160), Math.round(170 - t * 120), 45];
+              // Clicking a faction in the sidebar focuses the map on it.
+              if (selectedFaction && e.faction !== selectedFaction.toLowerCase()) base = [40, 42, 47];
+              else {
+                const t = Math.max(0, Math.min(1, (140 - e.po) / 70)); // PO 140+ green → 70 (riot line) red
+                base = [Math.round(60 + t * 160), Math.round(170 - t * 120), 45];
+              }
             } else if (colorMode === "trueincome" && e.income != null) {
               const t = Math.sqrt(Math.max(0, e.income) / (mapMetrics.maxIncome || 1));
               base = [Math.round(50 + t * 205), Math.round(48 + t * 157), 45];
@@ -15356,6 +15360,40 @@ function App() {
             <div style={labelRow}>
               <span>{CFG.labels[0]}</span><span>{CFG.labels[1]}</span><span>{CFG.labels[2]}</span>
             </div>
+            {colorMode === "unrestrisk" && mapMetrics && (() => {
+              // Revolt risk PER FACTION (user 2026-07-17): risky = PO < 80
+              // (riot line is 70 — <80 leaves no headroom). Click = focus map.
+              const agg = {};
+              for (const e of Object.values(mapMetrics.byRegion)) {
+                if (!e || e.po == null || !e.faction) continue;
+                const a = agg[e.faction] = agg[e.faction] || { risky: 0, total: 0 };
+                a.total += 1;
+                if (e.po < 80) a.risky += 1;
+              }
+              const rows = Object.entries(agg)
+                .filter(([, a]) => a.risky > 0)
+                .sort((x, y) => y[1].risky - x[1].risky || (y[1].risky / y[1].total) - (x[1].risky / x[1].total));
+              if (!rows.length) return <div style={{ fontSize: "0.7rem", color: "#8fd18f", marginTop: 6 }}>No faction has settlements at revolt risk.</div>;
+              return (
+                <div style={{ marginTop: 6, maxHeight: "34vh", overflowY: "auto", paddingRight: 2 }}>
+                  <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>Revolt risk by faction (click to focus):</div>
+                  {rows.map(([fac, a]) => {
+                    const active = selectedFaction && selectedFaction.toLowerCase() === fac;
+                    return (
+                      <div
+                        key={fac}
+                        onClick={() => setSelectedFaction(active ? null : fac)}
+                        title={active ? "Click to unfocus" : "Click to show only this faction's regions"}
+                        style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer", background: active ? "rgba(220,166,74,0.22)" : "transparent", borderRadius: 3, padding: "0 3px" }}
+                      >
+                        <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(factionDisplayNames && factionDisplayNames[fac]) || fac.replace(/_/g, " ")}</span>
+                        <span style={{ color: a.risky / a.total > 0.4 ? "#e87a6a" : "#e8c873", whiteSpace: "nowrap" }}>{a.risky}/{a.total}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
             <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>
               {mapMetrics
                 ? `Per-settlement model values at campaign start (${mapMetrics.factions} factions).`
