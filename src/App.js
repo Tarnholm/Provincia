@@ -14972,6 +14972,15 @@ function App() {
       const max = 14;
       return { label: "Fertility", value: `${val} / ${max}` };
     }
+    if (colorMode === "mining") {
+      // Cursor tooltip ONLY — the region-panel modeExtra prop suppresses the
+      // mining case (map modes must not alter the region info panel).
+      const mp = mineProspects && mineProspects[info.region];
+      if (!mp || !mp.levels || !mp.levels.length) return { label: "Mining", value: "no deposits" };
+      const cur = mp.currentIncome || 0;
+      const best = mp.levels.reduce((a, l) => Math.max(a, l.income), 0);
+      return { label: `Mining · ${mp.settlement || info.region}`, value: `current +${cur}/turn · potential +${best}/turn` };
+    }
     if (colorMode === "armyheat") {
       const rd2 = startingArmiesByRegion && startingArmiesByRegion[info.region];
       if (!rd2) return { label: "Armies", value: "— none at campaign start" };
@@ -15347,8 +15356,18 @@ function App() {
       const val = (mp) => (miningView === "current" ? (mp.currentIncome || 0) : best(mp));
       const rows = entries
         .map(([region, mp]) => ({ region, settlement: mp.settlement || region, income: val(mp), built: (mp.levels || []).some((l) => l.built) }))
+        .filter((t) => miningView !== "current" || t.built) // Current = only settlements with a mine BUILT (user 2026-07-17)
         .sort((a, b) => b.income - a.income || a.settlement.localeCompare(b.settlement));
       const maxV = rows.length ? rows[0].income : 0;
+      // Click a row → highlight the province; double-click → jump the map there
+      // (same flow as the Ctrl+K region search).
+      const jumpToMine = (regionName, dbl) => {
+        const hit = Object.entries(regions).find(([, rd2]) => rd2 && rd2.region === regionName);
+        if (!hit) return;
+        const [rgbKey, rd2] = hit;
+        if (dbl) onSearchActivate({ type: "region", payload: { region: rd2, rgbKey } });
+        else setSelectedProvinces([rgbKey]);
+      };
       const toggleBtn = (key, label) => (
         <button
           onClick={() => setMiningView(key)}
@@ -15378,14 +15397,20 @@ function App() {
             {rows.length > 0 && (
               <div style={{ marginTop: 6, maxHeight: "38vh", overflowY: "auto", paddingRight: 2 }}>
                 {rows.map((t) => (
-                  <div key={t.region} style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem" }}>
+                  <div
+                    key={t.region}
+                    onClick={() => jumpToMine(t.region, false)}
+                    onDoubleClick={() => jumpToMine(t.region, true)}
+                    title="Click: highlight the province · double-click: jump to it"
+                    style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer" }}
+                  >
                     <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.settlement}</span>
                     <span style={{ color: t.built ? "#8fd18f" : "#e8c873", whiteSpace: "nowrap" }}>{t.income ? `+${t.income}/turn` : "—"}{t.built ? " ✓" : ""}</span>
                   </div>
                 ))}
               </div>
             )}
-            <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>✓ = mine built. All {rows.length} settlements with mineable deposits.</div>
+            <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>✓ = mine built. {miningView === "current" ? `${rows.length} settlements with mines.` : `All ${rows.length} settlements with mineable deposits.`} Click = highlight, double-click = jump.</div>
           </>}
         </div>
       );
@@ -18637,7 +18662,7 @@ function App() {
                   <div className="region-info">
                     <RegionInfo
                       info={lockedRegionInfo || regionInfo}
-                      modeExtra={getModeExtra(lockedRegionInfo || regionInfo)}
+                      modeExtra={colorMode === "mining" ? null : getModeExtra(lockedRegionInfo || regionInfo)}
                       colBox={{ left: MAP_PADDING + canvasSize.width + PANELS_GAP, width: rightColWidth }}
                       onStageGeneral={stageGeneral}
                       pendingGenerals={pendingGenerals}

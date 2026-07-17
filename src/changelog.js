@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1291",
+    date: "2026-07-17",
+    items: [
+      { type: "improvement", text: "**Mining mode, refined again per feedback.** The Current view lists only settlements with a mine actually built; clicking a settlement in the sidebar highlights its province on the map and double-clicking jumps you there (same flow as the region search); and hovering a region shows a small tooltip at the cursor with its current + potential mine income — without touching the region info panel." },
+    ],
+  },
+  {
     version: "0.9.1290",
     date: "2026-07-17",
     items: [
