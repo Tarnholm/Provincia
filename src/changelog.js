@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1295",
+    date: "2026-07-17",
+    items: [
+      { type: "fix", text: "**Unrest mode shows one faction at a time.** The map stays neutral until you pick a faction in the sidebar list (all factions listed, worst revolt risk first); only the picked faction's settlements color. Click again to deselect." },
+    ],
+  },
+  {
     version: "0.9.1294",
     date: "2026-07-17",
     items: [

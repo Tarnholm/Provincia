@@ -9503,9 +9503,9 @@ function App() {
           let base = [45, 47, 52];
           if (e) {
             if (colorMode === "unrestrisk" && e.po != null) {
-              // Clicking a faction in the sidebar focuses the map on it.
-              if (selectedFaction && e.faction !== selectedFaction.toLowerCase()) base = [40, 42, 47];
-              else {
+              // ONE faction at a time (user 2026-07-17): nothing colors until
+              // a faction is picked in the sidebar; only its regions render.
+              if (selectedFaction && e.faction === selectedFaction.toLowerCase()) {
                 const t = Math.max(0, Math.min(1, (140 - e.po) / 70)); // PO 140+ green → 70 (riot line) red
                 base = [Math.round(60 + t * 160), Math.round(170 - t * 120), 45];
               }
@@ -15371,12 +15371,11 @@ function App() {
                 if (e.po < 80) a.risky += 1;
               }
               const rows = Object.entries(agg)
-                .filter(([, a]) => a.risky > 0)
-                .sort((x, y) => y[1].risky - x[1].risky || (y[1].risky / y[1].total) - (x[1].risky / x[1].total));
-              if (!rows.length) return <div style={{ fontSize: "0.7rem", color: "#8fd18f", marginTop: 6 }}>No faction has settlements at revolt risk.</div>;
+                .sort((x, y) => y[1].risky - x[1].risky || (y[1].risky / y[1].total) - (x[1].risky / x[1].total) || x[0].localeCompare(y[0]));
+              if (!rows.length) return null;
               return (
                 <div style={{ marginTop: 6, maxHeight: "34vh", overflowY: "auto", paddingRight: 2 }}>
-                  <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>Revolt risk by faction (click to focus):</div>
+                  <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>{selectedFaction ? "Revolt risk by faction:" : "Select a faction to view its unrest:"}</div>
                   {rows.map(([fac, a]) => {
                     const active = selectedFaction && selectedFaction.toLowerCase() === fac;
                     return (
