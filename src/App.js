@@ -1839,6 +1839,11 @@ function App() {
   const [regionInfo, setRegionInfo] = useState(null);
   const [miningView, setMiningView] = useState("potential"); // mining map mode: "current" earnings vs best-level "potential" (declared early — the colorize dep array reads it)
   const [regionAdjacency, setRegionAdjacency] = useState(null); // { region: [neighbors] } for Threat/Reach modes (declared early — colorize dep array reads it)
+  // Per-region model metrics for the Unrest/Income/Corruption/Growth modes.
+  // Fetched lazily on first activation (full-faction sweep, ~1-2 min cold,
+  // cached in main). Declared early — colorize dep array reads it.
+  const [mapMetrics, setMapMetrics] = useState(null);
+  const mapMetricsBusyRef = useRef(false);
   // 0.9.535: hover-to-inspect tooltip — { sx, sy, region, owner, terrain }.
   // Lightweight cursor readout updated only when the hovered tile changes
   // (gated via lastInspectKeyRef) so it doesn't re-render every pixel.
@@ -4218,6 +4223,26 @@ function App() {
   const [mineProspects, setMineProspects] = useState(null);
   const mineProspectsTimerRef = useRef(null);
   useEffect(() => () => { if (mineProspectsTimerRef.current) clearTimeout(mineProspectsTimerRef.current); }, []);
+  // Metrics fetch for the Unrest/Income/Corruption/Growth modes (state lives
+  // early in the file — the colorize dep array reads it; effects live HERE
+  // because their dep arrays need colorMode/modDataDir initialized).
+  useEffect(() => { setMapMetrics(null); }, [modDataDir]);
+  useEffect(() => {
+    const METRIC_MODES = ["unrestrisk", "trueincome", "corruptionmap", "growthmap"];
+    if (!METRIC_MODES.includes(colorMode) || mapMetrics || mapMetricsBusyRef.current || !modDataDir) return;
+    const api = window.electronAPI;
+    if (!api?.getMapModeMetrics) return;
+    mapMetricsBusyRef.current = true;
+    let stale = false;
+    const poll = () => api.getMapModeMetrics(modDataDir).then((r) => {
+      if (stale) { mapMetricsBusyRef.current = false; return; }
+      if (r && r.byRegion) { console.log(`[map-metrics] ${r.factions} factions in ${r.ms}ms`); setMapMetrics(r); mapMetricsBusyRef.current = false; }
+      else if (r && r.busy) setTimeout(poll, 3000);
+      else mapMetricsBusyRef.current = false;
+    }).catch(() => { mapMetricsBusyRef.current = false; });
+    poll();
+    return () => { stale = true; };
+  }, [colorMode, mapMetrics, modDataDir]);
   // Settlement income explainer (2026-07-17): fetched on demand from the
   // region panel's "≡ explain" button; null = closed. First call per faction
   // reparses descr_strat+EDB in the main process (seconds) — cached after.
@@ -9468,6 +9493,33 @@ function App() {
           const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.5;
           return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
         }));
+      } else if (colorMode === "unrestrisk" || colorMode === "trueincome" || colorMode === "corruptionmap" || colorMode === "growthmap") {
+        // Model-metric modes (2026-07-17, player modes 29-32): per-settlement
+        // values from the cracked models (campaign-start state), one shared
+        // main-process sweep (get-map-mode-metrics), lazily fetched + cached.
+        const mm = mapMetrics && mapMetrics.byRegion;
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          const e = mm && mm[r.region];
+          let base = [45, 47, 52];
+          if (e) {
+            if (colorMode === "unrestrisk" && e.po != null) {
+              const t = Math.max(0, Math.min(1, (140 - e.po) / 70)); // PO 140+ green → 70 (riot line) red
+              base = [Math.round(60 + t * 160), Math.round(170 - t * 120), 45];
+            } else if (colorMode === "trueincome" && e.income != null) {
+              const t = Math.sqrt(Math.max(0, e.income) / (mapMetrics.maxIncome || 1));
+              base = [Math.round(50 + t * 205), Math.round(48 + t * 157), 45];
+            } else if (colorMode === "corruptionmap" && e.corruption != null) {
+              const t = Math.sqrt(Math.max(0, e.corruption) / (mapMetrics.maxCorr || 1));
+              base = [Math.round(55 + t * 165), Math.round(140 - t * 95), Math.round(60 - t * 20)];
+            } else if (colorMode === "growthmap" && e.growth != null) {
+              const g = Math.max(-2, Math.min(4, e.growth));
+              base = g < 0 ? [200, 60, 45] : g < 0.5 ? [190, 170, 60] : [Math.round(80 - g * 8), Math.round(120 + g * 25), 50];
+            }
+          }
+          if (devFlatColors) return base;
+          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.5;
+          return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
+        }));
       } else if (colorMode === "threat" || colorMode === "reach") {
         // Threat (mode 25) + Reach (mode 28), 2026-07-17. Perspective faction =
         // selected faction (click one) falling back to the live player faction.
@@ -9700,7 +9752,7 @@ function App() {
         else clearTimeout(_handle);
       }
     };
-  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion, regionAdjacency, playerFaction, diplomacyMatrix]);
+  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion, regionAdjacency, playerFaction, diplomacyMatrix, mapMetrics]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -13575,6 +13627,7 @@ function App() {
       ]},
       { id: "government", title: "Government", members: [
         { key: "government", label: "Government", badge: "mode.government" },
+        { key: "unrestrisk", label: "Unrest", badge: "mode.unrestrisk" },
         { key: "loyalist", label: "Loyalist", badge: "mode.loyalist", dev: true }, // dev-only since 0.9.1276 (user request)
         { key: "public_order", label: "Public Order", badge: "devmode.public_order", dev: true },
         { key: "happiness", label: "Happiness", badge: "devmode.happiness", dev: true },
@@ -13591,6 +13644,9 @@ function App() {
         { key: "resource", label: "Resources", badge: "mode.resource" },
         { key: "farm", label: "Fertility", badge: "mode.farm" },
         { key: "mining", label: "Mining", badge: "mode.mining" },
+        { key: "trueincome", label: "Income", badge: "mode.trueincome" },
+        { key: "corruptionmap", label: "Corruption", badge: "mode.corruptionmap" },
+        { key: "growthmap", label: "Growth", badge: "mode.growthmap" },
         { key: "wealth", label: "Wealth", badge: "devmode.wealth", dev: true },
         { key: "income", label: "Income", badge: "devmode.income", dev: true },
         { key: "port_level", label: "Port Level", badge: "devmode.port_level", dev: true },
@@ -15280,6 +15336,30 @@ function App() {
               <span>Fertility 1</span>
               <span>Fertility 7</span>
               <span>Fertility 14</span>
+            </div>
+          </>}
+        </div>
+      );
+    }
+    if (colorMode === "unrestrisk" || colorMode === "trueincome" || colorMode === "corruptionmap" || colorMode === "growthmap") {
+      const CFG = {
+        unrestrisk: { title: "Unrest risk", grad: "linear-gradient(to right, rgb(60,170,45), rgb(190,170,60), rgb(220,50,45))", labels: ["stable", "tense", "riot risk"] },
+        trueincome: { title: "Income (model)", grad: "linear-gradient(to right, rgb(50,48,45), rgb(160,130,45), rgb(255,205,45))", labels: ["poor", "", mapMetrics ? `${mapMetrics.maxIncome} dn` : "richest"] },
+        corruptionmap: { title: "Corruption", grad: "linear-gradient(to right, rgb(55,140,60), rgb(140,95,50), rgb(220,45,40))", labels: ["clean", "", mapMetrics ? `-${mapMetrics.maxCorr} dn` : "worst"] },
+        growthmap: { title: "Growth", grad: "linear-gradient(to right, rgb(200,60,45), rgb(190,170,60), rgb(60,180,50))", labels: ["declining", "flat", "booming"] },
+      }[colorMode];
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>{CFG.title} <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            <div style={{ height: 12, borderRadius: 4, background: CFG.grad }} />
+            <div style={labelRow}>
+              <span>{CFG.labels[0]}</span><span>{CFG.labels[1]}</span><span>{CFG.labels[2]}</span>
+            </div>
+            <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>
+              {mapMetrics
+                ? `Per-settlement model values at campaign start (${mapMetrics.factions} factions).`
+                : "Computing all factions… first time takes a minute or two, then it's cached."}
             </div>
           </>}
         </div>

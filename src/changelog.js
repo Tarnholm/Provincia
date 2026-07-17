@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1293",
+    date: "2026-07-17",
+    items: [
+      { type: "feature", text: "**Four model-powered map modes: Unrest, Income, Corruption, Growth.** *Unrest* (Government) colors every settlement by public-order risk, green stable → red riot line. In Economy: *Income* shows each settlement's real modeled net income in denarii, *Corruption* shows exactly where distance-to-capital corruption bleeds money, and *Growth* shows squalor-aware population growth — declining red, booming green. All four come from the cracked economy/growth/PO models (campaign-start values); the first activation computes every faction (a minute or two) and is then cached." },
+    ],
+  },
+  {
     version: "0.9.1292",
     date: "2026-07-17",
     items: [

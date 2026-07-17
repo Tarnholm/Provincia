@@ -329,6 +329,56 @@ function _modCopyWarning(modDataDir) {
 // IPC: per-region mining prospects for the region panel (2026-07-17) — deposit
 // list + predicted income per mine level from the cracked mining formula
 // (incomeModel.mineProspects; validated to the denarius on live saves).
+// IPC: per-region model metrics for the Unrest/Income/Corruption/Growth map
+// modes (2026-07-17). Sweeps every faction through the turn-1 budget model
+// (income+corruption per settlement) and the population projection (growth+PO).
+// ~1-2 min cold on RIS's 239 factions, cached per modDataDir; yields between
+// factions so other IPC stays responsive; { busy } while a sweep runs.
+let _mapMetricsCache = { key: null, data: null, busy: false };
+ipcMain.handle("get-map-mode-metrics", async (_event, modDataDir) => {
+  try {
+    if (!modDataDir) return { error: "modDataDir required" };
+    if (_mapMetricsCache.key === modDataDir && _mapMetricsCache.data) return _mapMetricsCache.data;
+    if (_mapMetricsCache.busy) return { busy: true };
+    _mapMetricsCache.busy = true;
+    const t0 = Date.now();
+    const im = require("./incomeModel.js");
+    const pp = require("./popProjection.js");
+    const ge = require("./growthEval.js");
+    const stratPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
+    const facList = Object.keys(ge.parseStrat(stratPath) || {});
+    const byRegion = {};
+    let maxIncome = 1, maxCorr = 1;
+    for (const fac of facList) {
+      try {
+        const b = im.computeTurn1Budget(modDataDir, fac, null, { _noTribute: true });
+        for (const s of (b && b.settlements) || []) {
+          const e = byRegion[s.region] = byRegion[s.region] || {};
+          e.settlement = s.settlement; e.faction = fac;
+          e.income = s.totalIncome; e.corruption = s.corruption;
+          if (s.totalIncome > maxIncome) maxIncome = s.totalIncome;
+          if (s.corruption > maxCorr) maxCorr = s.corruption;
+        }
+      } catch { /* faction fails → its regions stay dark */ }
+      try {
+        const p = pp.projectPopulation(modDataDir, fac, 1);
+        for (const s of (p && p.settlements) || []) {
+          const e = byRegion[s.region] = byRegion[s.region] || {};
+          e.growth = s.growthPctPerTurn; e.po = s.po;
+        }
+      } catch { /* ditto */ }
+      await new Promise((r) => setImmediate(r));
+    }
+    const data = { byRegion, maxIncome, maxCorr, factions: facList.length, ms: Date.now() - t0 };
+    _mapMetricsCache = { key: modDataDir, data, busy: false };
+    _writeLog(`[map-metrics] swept ${facList.length} factions, ${Object.keys(byRegion).length} regions in ${data.ms}ms`);
+    return data;
+  } catch (e) {
+    _mapMetricsCache.busy = false;
+    return { error: e && e.message ? e.message : "map metrics failed" };
+  }
+});
+
 // IPC: region adjacency graph (2026-07-17) — for the Threat/Reach map modes.
 // Sets → arrays for IPC. Cached inside incomeModel per modDataDir.
 ipcMain.handle("get-region-adjacency", async (_event, modDataDir) => {
