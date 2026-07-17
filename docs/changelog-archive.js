@@ -5,6 +5,13 @@
 // greppable in the working tree. Full authoritative history is in git.
 const CHANGELOG_ARCHIVE = [
   {
+    version: "0.9.1281",
+    date: "2026-07-16",
+    items: [
+      { type: "fix", text: "**AOR unit cards no longer load in slowly.** The Areas-of-Recruitment roster keys its cards by region owner, and those pairs fell past the warm-up's safety cap (the log showed it truncating at 8,000 cards). The warm-up now computes each region's AOR units precisely and loads them first, and the cap is raised to 20,000 — AOR panels should open fully drawn like everything else." },
+    ],
+  },
+  {
     version: "0.9.1280",
     date: "2026-07-16",
     items: [

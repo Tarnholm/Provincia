@@ -13971,9 +13971,12 @@ function App() {
                 >🧰 Tools</button>
                 {showToolsMenu && (
                   <div style={{
-                    position: "absolute", top: "105%", left: 0, zIndex: 5000,
+                    // Opens UPWARD (bottom-anchored): the toolbar sits low on
+                    // screen, a downward list ran off the bottom (user 2026-07-17).
+                    position: "absolute", bottom: "105%", left: 0, zIndex: 5000,
                     background: "rgba(26,22,18,0.98)", border: "1px solid #6a5a3a", borderRadius: 8,
-                    padding: 6, minWidth: 240, boxShadow: "0 6px 24px rgba(0,0,0,0.6)",
+                    padding: 6, minWidth: 240, maxHeight: "70vh", overflowY: "auto",
+                    boxShadow: "0 6px 24px rgba(0,0,0,0.6)",
                     display: "flex", flexDirection: "column", gap: 2,
                   }}>
                     {[

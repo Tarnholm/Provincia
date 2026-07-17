@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1286",
+    date: "2026-07-17",
+    items: [
+      { type: "fix", text: "**The 🧰 Tools menu now opens upward.** It opened downward from the toolbar and ran off the bottom of the screen, hiding the entries. It also scrolls if it ever outgrows the screen." },
+    ],
+  },
+  {
     version: "0.9.1285",
     date: "2026-07-17",
     items: [
@@ -48,13 +55,6 @@ const CHANGELOG = [
     date: "2026-07-16",
     items: [
       { type: "fix", text: "**Zero pop-in, as fast as possible.** 0.9.1281's warm-up still truncated at 20,000 cards on large mods (the log showed it), and the background passes ran deliberately slowly — so cards could pop in for tens of seconds after the map appeared. Three changes: each unique card file is now decoded once ever and shared across all faction keys (most of those 20,000+ were the same art), the cap is effectively gone (100,000), and every post-splash pass now runs at full pipelined speed with no redraw storms. Commander-portrait warming is quicker too. The whole map should be warm within a few seconds of reveal." },
-    ],
-  },
-  {
-    version: "0.9.1281",
-    date: "2026-07-16",
-    items: [
-      { type: "fix", text: "**AOR unit cards no longer load in slowly.** The Areas-of-Recruitment roster keys its cards by region owner, and those pairs fell past the warm-up's safety cap (the log showed it truncating at 8,000 cards). The warm-up now computes each region's AOR units precisely and loads them first, and the cap is raised to 20,000 — AOR panels should open fully drawn like everything else." },
     ],
   },
 
