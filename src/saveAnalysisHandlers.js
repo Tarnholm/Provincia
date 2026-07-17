@@ -379,6 +379,21 @@ ipcMain.handle("get-map-mode-metrics", async (_event, modDataDir) => {
   }
 });
 
+// IPC: sea-trade lanes with flow values (2026-07-17) — Trade Lanes map mode.
+ipcMain.handle("get-trade-lanes", async (_event, modDataDir) => {
+  try {
+    if (!modDataDir) return { error: "modDataDir required" };
+    const flow = require("./incomeModel.js").seaFlowPtsByLane(modDataDir);
+    const lanes = Object.entries(flow).map(([k, v]) => {
+      const gt = k.indexOf(">");
+      return { from: k.slice(0, gt), to: k.slice(gt + 1), flow: +v || 0 };
+    });
+    return { lanes };
+  } catch (e) {
+    return { error: e && e.message ? e.message : "trade lanes failed" };
+  }
+});
+
 // IPC: region adjacency graph (2026-07-17) — for the Threat/Reach map modes.
 // Sets → arrays for IPC. Cached inside incomeModel per modDataDir.
 ipcMain.handle("get-region-adjacency", async (_event, modDataDir) => {

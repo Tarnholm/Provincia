@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1296",
+    date: "2026-07-17",
+    items: [
+      { type: "feature", text: "**Trade Lanes map mode (Economy).** The cracked sea-trade network drawn on the map: every lane as a golden line between its two regions, thickness and brightness = trade flow, over a dimmed map. The last of the player map-mode series — nine modes total." },
+    ],
+  },
+  {
     version: "0.9.1295",
     date: "2026-07-17",
     items: [

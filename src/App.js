@@ -1844,6 +1844,7 @@ function App() {
   // cached in main). Declared early — colorize dep array reads it.
   const [mapMetrics, setMapMetrics] = useState(null);
   const mapMetricsBusyRef = useRef(false);
+  const [tradeLanes, setTradeLanes] = useState(null); // [{from,to,flow}] sea lanes for the Trade Lanes mode (early — colorize deps)
   // 0.9.535: hover-to-inspect tooltip — { sx, sy, region, owner, terrain }.
   // Lightweight cursor readout updated only when the hovered tile changes
   // (gated via lastInspectKeyRef) so it doesn't re-render every pixel.
@@ -4159,6 +4160,11 @@ function App() {
         if (api.getRegionAdjacency) {
           api.getRegionAdjacency(modDataDir).then((r) => {
             if (r && r.adjacency) setRegionAdjacency(r.adjacency);
+          }).catch(() => {});
+        }
+        if (api.getTradeLanes) {
+          api.getTradeLanes(modDataDir).then((r) => {
+            if (r && r.lanes) setTradeLanes(r.lanes);
           }).catch(() => {});
         }
         api.getMineProspects(modDataDir).then((r) => {
@@ -9493,6 +9499,34 @@ function App() {
           const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.5;
           return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
         }));
+      } else if (colorMode === "tradelanes") {
+        // Trade Lanes (2026-07-17, player mode 34): the cracked sea-trade
+        // lanes drawn as lines between region centroids, thickness = flow.
+        // The map itself renders dimmed so the network reads clearly.
+        const canvas = buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => [Math.round(pr * 0.22 + 28), Math.round(pg * 0.22 + 28), Math.round(pb * 0.22 + 30)]);
+        if (tradeLanes && tradeLanes.length && regionCentroids) {
+          const centroidByName = {};
+          for (const [rgbKey, rd2] of Object.entries(regions)) {
+            if (rd2 && rd2.region && regionCentroids[rgbKey]) centroidByName[rd2.region] = regionCentroids[rgbKey];
+          }
+          const maxFlow = tradeLanes.reduce((a, l) => Math.max(a, l.flow), 1);
+          const cctx = canvas.getContext("2d");
+          cctx.save();
+          cctx.lineCap = "round";
+          for (const l of tradeLanes) {
+            const a = centroidByName[l.from], b = centroidByName[l.to];
+            if (!a || !b) continue;
+            const t = Math.sqrt(l.flow / maxFlow);
+            cctx.strokeStyle = `rgba(255, ${Math.round(190 + t * 40)}, 90, ${0.35 + t * 0.55})`;
+            cctx.lineWidth = 1 + t * 4;
+            cctx.beginPath();
+            cctx.moveTo(a.x, a.y);
+            cctx.lineTo(b.x, b.y);
+            cctx.stroke();
+          }
+          cctx.restore();
+        }
+        setColoredOffscreen(canvas);
       } else if (colorMode === "unrestrisk" || colorMode === "trueincome" || colorMode === "corruptionmap" || colorMode === "growthmap") {
         // Model-metric modes (2026-07-17, player modes 29-32): per-settlement
         // values from the cracked models (campaign-start state), one shared
@@ -9756,7 +9790,7 @@ function App() {
         else clearTimeout(_handle);
       }
     };
-  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion, regionAdjacency, playerFaction, diplomacyMatrix, mapMetrics]);
+  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion, regionAdjacency, playerFaction, diplomacyMatrix, mapMetrics, tradeLanes, regionCentroids]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -13651,6 +13685,7 @@ function App() {
         { key: "trueincome", label: "Income", badge: "mode.trueincome" },
         { key: "corruptionmap", label: "Corruption", badge: "mode.corruptionmap" },
         { key: "growthmap", label: "Growth", badge: "mode.growthmap" },
+        { key: "tradelanes", label: "Trade Lanes", badge: "mode.tradelanes" },
         { key: "wealth", label: "Wealth", badge: "devmode.wealth", dev: true },
         { key: "income", label: "Income", badge: "devmode.income", dev: true },
         { key: "port_level", label: "Port Level", badge: "devmode.port_level", dev: true },
@@ -15398,6 +15433,17 @@ function App() {
                 ? `Per-settlement model values at campaign start (${mapMetrics.factions} factions).`
                 : "Computing all factions… first time takes a minute or two, then it's cached."}
             </div>
+          </>}
+        </div>
+      );
+    }
+    if (colorMode === "tradelanes") {
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Trade lanes <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            <div style={{ fontSize: "0.72rem", color: "#ddd" }}>Line thickness &amp; brightness = trade flow on that sea lane.</div>
+            <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>{tradeLanes ? `${tradeLanes.length} lanes from the cracked sea-trade model.` : "Loading lanes… (a few seconds after launch)"}</div>
           </>}
         </div>
       );
