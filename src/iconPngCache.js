@@ -90,6 +90,29 @@ function pngCachePut(srcPath, pngBuf) {
   }
 }
 
+// Drop every entry whose source path lies under dirPrefix — called when a mod
+// slot is re-imported from a different folder, so the replaced mod's PNGs
+// don't sit on disk forever. Over-pruning is harmless (entries re-cache on
+// miss), so shared fallback dirs need no special casing.
+function pngCachePruneUnder(dirPrefix) {
+  if (!dirPrefix) return 0;
+  let prefix = String(dirPrefix).toLowerCase().replace(/\//g, "\\").replace(/\\+$/, "") + "\\";
+  const m = loadManifest();
+  let removed = 0;
+  for (const [key, v] of m) {
+    if (key.replace(/\//g, "\\").startsWith(prefix)) {
+      m.delete(key);
+      removed += 1;
+      try { fs.unlinkSync(path.join(cacheDir(), v.f)); } catch {}
+    }
+  }
+  if (removed) {
+    scheduleSave();
+    console.log(`[icon-png-cache] pruned ${removed} entries under ${dirPrefix}`);
+  }
+  return removed;
+}
+
 // items: [{ path, png: ArrayBuffer }]
 function registerPngCacheIpc(ipcMain) {
   ipcMain.handle("icon-cache-put-bulk", async (_event, items) => {
@@ -100,6 +123,7 @@ function registerPngCacheIpc(ipcMain) {
     }
     return stored;
   });
+  ipcMain.handle("icon-cache-prune-under", async (_event, dirPrefix) => pngCachePruneUnder(dirPrefix));
 }
 
-module.exports = { pngCacheGet, pngCachePut, registerPngCacheIpc };
+module.exports = { pngCacheGet, pngCachePut, pngCachePruneUnder, registerPngCacheIpc };

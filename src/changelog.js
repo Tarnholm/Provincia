@@ -13,6 +13,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1284",
+    date: "2026-07-17",
+    items: [
+      { type: "feature", text: "**The region panel now shows real mining income.** Regions with mineable deposits get a Mining row: the actual per-turn income a mine would earn there, per level, computed with the exact formula the game uses internally (deposit quantities × trade values × the mine's effective strength) — the number the in-game building card can't show. The currently built level is marked, and predictions match live settlement scrolls to the denarius. Appears a few seconds after launch (the first computation runs quietly in the background)." },
+      { type: "improvement", text: "**One-line launch diagnostics.** The moment the splash lifts, the log gets a single [boot] line: total time, when each stage finished (map, overlay, building icons, unit cards) and how much was served from the disk cache. If a launch ever feels slow again, that one line is the whole bug report." },
+      { type: "improvement", text: "**The icon cache cleans up after itself.** Importing a different mod into a slot now removes the replaced mod's cached icons from disk instead of keeping them forever. (Re-importing the same folder — the reload flow — keeps the cache warm.)" },
+      { type: "fix", text: "**\"Clear mod caches\" and factory reset now truly clear the faction-name/culture caches.** A silently swallowed error meant those caches survived every reset since they were introduced, so a mod reload could keep serving stale faction display data until an app restart." },
+      { type: "change", text: "**Internals: the launch warm-up logic is consolidated into one scheduler module with its pacing rules under test, and the main-process file slimmed by ~1,000 lines into five focused modules.** No behavior change intended — groundwork that makes future launch work safer." },
+    ],
+  },
+  {
     version: "0.9.1283",
     date: "2026-07-16",
     items: [
@@ -43,16 +54,6 @@ const CHANGELOG = [
       { type: "improvement", text: "**Background icon warm-up finishes much sooner.** The post-splash passes (recruit cards, remaining building catalog) were deliberately slow-paced from the fix in 0.9.1278; now that card lookups are indexed they run at a brisker pace — the whole map should be fully warm within seconds of the map appearing, while input stays responsive." },
     ],
   },
-  {
-    version: "0.9.1279",
-    date: "2026-07-16",
-    items: [
-      { type: "improvement", text: "**The splash now says what it's doing.** A subtle loading line sits at the bottom of the splash from the very first paint — \"Loading map…\", \"Painting the map…\", \"Loading building icons…\", \"Loading unit cards…\" — so a longer hold never looks like a hang." },
-    ],
-  },
-
-
-
 
 
 

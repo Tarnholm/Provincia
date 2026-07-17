@@ -207,6 +207,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   resolveUnitCardsBulk: (modDataDir, items) =>
     ipcRenderer.invoke("resolve-unit-cards-bulk", modDataDir, items),
   iconCachePutBulk: (items) => ipcRenderer.invoke("icon-cache-put-bulk", items),
+  iconCachePruneUnder: (dir) => ipcRenderer.invoke("icon-cache-prune-under", dir),
+  getMineProspects: (modDataDir) => ipcRenderer.invoke("get-mine-prospects", modDataDir),
   resolveUnitInfo: (modDataDir, faction, unitName, dictionary) =>
     ipcRenderer.invoke("resolve-unit-info", modDataDir, faction, unitName, dictionary),
   getBuildingDisplayNames: (modDataDir) =>

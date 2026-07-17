@@ -14,7 +14,21 @@ const {
 } = require("./src/saveBinaryReaders.js");
 const { encodeTga32BGRA } = require("./src/tgaCodec.js");
 const { diffSaveData, isEndAutosave } = require("./src/saveDiff.js");
-const { gameTextCRLF, hashName, makeLRU, parseTextDictionary } = require("./src/mainUtils.js");
+const { gameTextCRLF, hashName, makeLRU } = require("./src/mainUtils.js");
+// RTW:R install/mod path resolution + text-dictionary helpers — see
+// src/modPathResolver.js (extracted from main.js 2026-07-17). _textDictCache
+// is the module's live cache, required back so clear-mod-caches can clear it.
+const {
+  getVanillaDataDir,
+  getIconSearchRoots,
+  findRelatedModDirs,
+  getEdbSourceFiles,
+  getMergedTextDictionary,
+  _textDictCache,
+} = require("./src/modPathResolver.js");
+// Faction display/culture/initial-ownership handlers + their cache dropper —
+// see src/factionDisplayHandlers.js (extracted 2026-07-17).
+const { registerFactionDisplayHandlers, clearFactionDisplayCaches } = require("./src/factionDisplayHandlers.js");
 
 // RTW:R game TEXT files MUST be written with CRLF line endings. Writing LF
 // silently breaks the engine's descr_* parsers ("Expected faction list starting
@@ -254,7 +268,6 @@ registerLogHandlers(ipcMain, { writeLog: (s) => _writeLog(s), getLogPath: () => 
 // engineering notes.
 const { findCharacterRecords, findCharacterRegion, countDeadPoolRecords } = require("./src/characterParser.js");
 const { findScriptedCharacters: findCharsV2 } = require("./src/characterParserV2.js");
-const { parseLine: parseLogLineV2 } = require("./src/messageLogParser.js");
 const { findUnitRecords } = require("./src/unitParser.js");
 const { parseSettlements } = require("./src/buildingParser.js");
 const { buildInitialOwnership } = require("./src/ownershipParser.js");
@@ -2003,185 +2016,10 @@ registerVanillaDataHandlers(ipcMain, { getVanillaDataDir });
 // a matching TGA. Falls back to the vanilla RTW:R install and the Alexander
 // install when the mod doesn't include the icon.
 // Returns { buffer: ArrayBuffer, path: string, mime: "image/x-tga" } or null.
-// Locate the RTW:R install root. Tries common Steam install paths first,
-// then falls back to the Steam library config to resolve non-default
-// library locations (users with Steam on a secondary drive).
-// Locate the RTW:R install ROOT (the folder — or Mac .app bundle — that
-// contains `Contents/Resources/Data/data`). Auto-detects across:
-//   • Windows Steam: common drive letters, the Steam path from the registry,
-//     and every library in libraryfolders.vdf (Steam on a secondary drive).
-//   • Windows Epic Games.
-//   • macOS (Feral): /Applications and ~/Applications.
-// Returns a path consumed as `${root}/Contents/Resources/Data/...`, so the
-// Mac entry is the .app bundle itself (NOT .../Contents/Resources/Data).
-function findRtwInstallRoot() {
-  const REL = "Total War ROME REMASTERED";
-  // Steam install/library dirs to probe for /steamapps/common/<REL>.
-  const steamDirs = [];
-  for (const drive of ["C:", "D:", "E:", "F:", "G:", "H:"]) {
-    steamDirs.push(`${drive}/Program Files (x86)/Steam`, `${drive}/Program Files/Steam`, `${drive}/Steam`, `${drive}/SteamLibrary`);
-  }
-  // Steam install dir straight from the Windows registry (catches custom dirs).
-  try {
-    if (process.platform === "win32") {
-      const { execSync } = require("child_process");
-      const out = execSync('reg query "HKCU\\Software\\Valve\\Steam" /v SteamPath', { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-      const m = out.match(/SteamPath\s+REG_SZ\s+(.+)/i);
-      if (m) steamDirs.unshift(m[1].trim().replace(/\\/g, "/"));
-    }
-  } catch {}
-  // Expand each Steam dir's libraryfolders.vdf into extra library roots.
-  for (const sdir of [...steamDirs]) {
-    const vdfPath = `${sdir}/steamapps/libraryfolders.vdf`;
-    try {
-      if (!fs.existsSync(vdfPath)) continue;
-      const text = fs.readFileSync(vdfPath, "utf8");
-      const re = /"path"\s+"([^"]+)"/g;
-      let m;
-      while ((m = re.exec(text)) !== null) steamDirs.push(m[1].replace(/\\\\/g, "/").replace(/\\/g, "/"));
-    } catch {}
-  }
-  const candidates = [];
-  for (const s of steamDirs) candidates.push(`${s}/steamapps/common/${REL}`);
-  // Epic Games (Windows).
-  for (const drive of ["C:", "D:", "E:"]) {
-    candidates.push(`${drive}/Program Files/Epic Games/TotalWarRomeRemastered`);
-    candidates.push(`${drive}/Program Files/Epic Games/${REL}`);
-  }
-  // macOS (Feral) — the .app bundle is the root.
-  candidates.push(`/Applications/${REL}.app`);
-  if (process.env.HOME) candidates.push(`${process.env.HOME}/Applications/${REL}.app`);
-  for (const c of candidates) {
-    try { if (c && fs.existsSync(c)) return c; } catch {}
-  }
-  return null;
-}
-
-// Cached vanilla RTW:R `…/data` dir (the one containing `ui/`), derived from
-// the detected install root. null when no install is found. Logged once so
-// provincia.log shows whether the auto-detect succeeded — when portraits/icons
-// fail to resolve, this line tells you if it's the vanilla fallback that's
-// missing. See [resolve-portrait] NO PORTRAIT diagnostics.
-let _vanillaDataDir; // undefined = not computed yet
-function getVanillaDataDir() {
-  if (_vanillaDataDir !== undefined) return _vanillaDataDir;
-  _vanillaDataDir = null;
-  try {
-    const root = findRtwInstallRoot();
-    if (root) {
-      const dd = path.join(root, "Contents", "Resources", "Data", "data");
-      if (fs.existsSync(dd)) _vanillaDataDir = dd;
-    }
-  } catch {}
-  try { console.log(`[rtw-detect] vanilla RTW:R data dir: ${_vanillaDataDir || "(not found — auto-detect failed; portrait/icon vanilla fallback unavailable)"}`); } catch {}
-  return _vanillaDataDir;
-}
-
-const ICON_SEARCH_ROOTS = [];
-function getIconSearchRoots() {
-  if (ICON_SEARCH_ROOTS.length) return ICON_SEARCH_ROOTS;
-  const root = findRtwInstallRoot();
-  if (!root) return ICON_SEARCH_ROOTS;
-  // Always include the vanilla + BI + Alexander game installs if present.
-  // Load order matters for last-wins text-file merges (expanded_bi.txt,
-  // export_buildings.txt): Alex must come AFTER BI so its expansion-specific
-  // overrides (GAULS→Dahae, GERMANS→Illyria, PARTHIA→Persia, etc.) win.
-  const base = `${root}/Contents/Resources/Data`;
-  const tryAdd = (p) => { try { if (p && fs.existsSync(p)) ICON_SEARCH_ROOTS.push(p); } catch {} };
-  tryAdd(`${base}/data`);
-  tryAdd(`${base}/bi/data`);
-  tryAdd(`${base}/alexander/data`);
-  return ICON_SEARCH_ROOTS;
-}
-
-// Walk up from a mod data dir looking for "sibling" or "parent" data dirs
-// that also contain the target relative file. Handles layered mods like RIS
-// where a submod at `.../RIS/_submods/RIS_Classic/data` extends the main mod
-// at `.../RIS/RIS/data` — both must be read for display names to resolve.
-// Returns an ordered list: innermost/submod first, then parents.
-function findRelatedModDirs(modDataDir, relPath) {
-  if (!modDataDir) return [];
-  const found = new Set();
-  const result = [];
-  const norm = modDataDir.replace(/\\/g, "/");
-  // Add the user-specified dir itself first.
-  if (fs.existsSync(path.join(modDataDir, relPath))) {
-    result.push(modDataDir);
-    found.add(path.resolve(modDataDir));
-  }
-  // Walk up to 5 levels and scan siblings for `*/data/<relPath>`.
-  let cur = norm;
-  for (let i = 0; i < 5; i++) {
-    const parent = path.dirname(cur);
-    if (!parent || parent === cur) break;
-    try {
-      for (const entry of fs.readdirSync(parent, { withFileTypes: true })) {
-        if (!entry.isDirectory()) continue;
-        const candidate = path.join(parent, entry.name, "data");
-        const key = path.resolve(candidate);
-        if (found.has(key)) continue;
-        if (fs.existsSync(path.join(candidate, relPath))) {
-          found.add(key);
-          result.push(candidate);
-        }
-      }
-    } catch {}
-    cur = parent;
-  }
-  return result;
-}
-
-// Total conversions like RIS replace vanilla wholesale; merging vanilla
-// EDB/EDU into the source list with last-wins-per-(chain, level) leaks
-// vanilla recruits ("hoplite") whenever the mod doesn't redefine the
-// exact same chain+level pair. When a mod data dir is provided AND
-// contains the requested file, return ONLY the mod sources (mod dir +
-// any related submods/parents). Otherwise fall back to vanilla.
-function getEdbSourceFiles(modDataDir, relPath) {
-  const modDirs = findRelatedModDirs(modDataDir, relPath);
-  if (modDirs.length > 0) {
-    return modDirs.slice().reverse().map((d) => path.join(d, relPath));
-  }
-  return getIconSearchRoots().map((r) => path.join(r, relPath));
-}
-
-// Parse an RTW localized text file (text/export_units.txt /
-// export_buildings.txt). Format: each entry starts with `{key}content`,
-// content can span multiple lines until the next `{...}` line. UTF-16LE
-// with BOM is the common encoding; falls back to UTF-8.
-const _textDictCache = new Map(); // filePath -> { key: text }
-function readTextDictionary(filePath) {
-  if (_textDictCache.has(filePath)) return _textDictCache.get(filePath);
-  if (!filePath || !fs.existsSync(filePath)) {
-    _textDictCache.set(filePath, {});
-    return {};
-  }
-  try {
-    const buf = fs.readFileSync(filePath);
-    let text;
-    if (buf[0] === 0xff && buf[1] === 0xfe) text = buf.toString("utf16le", 2);
-    else if (buf[0] === 0xfe && buf[1] === 0xff) text = buf.swap16().toString("utf16le", 2);
-    else text = buf.toString("utf8");
-    const entries = parseTextDictionary(text); // pure parser in src/mainUtils.js
-    _textDictCache.set(filePath, entries);
-    return entries;
-  } catch (e) {
-    console.warn("[textDict]", filePath, e.message);
-    _textDictCache.set(filePath, {});
-    return {};
-  }
-}
-
-// Merge text dictionaries from mod + game text files. Mod entries win.
-function getMergedTextDictionary(modDataDir, relPath) {
-  const sources = getEdbSourceFiles(modDataDir, relPath);
-  const merged = {};
-  for (const src of sources) {
-    const dict = readTextDictionary(src);
-    Object.assign(merged, dict);
-  }
-  return merged;
-}
+// findRtwInstallRoot / getVanillaDataDir / getIconSearchRoots /
+// findRelatedModDirs / getEdbSourceFiles / readTextDictionary /
+// getMergedTextDictionary moved to src/modPathResolver.js (2026-07-17),
+// required at the top of this file.
 
 // IPC: return long-form unit description from text/export_units.txt.
 // Looks up the EDU `dictionary` key for the given unitName, then fetches
@@ -2426,7 +2264,7 @@ ipcMain.handle("clear-mod-caches", async () => {
   try { _unitStatsCache.clear(); } catch {}
   try { _buildingStatsCache.clear(); } catch {}
   try { _textDictCache.clear(); } catch {}
-  try { _factionCultureCache.clear(); } catch {}
+  try { clearFactionDisplayCaches(); } catch {} // display+culture LRUs live in src/factionDisplayHandlers.js
   return true;
 });
 
@@ -2446,7 +2284,7 @@ ipcMain.handle("factory-reset", async () => {
   for (const f of files) {
     try { if (fs.existsSync(path.join(ud, f))) { fs.rmSync(path.join(ud, f), { force: true }); removed.push(f); } } catch {}
   }
-  try { for (const c of _factionCultureCache ? [_factionCultureCache] : []) c.clear(); } catch {}
+  try { clearFactionDisplayCaches(); } catch {} // display+culture LRUs live in src/factionDisplayHandlers.js
   console.log("[factory-reset] removed:", removed.join(", "));
   return { ok: true, removed };
 });
@@ -2919,499 +2757,22 @@ ipcMain.handle("calibrate-from-save", async (_event, savePath) => {
   }
 });
 
-ipcMain.handle("select-save-files", async (_event, saveDir) => {
-  // Multi-select variant of select-save-file: pick 1+ turn-1 saves so the Army-Setup
-  // Balance overview can median each faction's economy across them, smoothing the
-  // engine's per-campaign governor-trait randomness. Returns { paths: [...] } or null.
-  const normalised = saveDir ? path.normalize(saveDir) : undefined;
-  const result = await dialog.showOpenDialog({
-    defaultPath: normalised,
-    filters: [{ name: "Rome save files", extensions: ["sav"] }],
-    properties: ["openFile", "multiSelections"],
-    title: "Pick one or more turn-1 saves — the overview medians across them",
-  });
-  if (result.canceled || !result.filePaths.length) return null;
-  return { paths: result.filePaths };
-});
-
-ipcMain.handle("select-save-file", async (_event, saveDir) => {
-  // Normalise to the platform's path separator — Electron's defaultPath
-  // honours mixed slashes on Windows but forward slashes alone sometimes
-  // open the wrong directory. path.normalize takes care of it.
-  const normalised = saveDir ? path.normalize(saveDir) : undefined;
-  const result = await dialog.showOpenDialog({
-    defaultPath: normalised,
-    filters: [{ name: "Rome save files", extensions: ["sav"] }],
-    properties: ["openFile"],
-    title: "Pick the save Live mode should track",
-  });
-  if (result.canceled || !result.filePaths.length) return null;
-  const full = result.filePaths[0];
-  if (saveDir) {
-    const a = path.normalize(full).toLowerCase();
-    const b = path.normalize(saveDir).toLowerCase();
-    if (!a.startsWith(b)) return { error: "Picked file is outside the saves folder.", path: full };
-  }
-  return { file: path.basename(full), path: full };
-});
+// Save-file picker + save-listing IPC handlers (select-save-files,
+// select-save-file, list-saves, get-latest-save-mtime) and findLatestSave
+// moved to src/saveListHandlers.js (2026-07-17). findLatestSave is required
+// back — reparseLatestSave and save-watch-start below still call it.
+const { registerSaveListHandlers, findLatestSave } = require("./src/saveListHandlers.js");
+registerSaveListHandlers(ipcMain, { dialog });
 
 // ── Live log watcher for Rome Remastered ──────────────────────────────────
-// Watches message_log.txt and campaign_ai_log.txt, tails new lines, sends to renderer.
-let logWatcher = null;
-let logWatcherAI = null;
-let logOffset = 0;
-let logOffsetAI = 0;
-let logPollInterval = null;
-// Current turn index for events (1-based). Increments on each "end round"
-// marker encountered while processing message_log lines.
-let logPollTurnIdx = 1;
-
-// Track army merges so the leader's MOVING_NORMAL events propagate to
-// passengers (lesser generals stacked into the leader's army).
-//
-// In RTW: when general A walks onto general B's tile and the user accepts
-// the merge prompt, the engine emits a `transferring general(A:uuid) unit(uuid)
-// from army(A_army) to named general(B:uuid):army(B_army)` line. From that
-// point on the engine tracks the merged stack under B's army_uuid, and
-// future moves emit MOVING_NORMAL only for B (the leader). A's marker
-// goes dark — until the next save snapshot updates A's character record
-// with the new (x, y).
-//
-// Map: leaderCharUuid → array of { charUuid, name, faction } passengers.
-// Cleared on log-watch-start (new campaign / fresh attach).
-const armyPassengers = new Map();
-// Reverse map for fast "is this character a passenger?" lookup, used to
-// drop a stale passenger relationship when the same character later
-// becomes a passenger of someone else (or the leader of their own stack).
-const passengerToLeader = new Map();
-// Live unit-flow tracking. Each transfer event in the log either moves
-// ONE unit between armies (so its leader chars), or moves a general (with
-// their bodyguard unit) between armies. We track the cumulative count of
-// units that flowed from one leader to another, then send a snapshot to
-// the renderer so the field-army `byCmd` grouping can re-bucket save
-// units accordingly.
-//
-// Why count-based instead of identity-based: the engine's runtime memory
-// uuid for a unit (e.g. `8f4f1c10` in the log) has no mapping to a save
-// unit (save units are identified by file offset and don't carry a stable
-// uuid that matches the runtime pointer). So we can't say "unit X moved
-// from save's-Aulus-roster to save's-Marcus-roster" by identity. But we
-// CAN say "13 units moved from Aulus's leader-runtime to Marcus's
-// leader-runtime", which we then apply by donating 13 generic foot units
-// from save-Aulus's roster to save-Marcus's roster on the renderer.
-//
-// Structure: unitFlow[fromRuntimeCharUuid][toRuntimeCharUuid] = count
-const unitFlowFromTo = new Map();
-// Who leads each army at any given time. Updated on transfer events.
-// Needed to identify the donor character when a unit transfer says
-// "from army(A) to named general(Y):army(B)" — Y is explicit, but the
-// donor is whoever leads A.
-const armyLeaderByArmyUuid = new Map();
-// Runtime char uuid → { name } as seen in log events. Lets us attach
-// names to flow snapshots so the renderer can match against save chars
-// by (firstName, lastName, faction) instead of via the unstable runtime
-// uuid → save secondaryUuid bridge. 0.9.271 used a weak first-name-only
-// fallback which caused the Uria misattribution flood; tracking the
-// full name from the log event itself avoids that class of bug.
-const charNameByRuntimeUuid = new Map();
-function recordCharName(uuid, name) {
-  if (uuid && name && !charNameByRuntimeUuid.has(uuid)) {
-    charNameByRuntimeUuid.set(uuid, name);
-  }
-}
-function unitFlowAdd(from, to) {
-  if (!from || !to || from === to) return;
-  if (!unitFlowFromTo.has(from)) unitFlowFromTo.set(from, new Map());
-  const inner = unitFlowFromTo.get(from);
-  inner.set(to, (inner.get(to) || 0) + 1);
-}
-function unitFlowSnapshot() {
-  const out = [];
-  for (const [from, inner] of unitFlowFromTo) {
-    for (const [to, count] of inner) {
-      out.push({
-        from, to, count,
-        fromName: charNameByRuntimeUuid.get(from) || null,
-        toName: charNameByRuntimeUuid.get(to) || null,
-      });
-    }
-  }
-  return out;
-}
-
-// Last seen army_uuid per character. Used to detect SPLITS: when a
-// character's MOVING_NORMAL event reports a different army_uuid than we
-// last saw, AND we already had passengers attached, it means they split
-// off into a new army WITHOUT bringing their passengers along (the
-// passengers stay in the old army at the split tile). Per save_rome10's
-// log, the BESIEGE-to-Brundisium event for Marcus comes BEFORE the
-// `transferring general(Marcus:X) ... to named general(Marcus:X):army(NEW)`
-// transfer line — so we can't wait for the self-transfer to fire to clear
-// the relationship; we have to read the new army_uuid off the move itself.
-const armyUuidByCharUuid = new Map();
-function setPassenger(leaderUuid, passengerUuid, passengerName, passengerFaction) {
-  if (!leaderUuid || !passengerUuid) return;
-  // Self-transfer (movedChar === toCommander) signals a SPLIT: the
-  // general is moving themselves into a new empty army. Adding them to
-  // their own passenger list would synthesize duplicate move events
-  // forever. Skip — the split-detection in detectAndApplySplit already
-  // cleared any prior passengers when the move event with the new
-  // army_uuid fired.
-  if (leaderUuid === passengerUuid) return;
-  // Remove the passenger from any prior leader's list.
-  const priorLeader = passengerToLeader.get(passengerUuid);
-  if (priorLeader && priorLeader !== leaderUuid) {
-    const priorList = armyPassengers.get(priorLeader);
-    if (priorList) {
-      const filtered = priorList.filter(p => p.charUuid !== passengerUuid);
-      if (filtered.length) armyPassengers.set(priorLeader, filtered);
-      else armyPassengers.delete(priorLeader);
-    }
-  }
-  if (!armyPassengers.has(leaderUuid)) armyPassengers.set(leaderUuid, []);
-  const list = armyPassengers.get(leaderUuid);
-  if (!list.some(p => p.charUuid === passengerUuid)) {
-    list.push({ charUuid: passengerUuid, name: passengerName, faction: passengerFaction });
-  }
-  passengerToLeader.set(passengerUuid, leaderUuid);
-}
-function clearPassengers() {
-  armyPassengers.clear();
-  passengerToLeader.clear();
-  armyUuidByCharUuid.clear();
-  unitFlowFromTo.clear();
-  armyLeaderByArmyUuid.clear();
-  charNameByRuntimeUuid.clear();
-}
-// Called on every character_move BEFORE fanout. If the moving character's
-// army_uuid doesn't match the last seen value AND they have passengers,
-// they've split off — clear the passenger list so we don't drag the lesser
-// general(s) along to the new army's destination. Returns true if a split
-// was detected (caller can skip fanout entirely).
-function detectAndApplySplit(charUuid, newArmyUuid) {
-  if (!charUuid || !newArmyUuid) return false;
-  const prev = armyUuidByCharUuid.get(charUuid);
-  armyUuidByCharUuid.set(charUuid, newArmyUuid);
-  if (!prev || prev === newArmyUuid) return false;
-  const passengers = armyPassengers.get(charUuid);
-  if (!passengers || passengers.length === 0) return false;
-  for (const p of passengers) passengerToLeader.delete(p.charUuid);
-  armyPassengers.delete(charUuid);
-  return true;
-}
-
-// Handle a unit-transfer event for the flow tracker. Pass in the transfer's
-// fromArmyUuid, toArmyUuid, the named-general char uuid of the to-army
-// (recipient = explicit), and OPTIONALLY the runtime char uuid of the
-// general moving for general-transfer events. The donor is `armyLeader[from]`.
-function recordUnitTransfer(fromArmyUuid, toArmyUuid, recipientCharUuid, movingGeneralUuid) {
-  // Update leader tracking. When a general transfer fires, set the named
-  // general as the recipient army's leader (if no one's there yet) AND
-  // ensure the moving general was the from-army's leader (so we know
-  // who's donating). This handles both merge and split forms.
-  if (movingGeneralUuid && fromArmyUuid && !armyLeaderByArmyUuid.has(fromArmyUuid)) {
-    armyLeaderByArmyUuid.set(fromArmyUuid, movingGeneralUuid);
-  }
-  if (recipientCharUuid && toArmyUuid && !armyLeaderByArmyUuid.has(toArmyUuid)) {
-    armyLeaderByArmyUuid.set(toArmyUuid, recipientCharUuid);
-  }
-  const donor = fromArmyUuid ? armyLeaderByArmyUuid.get(fromArmyUuid) : null;
-  const recipient = recipientCharUuid || (toArmyUuid ? armyLeaderByArmyUuid.get(toArmyUuid) : null);
-  if (donor && recipient && donor !== recipient) unitFlowAdd(donor, recipient);
-  // Update leader-after-the-move logic for general-transfer events.
-  if (movingGeneralUuid) {
-    // If the moving general was the from-army's leader, then they're
-    // leaving an army that may now be empty (split, single-general case)
-    // OR still have passengers. We can't know without more state — leave
-    // armyLeader[from] alone; subsequent transfer events from the same
-    // army will re-confirm or update it via the recipient pattern.
-    // If self-transfer (moving=recipient), recipient is now the leader
-    // of the to-army (already set above).
-  }
-}
-
-// Reset live-log tracking without restarting the watcher: re-anchor to
-// current EOF, drop passenger / flow / position state, tell the renderer
-// to clear its live caches. User-triggered "fresh start" — for when
-// they've just loaded a save mid-session and want to ignore log entries
-// written by the previous game state.
-ipcMain.handle("log-watch-reset", async () => {
-  if (!logPollInterval) return { ok: false, reason: "log-watch not running" };
-  const msgPath = _logPath ? path.dirname(_logPath) : null;
-  // We rely on the existing poll's msgPath; that's captured inside the
-  // closure of the interval callback (line ~3450). Easier: re-stat the
-  // file using the path the watcher most recently saw.
-  try {
-    // Approximation: bump offset to the current size of message_log.txt.
-    // Find the log dir from the running interval: we tracked it via the
-    // outer closure variable. Read directly from disk using the env we
-    // set at watch-start (stored in module-scope `_lastWatchedLogDir`).
-    if (_lastWatchedLogDir) {
-      const p = path.join(_lastWatchedLogDir, "message_log.txt");
-      logOffset = fs.existsSync(p) ? fs.statSync(p).size : logOffset;
-      const ap = path.join(_lastWatchedLogDir, "campaign_ai_log.txt");
-      logOffsetAI = fs.existsSync(ap) ? fs.statSync(ap).size : logOffsetAI;
-    }
-    clearPassengers();
-    logPollTurnIdx = 1;
-    const winR = BrowserWindow.getAllWindows()[0];
-    if (winR) winR.webContents.send("live-char-moves", { moves: [], deaths: [], reset: true });
-    return { ok: true };
-  } catch (e) {
-    return { ok: false, error: e.message };
-  }
-});
-
-let _lastWatchedLogDir = null;
-
-ipcMain.handle("log-watch-start", async (_event, logDir) => {
-  // Stop any existing watcher
-  if (logPollInterval) { clearInterval(logPollInterval); logPollInterval = null; }
-
-  const msgPath = path.join(logDir, "message_log.txt");
-  const aiPath = path.join(logDir, "campaign_ai_log.txt");
-
-  if (!fs.existsSync(msgPath)) return { error: "message_log.txt not found in " + logDir };
-  _lastWatchedLogDir = logDir;
-
-  // Start from current end of file (only watch new lines)
-  try { logOffset = fs.statSync(msgPath).size; } catch { logOffset = 0; }
-  try { logOffsetAI = fs.statSync(aiPath).size; } catch { logOffsetAI = 0; }
-
-  // Reset turn counter for this fresh watch cycle.
-  logPollTurnIdx = 1;
-  // Clear passenger tracking from any prior watch cycle.
-  clearPassengers();
-
-  // Clear any prior live-position state in the renderer before backfilling.
-  // Otherwise stale entries from a previous campaign would mix with the new
-  // log's data.
-  try {
-    const winClear = BrowserWindow.getAllWindows()[0];
-    if (winClear) winClear.webContents.send("live-char-moves", { moves: [], deaths: [], reset: true });
-  } catch {}
-
-  // Backfill: parse the whole existing log once for character-move events
-  // so the renderer has a populated live-positions map right away (user
-  // shouldn't have to wait for a new move to happen to see armies in their
-  // correct spots).
-  try {
-    const win0 = BrowserWindow.getAllWindows()[0];
-    if (fs.existsSync(msgPath) && win0) {
-      const fullText = fs.readFileSync(msgPath, "utf8");
-      const moves = [];
-      const deaths = [];
-      // Tag each event with the turn it happened in. Count "end round"
-      // markers to delimit turns. The renderer uses `turn` to filter log
-      // events when the user is viewing an older save (avoids showing
-      // future positions).
-      let backfillTurn = 1;
-      for (const line of fullText.split(/\r?\n/)) {
-        if (line.startsWith("=================")) {
-          if (line.includes("end round")) backfillTurn++;
-          continue;
-        }
-        const ev = parseLogLineV2(line);
-        if (!ev) continue;
-        if (ev.type === "character_move") {
-          // Detect split: if this move's army_uuid differs from what we
-          // had recorded, the character moved to a new army without
-          // their passengers. Clears the passenger list so the fanout
-          // below doesn't fire for ex-passengers.
-          detectAndApplySplit(ev.charUuid, ev.armyUuid);
-          moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: ev.toX, y: ev.toY, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn: backfillTurn });
-          // Propagate to passengers: the leader is the one emitting
-          // MOVING_NORMAL; lesser generals folded into this stack don't
-          // emit their own move event, so synthesize one per passenger.
-          const passengers = ev.charUuid ? armyPassengers.get(ev.charUuid) : null;
-          if (passengers) {
-            for (const p of passengers) {
-              moves.push({ name: p.name, faction: p.faction || ev.faction, role: ev.role, x: ev.toX, y: ev.toY, armyUuid: ev.armyUuid, charUuid: p.charUuid, turn: backfillTurn });
-            }
-          }
-        } else if (ev.type === "general_transfer") {
-          // Empirically verified against save_rome10's message_log:
-          //   `transferring general(Marcus:...) unit(...) from army(A) to named general(Aulus:...):army(B)`
-          // After this, Aulus's uuid never appears in another event.
-          // Marcus emits BESIEGE for the merged stack's move to Uria.
-          // So in this transfer form: the MOVED general (X) is the
-          // active mover that keeps emitting MOVING_NORMAL, and the
-          // DESTINATION army's named general (Z) is the passive
-          // passenger whose marker would otherwise freeze. Don't read
-          // intent into Z (governor / faction leader / whatever) —
-          // just trust the log: Z stops emitting after the transfer,
-          // so we propagate X's moves to Z.
-          setPassenger(ev.movedCharUuid, ev.toCommanderUuid, ev.toCommanderName, null);
-          // Update the army-uuid tracking so the next MOVING_NORMAL for
-          // the moved general doesn't trigger split-detection (the move
-          // will use the destination army's uuid, which is the new
-          // expected value after a merge). Without this, the merge
-          // itself would look like a split — the very next move event's
-          // armyUuid differs from the pre-merge tracking value.
-          if (ev.movedCharUuid && ev.toArmyUuid) {
-            armyUuidByCharUuid.set(ev.movedCharUuid, ev.toArmyUuid);
-          }
-          recordCharName(ev.movedCharUuid, ev.movedCharName);
-          recordCharName(ev.toCommanderUuid, ev.toCommanderName);
-          recordUnitTransfer(ev.fromArmyUuid, ev.toArmyUuid, ev.toCommanderUuid, ev.movedCharUuid);
-        } else if (ev.type === "unit_transfer") {
-          recordCharName(ev.toCommanderUuid, ev.toCommanderName);
-          recordUnitTransfer(ev.fromArmyUuid, ev.toArmyUuid, ev.toCommanderUuid, null);
-        } else if (ev.type === "fleeing") {
-          moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: ev.toX, y: ev.toY, charUuid: null, turn: backfillTurn });
-        } else if (ev.type === "flee_tile" || ev.type === "fleeing_to_settlement") {
-          moves.push({ name: ev.name, faction: ev.faction || null, x: ev.x, y: ev.y, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn: backfillTurn });
-        } else if (ev.type === "army_created") {
-          moves.push({ name: ev.name, faction: null, x: ev.x, y: ev.y, charUuid: ev.charUuid, turn: backfillTurn });
-        } else if (ev.type === "army_dead") {
-          deaths.push({ name: ev.commanderName, faction: ev.faction, turn: backfillTurn });
-        } else if ((ev.type === "char_death" || ev.type === "char_dying") && !ev.alive) {
-          deaths.push({ name: ev.name, faction: ev.faction, turn: backfillTurn });
-        } else if (ev.type === "character_deleted") {
-          deaths.push({ charUuid: ev.charUuid, turn: backfillTurn });
-        }
-      }
-      // Sync poll-side counter so subsequent delta reads continue from here.
-      logPollTurnIdx = backfillTurn;
-      if (moves.length > 0 || deaths.length > 0) {
-        // Chunk moves; send deaths separately (smaller).
-        const CHUNK = 1000;
-        for (let i = 0; i < moves.length; i += CHUNK) {
-          win0.webContents.send("live-char-moves", { moves: moves.slice(i, i + CHUNK) });
-        }
-        if (deaths.length > 0) win0.webContents.send("live-char-moves", { moves: [], deaths });
-      }
-      // Send the unit-flow snapshot after backfill so the renderer can
-      // re-bucket save units in the field-army panel before the user
-      // interacts. Snapshot is the cumulative {from, to, count} flow built
-      // from every transfer event seen so far.
-      const flow = unitFlowSnapshot();
-      if (flow.length > 0) win0.webContents.send("live-char-moves", { moves: [], unitFlow: flow });
-    }
-  } catch (e) { console.warn("[log-watch] backfill failed:", e.message); }
-
-  // Poll every 2 seconds for new data
-  logPollInterval = setInterval(() => {
-    const win = BrowserWindow.getAllWindows()[0];
-    if (!win) return;
-
-    // Read new lines from message_log
-    try {
-      const stat = fs.statSync(msgPath);
-      if (stat.size > logOffset) {
-        const fd = fs.openSync(msgPath, "r");
-        const buf = Buffer.alloc(stat.size - logOffset);
-        fs.readSync(fd, buf, 0, buf.length, logOffset);
-        fs.closeSync(fd);
-        logOffset = stat.size;
-        const text = buf.toString("utf8");
-        if (text.trim()) {
-          win.webContents.send("log-lines", { source: "message", text });
-          // Also extract character-move + death events for live tracking.
-          const moves = [];
-          const deaths = [];
-          for (const line of text.split(/\r?\n/)) {
-            if (line.startsWith("=================")) {
-              if (line.includes("end round")) logPollTurnIdx++;
-              continue;
-            }
-            const ev = parseLogLineV2(line);
-            if (!ev) continue;
-            const turn = logPollTurnIdx;
-            if (ev.type === "character_move") {
-              detectAndApplySplit(ev.charUuid, ev.armyUuid);
-              moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: ev.toX, y: ev.toY, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn });
-              const passengers = ev.charUuid ? armyPassengers.get(ev.charUuid) : null;
-              if (passengers) {
-                for (const p of passengers) {
-                  moves.push({ name: p.name, faction: p.faction || ev.faction, role: ev.role, x: ev.toX, y: ev.toY, armyUuid: ev.armyUuid, charUuid: p.charUuid, turn });
-                }
-              }
-            } else if (ev.type === "general_transfer") {
-              setPassenger(ev.movedCharUuid, ev.toCommanderUuid, ev.toCommanderName, null);
-              if (ev.movedCharUuid && ev.toArmyUuid) {
-                armyUuidByCharUuid.set(ev.movedCharUuid, ev.toArmyUuid);
-              }
-              recordUnitTransfer(ev.fromArmyUuid, ev.toArmyUuid, ev.toCommanderUuid, ev.movedCharUuid);
-            } else if (ev.type === "unit_transfer") {
-              recordUnitTransfer(ev.fromArmyUuid, ev.toArmyUuid, ev.toCommanderUuid, null);
-            } else if (ev.type === "fleeing") {
-              moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: ev.toX, y: ev.toY, charUuid: null, turn });
-            } else if (ev.type === "flee_tile" || ev.type === "fleeing_to_settlement") {
-              moves.push({ name: ev.name, faction: ev.faction || null, x: ev.x, y: ev.y, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn });
-            } else if (ev.type === "army_created") {
-              moves.push({ name: ev.name, faction: null, x: ev.x, y: ev.y, charUuid: ev.charUuid, turn });
-            } else if (ev.type === "army_dead") {
-              deaths.push({ name: ev.commanderName, faction: ev.faction, turn });
-            } else if (ev.type === "char_death" || ev.type === "char_dying") {
-              // Treat DYING events as "remove from map" regardless of
-              // the death_type flag. DET_ALIVE means the character
-              // survived (e.g. captured / exiled rather than killed),
-              // but their army was destroyed and they no longer hold a
-              // map position — exactly the case the user hit when
-              // capturing Brundisium and seeing Titus's marker linger
-              // (DET_ALIVE was being filtered out, so the marker stuck
-              // until the next save snapshot dropped him).
-              deaths.push({ name: ev.name, faction: ev.faction, charUuid: ev.charUuid, turn });
-            } else if (ev.type === "character_deleted") {
-              deaths.push({ charUuid: ev.charUuid, turn });
-            }
-          }
-          // Always include the latest unit-flow snapshot alongside any
-          // move/death batch — it's small and lets the renderer re-bucket
-          // units on every live event.
-          const flow = unitFlowSnapshot();
-          if (moves.length > 0 || deaths.length > 0 || flow.length > 0) {
-            win.webContents.send("live-char-moves", { moves, deaths, unitFlow: flow });
-          }
-        }
-      } else if (stat.size < logOffset) {
-        // File was truncated (new campaign started) — reset and notify
-        logOffset = 0;
-        win.webContents.send("log-lines", { source: "reset", text: "" });
-        win.webContents.send("live-char-moves", { moves: [], reset: true });
-      }
-    } catch {}
-
-    // Read new lines from campaign_ai_log
-    try {
-      if (fs.existsSync(aiPath)) {
-        const stat = fs.statSync(aiPath);
-        if (stat.size > logOffsetAI) {
-          const fd = fs.openSync(aiPath, "r");
-          const buf = Buffer.alloc(stat.size - logOffsetAI);
-          fs.readSync(fd, buf, 0, buf.length, logOffsetAI);
-          fs.closeSync(fd);
-          logOffsetAI = stat.size;
-          const text = buf.toString("utf8");
-          if (text.trim()) win.webContents.send("log-lines", { source: "ai", text });
-        } else if (stat.size < logOffsetAI) {
-          logOffsetAI = 0;
-        }
-      }
-    } catch {}
-  }, 2000);
-
-  return { ok: true, msgPath, aiPath };
-});
-
-ipcMain.handle("log-watch-stop", async () => {
-  if (logPollInterval) { clearInterval(logPollInterval); logPollInterval = null; }
-  return { ok: true };
-});
-
-// Allow reading the full log files for initial parse (backfill)
-ipcMain.handle("log-read-full", async (_event, logDir) => {
-  const msgPath = path.join(logDir, "message_log.txt");
-  const aiPath = path.join(logDir, "campaign_ai_log.txt");
-  let msg = null, ai = null;
-  try { msg = fs.readFileSync(msgPath, "utf8"); } catch {}
-  try { ai = fs.readFileSync(aiPath, "utf8"); } catch {}
-  // Set offsets to end so watcher only gets new stuff
-  try { logOffset = fs.statSync(msgPath).size; } catch {}
-  try { logOffsetAI = fs.statSync(aiPath).size; } catch {}
-  return { msg, ai };
-});
+// Watcher state + the log-watch-reset/start/stop and log-read-full IPC
+// handlers moved to src/logWatchHandlers.js (2026-07-17). clearPassengers /
+// isLogWatchActive / reanchorLogOffsetsToEof are required back for the
+// save-watch re-anchor sites below.
+const {
+  registerLogWatchHandlers, clearPassengers, isLogWatchActive, reanchorLogOffsetsToEof,
+} = require("./src/logWatchHandlers.js");
+registerLogWatchHandlers(ipcMain, { BrowserWindow, getLogPath: () => _logPath });
 
 // ── Save file watcher & parser ────────────────────────────────────────────
 // Watches the RTW saves directory for new autosave .sav files, parses binary
@@ -3494,61 +2855,8 @@ let saveDebounceTimer = null;
 
 // isEndAutosave moved to src/saveDiff.js (pure, imported at top).
 
-// Return the most recently modified .sav in saveDir. Includes autosaves AND manual
-// saves so mid-turn manual saves also trigger live updates. Skips End-suffixed
-// autosaves so the freshly-written "Turn N+1 Start" wins on a tie.
-function findLatestSave(saveDir) {
-  try {
-    const files = fs.readdirSync(saveDir).filter(f => f.endsWith(".sav") && !isEndAutosave(f));
-    if (!files.length) return null;
-    let latest = null, latestTime = 0;
-    for (const f of files) {
-      try {
-        const stat = fs.statSync(path.join(saveDir, f));
-        if (stat.mtimeMs > latestTime) { latestTime = stat.mtimeMs; latest = f; }
-      } catch {}
-    }
-    return latest;
-  } catch { return null; }
-}
-
-// IPC: list all .sav files in a saves dir, sorted newest first. Used by the
-// "Pick save to track" UI so the user can pin a specific save instead of
-// following the newest-by-mtime default.
-ipcMain.handle("list-saves", (_event, saveDir) => {
-  if (!saveDir) return [];
-  try {
-    const files = fs.readdirSync(saveDir).filter((f) => f.endsWith(".sav"));
-    const out = [];
-    for (const f of files) {
-      try {
-        const st = fs.statSync(path.join(saveDir, f));
-        out.push({ file: f, mtime: st.mtimeMs, atime: st.atimeMs, size: st.size });
-      } catch {}
-    }
-    out.sort((a, b) => b.mtime - a.mtime);
-    return out;
-  } catch { return []; }
-});
-
-// IPC: return { file, mtime } for the newest .sav in saveDir, or null. Used
-// by the renderer's auto-detect logic to rank candidate campaign folders.
-// Skips End autosaves — see findLatestSave above for rationale.
-ipcMain.handle("get-latest-save-mtime", (_event, saveDir) => {
-  if (!saveDir) return null;
-  try {
-    const files = fs.readdirSync(saveDir).filter(f => f.endsWith(".sav") && !isEndAutosave(f));
-    if (!files.length) return null;
-    let latest = null, latestTime = 0;
-    for (const f of files) {
-      try {
-        const stat = fs.statSync(path.join(saveDir, f));
-        if (stat.mtimeMs > latestTime) { latestTime = stat.mtimeMs; latest = f; }
-      } catch {}
-    }
-    return latest ? { file: latest, mtime: latestTime } : null;
-  } catch { return null; }
-});
+// findLatestSave + list-saves + get-latest-save-mtime moved to
+// src/saveListHandlers.js (2026-07-17), required above.
 
 // ── UI batch 2 (2026-05-31): surface already-cracked save data on the live
 // watch path. Attaches three additive fields to `newData` so they ride the
@@ -4072,12 +3380,9 @@ async function reparseLatestSave() {
     // previous game session (so reading it is wrong). Tell the renderer
     // to drop its live state too. Manual Reset button still available
     // for cases where the user wants to drop state without saving.
-    if (logPollInterval && _lastWatchedLogDir) {
+    if (isLogWatchActive()) {
       try {
-        const lp = path.join(_lastWatchedLogDir, "message_log.txt");
-        if (fs.existsSync(lp)) logOffset = fs.statSync(lp).size;
-        const ap = path.join(_lastWatchedLogDir, "campaign_ai_log.txt");
-        if (fs.existsSync(ap)) logOffsetAI = fs.statSync(ap).size;
+        reanchorLogOffsetsToEof();
         clearPassengers();
         safeSend("live-char-moves", { moves: [], deaths: [], reset: true });
       } catch {}
@@ -4139,12 +3444,7 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
   // we ignore old game-session entries. User requested this 2026-05-11.
   try {
     clearPassengers();
-    if (logPollInterval && _lastWatchedLogDir) {
-      const lp = path.join(_lastWatchedLogDir, "message_log.txt");
-      if (fs.existsSync(lp)) logOffset = fs.statSync(lp).size;
-      const ap = path.join(_lastWatchedLogDir, "campaign_ai_log.txt");
-      if (fs.existsSync(ap)) logOffsetAI = fs.statSync(ap).size;
-    }
+    if (isLogWatchActive()) reanchorLogOffsetsToEof();
     const winR = BrowserWindow.getAllWindows()[0];
     if (winR) winR.webContents.send("live-char-moves", { moves: [], deaths: [], reset: true });
   } catch {}
@@ -4369,156 +3669,15 @@ ipcMain.handle("save-check-now", async () => {
   return { ok: true, file: lastSaveFile };
 });
 
-// Load mod-specific name/trait tables so subsequent save parses can decode
-// characters. Called by the renderer once the user has selected the mod data
-// directory. Idempotent — safe to call multiple times.
-// Returns the current faction display-name → internal-id map, so the renderer
-// can match "House of Claudii" → romans_julii without filename-pattern tricks.
-ipcMain.handle("faction-display-map", async () => {
-  return modFactionDisplayMap || {};
-});
-
-// Self-contained — parses expanded_bi.txt files from mod + game installs
-// so users without a mod selected still get faction display names.
-// Also reads campaign_descriptions.txt for campaign-specific names like
-// "The House of Claudii" (RIS alternate_campaign) vs "Rome" (imperial).
-// Pass the campaign id (e.g., "classic" → "alternate_campaign") so the
-// matching campaign's titles override the generic expanded_bi entries.
-const _factionDisplayCache = makeLRU(16);
-const CAMPAIGN_PREFIX = {
-  classic: ["ALTERNATE_CAMPAIGN", "RIS_CLASSIC", "RIS_CLASSIC_2"],
-  imperial: ["IMPERIAL_CAMPAIGN"],
-};
-ipcMain.handle("faction-display-names", async (_event, modDataDir, campaign) => {
-  const cacheKey = `${modDataDir || ""}|${campaign || ""}`;
-  if (_factionDisplayCache.has(cacheKey)) return _factionDisplayCache.get(cacheKey);
-  const map = {};
-  const sources = [];
-  for (const root of getIconSearchRoots()) {
-    sources.push(path.join(root, "text", "expanded_bi.txt"));
-  }
-  for (const d of findRelatedModDirs(modDataDir, "text/expanded_bi.txt").reverse()) {
-    sources.push(path.join(d, "text", "expanded_bi.txt"));
-  }
-  for (const src of sources) {
-    if (!fs.existsSync(src)) continue;
-    try {
-      const buf = fs.readFileSync(src);
-      const text = buf[0] === 0xff && buf[1] === 0xfe ? buf.toString("utf16le") : buf.toString("utf8");
-      for (const line of text.split(/\r?\n/)) {
-        const m = line.match(/^\{([A-Z][A-Z0-9_]*)\}\s*(.+?)\s*$/);
-        if (!m) continue;
-        const key = m[1];
-        if (key.includes("_DESCR") || key.startsWith("EMT_") || key.startsWith("SMW_") ||
-            key.endsWith("_LABEL") || key.endsWith("_ORDER") || key.endsWith("_UNREST") ||
-            key.endsWith("_TITLE") || key.endsWith("_BODY") || key.endsWith("_MESSAGE")) continue;
-        const factionId = key.toLowerCase();
-        const display = m[2].trim();
-        if (!display || display.length > 60) continue;
-        map[factionId] = display;
-      }
-    } catch {}
-  }
-  // Layer campaign-specific titles on top so the active campaign's faction
-  // names (e.g., "The House of Claudii" in alternate_campaign) override
-  // generic ones (e.g., "The Roman Republic" from expanded_bi.txt).
-  const prefixes = CAMPAIGN_PREFIX[campaign] || [];
-  if (prefixes.length) {
-    const campSources = [];
-    for (const root of getIconSearchRoots()) {
-      campSources.push(path.join(root, "text", "campaign_descriptions.txt"));
-    }
-    for (const d of findRelatedModDirs(modDataDir, "text/campaign_descriptions.txt").reverse()) {
-      campSources.push(path.join(d, "text", "campaign_descriptions.txt"));
-    }
-    for (const src of campSources) {
-      if (!fs.existsSync(src)) continue;
-      try {
-        const buf = fs.readFileSync(src);
-        const text = buf[0] === 0xff && buf[1] === 0xfe ? buf.toString("utf16le") : buf.toString("utf8");
-        for (const line of text.split(/\r?\n/)) {
-          const m = line.match(/^\{([A-Z0-9_]+)_TITLE\}(.+?)\s*$/);
-          if (!m) continue;
-          const key = m[1];
-          let factionId = null;
-          for (const p of prefixes) {
-            if (key.startsWith(p + "_")) {
-              factionId = key.slice(p.length + 1).toLowerCase();
-              break;
-            }
-          }
-          if (!factionId) continue;
-          const display = m[2].trim();
-          if (!display || display.length > 60) continue;
-          map[factionId] = display;
-        }
-      } catch {}
-    }
-  }
-  _factionDisplayCache.set(cacheKey, map);
-  return map;
-});
-
-// IPC: return faction → culture map, merged from mod + vanilla + Alexander.
-// Self-contained — doesn't depend on charactersInit having been called.
-// Users who haven't selected a mod path still get vanilla + Alexander data.
-const _factionCultureCache = makeLRU(16);
-ipcMain.handle("faction-cultures", async (_event, modDataDir) => {
-  const cacheKey = modDataDir || "";
-  if (_factionCultureCache.has(cacheKey)) return _factionCultureCache.get(cacheKey);
-  const map = {};
-  const sources = [];
-  // Mod first (first-wins — mod overrides fallbacks).
-  for (const d of findRelatedModDirs(modDataDir, "descr_sm_factions.txt")) {
-    sources.push(path.join(d, "descr_sm_factions.txt"));
-  }
-  // Game install fallbacks.
-  for (const root of getIconSearchRoots()) {
-    sources.push(path.join(root, "descr_sm_factions.txt"));
-  }
-  for (const src of sources) {
-    if (!fs.existsSync(src)) continue;
-    try {
-      const text = fs.readFileSync(src, "utf8");
-      let curFaction = null;
-      for (const line of text.split(/\r?\n/)) {
-        const fm = line.match(/^\s*"([a-z_0-9]+)":\s*(;.*)?$/);
-        if (fm) { curFaction = fm[1]; continue; }
-        if (curFaction) {
-          const cm = line.match(/^\s*"culture":\s*"([a-z_]+)"/);
-          if (cm) {
-            if (!(curFaction in map)) map[curFaction] = cm[1];
-            curFaction = null;
-          }
-        }
-      }
-    } catch {}
-  }
-  _factionCultureCache.set(cacheKey, map);
-  // Also update the legacy var so other code paths see it.
-  if (!modFactionCultures || Object.keys(modFactionCultures).length === 0) {
-    modFactionCultures = map;
-  }
-  return map;
-});
-
-// Expose the turn-0 settlement ownership map (settlementName → factionId)
-// to the renderer without needing a save loaded. Without this, the recruit
-// evaluator falls back to descr_regions.txt's rebel-default faction, which
-// for some regions points to a faction that doesn't actually own the
-// settlement at game start (Corsica is rebel-default romans_julii but the
-// actual descr_strat owner is corsi). That misresolves ownerId and shows
-// the wrong faction's recruits.
-ipcMain.handle("get-initial-ownership", async () => {
-  return modInitialOwnerByCity || {};
-});
-
-// 0.9.437: descr_strat `faction_creator` per settlement — the rebel-default
-// recorded by descr_strat. Distinct from the parent-faction current owner
-// returned by get-initial-ownership. Loyalist map mode uses this to compare
-// against descr_regions field 3 (also a rebel-default).
-ipcMain.handle("get-initial-creators", async () => {
-  return modInitialCreatorByCity || {};
+// Faction display-name / culture / initial-ownership IPC handlers moved to
+// src/factionDisplayHandlers.js (2026-07-17). clearFactionDisplayCaches is
+// required back for clear-mod-caches / factory-reset above.
+registerFactionDisplayHandlers(ipcMain, {
+  getModFactionDisplayMap: () => modFactionDisplayMap,
+  getModInitialOwnerByCity: () => modInitialOwnerByCity,
+  getModInitialCreatorByCity: () => modInitialCreatorByCity,
+  getModFactionCultures: () => modFactionCultures,
+  setModFactionCultures: (v) => { modFactionCultures = v; },
 });
 
 // 0.9.468: write a text file directly into the active mod's data dir.
@@ -4922,137 +4081,10 @@ ipcMain.handle("updater-quit-and-install", () => {
   return true;
 });
 
-// Victory-conditions helper: pick a CSV/text list of region names, then write a
-// CSV mapping each region → the faction that owns it in the mod's descr_strat.txt
-// (the settlement-block owner). Region tokens may be comma/newline/semicolon/tab
-// separated. Unmatched names are reported as NOT_FOUND so label rows stand out.
-ipcMain.handle("vc-region-owners-csv", async (_event, modDataDir, campaign) => {
-  try {
-    const dataDir = modDataDir || activeModDataDir;
-    if (!dataDir) return { error: "No mod loaded — import a mod first." };
-
-    const folder = campaign === "classic" ? "ris_classic" : "imperial_campaign";
-    const candidates = [
-      path.join(dataDir, "world", "maps", "campaign", folder, "descr_strat.txt"),
-      path.join(dataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
-      path.join(dataDir, "world", "maps", "campaign", "ris_classic", "descr_strat.txt"),
-    ];
-    let stratPath = candidates.find((p) => fs.existsSync(p));
-    if (!stratPath) {
-      const base = path.join(dataDir, "world", "maps", "campaign");
-      try {
-        for (const d of fs.readdirSync(base, { withFileTypes: true })) {
-          if (!d.isDirectory()) continue;
-          const p = path.join(base, d.name, "descr_strat.txt");
-          if (fs.existsSync(p)) { stratPath = p; break; }
-        }
-      } catch {}
-    }
-    if (!stratPath) return { error: "descr_strat.txt not found for this mod." };
-
-    const parent = BrowserWindow.getFocusedWindow() || undefined;
-    const inp = await dialog.showOpenDialog(parent, {
-      title: "Select region list (CSV / text)",
-      filters: [{ name: "CSV / text", extensions: ["csv", "txt"] }, { name: "All files", extensions: ["*"] }],
-      properties: ["openFile"],
-    });
-    if (inp.canceled || !inp.filePaths[0]) return { canceled: true };
-    const inputPath = inp.filePaths[0];
-
-    // Parse region tokens (dedupe, preserve order).
-    const seen = new Set();
-    const regions = [];
-    for (const tok of fs.readFileSync(inputPath, "utf8").split(/[\r\n,;\t]+/)) {
-      const t = tok.trim();
-      if (t && !seen.has(t)) { seen.add(t); regions.push(t); }
-    }
-    if (regions.length === 0) return { error: "No region names found in that file." };
-
-    // region → owning faction, from descr_strat settlement blocks.
-    const ownerByRegion = {}, ownerLower = {};
-    {
-      let curFaction = null, inSettlement = false;
-      for (const line of fs.readFileSync(stratPath, "utf8").split(/\r?\n/)) {
-        const s = line.trim();
-        if (!s || s.startsWith(";")) continue;
-        const fm = s.match(/^faction\s+([^\s,]+)/);
-        if (fm) { curFaction = fm[1].toLowerCase(); inSettlement = false; continue; }
-        if (s === "settlement") { inSettlement = true; continue; }
-        if (inSettlement && /^region\b/.test(s)) {
-          const rn = s.replace(/^region\s+/, "").trim();
-          if (rn && curFaction) { ownerByRegion[rn] = curFaction; ownerLower[rn.toLowerCase()] = curFaction; }
-          inSettlement = false;
-        }
-      }
-    }
-
-    // city → region (from descr_regions.txt) so a list of CITY names resolves too
-    // (descr_strat's `region` field holds province names like Faliscia, not the
-    // city Falerii). Blocks are 8 lines (region, city, faction, culture, rgb,
-    // tags, farm, pop); original RTW adds a 9th (ethnicities) — detect per block
-    // so the walk doesn't desync and skip later regions.
-    const cityToRegion = {}, cityToRegionLower = {};
-    {
-      const regCandidates = [
-        path.join(dataDir, "world", "maps", "campaign", folder, "descr_regions.txt"),
-        path.join(dataDir, "world", "maps", "base", "descr_regions.txt"),
-        path.join(dataDir, "world", "maps", "campaign", "imperial_campaign", "descr_regions.txt"),
-      ];
-      const regPath = regCandidates.find((p) => fs.existsSync(p));
-      if (regPath) {
-        const L = fs.readFileSync(regPath, "utf8").split(/\r?\n/);
-        const isStart = (raw) => {
-          if (raw == null || /^\s/.test(raw)) return false;
-          const t = raw.trim();
-          return !!t && !t.startsWith(";") && /^[A-Za-z][A-Za-z0-9_]*$/.test(t);
-        };
-        let i = 0;
-        while (i < L.length) {
-          const t = (L[i] || "").trim();
-          if (!t || t.startsWith(";")) { i++; continue; }
-          if (i + 7 >= L.length) break;
-          const rgb = (L[i + 4] || "").trim().split(/\s+/);
-          if (rgb.length !== 3 || !/^\d+$/.test(rgb[0])) { i++; continue; }
-          const region = t, city = (L[i + 1] || "").trim();
-          if (city) { cityToRegion[city] = region; cityToRegionLower[city.toLowerCase()] = region; }
-          const next = L[i + 8];
-          const has9 = next != null && !isStart(next) && !!next.trim() && !next.trim().startsWith(";");
-          i += has9 ? 9 : 8;
-        }
-      }
-    }
-
-    const resolveOwner = (name) => {
-      let o = ownerByRegion[name] || ownerLower[name.toLowerCase()];
-      if (o) return o;
-      const reg = cityToRegion[name] || cityToRegionLower[name.toLowerCase()];
-      if (reg) return ownerByRegion[reg] || ownerLower[reg.toLowerCase()] || null;
-      return null;
-    };
-
-    const csvCell = (v) => (/[",\n]/.test(v) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v));
-    let found = 0, notFound = 0;
-    const rows = ["region,owner_faction"];
-    for (const r of regions) {
-      const owner = resolveOwner(r);
-      if (owner) { found++; rows.push(`${csvCell(r)},${csvCell(owner)}`); }
-      else { notFound++; rows.push(`${csvCell(r)},NOT_FOUND`); }
-    }
-
-    const baseName = path.basename(inputPath).replace(/\.[^.]+$/, "");
-    const out = await dialog.showSaveDialog(parent, {
-      title: "Save region owners (CSV)",
-      defaultPath: path.join(path.dirname(inputPath), `${baseName}_owners.csv`),
-      filters: [{ name: "CSV", extensions: ["csv"] }],
-    });
-    if (out.canceled || !out.filePath) return { canceled: true };
-    fs.writeFileSync(out.filePath, rows.join("\r\n") + "\r\n", "utf8");
-
-    return { total: regions.length, found, notFound, outputPath: out.filePath };
-  } catch (e) {
-    return { error: e.message };
-  }
-});
+// Victory-conditions region→owner CSV export (vc-region-owners-csv) — moved
+// to src/regionOwnersCsvHandler.js (2026-07-17).
+const { registerRegionOwnersCsvHandler } = require("./src/regionOwnersCsvHandler.js");
+registerRegionOwnersCsvHandler(ipcMain, { dialog, BrowserWindow, getActiveModDataDir: () => activeModDataDir });
 
 // Single-instance lock: a second launch would run duplicate save/log watchers
 // against the same files and the same provincia.log fd — focus the existing

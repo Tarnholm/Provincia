@@ -2,7 +2,8 @@ import React, { useRef, useState, useEffect, useCallback, useMemo, lazy, Suspens
 import { createPortal } from "react-dom";
 import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
 import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect, subscribeWidgets, getWidgetSnapshot } from "./Movable";
-import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, prefetchBuildingIconsBulk, invalidateBuildingIcon } from "./buildingIcons";
+import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, prefetchBuildingIconsBulk, invalidateBuildingIcon, warmStats } from "./buildingIcons";
+import { WARM_TUNING, runWarmChunks } from "./iconWarmScheduler";
 import { getCachedUnitIcon, prefetchUnitIcons, prefetchUnitIconsBulk } from "./unitIcons";
 import { loadPortrait } from "./portraitIcons";
 // Heavy, single-use panels are code-split (2026-07-15): each is loaded as its
@@ -1786,6 +1787,11 @@ function App() {
   const minimapRef = useRef(null);
   const minimapDragging = useRef(false);
   const splashStartRef = useRef(Date.now());
+  // [boot] summary (2026-07-17): first-true timestamps of each splash gate,
+  // logged as one line at splash lift so a slow launch is diagnosable from a
+  // single pasted log line (which stage regressed + cache hit rates).
+  const bootStampsRef = useRef({});
+  const bootLoggedRef = useRef(false);
   const topBarRef = useRef(null);
   const [topBarHeight, setTopBarHeight] = useState(0);
 
@@ -4096,6 +4102,24 @@ function App() {
         if (map && Object.keys(map).length > 0) setFactionCultures(map);
       }).catch(() => {});
     }
+    // Mining prospects (region panel). Deferred well past boot: the handler
+    // parses EDB + descr_strat + map_regions.tga in the MAIN process on first
+    // call (cached after), and boot IPC (icon warm bulk) must not queue behind
+    // it. The panel just fills in when the data lands.
+    if (mineProspectsTimerRef.current) clearTimeout(mineProspectsTimerRef.current); // mod changed → drop the stale fetch
+    if (api?.getMineProspects && modDataDir) {
+      const t = setTimeout(() => {
+        api.getMineProspects(modDataDir).then((r) => {
+          if (r && r.prospects && Object.keys(r.prospects).length > 0) {
+            console.log("[mine-prospects] regions with mineable deposits:", Object.keys(r.prospects).length);
+            setMineProspects(r.prospects);
+          } else {
+            setMineProspects(null);
+          }
+        }).catch(() => {});
+      }, 12000);
+      mineProspectsTimerRef.current = t;
+    }
     // Skip the merged (BI/Alex) name dict on the vanilla Slot 1 — its own
     // names come from the dedicated vanilla-names effect (else Thrace reverts).
     const isVanillaSlot = mapCampaign === "classic" && !campaignLabels[mapCampaign];
@@ -4141,6 +4165,12 @@ function App() {
 
   const [buildingLevelsLookup, setBuildingLevelsLookup] = useState(null); // { chain: [level0Name, level1Name, ...] }
   const [buildingRecruits, setBuildingRecruits] = useState(null); // { chain: { level: [{unit, factions?}, ...] } }
+  // { region: { settlement, qtyVal, minerals:[{name,qty,tradeValue}], currentIncome,
+  //   levels:[{chain, level, built, income}] } } — cracked mining formula readout
+  // for the region panel (src/incomeModel.js mineProspects, 2026-07-17).
+  const [mineProspects, setMineProspects] = useState(null);
+  const mineProspectsTimerRef = useRef(null);
+  useEffect(() => () => { if (mineProspectsTimerRef.current) clearTimeout(mineProspectsTimerRef.current); }, []);
   const [unitOwnership, setUnitOwnership] = useState(null); // { unitName: [faction, ...] } — from export_descr_unit.txt
   // { rebelType: { units: [name, ...], category, chance, description } } from
   // descr_rebel_factions.txt. Used to surface the procedural rebel garrison
@@ -7832,39 +7862,22 @@ function App() {
       if (refreshTimer) return;
       refreshTimer = setTimeout(() => { refreshTimer = null; setIconCacheVersion((v) => v + 1); }, 120);
     };
-    // Large bulk chunks (one IPC round-trip each). CRITICAL: during the PRIORITY
-    // pass (behind the splash) we do NOT bump iconCacheVersion — a bump
-    // re-renders the whole 24k-line App, which clogs the main thread so it can't
-    // process the decode workers' responses, and the warm-up stalled (~55 icons
-    // then wedged to the hard cap). Nothing is visible behind the splash, so we
-    // skip re-renders entirely and bump ONCE at the reveal. The background
-    // (rest) pass IS visible, so it refreshes per chunk (refreshEach).
-    const runBatches = async (list, chunkSize, gapMs, refreshEach, label) => {
-      const chunks = [];
-      for (let i = 0; i < list.length; i += chunkSize) chunks.push(list.slice(i, i + chunkSize));
-      const fetchChunk = (c) =>
-        prefetchBuildingIconsBulk(modDataDir, c, null)
-          .catch((e) => { console.warn(`[icon-warmup] ${label} chunk error:`, e && e.message); });
-      let done = 0;
-      let inFlight = chunks.length ? fetchChunk(chunks[0]) : null;
-      for (let i = 0; i < chunks.length && !run.cancelled; i++) {
-        // Fast path (gapMs=0, behind the splash): start chunk i+1's IPC fetch
-        // BEFORE awaiting chunk i, so the decode-worker pool never sits idle
-        // between chunks (chunks are disjoint; bulk prefetch dedupes inflight).
-        // Gentle path (gapMs>0, post-reveal background): strictly serial with a
-        // gap, so it never crowds out interaction.
-        const next = (!gapMs && i + 1 < chunks.length) ? fetchChunk(chunks[i + 1]) : null;
-        await inFlight;
-        done += chunks[i].length;
-        if (refreshEach) scheduleRefresh();
-        if (gapMs) {
-          await new Promise((r) => setTimeout(r, gapMs));
-          inFlight = (i + 1 < chunks.length) ? fetchChunk(chunks[i + 1]) : null;
-        } else {
-          await new Promise((r) => setTimeout(r, 0));
-          inFlight = next;
-        }
-      }
+    // Chunked runner + bump policy live in src/iconWarmScheduler.js — read its
+    // invariants before changing anything here. Short version: NO version
+    // bumps mid-pass ever (behind the splash a bump clogs the main thread and
+    // the warm-up wedges; post-reveal a bump train is the 0.9.1277 stall
+    // storm) — one uncoalesced bump at the reveal, one debounced refresh at
+    // end of catalog.
+    const runBatches = async (list, label) => {
+      const done = await runWarmChunks(list, {
+        chunkSize: WARM_TUNING.BULK_CHUNK,
+        gapMs: 0,
+        fetchChunk: (c) =>
+          prefetchBuildingIconsBulk(modDataDir, c, null)
+            .catch((e) => { console.warn(`[icon-warmup] ${label} chunk error:`, e && e.message); }),
+        isCancelled: () => run.cancelled,
+        label,
+      });
       if (run.cancelled) console.log(`[icon-warmup] ${label} CANCELLED at ${done}/${list.length}`);
     };
     (async () => {
@@ -7875,7 +7888,7 @@ function App() {
       // buildings that appear later (dev edits, save switches to new owners)
       // can pop in while the background pass finishes — the 2026-07-16 approved
       // tradeoff for lifting the splash ~4s earlier than the old hold-for-all.
-      await runBatches(priority, 128, 0, false, "priority"); // bigger chunks since the decode pool widened (2026-07-16)
+      await runBatches(priority, "priority");
       if (run.cancelled) return;
       const dtp = ((performance && performance.now) ? performance.now() : Date.now()) - t0;
       console.log(`[icon-warmup] priority warmed ${priority.length} (${dtp.toFixed(0)}ms) — releasing splash, full catalog continues in background`);
@@ -7887,7 +7900,7 @@ function App() {
       // and bumping every chunk produced the 1.5–5s main-thread stall train in
       // 0.9.1277's logs. Panels that need a just-warmed icon bump the
       // coalesced version themselves; one bump at the end covers the rest.
-      await runBatches(rest, 128, 0, false, "rest"); // full tilt (2026-07-16): pipelined, no redraw bumps — zero pop-in ASAP
+      await runBatches(rest, "rest"); // full tilt (2026-07-16): pipelined, no redraw bumps — zero pop-in ASAP
       if (run.cancelled) return;
       const dt = ((performance && performance.now) ? performance.now() : Date.now()) - t0;
       console.log(`[icon-warmup] ALL warmed ${priority.length + rest.length} (${dt.toFixed(0)}ms) — full catalog cached`);
@@ -7923,9 +7936,9 @@ function App() {
       // clears this timer and warms for real; if not, release and let unit
       // cards lazy-load exactly as before this feature.
       const t = setTimeout(() => {
-        console.log("[unit-warmup] data not ready after 8s grace — releasing splash; warm-up runs when data lands");
+        console.log(`[unit-warmup] data not ready after ${WARM_TUNING.UNIT_DATA_GRACE_MS / 1000}s grace — releasing splash; warm-up runs when data lands`);
         setUnitIconsWarm(true);
-      }, 8000);
+      }, WARM_TUNING.UNIT_DATA_GRACE_MS);
       return () => clearTimeout(t);
     }
     // buildingRecruits/resourcesData arrive later than the armies data; keying
@@ -8045,7 +8058,7 @@ function App() {
     // product) and the truncated pairs were exactly the ones popping in.
     // Per-file blob dedupe in prefetchUnitIconsBulk makes the marginal cost
     // of extra keys tiny (an object URL to an already-decoded Blob).
-    const RECRUIT_WARM_CAP = 100000;
+    const RECRUIT_WARM_CAP = WARM_TUNING.RECRUIT_WARM_CAP;
     let capped = false;
     for (const [unit, facs] of Object.entries(unitOwnership)) {
       if (unit === "__dictionary" || !Array.isArray(facs)) continue;
@@ -8064,25 +8077,14 @@ function App() {
     console.log(`[unit-warmup] START army=${armyTriples.length} (holds splash) recruit=${recruitTriples.length} (background after reveal)`);
     let cancelled = false;
     (async () => {
-      const CHUNK = 128; // sized for the widened decode pool (2026-07-16)
-      const runChunks = async (list, gapMs, label) => {
-        const chunks = [];
-        for (let i = 0; i < list.length; i += CHUNK) chunks.push(list.slice(i, i + CHUNK));
-        const fetchChunk = (c) => prefetchUnitIconsBulk(activeDataDir, c)
-          .catch((e) => { console.warn(`[unit-warmup] ${label} chunk error:`, e && e.message); });
-        let inFlight = chunks.length ? fetchChunk(chunks[0]) : null;
-        for (let i = 0; i < chunks.length && !cancelled; i++) {
-          const next = (!gapMs && i + 1 < chunks.length) ? fetchChunk(chunks[i + 1]) : null;
-          await inFlight;
-          if (gapMs) {
-            await new Promise((r) => setTimeout(r, gapMs));
-            inFlight = (i + 1 < chunks.length) ? fetchChunk(chunks[i + 1]) : null;
-          } else {
-            await new Promise((r) => setTimeout(r, 0));
-            inFlight = next;
-          }
-        }
-      };
+      const runChunks = (list, gapMs, label) => runWarmChunks(list, {
+        chunkSize: WARM_TUNING.BULK_CHUNK,
+        gapMs,
+        fetchChunk: (c) => prefetchUnitIconsBulk(activeDataDir, c)
+          .catch((e) => { console.warn(`[unit-warmup] ${label} chunk error:`, e && e.message); }),
+        isCancelled: () => cancelled,
+        label,
+      });
       // Splash pass: only what's visible on the map at reveal.
       await runChunks(armyTriples, 0, "army");
       const dtA = performance.now() - t0;
@@ -8151,12 +8153,14 @@ function App() {
     if (triples.length === 0) return;
     let cancelled = false;
     (async () => {
-      const CHUNK = 96;
       let fresh = 0;
-      for (let i = 0; i < triples.length && !cancelled; i += CHUNK) {
-        try { fresh += (await prefetchUnitIconsBulk(activeDataDir, triples.slice(i, i + CHUNK))) || 0; } catch {}
-        await new Promise((r) => setTimeout(r, 50)); // gentle: UI is live
-      }
+      await runWarmChunks(triples, {
+        chunkSize: WARM_TUNING.LIVE_CHUNK,
+        gapMs: WARM_TUNING.LIVE_GAP_MS, // gentle: UI is live
+        fetchChunk: async (c) => { try { fresh += (await prefetchUnitIconsBulk(activeDataDir, c)) || 0; } catch {} },
+        isCancelled: () => cancelled,
+        label: "live",
+      });
       if (fresh > 0) {
         console.log(`[unit-warmup] live pass warmed ${fresh} new cards`);
         bumpIconCacheVersionCoalesced();
@@ -8220,12 +8224,16 @@ function App() {
     let cancelled = false;
     (async () => {
       const t0 = performance.now();
-      // Sequential with a small gap: each portrait is an IPC + a synchronous
-      // DDS decode on this thread, so pacing keeps hover/typing responsive.
-      for (let i = 0; i < jobs.length && !cancelled; i++) {
-        try { await loadPortrait(modDataDir, jobs[i].cultureKey, "general", jobs[i].ctx); } catch {}
-        await new Promise((r) => setTimeout(r, 5)); // minimal yield (was 15ms) — zero pop-in ASAP
-      }
+      // Strictly sequential with a small gap (chunkSize 1): each portrait is
+      // an IPC + a synchronous DDS decode on this thread, so pacing keeps
+      // hover/typing responsive. NO version bump — hover re-renders suffice.
+      await runWarmChunks(jobs, {
+        chunkSize: 1,
+        gapMs: WARM_TUNING.PORTRAIT_GAP_MS,
+        fetchChunk: async ([job]) => { try { await loadPortrait(modDataDir, job.cultureKey, "general", job.ctx); } catch {} },
+        isCancelled: () => cancelled,
+        label: "portraits",
+      });
       if (!cancelled) console.log(`[portrait-warmup] warmed ${jobs.length} commander portraits (${(performance.now() - t0).toFixed(0)}ms)`);
     })();
     return () => { cancelled = true; };
@@ -9631,7 +9639,25 @@ function App() {
   // When splash ends, show welcome/what's-new screen before the main UI.
   // One-shot: subsequent calls (re-fired when campaign switches re-run the splash
   // effect) must not re-open the welcome screen.
-  const hideSplash = useCallback(() => {
+  const hideSplash = useCallback((reason) => {
+    // One [boot] line per launch — total time, when each splash gate opened,
+    // and persistent-PNG-cache hit rates. THE line to read on "launch is slow".
+    if (!bootLoggedRef.current) {
+      bootLoggedRef.current = true;
+      try {
+        const t0 = splashStartRef.current;
+        const st = bootStampsRef.current;
+        const at = (k) => (st[k] ? ((st[k] - t0) / 1000).toFixed(1) + "s" : "—");
+        const bw = warmStats.building, uw = warmStats.unit;
+        const pct = (c, d) => (c + d > 0 ? Math.round((100 * c) / (c + d)) + "% cached" : "no work");
+        console.log(
+          `[boot] splash lifted (${reason === "hard-cap" ? "HARD CAP" : (reason || "ready")}) in ${((Date.now() - t0) / 1000).toFixed(1)}s — ` +
+          `map ${at("essentials")}, overlay ${at("overlay")}, ` +
+          `building icons ${at("buildings")} (${bw.cached}/${bw.cached + bw.decoded} files, ${pct(bw.cached, bw.decoded)}), ` +
+          `unit cards ${at("units")} (${uw.cached}/${uw.cached + uw.decoded} files, ${pct(uw.cached, uw.decoded)})`
+        );
+      } catch { /* diagnostics must never break the lift */ }
+    }
     setShowSplash(false);
     if (!welcomeShownOnceRef.current) {
       welcomeShownOnceRef.current = true;
@@ -9656,6 +9682,12 @@ function App() {
     // request 2026-07-15): the map behind the splash is fully drawn and all its
     // icons cached before the reveal, so nothing pops in afterward.
     const uiReady = essentialsReady && iconsPreloaded && overlayReady && priorityIconsWarm && unitIconsWarm;
+    // [boot] stamps: first time each splash gate opens (see hideSplash).
+    const st = bootStampsRef.current;
+    if (essentialsReady && !st.essentials) st.essentials = Date.now();
+    if (overlayReady && !st.overlay) st.overlay = Date.now();
+    if (priorityIconsWarm && !st.buildings) st.buildings = Date.now();
+    if (unitIconsWarm && !st.units) st.units = Date.now();
     const elapsed = Date.now() - splashStartRef.current;
     const remaining = Math.max(0, SPLASH_MIN_MS - elapsed);
     // Hard cap: whichever comes first — SPLASH_HARD_MAX_MS total, or 25s after
@@ -9665,9 +9697,9 @@ function App() {
       0,
       Math.min(SPLASH_HARD_MAX_MS - elapsed, (essentialsReady ? 25000 : SPLASH_HARD_MAX_MS))
     );
-    const hardCap = setTimeout(hideSplash, hardCapDelay);
+    const hardCap = setTimeout(() => hideSplash("hard-cap"), hardCapDelay);
     if (uiReady || assetError) {
-      const t = setTimeout(hideSplash, remaining);
+      const t = setTimeout(() => hideSplash(assetError ? "asset-error" : "ready"), remaining);
       return () => {
         clearTimeout(t);
         clearTimeout(hardCap);
@@ -18158,6 +18190,7 @@ function App() {
                         if (set.size) setSelectedFactions(set);
                       }}
                       modDataDir={modDataDir}
+                      mineProspects={mineProspects}
                       factionCultures={factionCultures}
                       statsCache={statsCache}
                       nonLivePortraitMap={nonLivePortraitMap}
@@ -19777,6 +19810,35 @@ function App() {
             //     persist on disk),
             // (2) auto-rescan that same folder if the user wants a true
             //     re-import (button below).
+            // Slot's mod changed → the replaced mod's cached icon PNGs are
+            // dead weight on disk; prune them. Skipped when re-importing the
+            // same folder (in-place reload) or when another slot still imports
+            // from inside that folder. Must read the OLD folder before the
+            // lastImport write below overwrites it.
+            try {
+              const prevRaw = localStorage.getItem("lastImport_" + camp.suffix);
+              const prevFolder = prevRaw ? (JSON.parse(prevRaw) || {}).folder : null;
+              if (prevFolder && window.electronAPI?.iconCachePruneUnder) {
+                const norm = (p) => String(p).toLowerCase().replace(/\//g, "\\").replace(/\\+$/, "") + "\\";
+                const oldP = norm(prevFolder);
+                const sameFolder = norm(campaignResult.dir) === oldP;
+                const otherSlotHolds = campaigns.some((c) => {
+                  if (c.suffix === camp.suffix) return false;
+                  try {
+                    const r = localStorage.getItem("lastImport_" + c.suffix);
+                    const f = r ? (JSON.parse(r) || {}).folder : null;
+                    if (!f) return false;
+                    const p = norm(f);
+                    return p.startsWith(oldP) || oldP.startsWith(p);
+                  } catch { return false; }
+                });
+                if (!sameFolder && !otherSlotHolds) {
+                  window.electronAPI.iconCachePruneUnder(prevFolder)
+                    .then((n) => { if (n > 0) console.log(`[icon-png-cache] slot ${camp.suffix}: pruned ${n} cached icons from replaced mod ${prevFolder}`); })
+                    .catch(() => {});
+                }
+              }
+            } catch {}
             try {
               const lastImport = {
                 folder: campaignResult.dir,

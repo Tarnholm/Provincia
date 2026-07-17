@@ -1219,8 +1219,11 @@ function regionSeaBodies(modDataDir) {
 // pixels. mineQtyVal = Σ quantity × tradeValue over MINEABLE resources — the exact
 // multiplier in the cracked mining formula.
 const _mineQtyCache = {};
-function mineQtyValByRegion(modDataDir) {
-  if (_mineQtyCache[modDataDir]) return _mineQtyCache[modDataDir];
+const _mineDepositCache = {};
+// Per-region MINEABLE deposit detail: { region: { qtyVal, minerals: [{name, qty, tradeValue}] } }.
+// qtyVal = Σ quantity × tradeValue — the exact multiplier in the cracked mining formula.
+function mineDepositsByRegion(modDataDir) {
+  if (_mineDepositCache[modDataDir]) return _mineDepositCache[modDataDir];
   const out = {};
   try {
     const dg = require("./descrStratGeneral.js");
@@ -1248,13 +1251,117 @@ function mineQtyValByRegion(modDataDir) {
       const t = raw.includes(";") ? raw.slice(0, raw.indexOf(";")) : raw;
       const m = t.match(/^resource\s+(\w+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
       if (!m) continue;
-      const e = resVal[m[1].toLowerCase()];
+      const name = m[1].toLowerCase();
+      const e = resVal[name];
       if (!e || !e.mineable || !e.tradeValue) continue;
       const reg = regionAt(+m[3], +m[4]);
-      if (reg) out[reg] = (out[reg] || 0) + (+m[2]) * e.tradeValue;
+      if (!reg) continue;
+      const entry = out[reg] = out[reg] || { qtyVal: 0, minerals: [] };
+      entry.qtyVal += (+m[2]) * e.tradeValue;
+      const min = entry.minerals.find(x => x.name === name);
+      if (min) min.qty += +m[2];
+      else entry.minerals.push({ name, qty: +m[2], tradeValue: e.tradeValue });
     }
   } catch { /* no quantities → mining falls back to 0-value regions */ }
+  return (_mineDepositCache[modDataDir] = out);
+}
+function mineQtyValByRegion(modDataDir) {
+  if (_mineQtyCache[modDataDir]) return _mineQtyCache[modDataDir];
+  const out = {};
+  const dep = mineDepositsByRegion(modDataDir);
+  for (const r of Object.keys(dep)) out[r] = dep[r].qtyVal;
   return (_mineQtyCache[modDataDir] = out);
+}
+
+// ---- MINING PROSPECTS for the region panel (2026-07-17) ----
+// For every region with mineable deposits: the deposit list and the predicted
+// per-turn income at each level of the mod's mine chain(s), via the cracked
+// formula income = minePoint × mine_resource(effective) × Σ(qty × tradeValue).
+// mine_resource is condition-evaluated against the settlement's descr_strat
+// state (other buildings, region tags, owner faction, player perspective) with
+// the mine chain HYPOTHETICALLY at each level — so a level's number is what
+// the settlement would actually earn with that mine built. Base value only:
+// governor Mining bonuses and the engine's public-order income scaling are
+// per-campaign-state and excluded. currentIncome uses the buildings as listed
+// in descr_strat (0 when no mine is built).
+const _mineProspectCache = {};
+function mineProspects(modDataDir) {
+  if (_mineProspectCache[modDataDir]) return _mineProspectCache[modDataDir];
+  const out = {};
+  try {
+    const deposits = mineDepositsByRegion(modDataDir);
+    const stratPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
+    const edbPath = path.join(modDataDir, "export_descr_buildings.txt");
+    if (!fs.existsSync(stratPath) || !fs.existsSync(edbPath)) return (_mineProspectCache[modDataDir] = out);
+    const { byRegion } = gv.parseRegions(modDataDir);
+    const resourcesByRegion = gv.parseResources(stratPath);
+    const inc = parseEDBIncome(edbPath);
+    const factionGroups = gv.parseFactionGroups(modDataDir);
+    const factions = gv.parseStrat(stratPath);
+    // The mod's mine chain(s): chains named like a mine that grant mine_resource.
+    // Other chains can grant mine_resource too (RIS governor buildings +5/4/2) —
+    // those stay in the settlement's building map and add into every evaluation,
+    // but they don't get prospect rows of their own.
+    const mineChains = [];
+    for (const key of Object.keys(inc.capIndex)) {
+      const chain = key.slice(0, key.indexOf(":"));
+      if (/mine/i.test(chain) && inc.capIndex[key].mine && inc.capIndex[key].mine.length && !mineChains.includes(chain)) mineChains.push(chain);
+    }
+    for (const fac of Object.keys(factions)) {
+      const f = factions[fac];
+      const factionTokens = gv.factionTokenSet(fac, factionGroups);
+      const tier = empireTier((f.settlements || []).length);
+      for (const s of f.settlements || []) {
+        const region = byRegion[s.region];
+        if (!region || !deposits[s.region]) continue;
+        const buildings = new Map();
+        for (const b of s.buildings) {
+          const order = inc.chainLevels[b.chain] || null;
+          const idx = order ? order.indexOf(b.level) : 0;
+          buildings.set(b.chain, idx < 0 ? 0 : idx);
+        }
+        const mkCtx = (bmap) => ({
+          hidden: region.hidden || new Set(), buildings: bmap, chainLevels: inc.chainLevels, aliases: inc.aliases,
+          capital: s.capital, faction: fac, factionTokens,
+          homeland: [...(region.hidden || [])].some(h => h.startsWith("homeland")),
+          sizeTier: 1, resources: resourcesByRegion[s.region] || new Set(),
+          isPlayer: true, empireTier: tier,
+        });
+        const mineSumFor = (bmap) => {
+          const ctx = mkCtx(bmap);
+          let sum = 0;
+          for (const [chain, idx] of bmap) {
+            const order = inc.chainLevels[chain] || [];
+            const cap = inc.capIndex[chain + ":" + (order[idx] != null ? order[idx] : "")];
+            if (!cap || !cap.mine) continue;
+            for (const x of cap.mine) if (gv.evalReq(x.req, ctx)) sum += x.val;
+          }
+          return sum;
+        };
+        const qtyVal = deposits[s.region].qtyVal;
+        const levels = [];
+        for (const chain of mineChains) {
+          (inc.chainLevels[chain] || []).forEach((lvl, idx) => {
+            const cap = inc.capIndex[chain + ":" + lvl];
+            if (!cap || !cap.mine || !cap.mine.length) return;
+            const bmap = new Map(buildings);
+            bmap.set(chain, idx);
+            levels.push({
+              chain, level: lvl, built: buildings.get(chain) === idx,
+              income: Math.round(CALIB.minePoint * mineSumFor(bmap) * qtyVal),
+            });
+          });
+        }
+        out[s.region] = {
+          settlement: region.settlement, owner: fac, qtyVal,
+          minerals: deposits[s.region].minerals,
+          currentIncome: Math.round(CALIB.minePoint * mineSumFor(buildings) * qtyVal),
+          levels,
+        };
+      }
+    }
+  } catch { /* panel shows nothing for this mod */ }
+  return (_mineProspectCache[modDataDir] = out);
 }
 
 // ---- WONDERS (descr_strat `landmark` lines, tile→region via map_regions pixels) ----
@@ -2728,4 +2835,4 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   };
 }
 
-module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, bodyguardBlockByFaction, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, regionBorderLen, frontierGraph, landingFrontierGraph, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion, seaFlowPtsByLane, seaPortDistDepth };
+module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, bodyguardBlockByFaction, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, regionBorderLen, frontierGraph, landingFrontierGraph, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion, seaFlowPtsByLane, seaPortDistDepth, mineDepositsByRegion, mineProspects };

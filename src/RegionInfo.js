@@ -528,7 +528,7 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
-export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, recruitableAll, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, liveReligion, liveWonders, agentCensus, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, onDuplicateUnitInSelectedArmy, onReorderUnitInSelectedArmy, onMoveUnitBetweenArmies, onSetUnitUpgrade, onSetAllUnitsUpgrade, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
+export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, recruitableAll, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, liveReligion, liveWonders, agentCensus, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, mineProspects, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, onDuplicateUnitInSelectedArmy, onReorderUnitInSelectedArmy, onMoveUnitBetweenArmies, onSetUnitUpgrade, onSetAllUnitsUpgrade, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
   const factionLabel = (fid) => {
@@ -1993,6 +1993,38 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                 </div>
               ))}
             </>
+          );
+        })()}
+        {(() => {
+          // Mining readout (2026-07-17): the cracked formula the game's own
+          // building card can't show — income = 5 × mine_resource(effective)
+          // × Σ(deposit qty × trade value), validated to the denarius on live
+          // saves (src/incomeModel.js). Base value: governor Mining bonuses
+          // and public-order income scaling vary per campaign state.
+          const mp = mineProspects && info && info.region ? mineProspects[info.region] : null;
+          if (!mp || !Array.isArray(mp.levels) || mp.levels.length === 0) return null;
+          const pretty = (s) => String(s).replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+          const anyBuilt = mp.levels.some((l) => l.built);
+          return (
+            <div style={{ marginTop: 4 }}
+              title={"Predicted per-turn mining income (cracked formula: 5 × mine_resource × Σ deposit qty × trade value).\nBase value — governor Mining bonuses and public-order income scaling not included."}>
+              <div style={{ fontWeight: 700, fontSize: "0.75rem", marginBottom: 2, color: "#cfc6b0" }}>
+                Mining{anyBuilt ? ` (current: +${mp.currentIncome}/turn)` : " potential"}:
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 4px" }}>
+                {mp.levels.map((l) => (
+                  <span key={l.chain + ":" + l.level} style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    padding: "1px 5px", borderRadius: 4,
+                    background: l.built ? "rgba(120,200,90,0.20)" : "rgba(220,166,74,0.16)",
+                    fontSize: "0.7rem", whiteSpace: "nowrap",
+                    border: l.built ? "1px solid rgba(120,200,90,0.45)" : "1px solid transparent",
+                  }}>
+                    {pretty(l.level)}: +{l.income}/turn{l.built ? " ✓" : ""}
+                  </span>
+                ))}
+              </div>
+            </div>
           );
         })()}
         {tagsList.length > 0 && (() => {

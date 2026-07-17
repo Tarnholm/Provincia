@@ -8,7 +8,7 @@
 "use strict";
 
 import TGA from "./tga.js";
-import { decodePngInWorker, queueCachePut, flushCachePuts } from "./buildingIcons.js";
+import { decodePngInWorker, queueCachePut, flushCachePuts, warmStats } from "./buildingIcons.js";
 
 const cache = new Map();
 const inflight = new Map();
@@ -142,8 +142,10 @@ export async function prefetchUnitIconsBulk(modDataDir, triples) {
     let blob = pathToBlob.get(f.path) || null;
     if (!blob) {
       if (f.png) {
+        warmStats.unit.cached += 1;
         blob = new Blob([f.png], { type: "image/png" });
       } else if (f.buffer) {
+        warmStats.unit.decoded += 1;
         try {
           const workerP = decodePngInWorker(f.buffer);
           if (workerP) {

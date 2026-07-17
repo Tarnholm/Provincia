@@ -21,6 +21,12 @@ const inflight = new Map(); // `${culture}|${level}` → Promise
 // touches the Blob or other keys' URLs, so icon-replace stays correct).
 const pathToBlob = new Map(); // resolvedPath → Blob | "none"
 
+// ── Boot diagnostics (2026-07-17) ───────────────────────────────────────────
+// Counts unique-file resolutions this session: served straight from the
+// persistent PNG cache vs freshly decoded. Read once by App's [boot] summary
+// line; shared by buildingIcons + unitIcons (imported there).
+export const warmStats = { building: { cached: 0, decoded: 0 }, unit: { cached: 0, decoded: 0 } };
+
 // ── Persistent-cache write-back queue (2026-07-16) ─────────────────────────
 // Freshly decoded PNGs ship to the main process (icon-cache-put-bulk) so the
 // NEXT launch serves them from <userData>/icon-png-cache without any decode.
@@ -260,10 +266,12 @@ export async function prefetchBuildingIconsBulk(modDataDir, triples, onEach) {
     try {
       if (cachedPng) {
         // Persistent-cache hit — already PNG bytes, no decode at all.
+        warmStats.building.cached += 1;
         out = new Blob([cachedPng], { type: "image/png" });
         if (srcPath) pathToBlob.set(srcPath, out);
         return out;
       }
+      warmStats.building.decoded += 1;
       const workerP = decodePngInWorker(buffer); // null if no pool → main-thread path
       if (workerP) {
         // OFF-THREAD: worker decodes TGA + encodes PNG in parallel with others.

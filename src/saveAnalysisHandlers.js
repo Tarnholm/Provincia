@@ -324,6 +324,18 @@ function _modCopyWarning(modDataDir) {
 // land/sea fit, wages 200×named+50×admiral, corruption 6.43×Σdist-to-capital).
 // Validated vs the 10-faction turn-1 corpus: median |budget err| 7%, worst 27%.
 // Returns computeTurn1Budget() + per-settlement optimalBracket/growth merged in.
+// IPC: per-region mining prospects for the region panel (2026-07-17) — deposit
+// list + predicted income per mine level from the cracked mining formula
+// (incomeModel.mineProspects; validated to the denarius on live saves).
+ipcMain.handle("get-mine-prospects", async (_event, modDataDir) => {
+  try {
+    if (!modDataDir) return { error: "modDataDir required" };
+    return { prospects: require("./incomeModel.js").mineProspects(modDataDir) };
+  } catch (e) {
+    return { error: e && e.message ? e.message : "mine prospects failed" };
+  }
+});
+
 ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath, asAI, taxH, corr, humanDifficulty) => {
   try {
     if (!modDataDir || !faction) return { error: "modDataDir + faction required" };
