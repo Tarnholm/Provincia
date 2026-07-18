@@ -10030,8 +10030,32 @@ function App() {
   // Trade-lane endpoint anchors, precomputed (2026-07-18 perf): region name →
   // settlement/port tile (cityPixels, top-down) with centroid fallback. Built
   // once when the map data changes instead of on every pan/zoom draw frame.
+  // When a live save is loaded, the trade overlay uses the ACTUAL network the
+  // game derived from that save (computeTradeNetwork → per-settlement
+  // seaPartners) — matching the game's routes, including ones the campaign-
+  // start (turn-1) top-N model doesn't select. No save → the turn-1 model.
+  // (user 2026-07-18: fresh-campaign routes missing + "allow for live save".)
+  const effectiveTradeLanes = useMemo(() => {
+    const net = tradeNetwork && tradeNetwork.trade && tradeNetwork.trade.settlements;
+    if (net) {
+      const regionOf = {};
+      for (const [nm, s] of Object.entries(net)) if (s && s.region) regionOf[nm] = s.region;
+      const lanes = []; const seen = new Set();
+      for (const s of Object.values(net)) {
+        if (!s || !s.region || !s.seaPartners) continue;
+        for (const p of s.seaPartners) {
+          const toR = regionOf[p]; if (!toR || toR === s.region) continue;
+          const key = [s.region, toR].sort().join(">"); if (seen.has(key)) continue; seen.add(key);
+          lanes.push({ from: s.region, to: toR, flow: 10 });
+        }
+      }
+      if (lanes.length) { console.log(`[sea-lanes] using LIVE-SAVE trade network: ${lanes.length} sea links`); return lanes; }
+    }
+    return tradeLanes;
+  }, [tradeNetwork, tradeLanes]);
+
   const tradeLaneAnchors = useMemo(() => {
-    if (!tradeLanes || !regionCentroids) return null;
+    if (!effectiveTradeLanes || !regionCentroids) return null;
     const m = {};
     for (const [rgbKey, rd2] of Object.entries(regions)) {
       if (rd2 && rd2.region && regionCentroids[rgbKey]) m[rd2.region] = regionCentroids[rgbKey];
@@ -10041,7 +10065,7 @@ function App() {
       if (rd2 && rd2.region && m[rd2.region] && !m[rd2.region]._city) m[rd2.region] = { x: cp.x, y: cp.y, _city: true };
     }
     return m;
-  }, [tradeLanes, regions, regionCentroids, cityPixels]);
+  }, [effectiveTradeLanes, regions, regionCentroids, cityPixels]);
 
   // Sea-lane A* routes (2026-07-18): reconstruct the game's curved sea lanes by
   // pathfinding each lane over the sea grid (derived from the region map — a
@@ -10049,7 +10073,7 @@ function App() {
   // chunks and cached; the draw uses these polylines, falling back to a simple
   // arc for any lane still pending or with no sea route.
   useEffect(() => {
-    if (colorMode !== "tradelanes" || !tradeLanes || !tradeLanes.length || !tradeLaneAnchors || !offscreen) return;
+    if (colorMode !== "tradelanes" || !effectiveTradeLanes || !effectiveTradeLanes.length || !tradeLaneAnchors || !offscreen) return;
     const data = pixelDataRef.current;
     const W = imgSize.width, H = imgSize.height;
     if (!data || !W || !H) return;
@@ -10072,7 +10096,7 @@ function App() {
       const sg = buildSeaGrid(data, W, H, (r, g, b) => !(isSea(r, g, b) || isPort(r, g, b)), 1);
       const DOWN = sg.down;
     const merged = {};
-    for (const l of tradeLanes) { const k = [l.from, l.to].sort().join(">"); if (!merged[k]) merged[k] = { key: k, from: l.from, to: l.to }; }
+    for (const l of effectiveTradeLanes) { const k = [l.from, l.to].sort().join(">"); if (!merged[k]) merged[k] = { key: k, from: l.from, to: l.to }; }
     const lanes = Object.values(merged);
     const anchorGrid = (name) => {
       const a = tradeLaneAnchors[name]; if (!a) return null;
@@ -10138,7 +10162,7 @@ function App() {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorMode, tradeLanes, tradeLaneAnchors, portPixels, offscreen, regions, imgSize, modDataDir]);
+  }, [colorMode, effectiveTradeLanes, tradeLaneAnchors, portPixels, offscreen, regions, imgSize, modDataDir]);
 
   // Land roads (2026-07-18): land trade follows roads that thread through
   // valleys/passes, so we A* over a LAND grid weighted by terrain (mountains
@@ -10301,12 +10325,12 @@ function App() {
     // the map→screen transform (like the borders) so strokes are antialiased
     // and stay smooth at every zoom. A clicked lane's endpoints highlight via
     // selectedProvinces; that lane draws brighter here.
-    if (colorMode === "tradelanes" && tradeLanes && tradeLanes.length && tradeLaneAnchors) {
+    if (colorMode === "tradelanes" && effectiveTradeLanes && effectiveTradeLanes.length && tradeLaneAnchors) {
       // Anchors precomputed in tradeLaneAnchors (settlement/port tile with
       // centroid fallback). Draw as a QUADRATIC ARC (control point offset
       // perpendicular to the chord) so lanes curve like the game's sea routes.
       const anchorByName = tradeLaneAnchors;
-      const maxFlow = tradeLanes.reduce((a, l) => Math.max(a, l.flow), 1);
+      const maxFlow = effectiveTradeLanes.reduce((a, l) => Math.max(a, l.flow), 1);
       ctx.save();
       ctx.lineCap = "round";
       // Land roads first (dashed brown, one combined stroke), sea lanes on top.
@@ -10317,7 +10341,7 @@ function App() {
         ctx.stroke(roadPath2D);
         ctx.setLineDash([]);
       }
-      for (const l of tradeLanes) {
+      for (const l of effectiveTradeLanes) {
         const a = anchorByName[l.from], b = anchorByName[l.to];
         if (!a || !b) continue;
         const t = Math.sqrt(l.flow / maxFlow);
@@ -10911,7 +10935,7 @@ function App() {
     cityPixels,
     settlementTierMap,
     stripeOverlay,
-    tradeLanes,
+    effectiveTradeLanes,
     tradeLaneAnchors,
     selectedTradeLane,
     seaLanePaths,

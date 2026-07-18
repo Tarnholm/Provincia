@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1319",
+    date: "2026-07-18",
+    items: [
+      { type: "feature", text: "**Trade Lanes now uses your live save's actual trade network.** With a save loaded, the overlay draws the real sea routes the game derived for that campaign (every port's actual trade partners) instead of the campaign-start estimate — so routes the start-of-game model didn't pick, like a Sardinian port trading with Rome, now appear. With no save loaded it still shows the campaign-start network." },
+    ],
+  },
+  {
     version: "0.9.1318",
     date: "2026-07-18",
     items: [
