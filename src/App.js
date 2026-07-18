@@ -1849,6 +1849,7 @@ function App() {
   const [mapMetrics, setMapMetrics] = useState(null);
   const mapMetricsBusyRef = useRef(false);
   const [tradeLanes, setTradeLanes] = useState(null); // [{from,to,flow}] sea lanes for the Trade Lanes mode (early — colorize deps)
+  const [roadRegions, setRoadRegions] = useState(null); // Set of region names whose settlement has roads (land trade only draws between these)
   const [selectedTradeLane, setSelectedTradeLane] = useState(null); // {from,to} highlighted lane from the sidebar inspector
   const [seaLanePaths, setSeaLanePaths] = useState(null); // sortedKey "a>b" → [{x,y} map-px] A* sea route (curves round coasts)
   const [roadPaths, setRoadPaths] = useState(null); // sortedKey → [{x,y}] A* land road (follows valleys/passes, avoids mountains)
@@ -4175,6 +4176,11 @@ function App() {
         if (api.getTradeLanes) {
           api.getTradeLanes(modDataDir).then((r) => {
             if (r && r.lanes) setTradeLanes(r.lanes);
+          }).catch(() => {});
+        }
+        if (api.getRoadRegions) {
+          api.getRoadRegions(modDataDir).then((r) => {
+            if (r && r.regions) setRoadRegions(new Set(r.regions.map((s) => s.toLowerCase())));
           }).catch(() => {});
         }
         api.getMineProspects(modDataDir).then((r) => {
@@ -8663,18 +8669,24 @@ function App() {
       // archipelagos (Sardinia, S.Italy, the Aegean) a neighbour's port pixel is
       // often physically closer, so binding by raw nearest drew the lane from the
       // wrong port and left the region's real port bare (2026-07-18, Iliensia).
+      // Assign to the region of the NEAREST region-coloured pixel (expanding
+      // rings). A radius-majority rule mis-tagged a tiny region's port (Piraeus)
+      // to its larger neighbour, whose pixels dominate the window; nearest-pixel
+      // gives even a 1-px sliver of its own coast to the right region (2026-07-19).
       const classifyPort = (px, py) => {
-        const counts = {};
-        for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
-          const nx = px + dx, ny = py + dy;
-          if (nx < 0 || ny < 0 || nx >= W || ny >= imgSize.height) continue;
-          const ni = (ny * W + nx) * 4;
-          const rd = regions[`${data[ni]},${data[ni + 1]},${data[ni + 2]}`];
-          if (rd && rd.region) counts[rd.region] = (counts[rd.region] || 0) + 1;
+        for (let r = 0; r <= 6; r++) {
+          let best = null, bd = Infinity;
+          for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+            if (r > 0 && Math.abs(dx) !== r && Math.abs(dy) !== r) continue; // ring only
+            const nx = px + dx, ny = py + dy;
+            if (nx < 0 || ny < 0 || nx >= W || ny >= imgSize.height) continue;
+            const ni = (ny * W + nx) * 4;
+            const rd = regions[`${data[ni]},${data[ni + 1]},${data[ni + 2]}`];
+            if (rd && rd.region) { const d = dx * dx + dy * dy; if (d < bd) { bd = d; best = rd.region; } }
+          }
+          if (best) return best;
         }
-        let best = null, bc = 0;
-        for (const k in counts) if (counts[k] > bc) { bc = counts[k]; best = k; }
-        return best;
+        return null;
       };
       for (const w of whites) w.region = classifyPort(w.x, w.y);
       setRegionCentroids(centroids);
@@ -10173,6 +10185,13 @@ function App() {
         if (!path && (pA.bx !== pA.gx || pA.by !== pA.gy || pB.bx !== pB.gx || pB.by !== pB.gy)) {
           path = aStarSea(sg, { x: pA.bx, y: pA.by }, { x: pB.bx, y: pB.by }, 12000);
         }
+        // Last resort: bridge narrow straits the grid pinches shut (Gibraltar,
+        // Dardanelles, Kerch). Bridging is enabled ONLY here, so no already-routing
+        // lane changes; it hops a single land cell like the game's own pathfinder.
+        if (!path) {
+          path = aStarSea(sg, { x: pA.bx, y: pA.by }, { x: pB.bx, y: pB.by }, 12000, null, true)
+              || aStarSea(sg, { x: pA.gx, y: pA.gy }, { x: pB.gx, y: pB.gy }, 12000, null, true);
+        }
         if (path && path.length >= 2) {
           const pts = [{ x: pA.x, y: pA.y }];
           const HC = DOWN >> 1; // draw at the cell CENTRE (0 at full res)
@@ -10251,17 +10270,24 @@ function App() {
       }
       return null;
     };
+    // A settlement shows roads only if it has a built road (hinterland_roads).
+    // A cross-border segment is drawn only when BOTH endpoints have roads — the
+    // road genuinely stops at a road-less province's border in-game (Pluvium has
+    // no roads, so no segment crosses it). If roadRegions hasn't loaded yet, draw
+    // nothing rather than draw everything (avoids a wrong flash), it fills in when
+    // the data lands.
+    const hasRoads = (reg) => roadRegions && roadRegions.has(reg.toLowerCase());
     const pairs = []; const seen = new Set();
     for (const [reg, nbrs] of Object.entries(regionAdjacency || {})) {
-      if (!tradeLaneAnchors[reg]) continue;
-      for (const nb of (nbrs || [])) { if (!tradeLaneAnchors[nb]) continue; const k = [reg, nb].sort().join(">"); if (seen.has(k)) continue; seen.add(k); pairs.push({ key: k, from: reg, to: nb }); }
+      if (!tradeLaneAnchors[reg] || !hasRoads(reg)) continue;
+      for (const nb of (nbrs || [])) { if (!tradeLaneAnchors[nb] || !hasRoads(nb)) continue; const k = [reg, nb].sort().join(">"); if (seen.has(k)) continue; seen.add(k); pairs.push({ key: k, from: reg, to: nb }); }
     }
     const out = {};
     // settlement→port connectors — only for genuinely coastal settlements
     // (port near the town); a long connector would be an inland town wrongly
     // reaching the sea, so skip those (they trade by land road instead).
     if (portByRegion) for (const [reg, p] of Object.entries(portByRegion)) {
-      if (!p) continue;
+      if (!p || !hasRoads(reg)) continue; // no roads building → no road to the harbour either
       const a = tradeLaneAnchors[reg];
       if (a) out["port>" + reg] = [{ x: a.x, y: a.y }, { x: p.x, y: p.y }]; // settlement → its port (white pixel)
     }
@@ -10284,7 +10310,7 @@ function App() {
     (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step);
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize]);
+  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, roadRegions]);
 
   // Combined Path2D for all roads (uniform style) → one stroke per frame, so
   // thousands of road segments don't tank the pan framerate.

@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1322",
+    date: "2026-07-19",
+    items: [
+      { type: "fix", text: "**Trade Lanes: roads now only appear for settlements that actually have roads built.** Provinces with no road (e.g. Pluvium at campaign start) no longer show a road segment running through them — a land route is drawn only where both settlements it connects have roads, matching the game." },
+      { type: "fix", text: "**Trade Lanes: every sea route audited and corrected — all 225 now draw.** Routes through narrow straits (Gibraltar, the Dardanelles, the Kerch strait, the Gulf of Corinth) that previously didn't appear now cross correctly, and small port-cities like Piraeus dock at their own harbour instead of a neighbour's. Verified end-to-end: no missing lanes, none over land, none docking at the wrong port." },
+    ],
+  },
+  {
     version: "0.9.1321",
     date: "2026-07-19",
     items: [

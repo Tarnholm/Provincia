@@ -394,6 +394,26 @@ ipcMain.handle("get-trade-lanes", async (_event, modDataDir) => {
   }
 });
 
+// IPC: regions whose settlement has a built road (hinterland_roads chain).
+// Trade Lanes draws land roads only between road-having settlements — a region
+// with no roads (e.g. Pluvium/Corsicosardinia at start) shows no road segment,
+// matching the game (2026-07-19). Parsed from the mod's own descr_strat so it
+// matches the RIS regions the rest of the trade-lane code uses.
+ipcMain.handle("get-road-regions", async (_event, modDataDir) => {
+  try {
+    if (!modDataDir) return { error: "modDataDir required" };
+    const gv = require("./growthEval.js");
+    const strat = gv.parseStrat(require("path").join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"));
+    const regions = [];
+    for (const f of Object.values(strat || {})) for (const sd of (f.settlements || [])) {
+      if (sd.region && (sd.buildings || []).some((b) => /hinterland_roads/i.test(b.chain || ""))) regions.push(sd.region);
+    }
+    return { regions };
+  } catch (e) {
+    return { error: e && e.message ? e.message : "road regions failed" };
+  }
+});
+
 // IPC: region adjacency graph (2026-07-17) — for the Threat/Reach map modes.
 // Sets → arrays for IPC. Cached inside incomeModel per modDataDir.
 ipcMain.handle("get-region-adjacency", async (_event, modDataDir) => {

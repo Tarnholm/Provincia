@@ -120,8 +120,16 @@ export function buildLandGrid(pixelData, W, H, isLand, down = 2) {
 // Reusable scratch buffers keyed by grid size, with a per-call generation stamp
 // so we never re-allocate or O(N)-clear between the hundreds of A* calls — this
 // makes full-resolution (DOWN=1) routing tractable.
+// JUMP offsets + cost for strait bridging (see `bridge` param below). Mirrors the
+// game's own sea pathfinder (seaPortDistDepth), which hops a single land cell to
+// cross a narrow strait (Gibraltar, the Dardanelles, the Kerch strait).
+const JUMP = [[2, 0], [-2, 0], [0, 2], [0, -2]];
+const BRIDGE_COST = 6;
 let _scr = null;
-export function aStarSea(sg, start, goal, cutoff = 1700, costArr = null) {
+// `bridge` (default off): when true, also allow a 2-cell orthogonal hop across a
+// SINGLE non-sea cell at BRIDGE_COST — for narrow straits the grid pinches shut.
+// Used only as a last-resort fallback so normal routes are never altered.
+export function aStarSea(sg, start, goal, cutoff = 1700, costArr = null, bridge = false) {
   const { grid, w, h } = sg;
   const N = w * h;
   const si = start.y * w + start.x, gi = goal.y * w + goal.x;
@@ -164,6 +172,17 @@ export function aStarSea(sg, start, goal, cutoff = 1700, costArr = null) {
       if (dx !== 0 && dy !== 0 && (!grid[cy * w + (cx + dx)] || !grid[(cy + dy) * w + cx])) continue;
       const ng = cg + cost * (costArr ? costArr[ni] : 1);
       if (ng < gAt(ni)) { gScore[ni] = ng; seen[ni] = gen; came[ni] = ci; push(ng + hOf(nx, ny), ni); }
+    }
+    if (bridge) {
+      // Hop 2 cells across a single blocked (land) cell to cross a pinched strait.
+      for (const [dx, dy] of JUMP) {
+        const mx = cx + (dx >> 1), my = cy + (dy >> 1), nx = cx + dx, ny = cy + dy;
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+        const mi = my * w + mx, ni = ny * w + nx;
+        if (grid[mi] || !grid[ni] || closed[ni] === gen) continue; // middle must be land, landing must be sea
+        const ng = cg + BRIDGE_COST;
+        if (ng < gAt(ni)) { gScore[ni] = ng; seen[ni] = gen; came[ni] = ci; push(ng + hOf(nx, ny), ni); }
+      }
     }
   }
   if (gi !== si && seen[gi] !== gen) return null; // goal never reached this call

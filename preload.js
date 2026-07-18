@@ -215,6 +215,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getRegionAdjacency: (modDataDir) => ipcRenderer.invoke("get-region-adjacency", modDataDir),
   getMapModeMetrics: (modDataDir) => ipcRenderer.invoke("get-map-mode-metrics", modDataDir),
   getTradeLanes: (modDataDir) => ipcRenderer.invoke("get-trade-lanes", modDataDir),
+  getRoadRegions: (modDataDir) => ipcRenderer.invoke("get-road-regions", modDataDir),
   explainSettlementIncome: (modDataDir, faction, region) =>
     ipcRenderer.invoke("explain-settlement-income", modDataDir, faction, region),
   econBaselineCapture: (modDataDir, name) => ipcRenderer.invoke("econ-baseline-capture", modDataDir, name),

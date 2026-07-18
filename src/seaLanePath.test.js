@@ -51,6 +51,24 @@ describe("seaLanePath", () => {
     expect(aStarSea(sg, { x: 2, y: 2 }, { x: 5, y: 2 }, 1000)).toBeNull();
   });
 
+  // A 1-cell-wide land strait splitting two seas: normal A* can't cross it, but
+  // bridge:true hops the single land cell (like the game's own sea pathfinder).
+  it("aStarSea bridges a single-cell strait only when bridge=true", () => {
+    const W = 7, H = 3;
+    const data = new Uint8Array(W * H * 4);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      const land = (x === 3); // full vertical land wall — no gap
+      if (land) { data[i] = 10; data[i + 1] = 20; data[i + 2] = 30; }
+      else { data[i] = 40; data[i + 1] = 120; data[i + 2] = 200; }
+    }
+    const sg = buildSeaGrid(data, W, H, isLand, 1);
+    expect(aStarSea(sg, { x: 1, y: 1 }, { x: 5, y: 1 }, 1000)).toBeNull();          // walled off
+    const bridged = aStarSea(sg, { x: 1, y: 1 }, { x: 5, y: 1 }, 1000, null, true); // hops x=3
+    expect(bridged).not.toBeNull();
+    expect(bridged[bridged.length - 1]).toEqual({ x: 5, y: 1 });
+  });
+
   // A port trapped in a 1-cell sea pocket sealed off by a land corner: the
   // component snap must move it onto the open-water body so A* can route it.
   it("seaComponents + nearestSeaBig snap a sealed pocket to open water", () => {
