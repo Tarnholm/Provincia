@@ -10315,19 +10315,13 @@ function App() {
         ctx.lineWidth = ((hot ? 2.2 : 0.5) + t * 1.8) / totalScale;
         ctx.setLineDash(hot ? [] : [7 / totalScale, 5 / totalScale]);
         const poly = seaLanePaths && seaLanePaths[[l.from, l.to].sort().join(">")];
+        // ONLY draw the real A* water route. No straight settlement-to-
+        // settlement fallback — that was the light line cutting across land
+        // for lanes still computing or with no water route (user 2026-07-18).
+        if (!poly || poly.length < 2) continue;
         ctx.beginPath();
-        if (poly && poly.length > 1) {
-          // A* sea route — curves around the coasts like the game
-          ctx.moveTo(poly[0].x, poly[0].y);
-          for (let k = 1; k < poly.length; k++) ctx.lineTo(poly[k].x, poly[k].y);
-        } else {
-          // fallback while routes compute (or no sea path): gentle arc
-          const dx = b.x - a.x, dy = b.y - a.y;
-          const len = Math.hypot(dx, dy) || 1;
-          const off = len * 0.14;
-          ctx.moveTo(a.x, a.y);
-          ctx.quadraticCurveTo((a.x + b.x) / 2 + (-dy / len) * off, (a.y + b.y) / 2 + (dx / len) * off, b.x, b.y);
-        }
+        ctx.moveTo(poly[0].x, poly[0].y);
+        for (let k = 1; k < poly.length; k++) ctx.lineTo(poly[k].x, poly[k].y);
         ctx.stroke();
       }
       ctx.setLineDash([]);

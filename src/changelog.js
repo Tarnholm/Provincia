@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1316",
+    date: "2026-07-18",
+    items: [
+      { type: "fix", text: "**The straight lines cutting across land are gone.** A sea lane now only draws once its actual water route is computed — the temporary straight-across placeholder (drawn city-to-city while a route was still calculating or when none could be found) has been removed, so nothing is ever shown crossing land." },
+    ],
+  },
+  {
     version: "0.9.1315",
     date: "2026-07-18",
     items: [
