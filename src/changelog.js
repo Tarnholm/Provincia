@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1317",
+    date: "2026-07-18",
+    items: [
+      { type: "improvement", text: "**Better diagnostics for missing sea lanes.** When a lane doesn't draw, the log now names the two settlements and the exact reason (no port found and how far the nearest one was, port on an enclosed bay, or no water route), so a missing connection can be pinned down instead of guessed at." },
+    ],
+  },
+  {
     version: "0.9.1316",
     date: "2026-07-18",
     items: [

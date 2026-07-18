@@ -10077,21 +10077,21 @@ function App() {
     };
     const out = {};
     const ports = {}; // region → {x,y} the white PORT pixel it trades through
+    const skips = []; // [sea-lanes] diagnostic: which lanes didn't draw + why
+    const portDiag = {}; // name → why the port bind failed (for logging)
     const portOf = (name) => {
       if (name in ports) return ports[name];
       const a = tradeLaneAnchors[name];
-      // the region's port = nearest white port pixel to its settlement; a
-      // coastal town's port sits right by it, so cap the distance (an inland
-      // town with no nearby port doesn't sea-trade).
+      if (!a) { portDiag[name] = "no anchor (region not in tradeLaneAnchors)"; return (ports[name] = null); }
       // Every region reaching here IS a sea trader (it's in tradeLanes), so it
-      // HAS a port — bind to the nearest port marker with a generous cap
-      // (some settlements sit a fair way from their port tile).
+      // HAS a port — bind to the nearest white port marker with a generous cap.
       let best = null, bd = Infinity;
       for (const wp of (portPixels || [])) { const d = (wp.x - a.x) ** 2 + (wp.y - a.y) ** 2; if (d < bd) { bd = d; best = wp; } }
-      if (!best || bd > 260 * 260) return (ports[name] = null);
+      if (!best) { portDiag[name] = "no port pixels loaded (" + (portPixels || []).length + ")"; return (ports[name] = null); }
+      if (bd > 260 * 260) { portDiag[name] = `nearest port ${Math.round(Math.sqrt(bd))}px from settlement (anchor ${a._city ? "settlement" : "CENTROID"} @${Math.round(a.x)},${Math.round(a.y)}) — over 260 cap`; return (ports[name] = null); }
       const gx = Math.min(sg.w - 1, Math.max(0, Math.round(best.x / DOWN))), gy = Math.min(sg.h - 1, Math.max(0, Math.round(best.y / DOWN)));
       const s = nearestSea(sg, gx, gy); // snap the port to a passable sea cell for A*
-      if (!s) return (ports[name] = null);
+      if (!s) { portDiag[name] = `port @${best.x},${best.y} has no navigable sea within reach (enclosed/pixelated bay)`; return (ports[name] = null); }
       return (ports[name] = { x: best.x, y: best.y, gx: s.x, gy: s.y }); // draw AT the white port pixel
     };
     let i = 0;
@@ -10102,25 +10102,25 @@ function App() {
       while (i < lanes.length && performance.now() - t0 < 12) {
         const l = lanes[i++];
         const pA = portOf(l.from), pB = portOf(l.to);
-        if (!pA || !pB) continue;
-        // Sea lane joins PORT to PORT over water (the settlement→port hop is a
-        // land road, drawn separately) — so lanes no longer run to an inland
-        // settlement anchor (user 2026-07-18: "goes to the settlement without
-        // hitting its port").
+        if (!pA) { skips.push(`${l.from}→${l.to}: ${l.from} port — ${portDiag[l.from] || "?"}`); continue; }
+        if (!pB) { skips.push(`${l.from}→${l.to}: ${l.to} port — ${portDiag[l.to] || "?"}`); continue; }
         const path = aStarSea(sg, { x: pA.gx, y: pA.gy }, { x: pB.gx, y: pB.gy }, 6000);
-        // Only draw a lane we could actually route over water — a straight
-        // fallback would cut across land/islands (user 2026-07-18). Endpoints
-        // pinned to the white PORT pixels so the lane visibly meets the ports.
         if (path && path.length >= 2) {
           const pts = [{ x: pA.x, y: pA.y }];
-          const HC = DOWN >> 1; // draw at the cell CENTRE (matches how sea was sampled) — corner drawing put lanes ~1px into land along coasts
+          const HC = DOWN >> 1; // draw at the cell CENTRE (matches how sea was sampled)
           for (const p of path) pts.push({ x: p.x * DOWN + HC, y: p.y * DOWN + HC });
           pts.push({ x: pB.x, y: pB.y });
           out[l.key] = pts;
+        } else {
+          skips.push(l.from + "→" + l.to + " [A* failed]");
         }
       }
       if (i < lanes.length) (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step, { timeout: 500 });
-      else { console.log(`[sea-lanes] routed ${Object.keys(out).length}/${lanes.length} ports=${Object.keys(ports).length} in ${(performance.now() - t0all).toFixed(0)}ms`); setSeaLanePaths(out); setPortByRegion(ports); }
+      else {
+        console.log(`[sea-lanes] routed ${Object.keys(out).length}/${lanes.length}, ports bound ${Object.keys(ports).filter((k) => ports[k]).length}, ${skips.length} SKIPPED, ${(performance.now() - t0all).toFixed(0)}ms`);
+        if (skips.length) { console.log("[sea-lanes] SKIPPED LANES (why each didn't draw):"); for (const s of skips) console.log("  ✗ " + s); }
+        setSeaLanePaths(out); setPortByRegion(ports);
+      }
     };
     (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step);
     })();
