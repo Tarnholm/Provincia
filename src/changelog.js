@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1310",
+    date: "2026-07-18",
+    items: [
+      { type: "fix", text: "**Sea lanes now dock at the actual ports, not the city centres.** Each region's port is read straight from the map (the port markers), and every sea lane runs port-to-port, with a short road from the settlement out to its own port — so lanes no longer terminate on inland city markers. Regions with no nearby port don't get a sea lane." },
+    ],
+  },
+  {
     version: "0.9.1309",
     date: "2026-07-18",
     items: [

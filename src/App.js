@@ -1853,6 +1853,7 @@ function App() {
   const [seaLanePaths, setSeaLanePaths] = useState(null); // sortedKey "a>b" → [{x,y} map-px] A* sea route (curves round coasts)
   const [roadPaths, setRoadPaths] = useState(null); // sortedKey → [{x,y}] A* land road (follows valleys/passes, avoids mountains)
   const [portByRegion, setPortByRegion] = useState(null); // region name → {x,y} port tile (nearest coast to its settlement); sea lanes join here, a road links it to the settlement
+  const [portPixels, setPortPixels] = useState([]); // [{x,y}] white port-marker pixels from the region map
   // 0.9.535: hover-to-inspect tooltip — { sx, sy, region, owner, terrain }.
   // Lightweight cursor readout updated only when the hovered tile changes
   // (gated via lastInspectKeyRef) so it doesn't re-render every pixel.
@@ -8623,7 +8624,8 @@ function App() {
       if (!data) return;
       const W = imgSize.width;
       const centroids = {};
-      const blacks = []; // city pixel positions
+      const blacks = []; // black pixels = settlement markers
+      const whites = []; // white pixels = PORT markers (sea lanes join here)
       for (let i = 0; i < data.length; i += 4) {
         const r = data[i], g = data[i + 1], b = data[i + 2];
         const key = `${r},${g},${b}`;
@@ -8631,10 +8633,12 @@ function App() {
           const idx = i / 4;
           centroids[key] = { x: idx % W, y: Math.floor(idx / W) };
         }
-        // Collect black pixels (city markers)
         if (r === 0 && g === 0 && b === 0) {
           const idx = i / 4;
           blacks.push({ x: idx % W, y: Math.floor(idx / W) });
+        } else if (r > 240 && g > 240 && b > 240) {
+          const idx = i / 4;
+          whites.push({ x: idx % W, y: Math.floor(idx / W) });
         }
       }
       // Map each black pixel to the nearest region by checking neighbors
@@ -8654,6 +8658,7 @@ function App() {
       }
       setRegionCentroids(centroids);
       setCityPixels(cities);
+      setPortPixels(whites); // port positions; each lane end binds to the nearest one to its settlement
     });
   }, [regions, imgSize, offscreen]);
 
@@ -10059,12 +10064,20 @@ function App() {
       return { gx: Math.min(sg.w - 1, Math.max(0, Math.round(a.x / DOWN))), gy: Math.min(sg.h - 1, Math.max(0, Math.round(a.y / DOWN))), fx: a.x, fy: a.y };
     };
     const out = {};
-    const ports = {}; // region → {x,y} full-res port tile (its nearest coast)
-    const portOf = (name, gp) => {
-      if (ports[name]) return ports[name];
-      const s = nearestSea(sg, gp.gx, gp.gy);
-      if (!s) return null;
-      return (ports[name] = { x: s.x * DOWN, y: s.y * DOWN, gx: s.x, gy: s.y });
+    const ports = {}; // region → {x,y} the white PORT pixel it trades through
+    const portOf = (name) => {
+      if (name in ports) return ports[name];
+      const a = tradeLaneAnchors[name];
+      // the region's port = nearest white port pixel to its settlement; a
+      // coastal town's port sits right by it, so cap the distance (an inland
+      // town with no nearby port doesn't sea-trade).
+      let best = null, bd = Infinity;
+      for (const wp of (portPixels || [])) { const d = (wp.x - a.x) ** 2 + (wp.y - a.y) ** 2; if (d < bd) { bd = d; best = wp; } }
+      if (!best || bd > 130 * 130) return (ports[name] = null);
+      const gx = Math.min(sg.w - 1, Math.max(0, Math.round(best.x / DOWN))), gy = Math.min(sg.h - 1, Math.max(0, Math.round(best.y / DOWN)));
+      const s = nearestSea(sg, gx, gy); // snap the port to a passable sea cell for A*
+      if (!s) return (ports[name] = null);
+      return (ports[name] = { x: best.x, y: best.y, gx: s.x, gy: s.y }); // draw AT the white port pixel
     };
     let i = 0, cancelled = false;
     const t0all = performance.now();
@@ -10073,9 +10086,7 @@ function App() {
       const t0 = performance.now();
       while (i < lanes.length && performance.now() - t0 < 12) {
         const l = lanes[i++];
-        const A = anchorGrid(l.from), B = anchorGrid(l.to);
-        if (!A || !B) continue;
-        const pA = portOf(l.from, A), pB = portOf(l.to, B);
+        const pA = portOf(l.from), pB = portOf(l.to);
         if (!pA || !pB) continue;
         // Sea lane joins PORT to PORT over water (the settlement→port hop is a
         // land road, drawn separately) — so lanes no longer run to an inland
@@ -10083,8 +10094,14 @@ function App() {
         // hitting its port").
         const path = aStarSea(sg, { x: pA.gx, y: pA.gy }, { x: pB.gx, y: pB.gy }, 6000);
         // Only draw a lane we could actually route over water — a straight
-        // fallback would cut across land/islands (user 2026-07-18).
-        if (path && path.length >= 2) out[l.key] = path.map((p) => ({ x: p.x * DOWN, y: p.y * DOWN }));
+        // fallback would cut across land/islands (user 2026-07-18). Endpoints
+        // pinned to the white PORT pixels so the lane visibly meets the ports.
+        if (path && path.length >= 2) {
+          const pts = [{ x: pA.x, y: pA.y }];
+          for (const p of path) pts.push({ x: p.x * DOWN, y: p.y * DOWN });
+          pts.push({ x: pB.x, y: pB.y });
+          out[l.key] = pts;
+        }
       }
       if (i < lanes.length) (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step, { timeout: 500 });
       else { console.log(`[sea-lanes] routed ${Object.keys(out).length}/${lanes.length} ports=${Object.keys(ports).length} in ${(performance.now() - t0all).toFixed(0)}ms`); setSeaLanePaths(out); setPortByRegion(ports); }
@@ -10092,7 +10109,7 @@ function App() {
     (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step);
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorMode, tradeLanes, tradeLaneAnchors, offscreen, regions, imgSize]);
+  }, [colorMode, tradeLanes, tradeLaneAnchors, portPixels, offscreen, regions, imgSize]);
 
   // Land roads (2026-07-18): land trade follows roads that thread through
   // valleys/passes, so we A* over a LAND grid weighted by terrain (mountains
@@ -10140,8 +10157,9 @@ function App() {
     // (port near the town); a long connector would be an inland town wrongly
     // reaching the sea, so skip those (they trade by land road instead).
     if (portByRegion) for (const [reg, p] of Object.entries(portByRegion)) {
+      if (!p) continue;
       const a = tradeLaneAnchors[reg];
-      if (a && Math.hypot(a.x - p.x, a.y - p.y) <= 55) out["port>" + reg] = [{ x: a.x, y: a.y }, { x: p.x, y: p.y }];
+      if (a) out["port>" + reg] = [{ x: a.x, y: a.y }, { x: p.x, y: p.y }]; // settlement → its port (white pixel)
     }
     let i = 0, cancelled = false; const t0all = performance.now();
     const step = () => {
