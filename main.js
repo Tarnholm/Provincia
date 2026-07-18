@@ -1947,7 +1947,13 @@ function isConsentedPath(p) { return consentStore().isConsented(p); }
 // Scan a known folder for campaign data — same scan logic as
 // select-folder but skips the dialog. Used by auto-reimport on launch.
 async function scanFolderForCampaigns(dir) {
-  const campaignFiles = ["descr_regions.txt", "descr_strat.txt", "descr_win_conditions.txt", "map_regions.tga"];
+  // map_ground_types.tga + map_heights.tga are REQUIRED here (regression fix
+  // 2026-07-18): applyFiles copies them into campaign_data per slot, but only
+  // from sourcePaths — and they only land in sourcePaths if the scan lists
+  // them. Dropping them (they were absent for a while) silently broke the
+  // Geography mode, the Terrain overlay and the Heights overlay on every
+  // imported slot (they fell back to the raw region map / 404'd).
+  const campaignFiles = ["descr_regions.txt", "descr_strat.txt", "descr_win_conditions.txt", "map_regions.tga", "map_ground_types.tga", "map_heights.tga"];
   const sharedFiles = ["descr_sm_factions.txt"];
   const allNeeded = [...campaignFiles, ...sharedFiles];
   const dirFiles = new Map();

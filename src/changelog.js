@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1301",
+    date: "2026-07-18",
+    items: [
+      { type: "fix", text: "**Geography mode and the Terrain & Heights overlays work again on imported mods.** The folder importer had stopped copying map_ground_types.tga and map_heights.tga into the slot, so all three silently fell back to nothing (Geography just showed each region in a flat colour). The importer now brings both files along again — this self-heals on your next launch (the startup mod re-read re-imports them); if it doesn't, hit 🔄 Reload or re-import the mod folder once." },
+    ],
+  },
+  {
     version: "0.9.1300",
     date: "2026-07-18",
     items: [
