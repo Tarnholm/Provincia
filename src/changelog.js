@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1307",
+    date: "2026-07-18",
+    items: [
+      { type: "fix", text: "**Sea lanes no longer cut straight across land.** Some lanes were skipping their ports because the water route couldn't be traced through a narrow strait or a tight bay; the sea map now keeps those channels open, and any lane that still can't find a full water route at least leaves each settlement through its coast instead of drawing a straight line over land." },
+    ],
+  },
+  {
     version: "0.9.1306",
     date: "2026-07-18",
     items: [

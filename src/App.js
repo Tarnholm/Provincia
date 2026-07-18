@@ -10068,12 +10068,21 @@ function App() {
         if (!A || !B) continue;
         const sA = nearestSea(sg, A.gx, A.gy), sB = nearestSea(sg, B.gx, B.gy);
         if (!sA || !sB) continue;
-        const path = aStarSea(sg, sA, sB, 3000);
-        if (!path || path.length < 2) continue;
-        const pts = [{ x: A.fx, y: A.fy }];
-        for (const p of path) pts.push({ x: p.x * DOWN, y: p.y * DOWN });
-        pts.push({ x: B.fx, y: B.fy });
-        out[l.key] = pts;
+        const path = aStarSea(sg, sA, sB, 4000);
+        if (path && path.length >= 2) {
+          const pts = [{ x: A.fx, y: A.fy }];
+          for (const p of path) pts.push({ x: p.x * DOWN, y: p.y * DOWN });
+          pts.push({ x: B.fx, y: B.fy });
+          out[l.key] = pts;
+        } else {
+          // No connected sea route found (disconnected seas / very long) —
+          // still leave the settlements via their COAST tiles rather than
+          // cutting a straight line settlement-to-settlement through land.
+          out[l.key] = [
+            { x: A.fx, y: A.fy }, { x: sA.x * DOWN, y: sA.y * DOWN },
+            { x: sB.x * DOWN, y: sB.y * DOWN }, { x: B.fx, y: B.fy },
+          ];
+        }
       }
       if (i < lanes.length) (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step, { timeout: 500 });
       else { console.log(`[sea-lanes] routed ${Object.keys(out).length}/${lanes.length} in ${(performance.now() - t0all).toFixed(0)}ms`); setSeaLanePaths(out); }

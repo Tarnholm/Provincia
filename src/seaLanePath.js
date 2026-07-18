@@ -8,14 +8,24 @@
 // up for drawing.
 
 // isLand(r,g,b) → true for land/settlement pixels (impassable for sea).
+// A downsampled cell is passable "sea" when ANY of the full-res pixels it
+// covers is sea — this keeps narrow straits, bays and coastlines connected at
+// the downsample (marking sea only from the centre pixel closed thin channels
+// and pocketed coastal ports, which stranded some lanes; 2026-07-18).
 export function buildSeaGrid(pixelData, W, H, isLand, down = 2) {
   const w = Math.ceil(W / down), h = Math.ceil(H / down);
   const grid = new Uint8Array(w * h); // 1 = sea (passable)
   for (let gy = 0; gy < h; gy++) {
     for (let gx = 0; gx < w; gx++) {
-      const px = Math.min(W - 1, gx * down), py = Math.min(H - 1, gy * down);
-      const i = (py * W + px) * 4;
-      grid[gy * w + gx] = isLand(pixelData[i], pixelData[i + 1], pixelData[i + 2]) ? 0 : 1;
+      let sea = 0;
+      for (let sy = 0; sy < down && !sea; sy++) {
+        for (let sx = 0; sx < down && !sea; sx++) {
+          const px = Math.min(W - 1, gx * down + sx), py = Math.min(H - 1, gy * down + sy);
+          const i = (py * W + px) * 4;
+          if (!isLand(pixelData[i], pixelData[i + 1], pixelData[i + 2])) sea = 1;
+        }
+      }
+      grid[gy * w + gx] = sea;
     }
   }
   return { grid, w, h, down };
