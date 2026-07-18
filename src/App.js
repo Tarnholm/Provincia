@@ -1854,6 +1854,7 @@ function App() {
   const [roadPaths, setRoadPaths] = useState(null); // sortedKey → [{x,y}] A* land road (follows valleys/passes, avoids mountains)
   const [portByRegion, setPortByRegion] = useState(null); // region name → {x,y} port tile (nearest coast to its settlement); sea lanes join here, a road links it to the settlement
   const [portPixels, setPortPixels] = useState([]); // [{x,y}] white port-marker pixels from the region map
+  const seaNavRef = useRef(); // cached decoded map_trade_routes.tga {dir,data,W,H} — the engine's navigable-sea map
   // 0.9.535: hover-to-inspect tooltip — { sx, sy, region, owner, terrain }.
   // Lightweight cursor readout updated only when the hovered tile changes
   // (gated via lastInspectKeyRef) so it doesn't re-render every pixel.
@@ -10052,10 +10053,33 @@ function App() {
     const data = pixelDataRef.current;
     const W = imgSize.width, H = imgSize.height;
     if (!data || !W || !H) return;
-    const landKeys = new Set(Object.keys(regions));
-    const isLand = (r, g, b) => (r === 0 && g === 0 && b === 0) || landKeys.has(`${r},${g},${b}`);
-    const DOWN = 2;
-    const sg = buildSeaGrid(data, W, H, isLand, DOWN);
+    let cancelled = false;
+    (async () => {
+      // Sea grid from the GAME'S OWN navigability map (map_trade_routes.tga:
+      // navigable water = blue/cyan, everything else impassable) so lanes
+      // follow the exact channels the engine routes through and hug coasts
+      // like in-game. Decoded once per mod, cached. Falls back to the region
+      // map (any non-land pixel = sea) if the file can't be read.
+      let sg = null;
+      if (modDataDir && window.electronAPI?.readFileBinary) {
+        let tr = seaNavRef.current;
+        if (!tr || tr.dir !== modDataDir) {
+          tr = null;
+          try {
+            const buf = await window.electronAPI.readFileBinary(`${modDataDir}/world/maps/base/map_trade_routes.tga`);
+            if (buf) { const dec = await decodeTgaAsync(buf); tr = { dir: modDataDir, data: dec.data, W: dec.width, H: dec.height }; }
+          } catch { /* fall back */ }
+          seaNavRef.current = tr;
+        }
+        if (cancelled) return;
+        if (tr && tr.W === W && tr.H === H) sg = buildSeaGrid(tr.data, W, H, (r, g, b) => !(b > 200 && r < 120), 2);
+      }
+      if (!sg) {
+        const landKeys = new Set(Object.keys(regions));
+        const isLand = (r, g, b) => (r === 0 && g === 0 && b === 0) || landKeys.has(`${r},${g},${b}`);
+        sg = buildSeaGrid(data, W, H, isLand, 2);
+      }
+      const DOWN = sg.down;
     const merged = {};
     for (const l of tradeLanes) { const k = [l.from, l.to].sort().join(">"); if (!merged[k]) merged[k] = { key: k, from: l.from, to: l.to }; }
     const lanes = Object.values(merged);
@@ -10079,7 +10103,7 @@ function App() {
       if (!s) return (ports[name] = null);
       return (ports[name] = { x: best.x, y: best.y, gx: s.x, gy: s.y }); // draw AT the white port pixel
     };
-    let i = 0, cancelled = false;
+    let i = 0;
     const t0all = performance.now();
     const step = () => {
       if (cancelled) return;
@@ -10107,9 +10131,10 @@ function App() {
       else { console.log(`[sea-lanes] routed ${Object.keys(out).length}/${lanes.length} ports=${Object.keys(ports).length} in ${(performance.now() - t0all).toFixed(0)}ms`); setSeaLanePaths(out); setPortByRegion(ports); }
     };
     (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step);
+    })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorMode, tradeLanes, tradeLaneAnchors, portPixels, offscreen, regions, imgSize]);
+  }, [colorMode, tradeLanes, tradeLaneAnchors, portPixels, offscreen, regions, imgSize, modDataDir]);
 
   // Land roads (2026-07-18): land trade follows roads that thread through
   // valleys/passes, so we A* over a LAND grid weighted by terrain (mountains

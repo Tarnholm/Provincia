@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1311",
+    date: "2026-07-18",
+    items: [
+      { type: "improvement", text: "**Sea lanes now route over the game's own sea-navigation map.** Instead of treating every blue pixel as open water, lanes follow the actual navigable channels the game uses, so they hug the coasts and thread the straits the same way rather than cutting across open sea." },
+    ],
+  },
+  {
     version: "0.9.1310",
     date: "2026-07-18",
     items: [
