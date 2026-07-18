@@ -10060,9 +10060,13 @@ function App() {
       // didn't include the coastal tiles right at the white ports, so lanes
       // failed to dock — reverted here; that path needs the port snapped onto
       // the navigable mask first (2026-07-18).
-      const landKeys = new Set(Object.keys(regions));
-      const isLand = (r, g, b) => (r === 0 && g === 0 && b === 0) || landKeys.has(`${r},${g},${b}`);
-      const sg = buildSeaGrid(data, W, H, isLand, 2);
+      // Classify by the ACTUAL sea colour (map_regions sea ≈ 41,140,235) —
+      // NOT "unknown colour = sea", which let lanes route through land regions
+      // that weren't in the loaded set (user 2026-07-18: lanes over Sardinia).
+      // Passable = sea water OR a white port pixel (a lane endpoint).
+      const isSea = (r, g, b) => r < 90 && g > 110 && g < 175 && b > 190;
+      const isPort = (r, g, b) => r > 240 && g > 240 && b > 240;
+      const sg = buildSeaGrid(data, W, H, (r, g, b) => !(isSea(r, g, b) || isPort(r, g, b)), 2);
       const DOWN = sg.down;
     const merged = {};
     for (const l of tradeLanes) { const k = [l.from, l.to].sort().join(">"); if (!merged[k]) merged[k] = { key: k, from: l.from, to: l.to }; }
@@ -10109,7 +10113,8 @@ function App() {
         // pinned to the white PORT pixels so the lane visibly meets the ports.
         if (path && path.length >= 2) {
           const pts = [{ x: pA.x, y: pA.y }];
-          for (const p of path) pts.push({ x: p.x * DOWN, y: p.y * DOWN });
+          const HC = DOWN >> 1; // draw at the cell CENTRE (matches how sea was sampled) — corner drawing put lanes ~1px into land along coasts
+          for (const p of path) pts.push({ x: p.x * DOWN + HC, y: p.y * DOWN + HC });
           pts.push({ x: pB.x, y: pB.y });
           out[l.key] = pts;
         }
@@ -10132,10 +10137,11 @@ function App() {
     const data = pixelDataRef.current;
     const W = imgSize.width, H = imgSize.height;
     if (!data || !W || !H) return;
-    const landKeys = new Set(Object.keys(regions));
-    const isLand = (r, g, b) => (r === 0 && g === 0 && b === 0) || landKeys.has(`${r},${g},${b}`);
+    // Land = anything that is NOT sea (any region colour known or not, plus
+    // settlement/port markers) — robust to regions missing from the set.
+    const isSea = (r, g, b) => r < 90 && g > 110 && g < 175 && b > 190;
     const DOWN = 2;
-    const lg = buildLandGrid(data, W, H, isLand, DOWN);
+    const lg = buildLandGrid(data, W, H, (r, g, b) => !isSea(r, g, b), DOWN);
     let costArr = null;
     if (groundTypesPixels && groundTypesSize.width) {
       const gW = groundTypesSize.width, gH = groundTypesSize.height, gData = groundTypesPixels;
@@ -10193,7 +10199,7 @@ function App() {
         if (!lA || !lB) continue;
         const path = aStarSea(lg, lA, lB, 6000, costArr);
         if (!path || path.length < 2) continue;
-        out[p.key] = path.map((pt) => ({ x: pt.x * DOWN, y: pt.y * DOWN }));
+        out[p.key] = path.map((pt) => ({ x: pt.x * DOWN + (DOWN >> 1), y: pt.y * DOWN + (DOWN >> 1) }));
       }
       if (i < pairs.length) (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step, { timeout: 500 });
       else { console.log(`[roads] routed ${Object.keys(out).length} (${pairs.length} adjacency pairs) in ${(performance.now() - t0all).toFixed(0)}ms`); setRoadPaths(out); }

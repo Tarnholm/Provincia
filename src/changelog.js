@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1315",
+    date: "2026-07-18",
+    items: [
+      { type: "fix", text: "**Sea lanes no longer cross land (Sardinia, etc.).** The water map was treating any unrecognised map colour as sea, so lanes could path straight through a land region that wasn't in the loaded set. It now classifies water by the actual sea colour, and draws each route point at the cell centre so lanes sit cleanly on the water rather than a pixel onto the shore." },
+    ],
+  },
+  {
     version: "0.9.1314",
     date: "2026-07-18",
     items: [
