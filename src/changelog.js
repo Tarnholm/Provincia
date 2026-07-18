@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1312",
+    date: "2026-07-18",
+    items: [
+      { type: "fix", text: "**Sea lanes dock at the ports again.** The previous change to route over the game's navigation map made some lanes stop reaching their ports; reverted that routing while keeping the port-to-port docking, so lanes connect to the port markers as before." },
+    ],
+  },
+  {
     version: "0.9.1311",
     date: "2026-07-18",
     items: [

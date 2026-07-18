@@ -10055,30 +10055,14 @@ function App() {
     if (!data || !W || !H) return;
     let cancelled = false;
     (async () => {
-      // Sea grid from the GAME'S OWN navigability map (map_trade_routes.tga:
-      // navigable water = blue/cyan, everything else impassable) so lanes
-      // follow the exact channels the engine routes through and hug coasts
-      // like in-game. Decoded once per mod, cached. Falls back to the region
-      // map (any non-land pixel = sea) if the file can't be read.
-      let sg = null;
-      if (modDataDir && window.electronAPI?.readFileBinary) {
-        let tr = seaNavRef.current;
-        if (!tr || tr.dir !== modDataDir) {
-          tr = null;
-          try {
-            const buf = await window.electronAPI.readFileBinary(`${modDataDir}/world/maps/base/map_trade_routes.tga`);
-            if (buf) { const dec = await decodeTgaAsync(buf); tr = { dir: modDataDir, data: dec.data, W: dec.width, H: dec.height }; }
-          } catch { /* fall back */ }
-          seaNavRef.current = tr;
-        }
-        if (cancelled) return;
-        if (tr && tr.W === W && tr.H === H) sg = buildSeaGrid(tr.data, W, H, (r, g, b) => !(b > 200 && r < 120), 2);
-      }
-      if (!sg) {
-        const landKeys = new Set(Object.keys(regions));
-        const isLand = (r, g, b) => (r === 0 && g === 0 && b === 0) || landKeys.has(`${r},${g},${b}`);
-        sg = buildSeaGrid(data, W, H, isLand, 2);
-      }
+      // Sea grid from the region map (any non-land pixel = sea). NOTE: routing
+      // over map_trade_routes.tga was tried (v0.9.1311) but its navigable mask
+      // didn't include the coastal tiles right at the white ports, so lanes
+      // failed to dock — reverted here; that path needs the port snapped onto
+      // the navigable mask first (2026-07-18).
+      const landKeys = new Set(Object.keys(regions));
+      const isLand = (r, g, b) => (r === 0 && g === 0 && b === 0) || landKeys.has(`${r},${g},${b}`);
+      const sg = buildSeaGrid(data, W, H, isLand, 2);
       const DOWN = sg.down;
     const merged = {};
     for (const l of tradeLanes) { const k = [l.from, l.to].sort().join(">"); if (!merged[k]) merged[k] = { key: k, from: l.from, to: l.to }; }
