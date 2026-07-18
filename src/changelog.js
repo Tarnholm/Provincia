@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1308",
+    date: "2026-07-18",
+    items: [
+      { type: "improvement", text: "**Trade routes now read like the game: settlement → road → port → sea lane → port → road → settlement.** Sea lanes connect port to port over the water, and land trade follows roads that thread through valleys and passes (avoiding mountains) between neighbouring settlements — plus a short road links each coastal settlement to its own port. Sea lanes are dashed light, roads dashed brown. Everything routes in the background when you open the mode." },
+    ],
+  },
+  {
     version: "0.9.1307",
     date: "2026-07-18",
     items: [

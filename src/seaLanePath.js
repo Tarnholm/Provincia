@@ -51,10 +51,34 @@ export function nearestSea(sg, x, y, maxR = 60) {
 
 const NB = [[1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1], [1, 1, 1.4142], [1, -1, 1.4142], [-1, 1, 1.4142], [-1, -1, 1.4142]];
 
-// A* over the sea grid. Returns an array of {x,y} grid cells (start→goal) or
-// null if unreachable within the cost cutoff. cutoff mirrors the engine's
-// bounded search (~3400 at full res; scaled by 1/down here).
-export function aStarSea(sg, start, goal, cutoff = 1700) {
+// Land-passability grid (roads travel over land): a cell is passable when ANY
+// covered pixel is land (region or settlement). Sea is impassable. Same
+// permissive rule as buildSeaGrid so thin isthmuses/coastal towns connect.
+export function buildLandGrid(pixelData, W, H, isLand, down = 2) {
+  const w = Math.ceil(W / down), h = Math.ceil(H / down);
+  const grid = new Uint8Array(w * h); // 1 = land (passable)
+  for (let gy = 0; gy < h; gy++) {
+    for (let gx = 0; gx < w; gx++) {
+      let land = 0;
+      for (let sy = 0; sy < down && !land; sy++) {
+        for (let sx = 0; sx < down && !land; sx++) {
+          const px = Math.min(W - 1, gx * down + sx), py = Math.min(H - 1, gy * down + sy);
+          const i = (py * W + px) * 4;
+          if (isLand(pixelData[i], pixelData[i + 1], pixelData[i + 2])) land = 1;
+        }
+      }
+      grid[gy * w + gx] = land;
+    }
+  }
+  return { grid, w, h, down };
+}
+
+// A* over a passability grid. Returns an array of {x,y} grid cells (start→goal)
+// or null if unreachable within the cost cutoff. Optional `costArr`
+// (Float32Array, length w*h) gives a per-cell traversal-cost multiplier — used
+// for roads to make mountains expensive so paths thread through valleys/passes;
+// omit (or all-1) for uniform cost (sea).
+export function aStarSea(sg, start, goal, cutoff = 1700, costArr = null) {
   const { grid, w, h } = sg;
   const N = w * h;
   const si = start.y * w + start.x, gi = goal.y * w + goal.x;
@@ -91,7 +115,7 @@ export function aStarSea(sg, start, goal, cutoff = 1700) {
       if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
       const ni = ny * w + nx;
       if (!grid[ni] || closed[ni]) continue;
-      const ng = cg + cost;
+      const ng = cg + cost * (costArr ? costArr[ni] : 1);
       if (ng < gScore[ni]) { gScore[ni] = ng; came[ni] = ci; push(ng + hOf(nx, ny), ni); }
     }
   }

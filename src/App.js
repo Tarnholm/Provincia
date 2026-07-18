@@ -4,7 +4,7 @@ import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
 import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect, subscribeWidgets, getWidgetSnapshot } from "./Movable";
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, prefetchBuildingIconsBulk, invalidateBuildingIcon, warmStats } from "./buildingIcons";
 import { WARM_TUNING, runWarmChunks } from "./iconWarmScheduler";
-import { buildSeaGrid, nearestSea, aStarSea } from "./seaLanePath";
+import { buildSeaGrid, buildLandGrid, nearestSea, aStarSea } from "./seaLanePath";
 import { getCachedUnitIcon, prefetchUnitIcons, prefetchUnitIconsBulk } from "./unitIcons";
 import { loadPortrait } from "./portraitIcons";
 // Heavy, single-use panels are code-split (2026-07-15): each is loaded as its
@@ -1851,6 +1851,8 @@ function App() {
   const [tradeLanes, setTradeLanes] = useState(null); // [{from,to,flow}] sea lanes for the Trade Lanes mode (early — colorize deps)
   const [selectedTradeLane, setSelectedTradeLane] = useState(null); // {from,to} highlighted lane from the sidebar inspector
   const [seaLanePaths, setSeaLanePaths] = useState(null); // sortedKey "a>b" → [{x,y} map-px] A* sea route (curves round coasts)
+  const [roadPaths, setRoadPaths] = useState(null); // sortedKey → [{x,y}] A* land road (follows valleys/passes, avoids mountains)
+  const [portByRegion, setPortByRegion] = useState(null); // region name → {x,y} port tile (nearest coast to its settlement); sea lanes join here, a road links it to the settlement
   // 0.9.535: hover-to-inspect tooltip — { sx, sy, region, owner, terrain }.
   // Lightweight cursor readout updated only when the hovered tile changes
   // (gated via lastInspectKeyRef) so it doesn't re-render every pixel.
@@ -10057,6 +10059,13 @@ function App() {
       return { gx: Math.min(sg.w - 1, Math.max(0, Math.round(a.x / DOWN))), gy: Math.min(sg.h - 1, Math.max(0, Math.round(a.y / DOWN))), fx: a.x, fy: a.y };
     };
     const out = {};
+    const ports = {}; // region → {x,y} full-res port tile (its nearest coast)
+    const portOf = (name, gp) => {
+      if (ports[name]) return ports[name];
+      const s = nearestSea(sg, gp.gx, gp.gy);
+      if (!s) return null;
+      return (ports[name] = { x: s.x * DOWN, y: s.y * DOWN, gx: s.x, gy: s.y });
+    };
     let i = 0, cancelled = false;
     const t0all = performance.now();
     const step = () => {
@@ -10066,31 +10075,104 @@ function App() {
         const l = lanes[i++];
         const A = anchorGrid(l.from), B = anchorGrid(l.to);
         if (!A || !B) continue;
-        const sA = nearestSea(sg, A.gx, A.gy), sB = nearestSea(sg, B.gx, B.gy);
-        if (!sA || !sB) continue;
-        const path = aStarSea(sg, sA, sB, 4000);
+        const pA = portOf(l.from, A), pB = portOf(l.to, B);
+        if (!pA || !pB) continue;
+        // Sea lane joins PORT to PORT over water (the settlement→port hop is a
+        // land road, drawn separately) — so lanes no longer run to an inland
+        // settlement anchor (user 2026-07-18: "goes to the settlement without
+        // hitting its port").
+        const path = aStarSea(sg, { x: pA.gx, y: pA.gy }, { x: pB.gx, y: pB.gy }, 4000);
         if (path && path.length >= 2) {
-          const pts = [{ x: A.fx, y: A.fy }];
-          for (const p of path) pts.push({ x: p.x * DOWN, y: p.y * DOWN });
-          pts.push({ x: B.fx, y: B.fy });
-          out[l.key] = pts;
+          out[l.key] = path.map((p) => ({ x: p.x * DOWN, y: p.y * DOWN }));
         } else {
-          // No connected sea route found (disconnected seas / very long) —
-          // still leave the settlements via their COAST tiles rather than
-          // cutting a straight line settlement-to-settlement through land.
-          out[l.key] = [
-            { x: A.fx, y: A.fy }, { x: sA.x * DOWN, y: sA.y * DOWN },
-            { x: sB.x * DOWN, y: sB.y * DOWN }, { x: B.fx, y: B.fy },
-          ];
+          out[l.key] = [{ x: pA.x, y: pA.y }, { x: pB.x, y: pB.y }]; // straight port-to-port fallback
         }
       }
       if (i < lanes.length) (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step, { timeout: 500 });
-      else { console.log(`[sea-lanes] routed ${Object.keys(out).length}/${lanes.length} in ${(performance.now() - t0all).toFixed(0)}ms`); setSeaLanePaths(out); }
+      else { console.log(`[sea-lanes] routed ${Object.keys(out).length}/${lanes.length} ports=${Object.keys(ports).length} in ${(performance.now() - t0all).toFixed(0)}ms`); setSeaLanePaths(out); setPortByRegion(ports); }
     };
     (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step);
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [colorMode, tradeLanes, tradeLaneAnchors, offscreen, regions, imgSize]);
+
+  // Land roads (2026-07-18): land trade follows roads that thread through
+  // valleys/passes, so we A* over a LAND grid weighted by terrain (mountains
+  // expensive) between adjacent settlements — plus a short settlement→port
+  // connector so sea trade reads settlement→road→port→sea lane like the game.
+  useEffect(() => {
+    if (colorMode !== "tradelanes" || !tradeLaneAnchors || !offscreen) return;
+    const data = pixelDataRef.current;
+    const W = imgSize.width, H = imgSize.height;
+    if (!data || !W || !H) return;
+    const landKeys = new Set(Object.keys(regions));
+    const isLand = (r, g, b) => (r === 0 && g === 0 && b === 0) || landKeys.has(`${r},${g},${b}`);
+    const DOWN = 2;
+    const lg = buildLandGrid(data, W, H, isLand, DOWN);
+    let costArr = null;
+    if (groundTypesPixels && groundTypesSize.width) {
+      const gW = groundTypesSize.width, gH = groundTypesSize.height, gData = groundTypesPixels;
+      const COST = { "High mountains": 30, "Mountains": 10, "Rocky highland": 4, "Hills": 2.5, "Oasis / marsh": 4, "Dense forest": 2.2, "Forest": 1.8, "Light woodland": 1.4 };
+      costArr = new Float32Array(lg.w * lg.h).fill(1);
+      for (let gy = 0; gy < lg.h; gy++) for (let gx = 0; gx < lg.w; gx++) {
+        const px = Math.min(W - 1, gx * DOWN), py = Math.min(H - 1, gy * DOWN);
+        const tx = Math.min(gW - 1, Math.floor(px / W * gW)), ty = Math.min(gH - 1, Math.floor(py / H * gH));
+        const gi = (ty * gW + tx) * 4;
+        const nm = GROUND_TYPE_PALETTE[`${gData[gi]},${gData[gi + 1]},${gData[gi + 2]}`]?.name;
+        if (nm && COST[nm]) costArr[gy * lg.w + gx] = COST[nm];
+      }
+    }
+    const toGrid = (a) => ({ gx: Math.min(lg.w - 1, Math.max(0, Math.round(a.x / DOWN))), gy: Math.min(lg.h - 1, Math.max(0, Math.round(a.y / DOWN))), fx: a.x, fy: a.y });
+    const nearestLand = (gx, gy) => {
+      if (gx >= 0 && gy >= 0 && gx < lg.w && gy < lg.h && lg.grid[gy * lg.w + gx]) return { x: gx, y: gy };
+      for (let r = 1; r <= 30; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+        if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+        const nx = gx + dx, ny = gy + dy;
+        if (nx >= 0 && ny >= 0 && nx < lg.w && ny < lg.h && lg.grid[ny * lg.w + nx]) return { x: nx, y: ny };
+      }
+      return null;
+    };
+    const pairs = []; const seen = new Set();
+    for (const [reg, nbrs] of Object.entries(regionAdjacency || {})) {
+      if (!tradeLaneAnchors[reg]) continue;
+      for (const nb of (nbrs || [])) { if (!tradeLaneAnchors[nb]) continue; const k = [reg, nb].sort().join(">"); if (seen.has(k)) continue; seen.add(k); pairs.push({ key: k, from: reg, to: nb }); }
+    }
+    const out = {};
+    // settlement→port connectors (straight; short) so sea lanes join up
+    if (portByRegion) for (const [reg, p] of Object.entries(portByRegion)) { const a = tradeLaneAnchors[reg]; if (a) out["port>" + reg] = [{ x: a.x, y: a.y }, { x: p.x, y: p.y }]; }
+    let i = 0, cancelled = false; const t0all = performance.now();
+    const step = () => {
+      if (cancelled) return;
+      const t0 = performance.now();
+      while (i < pairs.length && performance.now() - t0 < 12) {
+        const p = pairs[i++];
+        const A = toGrid(tradeLaneAnchors[p.from]), B = toGrid(tradeLaneAnchors[p.to]);
+        const lA = nearestLand(A.gx, A.gy), lB = nearestLand(B.gx, B.gy);
+        if (!lA || !lB) continue;
+        const path = aStarSea(lg, lA, lB, 6000, costArr);
+        if (!path || path.length < 2) continue;
+        out[p.key] = path.map((pt) => ({ x: pt.x * DOWN, y: pt.y * DOWN }));
+      }
+      if (i < pairs.length) (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step, { timeout: 500 });
+      else { console.log(`[roads] routed ${Object.keys(out).length} (${pairs.length} adjacency pairs) in ${(performance.now() - t0all).toFixed(0)}ms`); setRoadPaths(out); }
+    };
+    (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step);
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize]);
+
+  // Combined Path2D for all roads (uniform style) → one stroke per frame, so
+  // thousands of road segments don't tank the pan framerate.
+  const roadPath2D = useMemo(() => {
+    if (!roadPaths || typeof Path2D === "undefined") return null;
+    const p = new Path2D();
+    for (const pts of Object.values(roadPaths)) {
+      if (!pts || pts.length < 2) continue;
+      p.moveTo(pts[0].x, pts[0].y);
+      for (let k = 1; k < pts.length; k++) p.lineTo(pts[k].x, pts[k].y);
+    }
+    return p;
+  }, [roadPaths]);
 
   // Draw map
   useEffect(() => {
@@ -10167,6 +10249,14 @@ function App() {
       const maxFlow = tradeLanes.reduce((a, l) => Math.max(a, l.flow), 1);
       ctx.save();
       ctx.lineCap = "round";
+      // Land roads first (dashed brown, one combined stroke), sea lanes on top.
+      if (roadPath2D) {
+        ctx.strokeStyle = "rgba(120,86,52,0.85)";
+        ctx.lineWidth = 1.1 / totalScale;
+        ctx.setLineDash([5 / totalScale, 4 / totalScale]);
+        ctx.stroke(roadPath2D);
+        ctx.setLineDash([]);
+      }
       for (const l of tradeLanes) {
         const a = anchorByName[l.from], b = anchorByName[l.to];
         if (!a || !b) continue;
@@ -10771,6 +10861,7 @@ function App() {
     tradeLaneAnchors,
     selectedTradeLane,
     seaLanePaths,
+    roadPath2D,
     resourceImages,
     resourcesData,
     regionCentroids,
@@ -10861,7 +10952,7 @@ function App() {
   useEffect(() => {
     // 0.9.535: also load when the hover-inspect tooltip is on, so it can
     // report terrain type outside of Geography mode.
-    if (colorMode !== "geography" && !showGeographyOverlay && !showTileInspect) return;
+    if (colorMode !== "geography" && colorMode !== "tradelanes" && !showGeographyOverlay && !showTileInspect) return;
     if (groundTypesPixels) return;
     if (groundTypesLoadingRef.current) return;
     const campaign = CAMPAIGNS[mapCampaign];
