@@ -1848,6 +1848,7 @@ function App() {
   const [mapMetrics, setMapMetrics] = useState(null);
   const mapMetricsBusyRef = useRef(false);
   const [tradeLanes, setTradeLanes] = useState(null); // [{from,to,flow}] sea lanes for the Trade Lanes mode (early — colorize deps)
+  const [selectedTradeLane, setSelectedTradeLane] = useState(null); // {from,to} highlighted lane from the sidebar inspector
   // 0.9.535: hover-to-inspect tooltip — { sx, sy, region, owner, terrain }.
   // Lightweight cursor readout updated only when the hovered tile changes
   // (gated via lastInspectKeyRef) so it doesn't re-render every pixel.
@@ -9503,33 +9504,12 @@ function App() {
           return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
         }));
       } else if (colorMode === "tradelanes") {
-        // Trade Lanes (2026-07-17, player mode 34): the cracked sea-trade
-        // lanes drawn as lines between region centroids, thickness = flow.
-        // The map itself renders dimmed so the network reads clearly.
-        const canvas = buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => [Math.round(pr * 0.22 + 28), Math.round(pg * 0.22 + 28), Math.round(pb * 0.22 + 30)]);
-        if (tradeLanes && tradeLanes.length && regionCentroids) {
-          const centroidByName = {};
-          for (const [rgbKey, rd2] of Object.entries(regions)) {
-            if (rd2 && rd2.region && regionCentroids[rgbKey]) centroidByName[rd2.region] = regionCentroids[rgbKey];
-          }
-          const maxFlow = tradeLanes.reduce((a, l) => Math.max(a, l.flow), 1);
-          const cctx = canvas.getContext("2d");
-          cctx.save();
-          cctx.lineCap = "round";
-          for (const l of tradeLanes) {
-            const a = centroidByName[l.from], b = centroidByName[l.to];
-            if (!a || !b) continue;
-            const t = Math.sqrt(l.flow / maxFlow);
-            cctx.strokeStyle = `rgba(255, ${Math.round(190 + t * 40)}, 90, ${0.35 + t * 0.55})`;
-            cctx.lineWidth = 1 + t * 4;
-            cctx.beginPath();
-            cctx.moveTo(a.x, a.y);
-            cctx.lineTo(b.x, b.y);
-            cctx.stroke();
-          }
-          cctx.restore();
-        }
-        setColoredOffscreen(canvas);
+        // Trade Lanes (mode 34): the map renders DIMMED here; the lanes
+        // themselves are drawn as CRISP VECTOR lines on the display canvas
+        // (see the map-draw effect) so they stay smooth at any zoom instead
+        // of baking into the nearest-neighbour-upscaled offscreen — that was
+        // the blocky/pixelated look (fixed 2026-07-18).
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => [Math.round(pr * 0.22 + 28), Math.round(pg * 0.22 + 28), Math.round(pb * 0.22 + 30)]));
       } else if (colorMode === "unrestrisk" || colorMode === "trueincome" || colorMode === "corruptionmap" || colorMode === "growthmap") {
         // Model-metric modes (2026-07-17, player modes 29-32): per-settlement
         // values from the cracked models (campaign-start state), one shared
@@ -10095,6 +10075,34 @@ function App() {
           ctx.lineWidth = 2 / totalScale;
           ctx.stroke(groupPath);
         }
+      }
+      ctx.restore();
+    }
+
+    // Trade Lanes overlay (2026-07-18): crisp vector lines between region
+    // centroids, thickness/opacity by flow — drawn on the DISPLAY canvas under
+    // the map→screen transform (like the borders) so strokes are antialiased
+    // and stay smooth at every zoom. A clicked lane's endpoints highlight via
+    // selectedProvinces; that lane draws brighter here.
+    if (colorMode === "tradelanes" && tradeLanes && tradeLanes.length && regionCentroids) {
+      const centroidByName = {};
+      for (const [rgbKey, rd2] of Object.entries(regions)) {
+        if (rd2 && rd2.region && regionCentroids[rgbKey]) centroidByName[rd2.region] = regionCentroids[rgbKey];
+      }
+      const maxFlow = tradeLanes.reduce((a, l) => Math.max(a, l.flow), 1);
+      ctx.save();
+      ctx.lineCap = "round";
+      for (const l of tradeLanes) {
+        const a = centroidByName[l.from], b = centroidByName[l.to];
+        if (!a || !b) continue;
+        const t = Math.sqrt(l.flow / maxFlow);
+        const hot = selectedTradeLane && ((selectedTradeLane.from === l.from && selectedTradeLane.to === l.to) || (selectedTradeLane.from === l.to && selectedTradeLane.to === l.from));
+        ctx.strokeStyle = hot ? "rgba(120,230,255,0.95)" : `rgba(255, ${Math.round(190 + t * 40)}, 90, ${0.32 + t * 0.5})`;
+        ctx.lineWidth = ((hot ? 2.2 : 0.6) + t * 2.6) / totalScale;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
       }
       ctx.restore();
     }
@@ -10670,6 +10678,8 @@ function App() {
     cityPixels,
     settlementTierMap,
     stripeOverlay,
+    tradeLanes,
+    selectedTradeLane,
     resourceImages,
     resourcesData,
     regionCentroids,
@@ -15478,12 +15488,57 @@ function App() {
       );
     }
     if (colorMode === "tradelanes") {
+      // Sea-lane inspector (2026-07-18): each lane counted once (dedupe the
+      // A>B / B>A directions, summing flow), ranked by value; click focuses
+      // the lane + highlights its two regions on the map.
+      const laneList = (() => {
+        if (!tradeLanes) return [];
+        const merged = {};
+        for (const l of tradeLanes) {
+          const key = [l.from, l.to].sort().join(" ");
+          const m = merged[key] || (merged[key] = { from: l.from, to: l.to, flow: 0 });
+          m.flow += l.flow;
+        }
+        return Object.values(merged).sort((a, b) => b.flow - a.flow);
+      })();
+      const nameOf = (region) => {
+        const hit = Object.values(regions).find((rd2) => rd2 && rd2.region === region);
+        return (hit && hit.city) || String(region).replace(/_/g, " ");
+      };
+      const focusLane = (lane) => {
+        setSelectedTradeLane(lane);
+        const keys = [];
+        for (const rn of [lane.from, lane.to]) {
+          const hit = Object.entries(regions).find(([, rd2]) => rd2 && rd2.region === rn);
+          if (hit) keys.push(hit[0]);
+        }
+        if (keys.length) setSelectedProvinces(keys);
+      };
       return (
         <div style={panelStyle}>
           <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Trade lanes <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
           {!legendCollapsed && <>
-            <div style={{ fontSize: "0.72rem", color: "#ddd" }}>Line thickness &amp; brightness = trade flow on that sea lane.</div>
-            <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>{tradeLanes ? `${tradeLanes.length} lanes from the cracked sea-trade model.` : "Loading lanes… (a few seconds after launch)"}</div>
+            <div style={{ fontSize: "0.7rem", color: "#ddd" }}>Line thickness = trade flow. Click a lane to highlight it &amp; its ports.</div>
+            {!tradeLanes && <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>Loading lanes… (a few seconds after launch)</div>}
+            {laneList.length > 0 && (
+              <div style={{ marginTop: 6, maxHeight: "42vh", overflowY: "auto", paddingRight: 2 }}>
+                <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>{laneList.length} lanes (by flow):</div>
+                {laneList.map((lane) => {
+                  const active = selectedTradeLane && ((selectedTradeLane.from === lane.from && selectedTradeLane.to === lane.to) || (selectedTradeLane.from === lane.to && selectedTradeLane.to === lane.from));
+                  return (
+                    <div
+                      key={lane.from + ">" + lane.to}
+                      onClick={() => active ? setSelectedTradeLane(null) : focusLane(lane)}
+                      title="Click to highlight this lane and its two ports"
+                      style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer", background: active ? "rgba(120,230,255,0.18)" : "transparent", borderRadius: 3, padding: "0 3px" }}
+                    >
+                      <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nameOf(lane.from)} ↔ {nameOf(lane.to)}</span>
+                      <span style={{ color: "#e8c873", whiteSpace: "nowrap" }}>{Math.round(lane.flow)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </>}
         </div>
       );

@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1300",
+    date: "2026-07-18",
+    items: [
+      { type: "fix", text: "**Trade Lanes are no longer pixelated.** The lanes were baked into the map image and upscaled with smoothing off, so they looked blocky. They're now drawn as true vector lines on top of the map — crisp at every zoom." },
+      { type: "feature", text: "**Trade Lanes sidebar is now a lane inspector.** Every sea lane is listed ranked by trade flow; click one to highlight it (bright cyan) and its two ports on the map. Click again to clear." },
+    ],
+  },
+  {
     version: "0.9.1299",
     date: "2026-07-17",
     items: [
