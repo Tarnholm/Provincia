@@ -10798,14 +10798,23 @@ function App() {
     let cancelled = false;
     (async () => {
       try {
-        const r = await loadCampaignData(campaign.groundTypesFile);
+        let buffer = null;
+        // Read the TGA straight from the mod folder FIRST (user 2026-07-18:
+        // "always load from the mod directly") — always fresh, immune to the
+        // importer regression that left campaign_data copies missing. Falls
+        // back to the campaign_data copy / bundled slot only when no mod dir
+        // is set (e.g. the bundled demo). modDataDir is a consented path.
+        if (modDataDir && window.electronAPI?.readFileBinary) {
+          try { buffer = await window.electronAPI.readFileBinary(`${modDataDir}/world/maps/base/map_ground_types.tga`); } catch { /* fall through */ }
+        }
+        if (!buffer) { try { const r = await loadCampaignData(campaign.groundTypesFile); buffer = r.binary || r.data; } catch { /* both missed */ } }
         if (cancelled) return;
-        const buffer = r.binary || r.data;
-        if (!buffer) throw new Error("no binary data");
+        if (!buffer) throw new Error("no binary data (campaign_data + mod folder both missed)");
         const decoded = await decodeTgaAsync(buffer);
         if (cancelled) return;
         setGroundTypesPixels(decoded.data);
         setGroundTypesSize({ width: decoded.width, height: decoded.height });
+        console.log(`[geography] ground types loaded ${decoded.width}x${decoded.height}`);
       } catch (e) {
         console.warn("[geography] failed to load ground types TGA:", e.message);
       } finally {
@@ -10813,7 +10822,7 @@ function App() {
       }
     })();
     return () => { cancelled = true; };
-  }, [colorMode, showGeographyOverlay, showTileInspect, groundTypesPixels, mapCampaign, loadCampaignData]);
+  }, [colorMode, showGeographyOverlay, showTileInspect, groundTypesPixels, mapCampaign, loadCampaignData, modDataDir]);
 
   // Lazy-load map_heights.tga when the Heights overlay is activated.
   useEffect(() => {
@@ -10826,14 +10835,19 @@ function App() {
     let cancelled = false;
     (async () => {
       try {
-        const r = await loadCampaignData(campaign.heightsFile);
+        let buffer = null;
+        // Mod folder first, same as ground types (user 2026-07-18).
+        if (modDataDir && window.electronAPI?.readFileBinary) {
+          try { buffer = await window.electronAPI.readFileBinary(`${modDataDir}/world/maps/base/map_heights.tga`); } catch { /* fall through */ }
+        }
+        if (!buffer) { try { const r = await loadCampaignData(campaign.heightsFile); buffer = r.binary || r.data; } catch { /* both missed */ } }
         if (cancelled) return;
-        const buffer = r.binary || r.data;
-        if (!buffer) throw new Error("no binary data");
+        if (!buffer) throw new Error("no binary data (campaign_data + mod folder both missed)");
         const decoded = await decodeTgaAsync(buffer);
         if (cancelled) return;
         setHeightsPixels(decoded.data);
         setHeightsSize({ width: decoded.width, height: decoded.height });
+        console.log(`[heights] heights loaded ${decoded.width}x${decoded.height}`);
       } catch (e) {
         console.warn("[heights] failed to load heights TGA:", e.message);
       } finally {
@@ -10841,7 +10855,7 @@ function App() {
       }
     })();
     return () => { cancelled = true; };
-  }, [showHeightsOverlay, heightsPixels, mapCampaign, loadCampaignData]);
+  }, [showHeightsOverlay, heightsPixels, mapCampaign, loadCampaignData, modDataDir]);
 
   // Pre-bake the heights overlay as a grayscale hillshade canvas at the
   // map_heights.tga's native resolution (~2x the region map). Computes slope

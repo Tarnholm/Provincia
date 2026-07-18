@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1303",
+    date: "2026-07-18",
+    items: [
+      { type: "fix", text: "**Geography, Terrain and Heights now read their map directly from the mod folder.** Instead of relying on a copy the importer was supposed to make into the app's data (which could be missing), all three now load map_ground_types.tga / map_heights.tga straight from your mod's world/maps/base — always current, no re-import needed. Geography should now paint real per-tile terrain (forest, hills, mountains…) instead of a flat colour per province." },
+    ],
+  },
+  {
     version: "0.9.1302",
     date: "2026-07-18",
     items: [
