@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1305",
+    date: "2026-07-18",
+    items: [
+      { type: "fix", text: "**Trade Lanes mode no longer stutters when panning.** It was rebuilding the whole lane-anchor map on every frame; that's now computed once and reused." },
+    ],
+  },
+  {
     version: "0.9.1304",
     date: "2026-07-18",
     items: [

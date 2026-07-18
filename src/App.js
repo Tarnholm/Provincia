@@ -10017,6 +10017,22 @@ function App() {
     return () => clearTimeout(hardCap);
   }, [offscreen, imgSize, iconsPreloaded, assetError, hideSplash, coloredOffscreen, colorMode, priorityIconsWarm, unitIconsWarm]);
 
+  // Trade-lane endpoint anchors, precomputed (2026-07-18 perf): region name →
+  // settlement/port tile (cityPixels, top-down) with centroid fallback. Built
+  // once when the map data changes instead of on every pan/zoom draw frame.
+  const tradeLaneAnchors = useMemo(() => {
+    if (!tradeLanes || !regionCentroids) return null;
+    const m = {};
+    for (const [rgbKey, rd2] of Object.entries(regions)) {
+      if (rd2 && rd2.region && regionCentroids[rgbKey]) m[rd2.region] = regionCentroids[rgbKey];
+    }
+    for (const cp of (cityPixels || [])) {
+      const rd2 = cp.rgbKey && regions[cp.rgbKey];
+      if (rd2 && rd2.region && m[rd2.region] && !m[rd2.region]._city) m[rd2.region] = { x: cp.x, y: cp.y, _city: true };
+    }
+    return m;
+  }, [tradeLanes, regions, regionCentroids, cityPixels]);
+
   // Draw map
   useEffect(() => {
     if (showSplash || (assetError && !proceedAnyway)) return;
@@ -10084,26 +10100,11 @@ function App() {
     // the map→screen transform (like the borders) so strokes are antialiased
     // and stay smooth at every zoom. A clicked lane's endpoints highlight via
     // selectedProvinces; that lane draws brighter here.
-    if (colorMode === "tradelanes" && tradeLanes && tradeLanes.length && regionCentroids) {
-      // Anchor each lane at the region's SETTLEMENT/port tile when known
-      // (cityPixels — bottom-up world space, so flip Y to the top-down draw
-      // space), falling back to the region centroid. Draw as a QUADRATIC ARC
-      // (control point offset perpendicular to the chord) so lanes curve like
-      // the game's sea routes instead of straight province-to-province lines
-      // (user 2026-07-18).
-      const anchorByName = {};
-      for (const [rgbKey, rd2] of Object.entries(regions)) {
-        if (rd2 && rd2.region && regionCentroids[rgbKey]) anchorByName[rd2.region] = regionCentroids[rgbKey];
-      }
-      // cityPixels are in the SAME top-down map space as regionCentroids
-      // (both idx%W, idx/W from the region map) — NO Y-flip (the earlier flip
-      // mirrored the anchors; user 2026-07-18).
-      for (const cp of (cityPixels || [])) {
-        const rd2 = cp.rgbKey && regions[cp.rgbKey];
-        if (rd2 && rd2.region && anchorByName[rd2.region] && !anchorByName[rd2.region]._city) {
-          anchorByName[rd2.region] = { x: cp.x, y: cp.y, _city: true }; // first settlement pixel per region wins
-        }
-      }
+    if (colorMode === "tradelanes" && tradeLanes && tradeLanes.length && tradeLaneAnchors) {
+      // Anchors precomputed in tradeLaneAnchors (settlement/port tile with
+      // centroid fallback). Draw as a QUADRATIC ARC (control point offset
+      // perpendicular to the chord) so lanes curve like the game's sea routes.
+      const anchorByName = tradeLaneAnchors;
       const maxFlow = tradeLanes.reduce((a, l) => Math.max(a, l.flow), 1);
       ctx.save();
       ctx.lineCap = "round";
@@ -10700,6 +10701,7 @@ function App() {
     settlementTierMap,
     stripeOverlay,
     tradeLanes,
+    tradeLaneAnchors,
     selectedTradeLane,
     resourceImages,
     resourcesData,
