@@ -10271,16 +10271,17 @@ function App() {
       return null;
     };
     // A settlement shows roads only if it has a built road (hinterland_roads).
-    // A cross-border segment is drawn only when BOTH endpoints have roads — the
-    // road genuinely stops at a road-less province's border in-game (Pluvium has
-    // no roads, so no segment crosses it). If roadRegions hasn't loaded yet, draw
-    // nothing rather than draw everything (avoids a wrong flash), it fills in when
-    // the data lands.
+    // Roads exist only inside a province that has built them (hinterland_roads).
+    // We route between adjacent settlements when AT LEAST ONE side has roads, then
+    // clip the drawn path to the road-having provinces it actually passes through
+    // (below): province A's road extends to the A/B border and stops; a road-less
+    // B shows nothing within its own borders. If roadRegions hasn't loaded yet,
+    // draw nothing rather than everything (avoids a wrong flash) — fills in later.
     const hasRoads = (reg) => roadRegions && roadRegions.has(reg.toLowerCase());
     const pairs = []; const seen = new Set();
     for (const [reg, nbrs] of Object.entries(regionAdjacency || {})) {
-      if (!tradeLaneAnchors[reg] || !hasRoads(reg)) continue;
-      for (const nb of (nbrs || [])) { if (!tradeLaneAnchors[nb] || !hasRoads(nb)) continue; const k = [reg, nb].sort().join(">"); if (seen.has(k)) continue; seen.add(k); pairs.push({ key: k, from: reg, to: nb }); }
+      if (!tradeLaneAnchors[reg]) continue;
+      for (const nb of (nbrs || [])) { if (!tradeLaneAnchors[nb]) continue; if (!hasRoads(reg) && !hasRoads(nb)) continue; const k = [reg, nb].sort().join(">"); if (seen.has(k)) continue; seen.add(k); pairs.push({ key: k, from: reg, to: nb }); }
     }
     const out = {};
     // settlement→port connectors — only for genuinely coastal settlements
@@ -10302,7 +10303,23 @@ function App() {
         if (!lA || !lB) continue;
         const path = aStarSea(lg, lA, lB, 6000, costArr);
         if (!path || path.length < 2) continue;
-        out[p.key] = path.map((pt) => ({ x: pt.x * DOWN + (DOWN >> 1), y: pt.y * DOWN + (DOWN >> 1) }));
+        const HC = DOWN >> 1;
+        const full = path.map((pt) => ({ x: pt.x * DOWN + HC, y: pt.y * DOWN + HC }));
+        // Clip to road-having provinces: keep each cell whose underlying region
+        // has roads, splitting the path into contiguous kept runs. The province
+        // of a cell is read from the map pixel; settlement/port/edge pixels carry
+        // the last known region forward (seeded with the start province).
+        let curReg = p.from, seg = [], segIdx = 0;
+        for (const pt of full) {
+          const xi = Math.min(W - 1, Math.max(0, Math.round(pt.x))), yi = Math.min(H - 1, Math.max(0, Math.round(pt.y)));
+          const o = (yi * W + xi) * 4;
+          const rd = regions[`${data[o]},${data[o + 1]},${data[o + 2]}`];
+          if (rd && rd.region) curReg = rd.region;
+          if (hasRoads(curReg)) { seg.push(pt); }
+          else if (seg.length >= 2) { out[`${p.key}#${segIdx++}`] = seg; seg = []; }
+          else { seg = []; }
+        }
+        if (seg.length >= 2) out[`${p.key}#${segIdx++}`] = seg;
       }
       if (i < pairs.length) (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step, { timeout: 500 });
       else { console.log(`[roads] routed ${Object.keys(out).length} (${pairs.length} adjacency pairs) in ${(performance.now() - t0all).toFixed(0)}ms`); setRoadPaths(out); }

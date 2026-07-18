@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1323",
+    date: "2026-07-19",
+    items: [
+      { type: "fix", text: "**Trade Lanes: roads now clip at province borders.** When a province with roads borders one without, its road is drawn up to the shared border and stops — the road-less province shows nothing inside its own borders, instead of the whole connecting segment vanishing. Each road is clipped to exactly the road-having provinces it passes through." },
+    ],
+  },
+  {
     version: "0.9.1322",
     date: "2026-07-19",
     items: [
