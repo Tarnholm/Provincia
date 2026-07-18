@@ -4,6 +4,7 @@ import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
 import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect, subscribeWidgets, getWidgetSnapshot } from "./Movable";
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, prefetchBuildingIconsBulk, invalidateBuildingIcon, warmStats } from "./buildingIcons";
 import { WARM_TUNING, runWarmChunks } from "./iconWarmScheduler";
+import { buildSeaGrid, nearestSea, aStarSea } from "./seaLanePath";
 import { getCachedUnitIcon, prefetchUnitIcons, prefetchUnitIconsBulk } from "./unitIcons";
 import { loadPortrait } from "./portraitIcons";
 // Heavy, single-use panels are code-split (2026-07-15): each is loaded as its
@@ -1849,6 +1850,7 @@ function App() {
   const mapMetricsBusyRef = useRef(false);
   const [tradeLanes, setTradeLanes] = useState(null); // [{from,to,flow}] sea lanes for the Trade Lanes mode (early — colorize deps)
   const [selectedTradeLane, setSelectedTradeLane] = useState(null); // {from,to} highlighted lane from the sidebar inspector
+  const [seaLanePaths, setSeaLanePaths] = useState(null); // sortedKey "a>b" → [{x,y} map-px] A* sea route (curves round coasts)
   // 0.9.535: hover-to-inspect tooltip — { sx, sy, region, owner, terrain }.
   // Lightweight cursor readout updated only when the hovered tile changes
   // (gated via lastInspectKeyRef) so it doesn't re-render every pixel.
@@ -10033,6 +10035,54 @@ function App() {
     return m;
   }, [tradeLanes, regions, regionCentroids, cityPixels]);
 
+  // Sea-lane A* routes (2026-07-18): reconstruct the game's curved sea lanes by
+  // pathfinding each lane over the sea grid (derived from the region map — a
+  // pixel is passable sea when it belongs to no land region). Computed in idle
+  // chunks and cached; the draw uses these polylines, falling back to a simple
+  // arc for any lane still pending or with no sea route.
+  useEffect(() => {
+    if (colorMode !== "tradelanes" || !tradeLanes || !tradeLanes.length || !tradeLaneAnchors || !offscreen) return;
+    const data = pixelDataRef.current;
+    const W = imgSize.width, H = imgSize.height;
+    if (!data || !W || !H) return;
+    const landKeys = new Set(Object.keys(regions));
+    const isLand = (r, g, b) => (r === 0 && g === 0 && b === 0) || landKeys.has(`${r},${g},${b}`);
+    const DOWN = 2;
+    const sg = buildSeaGrid(data, W, H, isLand, DOWN);
+    const merged = {};
+    for (const l of tradeLanes) { const k = [l.from, l.to].sort().join(">"); if (!merged[k]) merged[k] = { key: k, from: l.from, to: l.to }; }
+    const lanes = Object.values(merged);
+    const anchorGrid = (name) => {
+      const a = tradeLaneAnchors[name]; if (!a) return null;
+      return { gx: Math.min(sg.w - 1, Math.max(0, Math.round(a.x / DOWN))), gy: Math.min(sg.h - 1, Math.max(0, Math.round(a.y / DOWN))), fx: a.x, fy: a.y };
+    };
+    const out = {};
+    let i = 0, cancelled = false;
+    const t0all = performance.now();
+    const step = () => {
+      if (cancelled) return;
+      const t0 = performance.now();
+      while (i < lanes.length && performance.now() - t0 < 12) {
+        const l = lanes[i++];
+        const A = anchorGrid(l.from), B = anchorGrid(l.to);
+        if (!A || !B) continue;
+        const sA = nearestSea(sg, A.gx, A.gy), sB = nearestSea(sg, B.gx, B.gy);
+        if (!sA || !sB) continue;
+        const path = aStarSea(sg, sA, sB, 3000);
+        if (!path || path.length < 2) continue;
+        const pts = [{ x: A.fx, y: A.fy }];
+        for (const p of path) pts.push({ x: p.x * DOWN, y: p.y * DOWN });
+        pts.push({ x: B.fx, y: B.fy });
+        out[l.key] = pts;
+      }
+      if (i < lanes.length) (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step, { timeout: 500 });
+      else { console.log(`[sea-lanes] routed ${Object.keys(out).length}/${lanes.length} in ${(performance.now() - t0all).toFixed(0)}ms`); setSeaLanePaths(out); }
+    };
+    (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step);
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [colorMode, tradeLanes, tradeLaneAnchors, offscreen, regions, imgSize]);
+
   // Draw map
   useEffect(() => {
     if (showSplash || (assetError && !proceedAnyway)) return;
@@ -10113,19 +10163,27 @@ function App() {
         if (!a || !b) continue;
         const t = Math.sqrt(l.flow / maxFlow);
         const hot = selectedTradeLane && ((selectedTradeLane.from === l.from && selectedTradeLane.to === l.to) || (selectedTradeLane.from === l.to && selectedTradeLane.to === l.from));
-        ctx.strokeStyle = hot ? "rgba(120,230,255,0.95)" : `rgba(255, ${Math.round(190 + t * 40)}, 90, ${0.32 + t * 0.5})`;
-        ctx.lineWidth = ((hot ? 2.2 : 0.6) + t * 2.6) / totalScale;
-        // control point: chord midpoint pushed perpendicular by ~14% of length
-        const dx = b.x - a.x, dy = b.y - a.y;
-        const len = Math.hypot(dx, dy) || 1;
-        const off = len * 0.14;
-        const cx = (a.x + b.x) / 2 + (-dy / len) * off;
-        const cy = (a.y + b.y) / 2 + (dx / len) * off;
+        // in-game look: light DASHED lines over the water
+        ctx.strokeStyle = hot ? "rgba(120,230,255,0.98)" : `rgba(225,238,255, ${0.30 + t * 0.5})`;
+        ctx.lineWidth = ((hot ? 2.2 : 0.5) + t * 1.8) / totalScale;
+        ctx.setLineDash(hot ? [] : [7 / totalScale, 5 / totalScale]);
+        const poly = seaLanePaths && seaLanePaths[[l.from, l.to].sort().join(">")];
         ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.quadraticCurveTo(cx, cy, b.x, b.y);
+        if (poly && poly.length > 1) {
+          // A* sea route — curves around the coasts like the game
+          ctx.moveTo(poly[0].x, poly[0].y);
+          for (let k = 1; k < poly.length; k++) ctx.lineTo(poly[k].x, poly[k].y);
+        } else {
+          // fallback while routes compute (or no sea path): gentle arc
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const len = Math.hypot(dx, dy) || 1;
+          const off = len * 0.14;
+          ctx.moveTo(a.x, a.y);
+          ctx.quadraticCurveTo((a.x + b.x) / 2 + (-dy / len) * off, (a.y + b.y) / 2 + (dx / len) * off, b.x, b.y);
+        }
         ctx.stroke();
       }
+      ctx.setLineDash([]);
       ctx.restore();
     }
 
@@ -10703,6 +10761,7 @@ function App() {
     tradeLanes,
     tradeLaneAnchors,
     selectedTradeLane,
+    seaLanePaths,
     resourceImages,
     resourcesData,
     regionCentroids,

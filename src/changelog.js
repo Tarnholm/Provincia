@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1306",
+    date: "2026-07-18",
+    items: [
+      { type: "improvement", text: "**Sea lanes now follow the actual sea.** Instead of straight arcs, each lane is routed around the coastlines and between the islands — pathfinding over the water from port to port — and drawn as a dashed line like the in-game trade routes. Routes compute in the background the first moment you open the mode; a lane shows a light arc until its exact route is ready." },
+    ],
+  },
+  {
     version: "0.9.1305",
     date: "2026-07-18",
     items: [
