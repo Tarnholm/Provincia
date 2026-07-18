@@ -67,15 +67,20 @@ export function buildLandGrid(pixelData, W, H, isLand, down = 2) {
 // (Float32Array, length w*h) gives a per-cell traversal-cost multiplier — used
 // for roads to make mountains expensive so paths thread through valleys/passes;
 // omit (or all-1) for uniform cost (sea).
+// Reusable scratch buffers keyed by grid size, with a per-call generation stamp
+// so we never re-allocate or O(N)-clear between the hundreds of A* calls — this
+// makes full-resolution (DOWN=1) routing tractable.
+let _scr = null;
 export function aStarSea(sg, start, goal, cutoff = 1700, costArr = null) {
   const { grid, w, h } = sg;
   const N = w * h;
   const si = start.y * w + start.x, gi = goal.y * w + goal.x;
   if (si < 0 || gi < 0 || si >= N || gi >= N || !grid[si] || !grid[gi]) return null;
-  const gScore = new Float32Array(N).fill(Infinity);
-  const came = new Int32Array(N).fill(-1);
-  const closed = new Uint8Array(N);
-  gScore[si] = 0;
+  if (!_scr || _scr.N !== N) _scr = { N, g: new Float32Array(N), came: new Int32Array(N), seen: new Int32Array(N), closed: new Int32Array(N), gen: 0 };
+  const gen = ++_scr.gen;
+  const gScore = _scr.g, came = _scr.came, seen = _scr.seen, closed = _scr.closed;
+  const gAt = (i) => (seen[i] === gen ? gScore[i] : Infinity); // Infinity when untouched this call
+  gScore[si] = 0; seen[si] = gen; came[si] = -1;
   const heapF = []; const heapI = []; // parallel arrays: f-score, node index
   const push = (f, idx) => {
     heapF.push(f); heapI.push(idx); let c = heapF.length - 1;
@@ -93,8 +98,8 @@ export function aStarSea(sg, start, goal, cutoff = 1700, costArr = null) {
   push(hOf(start.x, start.y), si);
   while (heapF.length) {
     const ci = pop();
-    if (closed[ci]) continue;
-    closed[ci] = 1;
+    if (closed[ci] === gen) continue;
+    closed[ci] = gen;
     if (ci === gi) break;
     const cg = gScore[ci];
     if (cg > cutoff) continue;
@@ -103,16 +108,15 @@ export function aStarSea(sg, start, goal, cutoff = 1700, costArr = null) {
       const nx = cx + dx, ny = cy + dy;
       if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
       const ni = ny * w + nx;
-      if (!grid[ni] || closed[ni]) continue;
+      if (!grid[ni] || closed[ni] === gen) continue;
       // No corner-cutting: a diagonal step is only allowed when BOTH shared
-      // orthogonal cells are passable — otherwise the path clips a land corner
-      // (that was the "sea route over land" near coasts; 2026-07-18).
+      // orthogonal cells are passable — otherwise the path clips a land corner.
       if (dx !== 0 && dy !== 0 && (!grid[cy * w + (cx + dx)] || !grid[(cy + dy) * w + cx])) continue;
       const ng = cg + cost * (costArr ? costArr[ni] : 1);
-      if (ng < gScore[ni]) { gScore[ni] = ng; came[ni] = ci; push(ng + hOf(nx, ny), ni); }
+      if (ng < gAt(ni)) { gScore[ni] = ng; seen[ni] = gen; came[ni] = ci; push(ng + hOf(nx, ny), ni); }
     }
   }
-  if (gi !== si && came[gi] === -1) return null;
+  if (gi !== si && seen[gi] !== gen) return null; // goal never reached this call
   const path = []; let c = gi;
   while (c !== -1) { path.push({ x: c % w, y: (c / w) | 0 }); if (c === si) break; c = came[c]; }
   path.reverse();

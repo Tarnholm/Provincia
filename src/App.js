@@ -10066,7 +10066,10 @@ function App() {
       // Passable = sea water OR a white port pixel (a lane endpoint).
       const isSea = (r, g, b) => r < 90 && g > 110 && g < 175 && b > 190;
       const isPort = (r, g, b) => r > 240 && g > 240 && b > 240;
-      const sg = buildSeaGrid(data, W, H, (r, g, b) => !(isSea(r, g, b) || isPort(r, g, b)), 2);
+      // Full resolution (DOWN=1): the coarse grid pixelated narrow straits/bays
+      // shut, disconnecting island ports so A* failed (36 lanes — Aegean,
+      // Bosporos, Iberian coast). Scratch-reuse in aStarSea keeps this fast.
+      const sg = buildSeaGrid(data, W, H, (r, g, b) => !(isSea(r, g, b) || isPort(r, g, b)), 1);
       const DOWN = sg.down;
     const merged = {};
     for (const l of tradeLanes) { const k = [l.from, l.to].sort().join(">"); if (!merged[k]) merged[k] = { key: k, from: l.from, to: l.to }; }
@@ -10104,10 +10107,10 @@ function App() {
         const pA = portOf(l.from), pB = portOf(l.to);
         if (!pA) { skips.push(`${l.from}→${l.to}: ${l.from} port — ${portDiag[l.from] || "?"}`); continue; }
         if (!pB) { skips.push(`${l.from}→${l.to}: ${l.to} port — ${portDiag[l.to] || "?"}`); continue; }
-        const path = aStarSea(sg, { x: pA.gx, y: pA.gy }, { x: pB.gx, y: pB.gy }, 6000);
+        const path = aStarSea(sg, { x: pA.gx, y: pA.gy }, { x: pB.gx, y: pB.gy }, 12000);
         if (path && path.length >= 2) {
           const pts = [{ x: pA.x, y: pA.y }];
-          const HC = DOWN >> 1; // draw at the cell CENTRE (matches how sea was sampled)
+          const HC = DOWN >> 1; // draw at the cell CENTRE (0 at full res)
           for (const p of path) pts.push({ x: p.x * DOWN + HC, y: p.y * DOWN + HC });
           pts.push({ x: pB.x, y: pB.y });
           out[l.key] = pts;
@@ -10119,6 +10122,15 @@ function App() {
       else {
         console.log(`[sea-lanes] routed ${Object.keys(out).length}/${lanes.length}, ports bound ${Object.keys(ports).filter((k) => ports[k]).length}, ${skips.length} SKIPPED, ${(performance.now() - t0all).toFixed(0)}ms`);
         if (skips.length) { console.log("[sea-lanes] SKIPPED LANES (why each didn't draw):"); for (const s of skips) console.log("  ✗ " + s); }
+        // Per-region binding dump (diagnose "no lane from X's port"): region →
+        // anchor (settlement vs centroid) + bound port pixel + its routed lanes.
+        const dumpRegions = [...new Set(lanes.flatMap((l) => [l.from, l.to]))];
+        console.log("[sea-lanes] PORT BINDINGS:");
+        for (const rn of dumpRegions) {
+          const a = tradeLaneAnchors[rn], p = ports[rn];
+          const myLanes = Object.keys(out).filter((k) => k === [rn, ""].join(">") || k.split(">").includes(rn));
+          console.log(`  ${rn}: anchor=${a ? (a._city ? "settlement" : "CENTROID") + `@${Math.round(a.x)},${Math.round(a.y)}` : "MISSING"} port=${p ? p.x + "," + p.y : "NONE"} lanes=${myLanes.length}`);
+        }
         setSeaLanePaths(out); setPortByRegion(ports);
       }
     };

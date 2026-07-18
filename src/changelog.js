@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1318",
+    date: "2026-07-18",
+    items: [
+      { type: "improvement", text: "**Sea lanes route at full map resolution now, so more of them connect.** The pathfinder was working on a half-resolution water map that pinched narrow straits and small bays shut, stranding island and coastal routes; it now uses the full map (kept fast with reusable pathfinding memory), so noticeably more lanes draw. Also logs each region's port binding for diagnosing any that still don't." },
+    ],
+  },
+  {
     version: "0.9.1317",
     date: "2026-07-18",
     items: [
