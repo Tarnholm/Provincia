@@ -10136,8 +10136,17 @@ function App() {
     let costArr = null;
     if (groundTypesPixels && groundTypesSize.width) {
       const gW = groundTypesSize.width, gH = groundTypesSize.height, gData = groundTypesPixels;
-      const COST = { "High mountains": 30, "Mountains": 10, "Rocky highland": 4, "Hills": 2.5, "Oasis / marsh": 4, "Dense forest": 2.2, "Forest": 1.8, "Light woodland": 1.4 };
-      costArr = new Float32Array(lg.w * lg.h).fill(1);
+      // EXACT engine per-terrain move costs (from the game's movement-cost
+      // table: mountains_high 20, hills 13, forest 14, swamp 8, beach 4.5,
+      // farmland/grassland ~10-12) mapped onto the ground-type palette, so
+      // roads follow the same least-cost land paths the game does.
+      const COST = {
+        "High mountains": 20, "Mountains": 20, "Rocky highland": 13, "Hills": 13,
+        "Rocky desert": 14, "Desert": 14, "Semi-arid scrub": 12, "Steppe / pasture": 12,
+        "Dense forest": 14, "Forest": 14, "Light woodland": 12,
+        "Grassland": 10, "Oasis / marsh": 8, "Coast / beach": 4.5,
+      };
+      costArr = new Float32Array(lg.w * lg.h).fill(11); // default ≈ cultivated land
       for (let gy = 0; gy < lg.h; gy++) for (let gx = 0; gx < lg.w; gx++) {
         const px = Math.min(W - 1, gx * DOWN), py = Math.min(H - 1, gy * DOWN);
         const tx = Math.min(gW - 1, Math.floor(px / W * gW)), ty = Math.min(gH - 1, Math.floor(py / H * gH));

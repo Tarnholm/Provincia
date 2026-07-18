@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1313",
+    date: "2026-07-18",
+    items: [
+      { type: "improvement", text: "**Land roads now use the game's exact terrain movement costs.** Roads route on the same least-cost land paths the game does — coast and open ground cheap, forest and hills dearer, mountains dearest (about 4× the cost of flat ground, not an exaggerated wall) — so they curve through passes and along valleys the way the in-game roads do." },
+    ],
+  },
+  {
     version: "0.9.1312",
     date: "2026-07-18",
     items: [
