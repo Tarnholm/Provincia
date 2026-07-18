@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1304",
+    date: "2026-07-18",
+    items: [
+      { type: "fix", text: "**Trade lanes now actually connect to the settlements.** The previous attempt mirrored the settlement positions vertically (a coordinate flip that shouldn't have been there), so lanes ran to the wrong points. Endpoints now sit on the settlement/port tiles." },
+    ],
+  },
+  {
     version: "0.9.1303",
     date: "2026-07-18",
     items: [

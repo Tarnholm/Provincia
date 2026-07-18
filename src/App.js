@@ -10095,11 +10095,13 @@ function App() {
       for (const [rgbKey, rd2] of Object.entries(regions)) {
         if (rd2 && rd2.region && regionCentroids[rgbKey]) anchorByName[rd2.region] = regionCentroids[rgbKey];
       }
-      const flipH = imgSize.height - 1;
+      // cityPixels are in the SAME top-down map space as regionCentroids
+      // (both idx%W, idx/W from the region map) — NO Y-flip (the earlier flip
+      // mirrored the anchors; user 2026-07-18).
       for (const cp of (cityPixels || [])) {
         const rd2 = cp.rgbKey && regions[cp.rgbKey];
         if (rd2 && rd2.region && anchorByName[rd2.region] && !anchorByName[rd2.region]._city) {
-          anchorByName[rd2.region] = { x: cp.x, y: flipH - cp.y, _city: true }; // first settlement pixel per region wins
+          anchorByName[rd2.region] = { x: cp.x, y: cp.y, _city: true }; // first settlement pixel per region wins
         }
       }
       const maxFlow = tradeLanes.reduce((a, l) => Math.max(a, l.flow), 1);
