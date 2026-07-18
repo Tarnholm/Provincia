@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1302",
+    date: "2026-07-18",
+    items: [
+      { type: "improvement", text: "**Trade Lanes now curve and connect to settlements.** Lanes anchor at each region's settlement/port tile (not the province centre) and draw as gentle arcs instead of straight lines — closer to how the game renders sea routes." },
+    ],
+  },
+  {
     version: "0.9.1301",
     date: "2026-07-18",
     items: [

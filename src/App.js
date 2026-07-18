@@ -10085,23 +10085,42 @@ function App() {
     // and stay smooth at every zoom. A clicked lane's endpoints highlight via
     // selectedProvinces; that lane draws brighter here.
     if (colorMode === "tradelanes" && tradeLanes && tradeLanes.length && regionCentroids) {
-      const centroidByName = {};
+      // Anchor each lane at the region's SETTLEMENT/port tile when known
+      // (cityPixels — bottom-up world space, so flip Y to the top-down draw
+      // space), falling back to the region centroid. Draw as a QUADRATIC ARC
+      // (control point offset perpendicular to the chord) so lanes curve like
+      // the game's sea routes instead of straight province-to-province lines
+      // (user 2026-07-18).
+      const anchorByName = {};
       for (const [rgbKey, rd2] of Object.entries(regions)) {
-        if (rd2 && rd2.region && regionCentroids[rgbKey]) centroidByName[rd2.region] = regionCentroids[rgbKey];
+        if (rd2 && rd2.region && regionCentroids[rgbKey]) anchorByName[rd2.region] = regionCentroids[rgbKey];
+      }
+      const flipH = imgSize.height - 1;
+      for (const cp of (cityPixels || [])) {
+        const rd2 = cp.rgbKey && regions[cp.rgbKey];
+        if (rd2 && rd2.region && anchorByName[rd2.region] && !anchorByName[rd2.region]._city) {
+          anchorByName[rd2.region] = { x: cp.x, y: flipH - cp.y, _city: true }; // first settlement pixel per region wins
+        }
       }
       const maxFlow = tradeLanes.reduce((a, l) => Math.max(a, l.flow), 1);
       ctx.save();
       ctx.lineCap = "round";
       for (const l of tradeLanes) {
-        const a = centroidByName[l.from], b = centroidByName[l.to];
+        const a = anchorByName[l.from], b = anchorByName[l.to];
         if (!a || !b) continue;
         const t = Math.sqrt(l.flow / maxFlow);
         const hot = selectedTradeLane && ((selectedTradeLane.from === l.from && selectedTradeLane.to === l.to) || (selectedTradeLane.from === l.to && selectedTradeLane.to === l.from));
         ctx.strokeStyle = hot ? "rgba(120,230,255,0.95)" : `rgba(255, ${Math.round(190 + t * 40)}, 90, ${0.32 + t * 0.5})`;
         ctx.lineWidth = ((hot ? 2.2 : 0.6) + t * 2.6) / totalScale;
+        // control point: chord midpoint pushed perpendicular by ~14% of length
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const off = len * 0.14;
+        const cx = (a.x + b.x) / 2 + (-dy / len) * off;
+        const cy = (a.y + b.y) / 2 + (dx / len) * off;
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
+        ctx.quadraticCurveTo(cx, cy, b.x, b.y);
         ctx.stroke();
       }
       ctx.restore();
