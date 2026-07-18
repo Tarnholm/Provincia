@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1325",
+    date: "2026-07-19",
+    items: [
+      { type: "feature", text: "**Trade Lanes now show money.** Hovering a sea lane lists the goods AND the denarii each direction earns, plus a lane total. The sidebar list is now ranked by value (most valuable trades first) and shows each lane's denarii." },
+      { type: "feature", text: "**Roads are hoverable too.** Hovering a land road highlights it and shows the goods and denarii of the land trade between those two provinces — same inspector as sea lanes." },
+    ],
+  },
+  {
     version: "0.9.1324",
     date: "2026-07-19",
     items: [

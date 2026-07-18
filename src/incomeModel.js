@@ -1887,6 +1887,91 @@ function seaLaneGoods(modDataDir) {
   if (!_seaLaneGoodsCache[modDataDir]) seaFlowPtsByLane(modDataDir);
   return _seaLaneGoodsCache[modDataDir] || {};
 }
+// Per-directed-lane EXPORT value in denarii — the same engine route-value the
+// income model bills (FUN_1414a3e70): seaKV·(seaPopCoefV·√(popX+popY)+cargo+base)
+// ·gate/dNav. This is the money the exporter X earns on lane X→Y (the importer Y
+// separately earns ~0.2× via the /5 tariff). For the map's trade-lane inspector.
+const _seaLaneValueCache = {};
+function seaLaneValues(modDataDir) {
+  if (_seaLaneValueCache[modDataDir]) return _seaLaneValueCache[modDataDir];
+  const out = {};
+  try {
+    const lanesBy = seaLanesByRegion(modDataDir);
+    const { qty: GQ, rawValues: RAW } = tradeQtyMapsByRegion(modDataDir);
+    const { ownerOfRegion, allies, popOfRegion } = tradePartnerCtx(modDataDir);
+    const prot = parseProtectorates(modDataDir);
+    const lfg = landingFrontierGraph(modDataDir);
+    let _spd = null; // seaPortDistDepth is only needed for river lanes; build it lazily
+    const getSpd = () => { if (_spd === null) { try { _spd = seaPortDistDepth(modDataDir); } catch { _spd = false; } } return _spd; };
+    const vanSea = _mapVer(modDataDir) < 0x7b;
+    const fsq = (x) => { const b = new ArrayBuffer(4), f = new Float32Array(b), i = new Int32Array(b); f[0] = x; i[0] = (((i[0] + 0xc0800000) | 0) >> 1) + 0x3f800000; return f[0]; };
+    const dNavOf = (X, Y) => { const e = (lfg[X] || []).find(z => z.region === Y); return e ? e.dist : null; };
+    const dEucOf = (X, Y) => { const e = (lfg[X] || []).find(z => z.region === Y); return (e && e.dEuclid != null) ? e.dEuclid : null; };
+    const rights = (fa, fb) => fa === fb || (/^romans?_/.test(fa || "") && /^romans?_/.test(fb || "")) || (allies[fa] && allies[fa].has(fb)) || prot.suzerainOf[fa] === fb || prot.suzerainOf[fb] === fa;
+    for (const X of Object.keys(lanesBy)) for (const ln of lanesBy[X]) {
+      if (ln.weak) continue; // weak sides export nothing (import-only row)
+      const Y = ln.to;
+      const gx = GQ[X] || {}, gy = GQ[Y] || {};
+      const popX = Math.max(400, popOfRegion[X] || 1500), popY = Math.max(400, popOfRegion[Y] || 1500);
+      const fs = fsq(popX + popY);
+      let cFv = 0; for (const r in gx) if (!(r in gy)) cFv += gx[r] * (RAW[r] || 0);
+      const ownX = ownerOfRegion[X], ownY = ownerOfRegion[Y];
+      const trueOwn = ownX === ownY;
+      const own = trueOwn || (/^romans?_/.test(ownX || "") && /^romans?_/.test(ownY || ""));
+      const agr = rights(ownX, ownY);
+      const gateV = vanSea ? (trueOwn ? CALIB.seaGateTrueOwnV : own ? CALIB.seaGateOwnV : agr ? CALIB.seaGateAgreeV : CALIB.seaGateForeignV)
+        : ((trueOwn || own || agr) ? 1.0 : CALIB.seaGateForeignV);
+      const baseT = vanSea ? CALIB.seaBaseTerm : (CALIB.seaBaseTermRis != null ? CALIB.seaBaseTermRis : CALIB.seaBaseTerm);
+      let dLF = ln.river ? (((getSpd() && getSpd().distFromRiver(X)) || {})[Y] || ln.d || 20) : (dNavOf(X, Y) || ln.d || 20);
+      if (ln.invalidBridge) dLF = Math.max(CALIB.seaDistFloor, dLF);
+      if (!ln.river && !vanSea && CALIB.seaNavRatioFloor) { const de = dEucOf(X, Y); if (de != null && dLF < CALIB.seaNavRatioFloor * de) dLF = CALIB.seaNavRatioFloor * de; }
+      out[X + ">" + Y] = Math.max(0, CALIB.seaKV * (CALIB.seaPopCoefV * fs + cFv + baseT) * gateV / dLF);
+    }
+  } catch (e) { if (global.__SEA_VAL_DEBUG) console.error("[seaLaneValues]", e); }
+  return (_seaLaneValueCache[modDataDir] = out);
+}
+// Per-directed land-trade pair: cargo goods + route value in denarii, using the
+// engine's vanilla land-trade law (the same one billed for RIS): value =
+// trunc(roadMult · band · (0.13·√(popX+popY) + 2·exportTV + importTV)). Land
+// partners are the type-0 region-frontier edges. For the map's road inspector.
+const _landLaneCache = {};
+function landLaneData(modDataDir) {
+  if (_landLaneCache[modDataDir]) return _landLaneCache[modDataDir];
+  const goods = {}, values = {};
+  try {
+    const fg = frontierGraph(modDataDir);
+    const { qty: GQ, rawValues: RAW } = tradeQtyMapsByRegion(modDataDir);
+    const { ownerOfRegion, allies, wars, popOfRegion, roadOfRegion } = tradePartnerCtx(modDataDir);
+    const prot = parseProtectorates(modDataDir);
+    const vanMap = _mapVer(modDataDir) < 0x7b;
+    const f10cut = vanMap ? Infinity : CALIB.frontierF10Cutoff;
+    const fsq = (x) => { const b = new ArrayBuffer(4), f = new Float32Array(b), i = new Int32Array(b); f[0] = x; i[0] = (((i[0] + 0xc0800000) | 0) >> 1) + 0x3f800000; return f[0]; };
+    const rights = (fa, fb) => fa === fb || (/^romans?_/.test(fa || "") && /^romans?_/.test(fb || "")) || (allies[fa] && allies[fa].has(fb)) || prot.suzerainOf[fa] === fb || prot.suzerainOf[fb] === fa;
+    for (const X of Object.keys(fg)) {
+      const ownX = ownerOfRegion[X];
+      if (!ownX || ownX === "slave") continue;
+      const edges = (fg[X] || []).filter(e => e.type === 0 && e.f10 <= f10cut && !(vanMap ? e.bord <= 2 : e.f10 > CALIB.seaInvalidF10));
+      for (const e of edges) {
+        const Y = e.region, ownY = ownerOfRegion[Y];
+        if (!ownY || ownY === "slave") continue;
+        if (wars[ownX] && wars[ownX].has(ownY)) continue; // at war → no land trade
+        const gx = GQ[X] || {}, gy = GQ[Y] || {};
+        let exTV = 0, imTV = 0;
+        for (const r in gx) if (!(r in gy)) exTV += gx[r] * (RAW[r] || 0);
+        for (const r in gy) if (!(r in gx)) imTV += gy[r] * (RAW[r] || 0);
+        const vband = (ownX === ownY || rights(ownX, ownY)) ? 1.0 : CALIB.seaBandForeign;
+        const roadMult = 1 + Math.min(Math.max(0, (roadOfRegion[X] || 0) - 1), roadOfRegion[Y] || 0);
+        const val = Math.trunc(roadMult * vband * (0.13 * fsq((popOfRegion[X] || 0) + (popOfRegion[Y] || 0)) + 2 * exTV + imTV));
+        if (val > 0) values[X + ">" + Y] = val;
+        const arr = [];
+        for (const r in gx) if (!(r in gy)) arr.push({ good: r, qty: gx[r], value: RAW[r] || 0 });
+        arr.sort((a, b) => b.qty * b.value - a.qty * a.value);
+        if (arr.length) goods[X + ">" + Y] = arr;
+      }
+    }
+  } catch (e) { if (global.__LAND_DEBUG) console.error("[landLaneData]", e); }
+  return (_landLaneCache[modDataDir] = { goods, values });
+}
 function seaFlowPtsByLane(modDataDir) {
   if (_seaFlowPtsCache[modDataDir]) return _seaFlowPtsCache[modDataDir];
   const lanesBy = seaLanesByRegion(modDataDir);
@@ -2851,4 +2936,4 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   };
 }
 
-module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, bodyguardBlockByFaction, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, regionBorderLen, frontierGraph, landingFrontierGraph, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion, seaFlowPtsByLane, seaLaneGoods, seaPortDistDepth, mineDepositsByRegion, mineProspects };
+module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, bodyguardBlockByFaction, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, regionBorderLen, frontierGraph, landingFrontierGraph, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion, seaFlowPtsByLane, seaLaneGoods, seaLaneValues, landLaneData, seaPortDistDepth, mineDepositsByRegion, mineProspects };

@@ -1866,6 +1866,7 @@ function App() {
   const [hoveredTradeLane, setHoveredTradeLane] = useState(null); // {key, dirs:[{from,to,goods}]} lane under the cursor (map hover)
   const [laneTipPos, setLaneTipPos] = useState(null); // {sx,sy} screen position for the lane tooltip (separate so map doesn't redraw on cursor move)
   const [laneRegionNames, setLaneRegionNames] = useState(null); // region name -> settlement display name (for the lane inspector)
+  const [landLanes, setLandLanes] = useState(null); // [{from,to,goods,value}] land-trade pairs (road inspector)
   const [seaLanePaths, setSeaLanePaths] = useState(null); // sortedKey "a>b" → [{x,y} map-px] A* sea route (curves round coasts)
   const [roadPaths, setRoadPaths] = useState(null); // sortedKey → [{x,y}] A* land road (follows valleys/passes, avoids mountains)
   const [portByRegion, setPortByRegion] = useState(null); // region name → {x,y} port tile (nearest coast to its settlement); sea lanes join here, a road links it to the settlement
@@ -4192,6 +4193,7 @@ function App() {
           api.getTradeLanes(modDataDir).then((r) => {
             if (r && r.lanes) setTradeLanes(r.lanes);
             if (r && r.names) setLaneRegionNames(r.names);
+            if (r && r.landLanes) setLandLanes(r.landLanes);
           }).catch(() => {});
         }
         if (api.getRoadRegions) {
@@ -10108,10 +10110,20 @@ function App() {
     const m = {};
     for (const l of (effectiveTradeLanes || [])) {
       const key = [l.from, l.to].sort().join(">");
-      (m[key] = m[key] || []).push({ from: l.from, to: l.to, goods: l.goods || [] });
+      (m[key] = m[key] || []).push({ from: l.from, to: l.to, goods: l.goods || [], value: l.value || 0 });
     }
     return m;
   }, [effectiveTradeLanes]);
+
+  // Same, for land-trade (road) pairs — sorted region key → both directed legs.
+  const landLaneGoodsByKey = useMemo(() => {
+    const m = {};
+    for (const l of (landLanes || [])) {
+      const key = [l.from, l.to].sort().join(">");
+      (m[key] = m[key] || []).push({ from: l.from, to: l.to, goods: l.goods || [], value: l.value || 0 });
+    }
+    return m;
+  }, [landLanes]);
 
   // Clear the lane hover when leaving Trade Lanes mode (mousemove may not fire).
   useEffect(() => { if (colorMode !== "tradelanes") { setHoveredTradeLane(null); setLaneTipPos(null); } }, [colorMode]);
@@ -10444,7 +10456,8 @@ function App() {
       // centroid fallback). Draw as a QUADRATIC ARC (control point offset
       // perpendicular to the chord) so lanes curve like the game's sea routes.
       const anchorByName = tradeLaneAnchors;
-      const hoverKey = hoveredTradeLane && hoveredTradeLane.key;
+      const hoverKey = hoveredTradeLane && hoveredTradeLane.kind === "sea" ? hoveredTradeLane.key : null;
+      const hoverRoadKey = hoveredTradeLane && hoveredTradeLane.kind === "road" ? hoveredTradeLane.key : null;
       ctx.save();
       ctx.lineCap = "round";
       // Land roads first (dashed brown, one combined stroke), sea lanes on top.
@@ -10454,6 +10467,20 @@ function App() {
         ctx.setLineDash([5 / totalScale, 4 / totalScale]);
         ctx.stroke(roadPath2D);
         ctx.setLineDash([]);
+      }
+      // Highlight the hovered road pair's segments over the combined stroke.
+      if (hoverRoadKey && roadPaths) {
+        ctx.strokeStyle = "rgba(255,210,120,0.98)";
+        ctx.lineWidth = 2.4 / totalScale;
+        for (const rk in roadPaths) {
+          if (rk.split("#")[0] !== hoverRoadKey) continue;
+          const poly = roadPaths[rk];
+          if (!poly || poly.length < 2) continue;
+          ctx.beginPath();
+          ctx.moveTo(poly[0].x, poly[0].y);
+          for (let k = 1; k < poly.length; k++) ctx.lineTo(poly[k].x, poly[k].y);
+          ctx.stroke();
+        }
       }
       // Uniform lines — thickness/opacity no longer encode trade volume (all
       // lanes read the same); only the hovered/selected lane brightens.
@@ -11060,6 +11087,7 @@ function App() {
     hoveredTradeLane,
     seaLanePaths,
     roadPath2D,
+    roadPaths,
     resourceImages,
     resourcesData,
     regionCentroids,
@@ -12066,21 +12094,34 @@ function App() {
       // Trade-lane hover: pick the sea lane whose A* route passes nearest the
       // cursor. Key change re-renders the map (highlight); position is a separate
       // state so cursor movement along one lane doesn't redraw the canvas.
-      if (colorMode === "tradelanes" && seaLanePaths) {
+      if (colorMode === "tradelanes" && (seaLanePaths || roadPaths)) {
         const mxf = (mouseScreenX - baseOffsetX - offset.x) / totalScale;
         const myf = (mouseScreenY - baseOffsetY - offset.y) / totalScale;
         const TH2 = (7 / totalScale) * (7 / totalScale); // ~7px screen pick radius
-        let bestKey = null, bestD = TH2;
-        for (const key in seaLanePaths) {
+        let bestKey = null, bestKind = null, bestD = TH2;
+        // sea lanes first
+        for (const key in (seaLanePaths || {})) {
           const poly = seaLanePaths[key];
           if (!poly || poly.length < 2) continue;
           for (let k = 1; k < poly.length; k++) {
             const d = distToSeg(mxf, myf, poly[k - 1].x, poly[k - 1].y, poly[k].x, poly[k].y);
-            if (d < bestD) { bestD = d; bestKey = key; }
+            if (d < bestD) { bestD = d; bestKey = key; bestKind = "sea"; }
+          }
+        }
+        // roads: keys are "regA>regB#seg" (inter-province) — skip "port>" connectors
+        for (const rkey in (roadPaths || {})) {
+          if (rkey.startsWith("port>") || rkey.indexOf(">") < 0) continue;
+          const poly = roadPaths[rkey];
+          if (!poly || poly.length < 2) continue;
+          const pairKey = rkey.split("#")[0];
+          for (let k = 1; k < poly.length; k++) {
+            const d = distToSeg(mxf, myf, poly[k - 1].x, poly[k - 1].y, poly[k].x, poly[k].y);
+            if (d < bestD) { bestD = d; bestKey = pairKey; bestKind = "road"; }
           }
         }
         if (bestKey) {
-          setHoveredTradeLane(prev => (prev && prev.key === bestKey) ? prev : { key: bestKey, dirs: tradeLaneGoodsByKey[bestKey] || [] });
+          const dirs = bestKind === "road" ? (landLaneGoodsByKey[bestKey] || []) : (tradeLaneGoodsByKey[bestKey] || []);
+          setHoveredTradeLane(prev => (prev && prev.key === bestKey && prev.kind === bestKind) ? prev : { key: bestKey, kind: bestKind, dirs });
           setLaneTipPos({ sx: mouseScreenX, sy: mouseScreenY });
         } else {
           setHoveredTradeLane(prev => prev ? null : prev);
@@ -15914,10 +15955,11 @@ function App() {
         const merged = {};
         for (const l of tradeLanes) {
           const key = [l.from, l.to].sort().join(" ");
-          const m = merged[key] || (merged[key] = { from: l.from, to: l.to, flow: 0 });
+          const m = merged[key] || (merged[key] = { from: l.from, to: l.to, flow: 0, value: 0 });
           m.flow += l.flow;
+          m.value += (l.value || 0);
         }
-        return Object.values(merged).sort((a, b) => b.flow - a.flow);
+        return Object.values(merged).sort((a, b) => b.value - a.value);
       })();
       const nameOf = (region) => {
         const hit = Object.values(regions).find((rd2) => rd2 && rd2.region === region);
@@ -15936,11 +15978,11 @@ function App() {
         <div style={panelStyle}>
           <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Trade lanes <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
           {!legendCollapsed && <>
-            <div style={{ fontSize: "0.7rem", color: "#ddd" }}>Line thickness = trade flow. Click a lane to highlight it &amp; its ports.</div>
+            <div style={{ fontSize: "0.7rem", color: "#ddd" }}>Hover a lane on the map to see its cargo &amp; value. Click a lane below to highlight it &amp; its ports.</div>
             {!tradeLanes && <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>Loading lanes… (a few seconds after launch)</div>}
             {laneList.length > 0 && (
               <div style={{ marginTop: 6, maxHeight: "42vh", overflowY: "auto", paddingRight: 2 }}>
-                <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>{laneList.length} lanes (by flow):</div>
+                <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>{laneList.length} lanes (by value):</div>
                 {laneList.map((lane) => {
                   const active = selectedTradeLane && ((selectedTradeLane.from === lane.from && selectedTradeLane.to === lane.to) || (selectedTradeLane.from === lane.to && selectedTradeLane.to === lane.from));
                   return (
@@ -15951,7 +15993,7 @@ function App() {
                       style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer", background: active ? "rgba(120,230,255,0.18)" : "transparent", borderRadius: 3, padding: "0 3px" }}
                     >
                       <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nameOf(lane.from)} ↔ {nameOf(lane.to)}</span>
-                      <span style={{ color: "#e8c873", whiteSpace: "nowrap" }}>{Math.round(lane.flow)}</span>
+                      <span style={{ color: "#e8c873", whiteSpace: "nowrap" }}>{lane.value} dn</span>
                     </div>
                   );
                 })}
@@ -18982,8 +19024,10 @@ function App() {
 
                 {hoveredTradeLane && laneTipPos && (() => {
                   const nm = (r) => (laneRegionNames && laneRegionNames[r]) || String(r).replace(/_/g, " ");
-                  const dirs = (hoveredTradeLane.dirs || []).filter(d => d.goods && d.goods.length);
+                  const dirs = (hoveredTradeLane.dirs || []).filter(d => (d.goods && d.goods.length) || d.value);
                   const [rA, rB] = hoveredTradeLane.key.split(">");
+                  const totalValue = (hoveredTradeLane.dirs || []).reduce((a, d) => a + (d.value || 0), 0);
+                  const isRoad = hoveredTradeLane.kind === "road";
                   return (
                     <div style={{
                       position: "absolute",
@@ -18996,21 +19040,24 @@ function App() {
                       fontSize: "0.82rem",
                       pointerEvents: "none",
                       zIndex: 20,
-                      border: "1px solid #3a5a78",
-                      maxWidth: 250,
+                      border: `1px solid ${isRoad ? "#6a5334" : "#3a5a78"}`,
+                      maxWidth: 260,
                       boxShadow: "0 6px 20px rgba(0,0,0,0.5)",
                     }}>
-                      <div style={{ fontWeight: 600, marginBottom: 4, color: "#bfe0ff" }}>
-                        {nm(rA)} <span style={{ color: "#7fb0d8" }}>⇄</span> {nm(rB)}
+                      <div style={{ fontWeight: 600, marginBottom: 4, color: isRoad ? "#e8cfa0" : "#bfe0ff", display: "flex", justifyContent: "space-between", gap: 10 }}>
+                        <span>{nm(rA)} <span style={{ color: isRoad ? "#c8a86a" : "#7fb0d8" }}>⇄</span> {nm(rB)}</span>
+                        {totalValue > 0 && <span style={{ color: "#ffd98a" }}>{totalValue} dn</span>}
                       </div>
+                      <div style={{ color: "#7f97ab", fontSize: "0.66rem", marginBottom: 3 }}>{isRoad ? "land trade (road)" : "sea lane"}</div>
                       {dirs.length === 0 && <div style={{ color: "#8fa8bd", fontStyle: "italic" }}>no significant cargo</div>}
                       {dirs.map((d, di) => (
                         <div key={di} style={{ marginTop: di ? 5 : 0 }}>
-                          <div style={{ color: "#9fc4e6", fontSize: "0.74rem", marginBottom: 1 }}>
-                            {nm(d.from)} → {nm(d.to)}
+                          <div style={{ color: isRoad ? "#d3b783" : "#9fc4e6", fontSize: "0.74rem", marginBottom: 1, display: "flex", justifyContent: "space-between", gap: 8 }}>
+                            <span>{nm(d.from)} → {nm(d.to)}</span>
+                            {d.value > 0 && <span style={{ color: "#e8c873" }}>{d.value} dn</span>}
                           </div>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 8px" }}>
-                            {d.goods.map((g, gi) => (
+                            {(d.goods || []).map((g, gi) => (
                               <span key={gi}>
                                 {String(g.good).replace(/_/g, " ")} <span style={{ color: "#ffd98a" }}>×{g.qty}</span>
                               </span>

@@ -386,9 +386,16 @@ ipcMain.handle("get-trade-lanes", async (_event, modDataDir) => {
     const im = require("./incomeModel.js");
     const flow = im.seaFlowPtsByLane(modDataDir);
     const goods = im.seaLaneGoods(modDataDir); // "X>Y" -> [{good, qty, value}]
+    const values = im.seaLaneValues(modDataDir); // "X>Y" -> export denarii
     const lanes = Object.entries(flow).map(([k, v]) => {
       const gt = k.indexOf(">");
-      return { from: k.slice(0, gt), to: k.slice(gt + 1), flow: +v || 0, goods: goods[k] || [] };
+      return { from: k.slice(0, gt), to: k.slice(gt + 1), flow: +v || 0, goods: goods[k] || [], value: Math.round(values[k] || 0) };
+    });
+    // Land-trade pairs (road inspector): directed {from,to,goods,value}.
+    const land = im.landLaneData(modDataDir);
+    const landLanes = Object.keys({ ...land.values, ...land.goods }).map((k) => {
+      const gt = k.indexOf(">");
+      return { from: k.slice(0, gt), to: k.slice(gt + 1), goods: land.goods[k] || [], value: Math.round(land.values[k] || 0) };
     });
     // region -> settlement display name (descr_regions: region on col-0 line,
     // settlement on the next indented line), for the map's lane inspector.
@@ -400,7 +407,7 @@ ipcMain.handle("get-trade-lanes", async (_event, modDataDir) => {
         if (/^\S/.test(rt[i]) && rt[i + 1] && /^\s/.test(rt[i + 1])) names[rt[i].trim()] = rt[i + 1].trim().replace(/_/g, " ");
       }
     } catch { /* names optional */ }
-    return { lanes, names };
+    return { lanes, names, landLanes };
   } catch (e) {
     return { error: e && e.message ? e.message : "trade lanes failed" };
   }
