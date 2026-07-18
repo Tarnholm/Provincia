@@ -8657,9 +8657,29 @@ function App() {
         }
         if (rgbKey) cities.push({ x: bp.x, y: bp.y, rgbKey });
       }
+      // Tag each white PORT pixel with the region it belongs to (majority region
+      // colour within radius 2 — ports sit right on the coast, sometimes 1–2px
+      // into the sea). A lane must dock at its OWN region's port: in dense
+      // archipelagos (Sardinia, S.Italy, the Aegean) a neighbour's port pixel is
+      // often physically closer, so binding by raw nearest drew the lane from the
+      // wrong port and left the region's real port bare (2026-07-18, Iliensia).
+      const classifyPort = (px, py) => {
+        const counts = {};
+        for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+          const nx = px + dx, ny = py + dy;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= imgSize.height) continue;
+          const ni = (ny * W + nx) * 4;
+          const rd = regions[`${data[ni]},${data[ni + 1]},${data[ni + 2]}`];
+          if (rd && rd.region) counts[rd.region] = (counts[rd.region] || 0) + 1;
+        }
+        let best = null, bc = 0;
+        for (const k in counts) if (counts[k] > bc) { bc = counts[k]; best = k; }
+        return best;
+      };
+      for (const w of whites) w.region = classifyPort(w.x, w.y);
       setRegionCentroids(centroids);
       setCityPixels(cities);
-      setPortPixels(whites); // port positions; each lane end binds to the nearest one to its settlement
+      setPortPixels(whites); // {x,y,region} — each lane end binds to the nearest port OF ITS OWN region
     });
   }, [regions, imgSize, offscreen]);
 
@@ -10111,9 +10131,15 @@ function App() {
       const a = tradeLaneAnchors[name];
       if (!a) { portDiag[name] = "no anchor (region not in tradeLaneAnchors)"; return (ports[name] = null); }
       // Every region reaching here IS a sea trader (it's in tradeLanes), so it
-      // HAS a port — bind to the nearest white port marker with a generous cap.
+      // HAS a port — bind to the nearest port marker OF THIS REGION (each white
+      // pixel is tagged with its owning region). Only if none is tagged to it do
+      // we fall back to the globally-nearest port. Raw-nearest binding made
+      // dense-archipelago regions dock at a neighbour's port (Iliensia grabbed
+      // Balaria's, 4px away, instead of its own 9px away), leaving the real port
+      // with no lane and drawing from the wrong pixel (2026-07-18).
       let best = null, bd = Infinity;
-      for (const wp of (portPixels || [])) { const d = (wp.x - a.x) ** 2 + (wp.y - a.y) ** 2; if (d < bd) { bd = d; best = wp; } }
+      for (const wp of (portPixels || [])) { if (wp.region !== name) continue; const d = (wp.x - a.x) ** 2 + (wp.y - a.y) ** 2; if (d < bd) { bd = d; best = wp; } }
+      if (!best) { for (const wp of (portPixels || [])) { const d = (wp.x - a.x) ** 2 + (wp.y - a.y) ** 2; if (d < bd) { bd = d; best = wp; } } }
       if (!best) { portDiag[name] = "no port pixels loaded (" + (portPixels || []).length + ")"; return (ports[name] = null); }
       if (bd > 260 * 260) { portDiag[name] = `nearest port ${Math.round(Math.sqrt(bd))}px from settlement (anchor ${a._city ? "settlement" : "CENTROID"} @${Math.round(a.x)},${Math.round(a.y)}) — over 260 cap`; return (ports[name] = null); }
       const gx = Math.min(sg.w - 1, Math.max(0, Math.round(best.x / DOWN))), gy = Math.min(sg.h - 1, Math.max(0, Math.round(best.y / DOWN)));

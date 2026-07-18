@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1320",
+    date: "2026-07-18",
+    items: [
+      { type: "fix", text: "**Trade Lanes: sea routes now dock at each settlement's OWN port.** On crowded coastlines (Sardinia, southern Italy, the Aegean, North Africa) a lane was snapping to whichever port marker sat physically closest — often a neighbouring town's — which left the settlement's real port with no line drawn from it (e.g. Uselis/Iliensia showed no route to Rome even though the route existed). Each port marker is now matched to the town it belongs to, so 34 regions that were docking at a neighbour's port draw correctly from their own." },
+    ],
+  },
+  {
     version: "0.9.1319",
     date: "2026-07-18",
     items: [
