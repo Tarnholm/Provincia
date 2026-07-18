@@ -45,6 +45,56 @@ export function nearestSea(sg, x, y, maxR = 60) {
 
 const NB = [[1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1], [1, 1, 1.4142], [1, -1, 1.4142], [-1, 1, 1.4142], [-1, -1, 1.4142]];
 
+// Label connected sea components using the SAME 8-neighbour + no-corner-cutting
+// rule aStarSea navigates by, so two cells share a component id iff A* can path
+// between them. Returns { comp:Int32Array(-1 for land), sizes:number[] }.
+// Used to snap a port out of a tiny sealed pocket (a coastal port whose only
+// water is a 1–3 cell diagonal pocket the corner rule walls off) onto real open
+// water it can actually be routed from (2026-07-19, Caralis→Hippo Diarrhytus).
+export function seaComponents(sg) {
+  const { grid, w, h } = sg;
+  const N = w * h;
+  const comp = new Int32Array(N).fill(-1);
+  const sizes = [];
+  const stack = [];
+  for (let s = 0; s < N; s++) {
+    if (!grid[s] || comp[s] !== -1) continue;
+    const id = sizes.length; let cnt = 0;
+    comp[s] = id; stack.push(s);
+    while (stack.length) {
+      const c = stack.pop(); cnt++;
+      const cx = c % w, cy = (c / w) | 0;
+      for (const [dx, dy] of NB) {
+        const nx = cx + dx, ny = cy + dy;
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+        const ni = ny * w + nx;
+        if (!grid[ni] || comp[ni] !== -1) continue;
+        if (dx !== 0 && dy !== 0 && (!grid[cy * w + (cx + dx)] || !grid[(cy + dy) * w + cx])) continue;
+        comp[ni] = id; stack.push(ni);
+      }
+    }
+    sizes.push(cnt);
+  }
+  return { comp, sizes };
+}
+
+// Nearest sea cell to (x,y) that lives in a component of at least `minSize` cells
+// — i.e. open water, not a sealed pocket. Falls back to null if none within maxR.
+export function nearestSeaBig(sg, comp, sizes, x, y, minSize = 30, maxR = 80) {
+  const { grid, w, h } = sg;
+  const ok = (a, b) => a >= 0 && b >= 0 && a < w && b < h && grid[b * w + a] && sizes[comp[b * w + a]] >= minSize;
+  if (ok(x, y)) return { x, y };
+  for (let r = 1; r <= maxR; r++) {
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue; // ring only
+        if (ok(x + dx, y + dy)) return { x: x + dx, y: y + dy };
+      }
+    }
+  }
+  return null;
+}
+
 // Land-passability grid (roads travel over land): a cell is passable when its
 // CENTRE pixel is land (region or settlement). Sea is impassable — centre-pixel
 // keeps roads on solid land instead of straying into coastal water.

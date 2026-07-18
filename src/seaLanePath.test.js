@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildSeaGrid, nearestSea, aStarSea } from "./seaLanePath.js";
+import { buildSeaGrid, nearestSea, aStarSea, seaComponents, nearestSeaBig } from "./seaLanePath.js";
 
 // Tiny synthetic map: 10x5, a vertical land wall at x=5 with a gap at y=0,
 // forcing the sea path to route around it.
@@ -49,5 +49,29 @@ describe("seaLanePath", () => {
     const { data, W, H } = makeMap();
     const sg = buildSeaGrid(data, W, H, isLand, 1);
     expect(aStarSea(sg, { x: 2, y: 2 }, { x: 5, y: 2 }, 1000)).toBeNull();
+  });
+
+  // A port trapped in a 1-cell sea pocket sealed off by a land corner: the
+  // component snap must move it onto the open-water body so A* can route it.
+  it("seaComponents + nearestSeaBig snap a sealed pocket to open water", () => {
+    // 6x6: big open sea on the left, a single sea cell at (5,0) walled off from
+    // it by land at (4,0) and (5,1) — reachable only via the blocked diagonal.
+    const W = 6, H = 6;
+    const data = new Uint8Array(W * H * 4);
+    const setLand = (x, y) => { const i = (y * W + x) * 4; data[i] = 10; data[i + 1] = 20; data[i + 2] = 30; };
+    const setSea = (x, y) => { const i = (y * W + x) * 4; data[i] = 40; data[i + 1] = 120; data[i + 2] = 200; };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) setSea(x, y);
+    setLand(4, 0); setLand(4, 1); setLand(5, 1); // pocket at (5,0), sealed
+    const sg = buildSeaGrid(data, W, H, isLand, 1);
+    const { comp, sizes } = seaComponents(sg);
+    // (5,0) is its own size-1 pocket; the main body is much larger
+    expect(sizes[comp[0 * W + 5]]).toBe(1);
+    expect(Math.max(...sizes)).toBeGreaterThan(20);
+    // plain nearestSea would keep it in the pocket; nearestSeaBig moves it out
+    const big = nearestSeaBig(sg, comp, sizes, 5, 0, 5, 10);
+    expect(big).not.toBeNull();
+    expect(sizes[comp[big.y * W + big.x]]).toBeGreaterThan(20);
+    // and A* can now reach it from the far side
+    expect(aStarSea(sg, { x: 0, y: 5 }, big, 1000)).not.toBeNull();
   });
 });

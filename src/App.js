@@ -4,7 +4,7 @@ import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
 import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect, subscribeWidgets, getWidgetSnapshot } from "./Movable";
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, prefetchBuildingIconsBulk, invalidateBuildingIcon, warmStats } from "./buildingIcons";
 import { WARM_TUNING, runWarmChunks } from "./iconWarmScheduler";
-import { buildSeaGrid, buildLandGrid, nearestSea, aStarSea } from "./seaLanePath";
+import { buildSeaGrid, buildLandGrid, nearestSea, aStarSea, seaComponents, nearestSeaBig } from "./seaLanePath";
 import { getCachedUnitIcon, prefetchUnitIcons, prefetchUnitIconsBulk } from "./unitIcons";
 import { loadPortrait } from "./portraitIcons";
 // Heavy, single-use panels are code-split (2026-07-15): each is loaded as its
@@ -10115,6 +10115,13 @@ function App() {
       // Bosporos, Iberian coast). Scratch-reuse in aStarSea keeps this fast.
       const sg = buildSeaGrid(data, W, H, (r, g, b) => !(isSea(r, g, b) || isPort(r, g, b)), 1);
       const DOWN = sg.down;
+      // Connected sea components (same adjacency A* uses). A coastal port can sit
+      // in a tiny sea pocket the corner-cutting rule seals off from open water
+      // (Hippo Diarrhytus: a 3-cell pocket) — routing to that cell fails. We keep
+      // the exact port cell as the primary A* endpoint (so every lane that routes
+      // today is unchanged) and, only when A* fails, retry from the nearest
+      // OPEN-WATER cell (component ≥ 30). Zero regressions, +11 lanes (2026-07-19).
+      const { comp: seaComp, sizes: seaSizes } = seaComponents(sg);
     const merged = {};
     for (const l of effectiveTradeLanes) { const k = [l.from, l.to].sort().join(">"); if (!merged[k]) merged[k] = { key: k, from: l.from, to: l.to }; }
     const lanes = Object.values(merged);
@@ -10145,7 +10152,9 @@ function App() {
       const gx = Math.min(sg.w - 1, Math.max(0, Math.round(best.x / DOWN))), gy = Math.min(sg.h - 1, Math.max(0, Math.round(best.y / DOWN)));
       const s = nearestSea(sg, gx, gy); // snap the port to a passable sea cell for A*
       if (!s) { portDiag[name] = `port @${best.x},${best.y} has no navigable sea within reach (enclosed/pixelated bay)`; return (ports[name] = null); }
-      return (ports[name] = { x: best.x, y: best.y, gx: s.x, gy: s.y }); // draw AT the white port pixel
+      // Open-water fallback cell (used only if the primary snap can't route).
+      const big = nearestSeaBig(sg, seaComp, seaSizes, s.x, s.y, 30, 80);
+      return (ports[name] = { x: best.x, y: best.y, gx: s.x, gy: s.y, bx: big ? big.x : s.x, by: big ? big.y : s.y }); // draw AT the white port pixel
     };
     let i = 0;
     const t0all = performance.now();
@@ -10157,7 +10166,13 @@ function App() {
         const pA = portOf(l.from), pB = portOf(l.to);
         if (!pA) { skips.push(`${l.from}→${l.to}: ${l.from} port — ${portDiag[l.from] || "?"}`); continue; }
         if (!pB) { skips.push(`${l.from}→${l.to}: ${l.to} port — ${portDiag[l.to] || "?"}`); continue; }
-        const path = aStarSea(sg, { x: pA.gx, y: pA.gy }, { x: pB.gx, y: pB.gy }, 12000);
+        let path = aStarSea(sg, { x: pA.gx, y: pA.gy }, { x: pB.gx, y: pB.gy }, 12000);
+        // Retry from open water if a port's exact cell sits in a sealed pocket
+        // (Caralis→Hippo Diarrhytus). The drawn lane still starts/ends at the
+        // white port pixel; only the A* endpoints move to routable water.
+        if (!path && (pA.bx !== pA.gx || pA.by !== pA.gy || pB.bx !== pB.gx || pB.by !== pB.gy)) {
+          path = aStarSea(sg, { x: pA.bx, y: pA.by }, { x: pB.bx, y: pB.by }, 12000);
+        }
         if (path && path.length >= 2) {
           const pts = [{ x: pA.x, y: pA.y }];
           const HC = DOWN >> 1; // draw at the cell CENTRE (0 at full res)

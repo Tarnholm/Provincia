@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1321",
+    date: "2026-07-19",
+    items: [
+      { type: "fix", text: "**Trade Lanes: sea routes now reach ports tucked in tight coastal pockets.** Some ports sit in a bay so narrow the router couldn't thread a path to the exact port cell, so the lane silently didn't draw (e.g. Caralis→Hippo Diarrhytus). Those lanes now route from the nearest open water while still drawing to the port marker — recovering 11 more sea lanes. Lanes that already drew are unchanged." },
+    ],
+  },
+  {
     version: "0.9.1320",
     date: "2026-07-18",
     items: [
