@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1309",
+    date: "2026-07-18",
+    items: [
+      { type: "fix", text: "**Sea lanes stay in the water and roads stay on land.** The water/land maps were counting a coastal cell as both, so some sea lanes cut across peninsulas and a few roads strayed into the sea. Each now uses the cell's centre, so lanes hug the coast and roads keep to land. A sea lane that genuinely can't be routed over water is now hidden rather than drawn straight across an island, and only truly coastal settlements get a line to a port." },
+    ],
+  },
+  {
     version: "0.9.1308",
     date: "2026-07-18",
     items: [

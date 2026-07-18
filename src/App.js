@@ -10081,12 +10081,10 @@ function App() {
         // land road, drawn separately) — so lanes no longer run to an inland
         // settlement anchor (user 2026-07-18: "goes to the settlement without
         // hitting its port").
-        const path = aStarSea(sg, { x: pA.gx, y: pA.gy }, { x: pB.gx, y: pB.gy }, 4000);
-        if (path && path.length >= 2) {
-          out[l.key] = path.map((p) => ({ x: p.x * DOWN, y: p.y * DOWN }));
-        } else {
-          out[l.key] = [{ x: pA.x, y: pA.y }, { x: pB.x, y: pB.y }]; // straight port-to-port fallback
-        }
+        const path = aStarSea(sg, { x: pA.gx, y: pA.gy }, { x: pB.gx, y: pB.gy }, 6000);
+        // Only draw a lane we could actually route over water — a straight
+        // fallback would cut across land/islands (user 2026-07-18).
+        if (path && path.length >= 2) out[l.key] = path.map((p) => ({ x: p.x * DOWN, y: p.y * DOWN }));
       }
       if (i < lanes.length) (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step, { timeout: 500 });
       else { console.log(`[sea-lanes] routed ${Object.keys(out).length}/${lanes.length} ports=${Object.keys(ports).length} in ${(performance.now() - t0all).toFixed(0)}ms`); setSeaLanePaths(out); setPortByRegion(ports); }
@@ -10138,8 +10136,13 @@ function App() {
       for (const nb of (nbrs || [])) { if (!tradeLaneAnchors[nb]) continue; const k = [reg, nb].sort().join(">"); if (seen.has(k)) continue; seen.add(k); pairs.push({ key: k, from: reg, to: nb }); }
     }
     const out = {};
-    // settlement→port connectors (straight; short) so sea lanes join up
-    if (portByRegion) for (const [reg, p] of Object.entries(portByRegion)) { const a = tradeLaneAnchors[reg]; if (a) out["port>" + reg] = [{ x: a.x, y: a.y }, { x: p.x, y: p.y }]; }
+    // settlement→port connectors — only for genuinely coastal settlements
+    // (port near the town); a long connector would be an inland town wrongly
+    // reaching the sea, so skip those (they trade by land road instead).
+    if (portByRegion) for (const [reg, p] of Object.entries(portByRegion)) {
+      const a = tradeLaneAnchors[reg];
+      if (a && Math.hypot(a.x - p.x, a.y - p.y) <= 55) out["port>" + reg] = [{ x: a.x, y: a.y }, { x: p.x, y: p.y }];
+    }
     let i = 0, cancelled = false; const t0all = performance.now();
     const step = () => {
       if (cancelled) return;

@@ -8,24 +8,18 @@
 // up for drawing.
 
 // isLand(r,g,b) → true for land/settlement pixels (impassable for sea).
-// A downsampled cell is passable "sea" when ANY of the full-res pixels it
-// covers is sea — this keeps narrow straits, bays and coastlines connected at
-// the downsample (marking sea only from the centre pixel closed thin channels
-// and pocketed coastal ports, which stranded some lanes; 2026-07-18).
+// A cell is "sea" when its CENTRE pixel is sea — so sea routes stay in real
+// water and never path through coastal land (an "any sub-pixel" rule let lanes
+// cut across peninsulas/islands; 2026-07-18).
 export function buildSeaGrid(pixelData, W, H, isLand, down = 2) {
   const w = Math.ceil(W / down), h = Math.ceil(H / down);
   const grid = new Uint8Array(w * h); // 1 = sea (passable)
+  const off = down >> 1;
   for (let gy = 0; gy < h; gy++) {
     for (let gx = 0; gx < w; gx++) {
-      let sea = 0;
-      for (let sy = 0; sy < down && !sea; sy++) {
-        for (let sx = 0; sx < down && !sea; sx++) {
-          const px = Math.min(W - 1, gx * down + sx), py = Math.min(H - 1, gy * down + sy);
-          const i = (py * W + px) * 4;
-          if (!isLand(pixelData[i], pixelData[i + 1], pixelData[i + 2])) sea = 1;
-        }
-      }
-      grid[gy * w + gx] = sea;
+      const px = Math.min(W - 1, gx * down + off), py = Math.min(H - 1, gy * down + off);
+      const i = (py * W + px) * 4;
+      grid[gy * w + gx] = isLand(pixelData[i], pixelData[i + 1], pixelData[i + 2]) ? 0 : 1;
     }
   }
   return { grid, w, h, down };
@@ -51,23 +45,18 @@ export function nearestSea(sg, x, y, maxR = 60) {
 
 const NB = [[1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1], [1, 1, 1.4142], [1, -1, 1.4142], [-1, 1, 1.4142], [-1, -1, 1.4142]];
 
-// Land-passability grid (roads travel over land): a cell is passable when ANY
-// covered pixel is land (region or settlement). Sea is impassable. Same
-// permissive rule as buildSeaGrid so thin isthmuses/coastal towns connect.
+// Land-passability grid (roads travel over land): a cell is passable when its
+// CENTRE pixel is land (region or settlement). Sea is impassable — centre-pixel
+// keeps roads on solid land instead of straying into coastal water.
 export function buildLandGrid(pixelData, W, H, isLand, down = 2) {
   const w = Math.ceil(W / down), h = Math.ceil(H / down);
   const grid = new Uint8Array(w * h); // 1 = land (passable)
+  const off = down >> 1;
   for (let gy = 0; gy < h; gy++) {
     for (let gx = 0; gx < w; gx++) {
-      let land = 0;
-      for (let sy = 0; sy < down && !land; sy++) {
-        for (let sx = 0; sx < down && !land; sx++) {
-          const px = Math.min(W - 1, gx * down + sx), py = Math.min(H - 1, gy * down + sy);
-          const i = (py * W + px) * 4;
-          if (isLand(pixelData[i], pixelData[i + 1], pixelData[i + 2])) land = 1;
-        }
-      }
-      grid[gy * w + gx] = land;
+      const px = Math.min(W - 1, gx * down + off), py = Math.min(H - 1, gy * down + off);
+      const i = (py * W + px) * 4;
+      grid[gy * w + gx] = isLand(pixelData[i], pixelData[i + 1], pixelData[i + 2]) ? 1 : 0;
     }
   }
   return { grid, w, h, down };
