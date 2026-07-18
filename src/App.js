@@ -10079,9 +10079,12 @@ function App() {
       // the region's port = nearest white port pixel to its settlement; a
       // coastal town's port sits right by it, so cap the distance (an inland
       // town with no nearby port doesn't sea-trade).
+      // Every region reaching here IS a sea trader (it's in tradeLanes), so it
+      // HAS a port — bind to the nearest port marker with a generous cap
+      // (some settlements sit a fair way from their port tile).
       let best = null, bd = Infinity;
       for (const wp of (portPixels || [])) { const d = (wp.x - a.x) ** 2 + (wp.y - a.y) ** 2; if (d < bd) { bd = d; best = wp; } }
-      if (!best || bd > 130 * 130) return (ports[name] = null);
+      if (!best || bd > 260 * 260) return (ports[name] = null);
       const gx = Math.min(sg.w - 1, Math.max(0, Math.round(best.x / DOWN))), gy = Math.min(sg.h - 1, Math.max(0, Math.round(best.y / DOWN)));
       const s = nearestSea(sg, gx, gy); // snap the port to a passable sea cell for A*
       if (!s) return (ports[name] = null);

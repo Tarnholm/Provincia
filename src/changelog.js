@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1314",
+    date: "2026-07-18",
+    items: [
+      { type: "fix", text: "**Sea lanes no longer clip across land corners, and more coastal towns get their lane.** Diagonal steps that sliced across the tip of a headland (a route appearing to cross land near coasts, e.g. by Carthage) are blocked, and the port-matching reach is wider so settlements whose port tile sits a bit further off — like Uselis on Sardinia connecting to Rome — now draw their sea lane." },
+    ],
+  },
+  {
     version: "0.9.1313",
     date: "2026-07-18",
     items: [

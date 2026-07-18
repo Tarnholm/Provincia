@@ -104,6 +104,10 @@ export function aStarSea(sg, start, goal, cutoff = 1700, costArr = null) {
       if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
       const ni = ny * w + nx;
       if (!grid[ni] || closed[ni]) continue;
+      // No corner-cutting: a diagonal step is only allowed when BOTH shared
+      // orthogonal cells are passable — otherwise the path clips a land corner
+      // (that was the "sea route over land" near coasts; 2026-07-18).
+      if (dx !== 0 && dy !== 0 && (!grid[cy * w + (cx + dx)] || !grid[(cy + dy) * w + cx])) continue;
       const ng = cg + cost * (costArr ? costArr[ni] : 1);
       if (ng < gScore[ni]) { gScore[ni] = ng; came[ni] = ci; push(ng + hOf(nx, ny), ni); }
     }
