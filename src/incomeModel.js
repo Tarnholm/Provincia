@@ -1879,6 +1879,14 @@ function seaPortDistDepth(modDataDir) {
 //     Parthenope stone-4) but ship at value 1.
 // Flows depend on competitor flows → iterative relaxation, 3 passes suffice.
 const _seaFlowPtsCache = {};
+const _seaLaneGoodsCache = {};
+// Per-lane goods manifest: { "X>Y": [{ good, qty, value }] } — the actual cargo
+// the flow model ships on each directed lane (goods X has that Y lacks), for the
+// map's trade-lane inspector. Populated as a side effect of seaFlowPtsByLane.
+function seaLaneGoods(modDataDir) {
+  if (!_seaLaneGoodsCache[modDataDir]) seaFlowPtsByLane(modDataDir);
+  return _seaLaneGoodsCache[modDataDir] || {};
+}
 function seaFlowPtsByLane(modDataDir) {
   if (_seaFlowPtsCache[modDataDir]) return _seaFlowPtsCache[modDataDir];
   const lanesBy = seaLanesByRegion(modDataDir);
@@ -1918,6 +1926,7 @@ function seaFlowPtsByLane(modDataDir) {
   }
   let shipped = {};
   let pts = {};
+  const goodsOut = {}; // "X>Y" -> [{good, qty, value}] captured on the final pass
   for (let pass = 0; pass < 3; pass++) {
     const next = {};
     pts = {};
@@ -1946,9 +1955,16 @@ function seaFlowPtsByLane(modDataDir) {
       }
       next[X + ">" + Y] = ship;
       pts[X + ">" + Y] = p;
+      if (pass === 2) {
+        const arr = [];
+        for (const r of Object.keys(ship)) arr.push({ good: r, qty: ship[r], value: Math.max(1, GV[r] || 0) });
+        arr.sort((m, n) => n.qty * n.value - m.qty * m.value);
+        if (arr.length) goodsOut[X + ">" + Y] = arr;
+      }
     }
     shipped = next;
   }
+  _seaLaneGoodsCache[modDataDir] = goodsOut;
   return (_seaFlowPtsCache[modDataDir] = pts);
 }
 
@@ -2835,4 +2851,4 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   };
 }
 
-module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, bodyguardBlockByFaction, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, regionBorderLen, frontierGraph, landingFrontierGraph, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion, seaFlowPtsByLane, seaPortDistDepth, mineDepositsByRegion, mineProspects };
+module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, bodyguardBlockByFaction, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, regionBorderLen, frontierGraph, landingFrontierGraph, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion, seaFlowPtsByLane, seaLaneGoods, seaPortDistDepth, mineDepositsByRegion, mineProspects };

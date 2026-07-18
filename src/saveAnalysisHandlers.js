@@ -383,12 +383,24 @@ ipcMain.handle("get-map-mode-metrics", async (_event, modDataDir) => {
 ipcMain.handle("get-trade-lanes", async (_event, modDataDir) => {
   try {
     if (!modDataDir) return { error: "modDataDir required" };
-    const flow = require("./incomeModel.js").seaFlowPtsByLane(modDataDir);
+    const im = require("./incomeModel.js");
+    const flow = im.seaFlowPtsByLane(modDataDir);
+    const goods = im.seaLaneGoods(modDataDir); // "X>Y" -> [{good, qty, value}]
     const lanes = Object.entries(flow).map(([k, v]) => {
       const gt = k.indexOf(">");
-      return { from: k.slice(0, gt), to: k.slice(gt + 1), flow: +v || 0 };
+      return { from: k.slice(0, gt), to: k.slice(gt + 1), flow: +v || 0, goods: goods[k] || [] };
     });
-    return { lanes };
+    // region -> settlement display name (descr_regions: region on col-0 line,
+    // settlement on the next indented line), for the map's lane inspector.
+    const names = {};
+    try {
+      const fsx = require("fs"), px = require("path");
+      const rt = fsx.readFileSync(px.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1").split(/\r?\n/);
+      for (let i = 0; i < rt.length; i++) {
+        if (/^\S/.test(rt[i]) && rt[i + 1] && /^\s/.test(rt[i + 1])) names[rt[i].trim()] = rt[i + 1].trim().replace(/_/g, " ");
+      }
+    } catch { /* names optional */ }
+    return { lanes, names };
   } catch (e) {
     return { error: e && e.message ? e.message : "trade lanes failed" };
   }

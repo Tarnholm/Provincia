@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1324",
+    date: "2026-07-19",
+    items: [
+      { type: "change", text: "**Trade Lanes: all lines now drawn at a uniform thickness** — line width no longer scales with trade volume, so the map reads more cleanly." },
+      { type: "feature", text: "**Hover a sea lane to see its cargo.** Moving the cursor over a trade lane highlights it and shows a tooltip listing the goods carried each way and their quantities (e.g. Caralis → Hippo Diarrhytus: copper ×2, grain ×2, olive oil ×2)." },
+    ],
+  },
+  {
     version: "0.9.1323",
     date: "2026-07-19",
     items: [

@@ -236,6 +236,18 @@ const MAP_BTN_ORDER = [
 ];
 
 // Index → letter: 0→A … 25→Z, 26→AA, 27→AB, … (bijective base-26).
+// Squared distance from point (px,py) to segment (ax,ay)-(bx,by). Used for
+// trade-lane hover picking (nearest lane polyline to the cursor).
+function distToSeg(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay;
+  const len2 = dx * dx + dy * dy;
+  let t = len2 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  const cx = ax + t * dx, cy = ay + t * dy;
+  const ex = px - cx, ey = py - cy;
+  return ex * ex + ey * ey;
+}
+
 function indexToLetters(i) {
   let n = i, s = "";
   do {
@@ -1851,6 +1863,9 @@ function App() {
   const [tradeLanes, setTradeLanes] = useState(null); // [{from,to,flow}] sea lanes for the Trade Lanes mode (early — colorize deps)
   const [roadRegions, setRoadRegions] = useState(null); // Set of region names whose settlement has roads (land trade only draws between these)
   const [selectedTradeLane, setSelectedTradeLane] = useState(null); // {from,to} highlighted lane from the sidebar inspector
+  const [hoveredTradeLane, setHoveredTradeLane] = useState(null); // {key, dirs:[{from,to,goods}]} lane under the cursor (map hover)
+  const [laneTipPos, setLaneTipPos] = useState(null); // {sx,sy} screen position for the lane tooltip (separate so map doesn't redraw on cursor move)
+  const [laneRegionNames, setLaneRegionNames] = useState(null); // region name -> settlement display name (for the lane inspector)
   const [seaLanePaths, setSeaLanePaths] = useState(null); // sortedKey "a>b" → [{x,y} map-px] A* sea route (curves round coasts)
   const [roadPaths, setRoadPaths] = useState(null); // sortedKey → [{x,y}] A* land road (follows valleys/passes, avoids mountains)
   const [portByRegion, setPortByRegion] = useState(null); // region name → {x,y} port tile (nearest coast to its settlement); sea lanes join here, a road links it to the settlement
@@ -4176,6 +4191,7 @@ function App() {
         if (api.getTradeLanes) {
           api.getTradeLanes(modDataDir).then((r) => {
             if (r && r.lanes) setTradeLanes(r.lanes);
+            if (r && r.names) setLaneRegionNames(r.names);
           }).catch(() => {});
         }
         if (api.getRoadRegions) {
@@ -10086,6 +10102,20 @@ function App() {
     return tradeLanes;
   }, [tradeNetwork, tradeLanes]);
 
+  // Sorted lane key "a>b" → both directed legs with their goods manifest, for the
+  // map hover inspector. effectiveTradeLanes carries each direction separately.
+  const tradeLaneGoodsByKey = useMemo(() => {
+    const m = {};
+    for (const l of (effectiveTradeLanes || [])) {
+      const key = [l.from, l.to].sort().join(">");
+      (m[key] = m[key] || []).push({ from: l.from, to: l.to, goods: l.goods || [] });
+    }
+    return m;
+  }, [effectiveTradeLanes]);
+
+  // Clear the lane hover when leaving Trade Lanes mode (mousemove may not fire).
+  useEffect(() => { if (colorMode !== "tradelanes") { setHoveredTradeLane(null); setLaneTipPos(null); } }, [colorMode]);
+
   const tradeLaneAnchors = useMemo(() => {
     if (!effectiveTradeLanes || !regionCentroids) return null;
     const m = {};
@@ -10404,17 +10434,17 @@ function App() {
       ctx.restore();
     }
 
-    // Trade Lanes overlay (2026-07-18): crisp vector lines between region
-    // centroids, thickness/opacity by flow — drawn on the DISPLAY canvas under
-    // the map→screen transform (like the borders) so strokes are antialiased
-    // and stay smooth at every zoom. A clicked lane's endpoints highlight via
-    // selectedProvinces; that lane draws brighter here.
+    // Trade Lanes overlay (2026-07-18): crisp vector lines along the A* sea
+    // routes — drawn on the DISPLAY canvas under the map→screen transform (like
+    // the borders) so strokes are antialiased and stay smooth at every zoom.
+    // Uniform width/opacity (no longer flow-scaled, 2026-07-19); the lane under
+    // the cursor brightens and its goods manifest shows in a hover tooltip.
     if (colorMode === "tradelanes" && effectiveTradeLanes && effectiveTradeLanes.length && tradeLaneAnchors) {
       // Anchors precomputed in tradeLaneAnchors (settlement/port tile with
       // centroid fallback). Draw as a QUADRATIC ARC (control point offset
       // perpendicular to the chord) so lanes curve like the game's sea routes.
       const anchorByName = tradeLaneAnchors;
-      const maxFlow = effectiveTradeLanes.reduce((a, l) => Math.max(a, l.flow), 1);
+      const hoverKey = hoveredTradeLane && hoveredTradeLane.key;
       ctx.save();
       ctx.lineCap = "round";
       // Land roads first (dashed brown, one combined stroke), sea lanes on top.
@@ -10425,16 +10455,21 @@ function App() {
         ctx.stroke(roadPath2D);
         ctx.setLineDash([]);
       }
+      // Uniform lines — thickness/opacity no longer encode trade volume (all
+      // lanes read the same); only the hovered/selected lane brightens.
+      const drawnKeys = new Set();
       for (const l of effectiveTradeLanes) {
         const a = anchorByName[l.from], b = anchorByName[l.to];
         if (!a || !b) continue;
-        const t = Math.sqrt(l.flow / maxFlow);
-        const hot = selectedTradeLane && ((selectedTradeLane.from === l.from && selectedTradeLane.to === l.to) || (selectedTradeLane.from === l.to && selectedTradeLane.to === l.from));
+        const key = [l.from, l.to].sort().join(">");
+        if (drawnKeys.has(key)) continue; // one stroke per undirected lane
+        drawnKeys.add(key);
+        const hot = (hoverKey && hoverKey === key) || (selectedTradeLane && ((selectedTradeLane.from === l.from && selectedTradeLane.to === l.to) || (selectedTradeLane.from === l.to && selectedTradeLane.to === l.from)));
         // in-game look: light DASHED lines over the water
-        ctx.strokeStyle = hot ? "rgba(120,230,255,0.98)" : `rgba(225,238,255, ${0.30 + t * 0.5})`;
-        ctx.lineWidth = ((hot ? 2.2 : 0.5) + t * 1.8) / totalScale;
+        ctx.strokeStyle = hot ? "rgba(120,230,255,0.98)" : "rgba(225,238,255,0.7)";
+        ctx.lineWidth = (hot ? 2.2 : 1.1) / totalScale;
         ctx.setLineDash(hot ? [] : [7 / totalScale, 5 / totalScale]);
-        const poly = seaLanePaths && seaLanePaths[[l.from, l.to].sort().join(">")];
+        const poly = seaLanePaths && seaLanePaths[key];
         // ONLY draw the real A* water route. No straight settlement-to-
         // settlement fallback — that was the light line cutting across land
         // for lanes still computing or with no water route (user 2026-07-18).
@@ -11022,6 +11057,7 @@ function App() {
     effectiveTradeLanes,
     tradeLaneAnchors,
     selectedTradeLane,
+    hoveredTradeLane,
     seaLanePaths,
     roadPath2D,
     resourceImages,
@@ -12027,6 +12063,30 @@ function App() {
       const mouseScreenY = e.nativeEvent.offsetY;
       const x = Math.floor((mouseScreenX - baseOffsetX - offset.x) / totalScale);
       const y = Math.floor((mouseScreenY - baseOffsetY - offset.y) / totalScale);
+      // Trade-lane hover: pick the sea lane whose A* route passes nearest the
+      // cursor. Key change re-renders the map (highlight); position is a separate
+      // state so cursor movement along one lane doesn't redraw the canvas.
+      if (colorMode === "tradelanes" && seaLanePaths) {
+        const mxf = (mouseScreenX - baseOffsetX - offset.x) / totalScale;
+        const myf = (mouseScreenY - baseOffsetY - offset.y) / totalScale;
+        const TH2 = (7 / totalScale) * (7 / totalScale); // ~7px screen pick radius
+        let bestKey = null, bestD = TH2;
+        for (const key in seaLanePaths) {
+          const poly = seaLanePaths[key];
+          if (!poly || poly.length < 2) continue;
+          for (let k = 1; k < poly.length; k++) {
+            const d = distToSeg(mxf, myf, poly[k - 1].x, poly[k - 1].y, poly[k].x, poly[k].y);
+            if (d < bestD) { bestD = d; bestKey = key; }
+          }
+        }
+        if (bestKey) {
+          setHoveredTradeLane(prev => (prev && prev.key === bestKey) ? prev : { key: bestKey, dirs: tradeLaneGoodsByKey[bestKey] || [] });
+          setLaneTipPos({ sx: mouseScreenX, sy: mouseScreenY });
+        } else {
+          setHoveredTradeLane(prev => prev ? null : prev);
+          setLaneTipPos(prev => prev ? null : prev);
+        }
+      } else if (hoveredTradeLane) { setHoveredTradeLane(null); setLaneTipPos(null); }
       // Update the paint-mode brush preview position (screen + tile coords).
       if (paintMode) {
         if (x >= 0 && y >= 0 && x < imgSize.width && y < imgSize.height) {
@@ -18919,6 +18979,48 @@ function App() {
                     {devMode && hoveredResource.resX != null && <><br /><span style={{ fontSize: "0.75rem", color: "#aaa" }}>x: {hoveredResource.resX}, y: {imgSize.height - hoveredResource.resY}</span></>}
                   </div>
                 )}
+
+                {hoveredTradeLane && laneTipPos && (() => {
+                  const nm = (r) => (laneRegionNames && laneRegionNames[r]) || String(r).replace(/_/g, " ");
+                  const dirs = (hoveredTradeLane.dirs || []).filter(d => d.goods && d.goods.length);
+                  const [rA, rB] = hoveredTradeLane.key.split(">");
+                  return (
+                    <div style={{
+                      position: "absolute",
+                      left: Math.min(laneTipPos.sx + 20, (canvasRef.current?.clientWidth || 9999) - 260),
+                      top: laneTipPos.sy + 16,
+                      background: "rgba(12,20,30,0.95)",
+                      color: "#eaf4ff",
+                      padding: "7px 10px",
+                      borderRadius: 7,
+                      fontSize: "0.82rem",
+                      pointerEvents: "none",
+                      zIndex: 20,
+                      border: "1px solid #3a5a78",
+                      maxWidth: 250,
+                      boxShadow: "0 6px 20px rgba(0,0,0,0.5)",
+                    }}>
+                      <div style={{ fontWeight: 600, marginBottom: 4, color: "#bfe0ff" }}>
+                        {nm(rA)} <span style={{ color: "#7fb0d8" }}>⇄</span> {nm(rB)}
+                      </div>
+                      {dirs.length === 0 && <div style={{ color: "#8fa8bd", fontStyle: "italic" }}>no significant cargo</div>}
+                      {dirs.map((d, di) => (
+                        <div key={di} style={{ marginTop: di ? 5 : 0 }}>
+                          <div style={{ color: "#9fc4e6", fontSize: "0.74rem", marginBottom: 1 }}>
+                            {nm(d.from)} → {nm(d.to)}
+                          </div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 8px" }}>
+                            {d.goods.map((g, gi) => (
+                              <span key={gi}>
+                                {String(g.good).replace(/_/g, " ")} <span style={{ color: "#ffd98a" }}>×{g.qty}</span>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
 
                 <div
                   className="zoom-controls"
