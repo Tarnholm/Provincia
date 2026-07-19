@@ -10314,7 +10314,7 @@ function App() {
     if (!data || !W || !H) return;
     // Cache signature: road geometry depends on the mod, terrain data, which
     // settlements have roads, the adjacency graph, anchors and the port bindings.
-    const roadSig = `road|v10|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${groundTypesPixels ? 1 : 0}`;
+    const roadSig = `road|v11|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10384,6 +10384,17 @@ function App() {
       if (!tradeLaneAnchors[reg]) continue;
       for (const nb of (nbrs || [])) { if (!tradeLaneAnchors[nb]) continue; if (!hasRoads(reg) && !hasRoads(nb)) continue; const k = [reg, nb].sort().join(">"); if (seen.has(k)) continue; seen.add(k); pairs.push({ key: k, from: reg, to: nb }); }
     }
+    // SHARED ROAD NETWORK (2026-07-19): the game builds ONE connected network, not
+    // a separate direct road per pair. We route shortest links FIRST so they form
+    // the backbone, then let longer links snap onto existing road cells (marked
+    // cheap below) — so a route follows the shared spine and reaches its target via
+    // junctions (the game's "north-then-east" behaviour) instead of cutting straight.
+    const REUSE = 3; // cost of a cell that already carries a road (≈ cheapest terrain)
+    for (const p of pairs) {
+      const a = tradeLaneAnchors[p.from], b = tradeLaneAnchors[p.to];
+      p._d = a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 1e9;
+    }
+    pairs.sort((p1, p2) => p1._d - p2._d);
     const out = {};
     // settlement→port connectors — only for genuinely coastal settlements
     // (port near the town); a long connector would be an inland town wrongly
@@ -10404,6 +10415,9 @@ function App() {
         if (!lA || !lB) continue;
         const path = aStarSea(lg, lA, lB, 200000, costArr);
         if (!path || path.length < 2) continue;
+        // Mark this route's cells as existing road so later, longer routes merge
+        // onto them instead of carving their own parallel line (shared network).
+        for (const pt of path) { const ci = pt.y * lg.w + pt.x; if (costArr[ci] > REUSE) costArr[ci] = REUSE; }
         const HC = DOWN >> 1;
         const full = path.map((pt) => ({ x: pt.x * DOWN + HC, y: pt.y * DOWN + HC }));
         // Clip to road-having provinces: keep each cell whose underlying region

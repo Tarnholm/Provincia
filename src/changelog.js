@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1338",
+    date: "2026-07-19",
+    items: [
+      { type: "feature", text: "**Roads are now one shared network, like the game.** Instead of drawing an independent straight road for every pair of towns, roads build a connected network — the shortest links form the backbone first and longer routes merge onto it, following the shared spine and reaching towns through junctions. This reproduces the game's road layout (routes that run along a backbone rather than cutting straight across) instead of a fan of separate direct lines." },
+    ],
+  },
+  {
     version: "0.9.1337",
     date: "2026-07-19",
     items: [
