@@ -546,6 +546,25 @@ function tgaToRaw(buf) {
     }
     return { W, H, desc, raw };
   }
+  // Grayscale (8bpp): type 3 uncompressed, type 11 RLE. Expanded to BGR triples
+  // (value in all three channels) so callers read it like any other map — used
+  // for map_roughness.tga (2026-07-19).
+  if (imgType === 3) {
+    const raw = Buffer.alloc(W * H * 3);
+    for (let i = 0; i < W * H; i++) { const v = buf[dataOff + i]; raw[i * 3] = v; raw[i * 3 + 1] = v; raw[i * 3 + 2] = v; }
+    return { W, H, desc, raw };
+  }
+  if (imgType === 11) {
+    const raw = Buffer.alloc(W * H * 3);
+    let p = dataOff, o = 0, count = 0; const total = W * H;
+    while (count < total && p < buf.length) {
+      const hdr = buf[p++], n = (hdr & 0x7f) + 1;
+      if (hdr & 0x80) { const v = buf[p++]; for (let i = 0; i < n; i++) { raw[o] = v; raw[o + 1] = v; raw[o + 2] = v; o += 3; } }
+      else { for (let i = 0; i < n; i++) { const v = buf[p++]; raw[o] = v; raw[o + 1] = v; raw[o + 2] = v; o += 3; } }
+      count += n;
+    }
+    return { W, H, desc, raw };
+  }
   throw new Error("unsupported TGA image type " + imgType);
 }
 

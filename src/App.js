@@ -10278,8 +10278,21 @@ function App() {
     // Land = anything that is NOT sea (any region colour known or not, plus
     // settlement/port markers) — robust to regions missing from the set.
     const isSea = (r, g, b) => r < 90 && g > 110 && g < 175 && b > 190;
-    const DOWN = 2;
+    const DOWN = 1; // full resolution — roads follow terrain per-pixel like the game
     const lg = buildLandGrid(data, W, H, (r, g, b) => !isSea(r, g, b), DOWN);
+    // Elevation per grid cell (from map_heights, ~2× res) drives the climb cost so
+    // roads bend around hills/mountains instead of running straight over them.
+    let heightArr = null, slopeW = 0;
+    if (heightsPixels && heightsSize.width) {
+      const hW = heightsSize.width, hH = heightsSize.height;
+      heightArr = new Float32Array(lg.w * lg.h);
+      for (let gy = 0; gy < lg.h; gy++) for (let gx = 0; gx < lg.w; gx++) {
+        const px = Math.min(W - 1, gx * DOWN), py = Math.min(H - 1, gy * DOWN);
+        const hx = Math.min(hW - 1, Math.round(px / W * hW)), hy = Math.min(hH - 1, Math.round(py / H * hH));
+        heightArr[gy * lg.w + gx] = heightsPixels[(hy * hW + hx) * 4]; // R channel = elevation
+      }
+      slopeW = 3.0; // climb weight — calibrated so mountains are strongly avoided
+    }
     let costArr = null;
     if (groundTypesPixels && groundTypesSize.width) {
       const gW = groundTypesSize.width, gH = groundTypesSize.height, gData = groundTypesPixels;
@@ -10343,7 +10356,7 @@ function App() {
         const A = toGrid(tradeLaneAnchors[p.from]), B = toGrid(tradeLaneAnchors[p.to]);
         const lA = nearestLand(A.gx, A.gy), lB = nearestLand(B.gx, B.gy);
         if (!lA || !lB) continue;
-        const path = aStarSea(lg, lA, lB, 6000, costArr);
+        const path = aStarSea(lg, lA, lB, 60000, costArr, false, heightArr, slopeW);
         if (!path || path.length < 2) continue;
         const HC = DOWN >> 1;
         const full = path.map((pt) => ({ x: pt.x * DOWN + HC, y: pt.y * DOWN + HC }));
@@ -10369,7 +10382,7 @@ function App() {
     (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step);
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, roadRegions]);
+  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, roadRegions, heightsPixels, heightsSize]);
 
   // Combined Path2D for all roads (uniform style) → one stroke per frame, so
   // thousands of road segments don't tank the pan framerate.
@@ -11213,9 +11226,10 @@ function App() {
     return () => { cancelled = true; };
   }, [colorMode, showGeographyOverlay, showTileInspect, groundTypesPixels, mapCampaign, loadCampaignData, modDataDir]);
 
-  // Lazy-load map_heights.tga when the Heights overlay is activated.
+  // Lazy-load map_heights.tga when the Heights overlay is activated OR in Trade
+  // Lanes mode (roads use elevation to bend around hills like the game).
   useEffect(() => {
-    if (!showHeightsOverlay) return;
+    if (!showHeightsOverlay && colorMode !== "tradelanes") return;
     if (heightsPixels) return;
     if (heightsLoadingRef.current) return;
     const campaign = CAMPAIGNS[mapCampaign];
@@ -11244,7 +11258,7 @@ function App() {
       }
     })();
     return () => { cancelled = true; };
-  }, [showHeightsOverlay, heightsPixels, mapCampaign, loadCampaignData, modDataDir]);
+  }, [showHeightsOverlay, colorMode, heightsPixels, mapCampaign, loadCampaignData, modDataDir]);
 
   // Pre-bake the heights overlay as a grayscale hillshade canvas at the
   // map_heights.tga's native resolution (~2x the region map). Computes slope

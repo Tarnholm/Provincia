@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1326",
+    date: "2026-07-19",
+    items: [
+      { type: "improvement", text: "**Roads now follow the terrain instead of drawing straight lines.** Land routes are traced at full map resolution and weighted by elevation, so they bend around hills and thread along valleys and coasts the way the game's roads do — using the mod's own height data." },
+    ],
+  },
+  {
     version: "0.9.1325",
     date: "2026-07-19",
     items: [
