@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1335",
+    date: "2026-07-19",
+    items: [
+      { type: "fix", text: "**Roads now wind through open ground around forest and hills, like the game.** Instead of a straight (or over-smoothed) line, the route is the raw per-pixel cheapest path — but road placement now treats woodland, hills and rough terrain as strong obstacles, so the road threads the open grassland and weaves around each wooded patch the way the game draws it." },
+    ],
+  },
+  {
     version: "0.9.1334",
     date: "2026-07-19",
     items: [

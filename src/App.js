@@ -10314,7 +10314,7 @@ function App() {
     if (!data || !W || !H) return;
     // Cache signature: road geometry depends on the mod, terrain data, which
     // settlements have roads, the adjacency graph, anchors and the port bindings.
-    const roadSig = `road|v6|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${groundTypesPixels ? 1 : 0}`;
+    const roadSig = `road|v8|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10339,10 +10339,16 @@ function App() {
     let costArr = null;
     if (groundTypesPixels && groundTypesSize.width) {
       const gW = groundTypesSize.width, gH = groundTypesSize.height, gData = groundTypesPixels;
+      // The game threads roads through OPEN ground and winds around wooded/broken
+      // terrain — road placement treats forest, hills and mountains as strong
+      // obstacles, far more than the mild unit-move cost gap (forest 13 vs grass
+      // 10) would. Open ground keeps the exact move costs; forest/hills/beach are
+      // made costly so the cheapest per-pixel route weaves around each patch, and
+      // dense forest + high mountains stay impassable (2026-07-19).
       const COST = {
-        "Grassland": 10, "Steppe / pasture": 11, "Semi-arid scrub": 12, "Rocky desert": 12,
-        "Desert": 12, "Light woodland": 13, "Forest": 13, "Hills": 14, "Coast / beach": 14,
-        "Mountains": 15, "Rocky highland": 15, "Oasis / marsh": 20,
+        "Grassland": 10, "Steppe / pasture": 11, "Semi-arid scrub": 12, "Rocky desert": 12, "Desert": 12,
+        "Coast / beach": 24, "Light woodland": 26, "Forest": 30, "Hills": 32, "Rocky highland": 38,
+        "Mountains": 45, "Oasis / marsh": 45,
         "High mountains": 999, "Dense forest": 999, // impassable — routed around
       };
       costArr = new Float32Array(lg.w * lg.h).fill(11);
@@ -10435,32 +10441,12 @@ function App() {
   const roadPath2D = useMemo(() => {
     if (!roadPaths || typeof Path2D === "undefined") return null;
     const p = new Path2D();
-    // The game draws roads as smooth, sinuous curves through waypoints — not the
-    // straight bird's-eye least-cost line. We thin each routed polyline down to
-    // waypoints (every ~6 px), then lay a Catmull-Rom spline through them so the
-    // road winds and curves between points instead of running dead straight
-    // (2026-07-19, user feedback comparing to the in-game roads).
-    const simplify = (pts, minD) => {
-      if (pts.length <= 2) return pts;
-      const out = [pts[0]]; let last = pts[0]; const m2 = minD * minD;
-      for (let k = 1; k < pts.length - 1; k++) {
-        const dx = pts[k].x - last.x, dy = pts[k].y - last.y;
-        if (dx * dx + dy * dy >= m2) { out.push(pts[k]); last = pts[k]; }
-      }
-      out.push(pts[pts.length - 1]);
-      return out;
-    };
-    for (const raw of Object.values(roadPaths)) {
-      if (!raw || raw.length < 2) continue;
-      const w = simplify(raw, 6);
-      if (w.length < 3) { p.moveTo(w[0].x, w[0].y); p.lineTo(w[w.length - 1].x, w[w.length - 1].y); continue; }
-      p.moveTo(w[0].x, w[0].y);
-      for (let k = 0; k < w.length - 1; k++) {
-        const p0 = w[k > 0 ? k - 1 : 0], p1 = w[k], p2 = w[k + 1], p3 = w[k + 2 < w.length ? k + 2 : w.length - 1];
-        const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
-        const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
-        p.bezierCurveTo(c1x, c1y, c2x, c2y, p2.x, p2.y);
-      }
+    // Draw the raw per-pixel least-cost path (no smoothing) so the road winds
+    // back and forth exactly as the cheapest route threads between obstacles.
+    for (const pts of Object.values(roadPaths)) {
+      if (!pts || pts.length < 2) continue;
+      p.moveTo(pts[0].x, pts[0].y);
+      for (let k = 1; k < pts.length; k++) p.lineTo(pts[k].x, pts[k].y);
     }
     return p;
   }, [roadPaths]);
