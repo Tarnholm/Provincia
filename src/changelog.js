@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1333",
+    date: "2026-07-19",
+    items: [
+      { type: "fix", text: "**Sea lanes now respect water depth.** Shallow coastal water is cheapest, medium (deep) sea costs more, and the deepest open ocean is impassable — so trade lanes hug the coastline and thread between shallows instead of striking straight across the open sea, matching how the game routes them." },
+    ],
+  },
+  {
     version: "0.9.1332",
     date: "2026-07-19",
     items: [

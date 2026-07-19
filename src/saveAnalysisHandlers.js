@@ -34,7 +34,7 @@ function _laneSrcMtimes(modDataDir, kind) {
   const c = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign");
   const files = kind === "road"
     ? [path.join(b, "map_regions.tga"), path.join(b, "map_ground_types.tga"), path.join(b, "map_heights.tga"), path.join(c, "descr_strat.txt"), path.join(b, "descr_regions.txt")]
-    : [path.join(b, "map_regions.tga"), path.join(c, "descr_strat.txt"), path.join(b, "descr_regions.txt")];
+    : [path.join(b, "map_regions.tga"), path.join(b, "map_ground_types.tga"), path.join(c, "descr_strat.txt"), path.join(b, "descr_regions.txt")]; // sea lanes now use ground types for depth
   return files.map((f) => { try { return fs.statSync(f).mtimeMs; } catch { return 0; } });
 }
 

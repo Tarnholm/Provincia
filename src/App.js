@@ -10159,7 +10159,7 @@ function App() {
     if (!data || !W || !H) return;
     // Cache signature: the sea geometry is fully determined by the mod, the lane
     // set (which changes with a live save), the port markers, and the map size.
-    const seaSig = `sea|${modDataDir}|${W}x${H}|${(portPixels || []).length}|${cheapStrHash((effectiveTradeLanes || []).map((l) => l.from + ">" + l.to).sort().join("|"))}`;
+    const seaSig = `sea|v2|${modDataDir}|${W}x${H}|${(portPixels || []).length}|${cheapStrHash((effectiveTradeLanes || []).map((l) => l.from + ">" + l.to).sort().join("|"))}`;
     if (_laneMemCache[seaSig]) { const g = _laneMemCache[seaSig]; setSeaLanePaths(g.seaLanePaths); setPortByRegion(g.portByRegion); return; }
     let cancelled = false;
     (async () => {
@@ -10185,6 +10185,24 @@ function App() {
       // Bosporos, Iberian coast). Scratch-reuse in aStarSea keeps this fast.
       const sg = buildSeaGrid(data, W, H, (r, g, b) => !(isSea(r, g, b) || isPort(r, g, b)), 1);
       const DOWN = sg.down;
+      // Sea DEPTH (map_ground_types R channel; exe enum SEA_SHALLOW/SEA_DEEP/OCEAN):
+      // shallow water (R≥180) is cheapest, medium/deep sea (R 100–179) costs more,
+      // and OCEAN (R<100, the deepest) is IMPASSABLE — so trade lanes hug the coast
+      // and can't strike out across open ocean, exactly like the game.
+      let seaCostArr = null;
+      if (groundTypesPixels && groundTypesSize.width) {
+        const gW2 = groundTypesSize.width, gH2 = groundTypesSize.height, gData2 = groundTypesPixels;
+        seaCostArr = new Float32Array(sg.w * sg.h).fill(1);
+        for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+          const i = y * W + x; if (!sg.grid[i]) continue;
+          const o = i * 4;
+          if (!isSea(data[o], data[o + 1], data[o + 2])) continue; // port pixel keeps cost 1
+          const tx = Math.min(gW2 - 1, Math.floor(x / W * gW2)), ty = Math.min(gH2 - 1, Math.floor(y / H * gH2));
+          const R = gData2[(ty * gW2 + tx) * 4];
+          if (R < 100) sg.grid[i] = 0;         // OCEAN — impassable, route around
+          else if (R < 180) seaCostArr[i] = 2; // SEA_DEEP (medium) — costlier than shallow
+        }
+      }
       // Connected sea components (same adjacency A* uses). A coastal port can sit
       // in a tiny sea pocket the corner-cutting rule seals off from open water
       // (Hippo Diarrhytus: a 3-cell pocket) — routing to that cell fails. We keep
@@ -10236,19 +10254,19 @@ function App() {
         const pA = portOf(l.from), pB = portOf(l.to);
         if (!pA) { skips.push(`${l.from}→${l.to}: ${l.from} port — ${portDiag[l.from] || "?"}`); continue; }
         if (!pB) { skips.push(`${l.from}→${l.to}: ${l.to} port — ${portDiag[l.to] || "?"}`); continue; }
-        let path = aStarSea(sg, { x: pA.gx, y: pA.gy }, { x: pB.gx, y: pB.gy }, 12000);
+        let path = aStarSea(sg, { x: pA.gx, y: pA.gy }, { x: pB.gx, y: pB.gy }, 30000, seaCostArr);
         // Retry from open water if a port's exact cell sits in a sealed pocket
         // (Caralis→Hippo Diarrhytus). The drawn lane still starts/ends at the
         // white port pixel; only the A* endpoints move to routable water.
         if (!path && (pA.bx !== pA.gx || pA.by !== pA.gy || pB.bx !== pB.gx || pB.by !== pB.gy)) {
-          path = aStarSea(sg, { x: pA.bx, y: pA.by }, { x: pB.bx, y: pB.by }, 12000);
+          path = aStarSea(sg, { x: pA.bx, y: pA.by }, { x: pB.bx, y: pB.by }, 30000, seaCostArr);
         }
         // Last resort: bridge narrow straits the grid pinches shut (Gibraltar,
         // Dardanelles, Kerch). Bridging is enabled ONLY here, so no already-routing
         // lane changes; it hops a single land cell like the game's own pathfinder.
         if (!path) {
-          path = aStarSea(sg, { x: pA.bx, y: pA.by }, { x: pB.bx, y: pB.by }, 12000, null, true)
-              || aStarSea(sg, { x: pA.gx, y: pA.gy }, { x: pB.gx, y: pB.gy }, 12000, null, true);
+          path = aStarSea(sg, { x: pA.bx, y: pA.by }, { x: pB.bx, y: pB.by }, 30000, seaCostArr, true)
+              || aStarSea(sg, { x: pA.gx, y: pA.gy }, { x: pB.gx, y: pB.gy }, 30000, seaCostArr, true);
         }
         if (path && path.length >= 2) {
           const pts = [{ x: pA.x, y: pA.y }];
@@ -10283,7 +10301,7 @@ function App() {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorMode, effectiveTradeLanes, tradeLaneAnchors, portPixels, offscreen, regions, imgSize, modDataDir]);
+  }, [colorMode, effectiveTradeLanes, tradeLaneAnchors, portPixels, offscreen, regions, imgSize, modDataDir, groundTypesPixels, groundTypesSize]);
 
   // Land roads (2026-07-18): land trade follows roads that thread through
   // valleys/passes, so we A* over a LAND grid weighted by terrain (mountains
