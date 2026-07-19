@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1332",
+    date: "2026-07-19",
+    items: [
+      { type: "fix", text: "**Roads now follow the inland route the game draws, not the coast.** I recovered the game's exact terrain-type ordering: fertile grassland is the cheapest ground (so roads follow the interior), while beach and marsh are costly (roads stay off the coast and out of swamp), and high mountains and dense forest are impassable (routed around). Roads now curve through the fertile heart of the land the way the game places them." },
+    ],
+  },
+  {
     version: "0.9.1331",
     date: "2026-07-19",
     items: [

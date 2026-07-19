@@ -10296,7 +10296,7 @@ function App() {
     if (!data || !W || !H) return;
     // Cache signature: road geometry depends on the mod, terrain data, which
     // settlements have roads, the adjacency graph, anchors and the port bindings.
-    const roadSig = `road|v4|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${groundTypesPixels ? 1 : 0}`;
+    const roadSig = `road|v5|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10310,19 +10310,22 @@ function App() {
     const isSea = (r, g, b) => r < 90 && g > 110 && g < 175 && b > 190;
     const DOWN = 1; // full resolution — per-pixel routing like the game
     const lg = buildLandGrid(data, W, H, (r, g, b) => !isSea(r, g, b), DOWN);
-    // EXACT engine terrain move costs — the terrainCost14 table lifted verbatim
-    // from rtw.exe (float[14] @144bf75a8, indexed by tile terrain type): the three
-    // 999 entries are the SEA types (already excluded from the land grid), so every
-    // LAND type is passable, with these costs. High mountains cost 20 (NOT blocked
-    // — they're the priciest passable land, so roads avoid them but can cross).
+    // EXACT engine terrain move costs — terrainCost14 (float[14] @144bf75a8) mapped
+    // by the game's terrain-type enum, whose index order was recovered from the
+    // name table @14296f040: FERTILE_LOW=10, FERTILE_MED/HIGH=11, WILDERNESS=12,
+    // MOUNTAINS_HIGH=999(impassable), MOUNTAINS_LOW=15, HILLS=14, FOREST_DENSE=999
+    // (impassable), FOREST_SPARSE=13, SWAMP=20, BEACH=14. So fertile grassland is
+    // CHEAPEST (roads follow the interior), beach and swamp are COSTLY (roads stay
+    // off the coast and out of marsh), and high mountains + dense forest are
+    // impassable (routed around). This reproduces the game's inland, curving roads.
     let costArr = null;
     if (groundTypesPixels && groundTypesSize.width) {
       const gW = groundTypesSize.width, gH = groundTypesSize.height, gData = groundTypesPixels;
       const COST = {
-        "High mountains": 20, "Mountains": 15, "Hills": 13, "Rocky highland": 13,
-        "Rocky desert": 14, "Desert": 14, "Semi-arid scrub": 12, "Light woodland": 12,
-        "Dense forest": 14, "Forest": 13, "Steppe / pasture": 11,
-        "Grassland": 10, "Oasis / marsh": 8, "Coast / beach": 4.5,
+        "Grassland": 10, "Steppe / pasture": 11, "Semi-arid scrub": 12, "Rocky desert": 12,
+        "Desert": 12, "Light woodland": 13, "Forest": 13, "Hills": 14, "Coast / beach": 14,
+        "Mountains": 15, "Rocky highland": 15, "Oasis / marsh": 20,
+        "High mountains": 999, "Dense forest": 999, // impassable — routed around
       };
       costArr = new Float32Array(lg.w * lg.h).fill(11);
       for (let gy = 0; gy < lg.h; gy++) for (let gx = 0; gx < lg.w; gx++) {
@@ -10375,7 +10378,7 @@ function App() {
         const A = toGrid(tradeLaneAnchors[p.from]), B = toGrid(tradeLaneAnchors[p.to]);
         const lA = nearestLand(A.gx, A.gy), lB = nearestLand(B.gx, B.gy);
         if (!lA || !lB) continue;
-        const path = aStarSea(lg, lA, lB, 60000, costArr);
+        const path = aStarSea(lg, lA, lB, 200000, costArr);
         if (!path || path.length < 2) continue;
         const HC = DOWN >> 1;
         const full = path.map((pt) => ({ x: pt.x * DOWN + HC, y: pt.y * DOWN + HC }));
