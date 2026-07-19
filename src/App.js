@@ -10314,7 +10314,7 @@ function App() {
     if (!data || !W || !H) return;
     // Cache signature: road geometry depends on the mod, terrain data, which
     // settlements have roads, the adjacency graph, anchors and the port bindings.
-    const roadSig = `road|v5|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${groundTypesPixels ? 1 : 0}`;
+    const roadSig = `road|v6|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10435,10 +10435,32 @@ function App() {
   const roadPath2D = useMemo(() => {
     if (!roadPaths || typeof Path2D === "undefined") return null;
     const p = new Path2D();
-    for (const pts of Object.values(roadPaths)) {
-      if (!pts || pts.length < 2) continue;
-      p.moveTo(pts[0].x, pts[0].y);
-      for (let k = 1; k < pts.length; k++) p.lineTo(pts[k].x, pts[k].y);
+    // The game draws roads as smooth, sinuous curves through waypoints — not the
+    // straight bird's-eye least-cost line. We thin each routed polyline down to
+    // waypoints (every ~6 px), then lay a Catmull-Rom spline through them so the
+    // road winds and curves between points instead of running dead straight
+    // (2026-07-19, user feedback comparing to the in-game roads).
+    const simplify = (pts, minD) => {
+      if (pts.length <= 2) return pts;
+      const out = [pts[0]]; let last = pts[0]; const m2 = minD * minD;
+      for (let k = 1; k < pts.length - 1; k++) {
+        const dx = pts[k].x - last.x, dy = pts[k].y - last.y;
+        if (dx * dx + dy * dy >= m2) { out.push(pts[k]); last = pts[k]; }
+      }
+      out.push(pts[pts.length - 1]);
+      return out;
+    };
+    for (const raw of Object.values(roadPaths)) {
+      if (!raw || raw.length < 2) continue;
+      const w = simplify(raw, 6);
+      if (w.length < 3) { p.moveTo(w[0].x, w[0].y); p.lineTo(w[w.length - 1].x, w[w.length - 1].y); continue; }
+      p.moveTo(w[0].x, w[0].y);
+      for (let k = 0; k < w.length - 1; k++) {
+        const p0 = w[k > 0 ? k - 1 : 0], p1 = w[k], p2 = w[k + 1], p3 = w[k + 2 < w.length ? k + 2 : w.length - 1];
+        const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
+        const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
+        p.bezierCurveTo(c1x, c1y, c2x, c2y, p2.x, p2.y);
+      }
     }
     return p;
   }, [roadPaths]);

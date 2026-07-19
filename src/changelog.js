@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1334",
+    date: "2026-07-19",
+    items: [
+      { type: "fix", text: "**Roads are now drawn as smooth, winding curves instead of straight lines.** Each route is laid out as a flowing spline through waypoints, so roads sweep and bend the way the game draws them rather than reading as a dead-straight bird's-eye path." },
+    ],
+  },
+  {
     version: "0.9.1333",
     date: "2026-07-19",
     items: [
