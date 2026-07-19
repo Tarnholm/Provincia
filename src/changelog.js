@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1331",
+    date: "2026-07-19",
+    items: [
+      { type: "fix", text: "**Roads now use the game's exact terrain movement costs.** The per-terrain costs are taken verbatim from the game's own cost table (grassland 10, hills 13, forest 13–14, low mountains 15, high mountains 20, marsh 8, beach 4.5), so roads weave through the landscape exactly as the game weights it — all land passable, sea excluded." },
+    ],
+  },
+  {
     version: "0.9.1330",
     date: "2026-07-19",
     items: [
