@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1330",
+    date: "2026-07-19",
+    items: [
+      { type: "fix", text: "**Roads curve through the terrain again, without hugging the coast.** They now weave along the easier ground (plains and grassland), bend around forest and hills, and route around impassable high mountains — restoring the game-like curves that the previous straight-line version lost, while keeping them off the coastline." },
+    ],
+  },
+  {
     version: "0.9.1329",
     date: "2026-07-19",
     items: [

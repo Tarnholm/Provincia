@@ -10296,7 +10296,7 @@ function App() {
     if (!data || !W || !H) return;
     // Cache signature: road geometry depends on the mod, terrain data, which
     // settlements have roads, the adjacency graph, anchors and the port bindings.
-    const roadSig = `road|v2|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${groundTypesPixels ? 1 : 0}`;
+    const roadSig = `road|v3|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10310,25 +10310,31 @@ function App() {
     const isSea = (r, g, b) => r < 90 && g > 110 && g < 175 && b > 190;
     const DOWN = 1; // full resolution — per-pixel routing like the game
     const lg = buildLandGrid(data, W, H, (r, g, b) => !isSea(r, g, b), DOWN);
-    // The game's road / trade-route network is a FLAG-based connectivity graph
-    // (rtw.exe FUN_1414c3100 tests per-tile passability bits), NOT a terrain-cost
-    // weighted path like unit movement. So roads take the SHORTEST route over
-    // passable land, detouring only around IMPASSABLE ground — sea (already
-    // excluded) plus high mountains. We therefore use uniform cost and just block
-    // impassable tiles, which reproduces the game's direct, valley-following roads
-    // instead of the cost-weighted coast/terrain detours (exe-confirmed 2026-07-19).
+    // Roads weave through terrain — cheap over plains/grassland, costlier over
+    // forest and hills, impassable over high mountains (blocked). This is what
+    // gives the game's roads their curves. Costs are the engine terrainCost14
+    // values EXCEPT beach, which is kept at a normal cost (its low unit-move value
+    // of 4.5 made roads hug the coastline, which the drawn road network doesn't do).
+    let costArr = null;
     if (groundTypesPixels && groundTypesSize.width) {
       const gW = groundTypesSize.width, gH = groundTypesSize.height, gData = groundTypesPixels;
+      const COST = {
+        "Mountains": 20, "Rocky highland": 13, "Hills": 13, "Rocky desert": 14,
+        "Desert": 14, "Semi-arid scrub": 12, "Steppe / pasture": 12,
+        "Dense forest": 16, "Forest": 14, "Light woodland": 12,
+        "Grassland": 10, "Oasis / marsh": 8, "Coast / beach": 11,
+      };
+      costArr = new Float32Array(lg.w * lg.h).fill(11);
       for (let gy = 0; gy < lg.h; gy++) for (let gx = 0; gx < lg.w; gx++) {
         const i = gy * lg.w + gx; if (!lg.grid[i]) continue;
         const px = Math.min(W - 1, gx * DOWN), py = Math.min(H - 1, gy * DOWN);
         const tx = Math.min(gW - 1, Math.floor(px / W * gW)), ty = Math.min(gH - 1, Math.floor(py / H * gH));
         const gi = (ty * gW + tx) * 4;
         const nm = GROUND_TYPE_PALETTE[`${gData[gi]},${gData[gi + 1]},${gData[gi + 2]}`]?.name;
-        if (nm === "High mountains") lg.grid[i] = 0; // impassable to the road network
+        if (nm === "High mountains") { lg.grid[i] = 0; continue; } // impassable → route around
+        if (nm && COST[nm]) costArr[i] = COST[nm];
       }
     }
-    const costArr = null; // uniform cost → shortest path over passable land
     const toGrid = (a) => ({ gx: Math.min(lg.w - 1, Math.max(0, Math.round(a.x / DOWN))), gy: Math.min(lg.h - 1, Math.max(0, Math.round(a.y / DOWN))), fx: a.x, fy: a.y });
     const nearestLand = (gx, gy) => {
       if (gx >= 0 && gy >= 0 && gx < lg.w && gy < lg.h && lg.grid[gy * lg.w + gx]) return { x: gx, y: gy };
