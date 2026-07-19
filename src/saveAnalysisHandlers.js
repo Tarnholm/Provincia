@@ -15,6 +15,29 @@ const { Worker } = require("worker_threads");
 const CRACK_WORKER_PATH = path.join(__dirname, "saveCrackWorker.js");
 const TIMELINE_WORKER_PATH = path.join(__dirname, "timelineRowWorker.js");
 
+// ---- Trade-lane geometry disk cache (2026-07-19) ----
+// The sea-lane and road A* geometry is expensive to recompute (full-res, hundreds
+// of pairs). We cache the computed polylines to disk, keyed by the mod folder and
+// invalidated when any source map/data file's mtime changes — so it stays fast
+// across restarts but always reflects the current mod/game data.
+function _laneCacheDir() {
+  let base;
+  try { base = require("electron").app.getPath("userData"); } catch { base = os.tmpdir(); }
+  return path.join(base, "lane-geom-cache");
+}
+function _laneCacheFile(modDataDir, kind) {
+  const h = require("crypto").createHash("md5").update(String(modDataDir)).digest("hex").slice(0, 16);
+  return path.join(_laneCacheDir(), `${h}-${kind}.json`);
+}
+function _laneSrcMtimes(modDataDir, kind) {
+  const b = path.join(modDataDir, "world", "maps", "base");
+  const c = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign");
+  const files = kind === "road"
+    ? [path.join(b, "map_regions.tga"), path.join(b, "map_ground_types.tga"), path.join(b, "map_heights.tga"), path.join(c, "descr_strat.txt"), path.join(b, "descr_regions.txt")]
+    : [path.join(b, "map_regions.tga"), path.join(c, "descr_strat.txt"), path.join(b, "descr_regions.txt")];
+  return files.map((f) => { try { return fs.statSync(f).mtimeMs; } catch { return 0; } });
+}
+
 function registerSaveAnalysisHandlers(ipcMain, { _writeLog, getLastSaveBuf }) {
   // Run a heavy save crack in a worker thread so it never blocks the Electron
   // main thread (a ~5s synchronous crack froze all IPC/window events). The
@@ -411,6 +434,30 @@ ipcMain.handle("get-trade-lanes", async (_event, modDataDir) => {
   } catch (e) {
     return { error: e && e.message ? e.message : "trade lanes failed" };
   }
+});
+
+// IPC: read cached trade-lane geometry. Returns the stored geometry only if the
+// renderer's signature matches AND no source file has changed since it was cached.
+ipcMain.handle("lane-cache-get", async (_event, modDataDir, kind, sig) => {
+  try {
+    if (!modDataDir) return null;
+    const file = _laneCacheFile(modDataDir, kind);
+    if (!fs.existsSync(file)) return null;
+    const j = JSON.parse(fs.readFileSync(file, "utf8"));
+    if (j.sig !== sig) return null;
+    if (JSON.stringify(j.mtimes) !== JSON.stringify(_laneSrcMtimes(modDataDir, kind))) return null;
+    return j.geom;
+  } catch { return null; }
+});
+
+// IPC: write cached trade-lane geometry (stamped with the current source mtimes).
+ipcMain.handle("lane-cache-set", async (_event, modDataDir, kind, sig, geom) => {
+  try {
+    if (!modDataDir || !geom) return false;
+    fs.mkdirSync(_laneCacheDir(), { recursive: true });
+    fs.writeFileSync(_laneCacheFile(modDataDir, kind), JSON.stringify({ sig, mtimes: _laneSrcMtimes(modDataDir, kind), geom }));
+    return true;
+  } catch { return false; }
 });
 
 // IPC: regions whose settlement has a built road (hinterland_roads chain).

@@ -236,6 +236,12 @@ const MAP_BTN_ORDER = [
 ];
 
 // Index → letter: 0→A … 25→Z, 26→AA, 27→AB, … (bijective base-26).
+// In-session cache of computed trade-lane geometry, keyed by a content signature,
+// so switching map modes back to Trade Lanes is instant (no A* recompute). A disk
+// cache (via IPC, invalidated by mod-file mtimes) backs this across app restarts.
+const _laneMemCache = {};
+function cheapStrHash(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
+
 // Squared distance from point (px,py) to segment (ax,ay)-(bx,by). Used for
 // trade-lane hover picking (nearest lane polyline to the cursor).
 function distToSeg(px, py, ax, ay, bx, by) {
@@ -10151,8 +10157,18 @@ function App() {
     const data = pixelDataRef.current;
     const W = imgSize.width, H = imgSize.height;
     if (!data || !W || !H) return;
+    // Cache signature: the sea geometry is fully determined by the mod, the lane
+    // set (which changes with a live save), the port markers, and the map size.
+    const seaSig = `sea|${modDataDir}|${W}x${H}|${(portPixels || []).length}|${cheapStrHash((effectiveTradeLanes || []).map((l) => l.from + ">" + l.to).sort().join("|"))}`;
+    if (_laneMemCache[seaSig]) { const g = _laneMemCache[seaSig]; setSeaLanePaths(g.seaLanePaths); setPortByRegion(g.portByRegion); return; }
     let cancelled = false;
     (async () => {
+      // Disk cache (survives restarts; invalidated when any source map/data file changes).
+      try {
+        const disk = await window.electronAPI?.laneCacheGet?.(modDataDir, "sea", seaSig);
+        if (cancelled) return;
+        if (disk && disk.seaLanePaths) { _laneMemCache[seaSig] = disk; setSeaLanePaths(disk.seaLanePaths); setPortByRegion(disk.portByRegion); console.log("[sea-lanes] loaded from cache"); return; }
+      } catch { /* cache miss → compute */ }
       // Sea grid from the region map (any non-land pixel = sea). NOTE: routing
       // over map_trade_routes.tga was tried (v0.9.1311) but its navigable mask
       // didn't include the coastal tiles right at the white ports, so lanes
@@ -10257,7 +10273,10 @@ function App() {
           const myLanes = Object.keys(out).filter((k) => k === [rn, ""].join(">") || k.split(">").includes(rn));
           console.log(`  ${rn}: anchor=${a ? (a._city ? "settlement" : "CENTROID") + `@${Math.round(a.x)},${Math.round(a.y)}` : "MISSING"} port=${p ? p.x + "," + p.y : "NONE"} lanes=${myLanes.length}`);
         }
+        const geom = { seaLanePaths: out, portByRegion: ports };
+        _laneMemCache[seaSig] = geom;
         setSeaLanePaths(out); setPortByRegion(ports);
+        try { window.electronAPI?.laneCacheSet?.(modDataDir, "sea", seaSig, geom); } catch { /* cache best-effort */ }
       }
     };
     (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step);
@@ -10275,6 +10294,17 @@ function App() {
     const data = pixelDataRef.current;
     const W = imgSize.width, H = imgSize.height;
     if (!data || !W || !H) return;
+    // Cache signature: road geometry depends on the mod, terrain data, which
+    // settlements have roads, the adjacency graph, anchors and the port bindings.
+    const roadSig = `road|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${heightsPixels ? 1 : 0}|${groundTypesPixels ? 1 : 0}`;
+    if (_laneMemCache[roadSig]) { setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
+    let cancelled = false;
+    (async () => {
+    try {
+      const disk = await window.electronAPI?.laneCacheGet?.(modDataDir, "road", roadSig);
+      if (cancelled) return;
+      if (disk && disk.roadPaths) { _laneMemCache[roadSig] = disk; setRoadPaths(disk.roadPaths); console.log("[roads] loaded from cache"); return; }
+    } catch { /* cache miss → compute */ }
     // Land = anything that is NOT sea (any region colour known or not, plus
     // settlement/port markers) — robust to regions missing from the set.
     const isSea = (r, g, b) => r < 90 && g > 110 && g < 175 && b > 190;
@@ -10363,7 +10393,7 @@ function App() {
       const a = tradeLaneAnchors[reg];
       if (a) out["port>" + reg] = [{ x: a.x, y: a.y }, { x: p.x, y: p.y }]; // settlement → its port (white pixel)
     }
-    let i = 0, cancelled = false; const t0all = performance.now();
+    let i = 0; const t0all = performance.now();
     const step = () => {
       if (cancelled) return;
       const t0 = performance.now();
@@ -10393,12 +10423,18 @@ function App() {
         if (seg.length >= 2) out[`${p.key}#${segIdx++}`] = seg;
       }
       if (i < pairs.length) (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step, { timeout: 500 });
-      else { console.log(`[roads] routed ${Object.keys(out).length} (${pairs.length} adjacency pairs) in ${(performance.now() - t0all).toFixed(0)}ms`); setRoadPaths(out); }
+      else {
+        console.log(`[roads] routed ${Object.keys(out).length} (${pairs.length} adjacency pairs) in ${(performance.now() - t0all).toFixed(0)}ms`);
+        _laneMemCache[roadSig] = { roadPaths: out };
+        setRoadPaths(out);
+        try { window.electronAPI?.laneCacheSet?.(modDataDir, "road", roadSig, { roadPaths: out }); } catch { /* best-effort */ }
+      }
     };
     (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step);
+    })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, roadRegions, heightsPixels, heightsSize]);
+  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, roadRegions, heightsPixels, heightsSize, modDataDir]);
 
   // Combined Path2D for all roads (uniform style) → one stroke per frame, so
   // thousands of road segments don't tank the pan framerate.

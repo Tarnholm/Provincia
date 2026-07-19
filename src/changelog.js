@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1328",
+    date: "2026-07-19",
+    items: [
+      { type: "improvement", text: "**Trade Lanes now load from a cache — much faster.** The sea-lane and road geometry is cached (in memory for instant map-mode switching, and on disk so it stays fast across restarts). The cache rebuilds automatically whenever the mod or game data changes, so it's always up to date." },
+    ],
+  },
+  {
     version: "0.9.1327",
     date: "2026-07-19",
     items: [

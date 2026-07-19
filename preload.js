@@ -216,6 +216,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getMapModeMetrics: (modDataDir) => ipcRenderer.invoke("get-map-mode-metrics", modDataDir),
   getTradeLanes: (modDataDir) => ipcRenderer.invoke("get-trade-lanes", modDataDir),
   getRoadRegions: (modDataDir) => ipcRenderer.invoke("get-road-regions", modDataDir),
+  laneCacheGet: (modDataDir, kind, sig) => ipcRenderer.invoke("lane-cache-get", modDataDir, kind, sig),
+  laneCacheSet: (modDataDir, kind, sig, geom) => ipcRenderer.invoke("lane-cache-set", modDataDir, kind, sig, geom),
   explainSettlementIncome: (modDataDir, faction, region) =>
     ipcRenderer.invoke("explain-settlement-income", modDataDir, faction, region),
   econBaselineCapture: (modDataDir, name) => ipcRenderer.invoke("econ-baseline-capture", modDataDir, name),
