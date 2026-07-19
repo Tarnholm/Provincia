@@ -10314,7 +10314,7 @@ function App() {
     if (!data || !W || !H) return;
     // Cache signature: road geometry depends on the mod, terrain data, which
     // settlements have roads, the adjacency graph, anchors and the port bindings.
-    const roadSig = `road|v9|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${groundTypesPixels ? 1 : 0}`;
+    const roadSig = `road|v10|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10347,9 +10347,9 @@ function App() {
       // dense forest + high mountains stay impassable (2026-07-19).
       const COST = {
         "Grassland": 10, "Steppe / pasture": 11, "Semi-arid scrub": 12, "Rocky desert": 12, "Desert": 12,
-        "Coast / beach": 30, "Light woodland": 45, "Forest": 60, "Hills": 55, "Rocky highland": 70,
-        "Mountains": 85, "Oasis / marsh": 70,
-        "High mountains": 999, "Dense forest": 999, // impassable — routed around
+        "Light woodland": 13, "Forest": 13, "Hills": 14, "Coast / beach": 14,
+        "Mountains": 15, "Rocky highland": 15, "Oasis / marsh": 20,
+        "High mountains": 999, "Dense forest": 999, // impassable (999 cost)
       };
       costArr = new Float32Array(lg.w * lg.h).fill(11);
       for (let gy = 0; gy < lg.h; gy++) for (let gx = 0; gx < lg.w; gx++) {

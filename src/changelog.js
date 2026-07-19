@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1337",
+    date: "2026-07-19",
+    items: [
+      { type: "change", text: "**Roads use the game's exact terrain movement costs.** After deep analysis of the game's own data, road routing now uses the exact per-terrain costs from the game (grassland 10, forest 13, hills 14, mountains 15/20, beach 14, marsh 20, dense forest + high mountains impassable), producing the cheapest land route between settlements." },
+    ],
+  },
+  {
     version: "0.9.1336",
     date: "2026-07-19",
     items: [
