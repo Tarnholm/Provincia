@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1329",
+    date: "2026-07-19",
+    items: [
+      { type: "fix", text: "**Roads now take the direct route the game draws.** They previously detoured along the coast and around terrain because they were weighted by movement cost; the game's road network instead connects settlements by the shortest path over passable land, only routing around genuinely impassable ground (sea and high mountains). Roads now do the same — straighter, inland routes that match the game." },
+    ],
+  },
+  {
     version: "0.9.1328",
     date: "2026-07-19",
     items: [

@@ -10296,7 +10296,7 @@ function App() {
     if (!data || !W || !H) return;
     // Cache signature: road geometry depends on the mod, terrain data, which
     // settlements have roads, the adjacency graph, anchors and the port bindings.
-    const roadSig = `road|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${heightsPixels ? 1 : 0}|${groundTypesPixels ? 1 : 0}`;
+    const roadSig = `road|v2|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10308,59 +10308,27 @@ function App() {
     // Land = anything that is NOT sea (any region colour known or not, plus
     // settlement/port markers) — robust to regions missing from the set.
     const isSea = (r, g, b) => r < 90 && g > 110 && g < 175 && b > 190;
-    const DOWN = 1; // full resolution — roads follow terrain per-pixel like the game
+    const DOWN = 1; // full resolution — per-pixel routing like the game
     const lg = buildLandGrid(data, W, H, (r, g, b) => !isSea(r, g, b), DOWN);
-    // Elevation per grid cell (from map_heights, ~2× res) — used to derive terrain
-    // roughness below (NOT a directional climb cost, which biased roads downhill).
-    let heightArr = null;
-    if (heightsPixels && heightsSize.width) {
-      const hW = heightsSize.width, hH = heightsSize.height;
-      heightArr = new Float32Array(lg.w * lg.h);
-      for (let gy = 0; gy < lg.h; gy++) for (let gx = 0; gx < lg.w; gx++) {
-        const px = Math.min(W - 1, gx * DOWN), py = Math.min(H - 1, gy * DOWN);
-        const hx = Math.min(hW - 1, Math.round(px / W * hW)), hy = Math.min(hH - 1, Math.round(py / H * hH));
-        heightArr[gy * lg.w + gx] = heightsPixels[(hy * hW + hx) * 4]; // R channel = elevation
-      }
-    }
-    let costArr = null;
+    // The game's road / trade-route network is a FLAG-based connectivity graph
+    // (rtw.exe FUN_1414c3100 tests per-tile passability bits), NOT a terrain-cost
+    // weighted path like unit movement. So roads take the SHORTEST route over
+    // passable land, detouring only around IMPASSABLE ground — sea (already
+    // excluded) plus high mountains. We therefore use uniform cost and just block
+    // impassable tiles, which reproduces the game's direct, valley-following roads
+    // instead of the cost-weighted coast/terrain detours (exe-confirmed 2026-07-19).
     if (groundTypesPixels && groundTypesSize.width) {
       const gW = groundTypesSize.width, gH = groundTypesSize.height, gData = groundTypesPixels;
-      // EXACT engine per-terrain move costs, extracted from rtw.exe's tile-cost
-      // function FUN_1402bb520 (the 14-entry CHECKED_ARRAY<float,14> at 144bf75a8):
-      // grassland 10, marsh 8, beach 4.5, hills 13, forest 14, mountains 20, etc.
-      // The game's full cost = terrainCost × base(1 ortho/1.41 diag) × tileRoughness
-      // (applied below). base is the aStarSea step weight.
-      const COST = {
-        "High mountains": 20, "Mountains": 20, "Rocky highland": 13, "Hills": 13,
-        "Rocky desert": 14, "Desert": 14, "Semi-arid scrub": 12, "Steppe / pasture": 12,
-        "Dense forest": 14, "Forest": 14, "Light woodland": 12,
-        "Grassland": 10, "Oasis / marsh": 8, "Coast / beach": 4.5,
-      };
-      costArr = new Float32Array(lg.w * lg.h).fill(11); // default ≈ cultivated land
       for (let gy = 0; gy < lg.h; gy++) for (let gx = 0; gx < lg.w; gx++) {
+        const i = gy * lg.w + gx; if (!lg.grid[i]) continue;
         const px = Math.min(W - 1, gx * DOWN), py = Math.min(H - 1, gy * DOWN);
         const tx = Math.min(gW - 1, Math.floor(px / W * gW)), ty = Math.min(gH - 1, Math.floor(py / H * gH));
         const gi = (ty * gW + tx) * 4;
         const nm = GROUND_TYPE_PALETTE[`${gData[gi]},${gData[gi + 1]},${gData[gi + 2]}`]?.name;
-        if (nm && COST[nm]) costArr[gy * lg.w + gx] = COST[nm];
-      }
-      // Terrain ROUGHNESS = the game's per-tile cost factor (tile+0x78 in the exe;
-      // descr_terrain roughness 50–200, derived from the height field). Rough,
-      // broken ground costs more, so roads thread smooth valleys and coasts and
-      // bend around hills — SYMMETRICALLY (mean local elevation change, no up/down
-      // bias). Multiplied onto the terrain cost.
-      if (heightArr) {
-        const w = lg.w, h = lg.h, ROUGH_K = 0.12;
-        const RNB = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]];
-        const baseCost = costArr.slice();
-        for (let gy = 1; gy < h - 1; gy++) for (let gx = 1; gx < w - 1; gx++) {
-          const i = gy * w + gx; if (!lg.grid[i]) continue;
-          const hi = heightArr[i]; let s = 0, n = 0;
-          for (const [dx, dy] of RNB) { const j = (gy + dy) * w + (gx + dx); if (lg.grid[j]) { s += Math.abs(hi - heightArr[j]); n++; } }
-          if (n) costArr[i] = baseCost[i] * (1 + ROUGH_K * (s / n));
-        }
+        if (nm === "High mountains") lg.grid[i] = 0; // impassable to the road network
       }
     }
+    const costArr = null; // uniform cost → shortest path over passable land
     const toGrid = (a) => ({ gx: Math.min(lg.w - 1, Math.max(0, Math.round(a.x / DOWN))), gy: Math.min(lg.h - 1, Math.max(0, Math.round(a.y / DOWN))), fx: a.x, fy: a.y });
     const nearestLand = (gx, gy) => {
       if (gx >= 0 && gy >= 0 && gx < lg.w && gy < lg.h && lg.grid[gy * lg.w + gx]) return { x: gx, y: gy };
@@ -10434,7 +10402,7 @@ function App() {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, roadRegions, heightsPixels, heightsSize, modDataDir]);
+  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, roadRegions, modDataDir]);
 
   // Combined Path2D for all roads (uniform style) → one stroke per frame, so
   // thousands of road segments don't tank the pan framerate.
