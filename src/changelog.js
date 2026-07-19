@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1336",
+    date: "2026-07-19",
+    items: [
+      { type: "fix", text: "**Roads now thread the open grassland and detour around forest like the game.** Road placement now avoids woodland, hills and rough ground much more strongly, so a route will swing north up an open corridor and come across the top rather than cutting straight through a forest — matching how the game lays its roads out." },
+    ],
+  },
+  {
     version: "0.9.1335",
     date: "2026-07-19",
     items: [
