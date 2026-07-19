@@ -129,11 +129,7 @@ let _scr = null;
 // `bridge` (default off): when true, also allow a 2-cell orthogonal hop across a
 // SINGLE non-sea cell at BRIDGE_COST — for narrow straits the grid pinches shut.
 // Used only as a last-resort fallback so normal routes are never altered.
-// `heightArr` + `slopeW` (roads): add a climb penalty slopeW·max(0, h[to]-h[from])
-// to each step so paths avoid gaining elevation — they thread valleys and passes
-// and bend around hills like the game's road pathfinder, instead of drawing
-// straight lines over mountains. Omit (defaults) for sea, which is flat.
-export function aStarSea(sg, start, goal, cutoff = 1700, costArr = null, bridge = false, heightArr = null, slopeW = 0) {
+export function aStarSea(sg, start, goal, cutoff = 1700, costArr = null, bridge = false) {
   const { grid, w, h } = sg;
   const N = w * h;
   const si = start.y * w + start.x, gi = goal.y * w + goal.x;
@@ -174,8 +170,7 @@ export function aStarSea(sg, start, goal, cutoff = 1700, costArr = null, bridge 
       // No corner-cutting: a diagonal step is only allowed when BOTH shared
       // orthogonal cells are passable — otherwise the path clips a land corner.
       if (dx !== 0 && dy !== 0 && (!grid[cy * w + (cx + dx)] || !grid[(cy + dy) * w + cx])) continue;
-      let ng = cg + cost * (costArr ? costArr[ni] : 1);
-      if (heightArr && slopeW) { const climb = heightArr[ni] - heightArr[ci]; if (climb > 0) ng += slopeW * climb; }
+      const ng = cg + cost * (costArr ? costArr[ni] : 1);
       if (ng < gAt(ni)) { gScore[ni] = ng; seen[ni] = gen; came[ni] = ci; push(ng + hOf(nx, ny), ni); }
     }
     if (bridge) {

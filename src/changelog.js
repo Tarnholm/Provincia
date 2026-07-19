@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1327",
+    date: "2026-07-19",
+    items: [
+      { type: "fix", text: "**Roads now follow terrain the way the game does.** The previous version biased routes downhill, sending some roads the wrong way. Roads now weight terrain by how rough/broken the ground is (symmetrically, using the exact per-terrain move costs and the roughness factor the game uses), so they thread smooth valleys and coastlines and bend around rugged ground without the downhill bias." },
+    ],
+  },
+  {
     version: "0.9.1326",
     date: "2026-07-19",
     items: [

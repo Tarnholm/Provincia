@@ -10280,9 +10280,9 @@ function App() {
     const isSea = (r, g, b) => r < 90 && g > 110 && g < 175 && b > 190;
     const DOWN = 1; // full resolution — roads follow terrain per-pixel like the game
     const lg = buildLandGrid(data, W, H, (r, g, b) => !isSea(r, g, b), DOWN);
-    // Elevation per grid cell (from map_heights, ~2× res) drives the climb cost so
-    // roads bend around hills/mountains instead of running straight over them.
-    let heightArr = null, slopeW = 0;
+    // Elevation per grid cell (from map_heights, ~2× res) — used to derive terrain
+    // roughness below (NOT a directional climb cost, which biased roads downhill).
+    let heightArr = null;
     if (heightsPixels && heightsSize.width) {
       const hW = heightsSize.width, hH = heightsSize.height;
       heightArr = new Float32Array(lg.w * lg.h);
@@ -10291,15 +10291,15 @@ function App() {
         const hx = Math.min(hW - 1, Math.round(px / W * hW)), hy = Math.min(hH - 1, Math.round(py / H * hH));
         heightArr[gy * lg.w + gx] = heightsPixels[(hy * hW + hx) * 4]; // R channel = elevation
       }
-      slopeW = 3.0; // climb weight — calibrated so mountains are strongly avoided
     }
     let costArr = null;
     if (groundTypesPixels && groundTypesSize.width) {
       const gW = groundTypesSize.width, gH = groundTypesSize.height, gData = groundTypesPixels;
-      // EXACT engine per-terrain move costs (from the game's movement-cost
-      // table: mountains_high 20, hills 13, forest 14, swamp 8, beach 4.5,
-      // farmland/grassland ~10-12) mapped onto the ground-type palette, so
-      // roads follow the same least-cost land paths the game does.
+      // EXACT engine per-terrain move costs, extracted from rtw.exe's tile-cost
+      // function FUN_1402bb520 (the 14-entry CHECKED_ARRAY<float,14> at 144bf75a8):
+      // grassland 10, marsh 8, beach 4.5, hills 13, forest 14, mountains 20, etc.
+      // The game's full cost = terrainCost × base(1 ortho/1.41 diag) × tileRoughness
+      // (applied below). base is the aStarSea step weight.
       const COST = {
         "High mountains": 20, "Mountains": 20, "Rocky highland": 13, "Hills": 13,
         "Rocky desert": 14, "Desert": 14, "Semi-arid scrub": 12, "Steppe / pasture": 12,
@@ -10313,6 +10313,22 @@ function App() {
         const gi = (ty * gW + tx) * 4;
         const nm = GROUND_TYPE_PALETTE[`${gData[gi]},${gData[gi + 1]},${gData[gi + 2]}`]?.name;
         if (nm && COST[nm]) costArr[gy * lg.w + gx] = COST[nm];
+      }
+      // Terrain ROUGHNESS = the game's per-tile cost factor (tile+0x78 in the exe;
+      // descr_terrain roughness 50–200, derived from the height field). Rough,
+      // broken ground costs more, so roads thread smooth valleys and coasts and
+      // bend around hills — SYMMETRICALLY (mean local elevation change, no up/down
+      // bias). Multiplied onto the terrain cost.
+      if (heightArr) {
+        const w = lg.w, h = lg.h, ROUGH_K = 0.12;
+        const RNB = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]];
+        const baseCost = costArr.slice();
+        for (let gy = 1; gy < h - 1; gy++) for (let gx = 1; gx < w - 1; gx++) {
+          const i = gy * w + gx; if (!lg.grid[i]) continue;
+          const hi = heightArr[i]; let s = 0, n = 0;
+          for (const [dx, dy] of RNB) { const j = (gy + dy) * w + (gx + dx); if (lg.grid[j]) { s += Math.abs(hi - heightArr[j]); n++; } }
+          if (n) costArr[i] = baseCost[i] * (1 + ROUGH_K * (s / n));
+        }
       }
     }
     const toGrid = (a) => ({ gx: Math.min(lg.w - 1, Math.max(0, Math.round(a.x / DOWN))), gy: Math.min(lg.h - 1, Math.max(0, Math.round(a.y / DOWN))), fx: a.x, fy: a.y });
@@ -10356,7 +10372,7 @@ function App() {
         const A = toGrid(tradeLaneAnchors[p.from]), B = toGrid(tradeLaneAnchors[p.to]);
         const lA = nearestLand(A.gx, A.gy), lB = nearestLand(B.gx, B.gy);
         if (!lA || !lB) continue;
-        const path = aStarSea(lg, lA, lB, 60000, costArr, false, heightArr, slopeW);
+        const path = aStarSea(lg, lA, lB, 60000, costArr);
         if (!path || path.length < 2) continue;
         const HC = DOWN >> 1;
         const full = path.map((pt) => ({ x: pt.x * DOWN + HC, y: pt.y * DOWN + HC }));
