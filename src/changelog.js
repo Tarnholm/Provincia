@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1348",
+    date: "2026-07-21",
+    items: [
+      { type: "feature", text: "**Roads now render with the game's exact curve — including its natural wiggle.** Rather than approximating, this reproduces the game's own road-drawing spline exactly: a cubic Bézier through the road's tiles, with each point's direction set the way the game sets it — including the small, deterministic bend the game applies at every step (seeded from the terrain, so it never flickers and matches run to run). That's why even straight stretches gently meander, exactly as in-game. The result stays on land where the game's roads are, and no longer runs ruler-straight." },
+    ],
+  },
+  {
     version: "0.9.1347",
     date: "2026-07-21",
     items: [

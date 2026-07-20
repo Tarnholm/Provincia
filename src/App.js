@@ -1933,6 +1933,7 @@ function App() {
   const [landLanes, setLandLanes] = useState(null); // [{from,to,goods,value}] land-trade pairs (road inspector)
   const [seaLanePaths, setSeaLanePaths] = useState(null); // sortedKey "a>b" → [{x,y} map-px] A* sea route (curves round coasts)
   const [roadPaths, setRoadPaths] = useState(null); // sortedKey → [{x,y}] A* land road (follows valleys/passes, avoids mountains)
+  const [roadsPrecurved, setRoadsPrecurved] = useState(false); // true = captured exact-game curve (draw raw, no smoothing)
   const [portByRegion, setPortByRegion] = useState(null); // region name → {x,y} port tile (nearest coast to its settlement); sea lanes join here, a road links it to the settlement
   const [portPixels, setPortPixels] = useState([]); // [{x,y}] white port-marker pixels from the region map
   const seaNavRef = useRef(); // cached decoded map_trade_routes.tga {dir,data,W,H} — the engine's navigable-sea map
@@ -10419,13 +10420,13 @@ function App() {
       return data[o] === f.rgb[0] && data[o + 1] === f.rgb[1] && data[o + 2] === f.rgb[2];
     });
     const roadSig = `road|v17|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
-    if (_laneMemCache[roadSig]) { setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
+    if (_laneMemCache[roadSig]) { setRoadsPrecurved(!!_laneMemCache[roadSig].precurved); setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
     try {
       const disk = await window.electronAPI?.laneCacheGet?.(modDataDir, "road", roadSig);
       if (cancelled) return;
-      if (disk && disk.roadPaths) { _laneMemCache[roadSig] = disk; setRoadPaths(disk.roadPaths); console.log("[roads] loaded from cache"); return; }
+      if (disk && disk.roadPaths) { _laneMemCache[roadSig] = disk; setRoadsPrecurved(!!disk.precurved); setRoadPaths(disk.roadPaths); console.log("[roads] loaded from cache"); return; }
     } catch { /* cache miss → compute */ }
     if (capMap) {
       // Build roadPaths straight from the captured geometry. Key each road by
@@ -10442,11 +10443,13 @@ function App() {
         out[key.startsWith("port>") ? key + (idx || "") : `${key}#${idx}`] = pts;
       }
       console.log(`[roads] exact captured network "${capMap.name}": ${Object.keys(out).length} roads`);
-      _laneMemCache[roadSig] = { roadPaths: out };
+      _laneMemCache[roadSig] = { roadPaths: out, precurved: true };
+      setRoadsPrecurved(true);
       setRoadPaths(out);
-      try { window.electronAPI?.laneCacheSet?.(modDataDir, "road", roadSig, { roadPaths: out }); } catch { /* best-effort */ }
+      try { window.electronAPI?.laneCacheSet?.(modDataDir, "road", roadSig, { roadPaths: out, precurved: true }); } catch { /* best-effort */ }
       return;
     }
+    setRoadsPrecurved(false); // computed roads below use corner-rounding
     // Land = anything that is NOT sea (any region colour known or not, plus
     // settlement/port markers) — robust to regions missing from the set.
     const isSea = (r, g, b) => r < 90 && g > 110 && g < 175 && b > 190;
@@ -10619,14 +10622,17 @@ function App() {
   const roadPath2D = useMemo(() => {
     if (!roadPaths || typeof Path2D === "undefined") return null;
     const p = new Path2D();
+    // Captured roads are already the game's exact drawn curve (Bézier spline
+    // reproduced from the engine) — draw them raw. Computed roads are an A*
+    // tile staircase, so corner-round them.
     for (const pts of Object.values(roadPaths)) {
       if (!pts || pts.length < 2) continue;
-      const s = chaikinRoad(pts); // corner-rounding only — the captured course is
-      p.moveTo(s[0].x, s[0].y);   // already the game's exact road; do NOT displace
-      for (let k = 1; k < s.length; k++) p.lineTo(s[k].x, s[k].y); // it (that pushed roads into the sea).
+      const s = roadsPrecurved ? pts : chaikinRoad(pts);
+      p.moveTo(s[0].x, s[0].y);
+      for (let k = 1; k < s.length; k++) p.lineTo(s[k].x, s[k].y);
     }
     return p;
-  }, [roadPaths]);
+  }, [roadPaths, roadsPrecurved]);
 
   // Draw map
   useEffect(() => {
@@ -10720,7 +10726,7 @@ function App() {
           if (rk.split("#")[0] !== hoverRoadKey) continue;
           const poly = roadPaths[rk];
           if (!poly || poly.length < 2) continue;
-          const sm = chaikinRoad(poly); // same smoothing as the base stroke
+          const sm = roadsPrecurved ? poly : chaikinRoad(poly); // match the base stroke
           ctx.beginPath();
           ctx.moveTo(sm[0].x, sm[0].y);
           for (let k = 1; k < sm.length; k++) ctx.lineTo(sm[k].x, sm[k].y);
