@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1347",
+    date: "2026-07-21",
+    items: [
+      { type: "fix", text: "**Reverted the road \"wiggle\" — it was pushing coastal roads into the sea.** The previous version nudged roads sideways to look hand-drawn, but that displacement ignored the coastline and shoved near-shore roads into the water, and looked worse overall. Roads now draw the captured in-game course faithfully with only corner-rounding, so they stay on land exactly where the game puts them." },
+    ],
+  },
+  {
     version: "0.9.1346",
     date: "2026-07-21",
     items: [

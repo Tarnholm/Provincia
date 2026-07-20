@@ -10621,9 +10621,9 @@ function App() {
     const p = new Path2D();
     for (const pts of Object.values(roadPaths)) {
       if (!pts || pts.length < 2) continue;
-      const s = organicRoad(pts);
-      p.moveTo(s[0].x, s[0].y);
-      for (let k = 1; k < s.length; k++) p.lineTo(s[k].x, s[k].y);
+      const s = chaikinRoad(pts); // corner-rounding only — the captured course is
+      p.moveTo(s[0].x, s[0].y);   // already the game's exact road; do NOT displace
+      for (let k = 1; k < s.length; k++) p.lineTo(s[k].x, s[k].y); // it (that pushed roads into the sea).
     }
     return p;
   }, [roadPaths]);
@@ -10720,7 +10720,7 @@ function App() {
           if (rk.split("#")[0] !== hoverRoadKey) continue;
           const poly = roadPaths[rk];
           if (!poly || poly.length < 2) continue;
-          const sm = organicRoad(poly); // same wiggle+smoothing as the base stroke
+          const sm = chaikinRoad(poly); // same smoothing as the base stroke
           ctx.beginPath();
           ctx.moveTo(sm[0].x, sm[0].y);
           for (let k = 1; k < sm.length; k++) ctx.lineTo(sm[k].x, sm[k].y);
