@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1341",
+    date: "2026-07-20",
+    items: [
+      { type: "fix", text: "**Roads built during your campaign now show.** Which provinces have roads was read from the campaign's STARTING setup, so any province that built its roads during play showed nothing — on Sardinia this cut away the entire northern Y-fork (the junction where the road splits toward Pluvium and Olbia) even though the game draws it. With a save loaded, road-having provinces now come from the save's own building lists, so the network matches what you actually built." },
+      { type: "improvement", text: "**Roads draw as soft curves, like the game.** The drawn line now rounds every corner of the routed course (the course itself is unchanged), so roads meander organically instead of stepping in right angles. The hover highlight follows the same curve." },
+    ],
+  },
+  {
     version: "0.9.1340",
     date: "2026-07-20",
     items: [

@@ -1326,6 +1326,26 @@ function devTraceStep(label) {
 // The climate-map (map_climates.tga) cross-ref was consulted but is less
 // reliable for terrain naming because RTW terrain type and climate are
 // orthogonal (a swamp can sit in a desert climate, e.g. the Nile delta).
+// The per-pixel least-cost road path is right about WHICH cells the road
+// crosses, but drawn raw it reads as right-angled pixel steps. The game's
+// roads meander in soft curves — two rounds of Chaikin corner-cutting
+// (endpoints pinned) round every corner while staying inside the same cells,
+// so the course is unchanged but the line reads organic (2026-07-20).
+function chaikinRoad(pts) {
+  let s = pts;
+  for (let r = 0; r < 2 && s.length >= 3; r++) {
+    const n = [s[0]];
+    for (let k = 0; k < s.length - 1; k++) {
+      const a = s[k], b = s[k + 1];
+      n.push({ x: a.x * 0.75 + b.x * 0.25, y: a.y * 0.75 + b.y * 0.25 });
+      n.push({ x: a.x * 0.25 + b.x * 0.75, y: a.y * 0.25 + b.y * 0.75 });
+    }
+    n.push(s[s.length - 1]);
+    s = n;
+  }
+  return s;
+}
+
 const GROUND_TYPE_PALETTE = {
   "196,0,0":       { name: "High mountains",    color: [92, 84, 96]    }, // h84 — highest elevation
   "128,0,0":       { name: "Mountains",         color: [140, 122, 120] }, // h78
@@ -10304,6 +10324,28 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [colorMode, effectiveTradeLanes, tradeLaneAnchors, portPixels, offscreen, regions, imgSize, modDataDir, groundTypesPixels, groundTypesSize]);
 
+  // Live road-having regions (2026-07-20): descr_strat only knows the CAMPAIGN
+  // START state, so provinces that built roads during play were wrongly clipped
+  // (Sardinia's whole northern Y-fork vanished even though the game draws it).
+  // When a save is loaded, read hinterland_roads from the save's own building
+  // lists instead, and UNION with the start set (roads are never demolished;
+  // union also covers settlements whose save record failed to parse).
+  const roadRegionsLive = useMemo(() => {
+    if (!liveLogActive || !builtBuildingsByCity || !regions) return null;
+    const cityToRegion = {};
+    for (const rd of Object.values(regions)) {
+      if (rd && rd.city && rd.region) cityToRegion[String(rd.city).toLowerCase()] = String(rd.region).toLowerCase();
+    }
+    const out = new Set();
+    for (const [city, chains] of Object.entries(builtBuildingsByCity)) {
+      const has = (chains || []).some((e) => String(typeof e === "string" ? e : (e && e.name) || "").startsWith("hinterland_roads"));
+      if (!has) continue;
+      const reg = cityToRegion[String(city).toLowerCase()];
+      if (reg) out.add(reg);
+    }
+    return out;
+  }, [liveLogActive, builtBuildingsByCity, regions]);
+
   // Land roads (2026-07-18): land trade follows roads that thread through
   // valleys/passes, so we A* over a LAND grid weighted by terrain (mountains
   // expensive) between adjacent settlements — plus a short settlement→port
@@ -10315,7 +10357,13 @@ function App() {
     if (!data || !W || !H) return;
     // Cache signature: road geometry depends on the mod, terrain data, which
     // settlements have roads, the adjacency graph, anchors and the port bindings.
-    const roadSig = `road|v13|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}|${heightsPixels ? 1 : 0}`;
+    // Effective road set = campaign-start roads ∪ roads built during play
+    // (from the loaded save). Hash the contents into the signature so the
+    // cache refreshes when the save's road picture changes, not just its size.
+    const roadRegionsEff = roadRegionsLive
+      ? new Set([...(roadRegions || []), ...roadRegionsLive])
+      : roadRegions;
+    const roadSig = `road|v14|${modDataDir}|${W}x${H}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}|${heightsPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10424,7 +10472,7 @@ function App() {
     // (below): province A's road extends to the A/B border and stops; a road-less
     // B shows nothing within its own borders. If roadRegions hasn't loaded yet,
     // draw nothing rather than everything (avoids a wrong flash) — fills in later.
-    const hasRoads = (reg) => roadRegions && roadRegions.has(reg.toLowerCase());
+    const hasRoads = (reg) => roadRegionsEff && roadRegionsEff.has(reg.toLowerCase());
     const pairs = []; const seen = new Set();
     for (const [reg, nbrs] of Object.entries(regionAdjacency || {})) {
       if (!tradeLaneAnchors[reg]) continue;
@@ -10521,19 +10569,18 @@ function App() {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, portPixels, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, heightsPixels, heightsSize, roadRegions, modDataDir]);
+  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, portPixels, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, heightsPixels, heightsSize, roadRegions, roadRegionsLive, modDataDir]);
 
   // Combined Path2D for all roads (uniform style) → one stroke per frame, so
   // thousands of road segments don't tank the pan framerate.
   const roadPath2D = useMemo(() => {
     if (!roadPaths || typeof Path2D === "undefined") return null;
     const p = new Path2D();
-    // Draw the raw per-pixel least-cost path (no smoothing) so the road winds
-    // back and forth exactly as the cheapest route threads between obstacles.
     for (const pts of Object.values(roadPaths)) {
       if (!pts || pts.length < 2) continue;
-      p.moveTo(pts[0].x, pts[0].y);
-      for (let k = 1; k < pts.length; k++) p.lineTo(pts[k].x, pts[k].y);
+      const s = chaikinRoad(pts);
+      p.moveTo(s[0].x, s[0].y);
+      for (let k = 1; k < s.length; k++) p.lineTo(s[k].x, s[k].y);
     }
     return p;
   }, [roadPaths]);
@@ -10630,9 +10677,10 @@ function App() {
           if (rk.split("#")[0] !== hoverRoadKey) continue;
           const poly = roadPaths[rk];
           if (!poly || poly.length < 2) continue;
+          const sm = chaikinRoad(poly); // same smoothing as the base stroke
           ctx.beginPath();
-          ctx.moveTo(poly[0].x, poly[0].y);
-          for (let k = 1; k < poly.length; k++) ctx.lineTo(poly[k].x, poly[k].y);
+          ctx.moveTo(sm[0].x, sm[0].y);
+          for (let k = 1; k < sm.length; k++) ctx.lineTo(sm[k].x, sm[k].y);
           ctx.stroke();
         }
       }
