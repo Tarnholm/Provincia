@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1342",
+    date: "2026-07-20",
+    items: [
+      { type: "fix", text: "**Road links now run settlement-to-settlement, like the game — the missing Y-fork is back.** Verified against the campaign-start map: a settlement with roads sends its road ALL THE WAY to each neighbouring settlement, even across a province that has no roads of its own. Previously the drawn road was cut at the roadless province's border, which removed exactly the fork the game shows on Sardinia (the west road splitting toward Pluvium and toward Olbia). Two roadless neighbours still get no link between them." },
+      { type: "fix", text: "**Harbour roads follow the port building, not the roads building.** A settlement that has built a port gets its settlement→harbour road even with no roads built (this is how the game lays them — e.g. Sardinia's inland town at campaign start has only a port, and its long harbour road across the island is drawn). Port roads were previously gated on the roads building." },
+      { type: "fix", text: "**Compatible with today's mod update's re-compressed map files.** The mod's latest update re-saved its campaign map images in a compressed format; one internal reader still assumed the uncompressed layout and silently mis-read the map. All map readers now handle both formats." },
+    ],
+  },
+  {
     version: "0.9.1341",
     date: "2026-07-20",
     items: [

@@ -1889,6 +1889,7 @@ function App() {
   const mapMetricsBusyRef = useRef(false);
   const [tradeLanes, setTradeLanes] = useState(null); // [{from,to,flow}] sea lanes for the Trade Lanes mode (early — colorize deps)
   const [roadRegions, setRoadRegions] = useState(null); // Set of region names whose settlement has roads (land trade only draws between these)
+  const [portRegions, setPortRegions] = useState(null); // Set of region names whose settlement has a PORT building (gets a settlement→port road even with no roads built)
   const [selectedTradeLane, setSelectedTradeLane] = useState(null); // {from,to} highlighted lane from the sidebar inspector
   const [hoveredTradeLane, setHoveredTradeLane] = useState(null); // {key, dirs:[{from,to,goods}]} lane under the cursor (map hover)
   const [laneTipPos, setLaneTipPos] = useState(null); // {sx,sy} screen position for the lane tooltip (separate so map doesn't redraw on cursor move)
@@ -4226,6 +4227,7 @@ function App() {
         if (api.getRoadRegions) {
           api.getRoadRegions(modDataDir).then((r) => {
             if (r && r.regions) setRoadRegions(new Set(r.regions.map((s) => s.toLowerCase())));
+            if (r && r.portRegions) setPortRegions(new Set(r.portRegions.map((s) => s.toLowerCase())));
           }).catch(() => {});
         }
         api.getMineProspects(modDataDir).then((r) => {
@@ -10336,14 +10338,17 @@ function App() {
     for (const rd of Object.values(regions)) {
       if (rd && rd.city && rd.region) cityToRegion[String(rd.city).toLowerCase()] = String(rd.region).toLowerCase();
     }
-    const out = new Set();
+    const roads = new Set(), ports = new Set();
     for (const [city, chains] of Object.entries(builtBuildingsByCity)) {
-      const has = (chains || []).some((e) => String(typeof e === "string" ? e : (e && e.name) || "").startsWith("hinterland_roads"));
-      if (!has) continue;
       const reg = cityToRegion[String(city).toLowerCase()];
-      if (reg) out.add(reg);
+      if (!reg) continue;
+      for (const e of (chains || [])) {
+        const n = String(typeof e === "string" ? e : (e && e.name) || "");
+        if (n.startsWith("hinterland_roads")) roads.add(reg);
+        else if (n.startsWith("port_buildings") || n.startsWith("river_port")) ports.add(reg);
+      }
     }
-    return out;
+    return { roads, ports };
   }, [liveLogActive, builtBuildingsByCity, regions]);
 
   // Land roads (2026-07-18): land trade follows roads that thread through
@@ -10357,13 +10362,16 @@ function App() {
     if (!data || !W || !H) return;
     // Cache signature: road geometry depends on the mod, terrain data, which
     // settlements have roads, the adjacency graph, anchors and the port bindings.
-    // Effective road set = campaign-start roads ∪ roads built during play
-    // (from the loaded save). Hash the contents into the signature so the
-    // cache refreshes when the save's road picture changes, not just its size.
+    // Effective road/port sets = campaign-start buildings ∪ buildings built
+    // during play (from the loaded save). Hash the contents into the signature
+    // so the cache refreshes when the save's picture changes, not just its size.
     const roadRegionsEff = roadRegionsLive
-      ? new Set([...(roadRegions || []), ...roadRegionsLive])
+      ? new Set([...(roadRegions || []), ...roadRegionsLive.roads])
       : roadRegions;
-    const roadSig = `road|v14|${modDataDir}|${W}x${H}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}|${heightsPixels ? 1 : 0}`;
+    const portRegionsEff = roadRegionsLive
+      ? new Set([...(portRegions || []), ...roadRegionsLive.ports])
+      : portRegions;
+    const roadSig = `road|v15|${modDataDir}|${W}x${H}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}|${heightsPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10465,14 +10473,19 @@ function App() {
       }
       return null;
     };
-    // A settlement shows roads only if it has a built road (hinterland_roads).
-    // Roads exist only inside a province that has built them (hinterland_roads).
-    // We route between adjacent settlements when AT LEAST ONE side has roads, then
-    // clip the drawn path to the road-having provinces it actually passes through
-    // (below): province A's road extends to the A/B border and stops; a road-less
-    // B shows nothing within its own borders. If roadRegions hasn't loaded yet,
-    // draw nothing rather than everything (avoids a wrong flash) — fills in later.
+    // ROAD LINK RULE (corrected 2026-07-20 against a campaign-start screenshot):
+    // a road-having settlement's links run FULL LENGTH to each neighbouring
+    // settlement — crossing the neighbour's province even when that neighbour
+    // has no roads of its own (Cornus' roads reach Pluvium and Olbia across
+    // roadless Corsicosardinia, forming the Y-fork the game draws). The old
+    // model clipped each link at the roadless province's border, which cut
+    // away exactly those fork legs. A link exists when AT LEAST ONE side has
+    // hinterland_roads; two roadless neighbours get no link (there is no
+    // direct Pluvium↔Olbia road in the game — both route via the fork).
+    // If roadRegions hasn't loaded yet, draw nothing rather than everything
+    // (avoids a wrong flash) — fills in later.
     const hasRoads = (reg) => roadRegionsEff && roadRegionsEff.has(reg.toLowerCase());
+    const hasPort = (reg) => portRegionsEff && portRegionsEff.has(reg.toLowerCase());
     const pairs = []; const seen = new Set();
     for (const [reg, nbrs] of Object.entries(regionAdjacency || {})) {
       if (!tradeLaneAnchors[reg]) continue;
@@ -10495,21 +10508,22 @@ function App() {
     // road threads around hills/forest — and follows the traced course where
     // one exists (the game draws town→port roads along the road network, e.g.
     // an inland town's road crossing the island to its far-coast harbour).
-    // Sourced from the region map's port pixels for EVERY road-having region
-    // (previously only regions whose port a sea lane had bound got a harbour
-    // road, so a port without active sea trade never showed its road even
-    // though the game draws it). Sea-lane-bound pixel preferred when present
-    // so road and lane still join at the same tile.
+    // Drawn for every region whose settlement has a PORT BUILDING (start or
+    // built during play) — the engine lays the harbour road with the port
+    // itself, independent of hinterland_roads (Iliensia at start: port, no
+    // roads, and its long harbour road across Sardinia is drawn). Sourced
+    // from the region map's port pixels; sea-lane-bound pixel preferred when
+    // present so road and lane still join at the same tile.
     const portOf = {};
     for (const wp of (portPixels || [])) {
-      if (!wp.region || !hasRoads(wp.region)) continue;
+      if (!wp.region || !hasPort(wp.region)) continue;
       const a = tradeLaneAnchors[wp.region];
       if (!a) continue;
       const d = (wp.x - a.x) ** 2 + (wp.y - a.y) ** 2;
       if (!portOf[wp.region] || d < portOf[wp.region]._d) portOf[wp.region] = { x: wp.x, y: wp.y, _d: d };
     }
     if (portByRegion) for (const [reg, p] of Object.entries(portByRegion)) {
-      if (p && hasRoads(reg) && tradeLaneAnchors[reg]) portOf[reg] = { x: p.x, y: p.y };
+      if (p && hasPort(reg) && tradeLaneAnchors[reg]) portOf[reg] = { x: p.x, y: p.y };
     }
     for (const [reg, p] of Object.entries(portOf)) {
       const a = tradeLaneAnchors[reg];
@@ -10540,22 +10554,10 @@ function App() {
         // onto them instead of carving their own parallel line (shared network).
         for (const pt of path) { const ci = pt.y * lg.w + pt.x; if (costArr[ci] > REUSE) costArr[ci] = REUSE; }
         const HC = DOWN >> 1;
-        const full = path.map((pt) => ({ x: pt.x * DOWN + HC, y: pt.y * DOWN + HC }));
-        // Clip to road-having provinces: keep each cell whose underlying region
-        // has roads, splitting the path into contiguous kept runs. The province
-        // of a cell is read from the map pixel; settlement/port/edge pixels carry
-        // the last known region forward (seeded with the start province).
-        let curReg = p.from, seg = [], segIdx = 0;
-        for (const pt of full) {
-          const xi = Math.min(W - 1, Math.max(0, Math.round(pt.x))), yi = Math.min(H - 1, Math.max(0, Math.round(pt.y)));
-          const o = (yi * W + xi) * 4;
-          const rd = regions[`${data[o]},${data[o + 1]},${data[o + 2]}`];
-          if (rd && rd.region) curReg = rd.region;
-          if (hasRoads(curReg)) { seg.push(pt); }
-          else if (seg.length >= 2) { out[`${p.key}#${segIdx++}`] = seg; seg = []; }
-          else { seg = []; }
-        }
-        if (seg.length >= 2) out[`${p.key}#${segIdx++}`] = seg;
+        // Full link, settlement to settlement — no border clipping (see the
+        // ROAD LINK RULE above; the game draws the whole connection even
+        // through a roadless neighbour's province).
+        out[`${p.key}#0`] = path.map((pt) => ({ x: pt.x * DOWN + HC, y: pt.y * DOWN + HC }));
       }
       if (i < pairs.length) (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step, { timeout: 500 });
       else {
@@ -10569,7 +10571,7 @@ function App() {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, portPixels, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, heightsPixels, heightsSize, roadRegions, roadRegionsLive, modDataDir]);
+  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, portPixels, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, heightsPixels, heightsSize, roadRegions, portRegions, roadRegionsLive, modDataDir]);
 
   // Combined Path2D for all roads (uniform style) → one stroke per frame, so
   // thousands of road segments don't tank the pan framerate.

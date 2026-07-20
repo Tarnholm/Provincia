@@ -29,6 +29,7 @@ const fs = require("fs");
 const path = require("path");
 
 const { parseDescrRegions, findDescrRegions } = require("./ownershipParser.js");
+const { tgaToRaw } = require("./descrStratGeneral.js");
 
 const SKIP_COLORS = new Set(["0,0,0", "255,255,255"]);
 
@@ -60,20 +61,20 @@ function parseRgbToRegion(regionsPath) {
   return rgbToRegion;
 }
 
-// Minimal 24bpp uncompressed TGA reader. Returns { W, H, px(col, rowTop) }.
+// 24bpp TGA reader. Returns { W, H, px(col, rowTop) }.
 // px gives [r,g,b] for a TOP-DOWN image row (row 0 = top), accounting for the
 // TGA origin flag — so callers can reason in image-row space and convert to
-// engine_y = H-1-row.
+// engine_y = H-1-row. Decoding is delegated to tgaToRaw, which handles both
+// uncompressed (type 2) and RLE (type 10) — RIS re-saves its map TGAs as RLE
+// on some updates (2026-07-20: map_regions.tga went 2.1MB → 174KB and this
+// module's old direct-offset reader silently returned garbage pixels).
 function openTga(tgaBuf) {
-  const W = tgaBuf.readUInt16LE(12);
-  const H = tgaBuf.readUInt16LE(14);
-  const desc = tgaBuf[17];
-  const dataOff = 18 + tgaBuf[0];
+  const { W, H, desc, raw } = tgaToRaw(tgaBuf);
   const bottomLeft = (desc & 0x20) === 0; // bit5 clear = bottom-left origin
   const px = (col, rowTop) => {
     const r = bottomLeft ? H - 1 - rowTop : rowTop;
-    const o = dataOff + (r * W + col) * 3;
-    return [tgaBuf[o + 2], tgaBuf[o + 1], tgaBuf[o]]; // TGA stores BGR
+    const o = (r * W + col) * 3;
+    return [raw[o + 2], raw[o + 1], raw[o]]; // TGA stores BGR
   };
   return { W, H, px };
 }

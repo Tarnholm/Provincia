@@ -471,10 +471,16 @@ ipcMain.handle("get-road-regions", async (_event, modDataDir) => {
     const gv = require("./growthEval.js");
     const strat = gv.parseStrat(require("path").join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"));
     const regions = [];
+    const portRegions = []; // regions whose settlement has a PORT building — the
+    // engine draws a settlement→port road for these even with no roads built
+    // (verified against a campaign-start screenshot: Iliensia has only a port,
+    // and its long harbour road across Sardinia is drawn; 2026-07-20).
     for (const f of Object.values(strat || {})) for (const sd of (f.settlements || [])) {
-      if (sd.region && (sd.buildings || []).some((b) => /hinterland_roads/i.test(b.chain || ""))) regions.push(sd.region);
+      if (!sd.region) continue;
+      if ((sd.buildings || []).some((b) => /hinterland_roads/i.test(b.chain || ""))) regions.push(sd.region);
+      if ((sd.buildings || []).some((b) => /port_buildings|river_port/i.test(b.chain || ""))) portRegions.push(sd.region);
     }
-    return { regions };
+    return { regions, portRegions };
   } catch (e) {
     return { error: e && e.message ? e.message : "road regions failed" };
   }
