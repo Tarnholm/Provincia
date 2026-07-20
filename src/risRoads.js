@@ -3101,3 +3101,10 @@ export const RIS_ROADS = [
 {a:"",b:"5,179,179",p:[909,275,910,275,911,275,912,275,912,274,913,274,914,274,915,274,916,274,916,273,916,272,916,271,916,270,917,270,917,269,917,268,917,267,917,266,917,265,917,264,917,263,917,262,917,261,917,260,917,259,918,259,918,258,918,257,918,256,918,255,918,254,918,253,919,253,919,252,919,251,919,250,919,249,920,249,920,248,921,248,921,247,921,246]},
 {a:"",b:"5,179,179",p:[921,245,921,244,921,243,921,242,921,241,921,240,921,239,922,239,922,238,922,237,922,236,922,235,922,234]}
 ];
+
+// All captured maps, matched by fingerprint against the loaded map. Append a
+// new { fingerprint, roads } entry (captured via dump_roads.py + the bake step)
+// to support another Rome Remastered map/mod. Order matters only for tie-breaks.
+export const CAPTURED_MAPS = [
+  { name: "RIS grand campaign", fingerprint: RIS_ROADS_FINGERPRINT, roads: RIS_ROADS },
+];

@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1346",
+    date: "2026-07-21",
+    items: [
+      { type: "improvement", text: "**Exact roads now generalize to any Rome Remastered map, not just RIS.** The exact-road system was reworked to hold multiple maps' real road networks and match whichever map you have loaded automatically (by a map fingerprint), so additional maps/mods can be supported with their true in-game road layout. Any map without an exact network still uses the computed router." },
+    ],
+  },
+  {
     version: "0.9.1345",
     date: "2026-07-21",
     items: [

@@ -5,7 +5,7 @@ import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOver
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, prefetchBuildingIconsBulk, invalidateBuildingIcon, warmStats } from "./buildingIcons";
 import { WARM_TUNING, runWarmChunks } from "./iconWarmScheduler";
 import { buildSeaGrid, buildLandGrid, nearestSea, aStarSea, seaComponents, nearestSeaBig, roadAStarExact } from "./seaLanePath";
-import { RIS_ROADS, RIS_ROADS_FINGERPRINT } from "./risRoads";
+import { CAPTURED_MAPS } from "./risRoads";
 import { getCachedUnitIcon, prefetchUnitIcons, prefetchUnitIconsBulk } from "./unitIcons";
 import { loadPortrait } from "./portraitIcons";
 // Heavy, single-use panels are code-split (2026-07-15): each is loaded as its
@@ -10407,15 +10407,18 @@ function App() {
     const portRegionsEff = roadRegionsLive
       ? new Set([...(portRegions || []), ...roadRegionsLive.ports])
       : portRegions;
-    // EXACT ROADS (2026-07-21): on the RIS grand-campaign map, use the real road
-    // network captured from the game engine's own memory (src/risRoads.js) —
-    // pixel-exact geometry, no pathfinding. Fingerprint-gated so it never
-    // applies to another 1020x700 mod. Everything else falls back to the
-    // reverse-engineered A* below.
-    const fpR = RIS_ROADS_FINGERPRINT, fpo = (fpR.y * W + fpR.x) * 4;
-    const risMap = W === fpR.mapW && H === fpR.mapH
-      && data[fpo] === fpR.rgb[0] && data[fpo + 1] === fpR.rgb[1] && data[fpo + 2] === fpR.rgb[2];
-    const roadSig = `road|v17|${modDataDir}|${W}x${H}|${risMap ? "risX" : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
+    // EXACT ROADS (2026-07-21): if the loaded map matches a captured network
+    // (src/risRoads.js CAPTURED_MAPS — the game engine's own road geometry read
+    // from memory), draw that pixel-exact geometry, no pathfinding. Each entry is
+    // fingerprint-gated (dims + a marker pixel) so it never applies to a
+    // different map. Any RR map/mod can be added by capturing it. Everything
+    // unmatched falls back to the reverse-engineered A* below.
+    const capMap = CAPTURED_MAPS.find((cm) => {
+      const f = cm.fingerprint; if (W !== f.mapW || H !== f.mapH) return false;
+      const o = (f.y * W + f.x) * 4;
+      return data[o] === f.rgb[0] && data[o + 1] === f.rgb[1] && data[o + 2] === f.rgb[2];
+    });
+    const roadSig = `road|v17|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10424,12 +10427,12 @@ function App() {
       if (cancelled) return;
       if (disk && disk.roadPaths) { _laneMemCache[roadSig] = disk; setRoadPaths(disk.roadPaths); console.log("[roads] loaded from cache"); return; }
     } catch { /* cache miss → compute */ }
-    if (risMap) {
+    if (capMap) {
       // Build roadPaths straight from the captured geometry. Key each road by
       // its endpoint region-name pair (region colour → name via `regions`) so
       // the hover tooltip / trade sidebar link to the same land-lane data.
       const out = {}; const idxByKey = {};
-      for (const rd of RIS_ROADS) {
+      for (const rd of capMap.roads) {
         const p = rd.p; if (!p || p.length < 4) continue;
         const pts = []; for (let k = 0; k < p.length - 1; k += 2) pts.push({ x: p[k], y: p[k + 1] });
         const nmA = (regions[rd.a] && regions[rd.a].region) || rd.a || "?";
@@ -10438,7 +10441,7 @@ function App() {
         const idx = (idxByKey[key] = (idxByKey[key] || 0) + 1) - 1;
         out[key.startsWith("port>") ? key + (idx || "") : `${key}#${idx}`] = pts;
       }
-      console.log(`[roads] RIS exact network: ${Object.keys(out).length} roads from captured geometry`);
+      console.log(`[roads] exact captured network "${capMap.name}": ${Object.keys(out).length} roads`);
       _laneMemCache[roadSig] = { roadPaths: out };
       setRoadPaths(out);
       try { window.electronAPI?.laneCacheSet?.(modDataDir, "road", roadSig, { roadPaths: out }); } catch { /* best-effort */ }
