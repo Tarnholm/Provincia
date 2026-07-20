@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1339",
+    date: "2026-07-20",
+    items: [
+      { type: "feature", text: "**Sardinia roads now follow the game's actual road course.** The island's road layout — the long west road that runs north out of Cornus before turning inland, the three-way junction in the middle of the island, and the harbour road crossing to the east coast — was captured from the campaign map itself and georeferenced to map coordinates. Trade Lanes routes on Sardinia now follow that real course wherever it is known, instead of a computed best-guess path." },
+      { type: "improvement", text: "**Harbour roads follow terrain and the road network.** The settlement→harbour connector is now routed like every other road — winding around hills and forest and merging onto existing roads — instead of being drawn as a straight line. An inland town's road to a far-coast harbour now crosses the island along the actual road course, like the game." },
+    ],
+  },
+  {
     version: "0.9.1338",
     date: "2026-07-19",
     items: [

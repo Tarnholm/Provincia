@@ -5,6 +5,7 @@ import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOver
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, prefetchBuildingIconsBulk, invalidateBuildingIcon, warmStats } from "./buildingIcons";
 import { WARM_TUNING, runWarmChunks } from "./iconWarmScheduler";
 import { buildSeaGrid, buildLandGrid, nearestSea, aStarSea, seaComponents, nearestSeaBig } from "./seaLanePath";
+import { TRACED_ROADS } from "./tracedRoads";
 import { getCachedUnitIcon, prefetchUnitIcons, prefetchUnitIconsBulk } from "./unitIcons";
 import { loadPortrait } from "./portraitIcons";
 // Heavy, single-use panels are code-split (2026-07-15): each is loaded as its
@@ -10314,7 +10315,7 @@ function App() {
     if (!data || !W || !H) return;
     // Cache signature: road geometry depends on the mod, terrain data, which
     // settlements have roads, the adjacency graph, anchors and the port bindings.
-    const roadSig = `road|v11|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${groundTypesPixels ? 1 : 0}`;
+    const roadSig = `road|v12|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10361,6 +10362,31 @@ function App() {
         if (nm && COST[nm]) costArr[i] = COST[nm];
       }
     }
+    // TRACED ROADS (2026-07-20): where the actual on-map road course is known
+    // (captured from the campaign map itself and georeferenced to map pixels),
+    // burn those cells into the cost grid as a near-free "trench". A* then
+    // follows the game's real road line between settlements — including its
+    // junctions and detours — rather than inventing its own least-cost path.
+    // Trench cost 2 < REUSE 3 < cheapest terrain 10, so traced course wins,
+    // and network merging (REUSE) still layers on top for untraced links.
+    {
+      const tr = TRACED_ROADS;
+      const fp = tr.fingerprint, fo = (fp.y * W + fp.x) * 4;
+      const applies = W === tr.mapW && H === tr.mapH
+        && data[fo] === fp.rgb[0] && data[fo + 1] === fp.rgb[1] && data[fo + 2] === fp.rgb[2];
+      if (applies) {
+        if (!costArr) costArr = new Float32Array(lg.w * lg.h).fill(11);
+        let burned = 0;
+        for (const [cx, cy] of tr.cells) {
+          const gx = Math.floor(cx / DOWN), gy = Math.floor(cy / DOWN);
+          if (gx < 0 || gy < 0 || gx >= lg.w || gy >= lg.h) continue;
+          const ci = gy * lg.w + gx;
+          if (!lg.grid[ci]) continue; // never carve a road into sea cells
+          costArr[ci] = 2; burned++;
+        }
+        console.log(`[roads] traced course applied: ${burned}/${tr.cells.length} cells burned into cost grid`);
+      }
+    }
     const toGrid = (a) => ({ gx: Math.min(lg.w - 1, Math.max(0, Math.round(a.x / DOWN))), gy: Math.min(lg.h - 1, Math.max(0, Math.round(a.y / DOWN))), fx: a.x, fy: a.y });
     const nearestLand = (gx, gy) => {
       if (gx >= 0 && gy >= 0 && gx < lg.w && gy < lg.h && lg.grid[gy * lg.w + gx]) return { x: gx, y: gy };
@@ -10396,13 +10422,27 @@ function App() {
     }
     pairs.sort((p1, p2) => p1._d - p2._d);
     const out = {};
-    // settlement→port connectors — only for genuinely coastal settlements
-    // (port near the town); a long connector would be an inland town wrongly
-    // reaching the sea, so skip those (they trade by land road instead).
+    // settlement→port connectors. Routed with the same terrain-cost A* as the
+    // settlement roads (2026-07-20) instead of a straight line, so a harbour
+    // road threads around hills/forest — and follows the traced course where
+    // one exists (the game draws town→port roads along the road network, e.g.
+    // an inland town's road crossing the island to its far-coast harbour).
+    // Straight line kept as fallback when no land route is found.
     if (portByRegion) for (const [reg, p] of Object.entries(portByRegion)) {
       if (!p || !hasRoads(reg)) continue; // no roads building → no road to the harbour either
       const a = tradeLaneAnchors[reg];
-      if (a) out["port>" + reg] = [{ x: a.x, y: a.y }, { x: p.x, y: p.y }]; // settlement → its port (white pixel)
+      if (!a) continue;
+      const A = toGrid(a), B = toGrid(p);
+      const lA = nearestLand(A.gx, A.gy), lB = nearestLand(B.gx, B.gy);
+      const path = lA && lB ? aStarSea(lg, lA, lB, 200000, costArr) : null;
+      if (path && path.length >= 2) {
+        // port roads are part of the shared network — later routes merge onto them
+        if (costArr) for (const pt of path) { const ci = pt.y * lg.w + pt.x; if (costArr[ci] > REUSE) costArr[ci] = REUSE; }
+        const HC = DOWN >> 1;
+        out["port>" + reg] = path.map((pt) => ({ x: pt.x * DOWN + HC, y: pt.y * DOWN + HC }));
+      } else {
+        out["port>" + reg] = [{ x: a.x, y: a.y }, { x: p.x, y: p.y }]; // settlement → its port (white pixel)
+      }
     }
     let i = 0; const t0all = performance.now();
     const step = () => {
