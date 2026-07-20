@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1343",
+    date: "2026-07-20",
+    items: [
+      { type: "fix", text: "**Roads now use the game's own road-building method.** Deep analysis of the game established exactly how it lays roads: it routes each settlement to each neighbouring settlement (and to its own harbour) along the cheapest path, staying within those two provinces' territory, and every road reuses the existing network where they meet — which is what forms the junctions and forks. Trade Lanes now reproduces that method directly instead of approximating it." },
+      { type: "fix", text: "**Terrain is now read correctly — this was the big one.** The map's terrain data had been decoded with an inverted colour table: the shades that are actually shallow/deep sea were being treated as mountains, and the commonest inland type was mislabelled. Roads were therefore avoiding and following the wrong ground. Terrain is now identified from the game's own definitive table (fertile land, wilderness, hills, mountains, forest, swamp, sea depths, beach), so roads thread the passable ground and bend around real mountains and forest the way the game does." },
+      { type: "improvement", text: "**Geography overlay labels fixed too.** The same terrain-table correction fixes the Geography map mode and hover tooltips, which previously mislabelled sea as mountains and vice-versa." },
+    ],
+  },
+  {
     version: "0.9.1342",
     date: "2026-07-20",
     items: [

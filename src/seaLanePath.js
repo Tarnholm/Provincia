@@ -191,3 +191,68 @@ export function aStarSea(sg, start, goal, cutoff = 1700, costArr = null, bridge 
   path.reverse();
   return path;
 }
+
+// Exact road neighbour order recovered from rtw.exe (SM::A_STAR_TILES): the
+// game visits successors in THIS order (dx,dy), which sets tie-breaking, and
+// weights a diagonal step 1.41 (its own constant, not √2).
+const ROAD_NB = [[0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1]];
+let _rscr = null;
+
+// Exact reproduction of the game's road pathfinder (SM::STRATEGY_MAP::
+// road_setup_path → A_STAR_TILES, reverse-engineered 2026-07-20). Full
+// resolution. Search is RESTRICTED to tiles belonging to the two endpoint
+// regions (`allowedA`/`allowedB` are packed-RGB region colours from
+// map_regions.tga) — the engine's mode-2 restriction — so a road stays within
+// its own + the neighbour's territory. Per-cell entry cost = terrainCost[cell]
+// × (diag ? 1.41 : 1) × (already-road ? 0.5 : 4), floored at 0.4; heuristic =
+// 0.5 × Euclidean. `roadMark` (Uint8, w*h) flags cells already carrying a road
+// so later links snap onto them (the shared-network / junction behaviour).
+//   lg        : land grid {grid,w,h}
+//   cost      : Float32Array w*h — terrainCost14 per cell (>=999 impassable)
+//   cellColor : Int32Array w*h — packed RGB region colour (-1 sea, -2 marker)
+export function roadAStarExact(lg, start, goal, cost, cellColor, allowedA, allowedB, roadMark, cutoff = 200000) {
+  const { grid, w, h } = lg;
+  const N = w * h;
+  const si = start.y * w + start.x, gi = goal.y * w + goal.x;
+  if (si < 0 || gi < 0 || si >= N || gi >= N || !grid[si] || !grid[gi]) return null;
+  if (!_rscr || _rscr.N !== N) _rscr = { N, g: new Float32Array(N), came: new Int32Array(N), seen: new Int32Array(N), closed: new Int32Array(N), gen: 0 };
+  const gen = ++_rscr.gen;
+  const gScore = _rscr.g, came = _rscr.came, seen = _rscr.seen, closed = _rscr.closed;
+  const gAt = (i) => (seen[i] === gen ? gScore[i] : Infinity);
+  const allowed = (i) => { const c = cellColor[i]; return c === allowedA || c === allowedB || c === -2; };
+  gScore[si] = 0; seen[si] = gen; came[si] = -1;
+  const heapF = [], heapI = [];
+  const push = (f, idx) => { heapF.push(f); heapI.push(idx); let c = heapF.length - 1; while (c > 0) { const p = (c - 1) >> 1; if (heapF[p] <= heapF[c]) break; [heapF[p], heapF[c]] = [heapF[c], heapF[p]]; [heapI[p], heapI[c]] = [heapI[c], heapI[p]]; c = p; } };
+  const pop = () => { const idx = heapI[0]; const lf = heapF.pop(); const li = heapI.pop(); if (heapF.length) { heapF[0] = lf; heapI[0] = li; let c = 0; for (;;) { let l = 2 * c + 1, r = l + 1, s = c; if (l < heapF.length && heapF[l] < heapF[s]) s = l; if (r < heapF.length && heapF[r] < heapF[s]) s = r; if (s === c) break; [heapF[s], heapF[c]] = [heapF[c], heapF[s]]; [heapI[s], heapI[c]] = [heapI[c], heapI[s]]; c = s; } } return idx; };
+  const hOf = (x, y) => 0.5 * Math.hypot(goal.x - x, goal.y - y);
+  push(hOf(start.x, start.y), si);
+  while (heapF.length) {
+    const ci = pop();
+    if (closed[ci] === gen) continue;
+    closed[ci] = gen;
+    if (ci === gi) break;
+    const cg = gScore[ci];
+    if (cg > cutoff) continue;
+    const cx = ci % w, cy = (ci / w) | 0;
+    for (const [dx, dy] of ROAD_NB) {
+      const nx = cx + dx, ny = cy + dy;
+      if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+      const ni = ny * w + nx;
+      if (!grid[ni] || closed[ni] === gen) continue;
+      if (dx !== 0 && dy !== 0 && (!grid[cy * w + (cx + dx)] || !grid[(cy + dy) * w + cx])) continue;
+      // region restriction (goal always allowed so the endpoint tile is reachable)
+      if (ni !== gi && !allowed(ni)) continue;
+      const base = cost[ni];
+      if (base >= 999) continue; // impassable terrain (mountains/dense forest/ocean)
+      let c = base * (dx !== 0 && dy !== 0 ? 1.41 : 1.0) * (roadMark && roadMark[ni] ? 0.5 : 4.0);
+      if (c < 0.4) c = 0.4;
+      const ng = cg + c;
+      if (ng < gAt(ni)) { gScore[ni] = ng; seen[ni] = gen; came[ni] = ci; push(ng + hOf(nx, ny), ni); }
+    }
+  }
+  if (gi !== si && seen[gi] !== gen) return null;
+  const path = []; let c = gi;
+  while (c !== -1) { path.push({ x: c % w, y: (c / w) | 0 }); if (c === si) break; c = came[c]; }
+  path.reverse();
+  return path;
+}

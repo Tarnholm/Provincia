@@ -4,8 +4,7 @@ import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
 import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect, subscribeWidgets, getWidgetSnapshot } from "./Movable";
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, prefetchBuildingIconsBulk, invalidateBuildingIcon, warmStats } from "./buildingIcons";
 import { WARM_TUNING, runWarmChunks } from "./iconWarmScheduler";
-import { buildSeaGrid, buildLandGrid, nearestSea, aStarSea, seaComponents, nearestSeaBig } from "./seaLanePath";
-import { TRACED_ROADS } from "./tracedRoads";
+import { buildSeaGrid, buildLandGrid, nearestSea, aStarSea, seaComponents, nearestSeaBig, roadAStarExact } from "./seaLanePath";
 import { getCachedUnitIcon, prefetchUnitIcons, prefetchUnitIconsBulk } from "./unitIcons";
 import { loadPortrait } from "./portraitIcons";
 // Heavy, single-use panels are code-split (2026-07-15): each is loaded as its
@@ -1346,21 +1345,26 @@ function chaikinRoad(pts) {
   return s;
 }
 
+// map_ground_types.tga colour → terrain type. CORRECTED 2026-07-20 from the
+// engine's own classification table (@144bfa700, decoded from rtw.exe): the
+// prior mapping was inverted — the red channel is SEA DEPTH, not mountains, and
+// (0,0,0) is WILDERNESS (the commonest land type), not desert/grassland. Names
+// are the 14 engine terrain enums; `color` is just the overlay display tint.
 const GROUND_TYPE_PALETTE = {
-  "196,0,0":       { name: "High mountains",    color: [92, 84, 96]    }, // h84 — highest elevation
-  "128,0,0":       { name: "Mountains",         color: [140, 122, 120] }, // h78
-  "64,0,0":        { name: "Hills",             color: [178, 150, 108] }, // h70
-  "196,128,128":   { name: "Rocky highland",    color: [180, 140, 110] }, // h60
-  "98,65,65":      { name: "Rocky desert",      color: [170, 130, 95]  }, // h26
-  "128,128,64":    { name: "Semi-arid scrub",   color: [214, 198, 138] }, // h13
-  "0,0,0":         { name: "Desert",            color: [231, 210, 150] }, // h3.4 — 89% of Sahara (was wrongly "Grassland")
-  "0,64,0":        { name: "Dense forest",      color: [25, 95, 40]    }, // h5
-  "0,128,0":       { name: "Forest",            color: [55, 150, 70]   }, // h5
-  "96,160,64":     { name: "Light woodland",    color: [120, 200, 90]  }, // h3.4
-  "0,128,128":     { name: "Grassland",         color: [170, 205, 120] }, // h3.1 — was wrongly "Mountain"
-  "101,124,0":     { name: "Steppe / pasture",  color: [175, 180, 95]  }, // h3.1
-  "0,255,128":     { name: "Oasis / marsh",     color: [90, 175, 130]  }, // h2.5 — deltas + scattered oases (was wrongly "Swamp")
-  "255,255,255":   { name: "Coast / beach",     color: [235, 225, 170] }, // h1.5 — lowest, rarest
+  "0,128,128":     { name: "Fertile land",      color: [120, 190, 90]  }, // FERTILE_LOW
+  "96,160,64":     { name: "Fertile land",      color: [140, 200, 100] }, // FERTILE_MEDIUM
+  "101,124,0":     { name: "Fertile highland",  color: [175, 190, 95]  }, // FERTILE_HIGH
+  "0,0,0":         { name: "Wilderness",        color: [200, 190, 140] }, // WILDERNESS (dominant land)
+  "196,128,128":   { name: "High mountains",    color: [92, 84, 96]    }, // MOUNTAINS_HIGH (impassable)
+  "98,65,65":      { name: "Mountains",         color: [140, 122, 120] }, // MOUNTAINS_LOW
+  "128,128,64":    { name: "Hills",             color: [178, 150, 108] }, // HILLS
+  "0,64,0":        { name: "Dense forest",      color: [25, 95, 40]    }, // FOREST_DENSE (impassable)
+  "0,128,0":       { name: "Forest",            color: [55, 150, 70]   }, // FOREST_SPARSE
+  "0,255,128":     { name: "Swamp",             color: [90, 150, 110]  }, // SWAMP
+  "64,0,0":        { name: "Ocean",             color: [30, 70, 130]   }, // OCEAN (impassable)
+  "128,0,0":       { name: "Deep sea",          color: [45, 100, 170]  }, // SEA_DEEP
+  "196,0,0":       { name: "Shallow sea",       color: [80, 160, 210]  }, // SEA_SHALLOW
+  "255,255,255":   { name: "Beach",             color: [235, 225, 170] }, // BEACH
 };
 
 // Parse "dorian 70 italic 30" → [{name:"dorian",pct:70},{name:"italic",pct:30}]
@@ -10371,7 +10375,7 @@ function App() {
     const portRegionsEff = roadRegionsLive
       ? new Set([...(portRegions || []), ...roadRegionsLive.ports])
       : portRegions;
-    const roadSig = `road|v15|${modDataDir}|${W}x${H}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}|${heightsPixels ? 1 : 0}`;
+    const roadSig = `road|v16|${modDataDir}|${W}x${H}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10393,76 +10397,54 @@ function App() {
     // CHEAPEST (roads follow the interior), beach and swamp are COSTLY (roads stay
     // off the coast and out of marsh), and high mountains + dense forest are
     // impassable (routed around). This reproduces the game's inland, curving roads.
-    let costArr = null;
+    // EXACT terrain cost per tile (reverse-engineered from rtw.exe 2026-07-20).
+    // The engine's road pathfinder (SM::A_STAR_TILES) enters a tile at cost
+    // terrainCost14[type], where `type` is looked up from map_ground_types.tga
+    // via the exe's colour table @144bfa700 (stored BGR). That table — decoded
+    // here — corrects the old palette: the red channel is SEA DEPTH, not
+    // mountains; (0,0,0) is WILDERNESS (the commonest land); the browns are the
+    // real mountains. cost>=999 = impassable (high mtn / dense forest / ocean).
+    const RGB_COST = {
+      "0,128,128": 10, "96,160,64": 11, "101,124,0": 11, "0,0,0": 12,
+      "196,128,128": 999, "98,65,65": 15, "128,128,64": 14, "0,64,0": 999,
+      "0,128,0": 13, "0,255,128": 20, "64,0,0": 999, "128,0,0": 8,
+      "196,0,0": 4.5, "255,255,255": 14,
+    };
+    const cost = new Float32Array(lg.w * lg.h).fill(12); // default WILDERNESS
     if (groundTypesPixels && groundTypesSize.width) {
       const gW = groundTypesSize.width, gH = groundTypesSize.height, gData = groundTypesPixels;
-      // The game threads roads through OPEN ground and winds around wooded/broken
-      // terrain — road placement treats forest, hills and mountains as strong
-      // obstacles, far more than the mild unit-move cost gap (forest 13 vs grass
-      // 10) would. Open ground keeps the exact move costs; forest/hills/beach are
-      // made costly so the cheapest per-pixel route weaves around each patch, and
-      // dense forest + high mountains stay impassable (2026-07-19).
-      const COST = {
-        "Grassland": 10, "Steppe / pasture": 11, "Semi-arid scrub": 12, "Rocky desert": 12, "Desert": 12,
-        "Light woodland": 13, "Forest": 13, "Hills": 14, "Coast / beach": 14,
-        "Mountains": 15, "Rocky highland": 15, "Oasis / marsh": 20,
-        "High mountains": 999, "Dense forest": 999, // impassable (999 cost)
-      };
-      costArr = new Float32Array(lg.w * lg.h).fill(11);
       for (let gy = 0; gy < lg.h; gy++) for (let gx = 0; gx < lg.w; gx++) {
-        const i = gy * lg.w + gx; if (!lg.grid[i]) continue;
+        const ii = gy * lg.w + gx; if (!lg.grid[ii]) continue;
         const px = Math.min(W - 1, gx * DOWN), py = Math.min(H - 1, gy * DOWN);
         const tx = Math.min(gW - 1, Math.floor(px / W * gW)), ty = Math.min(gH - 1, Math.floor(py / H * gH));
         const gi = (ty * gW + tx) * 4;
-        const nm = GROUND_TYPE_PALETTE[`${gData[gi]},${gData[gi + 1]},${gData[gi + 2]}`]?.name;
-        if (nm && COST[nm]) costArr[i] = COST[nm];
+        const c = RGB_COST[`${gData[gi]},${gData[gi + 1]},${gData[gi + 2]}`];
+        if (c !== undefined) cost[ii] = c;
       }
     }
-    // ELEVATION (2026-07-20): the heights map now feeds routing, as the
-    // "roads use elevation" note above always intended. Steep ground costs
-    // more (gentle ×1..×2 by local slope), so roads prefer valley floors and
-    // passes over shoulders of hills — without overriding the terrain-type
-    // costs, and never overriding a traced course (burned below).
-    if (heightsPixels && heightsSize.width) {
-      const hW2 = heightsSize.width, hH2 = heightsSize.height, hData = heightsPixels;
-      if (!costArr) costArr = new Float32Array(lg.w * lg.h).fill(11);
-      const hAt = (gx, gy) => {
-        const px = Math.min(W - 1, Math.max(0, gx * DOWN)), py = Math.min(H - 1, Math.max(0, gy * DOWN));
-        const hx = Math.min(hW2 - 1, Math.floor((px + 0.5) / W * hW2)), hy = Math.min(hH2 - 1, Math.floor((py + 0.5) / H * hH2));
-        return hData[(hy * hW2 + hx) * 4];
-      };
-      for (let gy = 0; gy < lg.h; gy++) for (let gx = 0; gx < lg.w; gx++) {
-        const i = gy * lg.w + gx;
-        if (!lg.grid[i] || costArr[i] >= 999) continue;
-        const sl = Math.max(Math.abs(hAt(gx + 1, gy) - hAt(gx - 1, gy)), Math.abs(hAt(gx, gy + 1) - hAt(gx, gy - 1))) / 2;
-        costArr[i] *= Math.min(2, 1 + sl / 8);
-      }
+    // Region colour per cell (packed RGB) — the engine's mode-2 restriction:
+    // a road may only cross tiles of its two endpoint regions. Sea = -1;
+    // settlement/port markers (black/white) = -2 (always allowed).
+    const cellColor = new Int32Array(lg.w * lg.h).fill(-1);
+    for (let gy = 0; gy < lg.h; gy++) for (let gx = 0; gx < lg.w; gx++) {
+      const ii = gy * lg.w + gx; if (!lg.grid[ii]) continue;
+      const px = Math.min(W - 1, gx * DOWN), py = Math.min(H - 1, gy * DOWN);
+      const o = (py * W + px) * 4;
+      const r = data[o], g = data[o + 1], b = data[o + 2];
+      cellColor[ii] = ((r === 0 && g === 0 && b === 0) || (r === 255 && g === 255 && b === 255))
+        ? -2 : ((r << 16) | (g << 8) | b);
     }
-    // TRACED ROADS (2026-07-20): where the actual on-map road course is known
-    // (captured from the campaign map itself and georeferenced to map pixels),
-    // burn those cells into the cost grid as a near-free "trench". A* then
-    // follows the game's real road line between settlements — including its
-    // junctions and detours — rather than inventing its own least-cost path.
-    // Trench cost 2 < REUSE 3 < cheapest terrain 10, so traced course wins,
-    // and network merging (REUSE) still layers on top for untraced links.
-    {
-      const tr = TRACED_ROADS;
-      const fp = tr.fingerprint, fo = (fp.y * W + fp.x) * 4;
-      const applies = W === tr.mapW && H === tr.mapH
-        && data[fo] === fp.rgb[0] && data[fo + 1] === fp.rgb[1] && data[fo + 2] === fp.rgb[2];
-      if (applies) {
-        if (!costArr) costArr = new Float32Array(lg.w * lg.h).fill(11);
-        let burned = 0;
-        for (const [cx, cy] of tr.cells) {
-          const gx = Math.floor(cx / DOWN), gy = Math.floor(cy / DOWN);
-          if (gx < 0 || gy < 0 || gx >= lg.w || gy >= lg.h) continue;
-          const ci = gy * lg.w + gx;
-          if (!lg.grid[ci]) continue; // never carve a road into sea cells
-          costArr[ci] = 2; burned++;
-        }
-        console.log(`[roads] traced course applied: ${burned}/${tr.cells.length} cells burned into cost grid`);
-      }
+    const roadMark = new Uint8Array(lg.w * lg.h); // cells already carrying a road (→ ×0.5, shared network)
+    // region name → its packed-RGB map colour, for the allowed-region lookup.
+    const regionColorOf = {};
+    for (const [key, rd] of Object.entries(regions || {})) {
+      if (!rd || !rd.region) continue;
+      const nm = String(rd.region).toLowerCase();
+      if (nm in regionColorOf) continue;
+      const [r, g, b] = key.split(",").map(Number);
+      regionColorOf[nm] = (r << 16) | (g << 8) | b;
     }
+    const colorFor = (reg) => { const c = regionColorOf[String(reg).toLowerCase()]; return c === undefined ? -3 : c; };
     const toGrid = (a) => ({ gx: Math.min(lg.w - 1, Math.max(0, Math.round(a.x / DOWN))), gy: Math.min(lg.h - 1, Math.max(0, Math.round(a.y / DOWN))), fx: a.x, fy: a.y });
     const nearestLand = (gx, gy) => {
       if (gx >= 0 && gy >= 0 && gx < lg.w && gy < lg.h && lg.grid[gy * lg.w + gx]) return { x: gx, y: gy };
@@ -10491,12 +10473,11 @@ function App() {
       if (!tradeLaneAnchors[reg]) continue;
       for (const nb of (nbrs || [])) { if (!tradeLaneAnchors[nb]) continue; if (!hasRoads(reg) && !hasRoads(nb)) continue; const k = [reg, nb].sort().join(">"); if (seen.has(k)) continue; seen.add(k); pairs.push({ key: k, from: reg, to: nb }); }
     }
-    // SHARED ROAD NETWORK (2026-07-19): the game builds ONE connected network, not
-    // a separate direct road per pair. We route shortest links FIRST so they form
-    // the backbone, then let longer links snap onto existing road cells (marked
-    // cheap below) — so a route follows the shared spine and reaches its target via
-    // junctions (the game's "north-then-east" behaviour) instead of cutting straight.
-    const REUSE = 3; // cost of a cell that already carries a road (≈ cheapest terrain)
+    // SHARED ROAD NETWORK: the engine builds ONE connected network — a new link
+    // that reaches a tile already carrying a road pays only ×0.5 to enter it
+    // (roadMark below), so later links snap onto the existing spine and reach
+    // their target through junctions (the Y-fork) instead of cutting straight.
+    // Shortest links route first so they form the backbone.
     for (const p of pairs) {
       const a = tradeLaneAnchors[p.from], b = tradeLaneAnchors[p.to];
       p._d = a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 1e9;
@@ -10529,10 +10510,10 @@ function App() {
       const a = tradeLaneAnchors[reg];
       const A = toGrid(a), B = toGrid(p);
       const lA = nearestLand(A.gx, A.gy), lB = nearestLand(B.gx, B.gy);
-      const path = lA && lB ? aStarSea(lg, lA, lB, 200000, costArr) : null;
+      const rc = colorFor(reg); // harbour road stays within the region's own territory
+      const path = lA && lB ? roadAStarExact(lg, lA, lB, cost, cellColor, rc, rc, roadMark) : null;
       if (path && path.length >= 2) {
-        // port roads are part of the shared network — later routes merge onto them
-        if (costArr) for (const pt of path) { const ci = pt.y * lg.w + pt.x; if (costArr[ci] > REUSE) costArr[ci] = REUSE; }
+        for (const pt of path) roadMark[pt.y * lg.w + pt.x] = 1;
         const HC = DOWN >> 1;
         out["port>" + reg] = path.map((pt) => ({ x: pt.x * DOWN + HC, y: pt.y * DOWN + HC }));
       } else {
@@ -10548,15 +10529,12 @@ function App() {
         const A = toGrid(tradeLaneAnchors[p.from]), B = toGrid(tradeLaneAnchors[p.to]);
         const lA = nearestLand(A.gx, A.gy), lB = nearestLand(B.gx, B.gy);
         if (!lA || !lB) continue;
-        const path = aStarSea(lg, lA, lB, 200000, costArr);
+        // Exact engine road: A* restricted to the two endpoint regions' tiles,
+        // exact terrain cost, ×0.5 onto existing road (shared network / Y-fork).
+        const path = roadAStarExact(lg, lA, lB, cost, cellColor, colorFor(p.from), colorFor(p.to), roadMark);
         if (!path || path.length < 2) continue;
-        // Mark this route's cells as existing road so later, longer routes merge
-        // onto them instead of carving their own parallel line (shared network).
-        for (const pt of path) { const ci = pt.y * lg.w + pt.x; if (costArr[ci] > REUSE) costArr[ci] = REUSE; }
+        for (const pt of path) roadMark[pt.y * lg.w + pt.x] = 1;
         const HC = DOWN >> 1;
-        // Full link, settlement to settlement — no border clipping (see the
-        // ROAD LINK RULE above; the game draws the whole connection even
-        // through a roadless neighbour's province).
         out[`${p.key}#0`] = path.map((pt) => ({ x: pt.x * DOWN + HC, y: pt.y * DOWN + HC }));
       }
       if (i < pairs.length) (window.requestIdleCallback || ((cb) => setTimeout(cb, 16)))(step, { timeout: 500 });
@@ -10571,7 +10549,7 @@ function App() {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, portPixels, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, heightsPixels, heightsSize, roadRegions, portRegions, roadRegionsLive, modDataDir]);
+  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, portPixels, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, roadRegions, portRegions, roadRegionsLive, modDataDir]);
 
   // Combined Path2D for all roads (uniform style) → one stroke per frame, so
   // thousands of road segments don't tank the pan framerate.
