@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1345",
+    date: "2026-07-21",
+    items: [
+      { type: "improvement", text: "**Roads now wiggle like the game's, not just at the bends.** The captured network gives each road's true course, but the game draws its roads as an organic, gently-meandering line even along straight open stretches. Roads now render with that same subtle wiggle (deterministic, so it never flickers, and tapered to stay pinned at settlements and junctions), so a long straight run reads like a real road instead of a ruler line." },
+    ],
+  },
+  {
     version: "0.9.1344",
     date: "2026-07-21",
     items: [

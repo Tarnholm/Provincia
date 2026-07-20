@@ -1326,14 +1326,13 @@ function devTraceStep(label) {
 // The climate-map (map_climates.tga) cross-ref was consulted but is less
 // reliable for terrain naming because RTW terrain type and climate are
 // orthogonal (a swamp can sit in a desert climate, e.g. the Nile delta).
-// The per-pixel least-cost road path is right about WHICH cells the road
-// crosses, but drawn raw it reads as right-angled pixel steps. The game's
-// roads meander in soft curves — two rounds of Chaikin corner-cutting
-// (endpoints pinned) round every corner while staying inside the same cells,
-// so the course is unchanged but the line reads organic (2026-07-20).
-function chaikinRoad(pts) {
+// The captured/routed road path gives the road's tile-level COURSE, but the
+// game RENDERS its roads as an organic spline that gently wiggles even along
+// straight open stretches. chaikinRoad rounds the corners; organicRoad adds
+// that wiggle so long straight runs read like the game instead of ruler-straight.
+function chaikinRoad(pts, rounds = 2) {
   let s = pts;
-  for (let r = 0; r < 2 && s.length >= 3; r++) {
+  for (let r = 0; r < rounds && s.length >= 3; r++) {
     const n = [s[0]];
     for (let k = 0; k < s.length - 1; k++) {
       const a = s[k], b = s[k + 1];
@@ -1344,6 +1343,38 @@ function chaikinRoad(pts) {
     s = n;
   }
   return s;
+}
+// Resample to ~STEP px, displace each point perpendicular to the local heading
+// by a smooth two-harmonic sine of arc length (phase seeded from the road's
+// start so it's deterministic — no per-frame flicker), tapered to zero at both
+// ends so settlements/junctions stay pinned, then Chaikin-smooth. Amplitude is
+// deliberately small (sub-pixel-ish at map scale) — a natural meander, not noise.
+function organicRoad(pts) {
+  if (!pts || pts.length < 2) return pts || [];
+  const STEP = 1.4, AMP = 0.55, WL = 7.0;
+  const res = [pts[0]]; let acc = 0;
+  for (let k = 0; k < pts.length - 1; k++) {
+    const a = pts[k], b = pts[k + 1];
+    const seg = Math.hypot(b.x - a.x, b.y - a.y);
+    if (seg < 1e-6) continue;
+    let d = STEP - acc;
+    while (d < seg) { const t = d / seg; res.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }); d += STEP; }
+    acc = seg - (d - STEP);
+  }
+  res.push(pts[pts.length - 1]);
+  if (res.length < 3) return chaikinRoad(pts, 2);
+  const ph1 = (pts[0].x * 12.9898 + pts[0].y * 78.233) % (Math.PI * 2);
+  const ph2 = (pts[0].x * 39.346 + pts[0].y * 11.135) % (Math.PI * 2);
+  const out = []; let s = 0;
+  for (let i = 0; i < res.length; i++) {
+    if (i > 0) s += Math.hypot(res[i].x - res[i - 1].x, res[i].y - res[i - 1].y);
+    const a = res[Math.max(0, i - 1)], b = res[Math.min(res.length - 1, i + 1)];
+    const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy) || 1;
+    const off = AMP * (Math.sin(s / WL + ph1) + 0.45 * Math.sin(s / (WL * 2.3) + ph2));
+    const taper = Math.min(1, i / 6, (res.length - 1 - i) / 6);
+    out.push({ x: res[i].x + (-dy / L) * off * taper, y: res[i].y + (dx / L) * off * taper });
+  }
+  return chaikinRoad(out, 2);
 }
 
 // map_ground_types.tga colour → terrain type. CORRECTED 2026-07-20 from the
@@ -10587,7 +10618,7 @@ function App() {
     const p = new Path2D();
     for (const pts of Object.values(roadPaths)) {
       if (!pts || pts.length < 2) continue;
-      const s = chaikinRoad(pts);
+      const s = organicRoad(pts);
       p.moveTo(s[0].x, s[0].y);
       for (let k = 1; k < s.length; k++) p.lineTo(s[k].x, s[k].y);
     }
@@ -10686,7 +10717,7 @@ function App() {
           if (rk.split("#")[0] !== hoverRoadKey) continue;
           const poly = roadPaths[rk];
           if (!poly || poly.length < 2) continue;
-          const sm = chaikinRoad(poly); // same smoothing as the base stroke
+          const sm = organicRoad(poly); // same wiggle+smoothing as the base stroke
           ctx.beginPath();
           ctx.moveTo(sm[0].x, sm[0].y);
           for (let k = 1; k < sm.length; k++) ctx.lineTo(sm[k].x, sm[k].y);
