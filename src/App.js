@@ -5,6 +5,7 @@ import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOver
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, prefetchBuildingIconsBulk, invalidateBuildingIcon, warmStats } from "./buildingIcons";
 import { WARM_TUNING, runWarmChunks } from "./iconWarmScheduler";
 import { buildSeaGrid, buildLandGrid, nearestSea, aStarSea, seaComponents, nearestSeaBig, roadAStarExact } from "./seaLanePath";
+import { RIS_ROADS, RIS_ROADS_FINGERPRINT } from "./risRoads";
 import { getCachedUnitIcon, prefetchUnitIcons, prefetchUnitIconsBulk } from "./unitIcons";
 import { loadPortrait } from "./portraitIcons";
 // Heavy, single-use panels are code-split (2026-07-15): each is loaded as its
@@ -10375,7 +10376,15 @@ function App() {
     const portRegionsEff = roadRegionsLive
       ? new Set([...(portRegions || []), ...roadRegionsLive.ports])
       : portRegions;
-    const roadSig = `road|v16|${modDataDir}|${W}x${H}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
+    // EXACT ROADS (2026-07-21): on the RIS grand-campaign map, use the real road
+    // network captured from the game engine's own memory (src/risRoads.js) —
+    // pixel-exact geometry, no pathfinding. Fingerprint-gated so it never
+    // applies to another 1020x700 mod. Everything else falls back to the
+    // reverse-engineered A* below.
+    const fpR = RIS_ROADS_FINGERPRINT, fpo = (fpR.y * W + fpR.x) * 4;
+    const risMap = W === fpR.mapW && H === fpR.mapH
+      && data[fpo] === fpR.rgb[0] && data[fpo + 1] === fpR.rgb[1] && data[fpo + 2] === fpR.rgb[2];
+    const roadSig = `road|v17|${modDataDir}|${W}x${H}|${risMap ? "risX" : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10384,6 +10393,26 @@ function App() {
       if (cancelled) return;
       if (disk && disk.roadPaths) { _laneMemCache[roadSig] = disk; setRoadPaths(disk.roadPaths); console.log("[roads] loaded from cache"); return; }
     } catch { /* cache miss → compute */ }
+    if (risMap) {
+      // Build roadPaths straight from the captured geometry. Key each road by
+      // its endpoint region-name pair (region colour → name via `regions`) so
+      // the hover tooltip / trade sidebar link to the same land-lane data.
+      const out = {}; const idxByKey = {};
+      for (const rd of RIS_ROADS) {
+        const p = rd.p; if (!p || p.length < 4) continue;
+        const pts = []; for (let k = 0; k < p.length - 1; k += 2) pts.push({ x: p[k], y: p[k + 1] });
+        const nmA = (regions[rd.a] && regions[rd.a].region) || rd.a || "?";
+        const nmB = (regions[rd.b] && regions[rd.b].region) || rd.b || "?";
+        const key = nmA === nmB ? "port>" + nmA : [nmA, nmB].sort().join(">");
+        const idx = (idxByKey[key] = (idxByKey[key] || 0) + 1) - 1;
+        out[key.startsWith("port>") ? key + (idx || "") : `${key}#${idx}`] = pts;
+      }
+      console.log(`[roads] RIS exact network: ${Object.keys(out).length} roads from captured geometry`);
+      _laneMemCache[roadSig] = { roadPaths: out };
+      setRoadPaths(out);
+      try { window.electronAPI?.laneCacheSet?.(modDataDir, "road", roadSig, { roadPaths: out }); } catch { /* best-effort */ }
+      return;
+    }
     // Land = anything that is NOT sea (any region colour known or not, plus
     // settlement/port markers) — robust to regions missing from the set.
     const isSea = (r, g, b) => r < 90 && g > 110 && g < 175 && b > 190;

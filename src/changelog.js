@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1344",
+    date: "2026-07-21",
+    items: [
+      { type: "feature", text: "**Roads on the RIS grand campaign now match the game exactly.** Instead of computing an approximation of where roads run, Provincia now uses the game's own complete road network — every road across the whole map, exactly as the game itself lays them (the Y-forks, the coastal detours, the junctions, all of it). Trade Lanes on this map is now pixel-for-pixel the game's road layout. Other maps continue to use the computed router." },
+    ],
+  },
+  {
     version: "0.9.1343",
     date: "2026-07-20",
     items: [
