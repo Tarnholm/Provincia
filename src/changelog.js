@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1349",
+    date: "2026-07-21",
+    items: [
+      { type: "fix", text: "**The exact road curve now actually shows — the previous update was being masked by a stale cache.** v0.9.1348 computed the game's real curved roads but the road cache key hadn't changed, so the app kept serving the older straight version. The cache key now busts correctly (and is tied to the road data so this can't recur), so the game-exact curving/meander is what you'll see." },
+    ],
+  },
+  {
     version: "0.9.1348",
     date: "2026-07-21",
     items: [
