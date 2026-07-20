@@ -10315,7 +10315,7 @@ function App() {
     if (!data || !W || !H) return;
     // Cache signature: road geometry depends on the mod, terrain data, which
     // settlements have roads, the adjacency graph, anchors and the port bindings.
-    const roadSig = `road|v12|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${groundTypesPixels ? 1 : 0}`;
+    const roadSig = `road|v13|${modDataDir}|${W}x${H}|${roadRegions ? roadRegions.size : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}|${heightsPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10360,6 +10360,26 @@ function App() {
         const gi = (ty * gW + tx) * 4;
         const nm = GROUND_TYPE_PALETTE[`${gData[gi]},${gData[gi + 1]},${gData[gi + 2]}`]?.name;
         if (nm && COST[nm]) costArr[i] = COST[nm];
+      }
+    }
+    // ELEVATION (2026-07-20): the heights map now feeds routing, as the
+    // "roads use elevation" note above always intended. Steep ground costs
+    // more (gentle ×1..×2 by local slope), so roads prefer valley floors and
+    // passes over shoulders of hills — without overriding the terrain-type
+    // costs, and never overriding a traced course (burned below).
+    if (heightsPixels && heightsSize.width) {
+      const hW2 = heightsSize.width, hH2 = heightsSize.height, hData = heightsPixels;
+      if (!costArr) costArr = new Float32Array(lg.w * lg.h).fill(11);
+      const hAt = (gx, gy) => {
+        const px = Math.min(W - 1, Math.max(0, gx * DOWN)), py = Math.min(H - 1, Math.max(0, gy * DOWN));
+        const hx = Math.min(hW2 - 1, Math.floor((px + 0.5) / W * hW2)), hy = Math.min(hH2 - 1, Math.floor((py + 0.5) / H * hH2));
+        return hData[(hy * hW2 + hx) * 4];
+      };
+      for (let gy = 0; gy < lg.h; gy++) for (let gx = 0; gx < lg.w; gx++) {
+        const i = gy * lg.w + gx;
+        if (!lg.grid[i] || costArr[i] >= 999) continue;
+        const sl = Math.max(Math.abs(hAt(gx + 1, gy) - hAt(gx - 1, gy)), Math.abs(hAt(gx, gy + 1) - hAt(gx, gy - 1))) / 2;
+        costArr[i] *= Math.min(2, 1 + sl / 8);
       }
     }
     // TRACED ROADS (2026-07-20): where the actual on-map road course is known
@@ -10427,11 +10447,24 @@ function App() {
     // road threads around hills/forest — and follows the traced course where
     // one exists (the game draws town→port roads along the road network, e.g.
     // an inland town's road crossing the island to its far-coast harbour).
-    // Straight line kept as fallback when no land route is found.
-    if (portByRegion) for (const [reg, p] of Object.entries(portByRegion)) {
-      if (!p || !hasRoads(reg)) continue; // no roads building → no road to the harbour either
-      const a = tradeLaneAnchors[reg];
+    // Sourced from the region map's port pixels for EVERY road-having region
+    // (previously only regions whose port a sea lane had bound got a harbour
+    // road, so a port without active sea trade never showed its road even
+    // though the game draws it). Sea-lane-bound pixel preferred when present
+    // so road and lane still join at the same tile.
+    const portOf = {};
+    for (const wp of (portPixels || [])) {
+      if (!wp.region || !hasRoads(wp.region)) continue;
+      const a = tradeLaneAnchors[wp.region];
       if (!a) continue;
+      const d = (wp.x - a.x) ** 2 + (wp.y - a.y) ** 2;
+      if (!portOf[wp.region] || d < portOf[wp.region]._d) portOf[wp.region] = { x: wp.x, y: wp.y, _d: d };
+    }
+    if (portByRegion) for (const [reg, p] of Object.entries(portByRegion)) {
+      if (p && hasRoads(reg) && tradeLaneAnchors[reg]) portOf[reg] = { x: p.x, y: p.y };
+    }
+    for (const [reg, p] of Object.entries(portOf)) {
+      const a = tradeLaneAnchors[reg];
       const A = toGrid(a), B = toGrid(p);
       const lA = nearestLand(A.gx, A.gy), lB = nearestLand(B.gx, B.gy);
       const path = lA && lB ? aStarSea(lg, lA, lB, 200000, costArr) : null;
@@ -10488,7 +10521,7 @@ function App() {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, roadRegions, modDataDir]);
+  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, portPixels, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, heightsPixels, heightsSize, roadRegions, modDataDir]);
 
   // Combined Path2D for all roads (uniform style) → one stroke per frame, so
   // thousands of road segments don't tank the pan framerate.

@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1340",
+    date: "2026-07-20",
+    items: [
+      { type: "fix", text: "**Harbour roads now draw for every port, not only trading ports.** A settlement's road to its harbour previously only appeared when a sea lane was actively using that port, so e.g. Sardinia's long road from the inland town across to its east-coast harbour never showed. Harbour roads now come from the map's port markers directly — every province with roads and a port shows the road to it, exactly as the game draws them." },
+      { type: "improvement", text: "**Roads now read the height map.** Road routing folds elevation into its terrain costs — steep ground is more expensive, so roads prefer valley floors and passes over hill shoulders. Captured road courses (like Sardinia's) are unaffected; this refines routes everywhere else." },
+    ],
+  },
+  {
     version: "0.9.1339",
     date: "2026-07-20",
     items: [
