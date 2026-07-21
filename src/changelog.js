@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1355",
+    date: "2026-07-21",
+    items: [
+      { type: "fix", text: "**Settlement→port roads now show for every port, even where no roads are built.** A settlement with a harbour always has a short road down to its port — but these were being hidden in regions that had a port yet no built roads (e.g. Baliares_Maiores). Port connectors now draw wherever the region has a port, matching the game." },
+    ],
+  },
+  {
     version: "0.9.1354",
     date: "2026-07-21",
     items: [

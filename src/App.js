@@ -10419,7 +10419,7 @@ function App() {
       const o = (f.y * W + f.x) * 4;
       return data[o] === f.rgb[0] && data[o + 1] === f.rgb[1] && data[o + 2] === f.rgb[2];
     });
-    const roadSig = `road|v18wig|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name + ":" + capMap.roads.length : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
+    const roadSig = `road|v19port|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name + ":" + capMap.roads.length : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadsPrecurved(!!_laneMemCache[roadSig].precurved); setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10433,16 +10433,27 @@ function App() {
       // its endpoint region-name pair (region colour → name via `regions`) so
       // the hover tooltip / trade sidebar link to the same land-lane data.
       // The captured geometry covers EVERY province (data captured with roads
-      // built everywhere). Show a road only where the loaded state actually has
-      // roads (roadRegionsEff) so it matches the game; if that set is unknown,
-      // show all.
-      const filterRoads = roadRegionsEff && roadRegionsEff.size > 0;
+      // built everywhere). Match the loaded game: draw an inter-settlement road
+      // only where a region actually has roads (roadRegionsEff), and draw a
+      // settlement→port connector (same-region endpoints) wherever the region
+      // has a PORT (portRegionsEff) even if it has no roads. If neither set is
+      // known, show all.
+      const filterRoads = (roadRegionsEff && roadRegionsEff.size > 0) || (portRegionsEff && portRegionsEff.size > 0);
+      const inRoads = (nm) => roadRegionsEff && roadRegionsEff.has(String(nm).toLowerCase());
+      const inPorts = (nm) => portRegionsEff && portRegionsEff.has(String(nm).toLowerCase());
       const out = {}; const idxByKey = {};
       for (const rd of capMap.roads) {
         const p = rd.p; if (!p || p.length < 4) continue;
         const nmA = (regions[rd.a] && regions[rd.a].region) || rd.a || "?";
         const nmB = (regions[rd.b] && regions[rd.b].region) || rd.b || "?";
-        if (filterRoads && !(roadRegionsEff.has(String(nmA).toLowerCase()) || roadRegionsEff.has(String(nmB).toLowerCase()))) continue;
+        if (filterRoads) {
+          const unknown = nmA === "?" || nmB === "?"; // untaggable endpoint — can't filter, so keep
+          const isPortRoad = nmA === nmB;
+          const keep = unknown || (isPortRoad
+            ? (inPorts(nmA) || inRoads(nmA))
+            : (inRoads(nmA) || inRoads(nmB)));
+          if (!keep) continue;
+        }
         const pts = []; for (let k = 0; k < p.length - 1; k += 2) pts.push({ x: p[k], y: p[k + 1] });
         const key = nmA === nmB ? "port>" + nmA : [nmA, nmB].sort().join(">");
         const idx = (idxByKey[key] = (idxByKey[key] || 0) + 1) - 1;
