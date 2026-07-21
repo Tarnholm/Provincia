@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1360",
+    date: "2026-07-21",
+    items: [
+      { type: "fix", text: "**Road junctions now form clean Y-forks instead of tiny triangles.** The game's road data contains tiny 1–2 pixel connector pieces between junction points — invisible under the game's thick road texture, but Provincia's fine lines drew them as small triangles. Those connectors are now merged into a single junction point. Dead-end stubs (settlement and harbour links) are untouched." },
+    ],
+  },
+  {
     version: "0.9.1359",
     date: "2026-07-21",
     items: [
