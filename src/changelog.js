@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1353",
+    date: "2026-07-21",
+    items: [
+      { type: "fix", text: "**Fixed the doubled/parallel road lines.** Where the game's captured road ran alongside a reproduced fallback road, both were being drawn, showing as two parallel lines. The fallback is now suppressed wherever it overlaps a captured road, so each road draws once." },
+    ],
+  },
+  {
     version: "0.9.1352",
     date: "2026-07-21",
     items: [
