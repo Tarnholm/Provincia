@@ -10710,13 +10710,21 @@ function App() {
       const hoverRoadKey = hoveredTradeLane && hoveredTradeLane.kind === "road" ? hoveredTradeLane.key : null;
       ctx.save();
       ctx.lineCap = "round";
-      // Land roads first (dashed brown, one combined stroke), sea lanes on top.
+      // Land roads first — SOLID continuous dirt line, like the game (dashes
+      // broke the gentle curve into straight ticks and read as straight; the
+      // game's roads are unbroken, so the meander only shows as a solid line).
+      // Round join/cap keep the curve smooth. Sea lanes stay dashed, on top.
       if (roadPath2D) {
-        ctx.strokeStyle = "rgba(120,86,52,0.85)";
-        ctx.lineWidth = 1.1 / totalScale;
-        ctx.setLineDash([5 / totalScale, 4 / totalScale]);
-        ctx.stroke(roadPath2D);
+        ctx.lineJoin = "round";
         ctx.setLineDash([]);
+        // subtle darker casing underneath, then the tan road on top — reads as
+        // a real road and makes the curve legible at any zoom.
+        ctx.strokeStyle = "rgba(84,58,34,0.55)";
+        ctx.lineWidth = 2.2 / totalScale;
+        ctx.stroke(roadPath2D);
+        ctx.strokeStyle = "rgba(202,170,120,0.95)";
+        ctx.lineWidth = 1.2 / totalScale;
+        ctx.stroke(roadPath2D);
       }
       // Highlight the hovered road pair's segments over the combined stroke.
       if (hoverRoadKey && roadPaths) {

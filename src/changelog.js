@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1350",
+    date: "2026-07-21",
+    items: [
+      { type: "fix", text: "**Roads now draw as a solid dirt line, like the game — which finally makes the curve visible.** They were drawn dashed, and a dashed line chops a gentle curve into short straight ticks, so the road read as straight no matter how accurate the underlying path was. Roads are now a solid continuous line (tan with a subtle darker casing), so the exact route — the meander, the forks, the in-and-out — actually shows. Sea lanes stay dashed." },
+    ],
+  },
+  {
     version: "0.9.1349",
     date: "2026-07-21",
     items: [
