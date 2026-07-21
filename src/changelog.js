@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1357",
+    date: "2026-07-21",
+    items: [
+      { type: "fix", text: "**Fixed looping/tangled roads (e.g. Caralis ⇄ Neapolis-Sardinia).** The game stores some road links twice, along two slightly different routes; drawn together the pair made a loop or hook. Provincia now keeps only the single most-direct route for each connection, so roads read as one clean line between settlements. Removed ~750 duplicate route pieces across the map." },
+    ],
+  },
+  {
     version: "0.9.1356",
     date: "2026-07-21",
     items: [
