@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1362",
+    date: "2026-07-22",
+    items: [
+      { type: "fix", text: "**Restored missing roads at Velzna, Arpi, around Olbia-Sardinia, Praeneste–Rome and ~30 more places.** The water test used to decide \"this road is in the sea\" was matching some regions' map colours (Velzna's and Arpi's among them), silently deleting every road that touched them. Water is now identified exactly, and none of those roads are lost." },
+      { type: "fix", text: "**Every road connection is now machine-verified before release.** A new validation pass checks the entire map: every settlement and harbour that has roads in the game keeps them, no road end is left hanging that the game has connected, no leftover slivers, nothing on water. This build passes with zero issues — and the check runs on every future road data update, so this class of bug can't slip through again." },
+    ],
+  },
+  {
     version: "0.9.1361",
     date: "2026-07-21",
     items: [
