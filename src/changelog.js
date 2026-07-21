@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1354",
+    date: "2026-07-21",
+    items: [
+      { type: "improvement", text: "**Roads now cover every province, using the game's actual drawn curves.** The road network is no longer limited to the regions that happened to be captured — it now spans the whole map, from Iberia to the Near East and every island, with each road following the exact organic curve the game draws. Roads draw only where the loaded game actually has roads, so what you see matches your campaign. Single clean lines throughout, always on land." },
+    ],
+  },
+  {
     version: "0.9.1353",
     date: "2026-07-21",
     items: [

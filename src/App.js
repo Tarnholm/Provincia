@@ -10432,12 +10432,18 @@ function App() {
       // Build roadPaths straight from the captured geometry. Key each road by
       // its endpoint region-name pair (region colour → name via `regions`) so
       // the hover tooltip / trade sidebar link to the same land-lane data.
+      // The captured geometry covers EVERY province (data captured with roads
+      // built everywhere). Show a road only where the loaded state actually has
+      // roads (roadRegionsEff) so it matches the game; if that set is unknown,
+      // show all.
+      const filterRoads = roadRegionsEff && roadRegionsEff.size > 0;
       const out = {}; const idxByKey = {};
       for (const rd of capMap.roads) {
         const p = rd.p; if (!p || p.length < 4) continue;
-        const pts = []; for (let k = 0; k < p.length - 1; k += 2) pts.push({ x: p[k], y: p[k + 1] });
         const nmA = (regions[rd.a] && regions[rd.a].region) || rd.a || "?";
         const nmB = (regions[rd.b] && regions[rd.b].region) || rd.b || "?";
+        if (filterRoads && !(roadRegionsEff.has(String(nmA).toLowerCase()) || roadRegionsEff.has(String(nmB).toLowerCase()))) continue;
+        const pts = []; for (let k = 0; k < p.length - 1; k += 2) pts.push({ x: p[k], y: p[k + 1] });
         const key = nmA === nmB ? "port>" + nmA : [nmA, nmB].sort().join(">");
         const idx = (idxByKey[key] = (idxByKey[key] || 0) + 1) - 1;
         out[key.startsWith("port>") ? key + (idx || "") : `${key}#${idx}`] = pts;
