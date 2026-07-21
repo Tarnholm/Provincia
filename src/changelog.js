@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1361",
+    date: "2026-07-21",
+    items: [
+      { type: "fix", text: "**Y-junctions rebuilt properly this time.** The previous junction merging averaged nearby road endpoints together, which could yank a road's end away from its natural course — producing spikes and crooked forks (visible at Pluvium among others). Joining is now done the way the game's data intends: only road ends that continue one another (the two halves of the same road meeting at a province border) are joined, settlement and junction anchor points are left exactly where the game puts them, and every correction is blended smoothly along the road instead of kinking the tip. Verified against the game at Pluvium, Olbia, Caralis and spot-checked across Italy and Greece before release." },
+    ],
+  },
+  {
     version: "0.9.1360",
     date: "2026-07-21",
     items: [
