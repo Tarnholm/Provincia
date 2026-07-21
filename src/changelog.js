@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1351",
+    date: "2026-07-21",
+    items: [
+      { type: "fix", text: "**Roads now flow organically instead of hugging the tile grid.** The road routes were correct, but they were pinned to the square tile grid, so they came out stair-stepped/squarish — and a per-step jitter made them look wobbly rather than curved. Roads are now relaxed off the grid into a smooth flowing line and drawn as a continuous dirt road, so they curve naturally like the game's, not like a modern highway. Also fixed roads that strayed into the sea near the coast — stray points are pulled back onto land." },
+    ],
+  },
+  {
     version: "0.9.1350",
     date: "2026-07-21",
     items: [
