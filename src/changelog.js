@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1356",
+    date: "2026-07-21",
+    items: [
+      { type: "fix", text: "**Roads no longer cut off between regions.** The game builds each road as separate per-region pieces that meet at the province border, and those pieces stopped a pixel or two short of each other — invisible in-game under the thick road texture, but showing as a gap in Provincia's fine lines (e.g. the road from Uelis to Caralis). Road pieces that meet at a junction are now snapped together, so roads run unbroken from settlement to settlement." },
+    ],
+  },
+  {
     version: "0.9.1355",
     date: "2026-07-21",
     items: [
