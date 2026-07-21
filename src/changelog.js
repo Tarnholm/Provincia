@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1358",
+    date: "2026-07-21",
+    items: [
+      { type: "fix", text: "**Fixed remaining road loops and dots.** Two causes: (1) very short roads (like a settlement's harbour link) could have both ends pulled into the same junction, turning them into small circles — junction merging now never collapses a road onto itself; (2) roads the game draws along land strips too narrow to exist at map resolution (e.g. coastal spits) were being squashed onto a single shore pixel — those are now omitted, since that water shows as blue in Provincia and roads never sit on blue." },
+      { type: "fix", text: "**Restored roads that run through settlements (e.g. Olbia-Sardinia) and minor spurs (e.g. up to Pluvium).** The previous version's duplicate-removal was too aggressive: when two road pieces connected the same two junctions by different routes, it kept only the shorter one — but those are often two real roads (one through the settlement, one around it). Every road piece the game draws is now drawn." },
+    ],
+  },
+  {
     version: "0.9.1357",
     date: "2026-07-21",
     items: [
