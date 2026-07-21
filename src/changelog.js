@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1352",
+    date: "2026-07-21",
+    items: [
+      { type: "fix", text: "**Roads now use the game's actual drawn curve — read directly, not reproduced.** Instead of trying to recompute the game's road shape (which kept coming out stair-stepped or wobbly), Provincia now uses the road geometry the game itself draws, so the curves are exactly the game's organic flowing lines. Regions that couldn't be captured fall back to the smooth reproduction so nothing is missing." },
+      { type: "fix", text: "**Roads can no longer sit on sea.** Every road point is now guaranteed to be on land — any point that would fall on a water pixel is pulled back to the nearest land. No more roads crossing into the blue." },
+    ],
+  },
+  {
     version: "0.9.1351",
     date: "2026-07-21",
     items: [
