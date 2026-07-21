@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1359",
+    date: "2026-07-21",
+    items: [
+      { type: "fix", text: "**Fixed missing road halves.** The game splits every road at the province border, and a road from a province with roads into one without is still drawn in full by the game — but Provincia was hiding the half lying in the roadless province. Roads are now filtered per link (drawn if either side has roads, exactly the game's rule), so roads run their full length again." },
+      { type: "fix", text: "**Cleaned up tangled road clusters (southern Sardinia and elsewhere).** Neighbouring provinces each store their own copy of shared border roads, and drawing both near-identical copies as fine lines produced a tangled look. Same-route copies are now merged (275 across the map) while genuinely distinct alternative roads — like the route through a settlement versus around it — are kept." },
+    ],
+  },
+  {
     version: "0.9.1358",
     date: "2026-07-21",
     items: [
