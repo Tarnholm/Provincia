@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1370",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**Removed duplicated / parallel road lines.** Where the game's capture had split a shared road corridor into overlapping pieces, they drew as double lines (e.g. across southern Sardinia). Overlapping duplicates are now collapsed to a single line per corridor, while the last road into every settlement and port is protected so nothing gets disconnected. ~1,600 duplicate pieces removed, connectivity verified map-wide." },
+    ],
+  },
+  {
     version: "0.9.1369",
     date: "2026-07-23",
     items: [
