@@ -388,13 +388,172 @@ def nearcols(px, py, rad=2):
                 if c not in ((0, 0, 0), (255, 255, 255)): cols.add(c)
     return cols
 
+# ---- LINK terminal assignment: the game draws roads per LINK (settlement to
+# settlement; drawn iff EITHER side has roads, even across roadless middle
+# regions — Cornus reaches Pluvium across roadless Corsicosardinia). Filtering
+# by the piece's LOCAL endpoint regions hid middle pieces of cross-region
+# links (Friniatia / Vocontia / Turonia bugs). So: build the road graph, run a
+# multi-source Dijkstra from every settlement/port anchor, and tag each piece
+# with its two LINK TERMINAL regions (nearest anchor through the graph from
+# each end, second-nearest when both ends see the same anchor).
+import heapq
+def nk(p): return (round(p[0], 1), round(p[1], 1))
+node_id = {}; node_pos = []
+def get_node(p):
+    k = nk(p)
+    if k not in node_id:
+        node_id[k] = len(node_pos); node_pos.append(p)
+    return node_id[k]
+adj = {}
+for ci, c in enumerate(ded):
+    n1, n2 = get_node(c[0]), get_node(c[-1])
+    w = max(plen2(c), 0.05)
+    adj.setdefault(n1, []).append((n2, w, ci)); adj.setdefault(n2, []).append((n1, w, ci))
+# T-junction edges: an endpoint feathered onto another piece's INTERIOR point
+# is a junction too — connect its node to that piece's two end nodes so the
+# graph walk can pass through (weights split by arc position).
+for ci, c in enumerate(ded):
+    for p in (c[0], c[-1]):
+        n = node_id[nk(p)]
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for x, y, cj in pgrid.get((int(p[0]) + dx, int(p[1]) + dy), ()):
+                    if cj == ci: continue
+                    if (x - p[0]) ** 2 + (y - p[1]) ** 2 <= 0.09:
+                        d = ded[cj]
+                        m1, m2 = node_id[nk(d[0])], node_id[nk(d[-1])]
+                        w = max(plen2(d) * 0.5, 0.05)
+                        adj.setdefault(n, []).append((m1, w, cj)); adj.setdefault(m1, []).append((n, w, cj))
+                        adj.setdefault(n, []).append((m2, w, cj)); adj.setdefault(m2, []).append((n, w, cj))
+                        break
+# anchor nodes: node within 0.95 of a settlement/port pixel-center.
+# Region of an anchor = most common region colour in the SMALLEST ring around
+# its pixel (3x3 first, then grow) — a wide sample at a border-hugging
+# settlement picks the NEIGHBOUR region (Metapontion bug).
+def anchor_region(ax, ay):
+    xi, yi = int(ax), int(ay)
+    for rad in (1, 2, 3):
+        cnt = Counter()
+        for dy in range(-rad, rad + 1):
+            for dx in range(-rad, rad + 1):
+                x, y = xi + dx, yi + dy
+                if 0 <= x < W and 0 <= y < H and not is_sea[y, x]:
+                    t = tuple(int(v) for v in reg[y, x])
+                    if t not in ((0, 0, 0), (255, 255, 255)): cnt[t] += 1
+        if cnt: return cnt.most_common(1)[0][0]
+    return None
+# anchor-centric claim: every settlement/port claims its NEAREST road node
+# (up to 2.5px away — the game's own node can sit 1-2px off the black pixel).
+# Node-centric detection missed those settlements entirely, wiping whole
+# regions out of the link terminals.
+ngrid = {}
+for ni, p in enumerate(node_pos): ngrid.setdefault((int(p[0]) // 2, int(p[1]) // 2), []).append(ni)
+anchor_col = {}
+anchor_claim_d = {}
+for (axp, ayp) in ANCH:
+    ax, ay = axp + 0.5, ayp + 0.5
+    col = anchor_region(ax, ay)
+    if not col: continue
+    best = None; bd = 2.5 * 2.5
+    cx, cy = int(ax) // 2, int(ay) // 2
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            for ni in ngrid.get((cx + dx, cy + dy), ()):
+                p = node_pos[ni]
+                d = (p[0] - ax) ** 2 + (p[1] - ay) ** 2
+                if d < bd: bd = d; best = ni
+    if best is not None and bd < anchor_claim_d.get(best, 1e18):
+        anchor_col[best] = col; anchor_claim_d[best] = bd
+print(f"link graph: {len(node_pos)} nodes, {len(anchor_col)} anchor nodes")
+# --- LINK-PATH DECOMPOSITION: replicate the game's build_road_links.
+# Links = settlement -> each ADJACENT region's settlement, + settlement -> own
+# port. Trace each link's path through the captured graph (Dijkstra); every
+# piece on the path carries that link. A piece is visible iff ANY of its links
+# has a side with roads. (Nearest-anchor tagging broke at branch junctions.)
+INF = 1e18
+# region adjacency from map_regions pixel neighbours
+SEAC = is_sea
+def okcol(t): return t not in ((0, 0, 0), (255, 255, 255))
+adjpairs = set()
+rr = reg.astype(np.int32)
+packed = (rr[..., 0] << 16) | (rr[..., 1] << 8) | rr[..., 2]
+packed[SEAC] = -1
+for axis, (sl1, sl2) in ((0, (np.s_[:-1, :], np.s_[1:, :])), (1, (np.s_[:, :-1], np.s_[:, 1:]))):
+    a1 = packed[sl1].ravel(); a2 = packed[sl2].ravel()
+    m = (a1 != a2) & (a1 >= 0) & (a2 >= 0)
+    for v1, v2 in zip(a1[m].tolist(), a2[m].tolist()):
+        c1 = ((v1 >> 16) & 255, (v1 >> 8) & 255, v1 & 255)
+        c2 = ((v2 >> 16) & 255, (v2 >> 8) & 255, v2 & 255)
+        if okcol(c1) and okcol(c2): adjpairs.add(tuple(sorted((c1, c2))))
+print(f"region adjacency pairs: {len(adjpairs)}")
+# settlement / port node per region colour
+set_node = {}; port_nodes = {}
+for ni, col in anchor_col.items():
+    p = node_pos[ni]
+    aa = anchors_near(p, 2.5)
+    if not aa: continue
+    ax, ay = aa[0]
+    is_set = (int(ax), int(ay)) in ANCH and _blk[int(ay), int(ax)]
+    if is_set:
+        if col not in set_node or anchor_claim_d.get(ni, 9) < anchor_claim_d.get(set_node[col], 9):
+            set_node[col] = ni
+    else:
+        port_nodes.setdefault(col, []).append(ni)
+print(f"settlement nodes: {len(set_node)}, port regions: {len(port_nodes)}")
+def dijkstra_path(src, dst):
+    dist = {src: 0.0}; prev = {}
+    pq = [(0.0, src)]
+    while pq:
+        d, n = heapq.heappop(pq)
+        if n == dst: break
+        if d > dist.get(n, INF): continue
+        for m, w, ci in adj.get(n, ()):
+            nd = d + w
+            if nd < dist.get(m, INF):
+                dist[m] = nd; prev[m] = (n, ci); heapq.heappush(pq, (nd, m))
+    if dst not in dist: return None, None
+    edges = []; n = dst
+    while n != src:
+        pn, ci = prev[n]; edges.append(ci); n = pn
+    return dist[dst], edges
+piece_links = [[] for _ in ded]
+nlinks = 0
+for (cA, cB) in adjpairs:
+    nA, nB = set_node.get(cA), set_node.get(cB)
+    if nA is None or nB is None or nA == nB: continue
+    pA, pB = node_pos[nA], node_pos[nB]
+    euclid = math.hypot(pA[0] - pB[0], pA[1] - pB[1])
+    d, edges = dijkstra_path(nA, nB)
+    if edges is None or d > max(euclid * 2.5, euclid + 8): continue
+    nlinks += 1
+    for ci in edges: piece_links[ci].append((cA, cB))
+for col, pns in port_nodes.items():
+    nS = set_node.get(col)
+    if nS is None: continue
+    for pn in pns:
+        d, edges = dijkstra_path(nS, pn)
+        if edges is None or d > 25: continue
+        nlinks += 1
+        for ci in edges: piece_links[ci].append((col, col))
+untagged = sum(1 for L in piece_links if not L)
+print(f"links traced: {nlinks}; untagged pieces: {untagged}")
+def link_terms(ci, c):
+    L = piece_links[ci]
+    if L: return L[0][0], L[0][1]
+    return regcol(*c[0]), regcol(*c[-1])
+
 fp = tuple(int(v) for v in reg[313, 244])
 entries = []
-for c in ded:
-    a = regcol(*c[0]); b = regcol(*c[-1])
+for ci, c in enumerate(ded):
+    a, b = link_terms(ci, c)
+    if a is None: a = regcol(*c[0])
+    if b is None: b = regcol(*c[-1])
     cs = lambda q: (f'"{q[0]},{q[1]},{q[2]}"' if q else '""')
-    link = sorted(nearcols(*c[0]) | nearcols(*c[-1]))
-    rl = ",".join(f'"{q[0]},{q[1]},{q[2]}"' for q in link)
+    # l = ALL links whose path uses this piece (beyond the primary a/b pair),
+    # as "rA,gA,bA|rB,gB,bB" strings — the app shows the piece if ANY link
+    # passes the visibility rule.
+    extra = piece_links[ci][1:]
+    rl = ",".join(f'"{q[0][0]},{q[0][1]},{q[0][2]}|{q[1][0]},{q[1][1]},{q[1][2]}"' for q in extra)
     # round for output, then re-check land — rounding 87.9996 -> 88.0 can hop
     # onto a sea pixel; re-clamp the ROUNDED value so what we WRITE is on land
     rpts = []
@@ -404,7 +563,7 @@ for c in ded:
             rx, ry = (round(v, 2) for v in to_land(rx, ry))
         rpts.append((rx, ry))
     flat = ",".join(f"{v:g}" for p in rpts for v in p)
-    entries.append(f'{{a:{cs(a)},b:{cs(b)},r:[{rl}],p:[{flat}]}}')
+    entries.append(f'{{a:{cs(a)},b:{cs(b)},l:[{rl}],p:[{flat}]}}')
 js = ("// WHOLE-MAP road network: the game's ACTUAL drawn curve for every province,\n"
       "// read from memory (fog off, all roads built) and rebuilt as cubic Bezier\n"
       "// through the engine's own nodes. Captured-only (no reproduced fallback ->\n"

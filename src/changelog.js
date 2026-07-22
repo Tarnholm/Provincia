@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1364",
+    date: "2026-07-22",
+    items: [
+      { type: "fix", text: "**Roads now show per LINK, exactly like the game — fixes Friniatia, Vennonia-Caluconia, Turonia, Anagnutia showing no roads and the Cavaria–Vocontia / Caturigia–Vocontia connections.** The game draws a road per settlement-to-settlement link: if either settlement has roads, the whole link is drawn, even where it crosses provinces without roads. Provincia was deciding per road piece from the province it happened to lie in, hiding the middle of exactly those cross-province links. Every road piece is now tagged with the actual link(s) it belongs to — traced settlement-to-settlement through the road network — and shown by the game's own rule." },
+      { type: "fix", text: "**No more half-drawn roads:** if a visible road continues into a piece the filter would have hidden, the continuation is shown too — a drawn road always runs settlement to settlement, never stopping mid-field." },
+      { type: "fix", text: "**The pre-release check now also verifies the filtered view** — it simulates what you'll actually see at campaign start and confirms every province with roads shows them at its settlement and no visible road dangles. This build: zero issues, map-wide." },
+    ],
+  },
+  {
     version: "0.9.1363",
     date: "2026-07-22",
     items: [
