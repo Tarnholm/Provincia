@@ -268,46 +268,15 @@ while changed:
             tri_removed += 1; changed = True; break
 print(f"junction triangles removed: {tri_removed} tiny connector pieces merged into junctions")
 
-# ---- attach loose ends (validator invariant): every endpoint that was
-# CONNECTED in the raw game data must still be connected after all passes.
-# Pairwise joins can leave the third end of a 3-way border meeting hanging
-# ~1px off; snap such ends (feathered) onto the nearest surviving endpoint.
-for _round, _rad in enumerate((1.6, 1.6, 1.6, 4.5)):  # last round = last resort
-    egrid2 = {}
-    for ci, c in enumerate(ded):
-        for p in (c[0], c[-1]): egrid2.setdefault((int(p[0]), int(p[1])), []).append((tuple(p), ci))
-    def others(p, rad, ci):
-        out = []
-        rr = 1 + int(rad)
-        for dx in range(-rr, rr + 1):
-            for dy in range(-rr, rr + 1):
-                for q, cj in egrid2.get((int(p[0]) + dx, int(p[1]) + dy), ()):
-                    if cj == ci: continue
-                    if (q[0] - p[0]) ** 2 + (q[1] - p[1]) ** 2 <= rad * rad: out.append(q)
-        return out
-    attached = 0
-    for ci, c in enumerate(ded):
-        for at_start in (True, False):
-            p = c[0] if at_start else c[-1]
-            if is_anchor(p): continue
-            if others(p, 0.3, ci): continue                      # already connected
-            o = c.orig[0] if at_start else c.orig[1]
-            cand = others(p, _rad, ci)
-            if not cand: continue
-            q = min(cand, key=lambda q: (q[0] - p[0]) ** 2 + (q[1] - p[1]) ** 2)
-            if not raw_shared(o):
-                # raw dead end — attach only in the last-resort round, and only
-                # when it nearly touches a real junction (>=2 ends share q)
-                if _rad != 4.5: continue
-                dq = (q[0] - p[0]) ** 2 + (q[1] - p[1]) ** 2
-                if dq > 1.0 or sum(1 for q2 in cand if q2 == q) < 2: continue
-            feather_move(c, at_start, q); attached += 1
-    print(f"attach-loose-ends round {_round + 1} (rad {_rad}): {attached}")
-
-# ---- snap dead ends to nearby anchors: the game's own data has road ends
-# stopping 1-2px short of a settlement (Praeneste's road toward Rome ends
-# 1.4px from Rome's pixel — the city model hides the gap in-game). A dead end
-# that close to a settlement/port anchor belongs to it: extend it (feathered).
+# ---- UNIFIED connection pass (validator invariant: every end terminates at
+# a settlement/port anchor or a junction with another road). For each dead end
+# take the NEAREST target across ALL kinds — other endpoints, other pieces'
+# polylines (T-junction), anchors — in growing radii. Running these as
+# SEPARATE passes caused visible diagonal yanks: endpoint-attach grabbed a far
+# endpoint (1.5px) when the true continuation polyline passed 0.3px away
+# (Uselis mess), and anchor-snap dragged an end 2.3px straight to a settlement
+# across terrain when the road it should T-join ran right beside it (Sulci).
+# Nothing is ever deleted here (deletion broke Syracuse's only port road).
 anch_grid = {}
 for (ax, ay) in ANCH: anch_grid.setdefault((ax // 2, ay // 2), []).append((ax + 0.5, ay + 0.5))
 def anchors_near(p, rad):
@@ -319,58 +288,90 @@ def anchors_near(p, rad):
                 d = (a[0] - p[0]) ** 2 + (a[1] - p[1]) ** 2
                 if d <= rad * rad: out.append((d, a))
     return [a for d, a in sorted(out)]
-# INVARIANT (user spec): every road end must terminate at a settlement/port
-# anchor or at a junction with another road. For each dead end (no anchor, no
-# partner) try, in order: (1) snap to a nearby anchor the piece doesn't
-# already sit on; (2) T-junction onto the nearest point of another road's
-# polyline; (3) snap to its own anchor (loop road). Nothing is ever deleted
-# here — deletion broke Syracuse's only port road.
-def build_egrid():
-    g = {}
-    for ci, c in enumerate(ded):
-        for p in (c[0], c[-1]): g.setdefault((int(p[0]), int(p[1])), []).append((tuple(p), ci))
-    return g
 def has_partner(g, p, ci, rad=0.55):
     for dx in (-1, 0, 1):
         for dy in (-1, 0, 1):
             for q, cj in g.get((int(p[0]) + dx, int(p[1]) + dy), ()):
                 if cj != ci and (q[0]-p[0])**2 + (q[1]-p[1])**2 <= rad*rad: return True
     return False
-# polyline grid: every interior point of every curve (for T-junction attach)
+def append_connector(c, at_start, target):
+    # extend the tip to target with a short quadratic-Bezier blend that leaves
+    # the piece's own geometry untouched — feather-dragging the tip sideways
+    # painted visible straight diagonals (Uselis / Sulci mess).
+    tip = c[0] if at_start else c[-1]
+    nxt = c[min(2, len(c) - 1)] if at_start else c[max(-3, -len(c))]
+    tx, ty = tip[0] - nxt[0], tip[1] - nxt[1]
+    L = math.hypot(tx, ty) or 1.0
+    dist = math.hypot(target[0] - tip[0], target[1] - tip[1])
+    ctrl = (tip[0] + tx / L * dist * 0.4, tip[1] + ty / L * dist * 0.4)
+    seg = []
+    for k in range(1, 6):
+        t = k / 5.0; u = 1 - t
+        seg.append(to_land(u*u*tip[0] + 2*u*t*ctrl[0] + t*t*target[0],
+                           u*u*tip[1] + 2*u*t*ctrl[1] + t*t*target[1]))
+    if at_start:
+        for q in seg: c.insert(0, q)
+    else:
+        c.extend(seg)
+stats = Counter()
+for _round, _rad in enumerate((1.6, 2.5, 4.5)):
+    egrid2 = {}
+    pgrid = {}
+    for ci, c in enumerate(ded):
+        for p in (c[0], c[-1]): egrid2.setdefault((int(p[0]), int(p[1])), []).append((tuple(p), ci))
+        for k in range(1, len(c) - 1):
+            p = c[k]
+            pgrid.setdefault((int(p[0]), int(p[1])), []).append((p[0], p[1], ci))
+    moved = 0
+    for ci, c in enumerate(ded):
+        for at_start in (True, False):
+            p = c[0] if at_start else c[-1]
+            if is_anchor(p): continue
+            if has_partner(egrid2, p, ci): continue
+            o = c.orig[0] if at_start else c.orig[1]
+            if _rad == 4.5 and not raw_shared(o):
+                continue  # widest radius only for ends the game itself had connected
+            other = c[-1] if at_start else c[0]
+            cand = []   # (dist2, point, kind)
+            rr = 1 + int(_rad)
+            for dx in range(-rr, rr + 1):
+                for dy in range(-rr, rr + 1):
+                    for q, cj in egrid2.get((int(p[0]) + dx, int(p[1]) + dy), ()):
+                        if cj == ci: continue
+                        d = (q[0] - p[0]) ** 2 + (q[1] - p[1]) ** 2
+                        if 1e-9 < d <= _rad * _rad: cand.append((d, q, "end"))
+                    for x, y, cj in pgrid.get((int(p[0]) + dx, int(p[1]) + dy), ()):
+                        if cj == ci: continue
+                        d = (x - p[0]) ** 2 + (y - p[1]) ** 2
+                        if 1e-9 < d <= _rad * _rad: cand.append((d, (x, y), "poly"))
+            arad = min(_rad, 2.5)
+            for a in anchors_near(p, arad):
+                if (other[0] - a[0]) ** 2 + (other[1] - a[1]) ** 2 <= 0.25: continue  # fold-back
+                cand.append(((a[0] - p[0]) ** 2 + (a[1] - p[1]) ** 2, a, "anchor"))
+            if not cand: continue
+            cand.sort(key=lambda t: t[0])
+            d, q, kind = cand[0]
+            # a RAW dead end near a settlement/port is the game's settlement
+            # approach (city model hides the last 1-2px): it must reach the
+            # ANCHOR, not T-join a road passing slightly nearer (Praeneste).
+            # Raw-SHARED ends are junction ends — nearest target is correct.
+            if not raw_shared(o):
+                anch = [t for t in cand if t[2] == "anchor"]
+                if anch: d, q, kind = anch[0]
+            if d <= 0.6 * 0.6:
+                feather_move(c, at_start, q)   # sub-pixel: plain snap is invisible
+            else:
+                append_connector(c, at_start, q)
+            stats[kind] += 1; moved += 1
+    print(f"unified connect round {_round + 1} (rad {_rad}): {moved}")
+    if not moved and _rad != 4.5: break
+print(f"connections: {dict(stats)}")
+# rebuild pgrid over FULL curves for the link-graph section below
 pgrid = {}
 for ci, c in enumerate(ded):
     for k in range(len(c)):
         p = c[k]
         pgrid.setdefault((int(p[0]), int(p[1])), []).append((p[0], p[1], ci))
-def nearest_online(p, ci, rad):
-    best = None; bd = rad * rad
-    for dx in range(-1 - int(rad), 2 + int(rad)):
-        for dy in range(-1 - int(rad), 2 + int(rad)):
-            for x, y, cj in pgrid.get((int(p[0]) + dx, int(p[1]) + dy), ()):
-                if cj == ci: continue
-                d = (x - p[0]) ** 2 + (y - p[1]) ** 2
-                if d < bd: bd = d; best = (x, y)
-    return best
-egrid3 = build_egrid()
-snapped_anchor = tjoins = self_snaps = unresolved = 0
-for ci, c in enumerate(ded):
-    for at_start in (True, False):
-        p = c[0] if at_start else c[-1]
-        if is_anchor(p): continue
-        if has_partner(egrid3, p, ci): continue
-        other = c[-1] if at_start else c[0]
-        same = lambda a: (other[0] - a[0]) ** 2 + (other[1] - a[1]) ** 2 <= 0.5 * 0.5
-        diff = [a for a in anchors_near(p, 2.5) if not same(a)]
-        if diff:
-            feather_move(c, at_start, diff[0]); snapped_anchor += 1; continue
-        t = nearest_online(p, ci, 2.5)
-        if t:
-            feather_move(c, at_start, t); tjoins += 1; continue
-        own = anchors_near(p, 2.5)
-        if own:
-            feather_move(c, at_start, own[0]); self_snaps += 1; continue
-        unresolved += 1
-print(f"dead ends -> anchor: {snapped_anchor}, T-junction: {tjoins}, own-anchor loop: {self_snaps}, unresolved: {unresolved}")
 
 seapts = sum(1 for c in ded for x,y in c if 0<=int(x)<Ww and 0<=int(y)<Hh and is_sea[int(y),int(x)])
 print("sea points:", seapts)

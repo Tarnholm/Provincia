@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1365",
+    date: "2026-07-22",
+    items: [
+      { type: "fix", text: "**Cleaned up messy junctions around Uselis ⇄ Caralis and Neapolis-Sardinia ⇄ Sulci.** Where a road end needed joining to the network, the whole road tip was being dragged sideways, painting a straight diagonal across terrain. Road geometry is now left untouched — instead a short smooth connector curve is added from the road's own direction into the junction or settlement, so joins read as natural forks. Also, when connecting an end, the nearest target of ANY kind now wins (a road passing right beside beats a settlement further away), which is what created the stray diagonals in the first place." },
+    ],
+  },
+  {
     version: "0.9.1364",
     date: "2026-07-22",
     items: [
