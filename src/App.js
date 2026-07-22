@@ -6,6 +6,7 @@ import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, prefetc
 import { WARM_TUNING, runWarmChunks } from "./iconWarmScheduler";
 import { buildSeaGrid, buildLandGrid, nearestSea, aStarSea, seaComponents, nearestSeaBig, roadAStarExact } from "./seaLanePath";
 import { CAPTURED_MAPS } from "./risRoads";
+import { CAPTURED_SEA } from "./risSea";
 import { getCachedUnitIcon, prefetchUnitIcons, prefetchUnitIconsBulk } from "./unitIcons";
 import { loadPortrait } from "./portraitIcons";
 // Heavy, single-use panels are code-split (2026-07-15): each is loaded as its
@@ -1934,6 +1935,7 @@ function App() {
   const [seaLanePaths, setSeaLanePaths] = useState(null); // sortedKey "a>b" → [{x,y} map-px] A* sea route (curves round coasts)
   const [roadPaths, setRoadPaths] = useState(null); // sortedKey → [{x,y}] A* land road (follows valleys/passes, avoids mountains)
   const [roadsPrecurved, setRoadsPrecurved] = useState(false); // true = captured exact-game curve (draw raw, no smoothing)
+  const [seaPrecurved, setSeaPrecurved] = useState(false); // true = captured exact-game sea network (draw all routes directly, not per trade-pair)
   const [portByRegion, setPortByRegion] = useState(null); // region name → {x,y} port tile (nearest coast to its settlement); sea lanes join here, a road links it to the settlement
   const [portPixels, setPortPixels] = useState([]); // [{x,y}] white port-marker pixels from the region map
   const seaNavRef = useRef(); // cached decoded map_trade_routes.tga {dir,data,W,H} — the engine's navigable-sea map
@@ -10213,21 +10215,56 @@ function App() {
   // chunks and cached; the draw uses these polylines, falling back to a simple
   // arc for any lane still pending or with no sea route.
   useEffect(() => {
-    if (colorMode !== "tradelanes" || !effectiveTradeLanes || !effectiveTradeLanes.length || !tradeLaneAnchors || !offscreen) return;
+    // Captured sea routes are a fixed navigation network (always drawn by the
+    // game) so they don't need trade-lane data; the A* reconstruction below
+    // does. Require only the map pixels here and gate the A* path separately.
+    if (colorMode !== "tradelanes" || !offscreen) return;
     const data = pixelDataRef.current;
     const W = imgSize.width, H = imgSize.height;
     if (!data || !W || !H) return;
+    const haveTradeData = effectiveTradeLanes && effectiveTradeLanes.length && tradeLaneAnchors;
     // Cache signature: the sea geometry is fully determined by the mod, the lane
     // set (which changes with a live save), the port markers, and the map size.
-    const seaSig = `sea|v2|${modDataDir}|${W}x${H}|${(portPixels || []).length}|${cheapStrHash((effectiveTradeLanes || []).map((l) => l.from + ">" + l.to).sort().join("|"))}`;
-    if (_laneMemCache[seaSig]) { const g = _laneMemCache[seaSig]; setSeaLanePaths(g.seaLanePaths); setPortByRegion(g.portByRegion); return; }
+    // If this map matches a CAPTURED_SEA fingerprint (src/risSea.js — the game
+    // engine's own AERIAL_MAP_SEA_ROUTES read from memory), draw that geometry
+    // directly, no A* reconstruction. Fingerprint-gated like the roads.
+    const capSea = CAPTURED_SEA.find((cm) => {
+      const f = cm.fingerprint; if (W !== f.mapW || H !== f.mapH) return false;
+      const o = (f.y * W + f.x) * 4;
+      return data[o] === f.rgb[0] && data[o + 1] === f.rgb[1] && data[o + 2] === f.rgb[2];
+    });
+    const seaSig = `sea|v3|${modDataDir}|${W}x${H}|${capSea ? "cap:" + capSea.name + ":" + capSea.routes.length : ""}|${(portPixels || []).length}|${cheapStrHash((effectiveTradeLanes || []).map((l) => l.from + ">" + l.to).sort().join("|"))}`;
+    if (_laneMemCache[seaSig]) { const g = _laneMemCache[seaSig]; setSeaPrecurved(!!g.precurved); setSeaLanePaths(g.seaLanePaths); setPortByRegion(g.portByRegion); return; }
+    if (capSea) {
+      // Bake captured routes into the same key/shape the draw + hover expect.
+      // Key by endpoint region-name pair (colour → name via `regions`) so a
+      // route links to the trade sidebar exactly like the A* lanes did.
+      const colName = (c) => (regions[c] && regions[c].region) || c || "?";
+      const out = {}; const idxByKey = {};
+      for (const rt of capSea.routes) {
+        const p = rt.p; if (!p || p.length < 4) continue;
+        const pts = []; for (let k = 0; k < p.length - 1; k += 2) pts.push({ x: p[k], y: p[k + 1] });
+        const nmA = colName(rt.a), nmB = colName(rt.b);
+        const key = [nmA, nmB].sort().join(">");
+        const idx = (idxByKey[key] = (idxByKey[key] || 0) + 1) - 1;
+        out[`${key}#${idx}`] = pts;
+      }
+      console.log(`[sea-lanes] exact captured network "${capSea.name}": ${Object.keys(out).length} routes`);
+      const geom = { seaLanePaths: out, portByRegion: {}, precurved: true };
+      _laneMemCache[seaSig] = geom;
+      setSeaPrecurved(true); setSeaLanePaths(out); setPortByRegion({});
+      try { window.electronAPI?.laneCacheSet?.(modDataDir, "sea", seaSig, geom); } catch { /* best-effort */ }
+      return;
+    }
+    setSeaPrecurved(false);
+    if (!haveTradeData) return; // A* reconstruction needs the trade-lane set
     let cancelled = false;
     (async () => {
       // Disk cache (survives restarts; invalidated when any source map/data file changes).
       try {
         const disk = await window.electronAPI?.laneCacheGet?.(modDataDir, "sea", seaSig);
         if (cancelled) return;
-        if (disk && disk.seaLanePaths) { _laneMemCache[seaSig] = disk; setSeaLanePaths(disk.seaLanePaths); setPortByRegion(disk.portByRegion); console.log("[sea-lanes] loaded from cache"); return; }
+        if (disk && disk.seaLanePaths) { _laneMemCache[seaSig] = disk; setSeaPrecurved(!!disk.precurved); setSeaLanePaths(disk.seaLanePaths); setPortByRegion(disk.portByRegion); console.log("[sea-lanes] loaded from cache"); return; }
       } catch { /* cache miss → compute */ }
       // Sea grid from the region map (any non-land pixel = sea). NOTE: routing
       // over map_trade_routes.tga was tried (v0.9.1311) but its navigable mask
@@ -10419,7 +10456,7 @@ function App() {
       const o = (f.y * W + f.x) * 4;
       return data[o] === f.rgb[0] && data[o + 1] === f.rgb[1] && data[o + 2] === f.rgb[2];
     });
-    const roadSig = `road|v29conn|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name + ":" + capMap.roads.length : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
+    const roadSig = `road|v30cap2|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name + ":" + capMap.roads.length : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadsPrecurved(!!_laneMemCache[roadSig].precurved); setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10802,27 +10839,37 @@ function App() {
       }
       // Uniform lines — thickness/opacity no longer encode trade volume (all
       // lanes read the same); only the hovered/selected lane brightens.
-      const drawnKeys = new Set();
-      for (const l of effectiveTradeLanes) {
-        const a = anchorByName[l.from], b = anchorByName[l.to];
-        if (!a || !b) continue;
-        const key = [l.from, l.to].sort().join(">");
-        if (drawnKeys.has(key)) continue; // one stroke per undirected lane
-        drawnKeys.add(key);
-        const hot = (hoverKey && hoverKey === key) || (selectedTradeLane && ((selectedTradeLane.from === l.from && selectedTradeLane.to === l.to) || (selectedTradeLane.from === l.to && selectedTradeLane.to === l.from)));
-        // in-game look: light DASHED lines over the water
+      const strokeSea = (poly, hot) => {
+        if (!poly || poly.length < 2) return;
         ctx.strokeStyle = hot ? "rgba(120,230,255,0.98)" : "rgba(225,238,255,0.7)";
         ctx.lineWidth = (hot ? 2.2 : 1.1) / totalScale;
         ctx.setLineDash(hot ? [] : [7 / totalScale, 5 / totalScale]);
-        const poly = seaLanePaths && seaLanePaths[key];
-        // ONLY draw the real A* water route. No straight settlement-to-
-        // settlement fallback — that was the light line cutting across land
-        // for lanes still computing or with no water route (user 2026-07-18).
-        if (!poly || poly.length < 2) continue;
         ctx.beginPath();
         ctx.moveTo(poly[0].x, poly[0].y);
         for (let k = 1; k < poly.length; k++) ctx.lineTo(poly[k].x, poly[k].y);
         ctx.stroke();
+      };
+      if (seaPrecurved && seaLanePaths) {
+        // Captured game network: draw EVERY route (fixed navigation lanes),
+        // not per trade-pair. Keys are "regionA>regionB#idx".
+        for (const key in seaLanePaths) {
+          const hot = hoverKey && hoverKey === key;
+          strokeSea(seaLanePaths[key], hot);
+        }
+      } else {
+        const drawnKeys = new Set();
+        for (const l of effectiveTradeLanes) {
+          const a = anchorByName[l.from], b = anchorByName[l.to];
+          if (!a || !b) continue;
+          const key = [l.from, l.to].sort().join(">");
+          if (drawnKeys.has(key)) continue; // one stroke per undirected lane
+          drawnKeys.add(key);
+          const hot = (hoverKey && hoverKey === key) || (selectedTradeLane && ((selectedTradeLane.from === l.from && selectedTradeLane.to === l.to) || (selectedTradeLane.from === l.to && selectedTradeLane.to === l.from)));
+          // ONLY draw the real A* water route. No straight settlement-to-
+          // settlement fallback — that was the light line cutting across land
+          // for lanes still computing or with no water route (user 2026-07-18).
+          strokeSea(seaLanePaths && seaLanePaths[key], hot);
+        }
       }
       ctx.setLineDash([]);
       ctx.restore();

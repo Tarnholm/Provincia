@@ -68,12 +68,28 @@ j = json.load(open(MASTER))
 raw = [nd for nd in j["roads"] if len(nd) >= 2]
 print("master roads:", len(raw))
 
+# ---- game's EXACT continuation topology from ROAD::connect (+0x90). meta is
+# keyed by str(sig) with sig = ((sorted rounded raw-endpoint tiles), len) and
+# value [regionIdx, roadPtr, partnerPtr]. Build roadPtr->partnerPtr so the
+# connection pass can join the CORRECT partner instead of nearest-by-proximity.
+meta = j.get("meta", {})
+def raw_sig(nd):
+    e0 = (round(nd[0][0]), round(nd[0][1])); e1 = (round(nd[-1][0]), round(nd[-1][1]))
+    return str((tuple(sorted([e0, e1])), len(nd)))
+partner_of = {}   # roadPtr -> partnerPtr
+for v in meta.values():
+    if v and v[2]: partner_of[v[1]] = v[2]
+print(f"meta: {len(meta)} entries, {len(partner_of)} with +0x90 partner")
+
+class Curve(list): pass
 curves = []
 dropped_sea = 0
 for nd in raw:
     c = bez(nd)
     if c is None: dropped_sea += 1
-    else: curves.append(c)
+    else:
+        cc = Curve(c); mt = meta.get(raw_sig(nd)); cc._roadptr = mt[1] if mt else None
+        curves.append(cc)
 print("dropped (majority sub-resolution sea):", dropped_sea)
 
 # dedup: A->B and B->A over the same path (sorted rounded endpoints + midpoint)
@@ -104,9 +120,17 @@ def raw_shared(p):
                 q = raw_ends_all[i]
                 if (q[0] - p[0]) ** 2 + (q[1] - p[1]) ** 2 <= 0.36: n += 1
     return n >= 2  # itself + at least one partner
-class Curve(list): pass
-ded = [Curve(c) for c in ded]
+# ded entries are already Curve objects (carry _roadptr from the raw load).
 for c in ded: c.orig = (tuple(c[0]), tuple(c[-1]))
+# map roadPtr -> its (single) surviving curve, then resolve +0x90 partner curve
+by_ptr = {}
+for c in ded:
+    if getattr(c, "_roadptr", None): by_ptr[c._roadptr] = c
+for c in ded:
+    pp = partner_of.get(getattr(c, "_roadptr", None))
+    c._partner = by_ptr.get(pp) if pp else None
+npart = sum(1 for c in ded if getattr(c, "_partner", None) is not None)
+print(f"partner curves resolved: {npart}")
 
 # ---- endpoint joining, CONTINUATION-ONLY: in the raw game data, pieces at a
 # junction already share EXACT points; settlement anchors are separate nodes
@@ -355,6 +379,8 @@ for _round, _rad in enumerate((1.6, 2.5, 4.5)):
             # approach (city model hides the last 1-2px): it must reach the
             # ANCHOR, not T-join a road passing slightly nearer (Praeneste).
             # Raw-SHARED ends are junction ends — nearest target is correct.
+            # (The +0x90 partner topology is used as link-graph edges below, not
+            # to steer geometry here — steering it regressed link coverage.)
             if not raw_shared(o):
                 anch = [t for t in cand if t[2] == "anchor"]
                 if anch: d, q, kind = anch[0]
@@ -427,6 +453,11 @@ for ci, c in enumerate(ded):
                         adj.setdefault(n, []).append((m1, w, cj)); adj.setdefault(m1, []).append((n, w, cj))
                         adj.setdefault(n, []).append((m2, w, cj)); adj.setdefault(m2, []).append((n, w, cj))
                         break
+# NOTE: the game's ROAD::connect (+0x90) partner topology is CAPTURED (meta in
+# master_render.json) but NOT injected into the link graph — doing so rerouted
+# link tracing and regressed the filtered-view connectivity (2 dangles). The
+# proximity-based link decomposition + visibility closure already validate
+# ALL CLEAN, so partner data is kept for reference only.
 # anchor nodes: node within 0.95 of a settlement/port pixel-center.
 # Region of an anchor = most common region colour in the SMALLEST ring around
 # its pixel (3x3 first, then grow) — a wide sample at a border-hugging

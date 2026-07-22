@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1366",
+    date: "2026-07-22",
+    items: [
+      { type: "feature", text: "**Sea lanes now use the game's own routes.** Trade Lanes previously reconstructed sea routes with a pathfinder; it now draws the game's actual sea-route network — the same coastal shipping lanes the game itself renders — so they match exactly, hugging every coast from the Atlantic to the Red Sea. 267 routes, every point on navigable water." },
+      { type: "improvement", text: "**Roads refreshed from a new capture** that also records the game's own road-connection links. The road network is unchanged visually (still validated end-to-end: every road reaches a settlement, port or junction; nothing on water) — this just re-bakes from the latest, most complete capture." },
+    ],
+  },
+  {
     version: "0.9.1365",
     date: "2026-07-22",
     items: [
