@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1367",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**Road junctions and crossovers now match the game exactly.** Roads are rebuilt from the game's own road network as a single connected graph: where two roads share a route they merge onto one line, and they only ever meet at junctions — they never cross over each other, exactly like the game. This fixes the disconnected 4-way junctions and the X-shaped crossovers in southern Sardinia (and everywhere else). Verified map-wide: zero crossovers, zero dead-ends — every road runs junction-to-junction or into a settlement/port — and the curves stay smooth and organic." },
+    ],
+  },
+  {
     version: "0.9.1366",
     date: "2026-07-22",
     items: [
