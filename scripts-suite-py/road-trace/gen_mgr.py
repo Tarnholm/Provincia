@@ -49,6 +49,12 @@ j = json.load(open(MGR)); H = j["H"]
 roads = j["roads"]
 print("manager roads:", len(roads))
 
+# NOTE: geometry detail comes from de-quantizing the manager tile-path (DP +
+# Catmull-Rom in smooth()) — NOT from gathering aerial render points. Gathering
+# loose aerial points reintroduced crossovers (points from adjacent chains leak
+# in near junctions), so it was abandoned. The manager path IS the game's route;
+# DP keeps its genuine bends while dropping 1px stair-steps.
+
 def tpix(w): return (w[0], H - 1 - w[1])   # tile -> pixel (bottom-left origin)
 
 # link (settlement-pair colours) per manager road, from its endpoint pixels
@@ -105,24 +111,39 @@ def chain_links(ch):
 
 # ---- smooth a chain: relax interior OFF the tile staircase (junction ends
 # fixed so topology holds), then Catmull-Rom resample -> organic curve.
+def _dp(pts, eps):
+    # Douglas-Peucker: drop points within eps of the chord — removes the 1px
+    # tile-staircase quantization while KEEPING real route bends (detail).
+    if len(pts) < 3: return pts
+    a, b = pts[0], pts[-1]
+    dx, dy = b[0]-a[0], b[1]-a[1]; L2 = dx*dx+dy*dy or 1.0
+    dmax = 0; idx = 0
+    for i in range(1, len(pts)-1):
+        px, py = pts[i]
+        t = max(0.0, min(1.0, ((px-a[0])*dx + (py-a[1])*dy) / L2))
+        cx, cy = a[0]+t*dx, a[1]+t*dy
+        d = (px-cx)**2 + (py-cy)**2
+        if d > dmax: dmax = d; idx = i
+    if dmax > eps*eps:
+        return _dp(pts[:idx+1], eps)[:-1] + _dp(pts[idx:], eps)
+    return [a, b]
+
 def smooth(ch):
     P = [ (t[0]+0.5, H-1-t[1]+0.5) for t in ch ]
     if len(P) < 3:
         return [to_land(*p) for p in P]
-    # Laplacian relaxation, endpoints pinned — light (3× λ0.5) so the route's
-    # real bends survive (heavy relaxation rounded tight corners into bulges).
-    for _ in range(3):
-        Q = P[:]
-        for i in range(1, len(P)-1):
-            Q[i] = ((P[i-1][0]+P[i+1][0])*0.5*0.5 + P[i][0]*0.5,
-                    (P[i-1][1]+P[i+1][1])*0.5*0.5 + P[i][1]*0.5)
-        P = Q
-    # Catmull-Rom through relaxed points, 4 subdivisions
-    out = [P[0]]
-    for i in range(len(P)-1):
-        p0 = P[max(0,i-1)]; p1 = P[i]; p2 = P[i+1]; p3 = P[min(len(P)-1,i+2)]
-        for s in range(1,5):
-            t = s/4; t2=t*t; t3=t2*t
+    # de-quantize the staircase: DP keeps the route's genuine corners (>~1.2px)
+    # and discards the 1px stair-steps, so the following curve is DETAILED
+    # (follows terrain, like the game) rather than flattened — yet never
+    # crosses, because it stays on the manager path.
+    K = _dp(P, 1.2)
+    if len(K) < 2: K = [P[0], P[-1]]
+    # Catmull-Rom through the kept corners, 6 subdivisions
+    out = [K[0]]
+    for i in range(len(K)-1):
+        p0 = K[max(0,i-1)]; p1 = K[i]; p2 = K[i+1]; p3 = K[min(len(K)-1,i+2)]
+        for s in range(1,7):
+            t = s/6; t2=t*t; t3=t2*t
             x = 0.5*((2*p1[0])+(-p0[0]+p2[0])*t+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*t2+(-p0[0]+3*p1[0]-3*p2[0]+p3[0])*t3)
             y = 0.5*((2*p1[1])+(-p0[1]+p2[1])*t+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*t3)
             out.append((x,y))

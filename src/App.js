@@ -10456,7 +10456,7 @@ function App() {
       const o = (f.y * W + f.x) * 4;
       return data[o] === f.rgb[0] && data[o + 1] === f.rgb[1] && data[o + 2] === f.rgb[2];
     });
-    const roadSig = `road|v31graph|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name + ":" + capMap.roads.length : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
+    const roadSig = `road|v32detail|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name + ":" + capMap.roads.length : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadsPrecurved(!!_laneMemCache[roadSig].precurved); setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10482,7 +10482,11 @@ function App() {
       const inPorts = (nm) => portRegionsEff && portRegionsEff.has(String(nm).toLowerCase());
       const colName = (c) => (regions[c] && regions[c].region) || c || "?";
       const all = capMap.roads.filter((rd) => rd.p && rd.p.length >= 4);
-      const pairVis = (a, b) => (!a && !b) || inRoads(colName(a)) || inRoads(colName(b)) || (a === b && inPorts(colName(a)));
+      // A settlement-link is drawn by the game if EITHER endpoint region has
+      // roads OR a port — port cities are connected into the road network even
+      // without hinterland_roads (verified: Qart↔Iliensia is drawn at campaign
+      // start though neither has hinterland_roads, both have ports).
+      const pairVis = (a, b) => (!a && !b) || inRoads(colName(a)) || inRoads(colName(b)) || inPorts(colName(a)) || inPorts(colName(b));
       const keep = all.map((rd) => !filterRoads
         || pairVis(rd.a, rd.b)
         || (rd.l || []).some((s) => { const [a, b] = s.split("|"); return pairVis(a, b); }));

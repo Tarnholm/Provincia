@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1368",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**Road detail restored.** The previous build smoothed roads so much they lost their character. Roads now keep the genuine bends of their route (following terrain) while still being clean curves — the staircase from the underlying tile grid is removed, but real corners are preserved. Junctions stay connected and roads still never cross." },
+      { type: "fix", text: "**Roads to port cities now show (e.g. Uselis ⇄ Neapolis-Sardinia).** Port settlements are connected into the road network by the game even without a hinterland-roads building, so Provincia now shows those links too. Fixes roads that were missing between coastal cities." },
+    ],
+  },
+  {
     version: "0.9.1367",
     date: "2026-07-23",
     items: [
