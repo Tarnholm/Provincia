@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1369",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**Reverted roads and sea lanes to the earlier, better-looking version.** The recent re-scan of the game changed how roads and sea lanes were built and made both look worse — roads lost detail and sea lanes changed character. Both are now back to the version from a few updates ago that looked right." },
+    ],
+  },
+  {
     version: "0.9.1368",
     date: "2026-07-23",
     items: [
