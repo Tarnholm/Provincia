@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1363",
+    date: "2026-07-22",
+    items: [
+      { type: "fix", text: "**Every road end now terminates at a settlement, port or junction — enforced as a hard rule.** Roads that stopped a pixel or two short of their settlement (Rome–Praeneste, Gabalium, the Cavaria–Vocontia road, Genava and ~1,500 more ends map-wide) are now extended to their destination: ends near a settlement or port snap onto it, ends near another road join it as a T-junction. Nothing is deleted — an earlier cleanup that removed a 'sliver' turned out to be Syracuse's only port road; that can't happen anymore." },
+      { type: "fix", text: "**The pre-release check now verifies this rule across the whole map** — every road end must reach a settlement, port or junction, every settlement keeps its game connections, and nothing sits on water. This build: zero issues." },
+    ],
+  },
+  {
     version: "0.9.1362",
     date: "2026-07-22",
     items: [

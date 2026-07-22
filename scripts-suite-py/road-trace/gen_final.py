@@ -304,6 +304,74 @@ for _round, _rad in enumerate((1.6, 1.6, 1.6, 4.5)):  # last round = last resort
             feather_move(c, at_start, q); attached += 1
     print(f"attach-loose-ends round {_round + 1} (rad {_rad}): {attached}")
 
+# ---- snap dead ends to nearby anchors: the game's own data has road ends
+# stopping 1-2px short of a settlement (Praeneste's road toward Rome ends
+# 1.4px from Rome's pixel — the city model hides the gap in-game). A dead end
+# that close to a settlement/port anchor belongs to it: extend it (feathered).
+anch_grid = {}
+for (ax, ay) in ANCH: anch_grid.setdefault((ax // 2, ay // 2), []).append((ax + 0.5, ay + 0.5))
+def anchors_near(p, rad):
+    out = []
+    cx, cy = int(p[0]) // 2, int(p[1]) // 2
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            for a in anch_grid.get((cx + dx, cy + dy), ()):
+                d = (a[0] - p[0]) ** 2 + (a[1] - p[1]) ** 2
+                if d <= rad * rad: out.append((d, a))
+    return [a for d, a in sorted(out)]
+# INVARIANT (user spec): every road end must terminate at a settlement/port
+# anchor or at a junction with another road. For each dead end (no anchor, no
+# partner) try, in order: (1) snap to a nearby anchor the piece doesn't
+# already sit on; (2) T-junction onto the nearest point of another road's
+# polyline; (3) snap to its own anchor (loop road). Nothing is ever deleted
+# here — deletion broke Syracuse's only port road.
+def build_egrid():
+    g = {}
+    for ci, c in enumerate(ded):
+        for p in (c[0], c[-1]): g.setdefault((int(p[0]), int(p[1])), []).append((tuple(p), ci))
+    return g
+def has_partner(g, p, ci, rad=0.55):
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            for q, cj in g.get((int(p[0]) + dx, int(p[1]) + dy), ()):
+                if cj != ci and (q[0]-p[0])**2 + (q[1]-p[1])**2 <= rad*rad: return True
+    return False
+# polyline grid: every interior point of every curve (for T-junction attach)
+pgrid = {}
+for ci, c in enumerate(ded):
+    for k in range(len(c)):
+        p = c[k]
+        pgrid.setdefault((int(p[0]), int(p[1])), []).append((p[0], p[1], ci))
+def nearest_online(p, ci, rad):
+    best = None; bd = rad * rad
+    for dx in range(-1 - int(rad), 2 + int(rad)):
+        for dy in range(-1 - int(rad), 2 + int(rad)):
+            for x, y, cj in pgrid.get((int(p[0]) + dx, int(p[1]) + dy), ()):
+                if cj == ci: continue
+                d = (x - p[0]) ** 2 + (y - p[1]) ** 2
+                if d < bd: bd = d; best = (x, y)
+    return best
+egrid3 = build_egrid()
+snapped_anchor = tjoins = self_snaps = unresolved = 0
+for ci, c in enumerate(ded):
+    for at_start in (True, False):
+        p = c[0] if at_start else c[-1]
+        if is_anchor(p): continue
+        if has_partner(egrid3, p, ci): continue
+        other = c[-1] if at_start else c[0]
+        same = lambda a: (other[0] - a[0]) ** 2 + (other[1] - a[1]) ** 2 <= 0.5 * 0.5
+        diff = [a for a in anchors_near(p, 2.5) if not same(a)]
+        if diff:
+            feather_move(c, at_start, diff[0]); snapped_anchor += 1; continue
+        t = nearest_online(p, ci, 2.5)
+        if t:
+            feather_move(c, at_start, t); tjoins += 1; continue
+        own = anchors_near(p, 2.5)
+        if own:
+            feather_move(c, at_start, own[0]); self_snaps += 1; continue
+        unresolved += 1
+print(f"dead ends -> anchor: {snapped_anchor}, T-junction: {tjoins}, own-anchor loop: {self_snaps}, unresolved: {unresolved}")
+
 seapts = sum(1 for c in ded for x,y in c if 0<=int(x)<Ww and 0<=int(y)<Hh and is_sea[int(y),int(x)])
 print("sea points:", seapts)
 
@@ -327,7 +395,15 @@ for c in ded:
     cs = lambda q: (f'"{q[0]},{q[1]},{q[2]}"' if q else '""')
     link = sorted(nearcols(*c[0]) | nearcols(*c[-1]))
     rl = ",".join(f'"{q[0]},{q[1]},{q[2]}"' for q in link)
-    flat = ",".join(f"{round(v,2):g}" for p in c for v in p)
+    # round for output, then re-check land — rounding 87.9996 -> 88.0 can hop
+    # onto a sea pixel; re-clamp the ROUNDED value so what we WRITE is on land
+    rpts = []
+    for p in c:
+        rx, ry = round(p[0], 2), round(p[1], 2)
+        if 0 <= int(rx) < Ww and 0 <= int(ry) < Hh and is_sea[int(ry), int(rx)]:
+            rx, ry = (round(v, 2) for v in to_land(rx, ry))
+        rpts.append((rx, ry))
+    flat = ",".join(f"{v:g}" for p in rpts for v in p)
     entries.append(f'{{a:{cs(a)},b:{cs(b)},r:[{rl}],p:[{flat}]}}')
 js = ("// WHOLE-MAP road network: the game's ACTUAL drawn curve for every province,\n"
       "// read from memory (fog off, all roads built) and rebuilt as cubic Bezier\n"

@@ -98,6 +98,16 @@ for ax, ay, kind in anchors:
         nm, st = regname(ax, ay)
         issues.append(f"ANCHOR-LOST {kind} at ({ax},{ay}) {nm}/{st}: raw had {rawn} road ends, baked has 0")
 
+pgrid = {}
+for ci, c in enumerate(baked):
+    for p in c: pgrid.setdefault((int(p[0]), int(p[1])), []).append((p[0], p[1], ci))
+def on_other_polyline(p, ci, rad=0.9):
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            for x, y, cj in pgrid.get((int(p[0]) + dx, int(p[1]) + dy), ()):
+                if cj != ci and (x - p[0]) ** 2 + (y - p[1]) ** 2 <= rad * rad: return True
+    return False
+
 # 2. dangling ends: baked endpoint with no baked partner/polyline nearby but raw partner existed
 #    (skip anchor-touching ends: legit dead-ends)
 def poly_near(curves_grid_pts, p, rad, skip_ci):
@@ -109,6 +119,7 @@ for ci, c in enumerate(baked):
     for p in (c[0], c[-1]):
         if anchored(p): continue
         if near_end(gbak, p, 0.7, skip_ci=ci): continue
+        if on_other_polyline(p, ci): continue  # T-junction = connected
         # find this endpoint's RAW origin (nearest raw endpoint within 1.2) and
         # check whether THAT point was shared with another raw curve (a joint).
         origins = near_end(graw, p, 1.2)
@@ -119,6 +130,17 @@ for ci, c in enumerate(baked):
             nm, st = regname(*p)
             issues.append(f"DANGLING end at ({p[0]:.1f},{p[1]:.1f}) {nm}/{st} (raw had {len(raw_partners)} partners)")
             dang += 1
+
+# 2b. END INVARIANT (user spec): every road end must terminate at a
+#     settlement/port anchor OR at a junction with another road (shared
+#     endpoint or a point on another road's polyline).
+for ci, c in enumerate(baked):
+    for p in (c[0], c[-1]):
+        if anchored(p): continue
+        if near_end(gbak, p, 0.7, skip_ci=ci): continue
+        if on_other_polyline(p, ci): continue
+        nm, st = regname(*p)
+        issues.append(f"END-INVARIANT broken at ({p[0]:.1f},{p[1]:.1f}) {nm}/{st}: end reaches no settlement, port or junction")
 
 # 3. degenerate / tiny
 for c in baked:
