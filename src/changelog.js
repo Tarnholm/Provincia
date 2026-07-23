@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1376",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**Road gaps closed while keeping the game's real curves.** Roads use the game's actual captured geometry (organic, uneven curves — unchanged), and only the fragmented piece-ends are now snapped together at junctions and settlements, so roads connect properly instead of stopping just short of each other. ~8,000 loose ends joined, no crossovers introduced, curve shapes untouched." },
+      { type: "fix", text: "**Roads show without Live mode.** The whole baked network draws by default; Live mode only narrows it to a loaded save's built roads." },
+    ],
+  },
+  {
     version: "0.9.1375",
     date: "2026-07-23",
     items: [
