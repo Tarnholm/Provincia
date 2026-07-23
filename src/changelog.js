@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1377",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**Removed the remaining duplicated roads.** Where the capture left two lines tracing the same route, the redundant one is now removed (~1,700 across the map), keeping the game's organic curves intact. Every removal is verified — if it would leave a settlement, port or junction without a road it's undone, so nothing disconnects. Roads still meet cleanly at junctions with no crossovers." },
+    ],
+  },
+  {
     version: "0.9.1376",
     date: "2026-07-23",
     items: [
