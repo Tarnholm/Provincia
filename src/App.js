@@ -1185,6 +1185,27 @@ const LEGION_AORS = {
   praetorian:      { name: "Praetorian Guard",    col: [232, 202, 94] },
 };
 const LEGION_AOR_TAGS = new Set(Object.keys(LEGION_AORS));
+// Title-case an EDU legion unit type for display ("legio v alaudae early" →
+// "Legio V Alaudae Early"); roman-numeral tokens go fully uppercase.
+const ROMAN_NUMERALS = new Set(["i","ii","iii","iiii","iv","v","vi","vii","viii","ix","x","xi","xii","xiii","xiv","xv","xvi","xvii","xviii","xix","xx","xxi","xxii"]);
+function prettyLegionUnit(n) {
+  return String(n).split(/\s+/).map((w) => ROMAN_NUMERALS.has(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+// EDU unit types belonging to a legion zone tag. Anchored on the `<stem> early`
+// unit: its name minus " early" is the legion's exact base ("legio xiii
+// gemina"), which cleanly excludes similarly-named other legions (X Gemina Pia,
+// XIV Gemina Martia Victrix). Returns early/late × cohort/first-cohort rows.
+function legionUnitsFor(tag, unitNames) {
+  if (!unitNames || !unitNames.length) return [];
+  if (tag === "praetorian") return unitNames.filter((n) => /\bpraetorian\b/i.test(n)).sort();
+  const stem = tag.replace(/_early$/, "");
+  const early = unitNames.find((n) => new RegExp(`^legio\\s+\\S+\\s+${stem}\\s+early$`, "i").test(n));
+  if (!early) return unitNames.filter((n) => n.toLowerCase().includes(stem)).sort();
+  const base = early.replace(/\s+early$/i, "");
+  const lower = new Map(unitNames.map((n) => [n.toLowerCase(), n]));
+  return [base + " early", base + " early first", base, base + " first"]
+    .map((n) => lower.get(n.toLowerCase())).filter(Boolean);
+}
 // Deterministic palette slot for an AOR with no faction-mapped colour — derived
 // from the AOR name so the colour is STABLE across renders/sessions (the old
 // order-dependent cycling counter made unmapped AORs change colour each time).
@@ -2929,6 +2950,8 @@ function App() {
   useEffect(() => { localStorage.setItem("aorView", aorView); }, [aorView]);
   // Live filter for AOR legend rows; not persisted (transient UI state).
   const [aorLegendFilter, setAorLegendFilter] = useState("");
+  // Legions legend: which legion's unit list is expanded (tag or null).
+  const [legionUnitsOpen, setLegionUnitsOpen] = useState(null);
 
   // Prevent zooming out past the fitted view
   const minZoom = 1,
@@ -16689,14 +16712,18 @@ function App() {
             Legionary Recruitment ({entries.length}) <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
           </div>
           {!legendCollapsed && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: "34vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: "40vh", overflowY: "auto" }}>
               {entries.map((tag) => {
                 const { name, col } = LEGION_AORS[tag];
                 const isActive = activeSet && activeSet.has(tag);
                 const dimmed = activeSet && !isActive;
+                const unitNames = unitOwnership ? Object.keys(unitOwnership).filter((n) => n !== "__dictionary") : [];
+                const units = legionUnitsFor(tag, unitNames);
+                const open = legionUnitsOpen === tag;
+                const dictMap = (unitOwnership && unitOwnership.__dictionary) || {};
                 return (
+                  <React.Fragment key={tag}>
                   <div
-                    key={tag}
                     onClick={(e) => handleLegendClick(tag, e.shiftKey)}
                     title={`${counts[tag]} region(s) tagged with aor_${tag}\nClick to isolate · Shift-click to add`}
                     style={{
@@ -16717,12 +16744,51 @@ function App() {
                     <span style={{ color: "#888", fontVariantNumeric: "tabular-nums", fontSize: "0.68rem" }}>
                       {counts[tag]}
                     </span>
+                    {units.length > 0 && (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const next = open ? null : tag;
+                          setLegionUnitsOpen(next);
+                          if (next) {
+                            // warm the icons for the expanded legion's units
+                            prefetchUnitIcons(activeDataDir, units.map((u) => [((unitOwnership[u] || [])[0] || "romans_julii"), u, dictMap[u]]), bumpIconCacheVersionCoalesced);
+                          }
+                        }}
+                        title={open ? "Hide units" : `Show this legion's ${units.length} unit${units.length === 1 ? "" : "s"}`}
+                        style={{ color: "#aaa", fontSize: "0.68rem", padding: "0 2px", userSelect: "none" }}
+                      >{open ? "▾" : "▸"}</span>
+                    )}
                   </div>
+                  {open && (
+                    <div style={{ margin: "0 0 3px 20px", display: "flex", flexDirection: "column", gap: 1 }}>
+                      {units.map((u) => {
+                        const fac = (unitOwnership[u] || [])[0] || "romans_julii";
+                        const ic = getCachedUnitIcon(activeDataDir, fac, u);
+                        return (
+                          <div
+                            key={u}
+                            onClick={(e) => { e.stopPropagation(); setInfoPopup({ type: "unit", name: u, faction: fac, label: prettyLegionUnit(u) }); }}
+                            title="Open unit info"
+                            onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
+                            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                            style={{ display: "flex", alignItems: "center", gap: 6, padding: "1px 3px", borderRadius: 3, cursor: "pointer", fontSize: "0.7rem", color: "#ccc" }}
+                          >
+                            {ic
+                              ? <img src={ic} alt="" style={{ width: 16, height: 21, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} />
+                              : <span style={{ width: 16, height: 21, background: "rgba(255,255,255,0.06)", borderRadius: 2, flexShrink: 0 }} />}
+                            <span>{prettyLegionUnit(u)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  </React.Fragment>
                 );
               })}
               <div style={{ marginTop: 6, fontSize: "0.66rem", color: "#888", lineHeight: 1.4 }}>
                 Where each named legion can be recruited (aor_*_early hidden resources).
-                <br />Click an entry to isolate · Shift-click to add · Click again to clear.
+                <br />Click an entry to isolate · Shift-click to add · ▸ lists the legion's units — click one for its unit card.
               </div>
             </div>
           )}

@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1388",
+    date: "2026-07-23",
+    items: [
+      { type: "feature", text: "**Legions map: see each legion's units.** Every legion in the Legions legend now has a ▸ expander listing its actual units (early/late cohort and First Cohort variants, with unit icons) — click a unit to open its full unit card. Units are matched from the game's unit roster, so III Cyrenaica won't pick up III Gallica and XIII Gemina won't pick up X Gemina Pia." },
+    ],
+  },
+  {
     version: "0.9.1387",
     date: "2026-07-23",
     items: [
