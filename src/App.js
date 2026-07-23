@@ -10419,7 +10419,7 @@ function App() {
       const o = (f.y * W + f.x) * 4;
       return data[o] === f.rgb[0] && data[o + 1] === f.rgb[1] && data[o + 2] === f.rgb[2];
     });
-    const roadSig = `road|v49clip|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name + ":" + capMap.roads.length : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
+    const roadSig = `road|v50prov|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name + ":" + capMap.roads.length : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadsPrecurved(!!_laneMemCache[roadSig].precurved); setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10439,20 +10439,19 @@ function App() {
       // whose region has roads (descr_strat start set; ∪ save-built when Live
       // is on — roadRegionsEff) or a port (port connectors / port cities) are
       // drawn. A road from province A to province B where only A has roads is
-      // CUT at the border — the B half is not drawn, even mid-link. If no
-      // region sets are known at all, show the whole network.
+      // CUT at the border — the B half is not drawn, even mid-link. Masking is
+      // strictly PER PROVINCE (user rule): a province with roads or a port in
+      // descr_strat shows ALL road runs inside it — no per-connection logic.
+      // If no region sets are known at all, show the whole network.
       const filterRoads = (roadRegionsEff && roadRegionsEff.size > 0) || (portRegionsEff && portRegionsEff.size > 0);
       const inRoads = (nm) => roadRegionsEff && roadRegionsEff.has(String(nm).toLowerCase());
       const inPorts = (nm) => portRegionsEff && portRegionsEff.has(String(nm).toLowerCase());
       const colName = (c) => (regions[c] && regions[c].region) || c || "?";
-      const regionVis = (c, isPortConn) => {
+      const regionVis = (c) => {
         if (!c) return true;                       // untaggable → keep
         const nm = regions[c] && regions[c].region;
         if (!nm) return true;                      // colour not in region table → keep
-        // ports only qualify their own settlement→port connector, NOT
-        // through-roads — an inter-settlement road still cuts at a region
-        // that has a port but no roads built
-        return inRoads(nm) || (isPortConn && inPorts(nm));
+        return inRoads(nm) || inPorts(nm);
       };
       const all = capMap.roads.filter((rd) => rd.p && rd.p.length >= 4);
       const out = {}; const idxByKey = {};
@@ -10460,7 +10459,6 @@ function App() {
         const p = rd.p;
         const nmA = colName(rd.a);
         const nmB = colName(rd.b);
-        const isPortConn = !!rd.t; // baked flag: chain lies on a settlement→port path
         const key = nmA === nmB ? "port>" + nmA : [nmA, nmB].sort().join(">");
         const emit = (pts) => {
           if (pts.length < 2) return;
@@ -10473,7 +10471,7 @@ function App() {
         for (let r = 0; r < runs.length; r++) {
           const lo = runs[r][0];
           const hi = r + 1 < runs.length ? runs[r + 1][0] : nPts; // exclusive
-          if (!filterRoads || regionVis(runs[r][1], isPortConn)) {
+          if (!filterRoads || regionVis(runs[r][1])) {
             for (let k = lo; k < hi; k++) seg.push({ x: p[2 * k], y: p[2 * k + 1] });
           } else if (seg.length) { emit(seg); seg = []; }
         }

@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1385",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**Road masking is now strictly per province.** A province that has roads (or a port) built shows ALL road stretches inside it — including the piece connecting its settlement to the network. The previous update's per-connection logic wrongly hid parts of a province's own roads (e.g. Iliensia's settlement link)." },
+    ],
+  },
+  {
     version: "0.9.1384",
     date: "2026-07-23",
     items: [

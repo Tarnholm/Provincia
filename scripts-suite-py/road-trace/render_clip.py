@@ -45,7 +45,7 @@ for m in re.finditer(r'\{a:"([^"]*)",b:"([^"]*)",l:\[[^\]]*\],p:\[([-0-9.,]+)\],
     cut = False
     for r, (lo, c) in enumerate(runs):
         hi = runs[r+1][0] if r+1 < len(runs) else len(pts)
-        vis = c is None or c in roadcols or (is_port and c in portcols)
+        vis = c is None or c in roadcols or c in portcols
         if vis:
             cur.extend(pts[lo:hi])
         else:
