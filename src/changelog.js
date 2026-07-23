@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1386",
+    date: "2026-07-23",
+    items: [
+      { type: "feature", text: "**New map mode: Legions (Military, dev).** Shows where each named legion can be recruited — the aor_*_early / aor_praetorian zones from descr_regions: Legio I Germanica, II Gallica, III Cyrenaica, IIII Parthica, V Alaudae, VI Ferrata, VII Paterna, IX Hispana, X Equestris, XIII Gemina, and the Praetorian Guard (Roma). Solid colour per legion (each region belongs to at most one zone), legend sorted by zone size with click-to-isolate / shift-click-to-add, hover shows the legion name. These legion tags no longer clutter the regular AOR map's Secondary layer — they live here now." },
+    ],
+  },
+  {
     version: "0.9.1385",
     date: "2026-07-23",
     items: [

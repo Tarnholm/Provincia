@@ -226,6 +226,7 @@ const MAP_BTN_ORDER = [
   "devmode.pop_growth", "devmode.wealth", "devmode.recruitment", "devmode.garrison",
   "devmode.happiness", "devmode.income", "devmode.public_order", "devmode.paint",
   // Dev pill (bottom-right dev tools row).
+  "devmode.legions",
   "devpill.import", "devpill.scripts", "devpill.edb", "devpill.compare",
   "devpill.xref", "devpill.validate", "devpill.budget", "devpill.vcowners",
   "devpill.mac", "devpill.save", "devpill.layout", "devpill.changes",
@@ -1164,6 +1165,26 @@ const PRIMARY_AOR_TAGS = new Set(Object.keys(PRIMARY_AOR_TO_FACTION));
 // excluded from BOTH the Primary and Secondary map layers + the legend.
 // Keep in sync with RegionInfo.SPECIALTY_AOR_TAGS (which uses full aor_ tags).
 const SPECIALTY_AOR_BARE = new Set(["camillan", "euzonoi", "deuteroi", "oscan_southern", "thracian_hillmen"]);
+// Named-legion recruitment zones (RIS): the `aor_*_early` (+ aor_praetorian)
+// hidden resources gate WHERE each historical legion can be raised. The RIS
+// data has at most ONE legion tag per region (verified: 854 regions, zero
+// overlaps), so the Legions map mode is a solid-fill zone map. These tags are
+// excluded from the regular AOR layers/legend — they have their own map mode.
+// Names resolved against EDU unit types (legio i germanica early, …).
+const LEGION_AORS = {
+  germanica_early: { name: "Legio I Germanica",   col: [178, 44, 52] },
+  gallica_early:   { name: "Legio II Gallica",    col: [214, 121, 36] },
+  cyrenaica_early: { name: "Legio III Cyrenaica", col: [206, 178, 62] },
+  parthica_early:  { name: "Legio IIII Parthica", col: [92, 128, 186] },
+  alaudae_early:   { name: "Legio V Alaudae",     col: [122, 76, 158] },
+  ferrata_early:   { name: "Legio VI Ferrata",    col: [88, 138, 90] },
+  paterna_early:   { name: "Legio VII Paterna",   col: [146, 96, 60] },
+  hispana_early:   { name: "Legio IX Hispana",    col: [188, 96, 132] },
+  equestris_early: { name: "Legio X Equestris",   col: [66, 155, 162] },
+  gemina_early:    { name: "Legio XIII Gemina",   col: [148, 162, 74] },
+  praetorian:      { name: "Praetorian Guard",    col: [232, 202, 94] },
+};
+const LEGION_AOR_TAGS = new Set(Object.keys(LEGION_AORS));
 // Deterministic palette slot for an AOR with no faction-mapped colour — derived
 // from the AOR name so the colour is STABLE across renders/sessions (the old
 // order-dependent cycling counter made unmapped AORs change colour each time).
@@ -1250,7 +1271,7 @@ function splitAorsByLayer(tags, cityName) {
   // First pass: bucket by membership in PRIMARY_AOR_TAGS. Specialty AORs are
   // skipped entirely — they never colour the map (Specialty tab only).
   for (const a of all) {
-    if (SPECIALTY_AOR_BARE.has(a)) continue;
+    if (SPECIALTY_AOR_BARE.has(a) || LEGION_AOR_TAGS.has(a)) continue; // legions have their own map mode
     if (PRIMARY_AOR_TAGS.has(a)) primary.push(a);
     else secondary.push(a);
   }
@@ -1282,7 +1303,7 @@ function splitAorsByLayer(tags, cityName) {
   return { primary, secondary, all };
 }
 
-const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource", "aor", "happiness", "income", "public_order", "mercenaries"]);
+const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource", "aor", "legions", "happiness", "income", "public_order", "mercenaries"]);
 
 // Dev-toggle tracer (2026-07-16 "dev button does nothing" hunt). Every step of
 // the toggle logs to provincia.log so a dead click is attributable: handler
@@ -8976,6 +8997,31 @@ function App() {
         // No stripe overlay in AOR mode — the Primary/Secondary toggle is the
         // single source of truth for which zone colours a region (solid fill).
         setStripeOverlay(null);
+      } else if (colorMode === "legions") {
+        // Legionary recruitment map: colour each region by its named-legion
+        // recruitment zone (aor_*_early / aor_praetorian hidden resource).
+        // RIS data has at most ONE legion tag per region → solid fill, no
+        // layers/stripes. Regions outside every legion zone stay muted.
+        const legionByRegionKey = {};
+        for (const [key, r] of Object.entries(regions)) {
+          for (const a of getAors(r.tags)) {
+            if (LEGION_AOR_TAGS.has(a)) { legionByRegionKey[key] = a; break; }
+          }
+        }
+        console.log(`[legions] ${Object.keys(legionByRegionKey).length} regions in a legion recruitment zone`);
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions,
+          (r, pr, pg, pb) => {
+            const tag = legionByRegionKey[`${pr},${pg},${pb}`];
+            const base = tag ? LEGION_AORS[tag].col : [80, 75, 70];
+            if (devFlatColors) return base;
+            const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.6;
+            return [
+              Math.max(0, Math.min(255, base[0] + v)),
+              Math.max(0, Math.min(255, base[1] + v)),
+              Math.max(0, Math.min(255, base[2] + v)),
+            ];
+          }));
+        setStripeOverlay(null);
       } else if (colorMode === "culture") {
         const cultureColors = {};
         let ci = 0;
@@ -14469,6 +14515,7 @@ function App() {
         { key: "recruitment", label: "Recruitment", badge: "devmode.recruitment", dev: true },
         { key: "hidden_resource", label: "Hidden Res.", badge: "devmode.hidden_resource", dev: true },
         { key: "aor", label: "AOR", badge: "devmode.aor", dev: true },
+        { key: "legions", label: "Legions", badge: "devmode.legions", dev: true },
         { key: "mercenaries", label: "Mercenaries", badge: "devmode.mercenaries", dev: true },
       ]},
       { id: "geography", title: "Geography", members: [
@@ -15965,6 +16012,10 @@ function App() {
       }
       return { label: "Hidden Resources", value: hrs.length ? hrs.join(", ") : "None" };
     }
+    if (colorMode === "legions") {
+      const tag = getAors(info.tags).find((a) => LEGION_AOR_TAGS.has(a));
+      return { label: "Legion", value: tag ? LEGION_AORS[tag].name : "None — outside every legion recruitment zone" };
+    }
     if (colorMode === "aor") {
       const aors = getAors(info.tags);
       return { label: aors.length === 1 ? "AOR" : `AORs (${aors.length})`, value: aors.length ? aors.join(", ") : "None" };
@@ -16584,6 +16635,98 @@ function App() {
       );
     }
 
+    if (colorMode === "legions") {
+      // Legionary recruitment legend: one row per named legion (fixed
+      // LEGION_AORS palette — same colours as the map render), sorted by
+      // zone size. Click to isolate the zone, shift-click to add.
+      const counts = {};
+      for (const r of Object.values(regions)) {
+        for (const a of getAors(r.tags)) if (LEGION_AOR_TAGS.has(a)) counts[a] = (counts[a] || 0) + 1;
+      }
+      const entries = Object.keys(LEGION_AORS).filter((t) => counts[t])
+        .sort((a, b) => (counts[b] - counts[a]) || a.localeCompare(b));
+      if (entries.length === 0) {
+        return (
+          <div style={panelStyle}>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>Legionary Recruitment</div>
+            <div style={{ fontSize: "0.72rem", color: "#aaa", fontStyle: "italic" }}>
+              No legion recruitment tags (aor_*_early / aor_praetorian) found in this campaign's descr_regions.txt.
+            </div>
+          </div>
+        );
+      }
+      const activeSet = legendFilter instanceof Set ? legendFilter : null;
+      const getMatchingKeys = (tag) => {
+        const out = [];
+        for (const [rgbKey, r] of Object.entries(regions)) {
+          if (getAors(r.tags).includes(tag)) out.push(rgbKey);
+        }
+        return out;
+      };
+      const handleLegendClick = (tag, isShift) => {
+        setLegendFilter(prev => {
+          const current = prev instanceof Set ? new Set(prev) : new Set();
+          if (isShift) {
+            if (current.has(tag)) current.delete(tag);
+            else current.add(tag);
+          } else {
+            if (current.size === 1 && current.has(tag)) current.clear();
+            else { current.clear(); current.add(tag); }
+          }
+          const allKeys = [...current].flatMap(t => getMatchingKeys(t));
+          const unique = [...new Set(allKeys)];
+          setSelectedProvinces(unique);
+          if (unique.length > 0 && !isShift) zoomToProvinces(unique);
+          return current.size === 0 ? null : current;
+        });
+      };
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>
+            Legionary Recruitment ({entries.length}) <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
+          </div>
+          {!legendCollapsed && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: "34vh", overflowY: "auto" }}>
+              {entries.map((tag) => {
+                const { name, col } = LEGION_AORS[tag];
+                const isActive = activeSet && activeSet.has(tag);
+                const dimmed = activeSet && !isActive;
+                return (
+                  <div
+                    key={tag}
+                    onClick={(e) => handleLegendClick(tag, e.shiftKey)}
+                    title={`${counts[tag]} region(s) tagged with aor_${tag}\nClick to isolate · Shift-click to add`}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      padding: "2px 4px", fontSize: "0.72rem",
+                      borderRadius: 3, cursor: "pointer",
+                      background: isActive ? "rgba(255,255,255,0.10)" : "transparent",
+                      opacity: dimmed ? 0.42 : 1,
+                      transition: "opacity 0.12s, background 0.12s",
+                    }}
+                  >
+                    <span style={{
+                      width: 12, height: 12, borderRadius: 2, flexShrink: 0,
+                      background: `rgb(${col[0]}, ${col[1]}, ${col[2]})`,
+                      border: "1px solid rgba(0,0,0,0.35)",
+                    }} />
+                    <span style={{ flex: 1, color: "#eee" }}>{name}</span>
+                    <span style={{ color: "#888", fontVariantNumeric: "tabular-nums", fontSize: "0.68rem" }}>
+                      {counts[tag]}
+                    </span>
+                  </div>
+                );
+              })}
+              <div style={{ marginTop: 6, fontSize: "0.66rem", color: "#888", lineHeight: 1.4 }}>
+                Where each named legion can be recruited (aor_*_early hidden resources).
+                <br />Click an entry to isolate · Shift-click to add · Click again to clear.
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     if (colorMode === "aor") {
       // 0.9.486: AOR legend. Lists every aor_X tag found across regions,
       // with the same color it gets in the map render. Sorted by region
@@ -16617,7 +16760,7 @@ function App() {
         }
       }
       const entries = Object.entries(seen)
-        .filter(([n]) => !SPECIALTY_AOR_BARE.has(n)) // specialty AORs aren't map zones
+        .filter(([n]) => !SPECIALTY_AOR_BARE.has(n) && !LEGION_AOR_TAGS.has(n)) // specialty + legion AORs aren't AOR-map zones (legions have their own mode)
         .sort((a, b) => (counts[b[0]] - counts[a[0]]) || a[0].localeCompare(b[0]));
       if (entries.length === 0) {
         return (
