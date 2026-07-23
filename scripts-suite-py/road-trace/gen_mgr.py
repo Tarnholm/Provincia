@@ -139,7 +139,7 @@ def smooth(ch, tiles):
         return [to_land(*p) for p in P]
     # keypoints (drop 1px stair-steps but keep genuine bends) with matching tiles
     K = []; KT = []
-    keep_idx = _dp_idx(P, 0.35)   # more keypoints = finer wiggle detail
+    keep_idx = _dp_idx(P, 0.15)   # more keypoints = finer detail
     for i in keep_idx: K.append(P[i]); KT.append(tiles[i] if i < len(tiles) else tiles[-1])
     if len(K) < 2: return [to_land(*p) for p in P]
     def jitter(t):
@@ -155,7 +155,7 @@ def smooth(ch, tiles):
     out = [K[0]]
     for i in range(len(K)-1):
         p0, p3 = K[i], K[i+1]; t0, t1 = T[i], T[i+1]
-        seg = math.hypot(p3[0]-p0[0], p3[1]-p0[1]) * 0.33
+        seg = math.hypot(p3[0]-p0[0], p3[1]-p0[1]) * 0.18   # smaller arm = sharper corners
         p1 = (p0[0]+t0[0]*seg, p0[1]+t0[1]*seg)
         p2 = (p3[0]-t1[0]*seg, p3[1]-t1[1]*seg)
         for s2 in range(1, 6):

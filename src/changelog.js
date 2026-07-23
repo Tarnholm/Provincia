@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1383",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**Roads now use the game's actual rendered curves.** The road network's clean topology (all connections, proper junctions, no doubles) is now overlaid with the game's own rendered road geometry captured piece by piece — so the curves on the map are the real in-game curves, with their genuine detail and natural sharp corners, not a synthetic approximation. Verified map-wide: zero hairpin spikes, zero crossings, zero gaps, nothing on water." },
+    ],
+  },
+  {
     version: "0.9.1382",
     date: "2026-07-23",
     items: [

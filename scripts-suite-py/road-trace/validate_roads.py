@@ -127,6 +127,14 @@ sea = [(ci, x, y) for ci, c in enumerate(chains) for (x, y) in c
        if 0 <= int(x) < Ww and 0 <= int(y) < Hh and is_sea[int(y), int(x)]]
 
 print(f"SPIKE: {len(spikes)}   JUNCTION-SPIKE: {len(jspikes)}   CROSSOVER: {len(cross)}   DANGLE: {len(dangles)}   SEA: {len(sea)}")
+if len(sys.argv) > 2 and sys.argv[2] == "--json":
+    import json as _json
+    _json.dump({
+        "spikes": [[ri, pt[0], pt[1]] for ri, pt, dot in spikes],
+        "jspikes": [[ci, cj, pt[0], pt[1]] for ci, cj, pt in jspikes],
+        "crossovers": sorted([list(p) for p in cross]),
+        "sea": [[ci, x, y] for ci, x, y in sea],
+    }, open(sys.argv[3], "w"))
 for ri, pt, dot in spikes[:8]: print(f"  SPIKE chain {ri} at ({pt[0]:.1f},{pt[1]:.1f}) dot={dot}")
 for ci, cj, pt in jspikes[:8]: print(f"  JSPIKE chains {ci}+{cj} at ({pt[0]:.1f},{pt[1]:.1f})")
 fatal = len(spikes) + len(jspikes) + len(cross) + len(sea)
