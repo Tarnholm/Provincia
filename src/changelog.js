@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1378",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**Fixed the spiky road junctions (e.g. around Olbia-Sardinia).** When closing gaps, road ends were sometimes extended backwards past a town, making a spike. Ends now only extend forward along the road's direction, so junctions read cleanly. Duplicates removed and connectivity preserved as before." },
+    ],
+  },
+  {
     version: "0.9.1377",
     date: "2026-07-23",
     items: [

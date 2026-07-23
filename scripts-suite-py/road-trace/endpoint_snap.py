@@ -117,7 +117,7 @@ print("endpoints snapped:", snapped, "clusters:", len(comp))
 # endpoint, not on another road) is a real gap the capture left. Extend it to
 # the NEAREST point of another chain within WIDE px (endpoint or body), so the
 # gap closes into a junction. Feathered; skip if it would fold the chain.
-WIDE = 5.0
+WIDE = 7.0
 def build_end_grid():
     g = {}
     for ci, c in enumerate(chains):
@@ -135,35 +135,49 @@ def has_near(g, p, ci, r):
             for (x, y, cj) in g.get((int(p[0])+dx, int(p[1])+dy), ()):
                 if cj != ci and (x-p[0])**2 + (y-p[1])**2 <= r*r: return True
     return False
-def nearest_on_road(p, ci, r):
+def nearest_on_road_fwd(p, outdir, ci, r):
+    # nearest point on another road within r, but ONLY in the road's FORWARD
+    # direction (dot with outgoing dir > 0) so the extension continues the road
+    # instead of doubling back and making a spike.
     best = None; bd = r*r
     for dx in range(-int(r)-1, int(r)+2):
         for dy in range(-int(r)-1, int(r)+2):
             for (x, y, cj) in pgr.get((int(p[0])+dx, int(p[1])+dy), ()):
                 if cj == ci: continue
-                d = (x-p[0])**2 + (y-p[1])**2
-                if d < bd: bd = d; best = (x, y)
+                vx, vy = x-p[0], y-p[1]
+                d = vx*vx + vy*vy
+                if d >= bd or d < 1e-9: continue
+                L = math.sqrt(d)
+                if (vx/L)*outdir[0] + (vy/L)*outdir[1] < -0.25: continue   # allow perpendicular T-junctions, block ~180 backward spikes
+                bd = d; best = (x, y)
     return best
 extended = 0
 for ci, c in enumerate(chains):
+    P = c["pts"]
+    if len(P) < 3: continue
     for st in (True, False):
-        end = c["pts"][0] if st else c["pts"][-1]
+        end = P[0] if st else P[-1]
         if anchor_near(end): continue
         if has_near(eg, end, ci, 0.6): continue
         if has_near(pgr, end, ci, 0.9): continue    # already on another road
-        tgt = nearest_on_road(end, ci, WIDE)
+        # outgoing direction = from the 3rd point toward the end (where the road
+        # is heading as it leaves); we extend further along THAT heading.
+        nb = P[2] if st else P[-3]
+        ox, oy = end[0]-nb[0], end[1]-nb[1]; L = math.hypot(ox, oy) or 1.0
+        outdir = (ox/L, oy/L)
+        tgt = nearest_on_road_fwd(end, outdir, ci, WIDE)
         if not tgt: continue
-        other = c["pts"][-1] if st else c["pts"][0]
+        other = P[-1] if st else P[0]
         if (other[0]-tgt[0])**2 + (other[1]-tgt[1])**2 < 4: continue  # would fold
         t = to_land(*tgt)
         ddx, ddy = t[0]-end[0], t[1]-end[1]
-        n = len(c["pts"])
+        n = len(P)
         for k in range(min(FEATHER, n)):
             w = 1.0 - k/FEATHER
             idx = k if st else n-1-k
-            c["pts"][idx] = to_land(c["pts"][idx][0]+ddx*w, c["pts"][idx][1]+ddy*w)
+            P[idx] = to_land(P[idx][0]+ddx*w, P[idx][1]+ddy*w)
         extended += 1
-print("dangling ends extended to nearest road:", extended)
+print("dangling ends extended (forward-only):", extended)
 
 out = []
 for c in chains:
