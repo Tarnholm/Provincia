@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1373",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**Roads rebuilt from the game's real road network so they connect correctly everywhere.** The earlier captured road lines were fragmented — pieces ended just short of each other, leaving gaps and dangling ends that couldn't be patched away. Roads are now built from the game's own road network as one connected graph: every settlement and port is linked exactly as in the game, shared routes merge into one line, junctions join cleanly, roads never cross, and no duplicates. Curves are organic (following the terrain) though very slightly smoother than the raw capture — the trade-off for connections that are actually correct." },
+    ],
+  },
+  {
     version: "0.9.1372",
     date: "2026-07-23",
     items: [
