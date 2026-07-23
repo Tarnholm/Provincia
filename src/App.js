@@ -74,6 +74,8 @@ import TimelinePlayerPanel from "./panels/TimelinePlayerPanel";
 import UnitComparePanel from "./panels/UnitComparePanel";
 import RecruitPlannerPanel from "./panels/RecruitPlannerPanel";
 import DiploHeatmapPanel from "./panels/DiploHeatmapPanel";
+import MercPoolsPanel from "./panels/MercPoolsPanel";
+import { exportMapPng } from "./mapExport";
 import TraitExplorerPanel from "./panels/TraitExplorerPanel";
 import CampaignAutopsyPanel from "./panels/CampaignAutopsyPanel";
 import BuildOrderPanel from "./panels/BuildOrderPanel";
@@ -2988,6 +2990,10 @@ function App() {
   // Mercenaries map layer (2026-06-08): parsed descr_mercenaries pools. Loaded
   // lazily the first time the Mercenaries map mode is selected.
   const [mapMercData, setMapMercData] = useState(null);
+  // 🪙 Mercenary Pool browser (2026-07-24). Declared HERE (not with the other
+  // tool-panel states) because the merc-data fetch effect below reads it —
+  // declaring it later TDZ-crashes the whole app on mount.
+  const [showMercPools, setShowMercPools] = useState(false);
   // Mercenaries pool filter: null = show ALL pools; else a Set of ENABLED pool names
   // (lets the user isolate pools one-by-one to spot gaps/overlaps). Regions in a
   // multi-pool overlap colour by their first enabled pool.
@@ -3811,14 +3817,14 @@ function App() {
   // modDataDir useState above — its dep array reads modDataDir, so placing it earlier
   // TDZ-crashes the whole app on mount (gray screen; this is what broke v0.9.979).
   useEffect(() => {
-    if (colorMode !== "mercenaries" || !modDataDir) return;
+    if ((colorMode !== "mercenaries" && !showMercPools) || !modDataDir) return;
     let cancelled = false;
     (async () => {
       try { const r = await window.electronAPI.getMercenaryPools?.(modDataDir); if (!cancelled && r && r.byRegion) setMapMercData(r); }
       catch (e) { console.warn("[mercenaries] load failed", e); }
     })();
     return () => { cancelled = true; };
-  }, [colorMode, modDataDir]);
+  }, [colorMode, showMercPools, modDataDir]);
   // Mercenary pool names differ per mod, so clear the cached pools + any pool
   // filter when the mod changes (a stale filter Set would hide every region).
   useEffect(() => { setMapMercData(null); setMercPoolFilter(null); }, [modDataDir]);
@@ -4378,7 +4384,7 @@ function App() {
   // because their dep arrays need colorMode/modDataDir initialized).
   useEffect(() => { setMapMetrics(null); }, [modDataDir]);
   useEffect(() => {
-    const METRIC_MODES = ["unrestrisk", "trueincome", "corruptionmap", "growthmap"];
+    const METRIC_MODES = ["unrestrisk", "trueincome", "corruptionmap", "growthmap", "tierforecast"];
     if (!METRIC_MODES.includes(colorMode) || mapMetrics || mapMetricsBusyRef.current || !modDataDir) return;
     const api = window.electronAPI;
     if (!api?.getMapModeMetrics) return;
@@ -9705,7 +9711,7 @@ function App() {
         // of baking into the nearest-neighbour-upscaled offscreen — that was
         // the blocky/pixelated look (fixed 2026-07-18).
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => [Math.round(pr * 0.22 + 28), Math.round(pg * 0.22 + 28), Math.round(pb * 0.22 + 30)]));
-      } else if (colorMode === "unrestrisk" || colorMode === "trueincome" || colorMode === "corruptionmap" || colorMode === "growthmap") {
+      } else if (colorMode === "unrestrisk" || colorMode === "trueincome" || colorMode === "corruptionmap" || colorMode === "growthmap" || colorMode === "tierforecast") {
         // Model-metric modes (2026-07-17, player modes 29-32): per-settlement
         // values from the cracked models (campaign-start state), one shared
         // main-process sweep (get-map-mode-metrics), lazily fetched + cached.
@@ -9730,6 +9736,16 @@ function App() {
             } else if (colorMode === "growthmap" && e.growth != null) {
               const g = Math.max(-2, Math.min(4, e.growth));
               base = g < 0 ? [200, 60, 45] : g < 0.5 ? [190, 170, 60] : [Math.round(80 - g * 8), Math.round(120 + g * 25), 50];
+            } else if (colorMode === "tierforecast" && e.tierNow != null) {
+              // Turns until the settlement's next population tier (60-turn
+              // projection): imminent green -> distant amber; grey = stalled
+              // (never reaches it in 60 turns), red = declining, blue = max tier.
+              if (e.nextTierAt == null) base = [70, 95, 150];
+              else if (e.tierTurns == null) base = e.declining ? [185, 60, 48] : [92, 86, 78];
+              else {
+                const t = Math.max(0, Math.min(1, e.tierTurns / 40));
+                base = [Math.round(55 + t * 140), Math.round(180 - t * 55), 48];
+              }
             }
           }
           if (devFlatColors) return base;
@@ -11799,7 +11815,7 @@ function App() {
     setShowReportExport(false); setShowSaveCompare(false); setShowModLint(false);
     setShowTimelinePlayer(false); setShowUnitCompare(false); setShowRecruitPlanner(false);
     setShowDiploHeatmap(false); setShowPopProjection(false); setShowDefLocator(false);
-    setShowBattleLedger(false); setShowWhatIf(false);
+    setShowBattleLedger(false); setShowWhatIf(false); setShowMercPools(false);
   };
   // Battle ledger (2026-07-17): accumulates battle events from the raw live
   // log feed. The ledger instance lives on a ref (survives renders); snapshots
@@ -14177,6 +14193,81 @@ function App() {
     }
   }
 
+  // 🖼 High-res full-map export (2026-07-24): whole map at 3x native with the
+  // current mode's colors, re-stroked vector overlays and a painted legend.
+  function handleExportMap() {
+    const base = coloredOffscreen || offscreen;
+    if (!base || !imgSize.width) { pushToast("Map not ready yet.", "info", 4000); return; }
+    const MODE_TITLES = {
+      faction: "Factions", victory: "Victory Conditions", region: "Regions", culture: "Culture",
+      religion: "Religion", population: "Population", farm: "Fertility", resource: "Resources",
+      mining: "Mining", trueincome: "Income (model)", corruptionmap: "Corruption", growthmap: "Growth",
+      tierforecast: "Tier Forecast", tradelanes: "Trade Lanes", unrestrisk: "Unrest Risk",
+      armyheat: "Armies", waractivity: "War Activity", threat: "Threat", reach: "Reach",
+      aor: "Areas of Recruitment", legions: "Legionary Recruitment", mercenaries: "Mercenary Pools",
+      homeland: "Homelands", government: "Government", geography: "Geography",
+    };
+    let legendRows = null, gradient = null;
+    if (colorMode === "legions") {
+      const counts = {};
+      for (const r of Object.values(regions)) for (const a of getAors(r.tags)) if (LEGION_AOR_TAGS.has(a)) counts[a] = (counts[a] || 0) + 1;
+      legendRows = Object.keys(LEGION_AORS).filter((t) => counts[t]).sort((a, b) => counts[b] - counts[a])
+        .map((t) => ({ color: LEGION_AORS[t].col, label: LEGION_AORS[t].name, count: counts[t] }));
+    } else if (colorMode === "culture") {
+      const cols = {}; const counts = {}; let ci = 0;
+      for (const v of Object.values(regions)) {
+        if (!v.culture) continue;
+        if (!cols[v.culture]) { cols[v.culture] = CULTURE_PALETTE[ci % CULTURE_PALETTE.length]; ci++; }
+        counts[v.culture] = (counts[v.culture] || 0) + 1;
+      }
+      legendRows = Object.keys(cols).sort((a, b) => counts[b] - counts[a]).map((cu) => ({ color: cols[cu], label: cu, count: counts[cu] }));
+    } else if (colorMode === "religion") {
+      const counts = {};
+      for (const r of Object.values(regions)) {
+        let best = null, bl = -1;
+        for (const hit of String(r.tags || "").matchAll(/\brel_([a-z_]+?)_(\d+)\b/g)) { const lv = parseInt(hit[2], 10); if (lv > bl) { best = hit[1]; bl = lv; } }
+        if (best) counts[best] = (counts[best] || 0) + 1;
+      }
+      legendRows = Object.keys(counts).sort((a, b) => counts[b] - counts[a])
+        .map((re) => ({ color: RELIGION_COLORS[re] || [128, 128, 128], label: re.replace(/_/g, " "), count: counts[re] }));
+    } else if (colorMode === "aor") {
+      const counts = {};
+      for (const r of Object.values(regions)) for (const a of getAors(r.tags)) counts[a] = (counts[a] || 0) + 1;
+      const names = Object.keys(counts).filter((n) => !SPECIALTY_AOR_BARE.has(n) && !LEGION_AOR_TAGS.has(n))
+        .filter((n) => aorView === "secondary" ? !PRIMARY_AOR_TAGS.has(n) : PRIMARY_AOR_TAGS.has(n))
+        .sort((a, b) => counts[b] - counts[a]);
+      legendRows = names.map((n) => {
+        const facId = PRIMARY_AOR_TO_FACTION[n] || SECONDARY_AOR_TO_FACTION[n];
+        const fc = facId ? factionColors[facId.toLowerCase()] : null;
+        const col = (fc && Array.isArray(fc.primary)) ? fc.primary : CULTURE_PALETTE[stableAorColorIndex(n, CULTURE_PALETTE.length)];
+        return { color: col, label: n.replace(/_/g, " "), count: counts[n] };
+      });
+    } else if (colorMode === "tradelanes") {
+      legendRows = [{ line: "road", label: "Road" }, { line: "sea", label: "Sea lane" }];
+    } else {
+      const G = {
+        unrestrisk: { stops: [[60, 170, 45], [190, 170, 60], [220, 50, 45]], labels: ["stable", "tense", "riot risk"] },
+        trueincome: { stops: [[50, 48, 45], [160, 130, 45], [255, 205, 45]], labels: ["poor", "", "richest"] },
+        corruptionmap: { stops: [[55, 140, 60], [140, 95, 50], [220, 45, 40]], labels: ["clean", "", "worst"] },
+        growthmap: { stops: [[200, 60, 45], [190, 170, 60], [60, 180, 50]], labels: ["declining", "flat", "booming"] },
+        tierforecast: { stops: [[55, 180, 48], [125, 153, 48], [195, 125, 48]], labels: ["imminent", "~20 turns", "40+"] },
+      }[colorMode];
+      if (G) gradient = G;
+    }
+    const scale = 3;
+    const out = exportMapPng({
+      base, W: imgSize.width, H: imgSize.height, scale,
+      title: MODE_TITLES[colorMode] || colorMode,
+      subtitle: "Provincia — " + new Date().toISOString().slice(0, 10),
+      legendRows, gradient,
+      borderPath: DEV_COLOR_MODES.has(colorMode) ? devBorderPath : null,
+      roadPath2D: colorMode === "tradelanes" ? roadPath2D : null,
+      seaPolys: colorMode === "tradelanes" && seaLanePaths ? Object.values(seaLanePaths) : null,
+      fileName: `provincia-${colorMode}-${imgSize.width * scale}x${imgSize.height * scale}.png`,
+    });
+    if (out) pushToast(`Exported ${out.width}×${out.height} PNG.`, "success", 4000);
+  }
+
   function handleScreenshot() {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -14516,6 +14607,7 @@ function App() {
       { id: "population", title: "Population", members: [
         { key: "population", label: "Population", badge: "mode.population" },
         { key: "pop_growth", label: "Pop Headroom", badge: "devmode.pop_growth", dev: true },
+        { key: "tierforecast", label: "Tier Forecast", badge: "mode.tierforecast" },
       ]},
       { id: "economy", title: "Economy", members: [
         { key: "resource", label: "Resources", badge: "mode.resource" },
@@ -15058,6 +15150,8 @@ function App() {
                       { icon: "⚖", label: "Unit Comparator", color: "#d8b88f", desc: "Side-by-side EDU stats for up to 6 units, best-in-row highlighting + cost-effectiveness ratios.", open: () => setShowUnitCompare(true) },
                       { icon: "🏗", label: "Recruit Planner", color: "#a8d8a0", desc: "For the selected settlement: what each next building upgrade unlocks for recruitment.", open: () => { if (lockedRegionInfo || regionInfo) setShowRecruitPlanner(true); else pushToast("Select a region first — the planner works on the selected settlement.", "info", 5000); } },
                       { icon: "🕊", label: "Diplomacy Heatmap", color: "#d8a0a0", desc: "NxN heatmap of the live diplomacy matrix — war blocs and alliance clusters at a glance.", open: () => setShowDiploHeatmap(true) },
+                      { icon: "🪙", label: "Mercenary Pools", color: "#d9c964", desc: "Browse every mercenary pool — units, costs, replenish rates, faction restrictions; highlight a pool's regions on the map.", open: () => setShowMercPools(true) },
+                      { icon: "🖼", label: "Export Map PNG", color: "#a8d8d8", desc: "Save the whole map in the current mode as a high-res PNG (3× native) with a painted legend.", open: () => handleExportMap() },
                       { icon: "📉", label: "Population Projection", color: "#9ed6ad", desc: "Project every settlement N seasons forward; flag decline, stalls, tier-ups and unrest risk.", open: () => setShowPopProjection(true) },
                       { icon: "🎭", label: "Trait Explorer", color: "#c9b8e0", desc: "Browse every character trait — filter by effect (tax, law, command…), see levels/thresholds/effects, and in live mode who carries each.", open: () => setShowTraitExplorer(true) },
                       { icon: "⚰", label: "Campaign Autopsy", color: "#cf8f6a", desc: "Post-mortem over a scanned saves timeline — each faction's settlement/treasury/army arc, when they peaked, declined or were wiped, and who won.", open: () => setShowCampaignAutopsy(true) },
@@ -15969,6 +16063,15 @@ function App() {
       const total = resSum + farm * 2 + port * 4;
       return { label: "Wealth (est.)", value: `${total} (resources ${resSum}, farm ×${farm}, port ×${port})` };
     }
+    if (colorMode === "tierforecast") {
+      const e = mapMetrics && mapMetrics.byRegion && mapMetrics.byRegion[info.region];
+      if (!e || e.tierNow == null) return { label: "Tier Forecast", value: "No projection" };
+      const tierLabel = (t) => String(t || "").replace(/_/g, " ");
+      if (e.nextTierAt == null) return { label: "Tier Forecast", value: `${tierLabel(e.tierNow)} — max tier` };
+      const popStr = `pop ${(e.popNow || 0).toLocaleString()} / ${e.nextTierAt.toLocaleString()}`;
+      if (e.tierTurns == null) return { label: "Tier Forecast", value: `${tierLabel(e.tierNow)} — ${e.declining ? "declining" : "stalled"} (${popStr})` };
+      return { label: "Tier Forecast", value: `${tierLabel(e.tierNow)} → next tier in ~${e.tierTurns} turn${e.tierTurns === 1 ? "" : "s"} (${popStr})` };
+    }
     if (colorMode === "recruitment") {
       // 0.9.828: show the actual unique-recruit count for this region (the
       // coloring pass already computed it into recruitmentInfo.byName).
@@ -16230,12 +16333,13 @@ function App() {
         </div>
       );
     }
-    if (colorMode === "unrestrisk" || colorMode === "trueincome" || colorMode === "corruptionmap" || colorMode === "growthmap") {
+    if (colorMode === "unrestrisk" || colorMode === "trueincome" || colorMode === "corruptionmap" || colorMode === "growthmap" || colorMode === "tierforecast") {
       const CFG = {
         unrestrisk: { title: "Unrest risk", grad: "linear-gradient(to right, rgb(60,170,45), rgb(190,170,60), rgb(220,50,45))", labels: ["stable", "tense", "riot risk"] },
         trueincome: { title: "Income (model)", grad: "linear-gradient(to right, rgb(50,48,45), rgb(160,130,45), rgb(255,205,45))", labels: ["poor", "", mapMetrics ? `${mapMetrics.maxIncome} dn` : "richest"] },
         corruptionmap: { title: "Corruption", grad: "linear-gradient(to right, rgb(55,140,60), rgb(140,95,50), rgb(220,45,40))", labels: ["clean", "", mapMetrics ? `-${mapMetrics.maxCorr} dn` : "worst"] },
         growthmap: { title: "Growth", grad: "linear-gradient(to right, rgb(200,60,45), rgb(190,170,60), rgb(60,180,50))", labels: ["declining", "flat", "booming"] },
+        tierforecast: { title: "Tier Forecast (turns to next settlement tier)", grad: "linear-gradient(to right, rgb(55,180,48), rgb(125,153,48), rgb(195,125,48))", labels: ["imminent", "~20 turns", "40+"] },
       }[colorMode];
       return (
         <div style={panelStyle}>
@@ -16245,6 +16349,15 @@ function App() {
             <div style={labelRow}>
               <span>{CFG.labels[0]}</span><span>{CFG.labels[1]}</span><span>{CFG.labels[2]}</span>
             </div>
+            {colorMode === "tierforecast" && (
+              <div style={{ display: "flex", gap: 10, marginTop: 4, fontSize: "0.68rem", color: "#bbb" }}>
+                {[[[92, 86, 78], "stalled"], [[185, 60, 48], "declining"], [[70, 95, 150], "max tier"]].map(([c, lab]) => (
+                  <span key={lab} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: 2, background: `rgb(${c[0]},${c[1]},${c[2]})` }} />{lab}
+                  </span>
+                ))}
+              </div>
+            )}
             {colorMode === "unrestrisk" && mapMetrics && (() => {
               // Revolt risk (user 2026-07-17): risky = PO < 80 (riot line 70).
               // No faction picked → faction picker list. Faction picked → that
@@ -22777,6 +22890,18 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           factionColors={factionColors}
           liveActive={liveLogActive}
           onClose={() => setShowDiploHeatmap(false)}
+        />
+      )}
+      {showMercPools && (
+        <MercPoolsPanel
+          mercData={mapMercData}
+          regions={regions}
+          onHighlightRegions={(keys, jump) => { setSelectedProvinces(keys); if (jump) zoomToProvinces(keys); }}
+          onOpenUnit={(name) => {
+            const fac = (unitOwnership && unitOwnership[name] && unitOwnership[name][0]) || "slave";
+            setInfoPopup({ type: "unit", name, faction: fac, label: name.replace(/_/g, " ") });
+          }}
+          onClose={() => setShowMercPools(false)}
         />
       )}
       {showTraitExplorer && (

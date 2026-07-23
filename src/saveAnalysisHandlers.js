@@ -384,10 +384,16 @@ ipcMain.handle("get-map-mode-metrics", async (_event, modDataDir) => {
         }
       } catch { /* faction fails → its regions stay dark */ }
       try {
-        const p = pp.projectPopulation(modDataDir, fac, 1);
+        // 60-turn horizon so reachesNextTierAtTurn is meaningful for the Tier
+        // Forecast mode (the trajectory sim is arithmetic — the PO model inside
+        // projectPopulation dominates and runs either way).
+        const p = pp.projectPopulation(modDataDir, fac, 60);
         for (const s of (p && p.settlements) || []) {
           const e = byRegion[s.region] = byRegion[s.region] || {};
           e.growth = s.growthPctPerTurn; e.po = s.po;
+          e.tierNow = s.tierNow; e.nextTierAt = s.nextTierAt;
+          e.tierTurns = s.reachesNextTierAtTurn; e.popNow = s.popNow;
+          e.declining = s.declining;
         }
       } catch { /* ditto */ }
       await new Promise((r) => setImmediate(r));

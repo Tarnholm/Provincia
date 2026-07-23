@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1389",
+    date: "2026-07-24",
+    items: [
+      { type: "feature", text: "**New map mode: Tier Forecast (Population).** Colors every settlement by how many turns until it reaches its next population tier (60-turn projection): green = imminent, amber = distant, grey = stalled, red = declining, blue = already max tier. Hover shows the exact forecast (current tier, turns, pop vs threshold)." },
+      { type: "feature", text: "**New tool: Mercenary Pools (in the Tools menu).** Browse every mercenary pool with its units — experience, cost, replenish rate, max, faction restrictions. Search across pools/units/regions, highlight a pool's regions on the map, click a unit for its unit card." },
+      { type: "feature", text: "**New tool: Export Map PNG (in the Tools menu).** Saves the whole map in the current mode as a high-resolution PNG (3× native) with crisp region pixels, re-stroked overlays (borders, trade lanes) and a painted legend — ready for sharing or mod documentation." },
+    ],
+  },
+  {
     version: "0.9.1388",
     date: "2026-07-23",
     items: [
