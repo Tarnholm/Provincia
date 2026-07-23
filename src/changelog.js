@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1387",
+    date: "2026-07-23",
+    items: [
+      { type: "improvement", text: "**Legions map mode is now a regular Military mode** — visible under Military without dev mode on, and switching dev mode off no longer kicks you out of it." },
+    ],
+  },
+  {
     version: "0.9.1386",
     date: "2026-07-23",
     items: [

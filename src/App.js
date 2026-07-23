@@ -226,7 +226,7 @@ const MAP_BTN_ORDER = [
   "devmode.pop_growth", "devmode.wealth", "devmode.recruitment", "devmode.garrison",
   "devmode.happiness", "devmode.income", "devmode.public_order", "devmode.paint",
   // Dev pill (bottom-right dev tools row).
-  "devmode.legions",
+  "mode.legions",
   "devpill.import", "devpill.scripts", "devpill.edb", "devpill.compare",
   "devpill.xref", "devpill.validate", "devpill.budget", "devpill.vcowners",
   "devpill.mac", "devpill.save", "devpill.layout", "devpill.changes",
@@ -8665,7 +8665,7 @@ function App() {
           const next = !prev;
           devTraceClick("Ctrl+Shift+D", prev);
           // If turning off dev mode while a dev color mode is active, reset to faction
-          if (!next) setColorMode(cm => DEV_COLOR_MODES.has(cm) ? "faction" : cm);
+          if (!next) setColorMode(cm => (DEV_COLOR_MODES.has(cm) && cm !== "legions") ? "faction" : cm); // legions is a regular mode
           return next;
         });
       }
@@ -14515,7 +14515,10 @@ function App() {
         { key: "recruitment", label: "Recruitment", badge: "devmode.recruitment", dev: true },
         { key: "hidden_resource", label: "Hidden Res.", badge: "devmode.hidden_resource", dev: true },
         { key: "aor", label: "AOR", badge: "devmode.aor", dev: true },
-        { key: "legions", label: "Legions", badge: "devmode.legions", dev: true },
+        // Legions is a regular (non-dev) mode: it's in DEV_COLOR_MODES only to
+        // reuse the dev-mode render/border/legend machinery, and the dev-off
+        // colorMode reset explicitly spares it.
+        { key: "legions", label: "Legions", badge: "mode.legions" },
         { key: "mercenaries", label: "Mercenaries", badge: "devmode.mercenaries", dev: true },
       ]},
       { id: "geography", title: "Geography", members: [
@@ -15577,7 +15580,7 @@ function App() {
             onClick={() => setDevMode(prev => {
               const next = !prev;
               devTraceClick("Dev button", prev);
-              if (!next) setColorMode(cm => DEV_COLOR_MODES.has(cm) ? "faction" : cm);
+              if (!next) setColorMode(cm => (DEV_COLOR_MODES.has(cm) && cm !== "legions") ? "faction" : cm); // legions is a regular mode
               return next;
             })}
             style={{
