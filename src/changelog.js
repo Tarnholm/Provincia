@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1390",
+    date: "2026-07-24",
+    items: [
+      { type: "feature", text: "**New tool: Diplomacy Web (in the Tools menu).** Force-directed graph of the live diplomacy matrix — war blocs pull together, alliance clusters form visibly. Edges by relation type (war / allied / protectorate / trade / hostile, individually toggleable), node size = number of relations, faction colours. Drag nodes to untangle, search to find a faction, click one to focus its relations." },
+      { type: "improvement", text: "**Corruption map computes only the selected faction.** Picking the Corruption mode no longer kicks off the full all-faction sweep — select a faction in the sidebar and its numbers compute in under a second (cached per faction). The legend says which faction is shown." },
+    ],
+  },
+  {
     version: "0.9.1389",
     date: "2026-07-24",
     items: [

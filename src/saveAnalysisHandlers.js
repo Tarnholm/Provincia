@@ -357,6 +357,33 @@ function _modCopyWarning(modDataDir) {
 // (income+corruption per settlement) and the population projection (growth+PO).
 // ~1-2 min cold on RIS's 239 factions, cached per modDataDir; yields between
 // factions so other IPC stays responsive; { busy } while a sweep runs.
+// IPC: SINGLE-faction model metrics (2026-07-24) — the Corruption map mode
+// computes only the selected faction (user rule) instead of waiting on the
+// all-faction sweep. Same numbers as the sweep, ~sub-second per faction.
+const _factionMetricsCache = new Map(); // modDataDir|faction → data
+ipcMain.handle("get-faction-metrics", async (_event, modDataDir, faction) => {
+  try {
+    if (!modDataDir || !faction) return { error: "modDataDir and faction required" };
+    const key = modDataDir + "|" + String(faction).toLowerCase();
+    if (_factionMetricsCache.has(key)) return _factionMetricsCache.get(key);
+    const t0 = Date.now();
+    const im = require("./incomeModel.js");
+    const b = im.computeTurn1Budget(modDataDir, faction, null, { _noTribute: true });
+    if (!b || b.error) return { error: (b && b.error) || "budget model failed" };
+    const byRegion = {};
+    let maxIncome = 1, maxCorr = 1;
+    for (const s of b.settlements || []) {
+      byRegion[s.region] = { settlement: s.settlement, faction: String(faction).toLowerCase(), income: s.totalIncome, corruption: s.corruption };
+      if (s.totalIncome > maxIncome) maxIncome = s.totalIncome;
+      if (s.corruption > maxCorr) maxCorr = s.corruption;
+    }
+    const data = { faction: String(faction).toLowerCase(), byRegion, maxIncome, maxCorr, ms: Date.now() - t0 };
+    _factionMetricsCache.set(key, data);
+    _writeLog(`[faction-metrics] ${faction}: ${Object.keys(byRegion).length} settlements in ${data.ms}ms`);
+    return data;
+  } catch (e) { return { error: e && e.message ? e.message : "faction metrics failed" }; }
+});
+
 let _mapMetricsCache = { key: null, data: null, busy: false };
 ipcMain.handle("get-map-mode-metrics", async (_event, modDataDir) => {
   try {
