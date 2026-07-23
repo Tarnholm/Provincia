@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1371",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**Parallel/duplicate roads cleaned up without losing any roads.** Two roads leaving the same junction toward different towns were captured as separate lines running side by side; they're now merged into a single trunk that splits into a Y where they diverge — exactly like the game. Exact duplicate lines are removed outright. Crucially, every settlement's and port's road is protected, so nothing gets disconnected (the previous attempt over-trimmed and left roads missing — this one is verified connected map-wide)." },
+    ],
+  },
+  {
     version: "0.9.1370",
     date: "2026-07-23",
     items: [
