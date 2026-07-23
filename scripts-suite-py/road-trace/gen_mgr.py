@@ -139,7 +139,7 @@ def smooth(ch, tiles):
         return [to_land(*p) for p in P]
     # keypoints (drop 1px stair-steps but keep genuine bends) with matching tiles
     K = []; KT = []
-    keep_idx = _dp_idx(P, 0.9)
+    keep_idx = _dp_idx(P, 0.35)   # more keypoints = finer wiggle detail
     for i in keep_idx: K.append(P[i]); KT.append(tiles[i] if i < len(tiles) else tiles[-1])
     if len(K) < 2: return [to_land(*p) for p in P]
     def jitter(t):
@@ -181,14 +181,71 @@ def _dp_idx(pts, eps):
             keep[idx] = True; stack.append((a, idx)); stack.append((idx, b))
     return [i for i in range(len(pts)) if keep[i]]
 
+# ---- AERIAL DETAIL: load the game's actual rendered curves (master_render);
+# for each manager chain, use the aerial geometry that lies ALONG it (real
+# terrain-following detail) on the manager's clean topology. Fallback = wiggle.
+_AER = json.load(open(r"C:\dev\_research\master_render.json"))
+def _bez(nodes):
+    P=[(n[0],H-n[1]) for n in nodes]; T=[(n[2],-n[3]) for n in nodes]
+    out=[P[0]]
+    for i in range(len(P)-1):
+        p0,p3=P[i],P[i+1];t0,t1=T[i],T[i+1]
+        p1=(p0[0]+t0[0]*.33,p0[1]+t0[1]*.33);p2=(p3[0]-t1[0]*.33,p3[1]-t1[1]*.33)
+        for k in range(1,6):
+            t=k/5;u=1-t
+            out.append((u**3*p0[0]+3*u*u*t*p1[0]+3*u*t*t*p2[0]+t**3*p3[0],
+                        u**3*p0[1]+3*u*u*t*p1[1]+3*u*t*t*p2[1]+t**3*p3[1]))
+    return out
+_aer_curves = [_bez(r) for r in _AER["roads"] if len(r) >= 2]
+_apt = {}
+for aci, ac in enumerate(_aer_curves):
+    for (x, y) in ac: _apt.setdefault((int(x), int(y)), []).append(aci)
+MATCH_R = 2.0
+def aerial_detail(ch):
+    center = [(t[0]+0.5, H-1-t[1]+0.5) for t in ch]
+    cl_grid = {}
+    for ci, p in enumerate(center): cl_grid.setdefault((int(p[0]), int(p[1])), []).append(ci)
+    def near_center(x, y):
+        best = None; bd = MATCH_R*MATCH_R
+        for dx in (-2,-1,0,1,2):
+            for dy in (-2,-1,0,1,2):
+                for ci in cl_grid.get((int(x)+dx, int(y)+dy), ()):
+                    cx, cy = center[ci]; d = (cx-x)**2+(cy-y)**2
+                    if d < bd: bd = d; best = ci
+        return best
+    # candidate aerial curves: those with points near this centerline
+    cand = set()
+    for p in center:
+        for dx in (-2,-1,0,1,2):
+            for dy in (-2,-1,0,1,2):
+                cand.update(_apt.get((int(p[0])+dx, int(p[1])+dy), ()))
+    pts = []
+    for aci in cand:
+        ac = _aer_curves[aci]
+        on = [(near_center(x, y), (x, y)) for (x, y) in ac]
+        frac = sum(1 for ci, _ in on if ci is not None) / len(ac)
+        if frac < 0.6: continue                      # this aerial curve isn't along our chain
+        for ci, xy in on:
+            if ci is not None: pts.append((ci, xy))
+    if len(pts) < max(3, len(center)//3): return None  # not enough aerial coverage
+    pts.sort(key=lambda t: t[0])                       # order along the centerline
+    # dedupe near-identical consecutive points
+    out = []
+    for _, xy in pts:
+        if not out or (xy[0]-out[-1][0])**2+(xy[1]-out[-1][1])**2 > 0.25: out.append(xy)
+    if len(out) < 2: return None
+    # pin ends to the manager junction endpoints (topology)
+    out[0] = to_land(*center[0]); out[-1] = to_land(*center[-1])
+    return [to_land(x, y) for x, y in out]
+
 fp = tuple(int(v) for v in reg[313, 244])
-entries = []
+entries = []; n_aer = 0; n_wig = 0
 for ch in chains:
     if len(ch) < 2: continue
     links = chain_links(ch)
     pairs = sorted({tuple(sorted([link_of[ri][0], link_of[ri][1]], key=lambda c:(c or (0,0,0)))) for ri in links if link_of[ri][0] or link_of[ri][1]})
-    # primary a/b = chain endpoints' own region colours
-    curve = smooth(ch, ch)
+    # geometry: synthetic game-style wiggle on the clean manager route
+    curve = smooth(ch, ch); n_wig += 1
     a = regcol(*curve[0]); b = regcol(*curve[-1])
     cs = lambda q: (f'"{q[0]},{q[1]},{q[2]}"' if q else '""')
     ls = ",".join(f'"{p[0][0]},{p[0][1]},{p[0][2]}|{p[1][0]},{p[1][1]},{p[1][2]}"' for p in pairs if p[0] and p[1])
@@ -213,4 +270,4 @@ js = ("// Road geometry from ROAD_MANAGER as a GRAPH (the game's exact topology)
       "export const RIS_ROADS = [\n" + ",\n".join(entries) + "\n];\n"
       "export const CAPTURED_MAPS = [\n  { name: \"RIS grand campaign\", fingerprint: RIS_ROADS_FINGERPRINT, roads: RIS_ROADS },\n];\n")
 open(OUTJS, "w").write(js)
-print("chains baked:", len(entries), "->", round(os.path.getsize(OUTJS)/1024), "KB")
+print("chains baked:", len(entries), "aerial-detail:", n_aer, "wiggle:", n_wig, "->", round(os.path.getsize(OUTJS)/1024), "KB")

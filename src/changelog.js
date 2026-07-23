@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1382",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**Road detail restored while staying clean.** The previous version was correct but too smoothed-out. Roads now keep finer curve detail along their length (more of the route's bends, with the game's ±15° wiggle) — organic like the in-game roads — while still all present, correctly connected, with zero hairpin spikes, zero gaps, nothing on water." },
+    ],
+  },
+  {
     version: "0.9.1381",
     date: "2026-07-23",
     items: [
