@@ -58,7 +58,7 @@ def kept_pt_grid():
         if ci in dropped: continue
         for (x, y) in c["pts"]: g.setdefault((int(x), int(y)), []).append((x, y))
     return g
-def road_near(g, e, r=2.5):
+def road_near(g, e, r=1.0):
     for dx in range(-3, 4):
         for dy in range(-3, 4):
             for (x, y) in g.get((int(e[0])+dx, int(e[1])+dy), ()):

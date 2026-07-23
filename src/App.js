@@ -10419,7 +10419,7 @@ function App() {
       const o = (f.y * W + f.x) * 4;
       return data[o] === f.rgb[0] && data[o + 1] === f.rgb[1] && data[o + 2] === f.rgb[2];
     });
-    const roadSig = `road|v42despike|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name + ":" + capMap.roads.length : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
+    const roadSig = `road|v43clean|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name + ":" + capMap.roads.length : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadsPrecurved(!!_laneMemCache[roadSig].precurved); setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {

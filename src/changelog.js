@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1379",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**Road spikes eliminated (verified).** The gap-closing was bending road ends sideways and creating hairpin spikes (there were ~105). Ends now run straight into their junction, and a new automatic check confirms the whole map before release: this build has zero spikes, zero crossovers, zero roads on water, and only 9 tiny unavoidable gaps (down from ~2,000 in the raw capture). Duplicates removed and the game's organic curves preserved." },
+    ],
+  },
+  {
     version: "0.9.1378",
     date: "2026-07-23",
     items: [

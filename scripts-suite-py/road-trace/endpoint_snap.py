@@ -42,6 +42,20 @@ def to_land(x, y):
                 seen.add((nx,ny)); q.append((nx,ny))
     return (x,y)
 
+def snap_end(c, st, target):
+    # Move an endpoint to `target` by replacing the last FEATHER points with a
+    # STRAIGHT interpolation from target to the pivot (point FEATHER in). A
+    # straight tail into the junction can't spike (the old decaying-feather bent
+    # the tail sideways and made hairpins). Interior beyond the pivot untouched.
+    n = len(c)
+    F = min(FEATHER, n-1)
+    pivot = c[F] if st else c[n-1-F]
+    for k in range(F+1):
+        t = k / F if F else 0.0
+        x = target[0]*(1-t) + pivot[0]*t
+        y = target[1]*(1-t) + pivot[1]*t
+        c[k if st else n-1-k] = to_land(x, y)
+
 js = open(IN, encoding="utf-8").read()
 head = js[:js.index("export const RIS_ROADS = [")]
 tail = js[js.index("export const CAPTURED_MAPS"):]
@@ -104,12 +118,7 @@ for root, mem in comp.items():
         c = chains[ci]["pts"]
         end = c[0] if st else c[-1]
         if abs(end[0]-tgt[0]) < 1e-6 and abs(end[1]-tgt[1]) < 1e-6: continue
-        ddx, ddy = tgt[0]-end[0], tgt[1]-end[1]
-        n = len(c)
-        for k in range(min(FEATHER, n)):
-            w = 1.0 - k/FEATHER
-            idx = k if st else n-1-k
-            c[idx] = to_land(c[idx][0]+ddx*w, c[idx][1]+ddy*w)
+        snap_end(c, st, tgt)
         snapped += 1
 print("endpoints snapped:", snapped, "clusters:", len(comp))
 
@@ -169,15 +178,45 @@ for ci, c in enumerate(chains):
         if not tgt: continue
         other = P[-1] if st else P[0]
         if (other[0]-tgt[0])**2 + (other[1]-tgt[1])**2 < 4: continue  # would fold
-        t = to_land(*tgt)
-        ddx, ddy = t[0]-end[0], t[1]-end[1]
-        n = len(P)
-        for k in range(min(FEATHER, n)):
-            w = 1.0 - k/FEATHER
-            idx = k if st else n-1-k
-            P[idx] = to_land(P[idx][0]+ddx*w, P[idx][1]+ddy*w)
+        snap_end(P, st, to_land(*tgt))
         extended += 1
 print("dangling ends extended (forward-only):", extended)
+
+# ---- FINAL DESPIKE: any interior vertex that reverses >123 deg (dot<-0.55) is
+# a spike; pull it to the midpoint of its neighbours until none remain. Endpoints
+# are never moved (topology/junctions preserved). Also clears the 6 spikes that
+# were already in the raw capture.
+import math as _m
+def spike_ks(c):
+    out = []
+    for k in range(1, len(c)-1):
+        ax, ay = c[k][0]-c[k-1][0], c[k][1]-c[k-1][1]
+        bx, by = c[k+1][0]-c[k][0], c[k+1][1]-c[k][1]
+        la, lb = _m.hypot(ax, ay), _m.hypot(bx, by)
+        if la < 0.05 or lb < 0.05: continue
+        if (ax*bx+ay*by)/(la*lb) < -0.30: out.append(k)
+    return out
+def despike(c, rounds=40):
+    # first try gentle averaging (keeps the curve); if a spike persists, REMOVE
+    # the offending vertex (connect neighbours directly) — definitive, and safe
+    # since only interior points are touched (endpoints/junctions stay).
+    for _ in range(rounds):
+        ks = spike_ks(c)
+        if not ks: return True
+        for k in ks:
+            c[k] = to_land((c[k-1][0]+c[k+1][0])/2, (c[k-1][1]+c[k+1][1])/2)
+    while len(c) > 3:
+        ks = spike_ks(c)
+        if not ks: break
+        for k in reversed(ks):
+            if len(c) > 3: del c[k]
+    return not spike_ks(c)
+despiked = 0; stubborn = 0
+for c in chains:
+    if spike_ks(c["pts"]):
+        despiked += 1
+        if not despike(c["pts"]): stubborn += 1
+print(f"chains despiked: {despiked} (stubborn remaining: {stubborn})")
 
 out = []
 for c in chains:
