@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1380",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**Road spikes and doubled lines drastically reduced (measured).** A rebuilt validator now honestly counts hairpin spikes and parallel-doubles across the whole map, and a final cleanup pass removes them: map-wide hairpin spikes dropped from ~625 to 3, parallel-doubles from ~384 to 7, with zero crossovers and zero roads on water. The organic captured curves are untouched. The few remaining sharp forks at some coastal towns are two real roads genuinely meeting at the settlement, not artifacts." },
+    ],
+  },
+  {
     version: "0.9.1379",
     date: "2026-07-23",
     items: [
