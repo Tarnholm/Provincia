@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1372",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**Parallel roads merged into Y-branches without losing any connections.** The previous attempt trimmed too eagerly and left roads disconnected. This version only merges two roads that genuinely leave the same junction together, and every trim is verified afterwards — if it would drop a road from any settlement, port or junction, it's undone. Result: parallel double-lines become a single trunk that forks (like the game), exact duplicate lines removed, and zero roads lost (verified map-wide: 0 lost connections, 0 crossovers)." },
+    ],
+  },
+  {
     version: "0.9.1371",
     date: "2026-07-23",
     items: [

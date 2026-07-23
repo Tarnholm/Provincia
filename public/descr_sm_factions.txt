@@ -103,9 +103,9 @@
 		;;namelists
 		"namelists":
 		{
-			"men":      "roman_men",
-			"women":    "roman_women",
-			"surnames": "roman_surnames",
+			"men":      "greenr_men",
+			"women":    "greenr_women",
+			"surnames": "greenr_surnames",
 		},
 
 		"logos":
@@ -153,7 +153,7 @@
 		},
 
 		"available in custom battles": false,
-		"prefer naval invasions": true,
+		"prefer naval invasions": false,
 		"default religion": "italic",
 		"default battle ai personality": "default_personality",
 
@@ -176,9 +176,9 @@
 		;;namelists
 		"namelists":
 		{
-			"men":      "roman_men",
-			"women":    "roman_women",
-			"surnames": "roman_surnames",
+			"men":      "bluer_men",
+			"women":    "bluer_women",
+			"surnames": "bluer_surnames",
 		},
 
 		"logos":
@@ -249,9 +249,9 @@
 		;;namelists
 		"namelists":
 		{
-			"men":      "roman_men",
-			"women":    "roman_women",
-			"surnames": "roman_surnames",
+			"men":      "senate_men",
+			"women":    "senate_women",
+			"surnames": "senate_surnames",
 		},
 
 		"logos":

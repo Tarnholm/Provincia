@@ -243,5 +243,6 @@ describe("App render smoke-test", () => {
     // Sanity: the mount produced DOM. (App always renders at least a splash
     // root div.) Empty output would mean App short-circuited before its body.
     expect(container.childNodes.length).toBeGreaterThan(0);
-  });
+  }, 20000); // 20s: importing App pulls the multi-MB captured-road module, which
+             // can exceed the 5s default under full parallel test load (flaky).
 });
