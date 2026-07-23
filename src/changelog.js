@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1374",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**The game's full road network now shows by default — no Live mode needed.** Previously roads were filtered to a loaded save's built roads, so without Live mode connected they looked incomplete. The whole baked road network (the game's own roads) now draws by default; Live mode only narrows it to a specific save's built roads when you connect one." },
+      { type: "improvement", text: "**Roads now render at full detail (no simplification).** Every bend of the game's actual road route is kept — the curves follow the terrain exactly as the game routes them, just smoothed off the pixel grid." },
+    ],
+  },
+  {
     version: "0.9.1373",
     date: "2026-07-23",
     items: [

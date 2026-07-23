@@ -132,18 +132,18 @@ def smooth(ch):
     P = [ (t[0]+0.5, H-1-t[1]+0.5) for t in ch ]
     if len(P) < 3:
         return [to_land(*p) for p in P]
-    # de-quantize the staircase: DP keeps the route's genuine corners (>~1.2px)
-    # and discards the 1px stair-steps, so the following curve is DETAILED
-    # (follows terrain, like the game) rather than flattened — yet never
-    # crosses, because it stays on the manager path.
-    K = _dp(P, 1.2)
+    # 0 SIMPLIFICATION: keep EVERY waypoint of the game's actual route (DP eps
+    # ~0 drops only exactly-collinear points, so no bend/detail is lost). The
+    # Catmull-Rom below just rounds the 1px tile-corners into a smooth line.
+    K = _dp(P, 0.01)
     if len(K) < 2: K = [P[0], P[-1]]
-    # Catmull-Rom through the kept corners, 6 subdivisions
+    # Catmull-Rom through ALL kept points, 3 subdivisions (points are already
+    # dense, so 3 is plenty and keeps the file reasonable)
     out = [K[0]]
     for i in range(len(K)-1):
         p0 = K[max(0,i-1)]; p1 = K[i]; p2 = K[i+1]; p3 = K[min(len(K)-1,i+2)]
-        for s in range(1,7):
-            t = s/6; t2=t*t; t3=t2*t
+        for s in range(1,4):
+            t = s/3; t2=t*t; t3=t2*t
             x = 0.5*((2*p1[0])+(-p0[0]+p2[0])*t+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*t2+(-p0[0]+3*p1[0]-3*p2[0]+p3[0])*t3)
             y = 0.5*((2*p1[1])+(-p0[1]+p2[1])*t+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*t3)
             out.append((x,y))
