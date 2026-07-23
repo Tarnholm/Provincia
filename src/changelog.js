@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1381",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**Roads rebuilt to match the game's all-roads network — organic, complete, spike-free.** Roads now come from the game's real road network (every connection present, none missing or extra, junctions properly joined) and are drawn with the game's own ±15° curve-wiggle, so they look organic like the in-game roads rather than geometric. Verified map-wide: zero hairpin spikes, zero gaps, nothing on water. This finally gives both the correct connections and the in-game look at once." },
+    ],
+  },
+  {
     version: "0.9.1380",
     date: "2026-07-23",
     items: [

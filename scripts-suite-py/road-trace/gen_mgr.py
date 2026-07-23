@@ -128,26 +128,58 @@ def _dp(pts, eps):
         return _dp(pts[:idx+1], eps)[:-1] + _dp(pts[idx:], eps)
     return [a, b]
 
-def smooth(ch):
+def smooth(ch, tiles):
+    # GAME-STYLE WIGGLE (reverse-engineered from aerial_map_roads): simplify the
+    # tile route to keypoints, give each node a unit tangent = normalize(next-
+    # prev) rotated by a deterministic ±15° (per-tile hash, standing in for the
+    # engine's terrain-seeded LCG — same organic character), then cubic Bezier
+    # arm = tangent*seglen*0.33, 5 subdivisions. Clean topology + organic curves.
     P = [ (t[0]+0.5, H-1-t[1]+0.5) for t in ch ]
     if len(P) < 3:
         return [to_land(*p) for p in P]
-    # 0 SIMPLIFICATION: keep EVERY waypoint of the game's actual route (DP eps
-    # ~0 drops only exactly-collinear points, so no bend/detail is lost). The
-    # Catmull-Rom below just rounds the 1px tile-corners into a smooth line.
-    K = _dp(P, 0.01)
-    if len(K) < 2: K = [P[0], P[-1]]
-    # Catmull-Rom through ALL kept points, 3 subdivisions (points are already
-    # dense, so 3 is plenty and keeps the file reasonable)
+    # keypoints (drop 1px stair-steps but keep genuine bends) with matching tiles
+    K = []; KT = []
+    keep_idx = _dp_idx(P, 0.9)
+    for i in keep_idx: K.append(P[i]); KT.append(tiles[i] if i < len(tiles) else tiles[-1])
+    if len(K) < 2: return [to_land(*p) for p in P]
+    def jitter(t):
+        h = (int(t[0])*73856093) ^ (int(t[1])*19349663)
+        return (((h & 0x7fffffff) % 1000) / 1000.0 - 0.5) * (math.pi/6)   # ±15°
+    T = []
+    for i in range(len(K)):
+        a = K[max(0,i-1)]; b = K[min(len(K)-1,i+1)]
+        dx, dy = b[0]-a[0], b[1]-a[1]; L = math.hypot(dx, dy) or 1.0
+        ux, uy = dx/L, dy/L
+        ang = jitter(KT[i]); c, s = math.cos(ang), math.sin(ang)
+        T.append((ux*c - uy*s, ux*s + uy*c))
     out = [K[0]]
     for i in range(len(K)-1):
-        p0 = K[max(0,i-1)]; p1 = K[i]; p2 = K[i+1]; p3 = K[min(len(K)-1,i+2)]
-        for s in range(1,4):
-            t = s/3; t2=t*t; t3=t2*t
-            x = 0.5*((2*p1[0])+(-p0[0]+p2[0])*t+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*t2+(-p0[0]+3*p1[0]-3*p2[0]+p3[0])*t3)
-            y = 0.5*((2*p1[1])+(-p0[1]+p2[1])*t+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*t3)
-            out.append((x,y))
-    return [to_land(x,y) for x,y in out]
+        p0, p3 = K[i], K[i+1]; t0, t1 = T[i], T[i+1]
+        seg = math.hypot(p3[0]-p0[0], p3[1]-p0[1]) * 0.33
+        p1 = (p0[0]+t0[0]*seg, p0[1]+t0[1]*seg)
+        p2 = (p3[0]-t1[0]*seg, p3[1]-t1[1]*seg)
+        for s2 in range(1, 6):
+            t = s2/5; u = 1-t
+            out.append((u**3*p0[0]+3*u*u*t*p1[0]+3*u*t*t*p2[0]+t**3*p3[0],
+                        u**3*p0[1]+3*u*u*t*p1[1]+3*u*t*t*p2[1]+t**3*p3[1]))
+    return [to_land(x, y) for x, y in out]
+
+def _dp_idx(pts, eps):
+    # Douglas-Peucker returning KEPT INDICES (so we can map back to tiles)
+    keep = [False]*len(pts); keep[0] = keep[-1] = True
+    stack = [(0, len(pts)-1)]
+    while stack:
+        a, b = stack.pop()
+        if b <= a+1: continue
+        ax, ay = pts[a]; bx, by = pts[b]; dx, dy = bx-ax, by-ay; L2 = dx*dx+dy*dy or 1.0
+        dmax = 0; idx = a
+        for i in range(a+1, b):
+            px, py = pts[i]; t = max(0, min(1, ((px-ax)*dx+(py-ay)*dy)/L2))
+            cx, cy = ax+t*dx, ay+t*dy; d = (px-cx)**2+(py-cy)**2
+            if d > dmax: dmax = d; idx = i
+        if dmax > eps*eps:
+            keep[idx] = True; stack.append((a, idx)); stack.append((idx, b))
+    return [i for i in range(len(pts)) if keep[i]]
 
 fp = tuple(int(v) for v in reg[313, 244])
 entries = []
@@ -156,7 +188,7 @@ for ch in chains:
     links = chain_links(ch)
     pairs = sorted({tuple(sorted([link_of[ri][0], link_of[ri][1]], key=lambda c:(c or (0,0,0)))) for ri in links if link_of[ri][0] or link_of[ri][1]})
     # primary a/b = chain endpoints' own region colours
-    curve = smooth(ch)
+    curve = smooth(ch, ch)
     a = regcol(*curve[0]); b = regcol(*curve[-1])
     cs = lambda q: (f'"{q[0]},{q[1]},{q[2]}"' if q else '""')
     ls = ",".join(f'"{p[0][0]},{p[0][1]},{p[0][2]}|{p[1][0]},{p[1][1]},{p[1][2]}"' for p in pairs if p[0] and p[1])
