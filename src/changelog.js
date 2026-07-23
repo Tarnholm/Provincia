@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1375",
+    date: "2026-07-23",
+    items: [
+      { type: "fix", text: "**Reverted roads to the game's actual captured render.** The rebuilt-from-network version looked too geometric (straight runs and perfectly even curves) — nothing like the game's organic roads. Roads are back to the captured in-game geometry with its natural, uneven curves." },
+    ],
+  },
+  {
     version: "0.9.1374",
     date: "2026-07-23",
     items: [

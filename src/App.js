@@ -10419,7 +10419,7 @@ function App() {
       const o = (f.y * W + f.x) * 4;
       return data[o] === f.rgb[0] && data[o + 1] === f.rgb[1] && data[o + 2] === f.rgb[2];
     });
-    const roadSig = `road|v38nolive|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name + ":" + capMap.roads.length : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
+    const roadSig = `road|v39revert|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name + ":" + capMap.roads.length : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadsPrecurved(!!_laneMemCache[roadSig].precurved); setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10439,20 +10439,13 @@ function App() {
       // (NOT the local endpoint regions; a link crosses roadless middle
       // regions and is still drawn — game rule: link drawn iff EITHER side
       // has roads). Port connectors (a===b) also draw wherever the region has
-      // a PORT.
-      // DEFAULT (no Live mode): show the WHOLE baked game road network — it IS
-      // the game's road map. Only when Live mode is connected to a save do we
-      // filter down to that save's actually-built roads. So roads appear
-      // without needing Live on.
-      const filterRoads = !!roadRegionsLive && ((roadRegionsEff && roadRegionsEff.size > 0) || (portRegionsEff && portRegionsEff.size > 0));
+      // a PORT. If neither set is known, show all.
+      const filterRoads = (roadRegionsEff && roadRegionsEff.size > 0) || (portRegionsEff && portRegionsEff.size > 0);
       const inRoads = (nm) => roadRegionsEff && roadRegionsEff.has(String(nm).toLowerCase());
       const inPorts = (nm) => portRegionsEff && portRegionsEff.has(String(nm).toLowerCase());
       const colName = (c) => (regions[c] && regions[c].region) || c || "?";
       const all = capMap.roads.filter((rd) => rd.p && rd.p.length >= 4);
-      // Show a settlement-link if EITHER endpoint region has roads OR a port —
-      // the game connects port cities into the road network even without a
-      // hinterland-roads building (verified: port-city roads are drawn at start).
-      const pairVis = (a, b) => (!a && !b) || inRoads(colName(a)) || inRoads(colName(b)) || inPorts(colName(a)) || inPorts(colName(b));
+      const pairVis = (a, b) => (!a && !b) || inRoads(colName(a)) || inRoads(colName(b)) || (a === b && inPorts(colName(a)));
       const keep = all.map((rd) => !filterRoads
         || pairVis(rd.a, rd.b)
         || (rd.l || []).some((s) => { const [a, b] = s.split("|"); return pairVis(a, b); }));
