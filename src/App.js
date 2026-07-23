@@ -10419,7 +10419,7 @@ function App() {
       const o = (f.y * W + f.x) * 4;
       return data[o] === f.rgb[0] && data[o + 1] === f.rgb[1] && data[o + 2] === f.rgb[2];
     });
-    const roadSig = `road|v48mask|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name + ":" + capMap.roads.length : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
+    const roadSig = `road|v49clip|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name + ":" + capMap.roads.length : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadsPrecurved(!!_laneMemCache[roadSig].precurved); setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10433,76 +10433,51 @@ function App() {
       // its endpoint region-name pair (region colour → name via `regions`) so
       // the hover tooltip / trade sidebar link to the same land-lane data.
       // The captured geometry covers EVERY province (data captured with roads
-      // built everywhere). Match the loaded game at LINK level: rd.a / rd.b
-      // are the piece's LINK TERMINALS — the settlement/port regions the road
-      // actually runs between, resolved through the road graph at bake time
-      // (NOT the local endpoint regions; a link crosses roadless middle
-      // regions and is still drawn — game rule: link drawn iff EITHER side
-      // has roads). Port connectors (a===b) also draw wherever the region has
-      // a PORT. If neither set is known, show all.
-      // DEFAULT (no Live mode): show the WHOLE baked game road network. Only
-      // when Live mode is connected to a save do we filter to that save's
-      // built roads. So the game's roads appear without needing Live on.
-      const filterRoads = !!roadRegionsLive && ((roadRegionsEff && roadRegionsEff.size > 0) || (portRegionsEff && portRegionsEff.size > 0));
+      // built everywhere). PER-REGION CLIPPING (2026-07-23, user rule): a road
+      // only exists inside regions that actually have roads built — each entry
+      // carries region RUNS (rd.s = [[pointIdx, "r,g,b"], ...]) and only runs
+      // whose region has roads (descr_strat start set; ∪ save-built when Live
+      // is on — roadRegionsEff) or a port (port connectors / port cities) are
+      // drawn. A road from province A to province B where only A has roads is
+      // CUT at the border — the B half is not drawn, even mid-link. If no
+      // region sets are known at all, show the whole network.
+      const filterRoads = (roadRegionsEff && roadRegionsEff.size > 0) || (portRegionsEff && portRegionsEff.size > 0);
       const inRoads = (nm) => roadRegionsEff && roadRegionsEff.has(String(nm).toLowerCase());
       const inPorts = (nm) => portRegionsEff && portRegionsEff.has(String(nm).toLowerCase());
       const colName = (c) => (regions[c] && regions[c].region) || c || "?";
+      const regionVis = (c, isPortConn) => {
+        if (!c) return true;                       // untaggable → keep
+        const nm = regions[c] && regions[c].region;
+        if (!nm) return true;                      // colour not in region table → keep
+        // ports only qualify their own settlement→port connector, NOT
+        // through-roads — an inter-settlement road still cuts at a region
+        // that has a port but no roads built
+        return inRoads(nm) || (isPortConn && inPorts(nm));
+      };
       const all = capMap.roads.filter((rd) => rd.p && rd.p.length >= 4);
-      const pairVis = (a, b) => (!a && !b) || inRoads(colName(a)) || inRoads(colName(b)) || (a === b && inPorts(colName(a)));
-      const keep = all.map((rd) => !filterRoads
-        || pairVis(rd.a, rd.b)
-        || (rd.l || []).some((s) => { const [a, b] = s.split("|"); return pairVis(a, b); }));
-      if (filterRoads) {
-        // VISIBILITY CLOSURE: the game never draws a dead end — every drawn
-        // road runs settlement-to-settlement. If a kept piece's end touches
-        // only HIDDEN pieces (its link's path continues through geometry our
-        // link tags missed), those continuations are part of the drawn road:
-        // un-hide them and repeat until no kept end dangles.
-        const cellOf = (x, y) => `${Math.floor(x)},${Math.floor(y)}`;
-        const grid = new Map(); // cell -> [{x,y,i,isEnd}]
-        all.forEach((rd, i) => {
-          const p = rd.p;
-          for (let k = 0; k < p.length - 1; k += 2) {
-            const c = cellOf(p[k], p[k + 1]);
-            if (!grid.has(c)) grid.set(c, []);
-            grid.get(c).push({ x: p[k], y: p[k + 1], i, isEnd: k === 0 || k === p.length - 2 });
-          }
-        });
-        const touching = (x, y, self, r2) => {
-          const res = [];
-          for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
-            const cellPts = grid.get(`${Math.floor(x) + dx},${Math.floor(y) + dy}`);
-            if (cellPts) for (const q of cellPts) {
-              if (q.i !== self && (q.x - x) ** 2 + (q.y - y) ** 2 <= r2) res.push(q.i);
-            }
-          }
-          return res;
-        };
-        for (let round = 0; round < 12; round++) {
-          let changed = false;
-          all.forEach((rd, i) => {
-            if (!keep[i]) return;
-            const p = rd.p;
-            for (const [ex, ey] of [[p[0], p[1]], [p[p.length - 2], p[p.length - 1]]]) {
-              const near = touching(ex, ey, i, 0.81);
-              if (!near.length) continue;             // natural dead end (settlement/port)
-              if (near.some((j) => keep[j])) continue; // connected to a visible piece
-              for (const j of near) if (!keep[j]) { keep[j] = true; changed = true; }
-            }
-          });
-          if (!changed) break;
-        }
-      }
       const out = {}; const idxByKey = {};
-      all.forEach((rd, i) => {
-        if (!keep[i]) return;
+      all.forEach((rd) => {
         const p = rd.p;
         const nmA = colName(rd.a);
         const nmB = colName(rd.b);
-        const pts = []; for (let k = 0; k < p.length - 1; k += 2) pts.push({ x: p[k], y: p[k + 1] });
+        const isPortConn = !!rd.t; // baked flag: chain lies on a settlement→port path
         const key = nmA === nmB ? "port>" + nmA : [nmA, nmB].sort().join(">");
-        const idx = (idxByKey[key] = (idxByKey[key] || 0) + 1) - 1;
-        out[key.startsWith("port>") ? key + (idx || "") : `${key}#${idx}`] = pts;
+        const emit = (pts) => {
+          if (pts.length < 2) return;
+          const idx = (idxByKey[key] = (idxByKey[key] || 0) + 1) - 1;
+          out[key.startsWith("port>") ? key + (idx || "") : `${key}#${idx}`] = pts;
+        };
+        const nPts = p.length >> 1;
+        const runs = (filterRoads && rd.s && rd.s.length) ? rd.s : [[0, null]];
+        let seg = [];
+        for (let r = 0; r < runs.length; r++) {
+          const lo = runs[r][0];
+          const hi = r + 1 < runs.length ? runs[r + 1][0] : nPts; // exclusive
+          if (!filterRoads || regionVis(runs[r][1], isPortConn)) {
+            for (let k = lo; k < hi; k++) seg.push({ x: p[2 * k], y: p[2 * k + 1] });
+          } else if (seg.length) { emit(seg); seg = []; }
+        }
+        emit(seg);
       });
       console.log(`[roads] exact captured network "${capMap.name}": ${Object.keys(out).length} roads`);
       _laneMemCache[roadSig] = { roadPaths: out, precurved: true };

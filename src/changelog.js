@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1384",
+    date: "2026-07-23",
+    items: [
+      { type: "improvement", text: "**Roads now respect what's actually built — per region.** Without Live mode, the map shows only roads in regions that have roads built at campaign start (from descr_strat); with Live mode, the loaded save's built roads are added. A road crossing into a region without roads is cut exactly at the border — even mid-link — instead of drawing the whole connection. Settlement→port connectors still show in port regions (the game builds those with the port)." },
+    ],
+  },
+  {
     version: "0.9.1383",
     date: "2026-07-23",
     items: [
