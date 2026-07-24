@@ -147,3 +147,49 @@ describe("correlateWithSave / buildSaveFacts (log verdicts from save state)", ()
     expect(out[0].targetTaken).toBeUndefined();
   });
 });
+
+describe("finance + build-appetite tracking (real campaign_ai_log lines)", () => {
+  it("profiles a faction's economy and flags rich-but-stalled", async () => {
+    const { createAiDecisionAnalyzer } = await import("./aiMovementAnalyzer.js");
+    const an = createAiDecisionAnalyzer({ MIN_STALL_TURNS: 2 });
+    // real line shapes from the 346MB telemetry log
+    const rich = "AI: finance: est income 484, est maintenance 389, est outgoings 389 -- spending max 5700, spending norm 95; balance AFB_EARN_MINUTE, state AFS_CROESUS";
+    const stall = "AI: campaign: campaign for 'Pella' (reg 983, des 129) using strategy ACS_GATHERING. required str 400 (ACZ_SOLID), allocated str 0; num res 0.";
+    for (let t = 1; t <= 6; t++) {
+      an.feedLine(`AI: \t\t\t\tstart 'rich_fac' for year -${280 - t}, season summer`);
+      an.feedLine(rich);
+      an.feedLine("AI: -- building 'Barracks and Armoury' at priority 2740.");
+      an.feedLine("AI: -- building 'Racing Course (Leisure)' at priority 38.");
+      an.feedLine(stall);
+    }
+    const r = an.finish();
+    expect(r.economy.rich_fac.reports).toBe(6);
+    expect(r.economy.rich_fac.richPct).toBe(1);
+    expect(r.economy.rich_fac.avgIncome).toBe(484);
+    expect(r.economy.rich_fac.avgSpendMax).toBe(5700);
+    // build appetite: 2 candidates evaluated, 1 military, top military priority captured
+    expect(r.buildAppetite.rich_fac.picks).toBe(12);
+    expect(r.buildAppetite.rich_fac.military).toBe(6);
+    expect(r.buildAppetite.rich_fac.topMilitaryPriority).toBe(2740);
+    expect(r.buildAppetite.rich_fac.topMilitaryName).toBe("Barracks and Armoury");
+    // and the finding: money is not the block
+    const rb = r.findings.find((f) => f.kind === "rich_but_stalled");
+    expect(rb).toBeTruthy();
+    expect(rb.faction).toBe("rich_fac");
+    expect(rb.detail).toMatch(/100% of its turns were rich/);
+  });
+
+  it("does not flag a POOR stalled faction as rich-but-stalled", async () => {
+    const { createAiDecisionAnalyzer } = await import("./aiMovementAnalyzer.js");
+    const an = createAiDecisionAnalyzer({ MIN_STALL_TURNS: 2 });
+    const poor = "AI: finance: est income 101, est maintenance 378, est outgoings 378 -- spending max 0, spending norm -277; balance AFB_EARN_MINUTE, state AFS_PAUPER";
+    for (let t = 1; t <= 6; t++) {
+      an.feedLine(`AI: \t\t\t\tstart 'poor_fac' for year -${280 - t}, season summer`);
+      an.feedLine(poor);
+      an.feedLine("AI: campaign: campaign for 'X' (reg 1, des 1) using strategy ACS_GATHERING. required str 400 (ACZ_SOLID), allocated str 0; num res 0.");
+    }
+    const r = an.finish();
+    expect(r.economy.poor_fac.poorPct).toBe(1);
+    expect(r.findings.some((f) => f.kind === "rich_but_stalled")).toBe(false);
+  });
+});

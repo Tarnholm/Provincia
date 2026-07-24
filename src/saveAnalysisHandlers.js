@@ -456,6 +456,8 @@ async function _correlateSave(result, savePath, modDataDir) {
       const audit = auditModFiles({
         findings: result.findings,
         saveFacts: facts,
+        economy: result.economy || {},
+        buildAppetite: result.buildAppetite || {},
         files: {
           aiPersonality: rd("feral_descr_ai_personality.txt"),
           strat: rd(path.join("world", "maps", "campaign", "imperial_campaign", "descr_strat.txt")),

@@ -270,7 +270,19 @@ const AI_RX = {
   released: /^AI: resource for char '([^']+)' released by controller/,
   aborted: /^AI: campaign for region '(\d+)' aborted because of insufficient available strength/,
   campaign: /^AI: campaign: campaign for '([^']+)' \(reg (\d+), des \d+\) using strategy (ACS_\w+)\. required str (\d+) \(ACZ_\w+\), allocated str (\d+)/,
+  // AI: finance: est income 101, est maintenance 378, est outgoings 378 -- spending max 0, spending norm -277; balance AFB_EARN_MINUTE, state AFS_PAUPER
+  finance: /^AI: finance: est income (-?\d+), est maintenance (-?\d+), est outgoings (-?\d+) -- spending max (-?\d+), spending norm (-?\d+); balance (\w+), state (AFS_\w+)/,
+  // AI: -- building 'Training Grounds' at priority 3674.
+  buildWant: /^AI: -- building '([^']+)' at priority (\d+)/,
 };
+
+// Economic states the engine reports, poorest → richest. "Rich but stalled" is
+// the interesting case: money is NOT the constraint, so tuning income won't help.
+const AFS_RICH = new Set(["AFS_CROESUS", "AFS_ROLLING_IN_IT"]);
+const AFS_POOR = new Set(["AFS_PAUPER", "AFS_SHOESTRING"]);
+// Military-infrastructure building names as they appear in the AI's own build
+// list (RIS display names for the military_industrial_complex chain + armouries).
+const MILITARY_BUILD_RX = /barrack|armour|armor|training ground|warriors encampment|garrison|foundry|drill|stable|siege works|academy/i;
 
 function createAiDecisionAnalyzer(opts = {}) {
   const cfg = { ...AI_DEFAULTS, ...opts };
@@ -284,6 +296,8 @@ function createAiDecisionAnalyzer(opts = {}) {
   const stalls = new Map();        // faction|regId → { faction, regId, gatherTurns:Set, lastReq, lastAlloc }
   const aborts = new Map();        // regId → Set(turnIdx)
   const charSeen = new Map();      // char → { first, last, hits, faction } (abandonment)
+  const finance = new Map();       // faction → economy profile over the log
+  const buildWant = new Map();     // faction → buildings EVALUATED (candidates, not decisions) + top military priority
   let lines = 0, matched = 0;
 
   // Any line naming a character counts as "the AI is still managing them".
@@ -332,6 +346,27 @@ function createAiDecisionAnalyzer(opts = {}) {
     if ((m = AI_RX.aborted.exec(l))) {
       const s = aborts.get(m[1]) || new Set();
       s.add(turnIdx); aborts.set(m[1], s);
+      matched++; return;
+    }
+    if ((m = AI_RX.finance.exec(l))) {
+      const f = curFaction || "?";
+      const e = finance.get(f) || { reports: 0, income: 0, outgoings: 0, spendMax: 0, rich: 0, poor: 0, states: {} };
+      e.reports++; e.income += +m[1]; e.outgoings += +m[3]; e.spendMax += +m[4];
+      e.states[m[7]] = (e.states[m[7]] || 0) + 1;
+      if (AFS_RICH.has(m[7])) e.rich++; else if (AFS_POOR.has(m[7])) e.poor++;
+      finance.set(f, e);
+      matched++; return;
+    }
+    if ((m = AI_RX.buildWant.exec(l))) {
+      const f = curFaction || "?";
+      const e = buildWant.get(f) || { picks: 0, military: 0, topMilitaryPriority: 0, topMilitaryName: null };
+      e.picks++;
+      if (MILITARY_BUILD_RX.test(m[1])) {
+        e.military++;
+        const pri = +m[2];
+        if (pri > e.topMilitaryPriority) { e.topMilitaryPriority = pri; e.topMilitaryName = m[1]; }
+      }
+      buildWant.set(f, e);
       matched++; return;
     }
     { const cm = RX_ANY_CHAR.exec(l); if (cm) noteChar(cm[1] || cm[2] || cm[3]); }
@@ -414,6 +449,29 @@ function createAiDecisionAnalyzer(opts = {}) {
         });
       }
     }
+    // rich_but_stalled: the faction spent most of the log RICH yet its campaigns
+    // never launched — money is not the constraint, so income tuning is the
+    // wrong lever for it (recruitment capacity / build throughput is).
+    const stalledFactions = new Map();
+    for (const e of stalls.values()) {
+      if (e.turns.size >= cfg.MIN_STALL_TURNS) stalledFactions.set(e.faction, (stalledFactions.get(e.faction) || 0) + 1);
+    }
+    for (const [fac, nStalls] of stalledFactions) {
+      const fin = finance.get(fac);
+      if (!fin || fin.reports < 5) continue;
+      const richPct = fin.rich / fin.reports;
+      if (richPct >= 0.5) {
+        findings.push({
+          kind: "rich_but_stalled", name: fac, faction: fac,
+          fromTurn: null, toTurn: null, turns: nStalls,
+          region: null, x: null, y: null,
+          detail: `${nStalls} stalled campaign(s) while ${Math.round(richPct * 100)}% of its turns were rich ` +
+            `(avg income ${Math.round(fin.income / fin.reports)}, avg outgoings ${Math.round(fin.outgoings / fin.reports)}, ` +
+            `avg spending headroom ${Math.round(fin.spendMax / fin.reports)})`,
+          severity: richPct >= 0.75 ? 3 : 2,
+        });
+      }
+    }
     findings.sort((p, q) => q.severity - p.severity || q.turns - p.turns);
     const findingCounts = {};
     for (const f of findings) findingCounts[f.kind] = (findingCounts[f.kind] || 0) + 1;
@@ -423,6 +481,19 @@ function createAiDecisionAnalyzer(opts = {}) {
       parsedLines: matched, moveLines: 0, fleeLines: 0, cannotFlee: 0,
       armies: churn.size,
       findings, findingCounts, factionStats: {},
+      // per-faction economy + build appetite, for the audit's leads
+      economy: Object.fromEntries([...finance].map(([f, e]) => [f, {
+        reports: e.reports, richPct: e.reports ? e.rich / e.reports : 0, poorPct: e.reports ? e.poor / e.reports : 0,
+        avgIncome: e.reports ? Math.round(e.income / e.reports) : 0,
+        avgOutgoings: e.reports ? Math.round(e.outgoings / e.reports) : 0,
+        avgSpendMax: e.reports ? Math.round(e.spendMax / e.reports) : 0,
+        states: e.states,
+      }])),
+      buildAppetite: Object.fromEntries([...buildWant].map(([f, e]) => [f, {
+        picks: e.picks, military: e.military,
+        militaryPct: e.picks ? e.military / e.picks : 0,
+        topMilitaryPriority: e.topMilitaryPriority, topMilitaryName: e.topMilitaryName,
+      }])),
       lines,
     };
   };

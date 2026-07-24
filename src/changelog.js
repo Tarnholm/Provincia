@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1413",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**AI Movement Lab now reads the engine's own finance reports — so it can tell you when money is NOT the problem.** New RICH BUT STALLED finding: factions the engine itself rated financially rich for most of the campaign whose offensives still never launched. On the reference log that is 51 factions — Sophene sat on an average spending headroom of 77,773 and still never attacked. Those leads now explicitly say “do NOT raise its income” and point at military-building cost/time and recruit-tier gates instead, which is the opposite advice to the genuinely poor factions." },
+      { type: "improvement", text: "**Each faction now gets an economy and build-appetite profile** — share of turns rich vs poor, average income/outgoings/spending headroom, and the highest priority it ever assigned to a military building (e.g. Cyzicus ranks Barracks and Armoury at 3,047 yet still fields 264 men). That distinguishes “doesn’t want military buildings” from “wants them but never completes them”." },
+    ],
+  },
+  {
     version: "0.9.1412",
     date: "2026-07-25",
     items: [

@@ -107,7 +107,7 @@ function parseSmFactions(text) {
  *   files: { aiPersonality, strat, smFactions, edu } — raw TEXT, any may be null
  * → { factions: {faction: facts}, leads: [ {severity, faction, file, key, issue, suggestion, evidence} ] }
  */
-function auditModFiles({ findings = [], saveFacts = null, files = {} } = {}) {
+function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = {}, buildAppetite = {} } = {}) {
   const { personalities, diplomatic } = parseAiPersonality(files.aiPersonality);
   const strat = parseStratFactions(files.strat);
   const naval = parseNavalOwners(files.edu);
@@ -156,6 +156,8 @@ function auditModFiles({ findings = [], saveFacts = null, files = {} } = {}) {
       menAtSave: men[k] != null ? men[k] : null,
       settlementsAtSave: setts[k] != null ? setts[k] : null,
       navalAtSave: navalNow[k] || 0,
+      economy: economy[k] || null,
+      buildAppetite: buildAppetite[k] || null,
       symptoms: sym[k] || null,
     };
   }
@@ -231,6 +233,23 @@ function auditModFiles({ findings = [], saveFacts = null, files = {} } = {}) {
         issue: `INCOME-limited: ${s.incomeBlocked} impossible campaign(s) despite adequate military infrastructure (tier ${s.micMax})`,
         suggestion: "its towns can build the troops but it never affords them — check starting denari, regional resource values and trade access rather than the AI profile",
         evidence: `biggest ask ${s.maxReq.toLocaleString()} strength` + (F.menAtSave != null ? `, fields ${F.menAtSave.toLocaleString()} men` : "") + (F.startDenari != null ? `, started with ${F.startDenari.toLocaleString()} denari` : ""),
+      });
+    }
+    // 3d. rich but stalled — the engine's own finance report says money is NOT
+    //     the constraint, so income/resource tuning is the WRONG lever here.
+    if (s.byKind.rich_but_stalled) {
+      const ec = F.economy, ba = F.buildAppetite;
+      const micNote = s.micMax != null ? `military infrastructure tier ${s.micMax}` : "unknown infrastructure";
+      leads.push({
+        severity: 3, faction: k,
+        file: "export_descr_buildings.txt (mic cost/time + tier gates)",
+        key: `NOT descr_sm_resources — ${F.buildingProfile ? `building_priority ${F.buildingProfile}` : "building_priority"} / mic construction cost & time`,
+        issue: `rich but stalled: ${ec ? Math.round(ec.richPct * 100) : "?"}% of its turns were financially rich` +
+          (ec ? ` (avg spending headroom ${ec.avgSpendMax.toLocaleString()})` : "") +
+          ` yet its campaigns never launched, at ${micNote}`,
+        suggestion: "do NOT raise its income — it already has money it cannot convert into troops. Look at military-building cost/construction time and the recruit tier gates instead",
+        evidence: (ba ? `it ranks military buildings up to priority ${ba.topMilitaryPriority.toLocaleString()}` + (ba.topMilitaryName ? ` (${ba.topMilitaryName})` : "") + `, and military options are ${Math.round(ba.militaryPct * 100)}% of the buildings it evaluates` : "no build-choice data") +
+          (F.menAtSave != null ? `; fields ${F.menAtSave.toLocaleString()} men at save` : ""),
       });
     }
     // 4. orphaned live armies concentrated in one faction
