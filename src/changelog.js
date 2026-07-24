@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1393",
+    date: "2026-07-24",
+    items: [
+      { type: "improvement", text: "**Happiness and Public Order merged into one Public Order mode (Government)** — they read the same value. Now a regular (non-dev) mode that also works WITHOUT a save: pick a faction and the PO model estimates every settlement (normal tax); connect Live for exact in-game values. Same colour bands as before (green > 100%, light green 85–100, orange 75–85, red < 75)." },
+      { type: "change", text: "**Export Map PNG removed from Tools** — the map screenshot button already covers it." },
+    ],
+  },
+  {
     version: "0.9.1392",
     date: "2026-07-24",
     items: [

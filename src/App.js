@@ -75,7 +75,6 @@ import UnitComparePanel from "./panels/UnitComparePanel";
 import RecruitPlannerPanel from "./panels/RecruitPlannerPanel";
 import DiploHeatmapPanel from "./panels/DiploHeatmapPanel";
 import MercPoolsPanel from "./panels/MercPoolsPanel";
-import { exportMapPng } from "./mapExport";
 import TraitExplorerPanel from "./panels/TraitExplorerPanel";
 import CampaignAutopsyPanel from "./panels/CampaignAutopsyPanel";
 import BuildOrderPanel from "./panels/BuildOrderPanel";
@@ -1326,7 +1325,7 @@ function splitAorsByLayer(tags, cityName) {
   return { primary, secondary, all };
 }
 
-const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource", "aor", "legions", "happiness", "income", "public_order", "mercenaries"]);
+const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource", "aor", "legions", "income", "public_order", "mercenaries"]);
 
 // Dev-toggle tracer (2026-07-16 "dev button does nothing" hunt). Every step of
 // the toggle logs to provincia.log so a dead click is attributable: handler
@@ -4405,7 +4404,8 @@ function App() {
   // Per-faction metrics for the Corruption mode: fetch when the mode is active
   // and a faction is picked; skip when we already hold that faction's numbers.
   useEffect(() => {
-    if ((colorMode !== "corruptionmap" && colorMode !== "tierforecast") || !modDataDir || !selectedFaction) return;
+    const wantsFM = colorMode === "corruptionmap" || colorMode === "tierforecast" || (colorMode === "public_order" && !saveHappinessByCity);
+    if (!wantsFM || !modDataDir || !selectedFaction) return;
     const want = selectedFaction.toLowerCase();
     if (factionMetrics && factionMetrics.faction === want) return;
     let stale = false;
@@ -4415,7 +4415,7 @@ function App() {
       else if (r && r.error) console.warn("[faction-metrics]", r.error);
     }).catch(() => {});
     return () => { stale = true; };
-  }, [colorMode, modDataDir, selectedFaction, factionMetrics]);
+  }, [colorMode, modDataDir, selectedFaction, factionMetrics, saveHappinessByCity]);
   useEffect(() => { setFactionMetrics(null); }, [modDataDir]);
   // Settlement income explainer (2026-07-17): fetched on demand from the
   // region panel's "≡ explain" button; null = closed. First call per faction
@@ -8712,7 +8712,7 @@ function App() {
           const next = !prev;
           devTraceClick("Ctrl+Shift+D", prev);
           // If turning off dev mode while a dev color mode is active, reset to faction
-          if (!next) setColorMode(cm => (DEV_COLOR_MODES.has(cm) && cm !== "legions" && cm !== "mercenaries") ? "faction" : cm); // legions/mercenaries are regular modes
+          if (!next) setColorMode(cm => (DEV_COLOR_MODES.has(cm) && cm !== "legions" && cm !== "mercenaries" && cm !== "public_order") ? "faction" : cm); // legions/mercenaries/public_order are regular modes
           return next;
         });
       }
@@ -9467,77 +9467,40 @@ function App() {
             Math.max(0, Math.min(255, blue + v)),
           ];
         }));
-      } else if (colorMode === "happiness" || colorMode === "public_order") {
-        // Happiness and public order are red→yellow→green gradients over
-        // saveHappinessByCity (f32 at settlement.offset-30, raw 100..200
-        // scale per the save-cracker). Public order ≈ happiness in RTW
-        // today; the modes are kept separate so a future dedicated
-        // public-order source (e.g. parsed from a different settlement
-        // byte) can swap in here without touching callers.
+      } else if (colorMode === "public_order") {
+        // Public Order (absorbed the old Happiness mode -- both read the same
+        // save value). Source: live save exact % when present (offset-30
+        // value IS the in-game % -- verified vs julii1); otherwise the PO
+        // model for the SELECTED faction (normal tax, same per-faction fetch
+        // as Corruption/Tier Forecast). Discrete bands either way.
         const GREY = [70, 70, 70];
-        const happByRgb = new Map();
-        let minV = Infinity, maxV = -Infinity, withData = 0;
+        const poByRgb = new Map();
         if (saveHappinessByCity) {
           for (const [k, r] of Object.entries(regions)) {
             const v = saveHappinessByCity[r.city];
-            if (typeof v === "number") {
-              happByRgb.set(k, v);
-              if (v < minV) minV = v;
-              if (v > maxV) maxV = v;
-              withData++;
-            }
+            if (typeof v === "number") poByRgb.set(k, v);
           }
         }
-        const hasAnyData = withData > 0;
-        if (!hasAnyData) { minV = 0; maxV = 0; }
-        console.log(`[heatmap] mode ${colorMode}: range min=${minV} max=${maxV} (${withData} regions with data)`);
-        if (colorMode === "public_order" && hasAnyData) {
-          let g = 0, lg = 0, o = 0, rd = 0;
-          for (const v of happByRgb.values()) { if (v > 100) g++; else if (v >= 85) lg++; else if (v >= 75) o++; else rd++; }
-          console.log(`[public-order] bands: >100 darkgreen=${g}, 85-100 lightgreen=${lg}, 75-85 orange=${o}, <75 red=${rd}`);
+        if (poByRgb.size === 0 && factionMetrics && factionMetrics.byRegion) {
+          for (const [k, r] of Object.entries(regions)) {
+            const e = factionMetrics.byRegion[r.region];
+            if (e && typeof e.po === "number") poByRgb.set(k, e.po);
+          }
         }
+        console.log(`[public-order] ${poByRgb.size} regions (${saveHappinessByCity ? "live save" : "model"})`);
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
-          if (!hasAnyData) return GREY;
-          const k = `${pr},${pg},${pb}`;
-          const val = happByRgb.get(k);
+          const val = poByRgb.get(`${pr},${pg},${pb}`);
           if (typeof val !== "number") return GREY;
-          // Public order: discrete bands keyed on the in-game public-order %
-          // (the offset-30 value IS the % — verified vs julii1: Rome 300,
-          // Praeneste 140, Neapolis 75). >100 dark green, 85–100 light green,
-          // 75–85 orange, <75 red. (Happiness keeps the continuous gradient.)
-          if (colorMode === "public_order") {
-            let band;
-            if (val > 100) band = [34, 139, 34];        // dark green  (>100%)
-            else if (val >= 85) band = [124, 205, 110]; // light green (85–100%)
-            else if (val >= 75) band = [232, 150, 44];  // orange      (75–85%)
-            else band = [206, 52, 38];                  // red         (<75%)
-            const j = (((pr * 31 + pg * 17 + pb * 7) & 0x1F) - 16) * 0.5;
-            return [
-              Math.max(0, Math.min(255, band[0] + j)),
-              Math.max(0, Math.min(255, band[1] + j)),
-              Math.max(0, Math.min(255, band[2] + j)),
-            ];
-          }
-          const span = Math.max(0.001, maxV - minV);
-          const t = Math.min(1, Math.max(0, (val - minV) / span));
-          // Red (sad) → yellow → green (happy)
-          let red, green, blue;
-          if (t < 0.5) {
-            const u = t * 2;
-            red   = Math.round(210 + u * (230 - 210));
-            green = Math.round(40 + u * (200 - 40));
-            blue  = 40;
-          } else {
-            const u = (t - 0.5) * 2;
-            red   = Math.round(230 + u * (50 - 230));
-            green = Math.round(200 + u * (190 - 200));
-            blue  = 40;
-          }
-          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x1F) - 16) * 0.5;
+          let band;
+          if (val > 100) band = [34, 139, 34];        // dark green  (>100%)
+          else if (val >= 85) band = [124, 205, 110]; // light green (85-100%)
+          else if (val >= 75) band = [232, 150, 44];  // orange      (75-85%)
+          else band = [206, 52, 38];                  // red         (<75%)
+          const j = (((pr * 31 + pg * 17 + pb * 7) & 0x1F) - 16) * 0.5;
           return [
-            Math.max(0, Math.min(255, red + v)),
-            Math.max(0, Math.min(255, green + v)),
-            Math.max(0, Math.min(255, blue + v)),
+            Math.max(0, Math.min(255, band[0] + j)),
+            Math.max(0, Math.min(255, band[1] + j)),
+            Math.max(0, Math.min(255, band[2] + j)),
           ];
         }));
       } else if (colorMode === "income") {
@@ -14259,81 +14222,6 @@ function App() {
     }
   }
 
-  // 🖼 High-res full-map export (2026-07-24): whole map at 3x native with the
-  // current mode's colors, re-stroked vector overlays and a painted legend.
-  function handleExportMap() {
-    const base = coloredOffscreen || offscreen;
-    if (!base || !imgSize.width) { pushToast("Map not ready yet.", "info", 4000); return; }
-    const MODE_TITLES = {
-      faction: "Factions", victory: "Victory Conditions", region: "Regions", culture: "Culture",
-      religion: "Religion", population: "Population", farm: "Fertility", resource: "Resources",
-      mining: "Mining", trueincome: "Income (model)", corruptionmap: "Corruption", growthmap: "Growth",
-      tierforecast: "Tier Forecast", tradelanes: "Trade Lanes", unrestrisk: "Unrest Risk",
-      armyheat: "Armies", waractivity: "War Activity", threat: "Threat", reach: "Reach",
-      aor: "Areas of Recruitment", legions: "Legionary Recruitment", mercenaries: "Mercenary Pools",
-      homeland: "Homelands", government: "Government", geography: "Geography",
-    };
-    let legendRows = null, gradient = null;
-    if (colorMode === "legions") {
-      const counts = {};
-      for (const r of Object.values(regions)) for (const a of getAors(r.tags)) if (LEGION_AOR_TAGS.has(a)) counts[a] = (counts[a] || 0) + 1;
-      legendRows = Object.keys(LEGION_AORS).filter((t) => counts[t]).sort((a, b) => counts[b] - counts[a])
-        .map((t) => ({ color: LEGION_AORS[t].col, label: LEGION_AORS[t].name, count: counts[t] }));
-    } else if (colorMode === "culture") {
-      const cols = {}; const counts = {}; let ci = 0;
-      for (const v of Object.values(regions)) {
-        if (!v.culture) continue;
-        if (!cols[v.culture]) { cols[v.culture] = CULTURE_PALETTE[ci % CULTURE_PALETTE.length]; ci++; }
-        counts[v.culture] = (counts[v.culture] || 0) + 1;
-      }
-      legendRows = Object.keys(cols).sort((a, b) => counts[b] - counts[a]).map((cu) => ({ color: cols[cu], label: cu, count: counts[cu] }));
-    } else if (colorMode === "religion") {
-      const counts = {};
-      for (const r of Object.values(regions)) {
-        let best = null, bl = -1;
-        for (const hit of String(r.tags || "").matchAll(/\brel_([a-z_]+?)_(\d+)\b/g)) { const lv = parseInt(hit[2], 10); if (lv > bl) { best = hit[1]; bl = lv; } }
-        if (best) counts[best] = (counts[best] || 0) + 1;
-      }
-      legendRows = Object.keys(counts).sort((a, b) => counts[b] - counts[a])
-        .map((re) => ({ color: RELIGION_COLORS[re] || [128, 128, 128], label: re.replace(/_/g, " "), count: counts[re] }));
-    } else if (colorMode === "aor") {
-      const counts = {};
-      for (const r of Object.values(regions)) for (const a of getAors(r.tags)) counts[a] = (counts[a] || 0) + 1;
-      const names = Object.keys(counts).filter((n) => !SPECIALTY_AOR_BARE.has(n) && !LEGION_AOR_TAGS.has(n))
-        .filter((n) => aorView === "secondary" ? !PRIMARY_AOR_TAGS.has(n) : PRIMARY_AOR_TAGS.has(n))
-        .sort((a, b) => counts[b] - counts[a]);
-      legendRows = names.map((n) => {
-        const facId = PRIMARY_AOR_TO_FACTION[n] || SECONDARY_AOR_TO_FACTION[n];
-        const fc = facId ? factionColors[facId.toLowerCase()] : null;
-        const col = (fc && Array.isArray(fc.primary)) ? fc.primary : CULTURE_PALETTE[stableAorColorIndex(n, CULTURE_PALETTE.length)];
-        return { color: col, label: n.replace(/_/g, " "), count: counts[n] };
-      });
-    } else if (colorMode === "tradelanes") {
-      legendRows = [{ line: "road", label: "Road" }, { line: "sea", label: "Sea lane" }];
-    } else {
-      const G = {
-        unrestrisk: { stops: [[60, 170, 45], [190, 170, 60], [220, 50, 45]], labels: ["stable", "tense", "riot risk"] },
-        trueincome: { stops: [[50, 48, 45], [160, 130, 45], [255, 205, 45]], labels: ["poor", "", "richest"] },
-        corruptionmap: { stops: [[55, 140, 60], [140, 95, 50], [220, 45, 40]], labels: ["clean", "", "worst"] },
-        growthmap: { stops: [[200, 60, 45], [190, 170, 60], [60, 180, 50]], labels: ["declining", "flat", "booming"] },
-        tierforecast: { stops: [[55, 180, 48], [125, 153, 48], [195, 125, 48]], labels: ["imminent", "~20 turns", "40+"] },
-      }[colorMode];
-      if (G) gradient = G;
-    }
-    const scale = 3;
-    const out = exportMapPng({
-      base, W: imgSize.width, H: imgSize.height, scale,
-      title: MODE_TITLES[colorMode] || colorMode,
-      subtitle: "Provincia — " + new Date().toISOString().slice(0, 10),
-      legendRows, gradient,
-      borderPath: DEV_COLOR_MODES.has(colorMode) ? devBorderPath : null,
-      roadPath2D: colorMode === "tradelanes" ? roadPath2D : null,
-      seaPolys: colorMode === "tradelanes" && seaLanePaths ? Object.values(seaLanePaths) : null,
-      fileName: `provincia-${colorMode}-${imgSize.width * scale}x${imgSize.height * scale}.png`,
-    });
-    if (out) pushToast(`Exported ${out.width}×${out.height} PNG.`, "success", 4000);
-  }
-
   function handleScreenshot() {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -14664,8 +14552,10 @@ function App() {
         { key: "government", label: "Government", badge: "mode.government" },
         { key: "unrestrisk", label: "Unrest", badge: "mode.unrestrisk" },
         { key: "loyalist", label: "Loyalist", badge: "mode.loyalist", dev: true }, // dev-only since 0.9.1276 (user request)
-        { key: "public_order", label: "Public Order", badge: "devmode.public_order", dev: true },
-        { key: "happiness", label: "Happiness", badge: "devmode.happiness", dev: true },
+        // Public Order absorbed the old Happiness mode (2026-07-24, user: both
+        // read the same save value). Non-dev; works without a save via the
+        // per-selected-faction PO model (same fetch as Corruption/Tier Forecast).
+        { key: "public_order", label: "Public Order", badge: "mode.public_order" },
       ]},
       { id: "demography", title: "Demography", members: [
         { key: "culture", label: "Culture", badge: "mode.culture" },
@@ -15220,7 +15110,6 @@ function App() {
                       { icon: "🏗", label: "Recruit Planner", color: "#a8d8a0", desc: "For the selected settlement: what each next building upgrade unlocks for recruitment.", open: () => { if (lockedRegionInfo || regionInfo) setShowRecruitPlanner(true); else pushToast("Select a region first — the planner works on the selected settlement.", "info", 5000); } },
                       { icon: "🕊", label: "Diplomacy Heatmap", color: "#d8a0a0", desc: "NxN heatmap of the live diplomacy matrix — war blocs and alliance clusters at a glance.", open: () => setShowDiploHeatmap(true) },
                       { icon: "🪙", label: "Mercenary Pools", color: "#d9c964", desc: "Browse every mercenary pool — units, costs, replenish rates, faction restrictions; highlight a pool's regions on the map.", open: () => setShowMercPools(true) },
-                      { icon: "🖼", label: "Export Map PNG", color: "#a8d8d8", desc: "Save the whole map in the current mode as a high-res PNG (3× native) with a painted legend.", open: () => handleExportMap() },
                       { icon: "📉", label: "Population Projection", color: "#9ed6ad", desc: "Project every settlement N seasons forward; flag decline, stalls, tier-ups and unrest risk.", open: () => setShowPopProjection(true) },
                       { icon: "🎭", label: "Trait Explorer", color: "#c9b8e0", desc: "Browse every character trait — filter by effect (tax, law, command…), see levels/thresholds/effects, and in live mode who carries each.", open: () => setShowTraitExplorer(true) },
                       { icon: "⚰", label: "Campaign Autopsy", color: "#cf8f6a", desc: "Post-mortem over a scanned saves timeline — each faction's settlement/treasury/army arc, when they peaked, declined or were wiped, and who won.", open: () => setShowCampaignAutopsy(true) },
@@ -15766,7 +15655,7 @@ function App() {
             onClick={() => setDevMode(prev => {
               const next = !prev;
               devTraceClick("Dev button", prev);
-              if (!next) setColorMode(cm => (DEV_COLOR_MODES.has(cm) && cm !== "legions" && cm !== "mercenaries") ? "faction" : cm); // legions/mercenaries are regular modes
+              if (!next) setColorMode(cm => (DEV_COLOR_MODES.has(cm) && cm !== "legions" && cm !== "mercenaries" && cm !== "public_order") ? "faction" : cm); // legions/mercenaries/public_order are regular modes
               return next;
             })}
             style={{
@@ -16151,17 +16040,12 @@ function App() {
       if (typeof c !== "number") return { label: "Recruitment", value: "—" };
       return { label: "Recruitment", value: `${c} unique unit${c === 1 ? "" : "s"}${recruitmentInfo.max ? ` (max ${recruitmentInfo.max})` : ""}` };
     }
-    if (colorMode === "happiness") {
-      if (!saveHappinessByCity) return { label: "Happiness", value: "Live save required" };
-      const v = saveHappinessByCity[info.city];
-      if (typeof v !== "number") return { label: "Happiness", value: "No data" };
-      return { label: "Happiness", value: `${Math.round(v)} / 200` };
-    }
     if (colorMode === "public_order") {
-      if (!saveHappinessByCity) return { label: "Public Order", value: "Live save required" };
-      const v = saveHappinessByCity[info.city];
-      if (typeof v !== "number") return { label: "Public Order", value: "No data" };
-      return { label: "Public Order", value: `${Math.round(v)} / 200` };
+      const vs = saveHappinessByCity && saveHappinessByCity[info.city];
+      if (typeof vs === "number") return { label: "Public Order", value: `${Math.round(vs)}% (live save)` };
+      const e = factionMetrics && factionMetrics.byRegion && factionMetrics.byRegion[info.region];
+      if (e && typeof e.po === "number") return { label: "Public Order", value: `${Math.round(e.po)}% (model, normal tax)` };
+      return { label: "Public Order", value: saveHappinessByCity ? "No data" : "Pick a faction (or connect Live)" };
     }
     if (colorMode === "income") {
       if (saveIncomeByCity && saveIncomeByCity[info.city] && typeof saveIncomeByCity[info.city].perTurn === "number") {
@@ -16794,40 +16678,32 @@ function App() {
         </div>
       );
     }
-    if (colorMode === "happiness" || colorMode === "public_order") {
-      const title = colorMode === "happiness" ? "Happiness" : "Public Order";
-      const vals = [];
-      if (saveHappinessByCity) {
-        for (const r of Object.values(regions)) {
-          const v = saveHappinessByCity[r.city];
-          if (typeof v === "number") vals.push(v);
-        }
-      }
-      const hasData = vals.length > 0;
-      const minV = hasData ? Math.min(...vals) : 0;
-      const maxV = hasData ? Math.max(...vals) : 0;
-      const midV = hasData ? (minV + maxV) / 2 : 0;
+    if (colorMode === "public_order") {
+      const live = !!saveHappinessByCity;
+      const modelled = !live && factionMetrics && factionMetrics.byRegion;
+      const BANDS = [
+        [[34, 139, 34], "> 100% -- content"], [[124, 205, 110], "85-100% -- stable"],
+        [[232, 150, 44], "75-85% -- tense"], [[206, 52, 38], "< 75% -- riot risk"],
+      ];
       return (
         <div style={panelStyle}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>{title} <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Public Order <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
           {!legendCollapsed && <>
-            {hasData ? <>
-              <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(210,40,40), rgb(230,200,40), rgb(50,190,40))" }} />
-              <div style={labelRow}>
-                <span>{Math.round(minV)}</span>
-                <span>{Math.round(midV)}</span>
-                <span>{Math.round(maxV)}</span>
-              </div>
-              <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 4 }}>
-                {colorMode === "happiness"
-                  ? "Settlement happiness (raw 100..200 scale)."
-                  : "Public order ≈ happiness in RTW; separate mode for future split."}
-              </div>
-            </> : (
-              <div style={{ fontSize: "0.72rem", color: "#aaa", fontStyle: "italic" }}>
-                Heatmap requires a live save game.
-              </div>
-            )}
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {BANDS.map(([c, lab]) => (
+                <div key={lab} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem" }}>
+                  <span style={{ width: 12, height: 12, borderRadius: 2, background: `rgb(${c[0]},${c[1]},${c[2]})`, border: "1px solid rgba(0,0,0,0.35)", flexShrink: 0 }} />
+                  <span style={{ color: "#eee" }}>{lab}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: "0.7rem", color: live ? "#9ed6ad" : "#e8c873", marginTop: 5 }}>
+              {live
+                ? "Exact values from the live save."
+                : modelled
+                  ? `Model estimate (normal tax) for ${(factionDisplayNames && factionDisplayNames[factionMetrics.faction]) || factionMetrics.faction.replace(/_/g, " ")} -- connect Live for exact values.`
+                  : "Pick a faction in the sidebar for a model estimate, or connect Live for exact values."}
+            </div>
           </>}
         </div>
       );
@@ -18689,7 +18565,7 @@ function App() {
           ["aor", "Areas of Recruitment"], ["terrain", "Terrain"], ["climate", "Climate"],
           ["port_level", "Port Level"], ["irrigation", "Irrigation"], ["earthquakes", "Earthquakes"],
           ["rivertrade", "River Trade"], ["hidden_resource", "Hidden Resource"],
-          ["happiness", "Happiness"], ["income", "Income"],
+          ["income", "Income"],
           ["public_order", "Public Order"], ["loyalist", "Loyalist"],
         ];
         for (const [m, label] of MODES) {
