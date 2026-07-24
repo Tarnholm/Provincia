@@ -504,6 +504,16 @@ function correlateWithSave(findings, saveFacts) {
         if (req && e.factionMenAtSave != null) {
           e.reqVsHave = `needs ${req.toLocaleString()}, whole faction fields ${e.factionMenAtSave.toLocaleString()} men at turn ${F.turn}`;
           e.impossible = e.factionMenAtSave < req * 0.5; // can't get halfway there
+          const mic = (F.micByFaction || {})[fac];
+          if (e.impossible && mic) {
+            e.micMax = mic.max; e.micMissing = mic.missing; e.micTowns = mic.towns;
+            // mic tier gates which troops exist at all → distinguishes a poor
+            // faction from one that structurally cannot field better units.
+            e.blockedBy = mic.max <= 1 ? "recruitment" : "income";
+            e.reqVsHave += mic.max <= 1
+              ? ` · RECRUITMENT-capped: best military infrastructure is tier ${mic.max} (${mic.missing}/${mic.towns} towns have none)`
+              : ` · infrastructure is fine (tier ${mic.max}) — this is an INCOME/production limit`;
+          }
         }
       }
     }
@@ -530,6 +540,23 @@ function buildSaveFacts(save, regionOfSettlement) {
     const f = String(fx || "?").toLowerCase();
     settlementsByFaction[f] = (settlementsByFaction[f] || 0) + 1;
   }
+  // Military-infrastructure ceiling per faction. RIS gates troop recruitment on
+  // the military_industrial_complex tier (EDB `mic_tier_*` aliases), so a
+  // faction whose towns never get past mic_0/1 is RECRUITMENT-capped no matter
+  // how rich it is — that's what separates "poor" from "can't build troops"
+  // among the impossible campaigns. Measured from the save, not assumed.
+  const settByName = {};
+  for (const st of (save.settlements || [])) if (st && st.name) settByName[st.name] = st;
+  const micByFaction = {};
+  for (const [city, fx] of Object.entries(save.ownerByCity || {})) {
+    const f = String(fx || "?").toLowerCase();
+    const e = micByFaction[f] = micByFaction[f] || { max: 0, missing: 0, towns: 0 };
+    e.towns++;
+    const st = settByName[city];
+    const mic = st && (st.buildings || []).find((b) => b && b.name === "military_industrial_complex");
+    if (mic) { if ((mic.level || 0) > e.max) e.max = mic.level || 0; }
+    else e.missing++;
+  }
   // Character names, normalised, split alive/dead. Used to settle "abandoned"
   // findings: still-alive = the AI ORPHANED a live army; dead = benign.
   const aliveNames = {}, deadNames = {};
@@ -548,7 +575,7 @@ function buildSaveFacts(save, regionOfSettlement) {
     aliveNames, deadNames,
     ownerByCity: save.ownerByCity || {},
     unitsByFactionRegion, menByFaction, unitsByFaction, navalByFaction, navalWorld,
-    settlementsByFaction,
+    settlementsByFaction, micByFaction,
     regionOfSettlement: regionOfSettlement || {},
     sieges: (save.sieges || []).length,
   };

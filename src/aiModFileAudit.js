@@ -126,6 +126,9 @@ function auditModFiles({ findings = [], saveFacts = null, files = {} } = {}) {
     if (f.orphaned) e.orphaned++;
     const req = +(String(f.detail).match(/\/(\d+) strength/) || [0, 0])[1];
     if (req > e.maxReq) e.maxReq = req;
+    if (f.blockedBy === "recruitment") e.recruitBlocked = (e.recruitBlocked || 0) + 1;
+    if (f.blockedBy === "income") e.incomeBlocked = (e.incomeBlocked || 0) + 1;
+    if (f.micMax != null) { e.micMax = f.micMax; e.micMissing = f.micMissing; e.micTowns = f.micTowns; }
   }
 
   const men = (saveFacts && saveFacts.menByFaction) || {};
@@ -143,6 +146,7 @@ function auditModFiles({ findings = [], saveFacts = null, files = {} } = {}) {
       diplomaticProfile: pers ? (pers.diplomatic || null) : null,
       aggresiveness: dip && dip.aggresiveness != null ? dip.aggresiveness : null,
       militaryProfile: pers ? (pers.military || null) : null,
+      buildingProfile: pers ? (pers.building || null) : null,
       startSettlements: st ? st.settlements : null,
       startUnits: st ? st.units : null,
       startAdmirals: st ? st.admirals : null,
@@ -205,6 +209,30 @@ function auditModFiles({ findings = [], saveFacts = null, files = {} } = {}) {
       });
     }
 
+    // 3b. recruitment-capped: it isn't poverty, the faction structurally cannot
+    //     field better troops (RIS gates units on military_industrial_complex tier)
+    if (s.recruitBlocked > 0 && s.micMax != null) {
+      leads.push({
+        severity: 3, faction: k,
+        file: "export_descr_buildings.txt + feral_descr_ai_personality.txt",
+        key: `military_industrial_complex tier ${s.micMax} (mic_tier_* recruit gates) / building_priority ${F.buildingProfile || "(unmapped)"}`,
+        issue: `RECRUITMENT-capped: ${s.recruitBlocked} impossible campaign(s) while its best military infrastructure is tier ${s.micMax}` +
+          (s.micMissing != null ? ` and ${s.micMissing}/${s.micTowns} of its towns have none at all` : ""),
+        suggestion: "this faction cannot recruit the troops its own campaigns demand — either lower the mic tier that unlocks mid-tier units, make mic cheaper/faster, or raise its weight in this faction's building_priority",
+        evidence: `biggest ask ${s.maxReq.toLocaleString()} strength` + (F.menAtSave != null ? `, fields ${F.menAtSave.toLocaleString()} men` : "") + `, holds ${F.settlementsAtSave ?? "?"} settlement(s)`,
+      });
+    }
+    // 3c. income-limited: infrastructure is fine, the money/production isn't
+    if (s.incomeBlocked > 0 && !s.recruitBlocked) {
+      leads.push({
+        severity: 2, faction: k,
+        file: "descr_strat.txt + descr_sm_resources.txt",
+        key: "starting economy / regional resources for this faction",
+        issue: `INCOME-limited: ${s.incomeBlocked} impossible campaign(s) despite adequate military infrastructure (tier ${s.micMax})`,
+        suggestion: "its towns can build the troops but it never affords them — check starting denari, regional resource values and trade access rather than the AI profile",
+        evidence: `biggest ask ${s.maxReq.toLocaleString()} strength` + (F.menAtSave != null ? `, fields ${F.menAtSave.toLocaleString()} men` : "") + (F.startDenari != null ? `, started with ${F.startDenari.toLocaleString()} denari` : ""),
+      });
+    }
     // 4. orphaned live armies concentrated in one faction
     if (s.orphaned >= 5) {
       leads.push({

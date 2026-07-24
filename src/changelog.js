@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1412",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**AI Movement Lab now separates “can’t afford it” from “can’t build it”.** Every impossible campaign is classified by reading the faction’s actual military infrastructure out of the save: RECRUITMENT-capped (its towns never get past a low military_industrial_complex tier, so the units its own campaigns demand don’t exist for it) versus INCOME-limited (infrastructure is fine, the money isn’t). On the reference campaign that split 402 impossible campaigns into 295 recruitment-capped and 107 income-limited — e.g. Aulerci asks for 27,526 strength while fielding 2,227 men with 3 of its 4 towns having no military infrastructure at all." },
+      { type: "improvement", text: "**Mod-file leads now point at the right file for each cause** — recruitment caps name the mic recruit-gates in export_descr_buildings plus that faction’s building_priority, while income limits name descr_strat and descr_sm_resources instead. No more guessing which knob a stalled faction actually needs." },
+    ],
+  },
+  {
     version: "0.9.1411",
     date: "2026-07-24",
     items: [

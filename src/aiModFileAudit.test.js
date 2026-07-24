@@ -152,3 +152,64 @@ describe("audit leads", () => {
     });
   });
 });
+
+describe("recruitment- vs income-blocked leads", () => {
+  const AI = `
+diplomatic_priority super_aggressive
+aggresiveness 100
+personality ai_poor
+building_priority poorbuild
+military_priority poormil
+diplomatic_priority super_aggressive
+personality ai_rich
+building_priority richbuild
+military_priority richmil
+diplomatic_priority super_aggressive
+`;
+  const STRAT = `
+faction	poor, ai_poor
+denari	3000
+settlement
+{
+	level town
+	region A
+}
+faction	rich, ai_rich
+denari	30000
+settlement
+{
+	level city
+	region B
+}
+`;
+  const files = { aiPersonality: AI, strat: STRAT, smFactions: "", edu: "" };
+  // 20 settlements keeps both out of the "≤3 settlements" aggression rule, so
+  // only the recruitment/income leads can fire here.
+  const saveFacts = { turn: 102, menByFaction: { poor: 600, rich: 900 }, settlementsByFaction: { poor: 20, rich: 20 } };
+
+  it("names the mic/building-priority lever when the faction is recruitment-capped", () => {
+    const { leads } = auditModFiles({
+      findings: [{ kind: "campaign_stall", faction: "poor", region: "X", detail: "still 0/20000 strength", impossible: true, blockedBy: "recruitment", micMax: 1, micMissing: 3, micTowns: 4 }],
+      saveFacts, files,
+    });
+    const l = leads.find((x) => /RECRUITMENT-capped/.test(x.issue));
+    expect(l).toBeTruthy();
+    expect(l.file).toMatch(/export_descr_buildings/);
+    expect(l.key).toMatch(/military_industrial_complex tier 1/);
+    expect(l.key).toMatch(/building_priority poorbuild/);
+    expect(l.issue).toMatch(/3\/4 of its towns have none/);
+  });
+
+  it("points at economy files when infrastructure is fine but money isn't", () => {
+    const { leads } = auditModFiles({
+      findings: [{ kind: "campaign_stall", faction: "rich", region: "Y", detail: "still 0/20000 strength", impossible: true, blockedBy: "income", micMax: 3, micMissing: 0, micTowns: 5 }],
+      saveFacts, files,
+    });
+    const l = leads.find((x) => /INCOME-limited/.test(x.issue));
+    expect(l).toBeTruthy();
+    expect(l.file).toMatch(/descr_sm_resources/);
+    expect(l.evidence).toMatch(/started with 30.000 denari/);
+    // and it must NOT also claim a recruitment cap
+    expect(leads.some((x) => x.faction === "rich" && /RECRUITMENT-capped/.test(x.issue))).toBe(false);
+  });
+});
