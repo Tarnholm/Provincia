@@ -36,16 +36,25 @@ export default function AiMovementPanel({
   const [error, setError] = useState(null);
   const [kindFilter, setKindFilter] = useState(() => new Set(Object.keys(KIND_META)));
   const [factionFilter, setFactionFilter] = useState("");
+  const [savePath, setSavePath] = useState(null);      // optional .sav to cross-reference
+  const [onlyConfirmed, setOnlyConfirmed] = useState(false);
 
   const run = async (logPath) => {
     setBusy(true); setError(null);
     try {
-      const r = await window.electronAPI.analyzeAiMovement(logPath || null, modDataDir || null);
+      const r = await window.electronAPI.analyzeAiMovement(logPath || null, modDataDir || null, savePath || null);
       if (r && r.canceled) { setBusy(false); return; }
       if (!r || r.error) setError((r && r.error) || "analysis failed");
       else setResult(r);
     } catch (e) { setError(e && e.message ? e.message : String(e)); }
     setBusy(false);
+  };
+
+  const pickSave = async () => {
+    try {
+      const r = await window.electronAPI?.pickAiSaveFile?.();
+      if (r && r.path) setSavePath(r.path);
+    } catch { /* cancelled */ }
   };
 
   const flabel = (id) => (factionDisplayNames && factionDisplayNames[id]) || String(id || "?").replace(/_/g, " ");
@@ -54,9 +63,10 @@ export default function AiMovementPanel({
     const fq = factionFilter.trim().toLowerCase();
     return (result.findings || []).filter((f) =>
       kindFilter.has(f.kind) &&
+      (!onlyConfirmed || /NEVER arrived/.test(f.verdict || "") || f.impossible) &&
       (!fq || String(f.faction).toLowerCase().includes(fq) || flabel(f.faction).toLowerCase().includes(fq) || String(f.name).toLowerCase().includes(fq)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, kindFilter, factionFilter, factionDisplayNames]);
+  }, [result, kindFilter, factionFilter, onlyConfirmed, factionDisplayNames]);
 
   const jump = (regionName, dbl) => {
     if (!regionName || !onHighlightRegion) return;
@@ -101,6 +111,23 @@ export default function AiMovementPanel({
           <span style={{ fontSize: "0.68rem", color: "#888" }}>
             Takes message_log.txt (movement traces) or campaign_ai_log.txt (AI decisions, any size — 300MB telemetry streams fine).
           </span>
+          <div style={{ flexBasis: "100%", display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
+            <button onClick={pickSave} disabled={busy}
+              style={{ padding: "3px 10px", borderRadius: 6, cursor: busy ? "default" : "pointer", border: "1px solid rgba(143,201,216,0.4)", background: savePath ? "rgba(143,201,216,0.18)" : "transparent", color: "#8fc9d8", fontSize: "0.74rem" }}>
+              {savePath ? "✓ Save attached" : "Cross-reference a save… (optional)"}
+            </button>
+            {savePath && (
+              <>
+                <span title={savePath} style={{ fontSize: "0.68rem", color: "#9a8f7a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 320 }}>
+                  {savePath.split(/[\/]/).pop()}
+                </span>
+                <span onClick={() => setSavePath(null)} title="Detach" style={{ color: "#e87a6a", cursor: "pointer", fontSize: "0.74rem" }}>✕</span>
+              </>
+            )}
+            <span style={{ fontSize: "0.66rem", color: "#777" }}>
+              A save turns findings into verdicts — did the army ever arrive, was the campaign even affordable? (adds ~12s)
+            </span>
+          </div>
         </div>
 
         {error && <div style={{ padding: "8px 16px", color: "#e87a6a", fontSize: "0.78rem" }}>{error}</div>}
@@ -118,6 +145,20 @@ export default function AiMovementPanel({
 
         {result && (
           <div style={{ overflowY: "auto", padding: "8px 16px" }}>
+            {result.saveError && (
+              <div style={{ marginBottom: 6, fontSize: "0.74rem", color: "#e87a6a" }}>Save cross-reference failed: {result.saveError}</div>
+            )}
+            {result.save && (
+              <div style={{ marginBottom: 8, padding: "6px 9px", borderRadius: 6, background: "rgba(143,201,216,0.10)", border: "1px solid rgba(143,201,216,0.28)", fontSize: "0.75rem", lineHeight: 1.5 }}>
+                <b style={{ color: "#8fc9d8" }}>Cross-referenced with turn {result.save.turn}</b>
+                {" — "}
+                <b style={{ color: "#e87a6a" }}>{result.save.confirmedNeverArrived}</b> orders confirmed never to have arrived,{" "}
+                <b style={{ color: "#e87a6a" }}>{result.save.impossibleCampaigns}</b> campaigns the faction could never afford.
+                <div style={{ color: "#9a8f7a", fontSize: "0.7rem" }}>
+                  World at that turn: {result.save.navalWorld} ships total · {result.save.sieges} active sieges · {result.save.factionsWithUnits} factions still fielding troops.
+                </div>
+              </div>
+            )}
             {/* kind filter chips + summary counts */}
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
               {Object.entries(KIND_META).map(([k, m]) => {
@@ -136,6 +177,12 @@ export default function AiMovementPanel({
                 <span title="Beaten armies with NOWHERE to retreat (context-free engine line, not attributable to a specific army)"
                   style={{ fontSize: "0.72rem", color: "#e87a6a" }}>· {result.cannotFlee}× cannot-find-flee-tile</span>
               )}
+              {result.save && (
+                <label title="Show only findings the save proves went wrong" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.72rem", color: onlyConfirmed ? "#e87a6a" : "#888", cursor: "pointer" }}>
+                  <input type="checkbox" checked={onlyConfirmed} onChange={() => setOnlyConfirmed((v) => !v)} />
+                  proven only
+                </label>
+              )}
               <input value={factionFilter} onChange={(e) => setFactionFilter(e.target.value)} placeholder="Filter faction / army…"
                 style={{ marginLeft: "auto", width: 170, padding: "3px 8px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)", color: "#f0f0f0", fontSize: "0.74rem", outline: "none" }} />
             </div>
@@ -145,7 +192,8 @@ export default function AiMovementPanel({
             {visible.map((f, i) => {
               const m = KIND_META[f.kind] || { color: "#999", label: f.kind };
               return (
-                <div key={i}
+                <div key={i}>
+                  <div
                   onClick={() => jump(f.region, false)}
                   onDoubleClick={() => jump(f.region, true)}
                   title={f.region ? "Click: highlight region · double-click: jump" : "No region resolved for this tile"}
@@ -158,7 +206,15 @@ export default function AiMovementPanel({
                   <span style={{ color: "#8fc9d8", flexShrink: 0 }}>t{f.fromTurn}–{f.toTurn}</span>
                   <span style={{ color: "#bbb", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{f.detail}</span>
                   <span style={{ color: "#cfc6b0", flexShrink: 0 }}>{f.region ? f.region.replace(/_/g, " ") : `(${f.x},${f.y})`}</span>
-                </div>
+                  </div>
+                  {(f.verdict || f.reqVsHave) && (
+                    <div style={{ margin: "0 0 3px 92px", fontSize: "0.7rem", color: /NEVER arrived/.test(f.verdict || "") || f.impossible ? "#e87a6a" : "#8fd18f" }}>
+                      {f.impossible ? "⛔ " : /NEVER arrived/.test(f.verdict || "") ? "✕ " : "✓ "}
+                      {f.reqVsHave || f.verdict}
+                      {f.factionSettlements != null && f.kind === "campaign_stall" ? ` · holds ${f.factionSettlements} settlement(s)` : ""}
+                    </div>
+                  )}
+                  </div>
               );
             })}
 

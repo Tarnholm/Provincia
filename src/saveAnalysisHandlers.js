@@ -401,6 +401,58 @@ ipcMain.handle("get-faction-metrics", async (_event, modDataDir, faction) => {
   } catch (e) { return { error: e && e.message ? e.message : "faction metrics failed" }; }
 });
 
+// Enrich log findings with world state from a SAVE (log = what the AI tried,
+// save = whether it worked). Mutates `result` in place; silent no-op without a
+// save path so the log-only flow is unchanged. Cracking a 45MB save costs
+// ~12s, so this only runs when the user explicitly picks one.
+// Save picker for the AI Movement Lab's "cross-reference a save" option.
+ipcMain.handle("pick-ai-save-file", async () => {
+  try {
+    const { dialog } = require("electron");
+    const r = await dialog.showOpenDialog({
+      title: "Pick a save to cross-reference (.sav)",
+      filters: [{ name: "RTW save", extensions: ["sav"] }],
+      properties: ["openFile"],
+    });
+    if (r.canceled || !r.filePaths.length) return { canceled: true };
+    return { path: r.filePaths[0] };
+  } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+});
+
+async function _correlateSave(result, savePath, modDataDir) {
+  if (!savePath) return;
+  try {
+    if (!fs.existsSync(savePath)) { result.saveError = "save not found: " + savePath; return; }
+    const { crackSave } = require("./saveCracker.js");
+    const { correlateWithSave, buildSaveFacts } = require("./aiMovementAnalyzer.js");
+    const t0 = Date.now();
+    const save = crackSave(await fs.promises.readFile(savePath), modDataDir || null, {});
+    // settlement → region name, so "did they reach the target's region?" works
+    let regionOfSettlement = {};
+    try {
+      const dg = require("./descrStratGeneral.js");
+      const { regionToCity } = dg.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "utf8"));
+      for (const [region, city] of Object.entries(regionToCity || {})) if (city) regionOfSettlement[city] = region;
+    } catch { /* verdicts still work off ownerByCity alone */ }
+    const facts = buildSaveFacts(save, regionOfSettlement);
+    result.findings = correlateWithSave(result.findings, facts);
+    result.save = {
+      path: savePath, turn: facts.turn,
+      navalWorld: facts.navalWorld, sieges: facts.sieges,
+      factionsWithUnits: Object.keys(facts.unitsByFaction).length,
+      ms: Date.now() - t0,
+    };
+    // headline counts the user cares about
+    const sm = result.findings.filter((f) => /NEVER arrived/.test(f.verdict || ""));
+    const imp = result.findings.filter((f) => f.impossible);
+    result.save.confirmedNeverArrived = sm.length;
+    result.save.impossibleCampaigns = imp.length;
+    _writeLog(`[ai-movement] correlated with ${path.basename(savePath)} (turn ${facts.turn}): ${sm.length} confirmed-never-arrived, ${imp.length} impossible campaigns, in ${result.save.ms}ms`);
+  } catch (e) {
+    result.saveError = e && e.message ? e.message : String(e);
+  }
+}
+
 // IPC: AI Movement Analyzer (2026-07-24) — parse a message_log.txt (live dir,
 // archived, or downloaded from the RIS Discord telemetry) into per-army
 // movement traces + pathing pathology findings (stuck / oscillation /
@@ -408,7 +460,7 @@ ipcMain.handle("get-faction-metrics", async (_event, modDataDir, faction) => {
 // src/aiMovementAnalyzer.js; this handler adds file access, an Open-dialog
 // when no path is given, and strat-tile → region-name mapping so findings say
 // "near Roma", not "(283,402)".
-ipcMain.handle("analyze-ai-movement", async (_event, logPath, modDataDir) => {
+ipcMain.handle("analyze-ai-movement", async (_event, logPath, modDataDir, savePath) => {
   try {
     const { dialog } = require("electron");
     let p = logPath;
@@ -450,6 +502,7 @@ ipcMain.handle("analyze-ai-movement", async (_event, logPath, modDataDir) => {
         result.ms = Date.now() - t0;
         result.logPath = p;
         result.logBytes = fs.statSync(p).size;
+        await _correlateSave(result, savePath, modDataDir);
         _writeLog(`[ai-movement] ${path.basename(p)} (campaign_ai, ${(result.logBytes / 1048576).toFixed(0)}MB): ${result.lines.toLocaleString()} lines, ${result.findings.length} findings in ${result.ms}ms`);
         return result;
       }
@@ -496,6 +549,7 @@ ipcMain.handle("analyze-ai-movement", async (_event, logPath, modDataDir) => {
     result.ms = Date.now() - t0;
     result.logPath = p;
     result.logBytes = Buffer.byteLength(text);
+    await _correlateSave(result, savePath, modDataDir);
     _writeLog(`[ai-movement] ${path.basename(p)}: ${result.moveLines} moves, ${result.armies} armies, ${result.findings.length} findings in ${result.ms}ms`);
     return result;
   } catch (e) { return { error: e && e.message ? e.message : String(e) }; }

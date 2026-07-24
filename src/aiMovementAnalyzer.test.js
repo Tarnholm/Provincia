@@ -98,3 +98,52 @@ describe("createAiDecisionAnalyzer (real campaign_ai_log lines)", () => {
     expect(stall.region).toBe("Pella"); // regId 983 self-described by the campaign line
   });
 });
+
+describe("correlateWithSave / buildSaveFacts (log verdicts from save state)", () => {
+  it("turns findings into verdicts using real save shapes", async () => {
+    const { correlateWithSave, buildSaveFacts } = await import("./aiMovementAnalyzer.js");
+    // shapes taken from a real cracked save (crackSave output, turn 102)
+    const save = {
+      turn: 102,
+      ownerByCity: { Erythrai: "ptolemaic", Neapolis: "romans_julii", Klazomenai: "ptolemaic" },
+      units: [
+        { faction: "romans_julii", region: "Campania", soldiers: 120, naval: false },
+        { faction: "romans_julii", region: "Campania", soldiers: 100, naval: false },
+        { faction: "chios", region: "Chios", soldiers: 40, naval: false },
+        { faction: "ptolemaic", region: "Ionia", soldiers: 200, naval: true },
+      ],
+    };
+    const facts = buildSaveFacts(save, { Erythrai: "Ionia", Neapolis: "Campania", Klazomenai: "Ionia" });
+    expect(facts.turn).toBe(102);
+    expect(facts.navalWorld).toBe(1);
+    expect(facts.menByFaction.romans_julii).toBe(220);
+    expect(facts.settlementsByFaction.ptolemaic).toBe(2);
+
+    const out = correlateWithSave([
+      { kind: "stuck_mission", faction: "chios", name: "Ariston", region: "Erythrai", detail: "x" },
+      { kind: "stuck_mission", faction: "romans_julii", name: "Statiis", region: "Neapolis", detail: "x" },
+      { kind: "campaign_stall", faction: "chios", name: "Erythrai", region: "Erythrai", detail: "GATHERING for 9 turns, still 0/11590 strength — never launches" },
+      { kind: "campaign_stall", faction: "ptolemaic", name: "Klazomenai", region: "Klazomenai", detail: "GATHERING for 9 turns, still 0/100 strength — never launches" },
+    ], facts);
+
+    // never arrived: target held by someone else AND no units in that region
+    expect(out[0].verdict).toMatch(/NEVER arrived/);
+    expect(out[0].targetOwner).toBe("ptolemaic");
+    // arrived: the faction holds the target now
+    expect(out[1].targetTaken).toBe(true);
+    expect(out[1].verdict).toMatch(/arrived eventually/);
+    // impossible: needs 11,590 but the whole faction fields 40 men
+    expect(out[2].impossible).toBe(true);
+    expect(out[2].reqVsHave).toMatch(/needs 11.590/);
+    // affordable: needs 100, faction fields 200
+    expect(out[3].impossible).toBe(false);
+  });
+
+  it("says 'unknown' instead of guessing when the save can't answer", async () => {
+    const { correlateWithSave, buildSaveFacts } = await import("./aiMovementAnalyzer.js");
+    const facts = buildSaveFacts({ turn: 5, ownerByCity: {}, units: [] }, {});
+    const out = correlateWithSave([{ kind: "stuck_mission", faction: "x", name: "y", region: "Nowhere", detail: "d" }], facts);
+    expect(out[0].verdict).toMatch(/unknown/);
+    expect(out[0].targetTaken).toBeUndefined();
+  });
+});

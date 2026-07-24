@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1410",
+    date: "2026-07-24",
+    items: [
+      { type: "feature", text: "**AI Movement Lab can now cross-reference a save — turning findings into verdicts.** Attach a .sav alongside the log and every finding gets checked against what actually happened: did the army ever arrive (or does another faction still hold the target?), and could the faction ever have afforded the campaign it kept gathering for? On the reference 102-turn campaign that proved 179 of 271 repeated move orders never arrived, and 402 of 563 stalled campaigns were mathematically impossible — one faction needed 23,041 strength while fielding 631 men in total. A “proven only” filter narrows the list to what the save confirms, and where the save can’t answer, the verdict says “unknown” rather than guessing." },
+    ],
+  },
+  {
     version: "0.9.1409",
     date: "2026-07-24",
     items: [

@@ -399,4 +399,98 @@ function createAiDecisionAnalyzer(opts = {}) {
   return { feedLine, finish };
 }
 
-module.exports = { analyzeMovementLog, createAiDecisionAnalyzer, DEFAULTS, AI_DEFAULTS };
+// ════════════════════════════════════════════════════════════════════════
+// LOG ↔ SAVE CORRELATION (2026-07-24) — turn a log finding into a verdict by
+// checking the world state in an actual save. The log says what the AI TRIED;
+// the save says whether it worked.
+//
+// `saveFacts` is a compact digest the caller builds from a cracked save (see
+// buildSaveFacts below) so this stays pure and unit-testable:
+//   { turn, ownerByCity: {settlement: faction},
+//     unitsByFactionRegion: {"faction|Region": nUnits},
+//     menByFaction: {faction: men}, unitsByFaction: {faction: n},
+//     navalByFaction: {faction: n}, navalWorld: n,
+//     settlementsByFaction: {faction: n}, regionOfSettlement: {settlement: Region} }
+//
+// Every enrichment is evidence-only — where the save can't answer (a name the
+// save doesn't carry, a faction with no attributed units), the verdict is
+// "unknown" rather than a guess.
+function correlateWithSave(findings, saveFacts) {
+  const F = saveFacts || {};
+  const owner = F.ownerByCity || {};
+  const unitsFR = F.unitsByFactionRegion || {};
+  const men = F.menByFaction || {};
+  const naval = F.navalByFaction || {};
+  const setts = F.settlementsByFaction || {};
+  const regOf = F.regionOfSettlement || {};
+  const out = [];
+  for (const f of findings || []) {
+    const e = { ...f };
+    const fac = String(f.faction || "").toLowerCase();
+    // ── target-side: who holds the place the AI kept marching at? ──
+    if ((f.kind === "stuck_mission" || f.kind === "never_arrives" || f.kind === "campaign_stall") && f.region) {
+      const tgt = f.region;
+      const held = owner[tgt] || owner[String(tgt).replace(/ /g, "_")] || null;
+      if (held) {
+        e.targetOwner = held;
+        e.targetTaken = held.toLowerCase() === fac;      // they DID eventually take it
+        const reg = regOf[tgt] || regOf[String(tgt).replace(/ /g, "_")] || null;
+        const present = reg ? (unitsFR[fac + "|" + reg] || 0) : 0;
+        e.unitsAtTarget = reg ? present : null;
+        e.verdict = e.targetTaken
+          ? `arrived eventually — holds ${tgt} at turn ${F.turn}`
+          : (present > 0
+            ? `reached ${tgt}'s region (${present} unit(s) there at turn ${F.turn}) but ${held} still holds it`
+            : `NEVER arrived — ${held} holds ${tgt} and ${fac} has no units in that region at turn ${F.turn}`);
+      } else {
+        e.verdict = "unknown — save has no owner record for " + tgt;
+      }
+    }
+    // ── actor-side: could this faction ever have afforded the campaign? ──
+    if (fac && fac !== "?") {
+      e.factionMenAtSave = men[fac] != null ? men[fac] : null;
+      e.factionUnitsAtSave = F.unitsByFaction ? (F.unitsByFaction[fac] || 0) : null;
+      e.factionSettlements = setts[fac] != null ? setts[fac] : null;
+      e.factionNaval = naval[fac] != null ? naval[fac] : 0;
+      if (f.kind === "campaign_stall") {
+        const req = +(String(f.detail).match(/\/(\d+) strength/) || [0, 0])[1];
+        if (req && e.factionMenAtSave != null) {
+          e.reqVsHave = `needs ${req.toLocaleString()}, whole faction fields ${e.factionMenAtSave.toLocaleString()} men at turn ${F.turn}`;
+          e.impossible = e.factionMenAtSave < req * 0.5; // can't get halfway there
+        }
+      }
+    }
+    out.push(e);
+  }
+  return out;
+}
+
+// Build the correlation digest from a cracked save (crackSave output). Kept
+// next to the correlator so the two evolve together; caller supplies the save.
+function buildSaveFacts(save, regionOfSettlement) {
+  const unitsByFactionRegion = {}, menByFaction = {}, unitsByFaction = {}, navalByFaction = {};
+  let navalWorld = 0;
+  for (const u of (save.units || [])) {
+    const f = String(u.faction || "?").toLowerCase();
+    const key = f + "|" + u.region;
+    unitsByFactionRegion[key] = (unitsByFactionRegion[key] || 0) + 1;
+    unitsByFaction[f] = (unitsByFaction[f] || 0) + 1;
+    menByFaction[f] = (menByFaction[f] || 0) + (u.soldiers || 0);
+    if (u.naval) { navalWorld++; navalByFaction[f] = (navalByFaction[f] || 0) + 1; }
+  }
+  const settlementsByFaction = {};
+  for (const fx of Object.values(save.ownerByCity || {})) {
+    const f = String(fx || "?").toLowerCase();
+    settlementsByFaction[f] = (settlementsByFaction[f] || 0) + 1;
+  }
+  return {
+    turn: save.turn,
+    ownerByCity: save.ownerByCity || {},
+    unitsByFactionRegion, menByFaction, unitsByFaction, navalByFaction, navalWorld,
+    settlementsByFaction,
+    regionOfSettlement: regionOfSettlement || {},
+    sieges: (save.sieges || []).length,
+  };
+}
+
+module.exports = { analyzeMovementLog, createAiDecisionAnalyzer, correlateWithSave, buildSaveFacts, DEFAULTS, AI_DEFAULTS };
