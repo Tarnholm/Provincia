@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1418",
+    date: "2026-07-25",
+    items: [
+      { type: "fix", text: "**Fixed “Cannot find module ‘electron’” when analysing a log in the AI Movement Lab.** Moving the analysis into a worker thread (previous version) left behind the file-picker code that requires Electron — which a worker has no access to — so the packaged app failed instead of analysing. The picker belongs on the main thread and now stays there; the worker only ever receives a resolved path. Added a test that fails if anything Electron-dependent creeps back into the worker module." },
+    ],
+  },
+  {
     version: "0.9.1417",
     date: "2026-07-25",
     items: [

@@ -162,8 +162,6 @@ async function _correlateSave(result, savePath, modDataDir, _log) {
 
 }
 
-
-
 // IPC: AI Movement Analyzer (2026-07-24) — parse a message_log.txt (live dir,
 
 // archived, or downloaded from the RIS Discord telemetry) into per-army
@@ -184,33 +182,13 @@ async function runAiMovementAnalysis({ logPath, modDataDir, savePath }) {
 
   try {
 
-    const { dialog } = require("electron");
+    // The file picker stays on the main thread (Electron isn't available in a
+    // worker), so the caller always hands us a resolved path.
+    const p = logPath;
+    if (!p) return { error: "no log path supplied" };
 
-    let p = logPath;
-
-    if (!p) {
-
-      const r = await dialog.showOpenDialog({
-
-        title: "Pick a message_log.txt to analyze",
-
-        filters: [{ name: "RTW logs", extensions: ["txt", "log"] }],
-
-        properties: ["openFile"],
-
-      });
-
-      if (r.canceled || !r.filePaths.length) return { canceled: true };
-
-      p = r.filePaths[0];
-
-    }
-
-    if (fs.statSync(p).isDirectory()) p = path.join(p, "message_log.txt");
 
     if (!fs.existsSync(p)) return { error: "log not found: " + p };
-
-
 
     // ── campaign_ai_log? (decision log, can be 300MB+ telemetry) → STREAM ──
 
@@ -274,11 +252,7 @@ async function runAiMovementAnalysis({ logPath, modDataDir, savePath }) {
 
     }
 
-
-
     const text = await fs.promises.readFile(p, "utf8");
-
-
 
     // strat tile → region name: map_regions pixel (x, H-1-y), RLE-safe reader.
 
@@ -343,8 +317,6 @@ async function runAiMovementAnalysis({ logPath, modDataDir, savePath }) {
       }
 
     } catch { /* findings still useful without region names */ }
-
-
 
     const { analyzeMovementLog } = require("./aiMovementAnalyzer.js");
 

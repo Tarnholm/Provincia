@@ -229,3 +229,20 @@ describe("empty / unsuitable logs are reported honestly (not as 'all clear')", (
     expect(r.emptyReason).toMatch(/no AI decision data/);
   });
 });
+
+describe("worker-safety of the analysis pipeline", () => {
+  it("aiMovementRun.js must not require electron (it runs in a worker thread)", async () => {
+    const fsp = await import("node:fs");
+    const src = fsp.readFileSync(path.join(__dirname, "aiMovementRun.js"), "utf8");
+    // A worker has no Electron bindings — requiring it threw
+    // "Cannot find module 'electron'" for the packaged app (2026-07-25).
+    expect(src).not.toMatch(/require\(\s*["']electron["']\s*\)/);
+  });
+
+  it("exposes runAiMovementAnalysis and refuses a missing log path cleanly", async () => {
+    const { runAiMovementAnalysis } = await import("./aiMovementRun.js");
+    expect(typeof runAiMovementAnalysis).toBe("function");
+    const r = await runAiMovementAnalysis({ logPath: null, modDataDir: null, savePath: null });
+    expect(r.error).toMatch(/no log path/);
+  });
+});
