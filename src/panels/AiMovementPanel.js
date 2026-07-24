@@ -40,7 +40,10 @@ export default function AiMovementPanel({
   const [factionFilter, setFactionFilter] = useState("");
   const [savePath, setSavePath] = useState(null);      // optional .sav to cross-reference
   const [onlyConfirmed, setOnlyConfirmed] = useState(false);
-  const [tab, setTab] = useState("findings"); // "findings" | "leads"
+  const [tab, setTab] = useState("findings"); // "findings" | "leads" | "diff"
+  const [baselines, setBaselines] = useState(null);   // saved runs to compare against
+  const [diff, setDiff] = useState(null);             // before/after comparison
+  const [baseBusy, setBaseBusy] = useState(false);
 
   const run = async (logPath) => {
     setBusy(true); setError(null);
@@ -60,6 +63,32 @@ export default function AiMovementPanel({
     } catch { /* cancelled */ }
   };
 
+  const refreshBaselines = async () => {
+    try { const r = await window.electronAPI?.listAiBaselines?.(); if (r && r.baselines) setBaselines(r.baselines); }
+    catch { /* listing is best-effort */ }
+  };
+  const saveBaseline = async () => {
+    if (!result) return;
+    const label = window.prompt("Name this baseline (e.g. \"before mic_2 settlement_min change\")", "baseline");
+    if (!label) return;
+    setBaseBusy(true);
+    try {
+      const r = await window.electronAPI?.saveAiBaseline?.(result, label);
+      if (r && r.error) setError(r.error); else await refreshBaselines();
+    } catch (e) { setError(e?.message || String(e)); }
+    setBaseBusy(false);
+  };
+  const compareTo = async (file) => {
+    if (!result) return;
+    setBaseBusy(true);
+    try {
+      const r = await window.electronAPI?.compareAiBaseline?.(file, result);
+      if (r && r.error) setError(r.error);
+      else if (r && r.diff) { setDiff(r.diff); setTab("diff"); }
+    } catch (e) { setError(e?.message || String(e)); }
+    setBaseBusy(false);
+  };
+
   const flabel = (id) => (factionDisplayNames && factionDisplayNames[id]) || String(id || "?").replace(/_/g, " ");
   const visible = useMemo(() => {
     if (!result) return [];
@@ -70,6 +99,8 @@ export default function AiMovementPanel({
       (!fq || String(f.faction).toLowerCase().includes(fq) || flabel(f.faction).toLowerCase().includes(fq) || String(f.name).toLowerCase().includes(fq)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, kindFilter, factionFilter, onlyConfirmed, factionDisplayNames]);
+
+  React.useEffect(() => { if (result) refreshBaselines(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [result]);
 
   const jump = (regionName, dbl) => {
     if (!regionName || !onHighlightRegion) return;
@@ -185,8 +216,8 @@ export default function AiMovementPanel({
               </div>
             )}
             {result.modLeads && result.modLeads.length > 0 && (
-              <div style={{ display: "flex", gap: 2, marginBottom: 8, padding: 2, background: "rgba(0,0,0,0.25)", borderRadius: 5 }}>
-                {[["findings", `Findings (${result.findings.length})`], ["leads", `Mod-file leads (${result.modLeads.length})`]].map(([k, lab]) => (
+              <div style={{ display: "flex", gap: 2, marginBottom: 6, padding: 2, background: "rgba(0,0,0,0.25)", borderRadius: 5 }}>
+                {[["findings", `Findings (${result.findings.length})`], ["leads", `Mod-file leads (${result.modLeads.length})`], ...(diff ? [["diff", "Before / after"]] : [])].map(([k, lab]) => (
                   <div key={k} onClick={() => setTab(k)}
                     style={{ flex: 1, padding: "3px 8px", fontSize: "0.74rem", textAlign: "center", cursor: "pointer", borderRadius: 4, userSelect: "none",
                       background: tab === k ? "rgba(255,255,255,0.14)" : "transparent", color: tab === k ? "#fff" : "#bbb", fontWeight: tab === k ? 600 : 400 }}>
@@ -195,6 +226,33 @@ export default function AiMovementPanel({
                 ))}
               </div>
             )}
+            {/* before/after harness: snapshot a run, then compare a later run to
+                it to prove whether a mod change actually reduced the problems */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
+              <button onClick={saveBaseline} disabled={baseBusy}
+                title="Store this run's summary so a later run can be compared against it"
+                style={{ padding: "2px 9px", borderRadius: 5, cursor: baseBusy ? "default" : "pointer", border: "1px solid rgba(143,209,143,0.4)", background: "rgba(143,209,143,0.14)", color: "#8fd18f", fontSize: "0.72rem" }}>
+                ⭑ Save as baseline
+              </button>
+              {baselines && baselines.length > 0 && (
+                <>
+                  <span style={{ fontSize: "0.7rem", color: "#888" }}>compare with:</span>
+                  <select
+                    onChange={(e) => { if (e.target.value) compareTo(e.target.value); }}
+                    defaultValue=""
+                    disabled={baseBusy}
+                    style={{ maxWidth: 260, padding: "2px 6px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)", color: "#ddd", fontSize: "0.72rem" }}>
+                    <option value="">choose a baseline…</option>
+                    {baselines.map((b) => (
+                      <option key={b.file} value={b.file}>
+                        {(b.label || b.name)} — {b.findings} findings, {b.turns} turns{b.savedAt ? ` (${b.savedAt.slice(0, 10)})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
+              {baseBusy && <span style={{ fontSize: "0.7rem", color: "#8fc9d8" }}>working…</span>}
+            </div>
             {/* filters live in the fixed header too, so they're always reachable */}
             {tab === "findings" && (
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
@@ -228,6 +286,94 @@ export default function AiMovementPanel({
 
           {/* SCROLLER — just the results */}
           <div style={{ overflowY: "auto", padding: "8px 16px", flex: 1, minHeight: 0 }}>
+            {tab === "diff" && diff && (() => {
+              const VERDICT = {
+                improved: { color: "#8fd18f", text: "IMPROVED" },
+                regressed: { color: "#e87a6a", text: "REGRESSED" },
+                unchanged: { color: "#e8c873", text: "UNCHANGED" },
+                inconclusive: { color: "#9a8f7a", text: "INCONCLUSIVE" },
+              }[diff.verdict] || { color: "#9a8f7a", text: String(diff.verdict).toUpperCase() };
+              // improvement = FEWER problems, so a negative delta is good
+              const good = (d) => d < 0 ? "#8fd18f" : d > 0 ? "#e87a6a" : "#9a8f7a";
+              const sign = (d) => (d > 0 ? "+" : "") + d;
+              const row = (label, m) => (
+                <div key={label} style={{ display: "flex", alignItems: "baseline", gap: 8, fontSize: "0.74rem", padding: "1px 0" }}>
+                  <span style={{ width: 150, color: "#ddd", flexShrink: 0 }}>{label}</span>
+                  <span style={{ color: "#9a8f7a", width: 96, flexShrink: 0 }}>{m.before} → {m.after}</span>
+                  <span style={{ color: good(m.delta), width: 60, flexShrink: 0, fontWeight: 600 }}>{sign(m.delta)}</span>
+                  <span style={{ color: "#888" }}>
+                    {m.beforePerTurn}/turn → {m.afterPerTurn}/turn
+                    {m.ratePct != null ? ` (${m.ratePct > 0 ? "+" : ""}${m.ratePct}% rate)` : ""}
+                  </span>
+                </div>
+              );
+              return (
+                <div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 6 }}>
+                    <b style={{ color: VERDICT.color, fontSize: "0.95rem" }}>{VERDICT.text}</b>
+                    <span style={{ fontSize: "0.76rem", color: "#ddd" }}>
+                      {diff.labels.before} → {diff.labels.after}
+                      {diff.ratePct != null ? ` · ${diff.ratePct > 0 ? "+" : ""}${diff.ratePct}% findings per turn` : ""}
+                    </span>
+                  </div>
+                  {diff.caveat && (
+                    <div style={{ marginBottom: 8, padding: "6px 9px", borderRadius: 6, background: "rgba(232,200,115,0.10)", border: "1px solid rgba(232,200,115,0.35)", fontSize: "0.74rem", color: "#e8c873" }}>
+                      ⚠ {diff.caveat}
+                    </div>
+                  )}
+                  <div style={{ fontSize: "0.72rem", color: "#888", marginBottom: 4 }}>
+                    Fewer problems is better, so <span style={{ color: "#8fd18f" }}>green/negative</span> means the change helped.
+                    Rates are per turn, so a longer or shorter campaign can’t fake a result.
+                  </div>
+                  {row("All findings", diff.totals.findings)}
+                  <div style={{ fontSize: "0.72rem", color: "#cfc6b0", fontWeight: 700, margin: "8px 0 2px" }}>By problem type</div>
+                  {Object.entries(diff.byKind).map(([k, m]) => row((KIND_META[k] && KIND_META[k].label) || k, m))}
+                  {diff.save && (
+                    <>
+                      <div style={{ fontSize: "0.72rem", color: "#cfc6b0", fontWeight: 700, margin: "8px 0 2px" }}>
+                        Save-verified (turn {diff.save.turnBefore} → {diff.save.turnAfter})
+                      </div>
+                      {row("Never arrived", diff.save.neverArrived)}
+                      {row("Unaffordable campaigns", diff.save.impossible)}
+                      {row("Orphaned armies", diff.save.orphaned)}
+                    </>
+                  )}
+                  {diff.factionRows.length > 0 && (
+                    <>
+                      <div style={{ fontSize: "0.72rem", color: "#cfc6b0", fontWeight: 700, margin: "8px 0 2px" }}>
+                        Biggest movers by faction ({diff.factionRows.length} changed)
+                      </div>
+                      {diff.factionRows.slice(0, 20).map((f) => (
+                        <div key={f.faction} style={{ display: "flex", alignItems: "baseline", gap: 8, fontSize: "0.74rem" }}>
+                          <span style={{ width: 150, color: "#ddd", flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{flabel(f.faction)}</span>
+                          <span style={{ color: "#9a8f7a", width: 96, flexShrink: 0 }}>{f.beforeTotal} → {f.afterTotal}</span>
+                          <span style={{ color: good(f.total), width: 60, flexShrink: 0, fontWeight: 600 }}>{sign(f.total)}</span>
+                          <span style={{ color: "#888" }}>
+                            {f.impossible !== 0 ? `${sign(f.impossible)} unaffordable ` : ""}
+                            {f.orphaned !== 0 ? `${sign(f.orphaned)} orphaned ` : ""}
+                            {f.neverArrived !== 0 ? `${sign(f.neverArrived)} never-arrived` : ""}
+                          </span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {Object.keys(diff.leads.byFile).length > 0 && (
+                    <>
+                      <div style={{ fontSize: "0.72rem", color: "#cfc6b0", fontWeight: 700, margin: "8px 0 2px" }}>
+                        Mod-file leads {diff.leads.before} → {diff.leads.after} ({sign(diff.leads.delta)})
+                      </div>
+                      {Object.entries(diff.leads.byFile).map(([f, m]) => (
+                        <div key={f} style={{ display: "flex", gap: 8, fontSize: "0.72rem" }}>
+                          <code style={{ color: "#8fc9d8", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f}</code>
+                          <span style={{ color: "#9a8f7a" }}>{m.before} → {m.after}</span>
+                          <span style={{ color: good(m.delta), fontWeight: 600 }}>{sign(m.delta)}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              );
+            })()}
             {tab === "leads" && result.modLeads && (
               <div>
                 <div style={{ fontSize: "0.7rem", color: "#888", marginBottom: 6 }}>

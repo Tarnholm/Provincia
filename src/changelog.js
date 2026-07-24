@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1420",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**AI Movement Lab can now prove whether a mod change actually helped.** Save any run as a named baseline (“before mic_2 settlement_min change”), make your edit, play the campaign forward, then re-run and compare: you get a verdict (IMPROVED / REGRESSED / UNCHANGED) plus before→after numbers for every problem type, the save-verified totals (never-arrived, unaffordable campaigns, orphaned armies), the biggest movers faction by faction, and whether mod-file leads went down. Baselines are small files kept in the app’s data folder, so you can keep a history of tuning attempts." },
+      { type: "improvement", text: "**The comparison refuses to flatter you.** Findings scale with campaign length, so everything is also measured per turn — a shorter replay showing half the problems at the same rate reports UNCHANGED, not a win — and comparing two different log types is rejected outright with the reason stated. Fewer problems reads green; the verdict is computed from rates, not raw counts." },
+    ],
+  },
+  {
     version: "0.9.1419",
     date: "2026-07-25",
     items: [

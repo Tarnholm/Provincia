@@ -419,6 +419,74 @@ ipcMain.handle("pick-ai-save-file", async () => {
   } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
 });
 
+// ── AI-run baselines (2026-07-25) — the before/after harness ───────────────
+// Save a compact digest of an analysis run, then compare a later run against it
+// to see whether a mod change actually reduced the AI's problems. Digests are
+// small JSON files under userData/ai-baselines.
+function _baselineDir() {
+  let base;
+  try { base = require("electron").app.getPath("userData"); } catch { base = os.tmpdir(); }
+  const d = path.join(base, "ai-baselines");
+  try { fs.mkdirSync(d, { recursive: true }); } catch { /* best effort */ }
+  return d;
+}
+function _baselineFile(name) {
+  const safe = String(name || "baseline").replace(/[^a-z0-9._-]+/gi, "_").slice(0, 60) || "baseline";
+  return path.join(_baselineDir(), safe + ".json");
+}
+
+ipcMain.handle("save-ai-baseline", async (_event, result, label) => {
+  try {
+    const { makeDigest } = require("./aiRunDigest.js");
+    const digest = makeDigest(result, { label: label || null, savedAt: new Date().toISOString() });
+    if (!digest) return { error: "nothing to save — the run produced no result" };
+    const file = _baselineFile(label || digest.savedAt.slice(0, 19));
+    fs.writeFileSync(file, JSON.stringify(digest, null, 2), "utf8");
+    _writeLog(`[ai-baseline] saved ${path.basename(file)} (${digest.findings} findings, ${digest.turns} turns)`);
+    return { ok: true, file, digest };
+  } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+});
+
+ipcMain.handle("list-ai-baselines", async () => {
+  try {
+    const d = _baselineDir();
+    const out = [];
+    for (const f of fs.readdirSync(d)) {
+      if (!f.endsWith(".json")) continue;
+      try {
+        const dg = JSON.parse(fs.readFileSync(path.join(d, f), "utf8"));
+        out.push({ file: path.join(d, f), name: f.replace(/\.json$/, ""), label: dg.label, savedAt: dg.savedAt, findings: dg.findings, turns: dg.turns, logKind: dg.logKind });
+      } catch { /* skip unreadable */ }
+    }
+    out.sort((a, b) => String(b.savedAt || "").localeCompare(String(a.savedAt || "")));
+    return { ok: true, baselines: out };
+  } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+});
+
+ipcMain.handle("compare-ai-baseline", async (_event, baselineFile, result) => {
+  try {
+    const { makeDigest, diffDigests } = require("./aiRunDigest.js");
+    if (!baselineFile || !fs.existsSync(baselineFile)) return { error: "baseline not found" };
+    const before = JSON.parse(fs.readFileSync(baselineFile, "utf8"));
+    const after = makeDigest(result, { label: "current run" });
+    if (!after) return { error: "current run produced no result to compare" };
+    const diff = diffDigests(before, after);
+    _writeLog(`[ai-baseline] compared vs ${path.basename(baselineFile)}: verdict=${diff.verdict} rate=${diff.ratePct}%`);
+    return { ok: true, diff };
+  } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+});
+
+ipcMain.handle("delete-ai-baseline", async (_event, baselineFile) => {
+  try {
+    if (!baselineFile) return { error: "no file" };
+    const dir = _baselineDir();
+    // containment: only ever delete inside our own baselines folder
+    if (path.resolve(baselineFile).indexOf(path.resolve(dir)) !== 0) return { error: "refusing to delete outside the baselines folder" };
+    fs.unlinkSync(baselineFile);
+    return { ok: true };
+  } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+});
+
 // IPC: AI Movement Analyzer (2026-07-24) — parse a campaign log (message_log or
 // campaign_ai_log) into AI pathing/decision findings, optionally cross-referenced
 // with a save and audited against the mod files. The whole pipeline lives in
