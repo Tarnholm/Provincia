@@ -1963,6 +1963,7 @@ function App() {
   // no all-faction sweep. Cached per faction in the main process.
   const [factionMetrics, setFactionMetrics] = useState(null);
   const [factionReligions, setFactionReligions] = useState(null); // faction -> default religion (Cultural Conversion mode)
+  const reachTurnsRef = useRef(null); // Reach mode: last-computed { region: turns } for the hover readout
   // War-activity re-render trigger: snapshot pushed on each live battle event
   // (the War map/legend read battleLedgerRef directly). Declared here, before
   // the colorize effect that lists it as a dep, to avoid a render-phase TDZ.
@@ -9812,17 +9813,46 @@ function App() {
               valueByRegion[reg] = lv;
             }
           } else {
-            const q = [];
+            // REACH (rebuilt 2026-07-24): estimated TURNS to reinforce, not raw
+            // region hops. Hops ignored province size — a huge province and a
+            // tiny one both counted as "1". Now it's a distance-weighted
+            // Dijkstra over province centroids: edge cost = geographic distance
+            // between the two centroids (so crossing a large province costs
+            // more), halved where both provinces have roads (faster marching).
+            // Accumulated pixels ÷ a marching pace = approximate turns.
+            const PX_PER_TURN = 42;     // ~one average province per turn off-road
+            const ROAD_FACTOR = 0.55;   // roads ~1.8× faster
+            const centroidByRegion = {};
+            for (const [rgbKey, r] of Object.entries(regions)) {
+              if (r && r.region && regionCentroids[rgbKey]) centroidByRegion[r.region] = regionCentroids[rgbKey];
+            }
+            const roadSet = roadRegions instanceof Set ? roadRegions : null;
+            const hasRoad = (reg) => !!roadSet && roadSet.has(String(reg).toLowerCase());
+            const edgeCost = (a, b) => {
+              const ca = centroidByRegion[a], cb = centroidByRegion[b];
+              if (!ca || !cb) return 1e6; // unknown geometry → effectively far
+              const d = Math.hypot(ca.x - cb.x, ca.y - cb.y);
+              return d * (hasRoad(a) && hasRoad(b) ? ROAD_FACTOR : 1);
+            };
+            // seeds: every region holding one of the viewer's armies (0 turns)
+            const dist = {};
+            const heap = []; // simple binary min-heap of [cost, region]
+            const hpush = (c, reg) => { heap.push([c, reg]); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
+            const hpop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, rr = 2 * i + 2; let m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (rr < heap.length && heap[rr][0] < heap[m][0]) m = rr; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
             for (const [reg, rd2] of Object.entries(startingArmiesByRegion || {})) {
               const armies = [...(rd2.field || []), ...(rd2.garrison || [])];
-              if (armies.some((a) => (a.faction || "").toLowerCase() === viewer)) { valueByRegion[reg] = 0; q.push(reg); }
+              if (armies.some((a) => (a.faction || "").toLowerCase() === viewer)) { dist[reg] = 0; hpush(0, reg); }
             }
-            for (let i = 0; i < q.length; i++) {
-              const d = valueByRegion[q[i]];
-              for (const nb of (regionAdjacency[q[i]] || [])) {
-                if (valueByRegion[nb] == null) { valueByRegion[nb] = d + 1; q.push(nb); }
+            while (heap.length) {
+              const [c, reg] = hpop();
+              if (c > (dist[reg] ?? Infinity)) continue;
+              for (const nb of (regionAdjacency[reg] || [])) {
+                const nc = c + edgeCost(reg, nb);
+                if (nc < (dist[nb] ?? Infinity)) { dist[nb] = nc; hpush(nc, nb); }
               }
             }
+            for (const [reg, cost] of Object.entries(dist)) valueByRegion[reg] = cost / PX_PER_TURN; // → turns
+            reachTurnsRef.current = { viewer, byRegion: valueByRegion };
           }
         }
         const THREAT_COLS = [[55, 150, 70], [190, 170, 60], [220, 120, 40], [210, 55, 45]];
@@ -9831,9 +9861,9 @@ function App() {
           if (!viewer || ownerOf[r.region] !== viewer) base = [45, 47, 52];
           else if (colorMode === "threat") base = THREAT_COLS[valueByRegion[r.region] || 0];
           else {
-            const d = valueByRegion[r.region];
-            if (d == null) base = [140, 45, 125];
-            else { const t = Math.min(1, d / 5); base = [Math.round(60 + t * 160), Math.round(180 - t * 130), 45]; }
+            const turns = valueByRegion[r.region];
+            if (turns == null) base = [140, 45, 125];                 // no land route
+            else { const t = Math.min(1, turns / 8); base = [Math.round(60 + t * 160), Math.round(180 - t * 135), 45]; } // 0→8 turns green→red
           }
           if (devFlatColors) return base;
           const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.5;
@@ -10013,7 +10043,7 @@ function App() {
         else clearTimeout(_handle);
       }
     };
-  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion, regionAdjacency, playerFaction, diplomacyMatrix, factionMetrics, factionReligions, campaignTimeline, historyTurnIdx, liveSliderTurn, battleLedgerSnap, tradeLanes, regionCentroids]);
+  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion, regionAdjacency, roadRegions, playerFaction, diplomacyMatrix, factionMetrics, factionReligions, campaignTimeline, historyTurnIdx, liveSliderTurn, battleLedgerSnap, tradeLanes, regionCentroids]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -15984,6 +16014,17 @@ function App() {
         ? `${dom.replace(/_/g, " ")}${mix} — converted (owner's faith)`
         : `${dom.replace(/_/g, " ")}${mix} under ${ownRel.replace(/_/g, " ")} owner — FOREIGN` };
     }
+    if (colorMode === "reach") {
+      const viewer = (selectedFaction || playerFaction || "");
+      if (!viewer) return { label: "Reach", value: "Pick a faction to set the perspective" };
+      const rt = reachTurnsRef.current;
+      const turns = rt && rt.byRegion ? rt.byRegion[info.region] : undefined;
+      const owner = (((currentOwnerByCity && currentOwnerByCity[info.city]) || info.faction || "")).toLowerCase();
+      if (owner !== viewer.toLowerCase()) return { label: "Reach", value: `${viewer} territory only — this province is ${info.faction || "another faction"}’s` };
+      if (turns == null) return { label: "Reach", value: "No land route from any of your armies" };
+      const t = Math.round(turns * 10) / 10;
+      return { label: "Reach", value: t <= 0.05 ? "Army stationed here" : `≈ ${t} turn${t === 1 ? "" : "s"} to reinforce` };
+    }
     if (colorMode === "armyheat") {
       const rd2 = startingArmiesByRegion && startingArmiesByRegion[info.region];
       if (!rd2) return { label: "Armies", value: "— none at campaign start" };
@@ -16088,6 +16129,311 @@ function App() {
         return { label: `Has '${selectedHiddenResource}'`, value: has ? "Yes" : "No" };
       }
       return { label: "Hidden Resources", value: hrs.length ? hrs.join(", ") : "None" };
+    }
+
+    if (colorMode === "legions") {
+      const tag = getAors(info.tags).find((a) => LEGION_AOR_TAGS.has(a));
+      return { label: "Legion", value: tag ? LEGION_AORS[tag].name : "None — outside every legion recruitment zone" };
+    }
+    if (colorMode === "aor") {
+      const aors = getAors(info.tags);
+      return { label: aors.length === 1 ? "AOR" : `AORs (${aors.length})`, value: aors.length ? aors.join(", ") : "None" };
+    }
+    return null;
+  }
+
+  function renderLegend() {
+    const panelStyle = {
+      background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+      borderRadius: 10, padding: "8px 12px", color: "#f6f6f6",
+      fontSize: "0.75rem",
+      // Sidebar parent is a fixed-width column; every legend / filter panel
+      // expands to fill it so the stack of panels reads as a uniform list
+      // rather than ragged-right rectangles of different widths.
+      width: "100%", boxSizing: "border-box",
+      // The sidebar parent is a flex column with overflowY: auto. Without
+      // `flex-shrink: 0` here, expanded panels (e.g. the 200-faction list)
+      // get squashed by adjacent expanded panels (e.g. Resources overlay),
+      // hiding their content behind sibling panels. Lock natural size so
+      // the parent's scroll is the only thing that activates on overflow.
+      flexShrink: 0,
+      border: "1px solid rgba(255,255,255,0.08)",
+      boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
+    };
+    const labelRow = { display: "flex", justifyContent: "space-between", marginTop: 2 };
+    // Generic dev-mode legend: swatch + label + region count per category,
+    // most-common first. (Was referenced by 5 dev legends but never defined —
+    // opening any of them threw a ReferenceError. Fixed 2026-07-24.)
+    const renderDevLegend = (title, valueOf, colorMap, labelMap) => {
+      const counts = {};
+      for (const r of Object.values(regions)) {
+        const k = String(valueOf(r));
+        counts[k] = (counts[k] || 0) + 1;
+      }
+      const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      const colOf = (k) => {
+        const c = colorMap && (colorMap[k] != null ? colorMap[k] : colorMap[Number(k)]);
+        return Array.isArray(c) ? c : [120, 120, 120];
+      };
+      const labOf = (k) => (labelMap && (labelMap[k] != null ? labelMap[k] : labelMap[Number(k)])) || k.replace(/_/g, " ");
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>{title} <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {rows.map(([k, n]) => {
+                const c = colOf(k);
+                return (
+                  <div key={k} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem" }}>
+                    <span style={{ width: 12, height: 12, borderRadius: 2, background: `rgb(${c[0]},${c[1]},${c[2]})`, border: "1px solid rgba(0,0,0,0.35)", flexShrink: 0 }} />
+                    <span style={{ flex: 1, color: "#eee", textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{labOf(k)}</span>
+                    <span style={{ color: "#9a8f7a", fontVariantNumeric: "tabular-nums" }}>{n}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    };
+    const collapseArrow = legendCollapsed ? "\u25B6" : "\u25BC";
+    const collapseToggle = { cursor: "pointer", userSelect: "none" };
+    const onCollapseClick = () => setLegendCollapsed(p => !p);
+
+    if (colorMode === "mercenaries") {
+      const pools = (mapMercData && Array.isArray(mapMercData.pools)) ? mapMercData.pools : null;
+      const allNames = pools ? pools.map(p => p.name) : [];
+      const enabled = (name) => mercPoolFilter == null || mercPoolFilter.has(name);
+      const toggle = (name) => setMercPoolFilter(prev => {
+        const base = prev == null ? new Set(allNames) : new Set(prev);
+        if (base.has(name)) base.delete(name); else base.add(name);
+        return base.size === allNames.length ? null : base; // all on → null ("all")
+      });
+      const solo = (name) => setMercPoolFilter(allNames.length === 1 ? null : new Set([name]));
+      const lq = legendSearch.trim().toLowerCase();
+      const shown = pools
+        ? pools.filter(p => !lq || p.name.replace(/_/g, " ").toLowerCase().includes(lq)).slice().sort((a, b) => a.name.localeCompare(b.name))
+        : [];
+      const activeCount = mercPoolFilter ? mercPoolFilter.size : allNames.length;
+      // "Add region to pool" — uses the currently selected (clicked) or hovered region.
+      const selRegion = (lockedRegionInfo && lockedRegionInfo.region) || (regionInfo && regionInfo.region) || null;
+      const addRegionToPool = async (poolName) => {
+        if (!selRegion || !modDataDir) return;
+        try {
+          const res = await window.electronAPI.addRegionToMercPool?.(modDataDir, poolName, selRegion);
+          if (!res || res.error) { pushToast(res?.error || "add failed", res?.already ? "info" : "warn"); return; }
+          const fresh = await window.electronAPI.getMercenaryPools?.(modDataDir);
+          if (fresh && fresh.byRegion) setMapMercData(fresh);
+          pushToast(`Added ${selRegion.replace(/_/g, " ")} to pool "${poolName}" (descr_mercenaries.txt)`, "info");
+        } catch (e) { pushToast(e?.message || String(e), "warn"); }
+      };
+      return (
+        <div className="legend-panel" style={{ ...panelStyle, maxHeight: canvasSize.height - 100, overflowY: "auto", borderLeft: "3px solid #b06ad0" }}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 6, color: "#cf9ee8", ...collapseToggle }} onClick={onCollapseClick}>
+            Mercenary Pools <span style={{ fontWeight: 400, fontSize: "0.7rem", color: "#aaa" }}>({allNames.length}{mercPoolFilter ? ` · ${activeCount} shown` : ""})</span>
+            <span style={{ fontSize: "0.7rem", color: "#888", marginLeft: 6 }}>{collapseArrow}</span>
+          </div>
+          {!legendCollapsed && !pools && <div style={{ fontSize: "0.72rem", color: "#999" }}>Loading pools…</div>}
+          {!legendCollapsed && pools && (
+            <>
+              <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                <button onClick={() => setMercPoolFilter(null)} style={{ flex: 1, padding: "2px 6px", borderRadius: 5, cursor: "pointer", border: "1px solid rgba(207,158,232,0.4)", background: mercPoolFilter == null ? "rgba(176,106,208,0.3)" : "transparent", color: "#cf9ee8", fontSize: "0.68rem" }}>All</button>
+                <button onClick={() => setMercPoolFilter(new Set())} style={{ flex: 1, padding: "2px 6px", borderRadius: 5, cursor: "pointer", border: "1px solid rgba(255,255,255,0.18)", background: (mercPoolFilter && mercPoolFilter.size === 0) ? "rgba(176,106,208,0.3)" : "transparent", color: "#aaa", fontSize: "0.68rem" }}>None</button>
+              </div>
+              <input type="text" value={legendSearch} onChange={(e) => setLegendSearch(e.target.value)} className="legend-search-input" placeholder="Search pools…"
+                style={{ width: "100%", boxSizing: "border-box", padding: "4px 10px", marginBottom: 4, borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)", color: "#eee", fontSize: "0.74rem", outline: "none" }} />
+              <div style={{ marginBottom: 4, padding: "3px 6px", borderRadius: 5, background: "rgba(176,106,208,0.10)", border: "1px solid rgba(176,106,208,0.3)", fontSize: "0.66rem", color: selRegion ? "#cf9ee8" : "#888" }}>
+                {selRegion ? <>To add <b>{selRegion.replace(/_/g, " ")}</b> to a pool, click <b style={{ color: "#7fd17f" }}>＋</b> on that pool below.</> : <>Hover/click a region on the map, then ＋ a pool to add it.</>}
+              </div>
+              {shown.map((p) => {
+                const on = enabled(p.name);
+                const sw = on ? mercPoolColorFor(p.name) : [80, 80, 88];
+                const inPool = selRegion && (p.regions || []).some(rg => rg.toLowerCase() === selRegion.toLowerCase());
+                return (
+                  <div key={p.name} onClick={() => toggle(p.name)}
+                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "2px 4px", borderRadius: 4, cursor: "pointer", opacity: on ? 1 : 0.5, transition: "opacity 0.12s" }}>
+                    <div style={{ width: 11, height: 11, borderRadius: 2, flexShrink: 0, background: `rgb(${sw[0]},${sw[1]},${sw[2]})`, outline: on ? "1px solid rgba(255,255,255,0.35)" : "none" }} />
+                    <span style={{ flex: 1, fontSize: "0.72rem", fontWeight: on ? 600 : 400, textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name.replace(/_/g, " ")}</span>
+                    <span style={{ fontSize: "0.6rem", color: "#777", flexShrink: 0 }}>{(p.regions ? p.regions.length : 0)}r · {(p.units ? p.units.length : 0)}u</span>
+                    {selRegion && (inPool
+                      ? <span title={`${selRegion.replace(/_/g, " ")} is already in this pool`} style={{ fontSize: "0.6rem", color: "#7fd17f", flexShrink: 0, padding: "0 3px" }}>✓</span>
+                      : <span onClick={(e) => { e.stopPropagation(); addRegionToPool(p.name); }} title={`Add ${selRegion.replace(/_/g, " ")} to this pool (writes descr_mercenaries.txt)`}
+                          style={{ fontSize: "0.72rem", lineHeight: 1, color: "#7fd17f", flexShrink: 0, padding: "0 4px", borderRadius: 3, border: "1px solid rgba(127,209,127,0.4)", cursor: "pointer" }}>＋</span>)}
+                    <span onClick={(e) => { e.stopPropagation(); solo(p.name); }} title="Show only this pool"
+                      style={{ fontSize: "0.6rem", color: "#cf9ee8", flexShrink: 0, padding: "0 3px", borderRadius: 3, border: "1px solid rgba(207,158,232,0.3)", cursor: "pointer" }}>only</span>
+                    {(p.units || []).length > 0 && (
+                      <span onClick={(e) => { e.stopPropagation(); setMercUnitsOpen(mercUnitsOpen === p.name ? null : p.name); }}
+                        title={mercUnitsOpen === p.name ? "Hide units" : "Show this pool's units (cost / replenish / restrictions)"}
+                        style={{ fontSize: "0.7rem", color: "#aaa", flexShrink: 0, padding: "0 2px", userSelect: "none", cursor: "pointer" }}>{mercUnitsOpen === p.name ? "▾" : "▸"}</span>
+                    )}
+                  </div>
+                );
+              })}
+              {mercUnitsOpen && (() => {
+                // Expanded pool units (absorbed from the old 🪙 Mercenary Pools
+                // panel): cost / replenish / max / faction restrictions; click
+                // a unit for its unit card.
+                const pool = shown.find((x) => x.name === mercUnitsOpen);
+                if (!pool) return null;
+                return (
+                  <div style={{ margin: "2px 0 6px 18px", display: "flex", flexDirection: "column", gap: 1 }}>
+                    {(pool.units || []).map((u, i) => (
+                      <div key={u.name + i}
+                        onClick={() => {
+                          const fac = (unitOwnership && unitOwnership[u.name] && unitOwnership[u.name][0]) || "slave";
+                          setInfoPopup({ type: "unit", name: u.name, faction: fac, label: u.name.replace(/^merc /i, "").replace(/_/g, " ") });
+                        }}
+                        title={`cost ${u.cost ?? "?"} · replenish ${Array.isArray(u.replenish) ? u.replenish.join("–") : "?"} · max ${u.max ?? "?"}${(u.restrict || []).length ? ` · only: ${u.restrict.join(", ")}` : ""}
+Click for unit card`}
+                        onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
+                        onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                        style={{ display: "flex", justifyContent: "space-between", gap: 6, padding: "1px 3px", borderRadius: 3, cursor: "pointer", fontSize: "0.7rem" }}>
+                        <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textTransform: "capitalize" }}>{u.name.replace(/^merc /i, "").replace(/_/g, " ")}</span>
+                        <span style={{ color: "#e8c873", whiteSpace: "nowrap", flexShrink: 0 }}>{u.cost != null ? u.cost.toLocaleString() : "—"} dn</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+              <div style={{ marginTop: 6, fontSize: "0.62rem", color: "#888" }}>Darker‑gray regions have mercs but their pool is hidden; flat gray = none. Overlaps colour by the first shown pool. ＋ adds the selected region to a pool.</div>
+            </>
+          )}
+        </div>
+      );
+    }
+
+    if (colorMode === "explored") {
+      // Faction list for the picker. PREFER the resolvable list fetched from
+      // the live save (fogFactionList) — every entry is guaranteed to resolve in
+      // get-faction-vision. Fall back to the master/live union only before that
+      // arrives (so the control isn't empty mid-load).
+      let factionOpts;
+      if (fogFactionList && fogFactionList.length) {
+        factionOpts = fogFactionList.map((e) => e.faction);
+      } else {
+        const factionSet = new Set();
+        for (const f of (factions || [])) if (f) factionSet.add(f);
+        for (const f of Object.keys(factionRegionsMap || {})) if (f) factionSet.add(f);
+        if (currentOwnerByCity) for (const v of Object.values(currentOwnerByCity)) if (v) factionSet.add(v);
+        factionOpts = [...factionSet].sort();
+      }
+      const selStyle = {
+        width: "100%", padding: "4px 6px", borderRadius: 6, marginTop: 2,
+        // Solid dark-gray (not translucent) so the OPEN dropdown list — which
+        // the OS renders on its own surface — isn't white-on-white. The <option>
+        // elements below get the same background explicitly (Chromium ignores the
+        // select's bg for the popup rows).
+        background: "#2c2d33", color: "#f6f6f6",
+        border: "1px solid rgba(255,255,255,0.18)", fontSize: "0.75rem",
+      };
+      const optStyle = { background: "#2c2d33", color: "#f6f6f6" };
+      const cov = fogVision && typeof fogVision.coverage === "number" ? fogVision.coverage : null;
+      const playerLabel = playerFaction ? `Player — ${playerFaction.replace(/_/g, " ")}` : "Player (your faction)";
+      const shown = fogVision ? fogVision.faction : null;
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Explored / Fog of War <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            <div style={{ fontSize: "0.7rem", color: "#bbb", marginBottom: 6 }}>Regions a faction has never scouted are dimmed to dark grey.</div>
+            <label style={{ display: "block", fontSize: "0.7rem", color: "#ccc" }}>Show knowledge of:</label>
+            <select value={fogFaction || ""} onChange={(e) => setFogFaction(e.target.value || null)} style={selStyle}>
+              <option value="" style={optStyle}>{playerLabel}</option>
+              {factionOpts.map((f) => <option key={f} value={f} style={optStyle}>{f.replace(/_/g, " ")}</option>)}
+            </select>
+            <div style={{ marginTop: 6, fontSize: "0.7rem", color: "#bbb" }}>
+              {fogVision
+                ? <>{shown ? <span style={{ color: "#ddd" }}>{shown.replace(/_/g, " ")}: </span> : null}Explored {(fogVision.exploredCount || 0).toLocaleString()} tiles ({(100 * (fogVision.exploredCount || 0) / (1020 * 700)).toFixed(1)}% of map){cov != null && cov >= 0 ? ` · match ${(cov * 100).toFixed(0)}%` : ""}{cov != null && cov >= 0 && cov < 0.7 ? " (approx.)" : ""}</>
+                : fogLoading
+                  ? <span style={{ color: "#e0a030" }}>Loading…</span>
+                  : !fogFaction && !playerFaction
+                    ? (playerExploration ? <span style={{ color: "#c98" }}>Player faction not detected — showing the largest record. Pick a faction below.</span> : <span style={{ color: "#e0a030" }}>Load a save to see explored tiles.</span>)
+                    : <span style={{ color: "#c98" }}>No explored data for this faction (eliminated or not in this save).</span>}
+            </div>
+          </>}
+        </div>
+      );
+    }
+
+    if (colorMode === "population") {
+      const vals = Object.values(populationData);
+      if (vals.length === 0) return null;
+      const minV = Math.min(...vals), maxV = Math.max(...vals);
+      const midV = Math.round((minV + maxV) / 2);
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Population <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(30,60,180), rgb(135,130,100), rgb(240,200,20))" }} />
+            <div style={labelRow}>
+              <span>{minV.toLocaleString()}</span>
+              <span>{midV.toLocaleString()}</span>
+              <span>{maxV.toLocaleString()}</span>
+            </div>
+            {(() => {
+              // Headroom list for the SELECTED faction's provinces (user
+              // 2026-07-24): pop vs cap (pop_level × 1500, the Pop Headroom
+              // formula), fullest first. Click highlight · dblclick jump.
+              const sel = selectedFaction && selectedFaction.toLowerCase();
+              if (!sel) return (
+                <div style={{ fontSize: "0.7rem", color: "#e8c873", marginTop: 5 }}>
+                  Pick a faction in the sidebar to list its provinces' headroom.
+                </div>
+              );
+              const rowsH = [];
+              for (const [rgbKey, r] of Object.entries(regions)) {
+                if (!r || !r.region) continue;
+                const owner = ((currentOwnerByCity && currentOwnerByCity[r.city]) || r.faction || "").toLowerCase();
+                if (owner !== sel) continue;
+                const pop = populationData[r.region] || populationData[r.region?.split("-")[0]] || populationData[r.city] || 0;
+                const capLvl = parseInt(r.pop_level || "0", 10) || 0;
+                const cap = capLvl * 1500;
+                rowsH.push({ rgbKey, region: r.region, city: r.city, pop, cap, pct: cap > 0 ? Math.min(150, Math.round(pop / cap * 100)) : null });
+              }
+              if (!rowsH.length) return (
+                <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 5 }}>No provinces found for the selected faction.</div>
+              );
+              rowsH.sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
+              const jump = (rgbKey, r, dbl) => {
+                if (dbl) onSearchActivate({ type: "region", payload: { region: r, rgbKey } });
+                else setSelectedProvinces([rgbKey]);
+              };
+              return (
+                <div style={{ marginTop: 6, maxHeight: "30vh", overflowY: "auto", paddingRight: 2 }}>
+                  <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>
+                    {(factionDisplayNames && factionDisplayNames[sel]) || sel.replace(/_/g, " ")} — headroom (fullest first):
+                  </div>
+                  {rowsH.map((r) => (
+                    <div key={r.rgbKey} onClick={() => jump(r.rgbKey, regions[r.rgbKey], false)} onDoubleClick={() => jump(r.rgbKey, regions[r.rgbKey], true)}
+                      title="Click: highlight · double-click: jump"
+                      style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer" }}>
+                      <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{String(r.city || r.region).replace(/_/g, " ")}</span>
+                      <span style={{ color: r.pct == null ? "#888" : r.pct >= 90 ? "#e87a6a" : r.pct >= 60 ? "#e8c873" : "#8fd18f", whiteSpace: "nowrap" }}>
+                        {r.pct == null ? `${r.pop.toLocaleString()} · cap ?` : `${r.pop.toLocaleString()} / ${r.cap.toLocaleString()} (${r.pct}%)`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </>}
+        </div>
+      );
+    }
+
+    if (colorMode === "farm") {
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Fertility <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(210,0,30), rgb(210,200,30), rgb(50,200,30))" }} />
+            <div style={labelRow}>
+              <span>Fertility 1</span>
+              <span>Fertility 7</span>
+              <span>Fertility 14</span>
+            </div>
+          </>}
+        </div>
+      );
     }
     if (colorMode === "victory") {
       // Victory Progress folded into the mode legend (2026-07-24, was a 🧰
@@ -16475,326 +16821,299 @@ function App() {
         </div>
       );
     }
-    if (colorMode === "diplomacy") {
-      const viewer = (selectedFaction || playerFaction || "").toLowerCase();
-      const owner = ((currentOwnerByCity && currentOwnerByCity[info.city]) || info.faction || "").toLowerCase();
-      if (!owner || /(_rebels|^slave$|^rebels$)/.test(owner)) return { label: "Diplomacy", value: "Unowned / rebels" };
-      const ownerName = (factionDisplayNames && factionDisplayNames[owner]) || owner.replace(/_/g, " ");
-      if (viewer && owner === viewer) return { label: "Diplomacy", value: `${ownerName} — your regions` };
-      const dmRow = (viewer && diplomacyMatrix && diplomacyMatrix[viewer]) || null;
-      const has = (arr) => (arr || []).some((x) => String(x).toLowerCase() === owner);
-      let rel = "neutral";
-      if (dmRow) {
-        if (has(dmRow.war)) rel = "AT WAR with you";
-        else if (has(dmRow.protectorates)) rel = "your protectorate";
-        else if (has(dmRow.suzerains)) rel = "your suzerain";
-        else if (has(dmRow.allied)) rel = "allied with you";
-        else if (has(dmRow.trade)) rel = "trade/military bond";
-        else if (has(dmRow.hostile)) rel = "hostile (not at war)";
-      } else rel = viewer ? "neutral (Live mode adds relations)" : "pick a faction";
-      return { label: "Diplomacy", value: `${ownerName} — ${rel}` };
-    }
-    if (colorMode === "legions") {
-      const tag = getAors(info.tags).find((a) => LEGION_AOR_TAGS.has(a));
-      return { label: "Legion", value: tag ? LEGION_AORS[tag].name : "None — outside every legion recruitment zone" };
-    }
     if (colorMode === "aor") {
-      const aors = getAors(info.tags);
-      return { label: aors.length === 1 ? "AOR" : `AORs (${aors.length})`, value: aors.length ? aors.join(", ") : "None" };
-    }
-    return null;
-  }
-
-  function renderLegend() {
-    const panelStyle = {
-      background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
-      borderRadius: 10, padding: "8px 12px", color: "#f6f6f6",
-      fontSize: "0.75rem",
-      // Sidebar parent is a fixed-width column; every legend / filter panel
-      // expands to fill it so the stack of panels reads as a uniform list
-      // rather than ragged-right rectangles of different widths.
-      width: "100%", boxSizing: "border-box",
-      // The sidebar parent is a flex column with overflowY: auto. Without
-      // `flex-shrink: 0` here, expanded panels (e.g. the 200-faction list)
-      // get squashed by adjacent expanded panels (e.g. Resources overlay),
-      // hiding their content behind sibling panels. Lock natural size so
-      // the parent's scroll is the only thing that activates on overflow.
-      flexShrink: 0,
-      border: "1px solid rgba(255,255,255,0.08)",
-      boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
-    };
-    const labelRow = { display: "flex", justifyContent: "space-between", marginTop: 2 };
-    // Generic dev-mode legend: swatch + label + region count per category,
-    // most-common first. (Was referenced by 5 dev legends but never defined —
-    // opening any of them threw a ReferenceError. Fixed 2026-07-24.)
-    const renderDevLegend = (title, valueOf, colorMap, labelMap) => {
+      // 0.9.486: AOR legend. Lists every aor_X tag found across regions,
+      // with the same color it gets in the map render. Sorted by region
+      // count (most-used AORs at the top) so the user can see at a glance
+      // which AOR is the most common (helps spot dominant recruitment
+      // zones). Multi-AOR regions get a small "+N" marker on each AOR
+      // they belong to in the future click-to-filter pass.
+      // Match the map's palette assignment: count first, then walk each
+      // region's AOR list MOST-FREQUENT-FIRST so dominant AORs claim
+      // distinct palette slots before less-common ones get them. Without
+      // this the same AOR would get different colours in the legend vs map.
       const counts = {};
       for (const r of Object.values(regions)) {
-        const k = String(valueOf(r));
-        counts[k] = (counts[k] || 0) + 1;
+        for (const a of getAors(r.tags)) counts[a] = (counts[a] || 0) + 1;
       }
-      const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-      const colOf = (k) => {
-        const c = colorMap && (colorMap[k] != null ? colorMap[k] : colorMap[Number(k)]);
-        return Array.isArray(c) ? c : [120, 120, 120];
+      const seen = {};
+      for (const r of Object.values(regions)) {
+        const list = getAors(r.tags).slice().sort((a, b) => {
+          const da = counts[a] || 0, db = counts[b] || 0;
+          return da !== db ? db - da : a.localeCompare(b);
+        });
+        for (const a of list) {
+          if (seen[a]) continue;
+          const facId = PRIMARY_AOR_TO_FACTION[a] || SECONDARY_AOR_TO_FACTION[a];
+          const fc = facId ? factionColors[facId.toLowerCase()] : null;
+          if (fc && Array.isArray(fc.primary)) {
+            seen[a] = fc.primary;
+          } else {
+            seen[a] = CULTURE_PALETTE[stableAorColorIndex(a, CULTURE_PALETTE.length)];
+          }
+        }
+      }
+      const entries = Object.entries(seen)
+        .filter(([n]) => !SPECIALTY_AOR_BARE.has(n) && !LEGION_AOR_TAGS.has(n)) // specialty + legion AORs aren't AOR-map zones (legions have their own mode)
+        .sort((a, b) => (counts[b[0]] - counts[a[0]]) || a[0].localeCompare(b[0]));
+      if (entries.length === 0) {
+        return (
+          <div style={panelStyle}>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>Areas of Recruitment</div>
+            <div style={{ fontSize: "0.72rem", color: "#aaa", fontStyle: "italic" }}>
+              No `aor_*` tags found in the current campaign's descr_regions.txt.
+            </div>
+          </div>
+        );
+      }
+      console.log(`[aor] legend: ${entries.length} unique AORs across ${Object.values(counts).reduce((a, b) => a + b, 0)} region-tags`);
+
+      // 0.9.635: click an AOR to isolate every region tagged with it
+      // (primary fill OR stripe overlay); shift-click to add more. Same
+      // shared legendFilter state + selectedProvinces highlight infra
+      // as the culture / religion legends.
+      const activeSet = legendFilter instanceof Set ? legendFilter : null;
+      const getMatchingKeys = (name) => {
+        const out = [];
+        for (const [rgbKey, r] of Object.entries(regions)) {
+          if (getAors(r.tags).includes(name)) out.push(rgbKey);
+        }
+        return out;
       };
-      const labOf = (k) => (labelMap && (labelMap[k] != null ? labelMap[k] : labelMap[Number(k)])) || k.replace(/_/g, " ");
+      const handleLegendClick = (name, isShift) => {
+        setLegendFilter(prev => {
+          const current = prev instanceof Set ? new Set(prev) : new Set();
+          if (isShift) {
+            if (current.has(name)) current.delete(name);
+            else current.add(name);
+          } else {
+            if (current.size === 1 && current.has(name)) current.clear();
+            else { current.clear(); current.add(name); }
+          }
+          const allKeys = [...current].flatMap(n => getMatchingKeys(n));
+          const unique = [...new Set(allKeys)];
+          setSelectedProvinces(unique);
+          if (unique.length > 0 && !isShift) zoomToProvinces(unique);
+          return current.size === 0 ? null : current;
+        });
+      };
+
+      // Primary/secondary breakdown for the layer toggle. Counts come from
+      // counts[] which is the per-AOR region tally we just built above.
+      const primaryCount = entries.filter(([n]) => PRIMARY_AOR_TAGS.has(n)).length;
+      const secondaryCount = entries.length - primaryCount;
+      const tabBase = {
+        flex: 1, padding: "3px 6px", fontSize: "0.7rem", textAlign: "center",
+        cursor: "pointer", borderRadius: 3, userSelect: "none",
+        transition: "background 0.12s, color 0.12s",
+      };
+      const tabActive = { background: "rgba(255,255,255,0.14)", color: "#fff", fontWeight: 600 };
+      const tabIdle = { background: "transparent", color: "#bbb" };
       return (
         <div style={panelStyle}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>{title} <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
-          {!legendCollapsed && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {rows.map(([k, n]) => {
-                const c = colOf(k);
-                return (
-                  <div key={k} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem" }}>
-                    <span style={{ width: 12, height: 12, borderRadius: 2, background: `rgb(${c[0]},${c[1]},${c[2]})`, border: "1px solid rgba(0,0,0,0.35)", flexShrink: 0 }} />
-                    <span style={{ flex: 1, color: "#eee", textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{labOf(k)}</span>
-                    <span style={{ color: "#9a8f7a", fontVariantNumeric: "tabular-nums" }}>{n}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      );
-    };
-    const collapseArrow = legendCollapsed ? "\u25B6" : "\u25BC";
-    const collapseToggle = { cursor: "pointer", userSelect: "none" };
-    const onCollapseClick = () => setLegendCollapsed(p => !p);
-
-    if (colorMode === "mercenaries") {
-      const pools = (mapMercData && Array.isArray(mapMercData.pools)) ? mapMercData.pools : null;
-      const allNames = pools ? pools.map(p => p.name) : [];
-      const enabled = (name) => mercPoolFilter == null || mercPoolFilter.has(name);
-      const toggle = (name) => setMercPoolFilter(prev => {
-        const base = prev == null ? new Set(allNames) : new Set(prev);
-        if (base.has(name)) base.delete(name); else base.add(name);
-        return base.size === allNames.length ? null : base; // all on → null ("all")
-      });
-      const solo = (name) => setMercPoolFilter(allNames.length === 1 ? null : new Set([name]));
-      const lq = legendSearch.trim().toLowerCase();
-      const shown = pools
-        ? pools.filter(p => !lq || p.name.replace(/_/g, " ").toLowerCase().includes(lq)).slice().sort((a, b) => a.name.localeCompare(b.name))
-        : [];
-      const activeCount = mercPoolFilter ? mercPoolFilter.size : allNames.length;
-      // "Add region to pool" — uses the currently selected (clicked) or hovered region.
-      const selRegion = (lockedRegionInfo && lockedRegionInfo.region) || (regionInfo && regionInfo.region) || null;
-      const addRegionToPool = async (poolName) => {
-        if (!selRegion || !modDataDir) return;
-        try {
-          const res = await window.electronAPI.addRegionToMercPool?.(modDataDir, poolName, selRegion);
-          if (!res || res.error) { pushToast(res?.error || "add failed", res?.already ? "info" : "warn"); return; }
-          const fresh = await window.electronAPI.getMercenaryPools?.(modDataDir);
-          if (fresh && fresh.byRegion) setMapMercData(fresh);
-          pushToast(`Added ${selRegion.replace(/_/g, " ")} to pool "${poolName}" (descr_mercenaries.txt)`, "info");
-        } catch (e) { pushToast(e?.message || String(e), "warn"); }
-      };
-      return (
-        <div className="legend-panel" style={{ ...panelStyle, maxHeight: canvasSize.height - 100, overflowY: "auto", borderLeft: "3px solid #b06ad0" }}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 6, color: "#cf9ee8", ...collapseToggle }} onClick={onCollapseClick}>
-            Mercenary Pools <span style={{ fontWeight: 400, fontSize: "0.7rem", color: "#aaa" }}>({allNames.length}{mercPoolFilter ? ` · ${activeCount} shown` : ""})</span>
-            <span style={{ fontSize: "0.7rem", color: "#888", marginLeft: 6 }}>{collapseArrow}</span>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>
+            Areas of Recruitment ({entries.length}) <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
           </div>
-          {!legendCollapsed && !pools && <div style={{ fontSize: "0.72rem", color: "#999" }}>Loading pools…</div>}
-          {!legendCollapsed && pools && (
+          {!legendCollapsed && (
             <>
-              <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-                <button onClick={() => setMercPoolFilter(null)} style={{ flex: 1, padding: "2px 6px", borderRadius: 5, cursor: "pointer", border: "1px solid rgba(207,158,232,0.4)", background: mercPoolFilter == null ? "rgba(176,106,208,0.3)" : "transparent", color: "#cf9ee8", fontSize: "0.68rem" }}>All</button>
-                <button onClick={() => setMercPoolFilter(new Set())} style={{ flex: 1, padding: "2px 6px", borderRadius: 5, cursor: "pointer", border: "1px solid rgba(255,255,255,0.18)", background: (mercPoolFilter && mercPoolFilter.size === 0) ? "rgba(176,106,208,0.3)" : "transparent", color: "#aaa", fontSize: "0.68rem" }}>None</button>
+              <div
+                style={{ display: "flex", gap: 2, marginBottom: 4, padding: 2, background: "rgba(0,0,0,0.25)", borderRadius: 4 }}
+                title="Primary = AORs mapped in PRIMARY_AOR_TO_FACTION (faction colours). Secondary = the narrower sub-cultural / regional AORs."
+              >
+                <div style={{ ...tabBase, ...(aorView === "primary" ? tabActive : tabIdle) }} onClick={() => setAorView("primary")}>
+                  Primary ({primaryCount})
+                </div>
+                <div style={{ ...tabBase, ...(aorView === "secondary" ? tabActive : tabIdle) }} onClick={() => setAorView("secondary")}>
+                  Secondary ({secondaryCount})
+                </div>
               </div>
-              <input type="text" value={legendSearch} onChange={(e) => setLegendSearch(e.target.value)} className="legend-search-input" placeholder="Search pools…"
-                style={{ width: "100%", boxSizing: "border-box", padding: "4px 10px", marginBottom: 4, borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)", color: "#eee", fontSize: "0.74rem", outline: "none" }} />
-              <div style={{ marginBottom: 4, padding: "3px 6px", borderRadius: 5, background: "rgba(176,106,208,0.10)", border: "1px solid rgba(176,106,208,0.3)", fontSize: "0.66rem", color: selRegion ? "#cf9ee8" : "#888" }}>
-                {selRegion ? <>To add <b>{selRegion.replace(/_/g, " ")}</b> to a pool, click <b style={{ color: "#7fd17f" }}>＋</b> on that pool below.</> : <>Hover/click a region on the map, then ＋ a pool to add it.</>}
-              </div>
-              {shown.map((p) => {
-                const on = enabled(p.name);
-                const sw = on ? mercPoolColorFor(p.name) : [80, 80, 88];
-                const inPool = selRegion && (p.regions || []).some(rg => rg.toLowerCase() === selRegion.toLowerCase());
+              <input
+                value={aorLegendFilter}
+                onChange={(e) => setAorLegendFilter(e.target.value)}
+                placeholder="Filter AORs…"
+                style={{
+                  width: "100%", marginBottom: 4, padding: "3px 6px",
+                  fontSize: "0.72rem", borderRadius: 3,
+                  background: "rgba(0,0,0,0.30)", color: "#eee",
+                  border: "1px solid rgba(255,255,255,0.10)", outline: "none",
+                }}
+              />
+            <div style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: "30vh", overflowY: "auto" }}>
+              {entries
+                .filter(([n]) => aorView === "primary" ? PRIMARY_AOR_TAGS.has(n) : !PRIMARY_AOR_TAGS.has(n))
+                .filter(([n]) => !aorLegendFilter || n.toLowerCase().includes(aorLegendFilter.toLowerCase()))
+                .map(([name, col]) => {
+                const isActive = activeSet && activeSet.has(name);
+                const dimmed = activeSet && !isActive;
                 return (
-                  <div key={p.name} onClick={() => toggle(p.name)}
-                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "2px 4px", borderRadius: 4, cursor: "pointer", opacity: on ? 1 : 0.5, transition: "opacity 0.12s" }}>
-                    <div style={{ width: 11, height: 11, borderRadius: 2, flexShrink: 0, background: `rgb(${sw[0]},${sw[1]},${sw[2]})`, outline: on ? "1px solid rgba(255,255,255,0.35)" : "none" }} />
-                    <span style={{ flex: 1, fontSize: "0.72rem", fontWeight: on ? 600 : 400, textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name.replace(/_/g, " ")}</span>
-                    <span style={{ fontSize: "0.6rem", color: "#777", flexShrink: 0 }}>{(p.regions ? p.regions.length : 0)}r · {(p.units ? p.units.length : 0)}u</span>
-                    {selRegion && (inPool
-                      ? <span title={`${selRegion.replace(/_/g, " ")} is already in this pool`} style={{ fontSize: "0.6rem", color: "#7fd17f", flexShrink: 0, padding: "0 3px" }}>✓</span>
-                      : <span onClick={(e) => { e.stopPropagation(); addRegionToPool(p.name); }} title={`Add ${selRegion.replace(/_/g, " ")} to this pool (writes descr_mercenaries.txt)`}
-                          style={{ fontSize: "0.72rem", lineHeight: 1, color: "#7fd17f", flexShrink: 0, padding: "0 4px", borderRadius: 3, border: "1px solid rgba(127,209,127,0.4)", cursor: "pointer" }}>＋</span>)}
-                    <span onClick={(e) => { e.stopPropagation(); solo(p.name); }} title="Show only this pool"
-                      style={{ fontSize: "0.6rem", color: "#cf9ee8", flexShrink: 0, padding: "0 3px", borderRadius: 3, border: "1px solid rgba(207,158,232,0.3)", cursor: "pointer" }}>only</span>
-                    {(p.units || []).length > 0 && (
-                      <span onClick={(e) => { e.stopPropagation(); setMercUnitsOpen(mercUnitsOpen === p.name ? null : p.name); }}
-                        title={mercUnitsOpen === p.name ? "Hide units" : "Show this pool's units (cost / replenish / restrictions)"}
-                        style={{ fontSize: "0.7rem", color: "#aaa", flexShrink: 0, padding: "0 2px", userSelect: "none", cursor: "pointer" }}>{mercUnitsOpen === p.name ? "▾" : "▸"}</span>
-                    )}
+                  <div
+                    key={name}
+                    onClick={(e) => handleLegendClick(name, e.shiftKey)}
+                    title={`${counts[name]} region(s) tagged with aor_${name}\nClick to isolate · Shift-click to add`}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      padding: "2px 4px", fontSize: "0.72rem",
+                      borderRadius: 3, cursor: "pointer",
+                      background: isActive ? "rgba(255,255,255,0.10)" : "transparent",
+                      opacity: dimmed ? 0.42 : 1,
+                      transition: "opacity 0.12s, background 0.12s",
+                    }}
+                  >
+                    <span style={{
+                      width: 12, height: 12, borderRadius: 2, flexShrink: 0,
+                      background: `rgb(${col[0]}, ${col[1]}, ${col[2]})`,
+                      border: "1px solid rgba(0,0,0,0.35)",
+                    }} />
+                    <span style={{ flex: 1, textTransform: "capitalize", color: "#eee" }}>
+                      {name.replace(/_/g, " ")}
+                    </span>
+                    <span style={{ color: "#888", fontVariantNumeric: "tabular-nums", fontSize: "0.68rem" }}>
+                      {counts[name]}
+                    </span>
                   </div>
                 );
               })}
-              {mercUnitsOpen && (() => {
-                // Expanded pool units (absorbed from the old 🪙 Mercenary Pools
-                // panel): cost / replenish / max / faction restrictions; click
-                // a unit for its unit card.
-                const pool = shown.find((x) => x.name === mercUnitsOpen);
-                if (!pool) return null;
-                return (
-                  <div style={{ margin: "2px 0 6px 18px", display: "flex", flexDirection: "column", gap: 1 }}>
-                    {(pool.units || []).map((u, i) => (
-                      <div key={u.name + i}
-                        onClick={() => {
-                          const fac = (unitOwnership && unitOwnership[u.name] && unitOwnership[u.name][0]) || "slave";
-                          setInfoPopup({ type: "unit", name: u.name, faction: fac, label: u.name.replace(/^merc /i, "").replace(/_/g, " ") });
-                        }}
-                        title={`cost ${u.cost ?? "?"} · replenish ${Array.isArray(u.replenish) ? u.replenish.join("–") : "?"} · max ${u.max ?? "?"}${(u.restrict || []).length ? ` · only: ${u.restrict.join(", ")}` : ""}
-Click for unit card`}
-                        onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
-                        onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                        style={{ display: "flex", justifyContent: "space-between", gap: 6, padding: "1px 3px", borderRadius: 3, cursor: "pointer", fontSize: "0.7rem" }}>
-                        <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textTransform: "capitalize" }}>{u.name.replace(/^merc /i, "").replace(/_/g, " ")}</span>
-                        <span style={{ color: "#e8c873", whiteSpace: "nowrap", flexShrink: 0 }}>{u.cost != null ? u.cost.toLocaleString() : "—"} dn</span>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
-              <div style={{ marginTop: 6, fontSize: "0.62rem", color: "#888" }}>Darker‑gray regions have mercs but their pool is hidden; flat gray = none. Overlaps colour by the first shown pool. ＋ adds the selected region to a pool.</div>
+              <div style={{ marginTop: 6, fontSize: "0.66rem", color: "#888", lineHeight: 1.4 }}>
+                Stripes = regions with multiple AORs (each AOR's color appears in rotation).
+                <br />Click an entry to isolate · Shift-click to add · Click again to clear.
+              </div>
+            </div>
             </>
           )}
         </div>
       );
     }
-
-    if (colorMode === "explored") {
-      // Faction list for the picker. PREFER the resolvable list fetched from
-      // the live save (fogFactionList) — every entry is guaranteed to resolve in
-      // get-faction-vision. Fall back to the master/live union only before that
-      // arrives (so the control isn't empty mid-load).
-      let factionOpts;
-      if (fogFactionList && fogFactionList.length) {
-        factionOpts = fogFactionList.map((e) => e.faction);
-      } else {
-        const factionSet = new Set();
-        for (const f of (factions || [])) if (f) factionSet.add(f);
-        for (const f of Object.keys(factionRegionsMap || {})) if (f) factionSet.add(f);
-        if (currentOwnerByCity) for (const v of Object.values(currentOwnerByCity)) if (v) factionSet.add(v);
-        factionOpts = [...factionSet].sort();
+    if (colorMode === "legions") {
+      // Legionary recruitment legend: one row per named legion (fixed
+      // LEGION_AORS palette — same colours as the map render), sorted by
+      // zone size. Click to isolate the zone, shift-click to add.
+      const counts = {};
+      for (const r of Object.values(regions)) {
+        for (const a of getAors(r.tags)) if (LEGION_AOR_TAGS.has(a)) counts[a] = (counts[a] || 0) + 1;
       }
-      const selStyle = {
-        width: "100%", padding: "4px 6px", borderRadius: 6, marginTop: 2,
-        // Solid dark-gray (not translucent) so the OPEN dropdown list — which
-        // the OS renders on its own surface — isn't white-on-white. The <option>
-        // elements below get the same background explicitly (Chromium ignores the
-        // select's bg for the popup rows).
-        background: "#2c2d33", color: "#f6f6f6",
-        border: "1px solid rgba(255,255,255,0.18)", fontSize: "0.75rem",
+      const entries = Object.keys(LEGION_AORS).filter((t) => counts[t])
+        .sort((a, b) => (counts[b] - counts[a]) || a.localeCompare(b));
+      if (entries.length === 0) {
+        return (
+          <div style={panelStyle}>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>Legionary Recruitment</div>
+            <div style={{ fontSize: "0.72rem", color: "#aaa", fontStyle: "italic" }}>
+              No legion recruitment tags (aor_*_early / aor_praetorian) found in this campaign's descr_regions.txt.
+            </div>
+          </div>
+        );
+      }
+      const activeSet = legendFilter instanceof Set ? legendFilter : null;
+      const getMatchingKeys = (tag) => {
+        const out = [];
+        for (const [rgbKey, r] of Object.entries(regions)) {
+          if (getAors(r.tags).includes(tag)) out.push(rgbKey);
+        }
+        return out;
       };
-      const optStyle = { background: "#2c2d33", color: "#f6f6f6" };
-      const cov = fogVision && typeof fogVision.coverage === "number" ? fogVision.coverage : null;
-      const playerLabel = playerFaction ? `Player — ${playerFaction.replace(/_/g, " ")}` : "Player (your faction)";
-      const shown = fogVision ? fogVision.faction : null;
+      const handleLegendClick = (tag, isShift) => {
+        setLegendFilter(prev => {
+          const current = prev instanceof Set ? new Set(prev) : new Set();
+          if (isShift) {
+            if (current.has(tag)) current.delete(tag);
+            else current.add(tag);
+          } else {
+            if (current.size === 1 && current.has(tag)) current.clear();
+            else { current.clear(); current.add(tag); }
+          }
+          const allKeys = [...current].flatMap(t => getMatchingKeys(t));
+          const unique = [...new Set(allKeys)];
+          setSelectedProvinces(unique);
+          if (unique.length > 0 && !isShift) zoomToProvinces(unique);
+          return current.size === 0 ? null : current;
+        });
+      };
       return (
         <div style={panelStyle}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Explored / Fog of War <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
-          {!legendCollapsed && <>
-            <div style={{ fontSize: "0.7rem", color: "#bbb", marginBottom: 6 }}>Regions a faction has never scouted are dimmed to dark grey.</div>
-            <label style={{ display: "block", fontSize: "0.7rem", color: "#ccc" }}>Show knowledge of:</label>
-            <select value={fogFaction || ""} onChange={(e) => setFogFaction(e.target.value || null)} style={selStyle}>
-              <option value="" style={optStyle}>{playerLabel}</option>
-              {factionOpts.map((f) => <option key={f} value={f} style={optStyle}>{f.replace(/_/g, " ")}</option>)}
-            </select>
-            <div style={{ marginTop: 6, fontSize: "0.7rem", color: "#bbb" }}>
-              {fogVision
-                ? <>{shown ? <span style={{ color: "#ddd" }}>{shown.replace(/_/g, " ")}: </span> : null}Explored {(fogVision.exploredCount || 0).toLocaleString()} tiles ({(100 * (fogVision.exploredCount || 0) / (1020 * 700)).toFixed(1)}% of map){cov != null && cov >= 0 ? ` · match ${(cov * 100).toFixed(0)}%` : ""}{cov != null && cov >= 0 && cov < 0.7 ? " (approx.)" : ""}</>
-                : fogLoading
-                  ? <span style={{ color: "#e0a030" }}>Loading…</span>
-                  : !fogFaction && !playerFaction
-                    ? (playerExploration ? <span style={{ color: "#c98" }}>Player faction not detected — showing the largest record. Pick a faction below.</span> : <span style={{ color: "#e0a030" }}>Load a save to see explored tiles.</span>)
-                    : <span style={{ color: "#c98" }}>No explored data for this faction (eliminated or not in this save).</span>}
-            </div>
-          </>}
-        </div>
-      );
-    }
-
-    if (colorMode === "population") {
-      const vals = Object.values(populationData);
-      if (vals.length === 0) return null;
-      const minV = Math.min(...vals), maxV = Math.max(...vals);
-      const midV = Math.round((minV + maxV) / 2);
-      return (
-        <div style={panelStyle}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Population <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
-          {!legendCollapsed && <>
-            <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(30,60,180), rgb(135,130,100), rgb(240,200,20))" }} />
-            <div style={labelRow}>
-              <span>{minV.toLocaleString()}</span>
-              <span>{midV.toLocaleString()}</span>
-              <span>{maxV.toLocaleString()}</span>
-            </div>
-            {(() => {
-              // Headroom list for the SELECTED faction's provinces (user
-              // 2026-07-24): pop vs cap (pop_level × 1500, the Pop Headroom
-              // formula), fullest first. Click highlight · dblclick jump.
-              const sel = selectedFaction && selectedFaction.toLowerCase();
-              if (!sel) return (
-                <div style={{ fontSize: "0.7rem", color: "#e8c873", marginTop: 5 }}>
-                  Pick a faction in the sidebar to list its provinces' headroom.
-                </div>
-              );
-              const rowsH = [];
-              for (const [rgbKey, r] of Object.entries(regions)) {
-                if (!r || !r.region) continue;
-                const owner = ((currentOwnerByCity && currentOwnerByCity[r.city]) || r.faction || "").toLowerCase();
-                if (owner !== sel) continue;
-                const pop = populationData[r.region] || populationData[r.region?.split("-")[0]] || populationData[r.city] || 0;
-                const capLvl = parseInt(r.pop_level || "0", 10) || 0;
-                const cap = capLvl * 1500;
-                rowsH.push({ rgbKey, region: r.region, city: r.city, pop, cap, pct: cap > 0 ? Math.min(150, Math.round(pop / cap * 100)) : null });
-              }
-              if (!rowsH.length) return (
-                <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 5 }}>No provinces found for the selected faction.</div>
-              );
-              rowsH.sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
-              const jump = (rgbKey, r, dbl) => {
-                if (dbl) onSearchActivate({ type: "region", payload: { region: r, rgbKey } });
-                else setSelectedProvinces([rgbKey]);
-              };
-              return (
-                <div style={{ marginTop: 6, maxHeight: "30vh", overflowY: "auto", paddingRight: 2 }}>
-                  <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>
-                    {(factionDisplayNames && factionDisplayNames[sel]) || sel.replace(/_/g, " ")} — headroom (fullest first):
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>
+            Legionary Recruitment ({entries.length}) <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
+          </div>
+          {!legendCollapsed && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: "40vh", overflowY: "auto" }}>
+              {entries.map((tag) => {
+                const { name, col } = LEGION_AORS[tag];
+                const isActive = activeSet && activeSet.has(tag);
+                const dimmed = activeSet && !isActive;
+                const unitNames = unitOwnership ? Object.keys(unitOwnership).filter((n) => n !== "__dictionary") : [];
+                const units = legionUnitsFor(tag, unitNames);
+                const open = legionUnitsOpen === tag;
+                const dictMap = (unitOwnership && unitOwnership.__dictionary) || {};
+                return (
+                  <React.Fragment key={tag}>
+                  <div
+                    onClick={(e) => handleLegendClick(tag, e.shiftKey)}
+                    title={`${counts[tag]} region(s) tagged with aor_${tag}\nClick to isolate · Shift-click to add`}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      padding: "2px 4px", fontSize: "0.72rem",
+                      borderRadius: 3, cursor: "pointer",
+                      background: isActive ? "rgba(255,255,255,0.10)" : "transparent",
+                      opacity: dimmed ? 0.42 : 1,
+                      transition: "opacity 0.12s, background 0.12s",
+                    }}
+                  >
+                    <span style={{
+                      width: 12, height: 12, borderRadius: 2, flexShrink: 0,
+                      background: `rgb(${col[0]}, ${col[1]}, ${col[2]})`,
+                      border: "1px solid rgba(0,0,0,0.35)",
+                    }} />
+                    <span style={{ flex: 1, color: "#eee" }}>{name}</span>
+                    <span style={{ color: "#888", fontVariantNumeric: "tabular-nums", fontSize: "0.68rem" }}>
+                      {counts[tag]}
+                    </span>
+                    {units.length > 0 && (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const next = open ? null : tag;
+                          setLegionUnitsOpen(next);
+                          if (next) {
+                            // warm the icons for the expanded legion's units
+                            prefetchUnitIcons(activeDataDir, units.map((u) => [((unitOwnership[u] || [])[0] || "romans_julii"), u, dictMap[u]]), bumpIconCacheVersionCoalesced);
+                          }
+                        }}
+                        title={open ? "Hide units" : `Show this legion's ${units.length} unit${units.length === 1 ? "" : "s"}`}
+                        style={{ color: "#aaa", fontSize: "0.68rem", padding: "0 2px", userSelect: "none" }}
+                      >{open ? "▾" : "▸"}</span>
+                    )}
                   </div>
-                  {rowsH.map((r) => (
-                    <div key={r.rgbKey} onClick={() => jump(r.rgbKey, regions[r.rgbKey], false)} onDoubleClick={() => jump(r.rgbKey, regions[r.rgbKey], true)}
-                      title="Click: highlight · double-click: jump"
-                      style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer" }}>
-                      <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{String(r.city || r.region).replace(/_/g, " ")}</span>
-                      <span style={{ color: r.pct == null ? "#888" : r.pct >= 90 ? "#e87a6a" : r.pct >= 60 ? "#e8c873" : "#8fd18f", whiteSpace: "nowrap" }}>
-                        {r.pct == null ? `${r.pop.toLocaleString()} · cap ?` : `${r.pop.toLocaleString()} / ${r.cap.toLocaleString()} (${r.pct}%)`}
-                      </span>
+                  {open && (
+                    <div style={{ margin: "0 0 3px 20px", display: "flex", flexDirection: "column", gap: 1 }}>
+                      {units.map((u) => {
+                        const fac = (unitOwnership[u] || [])[0] || "romans_julii";
+                        const ic = getCachedUnitIcon(activeDataDir, fac, u);
+                        return (
+                          <div
+                            key={u}
+                            onClick={(e) => { e.stopPropagation(); setInfoPopup({ type: "unit", name: u, faction: fac, label: prettyLegionUnit(u) }); }}
+                            title="Open unit info"
+                            onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
+                            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                            style={{ display: "flex", alignItems: "center", gap: 6, padding: "1px 3px", borderRadius: 3, cursor: "pointer", fontSize: "0.7rem", color: "#ccc" }}
+                          >
+                            {ic
+                              ? <img src={ic} alt="" style={{ width: 16, height: 21, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} />
+                              : <span style={{ width: 16, height: 21, background: "rgba(255,255,255,0.06)", borderRadius: 2, flexShrink: 0 }} />}
+                            <span>{prettyLegionUnit(u)}</span>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
-              );
-            })()}
-          </>}
-        </div>
-      );
-    }
-
-    if (colorMode === "farm") {
-      return (
-        <div style={panelStyle}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Fertility <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
-          {!legendCollapsed && <>
-            <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(210,0,30), rgb(210,200,30), rgb(50,200,30))" }} />
-            <div style={labelRow}>
-              <span>Fertility 1</span>
-              <span>Fertility 7</span>
-              <span>Fertility 14</span>
+                  )}
+                  </React.Fragment>
+                );
+              })}
+              <div style={{ marginTop: 6, fontSize: "0.66rem", color: "#888", lineHeight: 1.4 }}>
+                Where each named legion can be recruited (aor_*_early hidden resources).
+                <br />Click an entry to isolate · Shift-click to add · ▸ lists the legion's units — click one for its unit card.
+              </div>
             </div>
-          </>}
+          )}
         </div>
       );
     }
@@ -17051,12 +17370,12 @@ Click for unit card`}
           {!legendCollapsed && <>
             <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(60,180,45), rgb(140,115,45), rgb(220,50,45))" }} />
             <div style={labelRow}>
-              <span>army here</span><span>2-3 regions</span><span>5+ away</span>
+              <span>army here</span><span>~4 turns</span><span>8+ turns</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem", marginTop: 2 }}>
               <span style={{ width: 12, height: 12, borderRadius: 3, background: "rgb(140,45,125)", display: "inline-block" }} /> no land route
             </div>
-            <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>{(selectedFaction || playerFaction) ? `Perspective: ${selectedFaction || playerFaction}. ` : "Click a faction to set the perspective. "}Distance from your nearest campaign-start army — roughly 1 region ≈ 1 turn on roads.</div>
+            <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>{(selectedFaction || playerFaction) ? `Perspective: ${selectedFaction || playerFaction}. ` : "Click a faction to set the perspective. "}Estimated turns to march reinforcements from the nearest army — weighted by real distance across each province (big provinces take longer) and halved along roads.</div>
           </>}
         </div>
       );

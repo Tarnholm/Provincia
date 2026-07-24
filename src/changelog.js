@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1404",
+    date: "2026-07-24",
+    items: [
+      { type: "fix", text: "**Restored missing sidebars for Culture, Religion, AOR, Legions and Victory.** A series of mode merges had scrambled the boundary between the hover-readout function and the legend function, leaving five modes' legend panels either deleted or misfiled (so they never rendered). All five are back in place with their full legends; the earlier one-line “culture/religion restore” attempt had landed in the wrong function." },
+      { type: "improvement", text: "**Reach map mode rebuilt to measure real travel, not region hops.** It used to count adjacency steps (“1 region ≈ 1 turn”) — which was wrong because provinces vary hugely in size. It now runs a distance-weighted shortest-path from your nearest army: each step costs the actual geographic distance across the province, halved along roads, converted to an estimated number of turns to march reinforcements there. Hover shows the per-province estimate." },
+    ],
+  },
+  {
     version: "0.9.1403",
     date: "2026-07-24",
     items: [
