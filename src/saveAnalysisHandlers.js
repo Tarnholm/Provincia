@@ -377,6 +377,19 @@ ipcMain.handle("get-faction-metrics", async (_event, modDataDir, faction) => {
       if (s.totalIncome > maxIncome) maxIncome = s.totalIncome;
       if (s.corruption > maxCorr) maxCorr = s.corruption;
     }
+    // population projection (60-turn horizon) for the Tier Forecast mode —
+    // per-faction like corruption (user 2026-07-24: no all-faction sweep)
+    try {
+      const pp = require("./popProjection.js");
+      const proj = pp.projectPopulation(modDataDir, faction, 60);
+      for (const s of (proj && proj.settlements) || []) {
+        const e = byRegion[s.region] = byRegion[s.region] || { settlement: s.settlement, faction: String(faction).toLowerCase() };
+        e.growth = s.growthPctPerTurn; e.po = s.po;
+        e.tierNow = s.tierNow; e.nextTierAt = s.nextTierAt;
+        e.tierTurns = s.reachesNextTierAtTurn; e.popNow = s.popNow;
+        e.declining = s.declining;
+      }
+    } catch { /* budget metrics still usable without the projection */ }
     const data = { faction: String(faction).toLowerCase(), byRegion, maxIncome, maxCorr, ms: Date.now() - t0 };
     _factionMetricsCache.set(key, data);
     _writeLog(`[faction-metrics] ${faction}: ${Object.keys(byRegion).length} settlements in ${data.ms}ms`);
@@ -411,16 +424,10 @@ ipcMain.handle("get-map-mode-metrics", async (_event, modDataDir) => {
         }
       } catch { /* faction fails → its regions stay dark */ }
       try {
-        // 60-turn horizon so reachesNextTierAtTurn is meaningful for the Tier
-        // Forecast mode (the trajectory sim is arithmetic — the PO model inside
-        // projectPopulation dominates and runs either way).
-        const p = pp.projectPopulation(modDataDir, fac, 60);
+        const p = pp.projectPopulation(modDataDir, fac, 1);
         for (const s of (p && p.settlements) || []) {
           const e = byRegion[s.region] = byRegion[s.region] || {};
           e.growth = s.growthPctPerTurn; e.po = s.po;
-          e.tierNow = s.tierNow; e.nextTierAt = s.nextTierAt;
-          e.tierTurns = s.reachesNextTierAtTurn; e.popNow = s.popNow;
-          e.declining = s.declining;
         }
       } catch { /* ditto */ }
       await new Promise((r) => setImmediate(r));

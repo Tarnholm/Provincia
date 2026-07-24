@@ -75,7 +75,6 @@ import UnitComparePanel from "./panels/UnitComparePanel";
 import RecruitPlannerPanel from "./panels/RecruitPlannerPanel";
 import DiploHeatmapPanel from "./panels/DiploHeatmapPanel";
 import MercPoolsPanel from "./panels/MercPoolsPanel";
-import DiploWebPanel from "./panels/DiploWebPanel";
 import { exportMapPng } from "./mapExport";
 import TraitExplorerPanel from "./panels/TraitExplorerPanel";
 import CampaignAutopsyPanel from "./panels/CampaignAutopsyPanel";
@@ -4388,7 +4387,7 @@ function App() {
   // because their dep arrays need colorMode/modDataDir initialized).
   useEffect(() => { setMapMetrics(null); }, [modDataDir]);
   useEffect(() => {
-    const METRIC_MODES = ["unrestrisk", "trueincome", "growthmap", "tierforecast"]; // corruptionmap fetches per-faction instead
+    const METRIC_MODES = ["unrestrisk", "trueincome", "growthmap"]; // corruptionmap + tierforecast fetch per-faction instead
     if (!METRIC_MODES.includes(colorMode) || mapMetrics || mapMetricsBusyRef.current || !modDataDir) return;
     const api = window.electronAPI;
     if (!api?.getMapModeMetrics) return;
@@ -4406,7 +4405,7 @@ function App() {
   // Per-faction metrics for the Corruption mode: fetch when the mode is active
   // and a faction is picked; skip when we already hold that faction's numbers.
   useEffect(() => {
-    if (colorMode !== "corruptionmap" || !modDataDir || !selectedFaction) return;
+    if ((colorMode !== "corruptionmap" && colorMode !== "tierforecast") || !modDataDir || !selectedFaction) return;
     const want = selectedFaction.toLowerCase();
     if (factionMetrics && factionMetrics.faction === want) return;
     let stale = false;
@@ -9735,7 +9734,7 @@ function App() {
         // values from the cracked models (campaign-start state), one shared
         // main-process sweep (get-map-mode-metrics), lazily fetched + cached.
         // corruption reads the per-faction fetch; the other metric modes read the sweep
-        const mm = colorMode === "corruptionmap" ? (factionMetrics && factionMetrics.byRegion) : (mapMetrics && mapMetrics.byRegion);
+        const mm = (colorMode === "corruptionmap" || colorMode === "tierforecast") ? (factionMetrics && factionMetrics.byRegion) : (mapMetrics && mapMetrics.byRegion);
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
           const e = mm && mm[r.region];
           let base = [45, 47, 52];
@@ -9758,14 +9757,23 @@ function App() {
               const g = Math.max(-2, Math.min(4, e.growth));
               base = g < 0 ? [200, 60, 45] : g < 0.5 ? [190, 170, 60] : [Math.round(80 - g * 8), Math.round(120 + g * 25), 50];
             } else if (colorMode === "tierforecast" && e.tierNow != null) {
-              // Turns until the settlement's next population tier (60-turn
-              // projection): imminent green -> distant amber; grey = stalled
-              // (never reaches it in 60 turns), red = declining, blue = max tier.
+              // Turns until the settlement's next population tier AT THE
+              // CURRENT growth rate (closed-form compound). The 60-turn squalor
+              // simulation plateaued EVERY RIS settlement below its threshold
+              // (no new buildings assumed), so it painted nothing — and 0%
+              // growth must never read green (user 2026-07-24). Green =
+              // genuinely growing & close; amber = distant; grey = stalled;
+              // red = declining; blue = max tier.
               if (e.nextTierAt == null) base = [70, 95, 150];
-              else if (e.tierTurns == null) base = e.declining ? [185, 60, 48] : [92, 86, 78];
               else {
-                const t = Math.max(0, Math.min(1, e.tierTurns / 40));
-                base = [Math.round(55 + t * 140), Math.round(180 - t * 55), 48];
+                const g = e.growth;
+                const turns = (e.popNow != null && e.popNow >= e.nextTierAt) ? 1
+                  : (g > 0 ? Math.ceil(Math.log(e.nextTierAt / Math.max(1, e.popNow || 1)) / Math.log(1 + g / 100)) : null);
+                if (turns == null) base = e.declining ? [185, 60, 48] : [92, 86, 78];
+                else {
+                  const t = Math.max(0, Math.min(1, turns / 60));
+                  base = [Math.round(55 + t * 140), Math.round(180 - t * 55), 48];
+                }
               }
             }
           }
@@ -11861,7 +11869,6 @@ function App() {
   const [showUnitCompare, setShowUnitCompare] = useState(false); // ⚖ side-by-side EDU unit stats (2026-07-17)
   const [showRecruitPlanner, setShowRecruitPlanner] = useState(false); // 🏗 what each building upgrade unlocks (2026-07-17)
   const [showDiploHeatmap, setShowDiploHeatmap] = useState(false); // 🕊 NxN diplomacy heatmap (2026-07-17)
-  const [showDiploWeb, setShowDiploWeb] = useState(false); // 🕸 force-directed diplomacy graph (2026-07-24)
   const [showTraitExplorer, setShowTraitExplorer] = useState(false); // 🎭 trait browser (2026-07-17)
   const [showCampaignAutopsy, setShowCampaignAutopsy] = useState(false); // ⚰ campaign post-mortem (2026-07-17)
   const [showBuildOrder, setShowBuildOrder] = useState(false); // 🔨 build-order payback ranking (2026-07-17)
@@ -11874,7 +11881,7 @@ function App() {
     setShowReportExport(false); setShowSaveCompare(false); setShowModLint(false);
     setShowTimelinePlayer(false); setShowUnitCompare(false); setShowRecruitPlanner(false);
     setShowDiploHeatmap(false); setShowPopProjection(false); setShowDefLocator(false);
-    setShowBattleLedger(false); setShowWhatIf(false); setShowMercPools(false); setShowDiploWeb(false);
+    setShowBattleLedger(false); setShowWhatIf(false); setShowMercPools(false);
   };
   // Battle ledger (2026-07-17): accumulates battle events from the raw live
   // log feed. The ledger instance lives on a ref (survives renders); snapshots
@@ -15212,7 +15219,6 @@ function App() {
                       { icon: "⚖", label: "Unit Comparator", color: "#d8b88f", desc: "Side-by-side EDU stats for up to 6 units, best-in-row highlighting + cost-effectiveness ratios.", open: () => setShowUnitCompare(true) },
                       { icon: "🏗", label: "Recruit Planner", color: "#a8d8a0", desc: "For the selected settlement: what each next building upgrade unlocks for recruitment.", open: () => { if (lockedRegionInfo || regionInfo) setShowRecruitPlanner(true); else pushToast("Select a region first — the planner works on the selected settlement.", "info", 5000); } },
                       { icon: "🕊", label: "Diplomacy Heatmap", color: "#d8a0a0", desc: "NxN heatmap of the live diplomacy matrix — war blocs and alliance clusters at a glance.", open: () => setShowDiploHeatmap(true) },
-                      { icon: "🕸", label: "Diplomacy Web", color: "#8fc9d8", desc: "Force-directed graph of the live diplomacy matrix — war blocs pull together, alliances cluster; drag, filter by relation type, click a faction to focus.", open: () => setShowDiploWeb(true) },
                       { icon: "🪙", label: "Mercenary Pools", color: "#d9c964", desc: "Browse every mercenary pool — units, costs, replenish rates, faction restrictions; highlight a pool's regions on the map.", open: () => setShowMercPools(true) },
                       { icon: "🖼", label: "Export Map PNG", color: "#a8d8d8", desc: "Save the whole map in the current mode as a high-res PNG (3× native) with a painted legend.", open: () => handleExportMap() },
                       { icon: "📉", label: "Population Projection", color: "#9ed6ad", desc: "Project every settlement N seasons forward; flag decline, stalls, tier-ups and unrest risk.", open: () => setShowPopProjection(true) },
@@ -16127,13 +16133,16 @@ function App() {
       return { label: "Wealth (est.)", value: `${total} (resources ${resSum}, farm ×${farm}, port ×${port})` };
     }
     if (colorMode === "tierforecast") {
-      const e = mapMetrics && mapMetrics.byRegion && mapMetrics.byRegion[info.region];
-      if (!e || e.tierNow == null) return { label: "Tier Forecast", value: "No projection" };
+      const e = factionMetrics && factionMetrics.byRegion && factionMetrics.byRegion[info.region];
+      if (!e || e.tierNow == null) return { label: "Tier Forecast", value: selectedFaction ? "No projection" : "Pick a faction" };
       const tierLabel = (t) => String(t || "").replace(/_/g, " ");
       if (e.nextTierAt == null) return { label: "Tier Forecast", value: `${tierLabel(e.tierNow)} — max tier` };
       const popStr = `pop ${(e.popNow || 0).toLocaleString()} / ${e.nextTierAt.toLocaleString()}`;
-      if (e.tierTurns == null) return { label: "Tier Forecast", value: `${tierLabel(e.tierNow)} — ${e.declining ? "declining" : "stalled"} (${popStr})` };
-      return { label: "Tier Forecast", value: `${tierLabel(e.tierNow)} → next tier in ~${e.tierTurns} turn${e.tierTurns === 1 ? "" : "s"} (${popStr})` };
+      const g = e.growth;
+      const turns = (e.popNow != null && e.popNow >= e.nextTierAt) ? 1
+        : (g > 0 ? Math.ceil(Math.log(e.nextTierAt / Math.max(1, e.popNow || 1)) / Math.log(1 + g / 100)) : null);
+      if (turns == null) return { label: "Tier Forecast", value: `${tierLabel(e.tierNow)} — ${e.declining ? "declining" : "stalled (0% growth)"} (${popStr})` };
+      return { label: "Tier Forecast", value: `${tierLabel(e.tierNow)} → next tier in ~${turns} turn${turns === 1 ? "" : "s"} at +${g}%/turn (${popStr})` };
     }
     if (colorMode === "recruitment") {
       // 0.9.828: show the actual unique-recruit count for this region (the
@@ -16444,7 +16453,7 @@ function App() {
                 ))}
               </div>
               <div style={{ marginTop: 6, fontSize: "0.66rem", color: "#888", lineHeight: 1.4 }}>
-                Deep dives: 🧰 Tools → 🕊 Diplomacy Heatmap · 🕸 Diplomacy Web.
+                Deep dive: 🧰 Tools → 🕊 Diplomacy Heatmap.
               </div>
             </>
           )}
@@ -16458,7 +16467,7 @@ function App() {
         trueincome: { title: "Income (model)", grad: "linear-gradient(to right, rgb(50,48,45), rgb(160,130,45), rgb(255,205,45))", labels: ["poor", "", mapMetrics ? `${mapMetrics.maxIncome} dn` : "richest"] },
         corruptionmap: { title: "Corruption", grad: "linear-gradient(to right, rgb(55,140,60), rgb(140,95,50), rgb(220,45,40))", labels: ["clean", "", factionMetrics ? `-${factionMetrics.maxCorr} dn` : "worst"] },
         growthmap: { title: "Growth", grad: "linear-gradient(to right, rgb(200,60,45), rgb(190,170,60), rgb(60,180,50))", labels: ["declining", "flat", "booming"] },
-        tierforecast: { title: "Tier Forecast (turns to next settlement tier)", grad: "linear-gradient(to right, rgb(55,180,48), rgb(125,153,48), rgb(195,125,48))", labels: ["imminent", "~20 turns", "40+"] },
+        tierforecast: { title: "Tier Forecast (turns to next tier at current growth)", grad: "linear-gradient(to right, rgb(55,180,48), rgb(125,153,48), rgb(195,125,48))", labels: ["soon", "~30 turns", "60+"] },
       }[colorMode];
       return (
         <div style={panelStyle}>
@@ -16468,11 +16477,11 @@ function App() {
             <div style={labelRow}>
               <span>{CFG.labels[0]}</span><span>{CFG.labels[1]}</span><span>{CFG.labels[2]}</span>
             </div>
-            {colorMode === "corruptionmap" && (
+            {(colorMode === "corruptionmap" || colorMode === "tierforecast") && (
               <div style={{ marginTop: 5, fontSize: "0.7rem", color: selectedFaction ? "#9ed6ad" : "#e8c873" }}>
                 {selectedFaction
                   ? `${(factionDisplayNames && factionDisplayNames[selectedFaction.toLowerCase()]) || selectedFaction.replace(/_/g, " ")} — computed for this faction only`
-                  : "Pick a faction in the sidebar — corruption computes only the selected faction."}
+                  : "Pick a faction in the sidebar — this mode computes only the selected faction."}
               </div>
             )}
             {colorMode === "tierforecast" && (
@@ -23016,17 +23025,6 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           factionColors={factionColors}
           liveActive={liveLogActive}
           onClose={() => setShowDiploHeatmap(false)}
-        />
-      )}
-      {showDiploWeb && (
-        <DiploWebPanel
-          diplomacyMatrix={diplomacyMatrix}
-          allFactionDiplomacy={allFactionDiplomacy}
-          factionDisplayNames={factionDisplayNames}
-          factionCultures={factionCultures}
-          factionColors={factionColors}
-          liveActive={liveLogActive}
-          onClose={() => setShowDiploWeb(false)}
         />
       )}
       {showMercPools && (

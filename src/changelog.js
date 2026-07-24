@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1392",
+    date: "2026-07-24",
+    items: [
+      { type: "improvement", text: "**Tier Forecast computes only the selected faction** (like Corruption) — no more all-faction sweep. Pick a faction in the sidebar; its projection computes in about a second and is cached." },
+      { type: "fix", text: "**Tier Forecast numbers fixed.** The old 60-turn simulation let squalor plateau every settlement below its threshold, so the map showed nothing useful — and 0% growth could read green. Now: turns-to-next-tier at the CURRENT growth rate (Rome at +3.5%/turn → ~32 turns), green only for genuinely growing settlements, grey = stalled (0%), red = declining, blue = max tier. Hover shows the rate and pop vs threshold." },
+      { type: "change", text: "**Removed the Diplomacy Web tool** (added earlier today) — not helpful in practice. The Diplomacy map mode and the Diplomacy Heatmap remain." },
+    ],
+  },
+  {
     version: "0.9.1391",
     date: "2026-07-24",
     items: [
