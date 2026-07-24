@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1396",
+    date: "2026-07-24",
+    items: [
+      { type: "improvement", text: "**Population legend lists the selected faction's provinces with their headroom** — population vs cap, fullest first (red ≥ 90%, amber ≥ 60%, green below). Click to highlight, double-click to jump." },
+    ],
+  },
+  {
     version: "0.9.1395",
     date: "2026-07-24",
     items: [

@@ -16136,6 +16136,52 @@ function App() {
               <span>{midV.toLocaleString()}</span>
               <span>{maxV.toLocaleString()}</span>
             </div>
+            {(() => {
+              // Headroom list for the SELECTED faction's provinces (user
+              // 2026-07-24): pop vs cap (pop_level × 1500, the Pop Headroom
+              // formula), fullest first. Click highlight · dblclick jump.
+              const sel = selectedFaction && selectedFaction.toLowerCase();
+              if (!sel) return (
+                <div style={{ fontSize: "0.7rem", color: "#e8c873", marginTop: 5 }}>
+                  Pick a faction in the sidebar to list its provinces' headroom.
+                </div>
+              );
+              const rowsH = [];
+              for (const [rgbKey, r] of Object.entries(regions)) {
+                if (!r || !r.region) continue;
+                const owner = ((currentOwnerByCity && currentOwnerByCity[r.city]) || r.faction || "").toLowerCase();
+                if (owner !== sel) continue;
+                const pop = populationData[r.region] || populationData[r.region?.split("-")[0]] || populationData[r.city] || 0;
+                const capLvl = parseInt(r.pop_level || "0", 10) || 0;
+                const cap = capLvl * 1500;
+                rowsH.push({ rgbKey, region: r.region, city: r.city, pop, cap, pct: cap > 0 ? Math.min(150, Math.round(pop / cap * 100)) : null });
+              }
+              if (!rowsH.length) return (
+                <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 5 }}>No provinces found for the selected faction.</div>
+              );
+              rowsH.sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
+              const jump = (rgbKey, r, dbl) => {
+                if (dbl) onSearchActivate({ type: "region", payload: { region: r, rgbKey } });
+                else setSelectedProvinces([rgbKey]);
+              };
+              return (
+                <div style={{ marginTop: 6, maxHeight: "30vh", overflowY: "auto", paddingRight: 2 }}>
+                  <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>
+                    {(factionDisplayNames && factionDisplayNames[sel]) || sel.replace(/_/g, " ")} — headroom (fullest first):
+                  </div>
+                  {rowsH.map((r) => (
+                    <div key={r.rgbKey} onClick={() => jump(r.rgbKey, regions[r.rgbKey], false)} onDoubleClick={() => jump(r.rgbKey, regions[r.rgbKey], true)}
+                      title="Click: highlight · double-click: jump"
+                      style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer" }}>
+                      <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{String(r.city || r.region).replace(/_/g, " ")}</span>
+                      <span style={{ color: r.pct == null ? "#888" : r.pct >= 90 ? "#e87a6a" : r.pct >= 60 ? "#e8c873" : "#8fd18f", whiteSpace: "nowrap" }}>
+                        {r.pct == null ? `${r.pop.toLocaleString()} · cap ?` : `${r.pop.toLocaleString()} / ${r.cap.toLocaleString()} (${r.pct}%)`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </>}
         </div>
       );
