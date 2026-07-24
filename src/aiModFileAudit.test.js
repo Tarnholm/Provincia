@@ -213,3 +213,89 @@ settlement
     expect(leads.some((x) => x.faction === "rich" && /RECRUITMENT-capped/.test(x.issue))).toBe(false);
   });
 });
+
+describe("EDB mic ladder + settlement-tier lock", () => {
+  // verbatim shape from RIS export_descr_buildings.txt
+  const EDB = `
+building core_building
+{
+	levels village
+}
+building military_industrial_complex
+{
+	levels mic_1 mic_2 mic_3 mic_4
+	{
+			mic_1 requires factions { all, }
+			{
+				construction  4
+				cost  3000
+				settlement_min town
+				upgrades
+				{
+				}
+			}
+			mic_2 requires factions { all, }
+			{
+				construction  6
+				cost  6000
+				settlement_min large_town
+				upgrades
+				{
+				}
+			}
+			mic_3 requires factions { all, }
+			{
+				construction  7
+				cost  10000
+				settlement_min city
+				upgrades
+				{
+				}
+			}
+	}
+}
+building market
+{
+	levels trader
+}
+`;
+
+  it("reads cost / turns / settlement_min per mic level", async () => {
+    const { parseMicLadder } = await import("./aiModFileAudit.js");
+    const l = parseMicLadder(EDB);
+    expect(l.mic_1).toMatchObject({ cost: 3000, turns: 4, settlementMin: "town", settlementMinTier: 1 });
+    expect(l.mic_2).toMatchObject({ cost: 6000, turns: 6, settlementMin: "large_town", settlementMinTier: 2 });
+    expect(l.mic_3).toMatchObject({ cost: 10000, turns: 7, settlementMin: "city", settlementMinTier: 3 });
+  });
+
+  it("flags a faction whose settlements are too small to ever reach the next mic level", () => {
+    const files = {
+      aiPersonality: "diplomatic_priority super_aggressive\naggresiveness 100\npersonality ai_small\nbuilding_priority sb\nmilitary_priority sm\ndiplomatic_priority super_aggressive\n",
+      strat: "faction	small, ai_small\ndenari	9000\nsettlement\n{\n	level town\n	region A\n}\n",
+      smFactions: "", edu: "", edb: EDB,
+    };
+    // 20 settlements avoids the "≤3 settlements" aggression rule; best tier 1 (town)
+    const saveFacts = { turn: 102, menByFaction: { small: 1500 }, settlementsByFaction: { small: 20 }, tierByFaction: { small: 1 } };
+    const findings = [{ kind: "campaign_stall", faction: "small", region: "X", detail: "still 0/20000 strength", impossible: true, blockedBy: "recruitment", micMax: 1, micMissing: 0, micTowns: 4 }];
+    const { leads } = auditModFiles({ findings, saveFacts, files });
+    const tl = leads.find((l) => /SETTLEMENT-TIER LOCKED/.test(l.issue));
+    expect(tl).toBeTruthy();
+    expect(tl.file).toBe("export_descr_buildings.txt");
+    // best tier is 1 → the unreachable next level is mic_2, which needs large_town
+    expect(tl.key).toMatch(/mic_2 → settlement_min large_town \(cost 6000, 6 turns\)/);
+    expect(tl.issue).toMatch(/best town is tier 1 \(town\)/);
+    expect(tl.suggestion).toMatch(/lower mic_2's settlement_min/);
+  });
+
+  it("does NOT flag a faction whose settlements already qualify", () => {
+    const files = {
+      aiPersonality: "personality ai_big\nbuilding_priority bb\nmilitary_priority bm\ndiplomatic_priority passive\n",
+      strat: "faction	big, ai_big\ndenari	9000\n", smFactions: "", edu: "", edb: EDB,
+    };
+    // best tier 3 (city) → next level mic_4 isn't in this ladder, so no lock claim
+    const saveFacts = { turn: 102, menByFaction: { big: 20000 }, settlementsByFaction: { big: 40 }, tierByFaction: { big: 3 } };
+    const findings = [{ kind: "campaign_stall", faction: "big", region: "Y", detail: "still 0/500 strength", impossible: true, blockedBy: "income", micMax: 3 }];
+    const { leads } = auditModFiles({ findings, saveFacts, files });
+    expect(leads.some((l) => /SETTLEMENT-TIER LOCKED/.test(l.issue))).toBe(false);
+  });
+});

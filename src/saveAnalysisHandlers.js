@@ -463,6 +463,7 @@ async function _correlateSave(result, savePath, modDataDir) {
           strat: rd(path.join("world", "maps", "campaign", "imperial_campaign", "descr_strat.txt")),
           smFactions: rd("descr_sm_factions.txt"),
           edu: rd("export_descr_unit.txt"),
+          edb: rd("export_descr_buildings.txt"),
         },
       });
       result.modLeads = audit.leads;

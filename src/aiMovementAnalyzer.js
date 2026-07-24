@@ -628,6 +628,19 @@ function buildSaveFacts(save, regionOfSettlement) {
     if (mic) { if ((mic.level || 0) > e.max) e.max = mic.level || 0; }
     else e.missing++;
   }
+  // Best settlement tier per faction (core_building level IS the settlement's
+  // upgrade tier). Every mic level carries a settlement_min in EDB, so this is
+  // the hard ceiling on a faction's military infrastructure — verified on the
+  // reference save: micMax === best core_building level for every faction
+  // checked (aulerci 0/0, treveri 1/1, arados 2/2, romans_julii 3/3).
+  const tierByFaction = {};
+  for (const [city, fx] of Object.entries(save.ownerByCity || {})) {
+    const f = String(fx || "?").toLowerCase();
+    const st = settByName[city];
+    const core = st && (st.buildings || []).find((b) => b && b.name === "core_building");
+    const lv = core ? (core.level || 0) : 0;
+    if (tierByFaction[f] == null || lv > tierByFaction[f]) tierByFaction[f] = lv;
+  }
   // Character names, normalised, split alive/dead. Used to settle "abandoned"
   // findings: still-alive = the AI ORPHANED a live army; dead = benign.
   const aliveNames = {}, deadNames = {};
@@ -646,7 +659,7 @@ function buildSaveFacts(save, regionOfSettlement) {
     aliveNames, deadNames,
     ownerByCity: save.ownerByCity || {},
     unitsByFactionRegion, menByFaction, unitsByFaction, navalByFaction, navalWorld,
-    settlementsByFaction, micByFaction,
+    settlementsByFaction, micByFaction, tierByFaction,
     regionOfSettlement: regionOfSettlement || {},
     sieges: (save.sieges || []).length,
   };

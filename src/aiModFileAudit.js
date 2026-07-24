@@ -88,6 +88,36 @@ function parseNavalOwners(text) {
   return owners;
 }
 
+// export_descr_buildings → the military_industrial_complex ladder:
+// level → { cost, turns, settlementMin }. RIS gates troop tiers on this chain
+// (`mic_tier_*`), and each level carries a settlement_min, so a faction whose
+// towns stay small is PERMANENTLY locked out of the units its own campaigns
+// demand — verified on the reference save, where every faction's mic level
+// equalled its best settlement tier exactly.
+const SETTLEMENT_TIERS = ["village", "town", "large_town", "city", "large_city", "huge_city"];
+function parseMicLadder(text) {
+  if (!text) return null;
+  const m = String(text).match(/\nbuilding\s+military_industrial_complex\b([\s\S]*?)(?=\nbuilding\s+\w)/);
+  if (!m) return null;
+  const blk = m[1];
+  const anchors = [...blk.matchAll(/\n\t{2,3}(mic_\d)\s/g)].map((a) => ({ pos: a.index, name: a[1] }));
+  const out = {};
+  anchors.forEach((a, i) => {
+    const seg = blk.slice(a.pos, i + 1 < anchors.length ? anchors[i + 1].pos : blk.length);
+    const turns = seg.match(/^\s*construction\s+(\d+)/m);
+    const cost = seg.match(/^\s*cost\s+(\d+)/m);
+    const smin = seg.match(/^\s*settlement_min\s+(\w+)/m);
+    out[a.name] = {
+      level: +a.name.replace("mic_", ""),
+      turns: turns ? +turns[1] : null,
+      cost: cost ? +cost[1] : null,
+      settlementMin: smin ? smin[1] : null,
+      settlementMinTier: smin ? SETTLEMENT_TIERS.indexOf(smin[1]) : null,
+    };
+  });
+  return Object.keys(out).length ? out : null;
+}
+
 // descr_sm_factions → faction → { culture, religion }
 function parseSmFactions(text) {
   const out = {};
@@ -112,6 +142,7 @@ function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = 
   const strat = parseStratFactions(files.strat);
   const naval = parseNavalOwners(files.edu);
   const sm = parseSmFactions(files.smFactions);
+  const micLadder = parseMicLadder(files.edb);
 
   // per-faction symptom tallies from the log findings
   const sym = {};
@@ -134,6 +165,7 @@ function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = 
   const men = (saveFacts && saveFacts.menByFaction) || {};
   const setts = (saveFacts && saveFacts.settlementsByFaction) || {};
   const navalNow = (saveFacts && saveFacts.navalByFaction) || {};
+  const tierNow = (saveFacts && saveFacts.tierByFaction) || {};
 
   const factions = {};
   for (const k of new Set([...Object.keys(sym), ...Object.keys(strat)])) {
@@ -156,6 +188,7 @@ function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = 
       menAtSave: men[k] != null ? men[k] : null,
       settlementsAtSave: setts[k] != null ? setts[k] : null,
       navalAtSave: navalNow[k] || 0,
+      bestSettlementTier: tierNow[k] != null ? tierNow[k] : null,
       economy: economy[k] || null,
       buildAppetite: buildAppetite[k] || null,
       symptoms: sym[k] || null,
@@ -252,6 +285,28 @@ function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = 
           (F.menAtSave != null ? `; fields ${F.menAtSave.toLocaleString()} men at save` : ""),
       });
     }
+    // 3e. settlement-tier lock — PROVEN on the reference save: a faction's
+    //     military infrastructure never exceeds its best settlement tier,
+    //     because every mic level carries a settlement_min. Small factions are
+    //     therefore permanently barred from the troop tiers their own campaigns
+    //     require, no matter how much money they accumulate.
+    if ((s.recruitBlocked > 0 || s.impossible > 0) && micLadder && F.bestSettlementTier != null) {
+      const nextLv = "mic_" + (F.bestSettlementTier + 1);
+      const need = micLadder[nextLv];
+      if (need && need.settlementMinTier != null && need.settlementMinTier > F.bestSettlementTier) {
+        leads.push({
+          severity: 3, faction: k,
+          file: "export_descr_buildings.txt",
+          key: `military_industrial_complex ${nextLv} → settlement_min ${need.settlementMin} (cost ${need.cost}, ${need.turns} turns)`,
+          issue: `SETTLEMENT-TIER LOCKED: its best town is tier ${F.bestSettlementTier} (${SETTLEMENT_TIERS[F.bestSettlementTier] || "?"}), so ${nextLv} is unreachable however rich it gets — and without it the troop tiers its campaigns demand do not exist for this faction`,
+          suggestion: `lower ${nextLv}'s settlement_min, or lower the mic_tier_* requirement on mid-tier units, or give this faction a settlement that can actually grow`,
+          evidence: `${s.impossible} impossible campaign(s), biggest ask ${s.maxReq.toLocaleString()} strength` +
+            (F.menAtSave != null ? `, fields ${F.menAtSave.toLocaleString()} men` : "") +
+            (s.micMax != null ? `, military infrastructure tier ${s.micMax}` : "") +
+            (F.economy ? `, ${Math.round(F.economy.richPct * 100)}% of turns financially rich` : ""),
+        });
+      }
+    }
     // 4. orphaned live armies concentrated in one faction
     if (s.orphaned >= 5) {
       leads.push({
@@ -268,4 +323,4 @@ function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = 
   return { factions, leads };
 }
 
-module.exports = { auditModFiles, parseAiPersonality, parseStratFactions, parseNavalOwners, parseSmFactions };
+module.exports = { auditModFiles, parseAiPersonality, parseStratFactions, parseNavalOwners, parseSmFactions, parseMicLadder, SETTLEMENT_TIERS };

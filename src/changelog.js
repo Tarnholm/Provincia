@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1414",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**AI Movement Lab now reads export_descr_buildings and found the root cause of stalled AI factions.** Each military_industrial_complex level carries a settlement_min (mic_2 needs a large_town, mic_3 a city), and on the reference save every faction’s military infrastructure equalled its best settlement tier EXACTLY — Aulerci’s four villages had none at all. So a faction whose towns stay small is permanently barred from the troop tiers its own campaigns demand, however rich it gets. New SETTLEMENT-TIER LOCKED lead (91 factions on the reference log) names the exact level, its settlement_min, cost and build time, and offers the three real fixes: lower that level’s settlement_min, lower the mic_tier_* requirement on mid-tier units, or give the faction a settlement that can grow." },
+      { type: "improvement", text: "**Faction profiles now include best settlement tier**, so a lead can distinguish “too poor” from “too small” — e.g. Armenia is financially rich 41% of the time, fields 1,890 men, and is asked for 135,121 strength while locked at town tier." },
+    ],
+  },
+  {
     version: "0.9.1413",
     date: "2026-07-25",
     items: [
