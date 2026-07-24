@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1399",
+    date: "2026-07-24",
+    items: [
+      { type: "fix", text: "**Cultural Conversion now uses the game's real rule.** A province's faith is whichever religion holds the largest share — the highest rel_X_N level in the region data (e.g. dorian 4 / italic 2 → dorian). A province is “converted” (green) when that dominant faith matches its owner faction's default religion (from descr_sm_factions), “foreign” (red) when another faith dominates — the same majority-religion logic the public-order model uses. Hover shows the dominant faith, the runner-up, and the owner's faith; the legend lists a faction's foreign-faith holdings. (Previously it compared a display-culture label against the wrong vocabulary.)" },
+    ],
+  },
+  {
     version: "0.9.1398",
     date: "2026-07-24",
     items: [

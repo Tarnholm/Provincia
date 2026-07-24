@@ -1962,6 +1962,7 @@ function App() {
   // Corruption mode computes ONLY the selected faction (user 2026-07-24) —
   // no all-faction sweep. Cached per faction in the main process.
   const [factionMetrics, setFactionMetrics] = useState(null);
+  const [factionReligions, setFactionReligions] = useState(null); // faction -> default religion (Cultural Conversion mode)
   const [tradeLanes, setTradeLanes] = useState(null); // [{from,to,flow}] sea lanes for the Trade Lanes mode (early — colorize deps)
   const [roadRegions, setRoadRegions] = useState(null); // Set of region names whose settlement has roads (land trade only draws between these)
   const [portRegions, setPortRegions] = useState(null); // Set of region names whose settlement has a PORT building (gets a settlement→port road even with no roads built)
@@ -4398,6 +4399,16 @@ function App() {
     return () => { stale = true; };
   }, [colorMode, modDataDir, selectedFaction, factionMetrics, saveHappinessByCity, saveIncomeByCity]);
   useEffect(() => { setFactionMetrics(null); }, [modDataDir]);
+  // Faction default-religion map for the Cultural Conversion mode.
+  useEffect(() => {
+    if (colorMode !== "conversion" || !modDataDir || factionReligions) return;
+    let stale = false;
+    window.electronAPI?.getFactionReligions?.(modDataDir).then((r) => {
+      if (!stale && r && !r.error) setFactionReligions(r);
+    }).catch(() => {});
+    return () => { stale = true; };
+  }, [colorMode, modDataDir, factionReligions]);
+  useEffect(() => { setFactionReligions(null); }, [modDataDir]);
   // Settlement income explainer (2026-07-17): fetched on demand from the
   // region panel's "≡ explain" button; null = closed. First call per faction
   // reparses descr_strat+EDB in the main process (seconds) — cached after.
@@ -8914,22 +8925,31 @@ function App() {
           return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
         }));
       } else if (colorMode === "conversion") {
-        // Cultural Conversion (2026-07-24): green = the settlement's native
-        // culture matches its current owner (converted / no friction); red =
-        // foreign culture under a different-culture owner (population still
-        // resisting, unrest + slow to urbanise). Owner culture from
-        // factionCultures; native culture from the region's own culture tag.
+        // Cultural Conversion (2026-07-24, game-accurate): a province's culture/
+        // religion is whichever is the PLURALITY of its rel_X_N breakdown (the
+        // highest level = largest share — user's rule, matches poModel's
+        // majorityRel). Green = that dominant religion equals the owner faction's
+        // default religion (converted, no friction); red = foreign (a different
+        // faith dominates than the owner's — unrest + slow urbanisation until it
+        // converts). Owner's religion from descr_sm_factions "default religion".
         const ownerOf = {};
         for (const rd2 of Object.values(regions)) {
           if (rd2 && rd2.region) ownerOf[rd2.region] = ((currentOwnerByCity && currentOwnerByCity[rd2.city]) || rd2.faction || "").toLowerCase();
         }
+        const domRel = (tags) => {
+          let best = null, bestL = -1;
+          for (const m of String(tags || "").matchAll(/\brel_([a-z_]+)_(\d+)\b/g)) {
+            const L = +m[2]; if (L > bestL) { bestL = L; best = m[1]; }
+          }
+          return best;
+        };
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
-          const native = (r.culture || "").toLowerCase();
+          const dom = domRel(r.tags);
           const owner = ownerOf[r.region];
-          const ownerCult = owner ? String(factionCultures[owner] || factionCultures[owner.toLowerCase()] || "").toLowerCase() : "";
-          let base = [70, 72, 78]; // unknown
-          if (native && ownerCult) base = (native === ownerCult) ? [70, 150, 66] : [200, 74, 52];
-          else if (native && !ownerCult) base = [70, 150, 66]; // rebels/unowned keep native
+          const ownRel = (owner && factionReligions) ? String(factionReligions[owner] || factionReligions[owner.toLowerCase()] || "").toLowerCase() : "";
+          let base = [70, 72, 78]; // unknown (no religion tag, or owner religion not loaded yet)
+          if (dom && ownRel) base = (dom === ownRel) ? [70, 150, 66] : [200, 74, 52];
+          else if (dom && !owner) base = [70, 150, 66]; // rebels/unowned: dominant faith rules unopposed
           if (devFlatColors) return base;
           const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.5;
           return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
@@ -9944,7 +9964,7 @@ function App() {
         else clearTimeout(_handle);
       }
     };
-  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion, regionAdjacency, playerFaction, diplomacyMatrix, factionMetrics, campaignTimeline, historyTurnIdx, tradeLanes, regionCentroids]);
+  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion, regionAdjacency, playerFaction, diplomacyMatrix, factionMetrics, factionReligions, campaignTimeline, historyTurnIdx, tradeLanes, regionCentroids]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -15900,12 +15920,20 @@ function App() {
       return { label: "History", value: "Scrub the timeline in the legend →" };
     }
     if (colorMode === "conversion") {
+      let dom = null, domL = -1, second = null, secL = -1;
+      for (const m of String(info.tags || "").matchAll(/\brel_([a-z_]+)_(\d+)\b/g)) {
+        const L = +m[2];
+        if (L > domL) { second = dom; secL = domL; dom = m[1]; domL = L; }
+        else if (L > secL) { second = m[1]; secL = L; }
+      }
+      if (!dom) return { label: "Faith", value: "No religion data" };
+      const mix = second ? ` (over ${second.replace(/_/g, " ")})` : "";
       const owner = ((currentOwnerByCity && currentOwnerByCity[info.city]) || info.faction || "").toLowerCase();
-      const native = (info.culture || "").toLowerCase();
-      const oc = owner ? String(factionCultures[owner] || factionCultures[owner.toLowerCase()] || "").toLowerCase() : "";
-      if (!native) return { label: "Culture", value: "Unknown" };
-      if (!oc) return { label: "Culture", value: `${native} (unowned/rebel — native)` };
-      return { label: "Culture", value: native === oc ? `${native} — native (owner's culture)` : `${native} under ${oc} owner — FOREIGN (converting)` };
+      const ownRel = (owner && factionReligions) ? String(factionReligions[owner] || "").toLowerCase() : "";
+      if (!ownRel) return { label: "Faith", value: `${dom.replace(/_/g, " ")}${mix} — dominant (unowned/rebel)` };
+      return { label: "Faith", value: dom === ownRel
+        ? `${dom.replace(/_/g, " ")}${mix} — converted (owner's faith)`
+        : `${dom.replace(/_/g, " ")}${mix} under ${ownRel.replace(/_/g, " ")} owner — FOREIGN` };
     }
     if (colorMode === "armyheat") {
       const rd2 = startingArmiesByRegion && startingArmiesByRegion[info.region];
@@ -17181,18 +17209,23 @@ Click for unit card`}
     }
     if (colorMode === "conversion") {
       const sel = selectedFaction && selectedFaction.toLowerCase();
-      const ROWS = [[[70, 150, 66], "Native — owner's culture (converted)"], [[200, 74, 52], "Foreign — different-culture owner"], [[70, 72, 78], "Unknown culture"]];
-      // list the selected faction's FOREIGN holdings (conversion pending)
+      const ROWS = [[[70, 150, 66], "Converted — owner's faith dominant"], [[200, 74, 52], "Foreign — another faith dominant"], [[70, 72, 78], "No religion data"]];
+      const domRelOf = (tags) => {
+        let best = null, bestL = -1;
+        for (const m of String(tags || "").matchAll(/\brel_([a-z_]+)_(\d+)\b/g)) { const L = +m[2]; if (L > bestL) { bestL = L; best = m[1]; } }
+        return best;
+      };
+      // list the selected faction's FOREIGN holdings (dominant faith != owner's)
       let foreignList = null;
       if (sel) {
+        const ownRel = factionReligions ? String(factionReligions[sel] || "").toLowerCase() : "";
         const rowsF = [];
         for (const [rgbKey, r] of Object.entries(regions)) {
           if (!r || !r.region) continue;
           const owner = ((currentOwnerByCity && currentOwnerByCity[r.city]) || r.faction || "").toLowerCase();
           if (owner !== sel) continue;
-          const native = (r.culture || "").toLowerCase();
-          const oc = String(factionCultures[sel] || "").toLowerCase();
-          if (native && oc && native !== oc) rowsF.push({ rgbKey, region: r.region, city: r.city, native });
+          const dom = domRelOf(r.tags);
+          if (dom && ownRel && dom !== ownRel) rowsF.push({ rgbKey, region: r.region, city: r.city, native: dom });
         }
         rowsF.sort((a, b) => (a.city || a.region).localeCompare(b.city || b.region));
         foreignList = rowsF;
@@ -17227,7 +17260,7 @@ Click for unit card`}
               </div>
             )}
             <div style={{ fontSize: "0.66rem", color: "#888", marginTop: 5, lineHeight: 1.4 }}>
-              Foreign settlements resist urbanisation and drag public order until their population converts. {sel ? "" : "Pick a faction to list its foreign holdings."}
+              A province’s faith = whichever religion has the largest share (highest rel level). Foreign-faith provinces drag public order until they convert. {sel ? "" : "Pick a faction to list its foreign holdings."}
             </div>
           </>}
         </div>

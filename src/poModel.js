@@ -267,4 +267,4 @@ function computeStartingPO(modDataDir, faction, opts = {}) {
   return out;
 }
 
-module.exports = { computeStartingPO, TAX_ORDER_DELTA, GARRISON_K, GARRISON_CAP_PTS };
+module.exports = { computeStartingPO, factionReligions, TAX_ORDER_DELTA, GARRISON_K, GARRISON_CAP_PTS };

@@ -397,6 +397,21 @@ ipcMain.handle("get-faction-metrics", async (_event, modDataDir, faction) => {
   } catch (e) { return { error: e && e.message ? e.message : "faction metrics failed" }; }
 });
 
+// IPC: per-faction "default religion" map (descr_sm_factions) for the Cultural
+// Conversion map mode. A province's dominant religion (highest rel_X_N level =
+// the plurality) is "converted" when it matches its owner's default religion —
+// the exact rule the PO model uses. Cheap parse, cached per modDataDir.
+const _facRelCache = new Map();
+ipcMain.handle("get-faction-religions", async (_event, modDataDir) => {
+  try {
+    if (!modDataDir) return {};
+    if (_facRelCache.has(modDataDir)) return _facRelCache.get(modDataDir);
+    const out = require("./poModel.js").factionReligions(modDataDir) || {};
+    _facRelCache.set(modDataDir, out);
+    return out;
+  } catch (e) { return { error: e && e.message ? e.message : "faction religions failed" }; }
+});
+
 let _mapMetricsCache = { key: null, data: null, busy: false };
 ipcMain.handle("get-map-mode-metrics", async (_event, modDataDir) => {
   try {
