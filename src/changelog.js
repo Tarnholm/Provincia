@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1394",
+    date: "2026-07-24",
+    items: [
+      { type: "improvement", text: "**Unrest merged into Public Order** — they were the same number shown two ways. Public Order (Government) now also lists the settlements worst-first with click-to-highlight / double-click-to-jump, from the live save or the selected faction's model." },
+      { type: "improvement", text: "**Tier Forecast merged into Growth** — one mode, called Growth (Economy), now computed only for the selected faction. Colour = growth rate; hover and the legend's settlement list show each settlement's growth and how many turns until its next tier at that rate." },
+      { type: "improvement", text: "**Corruption legend lists the faction's settlements** with each one's corruption cost (dn/turn, worst first) and the faction total — click to highlight, double-click to jump." },
+    ],
+  },
+  {
     version: "0.9.1393",
     date: "2026-07-24",
     items: [

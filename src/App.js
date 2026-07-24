@@ -2917,6 +2917,9 @@ function App() {
       // 0.9.829: "garrison" map mode was removed — fall back so a stale saved
       // value doesn't leave the map stuck on a mode that no longer exists.
       if (!saved || saved === "garrison") return "faction";
+      // 2026-07-24: Unrest + Happiness merged into Public Order
+      if (saved === "unrestrisk" || saved === "happiness") return "public_order";
+      if (saved === "tierforecast") return "growthmap"; // Tier Forecast merged into Growth
       return saved;
     }
   );
@@ -4386,7 +4389,7 @@ function App() {
   // because their dep arrays need colorMode/modDataDir initialized).
   useEffect(() => { setMapMetrics(null); }, [modDataDir]);
   useEffect(() => {
-    const METRIC_MODES = ["unrestrisk", "trueincome", "growthmap"]; // corruptionmap + tierforecast fetch per-faction instead
+    const METRIC_MODES = ["trueincome"]; // corruption/growth/public_order fetch per-faction instead
     if (!METRIC_MODES.includes(colorMode) || mapMetrics || mapMetricsBusyRef.current || !modDataDir) return;
     const api = window.electronAPI;
     if (!api?.getMapModeMetrics) return;
@@ -4404,7 +4407,7 @@ function App() {
   // Per-faction metrics for the Corruption mode: fetch when the mode is active
   // and a faction is picked; skip when we already hold that faction's numbers.
   useEffect(() => {
-    const wantsFM = colorMode === "corruptionmap" || colorMode === "tierforecast" || (colorMode === "public_order" && !saveHappinessByCity);
+    const wantsFM = colorMode === "corruptionmap" || colorMode === "growthmap" || (colorMode === "public_order" && !saveHappinessByCity);
     if (!wantsFM || !modDataDir || !selectedFaction) return;
     const want = selectedFaction.toLowerCase();
     if (factionMetrics && factionMetrics.faction === want) return;
@@ -9692,12 +9695,12 @@ function App() {
         // of baking into the nearest-neighbour-upscaled offscreen — that was
         // the blocky/pixelated look (fixed 2026-07-18).
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => [Math.round(pr * 0.22 + 28), Math.round(pg * 0.22 + 28), Math.round(pb * 0.22 + 30)]));
-      } else if (colorMode === "unrestrisk" || colorMode === "trueincome" || colorMode === "corruptionmap" || colorMode === "growthmap" || colorMode === "tierforecast") {
+      } else if (colorMode === "trueincome" || colorMode === "corruptionmap" || colorMode === "growthmap") {
         // Model-metric modes (2026-07-17, player modes 29-32): per-settlement
         // values from the cracked models (campaign-start state), one shared
         // main-process sweep (get-map-mode-metrics), lazily fetched + cached.
         // corruption reads the per-faction fetch; the other metric modes read the sweep
-        const mm = (colorMode === "corruptionmap" || colorMode === "tierforecast") ? (factionMetrics && factionMetrics.byRegion) : (mapMetrics && mapMetrics.byRegion);
+        const mm = (colorMode === "corruptionmap" || colorMode === "growthmap") ? (factionMetrics && factionMetrics.byRegion) : (mapMetrics && mapMetrics.byRegion);
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
           const e = mm && mm[r.region];
           let base = [45, 47, 52];
@@ -9706,38 +9709,12 @@ function App() {
               const t = Math.sqrt(Math.max(0, e.corruption) / ((factionMetrics && factionMetrics.maxCorr) || 1));
               base = [Math.round(55 + t * 165), Math.round(140 - t * 95), Math.round(60 - t * 20)];
             } else
-            if (colorMode === "unrestrisk" && e.po != null) {
-              // ONE faction at a time (user 2026-07-17): nothing colors until
-              // a faction is picked in the sidebar; only its regions render.
-              if (selectedFaction && e.faction === selectedFaction.toLowerCase()) {
-                const t = Math.max(0, Math.min(1, (140 - e.po) / 70)); // PO 140+ green → 70 (riot line) red
-                base = [Math.round(60 + t * 160), Math.round(170 - t * 120), 45];
-              }
-            } else if (colorMode === "trueincome" && e.income != null) {
+            if (colorMode === "trueincome" && e.income != null) {
               const t = Math.sqrt(Math.max(0, e.income) / (mapMetrics.maxIncome || 1));
               base = [Math.round(50 + t * 205), Math.round(48 + t * 157), 45];
             } else if (colorMode === "growthmap" && e.growth != null) {
               const g = Math.max(-2, Math.min(4, e.growth));
               base = g < 0 ? [200, 60, 45] : g < 0.5 ? [190, 170, 60] : [Math.round(80 - g * 8), Math.round(120 + g * 25), 50];
-            } else if (colorMode === "tierforecast" && e.tierNow != null) {
-              // Turns until the settlement's next population tier AT THE
-              // CURRENT growth rate (closed-form compound). The 60-turn squalor
-              // simulation plateaued EVERY RIS settlement below its threshold
-              // (no new buildings assumed), so it painted nothing — and 0%
-              // growth must never read green (user 2026-07-24). Green =
-              // genuinely growing & close; amber = distant; grey = stalled;
-              // red = declining; blue = max tier.
-              if (e.nextTierAt == null) base = [70, 95, 150];
-              else {
-                const g = e.growth;
-                const turns = (e.popNow != null && e.popNow >= e.nextTierAt) ? 1
-                  : (g > 0 ? Math.ceil(Math.log(e.nextTierAt / Math.max(1, e.popNow || 1)) / Math.log(1 + g / 100)) : null);
-                if (turns == null) base = e.declining ? [185, 60, 48] : [92, 86, 78];
-                else {
-                  const t = Math.max(0, Math.min(1, turns / 60));
-                  base = [Math.round(55 + t * 140), Math.round(180 - t * 55), 48];
-                }
-              }
             }
           }
           if (devFlatColors) return base;
@@ -14550,7 +14527,6 @@ function App() {
       ]},
       { id: "government", title: "Government", members: [
         { key: "government", label: "Government", badge: "mode.government" },
-        { key: "unrestrisk", label: "Unrest", badge: "mode.unrestrisk" },
         { key: "loyalist", label: "Loyalist", badge: "mode.loyalist", dev: true }, // dev-only since 0.9.1276 (user request)
         // Public Order absorbed the old Happiness mode (2026-07-24, user: both
         // read the same save value). Non-dev; works without a save via the
@@ -14564,7 +14540,6 @@ function App() {
       { id: "population", title: "Population", members: [
         { key: "population", label: "Population", badge: "mode.population" },
         { key: "pop_growth", label: "Pop Headroom", badge: "devmode.pop_growth", dev: true },
-        { key: "tierforecast", label: "Tier Forecast", badge: "mode.tierforecast" },
       ]},
       { id: "economy", title: "Economy", members: [
         { key: "resource", label: "Resources", badge: "mode.resource" },
@@ -16021,17 +15996,20 @@ function App() {
       const total = resSum + farm * 2 + port * 4;
       return { label: "Wealth (est.)", value: `${total} (resources ${resSum}, farm ×${farm}, port ×${port})` };
     }
-    if (colorMode === "tierforecast") {
+    if (colorMode === "growthmap") {
       const e = factionMetrics && factionMetrics.byRegion && factionMetrics.byRegion[info.region];
-      if (!e || e.tierNow == null) return { label: "Tier Forecast", value: selectedFaction ? "No projection" : "Pick a faction" };
-      const tierLabel = (t) => String(t || "").replace(/_/g, " ");
-      if (e.nextTierAt == null) return { label: "Tier Forecast", value: `${tierLabel(e.tierNow)} — max tier` };
-      const popStr = `pop ${(e.popNow || 0).toLocaleString()} / ${e.nextTierAt.toLocaleString()}`;
+      if (!e || e.growth == null) return { label: "Growth", value: selectedFaction ? "No projection" : "Pick a faction" };
       const g = e.growth;
-      const turns = (e.popNow != null && e.popNow >= e.nextTierAt) ? 1
-        : (g > 0 ? Math.ceil(Math.log(e.nextTierAt / Math.max(1, e.popNow || 1)) / Math.log(1 + g / 100)) : null);
-      if (turns == null) return { label: "Tier Forecast", value: `${tierLabel(e.tierNow)} — ${e.declining ? "declining" : "stalled (0% growth)"} (${popStr})` };
-      return { label: "Tier Forecast", value: `${tierLabel(e.tierNow)} → next tier in ~${turns} turn${turns === 1 ? "" : "s"} at +${g}%/turn (${popStr})` };
+      let tierStr = "";
+      if (e.nextTierAt == null) tierStr = " - max tier";
+      else if (e.popNow != null) {
+        const turns = e.popNow >= e.nextTierAt ? 1
+          : (g > 0 ? Math.ceil(Math.log(e.nextTierAt / Math.max(1, e.popNow)) / Math.log(1 + g / 100)) : null);
+        tierStr = turns != null
+          ? ` - next tier in ~${turns} turn${turns === 1 ? "" : "s"} (pop ${(e.popNow || 0).toLocaleString()} / ${e.nextTierAt.toLocaleString()})`
+          : (e.declining ? " - declining" : " - stalled");
+      }
+      return { label: "Growth", value: `${g > 0 ? "+" : ""}${g}%/turn${tierStr}` };
     }
     if (colorMode === "recruitment") {
       // 0.9.828: show the actual unique-recruit count for this region (the
@@ -16345,13 +16323,11 @@ function App() {
       );
     }
 
-    if (colorMode === "unrestrisk" || colorMode === "trueincome" || colorMode === "corruptionmap" || colorMode === "growthmap" || colorMode === "tierforecast") {
+    if (colorMode === "trueincome" || colorMode === "corruptionmap" || colorMode === "growthmap") {
       const CFG = {
-        unrestrisk: { title: "Unrest risk", grad: "linear-gradient(to right, rgb(60,170,45), rgb(190,170,60), rgb(220,50,45))", labels: ["stable", "tense", "riot risk"] },
         trueincome: { title: "Income (model)", grad: "linear-gradient(to right, rgb(50,48,45), rgb(160,130,45), rgb(255,205,45))", labels: ["poor", "", mapMetrics ? `${mapMetrics.maxIncome} dn` : "richest"] },
         corruptionmap: { title: "Corruption", grad: "linear-gradient(to right, rgb(55,140,60), rgb(140,95,50), rgb(220,45,40))", labels: ["clean", "", factionMetrics ? `-${factionMetrics.maxCorr} dn` : "worst"] },
         growthmap: { title: "Growth", grad: "linear-gradient(to right, rgb(200,60,45), rgb(190,170,60), rgb(60,180,50))", labels: ["declining", "flat", "booming"] },
-        tierforecast: { title: "Tier Forecast (turns to next tier at current growth)", grad: "linear-gradient(to right, rgb(55,180,48), rgb(125,153,48), rgb(195,125,48))", labels: ["soon", "~30 turns", "60+"] },
       }[colorMode];
       return (
         <div style={panelStyle}>
@@ -16361,86 +16337,82 @@ function App() {
             <div style={labelRow}>
               <span>{CFG.labels[0]}</span><span>{CFG.labels[1]}</span><span>{CFG.labels[2]}</span>
             </div>
-            {(colorMode === "corruptionmap" || colorMode === "tierforecast") && (
+            {colorMode === "growthmap" && factionMetrics && factionMetrics.byRegion && (() => {
+              // Settlement list: growth %/turn + turns to next tier (the old
+              // Tier Forecast, merged here 2026-07-24), slowest growers last.
+              const rowsG = Object.entries(factionMetrics.byRegion)
+                .filter(([, e]) => e && typeof e.growth === "number")
+                .map(([reg, e]) => {
+                  const g = e.growth;
+                  let turns = null;
+                  if (e.nextTierAt != null && e.popNow != null) {
+                    turns = e.popNow >= e.nextTierAt ? 1
+                      : (g > 0 ? Math.ceil(Math.log(e.nextTierAt / Math.max(1, e.popNow)) / Math.log(1 + g / 100)) : null);
+                  }
+                  return { region: reg, city: e.settlement || reg, g, turns, max: e.nextTierAt == null, declining: e.declining };
+                })
+                .sort((a, b) => b.g - a.g);
+              if (!rowsG.length) return null;
+              const jump = (regionName, dbl) => {
+                const hit = Object.entries(regions).find(([, rd2]) => rd2 && rd2.region === regionName);
+                if (!hit) return;
+                if (dbl) onSearchActivate({ type: "region", payload: { region: hit[1], rgbKey: hit[0] } });
+                else setSelectedProvinces([hit[0]]);
+              };
+              return (
+                <div style={{ marginTop: 6, maxHeight: "30vh", overflowY: "auto", paddingRight: 2 }}>
+                  <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>Growth + next settlement tier:</div>
+                  {rowsG.map((r) => (
+                    <div key={r.region} onClick={() => jump(r.region, false)} onDoubleClick={() => jump(r.region, true)}
+                      title="Click: highlight - double-click: jump"
+                      style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer" }}>
+                      <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{String(r.city).replace(/_/g, " ")}</span>
+                      <span style={{ color: r.g > 0 ? "#8fd18f" : r.g < 0 ? "#e87a6a" : "#e8c873", whiteSpace: "nowrap" }}>
+                        {r.g > 0 ? "+" : ""}{r.g}%{r.max ? " · max" : r.turns != null ? ` · tier in ~${r.turns}t` : r.declining ? " · declining" : " · stalled"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+            {colorMode === "corruptionmap" && factionMetrics && factionMetrics.byRegion && (() => {
+              // Settlement list (user 2026-07-24): every settlement of the
+              // selected faction with its corruption cost, worst first.
+              const rowsC = Object.entries(factionMetrics.byRegion)
+                .filter(([, e]) => e && typeof e.corruption === "number")
+                .map(([reg, e]) => ({ region: reg, city: e.settlement || reg, corr: e.corruption }))
+                .sort((a, b) => b.corr - a.corr);
+              if (!rowsC.length) return null;
+              const total = rowsC.reduce((a, r) => a + r.corr, 0);
+              const jump = (regionName, dbl) => {
+                const hit = Object.entries(regions).find(([, rd2]) => rd2 && rd2.region === regionName);
+                if (!hit) return;
+                if (dbl) onSearchActivate({ type: "region", payload: { region: hit[1], rgbKey: hit[0] } });
+                else setSelectedProvinces([hit[0]]);
+              };
+              return (
+                <div style={{ marginTop: 6, maxHeight: "30vh", overflowY: "auto", paddingRight: 2 }}>
+                  <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>
+                    {rowsC.length} settlements — {Math.round(total).toLocaleString()} dn/turn lost total:
+                  </div>
+                  {rowsC.map((r) => (
+                    <div key={r.region} onClick={() => jump(r.region, false)} onDoubleClick={() => jump(r.region, true)}
+                      title="Click: highlight · double-click: jump"
+                      style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer" }}>
+                      <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{String(r.city).replace(/_/g, " ")}</span>
+                      <span style={{ color: r.corr > (factionMetrics.maxCorr || 1) * 0.6 ? "#e87a6a" : r.corr > 0 ? "#e8c873" : "#8fd18f", whiteSpace: "nowrap" }}>-{Math.round(r.corr)} dn</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+            {(colorMode === "corruptionmap" || colorMode === "growthmap") && (
               <div style={{ marginTop: 5, fontSize: "0.7rem", color: selectedFaction ? "#9ed6ad" : "#e8c873" }}>
                 {selectedFaction
                   ? `${(factionDisplayNames && factionDisplayNames[selectedFaction.toLowerCase()]) || selectedFaction.replace(/_/g, " ")} — computed for this faction only`
                   : "Pick a faction in the sidebar — this mode computes only the selected faction."}
               </div>
             )}
-            {colorMode === "tierforecast" && (
-              <div style={{ display: "flex", gap: 10, marginTop: 4, fontSize: "0.68rem", color: "#bbb" }}>
-                {[[[92, 86, 78], "stalled"], [[185, 60, 48], "declining"], [[70, 95, 150], "max tier"]].map(([c, lab]) => (
-                  <span key={lab} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <span style={{ width: 10, height: 10, borderRadius: 2, background: `rgb(${c[0]},${c[1]},${c[2]})` }} />{lab}
-                  </span>
-                ))}
-              </div>
-            )}
-            {colorMode === "unrestrisk" && mapMetrics && (() => {
-              // Revolt risk (user 2026-07-17): risky = PO < 80 (riot line 70).
-              // No faction picked → faction picker list. Faction picked → that
-              // faction's PROVINCES with their PO, worst-first (user follow-up).
-              const sel = selectedFaction && selectedFaction.toLowerCase();
-              // Click a province → highlight; double-click → jump (mining flow).
-              const jumpToProv = (regionName, dbl) => {
-                const hit = Object.entries(regions).find(([, rd2]) => rd2 && rd2.region === regionName);
-                if (!hit) return;
-                const [rgbKey, rd2] = hit;
-                if (dbl) onSearchActivate({ type: "region", payload: { region: rd2, rgbKey } });
-                else setSelectedProvinces([rgbKey]);
-              };
-              if (sel) {
-                const provs = Object.entries(mapMetrics.byRegion)
-                  .filter(([, e]) => e && e.po != null && e.faction === sel)
-                  .map(([region, e]) => ({ region, settlement: e.settlement || region, po: e.po }))
-                  .sort((a, b) => a.po - b.po || a.settlement.localeCompare(b.settlement));
-                return (
-                  <div style={{ marginTop: 6, maxHeight: "40vh", overflowY: "auto", paddingRight: 2 }}>
-                    <div onClick={() => setSelectedFaction(null)} style={{ fontSize: "0.7rem", color: "#8fc9d8", cursor: "pointer", marginBottom: 3 }}>‹ all factions</div>
-                    <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>{(factionDisplayNames && factionDisplayNames[sel]) || sel.replace(/_/g, " ")} — {provs.filter((p) => p.po < 80).length}/{provs.length} at risk:</div>
-                    {provs.map((p) => (
-                      <div
-                        key={p.region}
-                        onClick={() => jumpToProv(p.region, false)}
-                        onDoubleClick={() => jumpToProv(p.region, true)}
-                        title="Click: highlight · double-click: jump"
-                        style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer" }}
-                      >
-                        <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.settlement}</span>
-                        <span style={{ color: p.po < 80 ? "#e87a6a" : p.po < 100 ? "#e8c873" : "#8fd18f", whiteSpace: "nowrap" }}>PO {p.po}</span>
-                      </div>
-                    ))}
-                  </div>
-                );
-              }
-              const agg = {};
-              for (const e of Object.values(mapMetrics.byRegion)) {
-                if (!e || e.po == null || !e.faction) continue;
-                const a = agg[e.faction] = agg[e.faction] || { risky: 0, total: 0 };
-                a.total += 1;
-                if (e.po < 80) a.risky += 1;
-              }
-              const rows = Object.entries(agg)
-                .sort((x, y) => y[1].risky - x[1].risky || (y[1].risky / y[1].total) - (x[1].risky / x[1].total) || x[0].localeCompare(y[0]));
-              if (!rows.length) return null;
-              return (
-                <div style={{ marginTop: 6, maxHeight: "40vh", overflowY: "auto", paddingRight: 2 }}>
-                  <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>Pick a faction (risk = at-risk / total):</div>
-                  {rows.map(([fac, a]) => (
-                    <div
-                      key={fac}
-                      onClick={() => setSelectedFaction(fac)}
-                      title="Show this faction's provinces"
-                      style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer", borderRadius: 3, padding: "0 3px" }}
-                    >
-                      <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(factionDisplayNames && factionDisplayNames[fac]) || fac.replace(/_/g, " ")}</span>
-                      <span style={{ color: a.risky / a.total > 0.4 ? "#e87a6a" : "#e8c873", whiteSpace: "nowrap" }}>{a.risky}/{a.total}</span>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
             <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>
               {mapMetrics
                 ? `Per-settlement model values at campaign start (${mapMetrics.factions} factions).`
@@ -16697,6 +16669,43 @@ function App() {
                 </div>
               ))}
             </div>
+            {(() => {
+              // Worst-first province list (absorbed from the old Unrest mode):
+              // live save values when present, else the selected faction's model.
+              const rowsPO = [];
+              if (saveHappinessByCity) {
+                for (const r of Object.values(regions)) {
+                  const v = saveHappinessByCity[r.city];
+                  if (typeof v === "number") rowsPO.push({ region: r.region, city: r.city, po: v });
+                }
+              } else if (factionMetrics && factionMetrics.byRegion) {
+                for (const [reg, e] of Object.entries(factionMetrics.byRegion)) {
+                  if (e && typeof e.po === "number") rowsPO.push({ region: reg, city: e.settlement || reg, po: e.po });
+                }
+              }
+              if (!rowsPO.length) return null;
+              rowsPO.sort((a, b) => a.po - b.po);
+              const atRisk = rowsPO.filter((r) => r.po < 80).length;
+              const jump = (regionName, dbl) => {
+                const hit = Object.entries(regions).find(([, rd2]) => rd2 && rd2.region === regionName);
+                if (!hit) return;
+                if (dbl) onSearchActivate({ type: "region", payload: { region: hit[1], rgbKey: hit[0] } });
+                else setSelectedProvinces([hit[0]]);
+              };
+              return (
+                <div style={{ marginTop: 6, maxHeight: "30vh", overflowY: "auto", paddingRight: 2 }}>
+                  <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>{atRisk}/{rowsPO.length} at risk (worst first):</div>
+                  {rowsPO.slice(0, 40).map((r) => (
+                    <div key={r.region} onClick={() => jump(r.region, false)} onDoubleClick={() => jump(r.region, true)}
+                      title="Click: highlight - double-click: jump"
+                      style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer" }}>
+                      <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{String(r.city).replace(/_/g, " ")}</span>
+                      <span style={{ color: r.po < 80 ? "#e87a6a" : r.po < 100 ? "#e8c873" : "#8fd18f", whiteSpace: "nowrap" }}>PO {Math.round(r.po)}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
             <div style={{ fontSize: "0.7rem", color: live ? "#9ed6ad" : "#e8c873", marginTop: 5 }}>
               {live
                 ? "Exact values from the live save."
