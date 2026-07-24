@@ -93,7 +93,7 @@ export default function AiMovementPanel({
             <span style={{ fontSize: "0.72rem", color: "#888" }}>
               {result.logKind === "campaign_ai"
                 ? `AI decision log · ${result.totalTurns} turn blocks (${result.firstYear} → ${result.lastYear}) · ${(result.lines || 0).toLocaleString()} lines · ${result.findings.length} findings · ${result.ms}ms`
-                : `${result.totalTurns} turns · ${result.moveLines.toLocaleString()} moves · ${result.armies} armies · ${result.findings.length} findings · ${result.ms}ms`}
+                : `movement log · ${result.totalTurns} turns · ${result.moveLines.toLocaleString()} moves · ${result.armies} armies · ${result.findings.length} findings · ${result.ms}ms`}
             </span>
           )}
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#bbb", fontSize: "1.1rem", cursor: "pointer" }}>✕</button>
@@ -146,7 +146,24 @@ export default function AiMovementPanel({
           </div>
         )}
 
-        {result && (
+        {result && result.usable === false && (
+          <div style={{ padding: "18px 20px" }}>
+            <div style={{ padding: "10px 12px", borderRadius: 8, background: "rgba(232,122,106,0.10)", border: "1px solid rgba(232,122,106,0.35)" }}>
+              <div style={{ fontWeight: 700, color: "#e87a6a", marginBottom: 4 }}>Nothing to analyse in this log</div>
+              <div style={{ fontSize: "0.8rem", color: "#ddd", lineHeight: 1.55 }}>{result.emptyReason}</div>
+              <div style={{ fontSize: "0.72rem", color: "#9a8f7a", marginTop: 6 }}>
+                {(result.logPath || "").split(/[\/]/).pop()}
+                {result.logBytes ? ` · ${(result.logBytes / 1048576).toFixed(1)} MB` : ""}
+              </div>
+            </div>
+            <div style={{ fontSize: "0.76rem", color: "#aaa", marginTop: 10, lineHeight: 1.6 }}>
+              This is <b>not</b> a clean bill of health for the AI — it simply means this file carries no
+              movement or decision data. The AI-side analysis lives in <code style={{ color: "#8fc9d8" }}>campaign_ai_log.txt</code>,
+              which is usually the far larger file in the same folder.
+            </div>
+          </div>
+        )}
+        {result && result.usable !== false && (
           <div style={{ overflowY: "auto", padding: "8px 16px" }}>
             {result.saveError && (
               <div style={{ marginBottom: 6, fontSize: "0.74rem", color: "#e87a6a" }}>Save cross-reference failed: {result.saveError}</div>
@@ -223,7 +240,13 @@ export default function AiMovementPanel({
             </div>
 
             {/* findings table */}
-            {visible.length === 0 && <div style={{ color: "#8fd18f", fontSize: "0.8rem", padding: "8px 2px" }}>No findings match — the AI moved cleanly here.</div>}
+            {visible.length === 0 && (
+              <div style={{ color: (result.findings || []).length ? "#e8c873" : "#8fd18f", fontSize: "0.8rem", padding: "8px 2px" }}>
+                {(result.findings || []).length
+                  ? "No findings match the current filters — widen them to see the rest."
+                  : "No problems found — the AI moved cleanly in this log."}
+              </div>
+            )}
             {visible.map((f, i) => {
               const m = KIND_META[f.kind] || { color: "#999", label: f.kind };
               return (

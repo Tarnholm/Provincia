@@ -421,6 +421,9 @@ ipcMain.handle("pick-ai-save-file", async () => {
 
 async function _correlateSave(result, savePath, modDataDir) {
   if (!savePath) return;
+  // Nothing was parsed out of the log → a banner of zeroes would read as
+  // "all clear" rather than "no data". Skip it and let the panel explain.
+  if (result.usable === false) return;
   try {
     if (!fs.existsSync(savePath)) { result.saveError = "save not found: " + savePath; return; }
     const { crackSave } = require("./saveCracker.js");

@@ -193,3 +193,39 @@ describe("finance + build-appetite tracking (real campaign_ai_log lines)", () =>
     expect(r.findings.some((f) => f.kind === "rich_but_stalled")).toBe(false);
   });
 });
+
+describe("empty / unsuitable logs are reported honestly (not as 'all clear')", () => {
+  it("marks a warnings-only message_log unusable and explains why", async () => {
+    const { analyzeMovementLog } = await import("./aiMovementAnalyzer.js");
+    // shape of a real session log that never played AI turns (engine warnings only)
+    const junk = [
+      "==== message log start, build date: Jan 17 2022 ===",
+      "Mods Disabled: No",
+      "Trying to reinitialise the own_character_info_scroll when it hasn't been initialised already",
+      "resetting all armies in region(4)",
+      "bdg.construction_type_get() == BUILDING_CONSTRUCTION_ITEM_BUILDING_NEW Failed",
+    ].join("\n");
+    const r = analyzeMovementLog(junk);
+    expect(r.logKind).toBe("message_log");
+    expect(r.usable).toBe(false);
+    expect(r.findings).toEqual([]);
+    expect(r.emptyReason).toMatch(/no movement events/);
+    expect(r.emptyReason).toMatch(/campaign_ai_log\.txt/); // tells the user where to look
+  });
+
+  it("marks a real movement log usable with no emptyReason", () => {
+    const r = analyzeMovementLog(fs.readFileSync(LOG, "utf8")); // archived 97-turn campaign
+    expect(r.usable).toBe(true);
+    expect(r.emptyReason).toBeNull();
+  });
+
+  it("marks an AI-decision log with no turn blocks unusable", async () => {
+    const { createAiDecisionAnalyzer } = await import("./aiMovementAnalyzer.js");
+    const an = createAiDecisionAnalyzer();
+    an.feedLine("==== campaign ai log start, build date: Jan 17 2022 ===");
+    an.feedLine("some unrelated line");
+    const r = an.finish();
+    expect(r.usable).toBe(false);
+    expect(r.emptyReason).toMatch(/no AI decision data/);
+  });
+});

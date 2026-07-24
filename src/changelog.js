@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1416",
+    date: "2026-07-25",
+    items: [
+      { type: "fix", text: "**AI Movement Lab no longer reports an empty log as “the AI moved cleanly”.** Feeding it a message_log that carries no movement data (a session log full of engine warnings, which is what the game leaves behind when no AI turns were played) showed “0 findings” plus a cross-reference banner full of zeroes — reading as a clean bill of health when in fact there was nothing to analyse. It now says so plainly, with the line count and what was missing, and points you at campaign_ai_log.txt instead. The save cross-reference is skipped entirely for such logs rather than printing zeroes." },
+      { type: "improvement", text: "**The header now names which kind of log was parsed** (“movement log” vs “AI decision log”), and “no findings” now distinguishes “your filters hide them all” from “genuinely nothing wrong in this log”." },
+    ],
+  },
+  {
     version: "0.9.1415",
     date: "2026-07-25",
     items: [

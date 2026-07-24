@@ -221,7 +221,22 @@ function analyzeMovementLog(text, opts = {}) {
   const findingCounts = {};
   for (const f of findings) findingCounts[f.kind] = (findingCounts[f.kind] || 0) + 1;
 
+  // Is this log actually USABLE for movement analysis? A message_log from a
+  // session that never played AI turns contains only engine warnings — no
+  // MOVING_NORMAL entries and no "end round" markers. Reporting "0 findings"
+  // for that read as "the AI is fine", which is false reassurance, so say
+  // plainly that there was nothing to analyse (2026-07-25).
+  const usable = moveLines > 0 || fleeLines > 0;
+  let emptyReason = null;
+  if (!usable) {
+    const scanned = String(text || "").split(/\r?\n/).length;
+    emptyReason = `no movement events in this log — ${scanned.toLocaleString()} lines scanned, ` +
+      `0 movement entries (MOVING_NORMAL) and ${totalTurns <= 1 ? "no turn markers" : totalTurns + " turn markers"}. ` +
+      `Movement traces only appear in a message_log from a campaign that was actually played; ` +
+      `a log of engine warnings has none. Try a campaign_ai_log.txt (AI decisions) or a message_log from a played session.`;
+  }
   return {
+    logKind: "message_log", usable, emptyReason,
     totalTurns, moveLines, fleeLines, parsedLines, cannotFlee,
     armies: armies.size,
     findings, findingCounts, factionStats,
@@ -475,8 +490,11 @@ function createAiDecisionAnalyzer(opts = {}) {
     findings.sort((p, q) => q.severity - p.severity || q.turns - p.turns);
     const findingCounts = {};
     for (const f of findings) findingCounts[f.kind] = (findingCounts[f.kind] || 0) + 1;
+    const usable = turnIdx > 0 && matched > 0;
     return {
       logKind: "campaign_ai",
+      usable,
+      emptyReason: usable ? null : `no AI decision data in this log — ${lines.toLocaleString()} lines scanned, no faction turn blocks recognised.`,
       totalTurns: turnIdx, firstYear, lastYear,
       parsedLines: matched, moveLines: 0, fleeLines: 0, cannotFlee: 0,
       armies: churn.size,
