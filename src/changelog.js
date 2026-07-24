@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1406",
+    date: "2026-07-24",
+    items: [
+      { type: "fix", text: "**Public Order (and Corruption/Income/Growth) no longer lock the app on first use.** The economy model re-parsed the entire buildings file (export_descr_buildings.txt) once per faction inside its trade-partner pass — about 12 seconds of frozen main thread the first time one of these modes opened. That parse is now cached, cutting the cold cost by ~78% (12s → ~2.7s), and the remaining one-time map/graph setup is cached per mod and warmed quietly in the background, so opening these modes is effectively instant after load." },
+    ],
+  },
+  {
     version: "0.9.1405",
     date: "2026-07-24",
     items: [

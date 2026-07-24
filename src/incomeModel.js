@@ -46,7 +46,16 @@ function empireTier(nSettlements) {
 
 // ---- EDB income-capability pass (same walking logic as growthEval.parseEDB) ----
 // capIndex["chain:level"] = { taxable:[{val,req}], trade:[…], tradeLvl:[…], mine:[…], fleet:[…] }
+// Cache the parsed EDB per file+mtime. It's a large static file and the
+// trade-partner pass re-invokes this once per faction — without the cache that
+// re-parse cost ~5s+ (dominating a ~12s cold Public Order / Growth open).
+// mtime-keyed so a live mod edit still refreshes it.
+const _edbIncomeCache = new Map();
 function parseEDBIncome(edbPath) {
+  let mtime = 0; try { mtime = fs.statSync(edbPath).mtimeMs; } catch { /* missing → key on 0 */ }
+  const cacheKey = edbPath + "|" + mtime;
+  const cached = _edbIncomeCache.get(cacheKey);
+  if (cached) return cached;
   const lines = fs.readFileSync(edbPath, "latin1").split(/\r?\n/);
   const capIndex = {}, chainLevels = {};
   let curBuilding = null, levelsList = [], curLevel = null, inFC = false, fcPending = false;
@@ -84,7 +93,9 @@ function parseEDBIncome(edbPath) {
     if ((m = ln.match(/^\s*population_health_bonus\s+(?:bonus\s+)?(-?\d+)(?:\s+requires\s+(.+))?/))) { add("health", { val: +m[1], req: (m[2] || "").trim() }); continue; }
     if ((m = ln.match(/^\s*law_bonus\s+(?:bonus\s+)?(-?\d+)(?:\s+requires\s+(.+))?/))) { add("law", { val: +m[1], req: (m[2] || "").trim() }); continue; }
   }
-  return { capIndex, chainLevels, aliases };
+  const result = { capIndex, chainLevels, aliases };
+  _edbIncomeCache.set(cacheKey, result);
+  return result;
 }
 
 // ---- descr_sm_resources: resource → { tradeValue, tier, mineable } ----
