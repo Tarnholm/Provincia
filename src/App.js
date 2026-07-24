@@ -16149,6 +16149,332 @@ function App() {
         </div>
       );
     }
+    if (colorMode === "culture" || colorMode === "religion") {
+      // Build swatch list and region counts from visible regions
+      const seen = {};
+      const counts = {}; // name → number of regions
+      let ci = 0;
+      for (const r of Object.values(regions)) {
+        if (colorMode === "culture" && r.culture) {
+          if (!seen[r.culture]) {
+            seen[r.culture] = CULTURE_PALETTE[ci % CULTURE_PALETTE.length];
+            ci++;
+          }
+          counts[r.culture] = (counts[r.culture] || 0) + 1;
+        }
+        if (colorMode === "religion") {
+          let best = null, bestLvl = -1;
+          for (const hit of String(r.tags || "").matchAll(/\brel_([a-z_]+?)_(\d+)\b/g)) {
+            const lvl = parseInt(hit[2], 10);
+            if (lvl > bestLvl) { best = hit[1]; bestLvl = lvl; }
+          }
+          if (best) {
+            if (!seen[best]) seen[best] = RELIGION_COLORS[best] || [128, 128, 128];
+            counts[best] = (counts[best] || 0) + 1;
+          }
+        }
+      }
+      const entries = Object.entries(seen).sort((a, b) => a[0].localeCompare(b[0]));
+      if (entries.length === 0) return null;
+
+      // legendFilter is now a Set<string> or null
+      const activeSet = legendFilter instanceof Set ? legendFilter : null;
+
+      const getMatchingKeys = (name) => {
+        const matching = [];
+        for (const [rgbKey, r] of Object.entries(regions)) {
+          if (colorMode === "culture") {
+            if (r.culture === name) matching.push(rgbKey);
+          } else {
+            let best = null, bestLvl = -1;
+            for (const hit of String(r.tags || "").matchAll(/\brel_([a-z_]+?)_(\d+)\b/g)) {
+              const lvl = parseInt(hit[2], 10);
+              if (lvl > bestLvl) { best = hit[1]; bestLvl = lvl; }
+            }
+            if (best === name) matching.push(rgbKey);
+          }
+        }
+        return matching;
+      };
+
+      const handleLegendClick = (name, isShift) => {
+        setLegendFilter(prev => {
+          const current = prev instanceof Set ? new Set(prev) : new Set();
+          if (isShift) {
+            // Shift: toggle this entry in the set
+            if (current.has(name)) current.delete(name);
+            else current.add(name);
+          } else {
+            // Regular: if only this one selected, deselect all; else select only this
+            if (current.size === 1 && current.has(name)) current.clear();
+            else { current.clear(); current.add(name); }
+          }
+          // Recompute selected provinces as union of all selected cultures
+          const allKeys = [...current].flatMap(n => getMatchingKeys(n));
+          const unique = [...new Set(allKeys)];
+          setSelectedProvinces(unique);
+          if (unique.length > 0 && !isShift) zoomToProvinces(unique);
+          return current.size === 0 ? null : current;
+        });
+      };
+
+      // Determine which legend entries are currently active on the map
+      // (provinces selected via map clicks that belong to a culture)
+      const activeOnMap = new Set(
+        selectedProvinces.map(k => colorMode === "culture" ? regions[k]?.culture : (() => {
+          let best = null, bestLvl = -1;
+          for (const hit of String(regions[k]?.tags || "").matchAll(/\brel_([a-z_]+?)_(\d+)\b/g)) {
+            const lvl = parseInt(hit[2], 10);
+            if (lvl > bestLvl) { best = hit[1]; bestLvl = lvl; }
+          }
+          return best;
+        })()).filter(Boolean)
+      );
+
+      return (
+        <div className="legend-panel" style={{ ...panelStyle, maxHeight: canvasSize.height - 100, overflowY: "auto" }}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 6, ...collapseToggle }} onClick={onCollapseClick}>
+            {colorMode === "culture" ? "Culture" : "Religion"} <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
+            {!legendCollapsed && <span style={{ fontWeight: 400, fontSize: "0.7rem", marginLeft: 6, color: "#aaa" }}>shift+click multi-select</span>}
+          </div>
+          {!legendCollapsed && (
+            <input
+              type="text"
+              value={legendSearch}
+              onChange={(e) => setLegendSearch(e.target.value)}
+              className="legend-search-input"
+              placeholder="Search..."
+              style={{
+                width: "100%", boxSizing: "border-box", padding: "4px 10px", marginBottom: 4,
+                borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)",
+                color: "#eee", fontSize: "0.74rem", outline: "none",
+                transition: "border-color 0.15s, box-shadow 0.15s",
+              }}
+            />
+          )}
+          <div style={{ display: legendCollapsed ? "none" : "flex", flexDirection: "column", gap: 2 }}>
+            {colorMode === "religion" ? (
+              // Grouped religion legend
+              Object.entries(RELIGION_GROUPS).map(([groupName, groupRels]) => {
+                let groupEntries = entries.filter(([name]) => groupRels.includes(name));
+                // Apply legend search filter
+                const lq = legendSearch.trim().toLowerCase();
+                if (lq) {
+                  groupEntries = groupEntries.filter(([name]) => name.replace(/_/g, " ").toLowerCase().includes(lq));
+                  if (groupEntries.length === 0 && !groupName.toLowerCase().includes(lq)) return null;
+                }
+                if (groupEntries.length === 0) return null;
+                const isGroupCollapsed = lq ? false : collapsedRelGroups.has(groupName);
+                const groupHasSelected = groupEntries.some(([name]) => activeSet?.has(name));
+                const groupRegionCount = groupEntries.reduce((sum, [name]) => sum + (counts[name] || 0), 0);
+                return (
+                  <div key={groupName}>
+                    <div onClick={(e) => {
+                      if (e.shiftKey) {
+                        // Shift+click: select all religions in this group
+                        const groupNames = groupEntries.map(([name]) => name);
+                        setLegendFilter(prev => {
+                          const current = prev instanceof Set ? new Set(prev) : new Set();
+                          const allSelected = groupNames.every(n => current.has(n));
+                          if (allSelected) groupNames.forEach(n => current.delete(n));
+                          else groupNames.forEach(n => current.add(n));
+                          const allKeys = [...current].flatMap(n => getMatchingKeys(n));
+                          const unique = [...new Set(allKeys)];
+                          setSelectedProvinces(unique);
+                          if (unique.length > 0) zoomToProvinces(unique);
+                          return current.size === 0 ? null : current;
+                        });
+                      } else {
+                        setCollapsedRelGroups(prev => {
+                          const s = new Set(prev);
+                          if (s.has(groupName)) s.delete(groupName); else s.add(groupName);
+                          return s;
+                        });
+                      }
+                    }} style={{
+                      padding: "3px 4px", cursor: "pointer", fontWeight: 700, fontSize: "0.72rem",
+                      color: groupHasSelected ? "#e8a030" : "#aaa", userSelect: "none",
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      borderBottom: "1px solid rgba(255,255,255,0.08)", marginTop: 2,
+                    }}>
+                      <span>{isGroupCollapsed ? "\u25B6" : "\u25BC"} {groupName}</span>
+                      <span style={{ fontWeight: 400, fontSize: "0.65rem", color: "#666" }}>{groupEntries.length} types, {groupRegionCount} regions</span>
+                    </div>
+                    {!isGroupCollapsed && groupEntries.map(([name, rgb]) => {
+                      const selected = activeSet?.has(name);
+                      const onMap = activeOnMap.has(name);
+                      const dimmed = activeSet && activeSet.size > 0 && !selected;
+                      return (
+                        <div key={name} onClick={(e) => handleLegendClick(name, e.shiftKey)} style={{
+                          display: "flex", alignItems: "center", gap: 6,
+                          padding: "2px 4px 2px 14px", borderRadius: 4, cursor: "pointer",
+                          background: selected ? "rgba(220,166,74,0.25)" : onMap ? "rgba(255,255,255,0.12)" : "transparent",
+                          opacity: dimmed ? 0.4 : 1,
+                          transition: "opacity 0.15s, background 0.15s",
+                        }}>
+                          <div style={{ width: 10, height: 10, borderRadius: 2, flexShrink: 0,
+                            background: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`,
+                            outline: selected ? "2px solid #dca64a" : onMap ? "2px solid #fff" : "none",
+                          }} />
+                          <span style={{
+                            textTransform: "capitalize", flex: 1, fontSize: "0.72rem",
+                            fontWeight: onMap ? 700 : 400,
+                            color: onMap && !selected ? "#fff" : "inherit",
+                          }}>{name.replace(/_/g, " ")}</span>
+                          <span style={{ fontSize: "0.62rem", color: "#666", flexShrink: 0 }}>({counts[name] || 0})</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })
+            ) : (
+              // Grouped culture legend with nested sub-groups
+              (() => {
+                const lq = legendSearch.trim().toLowerCase();
+                // Build culture → { main, sub } mapping
+                const cultureGroupMap = {};
+                for (const r of Object.values(regions)) {
+                  if (r.culture && !cultureGroupMap[r.culture]) {
+                    cultureGroupMap[r.culture] = classifyCultureGroup(r);
+                  }
+                }
+                // Filter entries by legend search
+                const filteredEntries = lq ? entries.filter(([name]) => name.replace(/_/g, " ").toLowerCase().includes(lq)) : entries;
+                // Build main → { sub → entries[] }
+                const mainGroups = {};
+                for (const [name, rgb] of filteredEntries) {
+                  const { main, sub } = cultureGroupMap[name] || { main: "Other", sub: null };
+                  if (!mainGroups[main]) mainGroups[main] = {};
+                  const subKey = sub || "__direct__";
+                  if (!mainGroups[main][subKey]) mainGroups[main][subKey] = [];
+                  mainGroups[main][subKey].push([name, rgb]);
+                }
+                const mainOrder = Object.keys(mainGroups).sort((a, b) => a === "Other" ? 1 : b === "Other" ? -1 : a.localeCompare(b));
+
+                const renderCultureEntry = (name, rgb, indent) => {
+                  const selected = activeSet?.has(name);
+                  const onMap = activeOnMap.has(name);
+                  const dimmed = activeSet && activeSet.size > 0 && !selected;
+                  return (
+                    <div key={name} onClick={(e) => handleLegendClick(name, e.shiftKey)} style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      padding: `2px 4px 2px ${indent}px`, borderRadius: 4, cursor: "pointer",
+                      background: selected ? "rgba(220,166,74,0.25)" : onMap ? "rgba(255,255,255,0.12)" : "transparent",
+                      opacity: dimmed ? 0.4 : 1, transition: "opacity 0.15s, background 0.15s",
+                    }}>
+                      <div style={{ width: 10, height: 10, borderRadius: 2, flexShrink: 0,
+                        background: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`,
+                        outline: selected ? "2px solid #dca64a" : onMap ? "2px solid #fff" : "none",
+                      }} />
+                      <span style={{ textTransform: "capitalize", flex: 1, fontSize: "0.72rem",
+                        fontWeight: onMap ? 700 : 400, color: onMap && !selected ? "#fff" : "inherit",
+                      }}>{name.replace(/_/g, " ")}</span>
+                      <span style={{ fontSize: "0.62rem", color: "#666", flexShrink: 0 }}>({counts[name] || 0})</span>
+                    </div>
+                  );
+                };
+
+                return mainOrder.map(mainName => {
+                  const subs = mainGroups[mainName];
+                  const subKeys = Object.keys(subs).sort((a, b) => a === "__direct__" ? -1 : b === "__direct__" ? 1 : a.localeCompare(b));
+                  const allEntries = subKeys.flatMap(k => subs[k]);
+                  const hasSubs = subKeys.length > 1 || (subKeys.length === 1 && subKeys[0] !== "__direct__");
+                  const isMainCollapsed = lq ? false : (collapsedCulGroups.has(mainName) || collapsedCulGroups.has("__all__"));
+                  const mainHasSelected = allEntries.some(([name]) => activeSet?.has(name));
+                  const mainRegionCount = allEntries.reduce((sum, [name]) => sum + (counts[name] || 0), 0);
+
+                  return (
+                    <div key={mainName}>
+                      {/* Main group header */}
+                      <div onClick={(e) => {
+                        if (e.shiftKey) {
+                          // Shift+click: select all cultures in this main group
+                          const groupCultureNames = allEntries.map(([name]) => name);
+                          setLegendFilter(prev => {
+                            const current = prev instanceof Set ? new Set(prev) : new Set();
+                            const allSelected = groupCultureNames.every(n => current.has(n));
+                            if (allSelected) groupCultureNames.forEach(n => current.delete(n));
+                            else groupCultureNames.forEach(n => current.add(n));
+                            const allKeys = [...current].flatMap(n => getMatchingKeys(n));
+                            const unique = [...new Set(allKeys)];
+                            setSelectedProvinces(unique);
+                            if (unique.length > 0) zoomToProvinces(unique);
+                            return current.size === 0 ? null : current;
+                          });
+                        } else {
+                          setCollapsedCulGroups(prev => {
+                            const s = new Set(prev); s.delete("__all__");
+                            if (s.has(mainName)) s.delete(mainName); else s.add(mainName);
+                            return s;
+                          });
+                        }
+                      }} style={{
+                        padding: "3px 4px", cursor: "pointer", fontWeight: 700, fontSize: "0.72rem",
+                        color: mainHasSelected ? "#e8a030" : "#aaa", userSelect: "none",
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        borderBottom: "1px solid rgba(255,255,255,0.08)", marginTop: 2,
+                      }}>
+                        <span>{isMainCollapsed ? "\u25B6" : "\u25BC"} {mainName}</span>
+                        <span style={{ fontWeight: 400, fontSize: "0.65rem", color: "#666" }}>{allEntries.length}, {mainRegionCount} reg</span>
+                      </div>
+                      {!isMainCollapsed && (
+                        hasSubs ? (
+                          // Render sub-groups inside the main group
+                          subKeys.map(subKey => {
+                            const subEntries = subs[subKey];
+                            const subLabel = subKey === "__direct__" ? `${mainName} (core)` : subKey.replace(/^.*? — /, "");
+                            const isSubCollapsed = lq ? false : collapsedCulGroups.has(`sub:${subKey}`);
+                            const subRegionCount = subEntries.reduce((sum, [name]) => sum + (counts[name] || 0), 0);
+                            return (
+                              <div key={subKey}>
+                                <div onClick={(e) => {
+                                  if (e.shiftKey) {
+                                    const subCultureNames = subEntries.map(([name]) => name);
+                                    setLegendFilter(prev => {
+                                      const current = prev instanceof Set ? new Set(prev) : new Set();
+                                      const allSel = subCultureNames.every(n => current.has(n));
+                                      if (allSel) subCultureNames.forEach(n => current.delete(n));
+                                      else subCultureNames.forEach(n => current.add(n));
+                                      const allKeys = [...current].flatMap(n => getMatchingKeys(n));
+                                      const unique = [...new Set(allKeys)];
+                                      setSelectedProvinces(unique);
+                                      if (unique.length > 0) zoomToProvinces(unique);
+                                      return current.size === 0 ? null : current;
+                                    });
+                                  } else {
+                                    setCollapsedCulGroups(prev => {
+                                      const s = new Set(prev); const k = `sub:${subKey}`;
+                                      if (s.has(k)) s.delete(k); else s.add(k);
+                                      return s;
+                                    });
+                                  }
+                                }} style={{
+                                  padding: "2px 4px 2px 10px", cursor: "pointer", fontWeight: 600, fontSize: "0.68rem",
+                                  color: "#888", userSelect: "none",
+                                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                                }}>
+                                  <span>{isSubCollapsed ? "\u25B9" : "\u25BF"} {subLabel}</span>
+                                  <span style={{ fontWeight: 400, fontSize: "0.6rem", color: "#555" }}>{subEntries.length}, {subRegionCount} reg</span>
+                                </div>
+                                {!isSubCollapsed && subEntries.map(([name, rgb]) => renderCultureEntry(name, rgb, 20))}
+                              </div>
+                            );
+                          })
+                        ) : (
+                          // No sub-groups — render entries directly
+                          allEntries.map(([name, rgb]) => renderCultureEntry(name, rgb, 14))
+                        )
+                      )}
+                    </div>
+                  );
+                });
+              })()
+            )}
+          </div>
+        </div>
+      );
+    }
     if (colorMode === "diplomacy") {
       const viewer = (selectedFaction || playerFaction || "").toLowerCase();
       const owner = ((currentOwnerByCity && currentOwnerByCity[info.city]) || info.faction || "").toLowerCase();

@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1402",
+    date: "2026-07-24",
+    items: [
+      { type: "fix", text: "**Restored the Culture and Religion map legends.** A recent mode-merge accidentally removed the shared culture/religion legend block, leaving those two modes with no sidebar. Brought it back (grouped families, search, per-entry region counts, click-to-isolate)." },
+    ],
+  },
+  {
     version: "0.9.1401",
     date: "2026-07-24",
     items: [
