@@ -134,6 +134,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getMercenaryPools: (modDataDir) => ipcRenderer.invoke("get-mercenary-pools", modDataDir),
   getFactionMetrics: (modDataDir, faction) => ipcRenderer.invoke("get-faction-metrics", modDataDir, faction),
   getFactionReligions: (modDataDir) => ipcRenderer.invoke("get-faction-religions", modDataDir),
+  analyzeAiMovement: (logPath, modDataDir) => ipcRenderer.invoke("analyze-ai-movement", logPath, modDataDir),
   addRegionToMercPool: (modDataDir, poolName, region) => ipcRenderer.invoke("add-region-to-merc-pool", modDataDir, poolName, region),
   applyArmySwap: (modDataDir, faction, character, oldUnit, newUnit) => ipcRenderer.invoke("apply-army-swap", modDataDir, faction, character, oldUnit, newUnit),
   applyAddGarrison: (modDataDir, faction, settlementName, unitName) => ipcRenderer.invoke("apply-add-garrison", modDataDir, faction, settlementName, unitName),

@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1407",
+    date: "2026-07-24",
+    items: [
+      { type: "feature", text: "**New tool: AI Movement Lab (⚔ in Tools).** Analyzes a campaign log (message_log.txt — the live game's, an archive, or one downloaded from the RIS Discord telemetry) for AI pathing pathologies, to guide AI tuning in the mod: STUCK armies (moving every turn, going nowhere), PING-PONG loops (bouncing between two tiles), orders that NEVER ARRIVE, and FLEE LOOPS — each with army, faction, turn span and the region it happened in (click to highlight on the map). Plus a per-faction wander index (how much of its marching is circles) and a cannot-find-flee-tile counter. Validated on a real 97-turn campaign: found an army that ping-ponged between two tiles for 70+ turns." },
+      { type: "fix", text: "**Flee events now actually parse.** The log parser's flee-tile pattern only matched one field order while real logs use two — every flee event was silently dropped (in Live mode too). Both orders parse now; 297 flee events surface in the reference log where before there were zero." },
+    ],
+  },
+  {
     version: "0.9.1406",
     date: "2026-07-24",
     items: [

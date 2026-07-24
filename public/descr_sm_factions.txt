@@ -10643,13 +10643,9 @@
 			;;units to use if we emerge inside a settlement
 			"settlement units":
 			[
-				"oscan javelinmen",
-				"oscan spearmen",
-				"oscan heavy skirmisher",
-				"oscan thureophoroi",
-				"oscan hoplites",
-				"oscan axemen",
-				"oscan cavalry",
+				"italic skirmishers",
+				"italic cohort",
+				"italic equites",
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)

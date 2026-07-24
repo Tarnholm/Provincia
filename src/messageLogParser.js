@@ -53,7 +53,12 @@ const RX = {
   // settlement 'Suza' damaged (riot, 968 deaths)
   settlementDamaged: /^settlement '([^']+)' damaged \(([^,]+), (\d+) deaths\)/,
   // Name(charUuid:faction) army(armyUuid) found flee tile(x,y)
-  fleeTile: /^(.+?)\(([0-9a-f]+):([a-z_]+)\) army\(([0-9a-f]+)\) found flee tile\((\d+),(\d+)\)/,
+  // Both field orders appear in REAL logs (message_log-97turns.txt):
+  //   Alexander(a63a2f70:macedon)army(a5bb1c20) found flee tile(11,37)   — uuid:faction, no space
+  //   Captain Xerxes(parthia:a8ba7150) army(a5bb3ba0) found flee tile(129,26) — faction:uuid, space
+  // The old single-order regex matched NEITHER variant reliably → flee events
+  // were silently dropped (found 2026-07-24 by the AI Movement Analyzer).
+  fleeTile: /^(.+?)\((?:([0-9a-f]+):([a-z_]+)|([a-z_]+):([0-9a-f]+))\)\s*army\(([0-9a-f]+)\) found flee tile\((\d+),(\d+)\)/,
   // Name(charUuid:faction:role):FLEEING:start(x,y):end(x,y)
   fleeing: /^(.+?)\(([a-z_]+):([a-z_ ]+)\):FLEEING:start\((\d+),(\d+)\):end\((\d+),(\d+)\)/,
   // Name(charUuid) army(armyUuid) is fleeing to settlement SettName(x,y)
@@ -189,9 +194,11 @@ function parseLine(line) {
   if ((m = RX.fleeTile.exec(line))) {
     return {
       type: "flee_tile",
-      name: m[1].trim(), charUuid: shortUuid(m[2]),
-      faction: m[3], armyUuid: shortUuid(m[4]),
-      x: +m[5], y: +m[6],
+      name: m[1].trim(),
+      charUuid: shortUuid(m[2] || m[5]),   // whichever order the log used
+      faction: m[3] || m[4],
+      armyUuid: shortUuid(m[6]),
+      x: +m[7], y: +m[8],
     };
   }
   if ((m = RX.fleeing.exec(line))) {

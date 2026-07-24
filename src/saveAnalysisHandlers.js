@@ -401,6 +401,74 @@ ipcMain.handle("get-faction-metrics", async (_event, modDataDir, faction) => {
   } catch (e) { return { error: e && e.message ? e.message : "faction metrics failed" }; }
 });
 
+// IPC: AI Movement Analyzer (2026-07-24) — parse a message_log.txt (live dir,
+// archived, or downloaded from the RIS Discord telemetry) into per-army
+// movement traces + pathing pathology findings (stuck / oscillation /
+// never-arrives / flee-loop), for tuning the mod's AI. Pure analysis lives in
+// src/aiMovementAnalyzer.js; this handler adds file access, an Open-dialog
+// when no path is given, and strat-tile → region-name mapping so findings say
+// "near Roma", not "(283,402)".
+ipcMain.handle("analyze-ai-movement", async (_event, logPath, modDataDir) => {
+  try {
+    const { dialog } = require("electron");
+    let p = logPath;
+    if (!p) {
+      const r = await dialog.showOpenDialog({
+        title: "Pick a message_log.txt to analyze",
+        filters: [{ name: "RTW logs", extensions: ["txt", "log"] }],
+        properties: ["openFile"],
+      });
+      if (r.canceled || !r.filePaths.length) return { canceled: true };
+      p = r.filePaths[0];
+    }
+    if (fs.statSync(p).isDirectory()) p = path.join(p, "message_log.txt");
+    if (!fs.existsSync(p)) return { error: "log not found: " + p };
+    const text = await fs.promises.readFile(p, "utf8");
+
+    // strat tile → region name: map_regions pixel (x, H-1-y), RLE-safe reader.
+    let regionAt = null;
+    try {
+      if (modDataDir) {
+        const dg = require("./descrStratGeneral.js");
+        const parsers = await import("./parsers.js"); // ESM (same pattern as startingArmiesBuilder)
+        const tga = dg.tgaToRaw(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "map_regions.tga")));
+        const regionsMap = parsers.parseDescrRegions(fs.readFileSync(path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"), "latin1"));
+        const colToRegion = {};
+        for (const [rgbKey, r] of Object.entries(regionsMap || {})) {
+          if (r && r.region) colToRegion[rgbKey] = r.region;
+        }
+        const topDown = (tga.desc & 0x20) !== 0;
+        regionAt = (sx, sy) => {
+          const by = topDown ? sy : (tga.H - 1 - sy);
+          if (sx < 0 || sx >= tga.W || by < 0 || by >= tga.H) return null;
+          // spiral out a little: army tiles are often ON black settlement px
+          for (let rad = 0; rad <= 2; rad++) {
+            for (let dy = -rad; dy <= rad; dy++) for (let dx = -rad; dx <= rad; dx++) {
+              if (Math.max(Math.abs(dx), Math.abs(dy)) !== rad) continue;
+              const nx = sx + dx, ny = by + dy;
+              if (nx < 0 || nx >= tga.W || ny < 0 || ny >= tga.H) continue;
+              const i = (ny * tga.W + nx) * 3;
+              const key = tga.raw[i + 2] + "," + tga.raw[i + 1] + "," + tga.raw[i];
+              const reg = colToRegion[key];
+              if (reg) return reg;
+            }
+          }
+          return null;
+        };
+      }
+    } catch { /* findings still useful without region names */ }
+
+    const { analyzeMovementLog } = require("./aiMovementAnalyzer.js");
+    const t0 = Date.now();
+    const result = analyzeMovementLog(text, { regionAt });
+    result.ms = Date.now() - t0;
+    result.logPath = p;
+    result.logBytes = Buffer.byteLength(text);
+    _writeLog(`[ai-movement] ${path.basename(p)}: ${result.moveLines} moves, ${result.armies} armies, ${result.findings.length} findings in ${result.ms}ms`);
+    return result;
+  } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+});
+
 // IPC: per-faction "default religion" map (descr_sm_factions) for the Cultural
 // Conversion map mode. A province's dominant religion (highest rel_X_N level =
 // the plurality) is "converted" when it matches its owner's default religion —

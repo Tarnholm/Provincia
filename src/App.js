@@ -72,6 +72,7 @@ import ModLintPanel from "./panels/ModLintPanel";
 import UnitComparePanel from "./panels/UnitComparePanel";
 import RecruitPlannerPanel from "./panels/RecruitPlannerPanel";
 import DiploHeatmapPanel from "./panels/DiploHeatmapPanel";
+import AiMovementPanel from "./panels/AiMovementPanel";
 import TraitExplorerPanel from "./panels/TraitExplorerPanel";
 import CampaignAutopsyPanel from "./panels/CampaignAutopsyPanel";
 import BuildOrderPanel from "./panels/BuildOrderPanel";
@@ -11888,13 +11889,14 @@ function App() {
   const [showBuildOrder, setShowBuildOrder] = useState(false); // 🔨 build-order payback ranking (2026-07-17)
   const [showDefLocator, setShowDefLocator] = useState(false); // ⌖ "where is this defined?" (2026-07-17)
   const [showWhatIf, setShowWhatIf] = useState(false); // 🧪 in-shadow EDB/EDU tweak → economy diff (2026-07-17)
+  const [showAiMovement, setShowAiMovement] = useState(false); // ⚔ AI movement pathology analyzer (2026-07-24)
   // Crash fallback for the tool-panel boundary: close every tool panel.
   const closeAllToolPanels = () => {
     setShowSubmodDrift(false); setShowEconBaseline(false);
     setShowReportExport(false); setShowSaveCompare(false); setShowModLint(false);
     setShowUnitCompare(false); setShowRecruitPlanner(false);
     setShowDiploHeatmap(false); setShowDefLocator(false);
-    setShowWhatIf(false);
+    setShowWhatIf(false); setShowAiMovement(false);
   };
   // Battle ledger (2026-07-17): accumulates battle events from the raw live
   // log feed. The ledger instance lives on a ref (survives renders); snapshots
@@ -15157,6 +15159,7 @@ function App() {
                       { icon: "🔨", label: "Build-Order Optimizer", color: "#d8c088", desc: "For the selected settlement: rank its buildable structures by payback time (cost ÷ extra income per turn).", open: () => { if (lockedRegionInfo || regionInfo) setShowBuildOrder(true); else pushToast("Select a region first — the optimizer works on the selected settlement.", "info", 5000); } },
                       { icon: "⌖", label: "Find Definition", color: "#c8c8e8", desc: "Where is this unit/building/region defined? File + line across all mod files, click to open in editor.", open: () => setShowDefLocator(true) },
                       { icon: "🧪", label: "What-If Sandbox", color: "#b8d8e8", desc: "Apply a hypothetical EDB/EDU tweak in a shadow copy and diff every faction's economy — the mod itself is never touched.", open: () => setShowWhatIf(true) },
+                      { icon: "⚔", label: "AI Movement Lab", color: "#8fc9d8", desc: "Analyze a campaign log for AI pathing problems — stuck armies, ping-pong loops, orders that never arrive, flee loops. Works on any message_log.txt incl. Discord telemetry downloads.", open: () => setShowAiMovement(true) },
                     ].map((t) => (
                       <button
                         key={t.label}
@@ -23180,6 +23183,21 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
       {showUnitCompare && <UnitComparePanel modDataDir={modDataDir} unitOwnership={unitOwnership} factionDisplayNames={factionDisplayNames} onClose={() => setShowUnitCompare(false)} />}
       {showDefLocator && <DefinitionLocatorPanel modDataDir={modDataDir} initialQuery="" onClose={() => setShowDefLocator(false)} />}
       {showWhatIf && <WhatIfPanel modDataDir={modDataDir} onClose={() => setShowWhatIf(false)} />}
+      {showAiMovement && (
+        <AiMovementPanel
+          defaultLogDir={liveLogDir}
+          modDataDir={modDataDir}
+          factionDisplayNames={factionDisplayNames}
+          regions={regions}
+          onHighlightRegion={(regionName, dbl) => {
+            const hit = Object.entries(regions).find(([, rd2]) => rd2 && rd2.region === regionName);
+            if (!hit) return;
+            if (dbl) onSearchActivate({ type: "region", payload: { region: hit[1], rgbKey: hit[0] } });
+            else setSelectedProvinces([hit[0]]);
+          }}
+          onClose={() => setShowAiMovement(false)}
+        />
+      )}
       {showDiploHeatmap && (
         <DiploHeatmapPanel
           diplomacyMatrix={diplomacyMatrix}
