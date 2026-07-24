@@ -228,4 +228,175 @@ function analyzeMovementLog(text, opts = {}) {
   };
 }
 
-module.exports = { analyzeMovementLog, DEFAULTS };
+// ════════════════════════════════════════════════════════════════════════
+// campaign_ai_log.txt analyzer (2026-07-24) — the DECISION side. The engine
+// narrates its own campaign AI: per-faction turn blocks, per-region campaign
+// strategies, per-character orders. Real line shapes (346MB RIS telemetry log):
+//   AI: 				start 'dummies' for year -270, season summer
+//   AI: campaign: mission move nonlocal: char 'Captain Proteus' moving towards sett 'Pella', priority 400.
+//   AI: named cc: character 'Bellovesus' told to move to 'Decetia', priority 100.
+//   AI: campaign: res for char 'Alexandros' assigned to reg 983 at priority 528.
+//   AI: resource for char 'Captain Bodmelqart' released by controller
+//   AI: campaign for region '1040' aborted because of insufficient available strength.
+//   AI: campaign: campaign for 'Pella' (reg 1306, des 129) using strategy ACS_GATHERING. required str 400 (ACZ_SOLID), allocated str 120; num res 3.
+//
+// STREAMING (feedLine/finish) — the telemetry logs are hundreds of MB; never
+// hold the file in memory. Findings:
+//   stuck_mission   — the SAME char is ordered toward the SAME settlement in
+//                     ≥ MIN_MISSION_TURNS distinct turns: the AI re-issues the
+//                     order every turn because the army never arrives.
+//   assign_churn    — a char is assigned/released ≥ CHURN_MIN times: the
+//                     controller thrashes it between jobs instead of using it.
+//   campaign_stall  — a faction's campaign for a region sits in ACS_GATHERING
+//                     with allocated < required for ≥ MIN_STALL_TURNS turns:
+//                     it wants to act but never musters the strength.
+//   aborted_hotspot — a region's campaign is aborted for insufficient strength
+//                     in ≥ MIN_ABORT_TURNS distinct turns.
+
+const AI_DEFAULTS = {
+  MIN_MISSION_TURNS: 4,
+  CHURN_MIN: 10,
+  MIN_STALL_TURNS: 6,
+  MIN_ABORT_TURNS: 5,
+};
+
+const AI_RX = {
+  factionStart: /^AI: \t*start '([^']+)' for year (-?\d+), season (\w+)/,
+  mission: /^AI: campaign: mission move nonlocal: char '([^']+)' moving towards sett '([^']+)', priority (\d+)/,
+  toldMove: /^AI: named cc: (?:character|army) '([^']+)' told to move to '([^']+)', priority (\d+)/,
+  assigned: /^AI: campaign: res for char '([^']+)' assigned to reg (\d+) at priority (\d+)/,
+  released: /^AI: resource for char '([^']+)' released by controller/,
+  aborted: /^AI: campaign for region '(\d+)' aborted because of insufficient available strength/,
+  campaign: /^AI: campaign: campaign for '([^']+)' \(reg (\d+), des \d+\) using strategy (ACS_\w+)\. required str (\d+) \(ACZ_\w+\), allocated str (\d+)/,
+};
+
+function createAiDecisionAnalyzer(opts = {}) {
+  const cfg = { ...AI_DEFAULTS, ...opts };
+  let curFaction = null;
+  let turnIdx = 0;                 // increments when (year, season) changes
+  let lastYearSeason = null;
+  let firstYear = null, lastYear = null;
+  const regName = new Map();       // regId → settlement name (self-described by campaign lines)
+  const missions = new Map();      // char|sett → { char, sett, faction, turns:Set }
+  const churn = new Map();         // char → { assigns, releases, faction, regs:Set }
+  const stalls = new Map();        // faction|regId → { faction, regId, gatherTurns:Set, lastReq, lastAlloc }
+  const aborts = new Map();        // regId → Set(turnIdx)
+  let lines = 0, matched = 0;
+
+  const feedLine = (l) => {
+    lines++;
+    if (l.charCodeAt(0) !== 65 /* 'A' */) return; // every interesting line starts "AI:"
+    let m;
+    if ((m = AI_RX.factionStart.exec(l))) {
+      curFaction = m[1];
+      const ys = m[2] + "|" + m[3];
+      if (ys !== lastYearSeason) { turnIdx++; lastYearSeason = ys; }
+      if (firstYear == null) firstYear = +m[2];
+      lastYear = +m[2];
+      matched++; return;
+    }
+    if ((m = AI_RX.mission.exec(l)) || (m = AI_RX.toldMove.exec(l))) {
+      const key = m[1] + "|" + m[2];
+      const e = missions.get(key) || { char: m[1], sett: m[2], faction: curFaction, turns: new Set() };
+      e.turns.add(turnIdx);
+      missions.set(key, e);
+      matched++; return;
+    }
+    if ((m = AI_RX.assigned.exec(l))) {
+      const e = churn.get(m[1]) || { assigns: 0, releases: 0, faction: curFaction, regs: new Set() };
+      e.assigns++; e.regs.add(m[2]); e.faction = e.faction || curFaction;
+      churn.set(m[1], e);
+      matched++; return;
+    }
+    if ((m = AI_RX.released.exec(l))) {
+      const e = churn.get(m[1]) || { assigns: 0, releases: 0, faction: curFaction, regs: new Set() };
+      e.releases++;
+      churn.set(m[1], e);
+      matched++; return;
+    }
+    if ((m = AI_RX.aborted.exec(l))) {
+      const s = aborts.get(m[1]) || new Set();
+      s.add(turnIdx); aborts.set(m[1], s);
+      matched++; return;
+    }
+    if ((m = AI_RX.campaign.exec(l))) {
+      regName.set(m[2], m[1]);
+      const req = +m[4], alloc = +m[5];
+      if (m[3] === "ACS_GATHERING" && alloc < req) {
+        const key = (curFaction || "?") + "|" + m[2];
+        const e = stalls.get(key) || { faction: curFaction || "?", regId: m[2], turns: new Set(), lastReq: req, lastAlloc: alloc };
+        e.turns.add(turnIdx); e.lastReq = req; e.lastAlloc = alloc;
+        stalls.set(key, e);
+      }
+      matched++; return;
+    }
+  };
+
+  const finish = () => {
+    const findings = [];
+    const nameOf = (regId) => regName.get(regId) || ("region " + regId);
+    for (const e of missions.values()) {
+      if (e.turns.size >= cfg.MIN_MISSION_TURNS) {
+        const ts = [...e.turns].sort((a, b) => a - b);
+        findings.push({
+          kind: "stuck_mission", name: e.char, faction: e.faction || "?",
+          fromTurn: ts[0], toTurn: ts[ts.length - 1], turns: e.turns.size,
+          region: e.sett, x: null, y: null,
+          detail: `ordered toward '${e.sett}' in ${e.turns.size} separate turns — never arrives`,
+          severity: Math.min(3, Math.floor(e.turns.size / cfg.MIN_MISSION_TURNS)),
+        });
+      }
+    }
+    for (const [char, e] of churn) {
+      const cycles = Math.min(e.assigns, e.releases);
+      if (cycles >= cfg.CHURN_MIN) {
+        findings.push({
+          kind: "assign_churn", name: char, faction: e.faction || "?",
+          fromTurn: null, toTurn: null, turns: cycles,
+          region: null, x: null, y: null,
+          detail: `assigned/released ${cycles}× across ${e.regs.size} region(s) — the controller thrashes this army`,
+          severity: Math.min(3, Math.floor(cycles / cfg.CHURN_MIN)),
+        });
+      }
+    }
+    for (const e of stalls.values()) {
+      if (e.turns.size >= cfg.MIN_STALL_TURNS) {
+        const ts = [...e.turns].sort((a, b) => a - b);
+        findings.push({
+          kind: "campaign_stall", name: nameOf(e.regId), faction: e.faction,
+          fromTurn: ts[0], toTurn: ts[ts.length - 1], turns: e.turns.size,
+          region: nameOf(e.regId), x: null, y: null,
+          detail: `GATHERING for ${e.turns.size} turns, still ${e.lastAlloc}/${e.lastReq} strength — never launches`,
+          severity: Math.min(3, Math.floor(e.turns.size / cfg.MIN_STALL_TURNS)),
+        });
+      }
+    }
+    for (const [regId, ts] of aborts) {
+      if (ts.size >= cfg.MIN_ABORT_TURNS) {
+        const arr = [...ts].sort((a, b) => a - b);
+        findings.push({
+          kind: "aborted_hotspot", name: nameOf(regId), faction: "?",
+          fromTurn: arr[0], toTurn: arr[arr.length - 1], turns: ts.size,
+          region: nameOf(regId), x: null, y: null,
+          detail: `campaign aborted for insufficient strength in ${ts.size} separate turns`,
+          severity: Math.min(3, Math.floor(ts.size / cfg.MIN_ABORT_TURNS)),
+        });
+      }
+    }
+    findings.sort((p, q) => q.severity - p.severity || q.turns - p.turns);
+    const findingCounts = {};
+    for (const f of findings) findingCounts[f.kind] = (findingCounts[f.kind] || 0) + 1;
+    return {
+      logKind: "campaign_ai",
+      totalTurns: turnIdx, firstYear, lastYear,
+      parsedLines: matched, moveLines: 0, fleeLines: 0, cannotFlee: 0,
+      armies: churn.size,
+      findings, findingCounts, factionStats: {},
+      lines,
+    };
+  };
+
+  return { feedLine, finish };
+}
+
+module.exports = { analyzeMovementLog, createAiDecisionAnalyzer, DEFAULTS, AI_DEFAULTS };

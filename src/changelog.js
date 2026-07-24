@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1409",
+    date: "2026-07-24",
+    items: [
+      { type: "feature", text: "**AI Movement Lab now reads campaign_ai_log.txt too — the AI's own decision log, at any size.** Telemetry logs stream (a real 346MB / 4.4-million-line log analyzes in ~1 second) and yield four new finding types: STUCK MISSIONS (the AI re-issues the same move order turn after turn — one army was ordered toward the same settlement in 50 of 51 turns), THRASHED ARMIES (the controller assigns/releases the same army endlessly — champion: 240 reassignments across 94 regions), STALLED CAMPAIGNS (gathering for a target but never reaching required strength, some at 0 of 11,000+), and ABORT HOTSPOTS (regions whose campaigns die for insufficient strength dozens of turns running). Log type is auto-detected; region ids resolve to settlement names from the log itself; click a finding to highlight the place on the map." },
+    ],
+  },
+  {
     version: "0.9.1408",
     date: "2026-07-24",
     items: [

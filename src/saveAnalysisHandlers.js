@@ -423,6 +423,38 @@ ipcMain.handle("analyze-ai-movement", async (_event, logPath, modDataDir) => {
     }
     if (fs.statSync(p).isDirectory()) p = path.join(p, "message_log.txt");
     if (!fs.existsSync(p)) return { error: "log not found: " + p };
+
+    // ── campaign_ai_log? (decision log, can be 300MB+ telemetry) → STREAM ──
+    // Detect by content, not filename: read the first 4KB and look for the
+    // engine's own banner / "AI:" prefix density.
+    {
+      const fd = fs.openSync(p, "r");
+      const head = Buffer.alloc(4096);
+      const n = fs.readSync(fd, head, 0, 4096, 0);
+      fs.closeSync(fd);
+      const headStr = head.slice(0, n).toString("latin1");
+      const isAiLog = headStr.includes("campaign ai log start") ||
+        (headStr.match(/^AI:/gm) || []).length > 5;
+      if (isAiLog) {
+        const readline = require("readline");
+        const { createAiDecisionAnalyzer } = require("./aiMovementAnalyzer.js");
+        const an = createAiDecisionAnalyzer();
+        const t0 = Date.now();
+        await new Promise((resolve, reject) => {
+          const rl = readline.createInterface({ input: fs.createReadStream(p, { encoding: "latin1" }), crlfDelay: Infinity });
+          rl.on("line", an.feedLine);
+          rl.on("close", resolve);
+          rl.on("error", reject);
+        });
+        const result = an.finish();
+        result.ms = Date.now() - t0;
+        result.logPath = p;
+        result.logBytes = fs.statSync(p).size;
+        _writeLog(`[ai-movement] ${path.basename(p)} (campaign_ai, ${(result.logBytes / 1048576).toFixed(0)}MB): ${result.lines.toLocaleString()} lines, ${result.findings.length} findings in ${result.ms}ms`);
+        return result;
+      }
+    }
+
     const text = await fs.promises.readFile(p, "utf8");
 
     // strat tile → region name: map_regions pixel (x, H-1-y), RLE-safe reader.

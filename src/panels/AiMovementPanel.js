@@ -11,10 +11,16 @@ import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
 const KIND_META = {
+  // message_log (movement traces)
   stuck: { color: "#e87a6a", label: "Stuck", desc: "moves every turn but gets nowhere" },
   oscillation: { color: "#e8c873", label: "Ping-pong", desc: "bounces between two tiles" },
   never_arrives: { color: "#cf8f6a", label: "Never arrives", desc: "multi-turn order never completes" },
   flee_loop: { color: "#c9a0dc", label: "Flee loop", desc: "flees repeatedly within a few turns" },
+  // campaign_ai_log (the AI's own decisions)
+  stuck_mission: { color: "#e87a6a", label: "Stuck mission", desc: "same move order re-issued turn after turn — the army never arrives" },
+  assign_churn: { color: "#e8c873", label: "Thrashed army", desc: "controller assigns/releases this army over and over" },
+  campaign_stall: { color: "#cf8f6a", label: "Stalled campaign", desc: "gathering for a target but never reaches required strength" },
+  aborted_hotspot: { color: "#c9a0dc", label: "Abort hotspot", desc: "campaign for this region aborted many turns for insufficient strength" },
 };
 
 export default function AiMovementPanel({
@@ -72,7 +78,9 @@ export default function AiMovementPanel({
           <span style={{ fontWeight: 700, fontSize: "1rem", color: "#8fc9d8" }}>⚔ AI Movement Lab</span>
           {result && (
             <span style={{ fontSize: "0.72rem", color: "#888" }}>
-              {result.totalTurns} turns · {result.moveLines.toLocaleString()} moves · {result.armies} armies · {result.findings.length} findings · {result.ms}ms
+              {result.logKind === "campaign_ai"
+                ? `AI decision log · ${result.totalTurns} turn blocks (${result.firstYear} → ${result.lastYear}) · ${(result.lines || 0).toLocaleString()} lines · ${result.findings.length} findings · ${result.ms}ms`
+                : `${result.totalTurns} turns · ${result.moveLines.toLocaleString()} moves · ${result.armies} armies · ${result.findings.length} findings · ${result.ms}ms`}
             </span>
           )}
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#bbb", fontSize: "1.1rem", cursor: "pointer" }}>✕</button>
@@ -91,7 +99,7 @@ export default function AiMovementPanel({
             </button>
           )}
           <span style={{ fontSize: "0.68rem", color: "#888" }}>
-            Any message_log.txt works — live dir, archive, or a Discord telemetry download.
+            Takes message_log.txt (movement traces) or campaign_ai_log.txt (AI decisions, any size — 300MB telemetry streams fine).
           </span>
         </div>
 

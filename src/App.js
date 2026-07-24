@@ -23190,7 +23190,9 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           factionDisplayNames={factionDisplayNames}
           regions={regions}
           onHighlightRegion={(regionName, dbl) => {
-            const hit = Object.entries(regions).find(([, rd2]) => rd2 && rd2.region === regionName);
+            // AI-log findings name SETTLEMENTS ('Pella'); movement findings name
+            // regions — match either.
+            const hit = Object.entries(regions).find(([, rd2]) => rd2 && (rd2.region === regionName || rd2.city === regionName));
             if (!hit) return;
             if (dbl) onSearchActivate({ type: "region", payload: { region: hit[1], rgbKey: hit[0] } });
             else setSelectedProvinces([hit[0]]);

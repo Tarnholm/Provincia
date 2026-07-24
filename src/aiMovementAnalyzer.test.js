@@ -65,3 +65,36 @@ describe("analyzeMovementLog on the archived 97-turn campaign", () => {
     expect(Date.now() - t0).toBeLessThan(2000); // ~50ms in practice
   });
 });
+
+describe("createAiDecisionAnalyzer (real campaign_ai_log lines)", () => {
+  it("parses turn blocks, missions, churn, stalls and aborts", async () => {
+    const { createAiDecisionAnalyzer } = await import("./aiMovementAnalyzer.js");
+    const an = createAiDecisionAnalyzer({ MIN_MISSION_TURNS: 2, CHURN_MIN: 2, MIN_STALL_TURNS: 2, MIN_ABORT_TURNS: 2 });
+    // REAL lines quoted from the 346MB RIS telemetry log (2026-07-24)
+    const lines = [
+      "AI: \t\t\t\tstart 'dummies' for year -270, season summer",
+      "AI: campaign: campaign for 'Pella' (reg 983, des 129) using strategy ACS_GATHERING. required str 400 (ACZ_SOLID), allocated str 120; num res 3.",
+      "AI: campaign: mission move nonlocal: char 'Captain Proteus' moving towards sett 'Pella', priority 400.",
+      "AI: campaign: res for char 'Alexandros' assigned to reg 983 at priority 528.",
+      "AI: resource for char 'Alexandros' released by controller",
+      "AI: campaign for region '983' aborted because of insufficient available strength.",
+      "AI: \t\t\t\tstart 'dummies' for year -270, season winter",
+      "AI: campaign: campaign for 'Pella' (reg 983, des 129) using strategy ACS_GATHERING. required str 400 (ACZ_SOLID), allocated str 120; num res 3.",
+      "AI: campaign: mission move nonlocal: char 'Captain Proteus' moving towards sett 'Pella', priority 400.",
+      "AI: campaign: res for char 'Alexandros' assigned to reg 983 at priority 528.",
+      "AI: resource for char 'Alexandros' released by controller",
+      "AI: campaign for region '983' aborted because of insufficient available strength.",
+    ];
+    for (const l of lines) an.feedLine(l);
+    const r = an.finish();
+    expect(r.logKind).toBe("campaign_ai");
+    expect(r.totalTurns).toBe(2);
+    expect(r.firstYear).toBe(-270);
+    expect(r.findingCounts.stuck_mission).toBe(1);
+    expect(r.findingCounts.assign_churn).toBe(1);
+    expect(r.findingCounts.campaign_stall).toBe(1);
+    expect(r.findingCounts.aborted_hotspot).toBe(1);
+    const stall = r.findings.find((f) => f.kind === "campaign_stall");
+    expect(stall.region).toBe("Pella"); // regId 983 self-described by the campaign line
+  });
+});
