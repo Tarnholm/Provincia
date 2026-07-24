@@ -15964,6 +15964,11 @@ function App() {
       }
       return best ? { label: "Religion", value: best.replace(/_/g, " ") } : null;
     }
+    if (colorMode === "corruptionmap") {
+      const e = factionMetrics && factionMetrics.byRegion && factionMetrics.byRegion[info.region];
+      if (e && typeof e.corruption === "number") return { label: "Corruption", value: `-${Math.round(e.corruption).toLocaleString()} dn/turn (model)` };
+      return { label: "Corruption", value: selectedFaction ? "No data" : "Pick a faction" };
+    }
     if (colorMode === "trueincome") {
       const live = saveIncomeByCity && saveIncomeByCity[info.city];
       if (live && typeof live.perTurn === "number") return { label: "Income", value: `${live.perTurn.toLocaleString()} dn/turn (live save)` };
@@ -17166,7 +17171,7 @@ Click for unit card`}
             {rows.length === 0 ? (
               <>
                 <div style={{ fontSize: "0.72rem", color: "#aaa", marginBottom: 6 }}>Scan your saves folder to build an ownership timeline, then scrub it here on the map.</div>
-                <button onClick={onScanTimeline} disabled={timelineScanning}
+                <button onClick={runTimelineScan} disabled={timelineScanning}
                   style={{ width: "100%", padding: "5px 10px", borderRadius: 6, cursor: timelineScanning ? "default" : "pointer", border: "1px solid rgba(220,166,74,0.4)", background: "rgba(220,166,74,0.18)", color: "#dca64a", fontWeight: 600, fontSize: "0.78rem" }}>
                   {timelineScanning ? "Scanning…" : "Scan saves timeline"}
                 </button>
@@ -17197,7 +17202,7 @@ Click for unit card`}
                     ))}
                   </div>
                 )}
-                <button onClick={onScanTimeline} disabled={timelineScanning}
+                <button onClick={runTimelineScan} disabled={timelineScanning}
                   style={{ marginTop: 6, width: "100%", padding: "3px 8px", borderRadius: 5, cursor: timelineScanning ? "default" : "pointer", border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#aaa", fontSize: "0.7rem" }}>
                   {timelineScanning ? "Scanning…" : "Re-scan saves"}
                 </button>
@@ -22410,7 +22415,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           onToggleScheduleMarkers={() => setShowScheduleMarkers(prev => !prev)}
           timeline={campaignTimeline}
           scanning={timelineScanning}
-          onScanTimeline={runTimelineScan}
+          runTimelineScan={runTimelineScan}
           modDataDir={modDataDir}
         />
       )}
@@ -22447,7 +22452,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           modDataDir={modDataDir}
           timeline={campaignTimeline}
           scanning={timelineScanning}
-          onScanTimeline={runTimelineScan}
+          runTimelineScan={runTimelineScan}
           factionDisplayNames={factionDisplayNames}
           onClose={() => setShowCampaignAutopsy(false)}
         />

@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1400",
+    date: "2026-07-24",
+    items: [
+      { type: "fix", text: "**Fixed a crash when opening the History map mode.** Its legend referenced a scan handler by the wrong name (a leftover from when it was a tool panel), throwing on render. History mode now opens correctly — scan your saves and scrub the timeline on the map." },
+      { type: "improvement", text: "**Corruption mode now has a hover readout** — hovering a region shows its per-turn corruption loss, matching the Income and Growth modes." },
+    ],
+  },
+  {
     version: "0.9.1399",
     date: "2026-07-24",
     items: [
