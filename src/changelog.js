@@ -13,6 +13,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1401",
+    date: "2026-07-24",
+    items: [
+      { type: "fix", text: "**Fixed a Live-mode crash on battle events.** The War map mode kept calling a snapshot setter whose state had been removed when the Battle Ledger tool was folded in — the next battle in a live game would have thrown. Restored the trigger so the War map/legend update live again." },
+      { type: "fix", text: "**Live time-scrubber now rewinds the map.** Dragging the live turn slider back in time repainted only the label/event feed while the map stayed on present-day borders. Faction, Diplomacy, Cultural Conversion, Threat/Reach and Armies now all follow the scrubber; returning to the latest turn resyncs to live." },
+      { type: "fix", text: "**Fixed crashes opening the Climate, Port Level, Irrigation, Earthquakes and River Trade legends** (a shared legend helper was never defined) and the Diplomacy line-overlay (its data was never computed — it now draws relation-coloured lines between faction territories). Also fixed the Compare Saves tool crashing on open." },
+      { type: "improvement", text: "**Added an undefined-reference guard** to the test suite: it statically scans App.js for any identifier used but never defined, catching this whole class of crash before release — the render smoke-test only covers the default map mode, so mode-specific and handler-specific crashes slipped through." },
+    ],
+  },
+  {
     version: "0.9.1400",
     date: "2026-07-24",
     items: [

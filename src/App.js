@@ -1963,6 +1963,10 @@ function App() {
   // no all-faction sweep. Cached per faction in the main process.
   const [factionMetrics, setFactionMetrics] = useState(null);
   const [factionReligions, setFactionReligions] = useState(null); // faction -> default religion (Cultural Conversion mode)
+  // War-activity re-render trigger: snapshot pushed on each live battle event
+  // (the War map/legend read battleLedgerRef directly). Declared here, before
+  // the colorize effect that lists it as a dep, to avoid a render-phase TDZ.
+  const [battleLedgerSnap, setBattleLedgerSnap] = useState(null);
   const [tradeLanes, setTradeLanes] = useState(null); // [{from,to,flow}] sea lanes for the Trade Lanes mode (early — colorize deps)
   const [roadRegions, setRoadRegions] = useState(null); // Set of region names whose settlement has roads (land trade only draws between these)
   const [portRegions, setPortRegions] = useState(null); // Set of region names whose settlement has a PORT building (gets a settlement→port road even with no roads built)
@@ -3768,6 +3772,47 @@ function App() {
     }
     return m;
   }, [factionRegionsMap, regions, currentOwnerByCity, initialOwnerByCity]);
+  // Diplomacy overlay lines (2026-07-24): the SVG overlay at render read a
+  // `diploPairs` that was never defined — toggling the overlay crashed. Compute
+  // it here: one line per faction pair with a live relation, anchored at each
+  // faction's territory centroid, coloured by relation. Bounded to real
+  // relations (no O(F²) neutral spaghetti). Empty until Live supplies a matrix.
+  const diploPairs = useMemo(() => {
+    if (!diplomacyMatrix || typeof diplomacyMatrix !== "object") return [];
+    // faction → centroid of its owned regions (average of region centroids)
+    const acc = {};
+    for (const [rgbKey, fac] of Object.entries(rgbToOwnerMap || {})) {
+      const c = regionCentroids && regionCentroids[rgbKey];
+      if (!c || !fac) continue;
+      const k = String(fac).toLowerCase();
+      const a = acc[k] || (acc[k] = { x: 0, y: 0, n: 0 });
+      a.x += c.x; a.y += c.y; a.n++;
+    }
+    const anchor = {};
+    for (const [k, a] of Object.entries(acc)) if (a.n) anchor[k] = { x: a.x / a.n, y: a.y / a.n, faction: k };
+    const REL = { // relation → { color, dash } (matches the Diplomacy map mode)
+      war: { color: "rgb(210,55,45)" }, allied: { color: "rgb(75,160,70)" },
+      protectorates: { color: "rgb(150,100,200)" }, suzerains: { color: "rgb(150,100,200)" },
+      trade: { color: "rgb(90,145,205)" }, hostile: { color: "rgb(205,140,50)", dash: "4 3" },
+    };
+    const seen = new Set(); const pairs = [];
+    for (const [fac, row] of Object.entries(diplomacyMatrix)) {
+      if (fac === "_meta") continue;
+      const a = anchor[String(fac).toLowerCase()];
+      if (!a || !row) continue;
+      for (const rel of Object.keys(REL)) {
+        for (const other of (row[rel] || [])) {
+          const b = anchor[String(other).toLowerCase()];
+          if (!b) continue;
+          const key = [a.faction, b.faction].sort().join("|") + "|" + rel;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          pairs.push({ a, b, color: REL[rel].color, dash: REL[rel].dash || null, isNeutral: false });
+        }
+      }
+    }
+    return pairs;
+  }, [diplomacyMatrix, rgbToOwnerMap, regionCentroids]);
   const [factionDisplayNames, setFactionDisplayNames] = useState(null); // { factionId: displayName } from mod text/expanded_bi.txt
   const [factionCultures, setFactionCultures] = useState(null); // { factionId: cultureFolderName } from descr_sm_factions.txt
   // Bumping this counter invalidates every mod-derived useEffect that
@@ -8892,6 +8937,10 @@ function App() {
       const _tRun = (performance && performance.now) ? performance.now() : Date.now();
       console.log(`[colorize] RUN colorMode=${colorMode} after ${(_tRun - _tSched).toFixed(0)}ms idle-wait — building colored overlay now`);
       const W = imgSize.width, H = imgSize.height;
+      // Live scrubber: present-day ownership overrides ONLY when live
+      // (slider at latest). While rewound, use the turn-N picture that
+      // replayToTurn restored into regions/factionRegionsMap.
+      const liveOwnersEff = (liveSliderTurn == null) ? currentOwnerByCity : null;
       if (colorMode === "history") {
         // History map mode (2026-07-24, folds in the Timeline Player tool):
         // recolour the map by region ownership at the scrubbed turn from a
@@ -8934,7 +8983,7 @@ function App() {
         // converts). Owner's religion from descr_sm_factions "default religion".
         const ownerOf = {};
         for (const rd2 of Object.values(regions)) {
-          if (rd2 && rd2.region) ownerOf[rd2.region] = ((currentOwnerByCity && currentOwnerByCity[rd2.city]) || rd2.faction || "").toLowerCase();
+          if (rd2 && rd2.region) ownerOf[rd2.region] = ((liveOwnersEff && liveOwnersEff[rd2.city]) || rd2.faction || "").toLowerCase();
         }
         const domRel = (tags) => {
           let best = null, bestL = -1;
@@ -8975,11 +9024,11 @@ function App() {
             }
           }
         }
-        if (currentOwnerByCity) {
+        if (liveOwnersEff) {
           let changeCount = 0;
           const samples = [];
           for (const [rgbKey, r] of Object.entries(regions)) {
-            const liveOwner = currentOwnerByCity[r.city];
+            const liveOwner = liveOwnersEff[r.city];
             if (liveOwner) {
               const prev = rgbToOwner[rgbKey];
               if (prev !== liveOwner) {
@@ -9704,7 +9753,7 @@ function App() {
         const viewer = (selectedFaction || playerFaction || "").toLowerCase();
         const ownerOf = {};
         for (const rd2 of Object.values(regions)) {
-          if (rd2 && rd2.region) ownerOf[rd2.region] = ((currentOwnerByCity && currentOwnerByCity[rd2.city]) || rd2.faction || "").toLowerCase();
+          if (rd2 && rd2.region) ownerOf[rd2.region] = ((liveOwnersEff && liveOwnersEff[rd2.city]) || rd2.faction || "").toLowerCase();
         }
         const dmRow = (viewer && diplomacyMatrix && diplomacyMatrix[viewer]) || null;
         const rset = (arr) => new Set((arr || []).map((x) => String(x).toLowerCase()));
@@ -9743,7 +9792,7 @@ function App() {
         const viewer = (selectedFaction || playerFaction || "").toLowerCase();
         const ownerOf = {};
         for (const rd2 of Object.values(regions)) {
-          if (rd2 && rd2.region) ownerOf[rd2.region] = ((currentOwnerByCity && currentOwnerByCity[rd2.city]) || rd2.faction || "").toLowerCase();
+          if (rd2 && rd2.region) ownerOf[rd2.region] = ((liveOwnersEff && liveOwnersEff[rd2.city]) || rd2.faction || "").toLowerCase();
         }
         const valueByRegion = {};
         if (viewer && regionAdjacency) {
@@ -9797,7 +9846,7 @@ function App() {
         // are descr_strat starting armies — live movement not yet folded in.
         const ownerOf = {};
         for (const rd2 of Object.values(regions)) {
-          if (rd2 && rd2.region) ownerOf[rd2.region] = ((currentOwnerByCity && currentOwnerByCity[rd2.city]) || rd2.faction || "").toLowerCase();
+          if (rd2 && rd2.region) ownerOf[rd2.region] = ((liveOwnersEff && liveOwnersEff[rd2.city]) || rd2.faction || "").toLowerCase();
         }
         const counts = {};
         let maxN = 1;
@@ -9964,7 +10013,7 @@ function App() {
         else clearTimeout(_handle);
       }
     };
-  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion, regionAdjacency, playerFaction, diplomacyMatrix, factionMetrics, factionReligions, campaignTimeline, historyTurnIdx, tradeLanes, regionCentroids]);
+  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion, regionAdjacency, playerFaction, diplomacyMatrix, factionMetrics, factionReligions, campaignTimeline, historyTurnIdx, liveSliderTurn, battleLedgerSnap, tradeLanes, regionCentroids]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -16149,6 +16198,41 @@ function App() {
       boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
     };
     const labelRow = { display: "flex", justifyContent: "space-between", marginTop: 2 };
+    // Generic dev-mode legend: swatch + label + region count per category,
+    // most-common first. (Was referenced by 5 dev legends but never defined —
+    // opening any of them threw a ReferenceError. Fixed 2026-07-24.)
+    const renderDevLegend = (title, valueOf, colorMap, labelMap) => {
+      const counts = {};
+      for (const r of Object.values(regions)) {
+        const k = String(valueOf(r));
+        counts[k] = (counts[k] || 0) + 1;
+      }
+      const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      const colOf = (k) => {
+        const c = colorMap && (colorMap[k] != null ? colorMap[k] : colorMap[Number(k)]);
+        return Array.isArray(c) ? c : [120, 120, 120];
+      };
+      const labOf = (k) => (labelMap && (labelMap[k] != null ? labelMap[k] : labelMap[Number(k)])) || k.replace(/_/g, " ");
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>{title} <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {rows.map(([k, n]) => {
+                const c = colOf(k);
+                return (
+                  <div key={k} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem" }}>
+                    <span style={{ width: 12, height: 12, borderRadius: 2, background: `rgb(${c[0]},${c[1]},${c[2]})`, border: "1px solid rgba(0,0,0,0.35)", flexShrink: 0 }} />
+                    <span style={{ flex: 1, color: "#eee", textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{labOf(k)}</span>
+                    <span style={{ color: "#9a8f7a", fontVariantNumeric: "tabular-nums" }}>{n}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    };
     const collapseArrow = legendCollapsed ? "\u25B6" : "\u25BC";
     const collapseToggle = { cursor: "pointer", userSelect: "none" };
     const onCollapseClick = () => setLegendCollapsed(p => !p);
@@ -18152,11 +18236,11 @@ Click for unit card`}
           factionColors={factionColors}
           factionRegionsMap={factionRegionsMap}
           factionWealth={factionWealth}
-          liveRegionsByFaction={liveRegionsByFaction}
-          liveArmiesByFaction={liveArmiesByFaction}
-          liveTreasuryByFaction={liveTreasuryByFaction}
+          liveRegionsByFaction={null}
+          liveArmiesByFaction={null}
+          liveTreasuryByFaction={null}
           factionDisplayNames={factionDisplayNames}
-          aiPersonalityByFaction={aiPersonalityByFaction}
+          aiPersonalityByFaction={null}
           liveLogActive={liveLogActive}
           selection={compareSelection}
           setSelection={setCompareSelection}
