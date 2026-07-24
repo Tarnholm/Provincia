@@ -69,7 +69,6 @@ import EconBaselinePanel from "./panels/EconBaselinePanel";
 import ReportExportPanel from "./panels/ReportExportPanel";
 import SaveComparePanel from "./panels/SaveComparePanel";
 import ModLintPanel from "./panels/ModLintPanel";
-import TimelinePlayerPanel from "./panels/TimelinePlayerPanel";
 import UnitComparePanel from "./panels/UnitComparePanel";
 import RecruitPlannerPanel from "./panels/RecruitPlannerPanel";
 import DiploHeatmapPanel from "./panels/DiploHeatmapPanel";
@@ -5555,6 +5554,19 @@ function App() {
     try { localStorage.setItem("showScheduleMarkers", showScheduleMarkers ? "1" : "0"); } catch {}
   }, [showScheduleMarkers]);
   const [campaignTimeline, setCampaignTimeline] = useState(null);   // scan-saves-timeline result
+  const [historyTurnIdx, setHistoryTurnIdx] = useState(0);          // History map mode: scrubbed turn
+  const [historyPlaying, setHistoryPlaying] = useState(false);      // History map mode: auto-advance
+  // History map mode: auto-advance the scrubbed turn while playing.
+  useEffect(() => {
+    if (colorMode !== "history" || !historyPlaying) return;
+    const camps = (campaignTimeline && campaignTimeline.campaigns) || [];
+    let best = 0; for (let i = 1; i < camps.length; i++) if ((camps[i].turns || []).length > (camps[best].turns || []).length) best = i;
+    const n = ((camps[best] && camps[best].turns) || []).length;
+    if (n < 2) { setHistoryPlaying(false); return; }
+    const t = setInterval(() => setHistoryTurnIdx((i) => (i + 1 >= n ? (setHistoryPlaying(false), i) : i + 1)), 650);
+    return () => clearInterval(t);
+  }, [colorMode, historyPlaying, campaignTimeline]);
+  useEffect(() => { if (colorMode !== "history") setHistoryPlaying(false); }, [colorMode]);
   const [timelineScanning, setTimelineScanning] = useState(false);
   const [liveSliderTurn, setLiveSliderTurn] = useState(null); // null = live/latest, number = rewound to turn N
   const [livePlayback, setLivePlayback] = useState(false); // true = auto-advancing turns
@@ -8869,8 +8881,61 @@ function App() {
       const _tRun = (performance && performance.now) ? performance.now() : Date.now();
       console.log(`[colorize] RUN colorMode=${colorMode} after ${(_tRun - _tSched).toFixed(0)}ms idle-wait — building colored overlay now`);
       const W = imgSize.width, H = imgSize.height;
-      if (colorMode === "faction") {
-        // Build rgbKey → owner faction.
+      if (colorMode === "history") {
+        // History map mode (2026-07-24, folds in the Timeline Player tool):
+        // recolour the map by region ownership at the scrubbed turn from a
+        // scanned saves timeline. No timeline yet -> paint faction-neutral grey
+        // (the legend has the Scan button). Unknown-owner regions stay dark.
+        const camps = (campaignTimeline && Array.isArray(campaignTimeline.campaigns)) ? campaignTimeline.campaigns : [];
+        let best = 0;
+        for (let i = 1; i < camps.length; i++) if ((camps[i].turns || []).length > (camps[best].turns || []).length) best = i;
+        const camp = camps[best] || null;
+        const rows = (camp && camp.turns) || [];
+        const row = rows[Math.min(historyTurnIdx, Math.max(0, rows.length - 1))] || null;
+        const own = row && (row._ownerByCity || row.ownerByCity) || null;
+        const fcMap = {};
+        const colorFor = (fid) => {
+          if (!fid) return null;
+          const key = String(fid).toLowerCase();
+          if (fcMap[key] !== undefined) return fcMap[key];
+          const fc = factionColors[key];
+          return (fcMap[key] = (fc && fc.primary) || null);
+        };
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          let base = [58, 55, 50];
+          if (own) {
+            const o = own[r.city] || own[r.region];
+            const c = colorFor(o);
+            if (c) base = c;
+            else base = [40, 38, 34]; // known turn, unknown owner
+          }
+          if (devFlatColors) return base;
+          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.6;
+          return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
+        }));
+      } else if (colorMode === "conversion") {
+        // Cultural Conversion (2026-07-24): green = the settlement's native
+        // culture matches its current owner (converted / no friction); red =
+        // foreign culture under a different-culture owner (population still
+        // resisting, unrest + slow to urbanise). Owner culture from
+        // factionCultures; native culture from the region's own culture tag.
+        const ownerOf = {};
+        for (const rd2 of Object.values(regions)) {
+          if (rd2 && rd2.region) ownerOf[rd2.region] = ((currentOwnerByCity && currentOwnerByCity[rd2.city]) || rd2.faction || "").toLowerCase();
+        }
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          const native = (r.culture || "").toLowerCase();
+          const owner = ownerOf[r.region];
+          const ownerCult = owner ? String(factionCultures[owner] || factionCultures[owner.toLowerCase()] || "").toLowerCase() : "";
+          let base = [70, 72, 78]; // unknown
+          if (native && ownerCult) base = (native === ownerCult) ? [70, 150, 66] : [200, 74, 52];
+          else if (native && !ownerCult) base = [70, 150, 66]; // rebels/unowned keep native
+          if (devFlatColors) return base;
+          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.5;
+          return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
+        }));
+      } else if (colorMode === "faction") {
+        // Build rgbKey → owner faction. (history/conversion handled above.)
         // Base layer: descr_strat starting ownership.
         // Live override: when a save is loaded (currentOwnerByCity set),
         // overwrite each region whose owner has changed. Without this the
@@ -9879,7 +9944,7 @@ function App() {
         else clearTimeout(_handle);
       }
     };
-  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion, regionAdjacency, playerFaction, diplomacyMatrix, factionMetrics, tradeLanes, regionCentroids]);
+  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion, regionAdjacency, playerFaction, diplomacyMatrix, factionMetrics, campaignTimeline, historyTurnIdx, tradeLanes, regionCentroids]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -11693,7 +11758,6 @@ function App() {
   const [showSaveCompare, setShowSaveCompare] = useState(false); // ⇄ save-to-save diff (2026-07-17)
   const [showModLint, setShowModLint] = useState(false); // 📏 mod consistency lint (2026-07-17)
   const [showToolsMenu, setShowToolsMenu] = useState(false); // 🧰 popup listing the tool panels
-  const [showTimelinePlayer, setShowTimelinePlayer] = useState(false); // ▶ ownership animation over scanned saves (2026-07-17)
   const [showUnitCompare, setShowUnitCompare] = useState(false); // ⚖ side-by-side EDU unit stats (2026-07-17)
   const [showRecruitPlanner, setShowRecruitPlanner] = useState(false); // 🏗 what each building upgrade unlocks (2026-07-17)
   const [showDiploHeatmap, setShowDiploHeatmap] = useState(false); // 🕊 NxN diplomacy heatmap (2026-07-17)
@@ -11706,7 +11770,7 @@ function App() {
   const closeAllToolPanels = () => {
     setShowSubmodDrift(false); setShowEconBaseline(false);
     setShowReportExport(false); setShowSaveCompare(false); setShowModLint(false);
-    setShowTimelinePlayer(false); setShowUnitCompare(false); setShowRecruitPlanner(false);
+    setShowUnitCompare(false); setShowRecruitPlanner(false);
     setShowDiploHeatmap(false); setShowDefLocator(false);
     setShowWhatIf(false);
   };
@@ -14409,6 +14473,7 @@ function App() {
         { key: "victory", label: "Victory", badge: "mode.victory" },
         { key: "diplomacy", label: "Diplomacy", badge: "mode.diplomacy" },
         { key: "explored", label: "Explored", badge: "mode.explored", live: true },
+        { key: "history", label: "History", badge: "mode.history" },
       ]},
       { id: "government", title: "Government", members: [
         { key: "government", label: "Government", badge: "mode.government" },
@@ -14421,6 +14486,7 @@ function App() {
       { id: "demography", title: "Demography", members: [
         { key: "culture", label: "Culture", badge: "mode.culture" },
         { key: "religion", label: "Religion", badge: "mode.religion" },
+        { key: "conversion", label: "Cultural Conversion", badge: "mode.conversion" },
       ]},
       { id: "population", title: "Population", members: [
         { key: "population", label: "Population", badge: "mode.population" },
@@ -14961,7 +15027,6 @@ function App() {
                       { icon: "📈", label: "Economy Baseline", color: "#8fd18f", desc: "Snapshot all faction economies; diff after mod edits to catch balance breakage (~20s on RIS).", open: () => setShowEconBaseline(true) },
                       { icon: "⇄", label: "Compare Saves", color: "#c9a0dc", desc: "Diff two saves — ownership flips, treasury/army deltas, population changes (~15s).", open: () => setShowSaveCompare(true) },
                       { icon: "📄", label: "HTML Report", color: "#9fb8d8", desc: "Export a self-contained shareable report of the current analysis.", open: () => setShowReportExport(true) },
-                      { icon: "▶", label: "Timeline Player", color: "#8fc9d8", desc: "Animate region ownership turn by turn across a scanned saves timeline.", open: () => setShowTimelinePlayer(true) },
                       { icon: "⚖", label: "Unit Comparator", color: "#d8b88f", desc: "Side-by-side EDU stats for up to 6 units, best-in-row highlighting + cost-effectiveness ratios.", open: () => setShowUnitCompare(true) },
                       { icon: "🏗", label: "Recruit Planner", color: "#a8d8a0", desc: "For the selected settlement: what each next building upgrade unlocks for recruitment.", open: () => { if (lockedRegionInfo || regionInfo) setShowRecruitPlanner(true); else pushToast("Select a region first — the planner works on the selected settlement.", "info", 5000); } },
                       { icon: "🕊", label: "Diplomacy Heatmap", color: "#d8a0a0", desc: "NxN heatmap of the live diplomacy matrix — war blocs and alliance clusters at a glance.", open: () => setShowDiploHeatmap(true) },
@@ -15831,6 +15896,17 @@ function App() {
       const best = mp.levels.reduce((a, l) => Math.max(a, l.income), 0);
       return { label: `Mining · ${mp.settlement || info.region}`, value: `current +${cur}/turn · potential +${best}/turn` };
     }
+    if (colorMode === "history") {
+      return { label: "History", value: "Scrub the timeline in the legend →" };
+    }
+    if (colorMode === "conversion") {
+      const owner = ((currentOwnerByCity && currentOwnerByCity[info.city]) || info.faction || "").toLowerCase();
+      const native = (info.culture || "").toLowerCase();
+      const oc = owner ? String(factionCultures[owner] || factionCultures[owner.toLowerCase()] || "").toLowerCase() : "";
+      if (!native) return { label: "Culture", value: "Unknown" };
+      if (!oc) return { label: "Culture", value: `${native} (unowned/rebel — native)` };
+      return { label: "Culture", value: native === oc ? `${native} — native (owner's culture)` : `${native} under ${oc} owner — FOREIGN (converting)` };
+    }
     if (colorMode === "armyheat") {
       const rd2 = startingArmiesByRegion && startingArmiesByRegion[info.region];
       if (!rd2) return { label: "Armies", value: "— none at campaign start" };
@@ -16553,6 +16629,55 @@ Click for unit card`}
               <span style={{ width: 12, height: 12, borderRadius: 3, background: "rgb(170,60,190)", display: "inline-block", marginLeft: 6 }} /> both
             </div>
             <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>Brightness = force size (unit count). Positions are campaign-start armies.</div>
+            {(() => {
+              // #50 (2026-07-24): composition of the SELECTED/hovered region's
+              // armies — every army with its units grouped by type, with icons.
+              const sel = lockedRegionInfo || regionInfo;
+              const rd2 = sel && startingArmiesByRegion && startingArmiesByRegion[sel.region];
+              const armies = rd2 ? [...(rd2.garrison || []), ...(rd2.field || [])] : [];
+              if (!sel) return <div style={{ fontSize: "0.68rem", color: "#888", marginTop: 5 }}>Hover or click a region to see its army composition.</div>;
+              if (!armies.length) return <div style={{ fontSize: "0.68rem", color: "#888", marginTop: 5 }}>{String(sel.city || sel.region).replace(/_/g, " ")}: no armies at campaign start.</div>;
+              // warm icons for the units shown
+              const dictMap = (unitOwnership && unitOwnership.__dictionary) || {};
+              const allTriples = [];
+              for (const a of armies) for (const u of (a.units || [])) allTriples.push([(a.faction || "slave"), u.name, dictMap[u.name]]);
+              if (allTriples.length) prefetchUnitIcons(activeDataDir, allTriples, bumpIconCacheVersionCoalesced);
+              return (
+                <div style={{ marginTop: 6, maxHeight: "40vh", overflowY: "auto", paddingRight: 2 }}>
+                  <div style={{ fontSize: "0.72rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 3 }}>{String(sel.city || sel.region).replace(/_/g, " ")} — {armies.length} arm{armies.length === 1 ? "y" : "ies"}:</div>
+                  {armies.map((a, ai) => {
+                    const grp = {};
+                    for (const u of (a.units || [])) grp[u.name] = (grp[u.name] || 0) + 1;
+                    const rows = Object.entries(grp).sort((x, y) => y[1] - x[1]);
+                    const fac = a.faction || "slave";
+                    return (
+                      <div key={ai} style={{ marginBottom: 5 }}>
+                        <div style={{ fontSize: "0.7rem", color: "#e8d9a0", marginBottom: 1 }}>
+                          {a.character ? a.character.replace(/_/g, " ") : (rd2.field || []).includes(a) ? "Field army" : "Garrison"}
+                          <span style={{ color: "#888" }}> · {(a.units || []).length}u · {(factionDisplayNames && factionDisplayNames[fac.toLowerCase()]) || fac.replace(/_/g, " ")}</span>
+                        </div>
+                        {rows.map(([name, n]) => {
+                          const ic = getCachedUnitIcon(activeDataDir, fac, name);
+                          return (
+                            <div key={name}
+                              onClick={() => setInfoPopup({ type: "unit", name, faction: fac, label: name.replace(/_/g, " ") })}
+                              title="Open unit card"
+                              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
+                              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                              style={{ display: "flex", alignItems: "center", gap: 6, padding: "1px 3px", borderRadius: 3, cursor: "pointer", fontSize: "0.7rem" }}>
+                              {ic ? <img src={ic} alt="" style={{ width: 16, height: 21, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} />
+                                  : <span style={{ width: 16, height: 21, background: "rgba(255,255,255,0.06)", borderRadius: 2, flexShrink: 0 }} />}
+                              <span style={{ flex: 1, color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textTransform: "capitalize" }}>{name.replace(/_/g, " ")}</span>
+                              {n > 1 && <span style={{ color: "#9a8f7a", flexShrink: 0 }}>×{n}</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </>}
         </div>
       );
@@ -16985,6 +17110,129 @@ Click for unit card`}
     }
 
     // Faction legend
+    if (colorMode === "history") {
+      // History mode legend (folds in the Timeline Player tool): scan button,
+      // scrubber + play, per-turn year + top factions.
+      const camps = (campaignTimeline && campaignTimeline.campaigns) || [];
+      let best = 0; for (let i = 1; i < camps.length; i++) if ((camps[i].turns || []).length > (camps[best].turns || []).length) best = i;
+      const rows = (camps[best] && camps[best].turns) || [];
+      const idx = Math.min(historyTurnIdx, Math.max(0, rows.length - 1));
+      const row = rows[idx] || null;
+      const own = row && (row._ownerByCity || row.ownerByCity) || null;
+      const yl = (r) => {
+        const y = r && (r.year != null ? r.year : r.turnYear);
+        if (y == null) return r && r.turn != null ? `turn ${r.turn}` : `frame ${idx + 1}`;
+        return `${Math.abs(y)} ${y < 0 ? "BC" : "AD"}`;
+      };
+      let top = [];
+      if (own) {
+        const c = {};
+        for (const f of Object.values(own)) { const k = String(f).toLowerCase(); if (k) c[k] = (c[k] || 0) + 1; }
+        top = Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      }
+      const fcol = (fid) => { const fc = factionColors[String(fid).toLowerCase()]; return (fc && fc.primary) ? `rgb(${fc.primary[0]},${fc.primary[1]},${fc.primary[2]})` : "#888"; };
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>History <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            {rows.length === 0 ? (
+              <>
+                <div style={{ fontSize: "0.72rem", color: "#aaa", marginBottom: 6 }}>Scan your saves folder to build an ownership timeline, then scrub it here on the map.</div>
+                <button onClick={onScanTimeline} disabled={timelineScanning}
+                  style={{ width: "100%", padding: "5px 10px", borderRadius: 6, cursor: timelineScanning ? "default" : "pointer", border: "1px solid rgba(220,166,74,0.4)", background: "rgba(220,166,74,0.18)", color: "#dca64a", fontWeight: 600, fontSize: "0.78rem" }}>
+                  {timelineScanning ? "Scanning…" : "Scan saves timeline"}
+                </button>
+              </>
+            ) : (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  <button onClick={() => setHistoryPlaying((v) => !v)}
+                    style={{ padding: "2px 9px", borderRadius: 5, cursor: "pointer", border: "1px solid rgba(220,166,74,0.4)", background: "rgba(220,166,74,0.18)", color: "#dca64a", fontWeight: 700 }}>
+                    {historyPlaying ? "❚❚" : "▶"}
+                  </button>
+                  <span style={{ fontSize: "0.78rem", color: "#e8d9a0", fontWeight: 700 }}>{yl(row)}</span>
+                  <span style={{ fontSize: "0.68rem", color: "#888", marginLeft: "auto" }}>{idx + 1}/{rows.length}</span>
+                </div>
+                <input type="range" min={0} max={rows.length - 1} value={idx}
+                  onChange={(e) => { setHistoryPlaying(false); setHistoryTurnIdx(+e.target.value); }}
+                  style={{ width: "100%" }} />
+                {!own && <div style={{ fontSize: "0.68rem", color: "#e8c873", marginTop: 2 }}>No ownership data in this save row.</div>}
+                {top.length > 0 && (
+                  <div style={{ marginTop: 5 }}>
+                    <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>Largest factions:</div>
+                    {top.map(([f, n]) => (
+                      <div key={f} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem" }}>
+                        <span style={{ width: 11, height: 11, borderRadius: 2, background: fcol(f), flexShrink: 0 }} />
+                        <span style={{ color: "#ddd", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(factionDisplayNames && factionDisplayNames[f]) || f.replace(/_/g, " ")}</span>
+                        <span style={{ color: "#9a8f7a" }}>{n}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button onClick={onScanTimeline} disabled={timelineScanning}
+                  style={{ marginTop: 6, width: "100%", padding: "3px 8px", borderRadius: 5, cursor: timelineScanning ? "default" : "pointer", border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#aaa", fontSize: "0.7rem" }}>
+                  {timelineScanning ? "Scanning…" : "Re-scan saves"}
+                </button>
+              </>
+            )}
+          </>}
+        </div>
+      );
+    }
+    if (colorMode === "conversion") {
+      const sel = selectedFaction && selectedFaction.toLowerCase();
+      const ROWS = [[[70, 150, 66], "Native — owner's culture (converted)"], [[200, 74, 52], "Foreign — different-culture owner"], [[70, 72, 78], "Unknown culture"]];
+      // list the selected faction's FOREIGN holdings (conversion pending)
+      let foreignList = null;
+      if (sel) {
+        const rowsF = [];
+        for (const [rgbKey, r] of Object.entries(regions)) {
+          if (!r || !r.region) continue;
+          const owner = ((currentOwnerByCity && currentOwnerByCity[r.city]) || r.faction || "").toLowerCase();
+          if (owner !== sel) continue;
+          const native = (r.culture || "").toLowerCase();
+          const oc = String(factionCultures[sel] || "").toLowerCase();
+          if (native && oc && native !== oc) rowsF.push({ rgbKey, region: r.region, city: r.city, native });
+        }
+        rowsF.sort((a, b) => (a.city || a.region).localeCompare(b.city || b.region));
+        foreignList = rowsF;
+      }
+      const jump = (rgbKey, r, dbl) => { if (dbl) onSearchActivate({ type: "region", payload: { region: r, rgbKey } }); else setSelectedProvinces([rgbKey]); };
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Cultural Conversion <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
+          {!legendCollapsed && <>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {ROWS.map(([c, lab]) => (
+                <div key={lab} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem" }}>
+                  <span style={{ width: 12, height: 12, borderRadius: 2, background: `rgb(${c[0]},${c[1]},${c[2]})`, border: "1px solid rgba(0,0,0,0.35)", flexShrink: 0 }} />
+                  <span style={{ color: "#eee" }}>{lab}</span>
+                </div>
+              ))}
+            </div>
+            {foreignList && (
+              <div style={{ marginTop: 6, maxHeight: "30vh", overflowY: "auto", paddingRight: 2 }}>
+                <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>
+                  {(factionDisplayNames && factionDisplayNames[sel]) || sel.replace(/_/g, " ")} — {foreignList.length} foreign holding{foreignList.length === 1 ? "" : "s"}:
+                </div>
+                {foreignList.map((r) => (
+                  <div key={r.rgbKey} onClick={() => jump(r.rgbKey, regions[r.rgbKey], false)} onDoubleClick={() => jump(r.rgbKey, regions[r.rgbKey], true)}
+                    title="Click: highlight · double-click: jump"
+                    style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer" }}>
+                    <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{String(r.city || r.region).replace(/_/g, " ")}</span>
+                    <span style={{ color: "#e2a06a", whiteSpace: "nowrap", textTransform: "capitalize" }}>{r.native}</span>
+                  </div>
+                ))}
+                {foreignList.length === 0 && <div style={{ fontSize: "0.7rem", color: "#8fd18f" }}>No foreign-culture holdings.</div>}
+              </div>
+            )}
+            <div style={{ fontSize: "0.66rem", color: "#888", marginTop: 5, lineHeight: 1.4 }}>
+              Foreign settlements resist urbanisation and drag public order until their population converts. {sel ? "" : "Pick a faction to list its foreign holdings."}
+            </div>
+          </>}
+        </div>
+      );
+    }
     if (colorMode === "faction") {
       // Aggregate from descr_strat ownership (factionRegionsMap), matching the
       // map coloring logic. The `r.faction` field in descr_regions is the
@@ -22204,18 +22452,6 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
         });
         return <RecruitPlannerPanel info={r} plan={plan} factionDisplayNames={factionDisplayNames} unitDict={null} onClose={() => setShowRecruitPlanner(false)} />;
       })()}
-      {showTimelinePlayer && (
-        <TimelinePlayerPanel
-          timeline={campaignTimeline}
-          scanning={timelineScanning}
-          onScanTimeline={runTimelineScan}
-          offscreen={offscreen}
-          regions={regions}
-          factionColors={factionColors}
-          factionDisplayNames={factionDisplayNames}
-          onClose={() => setShowTimelinePlayer(false)}
-        />
-      )}
       </ToolPanelBoundary>
       {showArmySetup && (
         <ArmySetupModal

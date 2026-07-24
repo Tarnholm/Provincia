@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1398",
+    date: "2026-07-24",
+    items: [
+      { type: "feature", text: "**New map mode: History (Political).** Folds in the old Timeline Player tool — scan your saves folder (button in the legend) and the map itself recolours by region ownership at the scrubbed turn. Play/pause auto-advances; the legend shows the year and the largest factions at that point. The separate Timeline Player tool is gone." },
+      { type: "feature", text: "**Armies mode shows the selected region's army composition.** Hover or click a region and the Armies legend lists each army with its units grouped by type and unit icons — click any unit for its full card. Not just counts anymore." },
+      { type: "feature", text: "**New map mode: Cultural Conversion (Demography).** Green = the settlement's culture matches its owner (converted, no friction); red = foreign culture under a different-culture owner (population resisting — unrest and slow urbanisation until it converts). Pick a faction to list its foreign holdings; hover shows both cultures." },
+    ],
+  },
+  {
     version: "0.9.1397",
     date: "2026-07-24",
     items: [
