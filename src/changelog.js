@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1391",
+    date: "2026-07-24",
+    items: [
+      { type: "feature", text: "**New map mode: Diplomacy (Political).** The classic relation view — every region coloured by its owner's standing with your faction: blue = yours, red = at war, amber = hostile, green = allied, purple = protectorate, light blue = trade bond, grey = neutral. Pick a faction in the sidebar to set the viewpoint (Live mode supplies the relations); hover any region for the exact relation. The Heatmap and Web panels in Tools remain the deep-dive views." },
+      { type: "improvement", text: "**Mercenaries map mode no longer requires dev mode** — it now sits under Military as a regular mode, alongside the Mercenary Pools browser in Tools." },
+    ],
+  },
+  {
     version: "0.9.1390",
     date: "2026-07-24",
     items: [

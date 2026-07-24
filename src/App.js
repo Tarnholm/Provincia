@@ -8713,7 +8713,7 @@ function App() {
           const next = !prev;
           devTraceClick("Ctrl+Shift+D", prev);
           // If turning off dev mode while a dev color mode is active, reset to faction
-          if (!next) setColorMode(cm => (DEV_COLOR_MODES.has(cm) && cm !== "legions") ? "faction" : cm); // legions is a regular mode
+          if (!next) setColorMode(cm => (DEV_COLOR_MODES.has(cm) && cm !== "legions" && cm !== "mercenaries") ? "faction" : cm); // legions/mercenaries are regular modes
           return next;
         });
       }
@@ -9769,6 +9769,43 @@ function App() {
               }
             }
           }
+          if (devFlatColors) return base;
+          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.5;
+          return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
+        }));
+      } else if (colorMode === "diplomacy") {
+        // Diplomacy map mode (2026-07-24): the classic relation view — every
+        // region coloured by its OWNER's relation to the viewer faction
+        // (selected faction, else the live player faction). Relations come
+        // from the live diplomacy matrix (war/allied/protectorate/trade/
+        // hostile); without Live only own-vs-others shows.
+        const viewer = (selectedFaction || playerFaction || "").toLowerCase();
+        const ownerOf = {};
+        for (const rd2 of Object.values(regions)) {
+          if (rd2 && rd2.region) ownerOf[rd2.region] = ((currentOwnerByCity && currentOwnerByCity[rd2.city]) || rd2.faction || "").toLowerCase();
+        }
+        const dmRow = (viewer && diplomacyMatrix && diplomacyMatrix[viewer]) || null;
+        const rset = (arr) => new Set((arr || []).map((x) => String(x).toLowerCase()));
+        const war = rset(dmRow && dmRow.war), allied = rset(dmRow && dmRow.allied);
+        const hostile = rset(dmRow && dmRow.hostile), trade = rset(dmRow && dmRow.trade);
+        const prot = rset(dmRow && dmRow.protectorates), suz = rset(dmRow && dmRow.suzerains);
+        const DIP_COLS = {
+          own: [62, 102, 172], war: [210, 55, 45], hostile: [205, 140, 50],
+          allied: [75, 160, 70], protectorate: [150, 100, 200], trade: [90, 145, 205],
+          neutral: [112, 106, 96], unowned: [66, 63, 58],
+        };
+        const relOf = (owner) => {
+          if (!owner || /(_rebels|^slave$|^rebels$)/.test(owner)) return "unowned";
+          if (viewer && owner === viewer) return "own";
+          if (war.has(owner)) return "war";
+          if (prot.has(owner) || suz.has(owner)) return "protectorate";
+          if (allied.has(owner)) return "allied";
+          if (trade.has(owner)) return "trade";
+          if (hostile.has(owner)) return "hostile";
+          return "neutral";
+        };
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          const base = DIP_COLS[relOf(ownerOf[r.region])];
           if (devFlatColors) return base;
           const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.5;
           return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
@@ -14613,6 +14650,7 @@ function App() {
         { key: "region", label: "Region", badge: "mode.region" },
         { key: "homeland", label: "Homeland", badge: "mode.homeland" },
         { key: "victory", label: "Victory", badge: "mode.victory" },
+        { key: "diplomacy", label: "Diplomacy", badge: "mode.diplomacy" },
         { key: "explored", label: "Explored", badge: "mode.explored", live: true },
       ]},
       { id: "government", title: "Government", members: [
@@ -14656,7 +14694,9 @@ function App() {
         // reuse the dev-mode render/border/legend machinery, and the dev-off
         // colorMode reset explicitly spares it.
         { key: "legions", label: "Legions", badge: "mode.legions" },
-        { key: "mercenaries", label: "Mercenaries", badge: "devmode.mercenaries", dev: true },
+        // Mercenaries promoted to a regular mode (2026-07-24, user: fewer things
+        // buried in Tools/dev) — same DEV_COLOR_MODES-for-machinery trick as Legions.
+        { key: "mercenaries", label: "Mercenaries", badge: "mode.mercenaries" },
       ]},
       { id: "geography", title: "Geography", members: [
         { key: "geography", label: "Geography", badge: "mode.geography" },
@@ -15720,7 +15760,7 @@ function App() {
             onClick={() => setDevMode(prev => {
               const next = !prev;
               devTraceClick("Dev button", prev);
-              if (!next) setColorMode(cm => (DEV_COLOR_MODES.has(cm) && cm !== "legions") ? "faction" : cm); // legions is a regular mode
+              if (!next) setColorMode(cm => (DEV_COLOR_MODES.has(cm) && cm !== "legions" && cm !== "mercenaries") ? "faction" : cm); // legions/mercenaries are regular modes
               return next;
             })}
             style={{
@@ -16164,6 +16204,25 @@ function App() {
       }
       return { label: "Hidden Resources", value: hrs.length ? hrs.join(", ") : "None" };
     }
+    if (colorMode === "diplomacy") {
+      const viewer = (selectedFaction || playerFaction || "").toLowerCase();
+      const owner = ((currentOwnerByCity && currentOwnerByCity[info.city]) || info.faction || "").toLowerCase();
+      if (!owner || /(_rebels|^slave$|^rebels$)/.test(owner)) return { label: "Diplomacy", value: "Unowned / rebels" };
+      const ownerName = (factionDisplayNames && factionDisplayNames[owner]) || owner.replace(/_/g, " ");
+      if (viewer && owner === viewer) return { label: "Diplomacy", value: `${ownerName} — your regions` };
+      const dmRow = (viewer && diplomacyMatrix && diplomacyMatrix[viewer]) || null;
+      const has = (arr) => (arr || []).some((x) => String(x).toLowerCase() === owner);
+      let rel = "neutral";
+      if (dmRow) {
+        if (has(dmRow.war)) rel = "AT WAR with you";
+        else if (has(dmRow.protectorates)) rel = "your protectorate";
+        else if (has(dmRow.suzerains)) rel = "your suzerain";
+        else if (has(dmRow.allied)) rel = "allied with you";
+        else if (has(dmRow.trade)) rel = "trade/military bond";
+        else if (has(dmRow.hostile)) rel = "hostile (not at war)";
+      } else rel = viewer ? "neutral (Live mode adds relations)" : "pick a faction";
+      return { label: "Diplomacy", value: `${ownerName} — ${rel}` };
+    }
     if (colorMode === "legions") {
       const tag = getAors(info.tags).find((a) => LEGION_AOR_TAGS.has(a));
       return { label: "Legion", value: tag ? LEGION_AORS[tag].name : "None — outside every legion recruitment zone" };
@@ -16356,6 +16415,43 @@ function App() {
         </div>
       );
     }
+    if (colorMode === "diplomacy") {
+      const viewer = (selectedFaction || playerFaction || "").toLowerCase();
+      const viewerName = viewer ? ((factionDisplayNames && factionDisplayNames[viewer]) || viewer.replace(/_/g, " ")) : null;
+      const haveMatrix = !!(viewer && diplomacyMatrix && diplomacyMatrix[viewer]);
+      const ROWS = [
+        [[62, 102, 172], "Your regions"], [[210, 55, 45], "At war"], [[205, 140, 50], "Hostile (not at war)"],
+        [[75, 160, 70], "Allied"], [[150, 100, 200], "Protectorate / suzerain"], [[90, 145, 205], "Trade / military bond"],
+        [[112, 106, 96], "Neutral"], [[66, 63, 58], "Unowned / rebels"],
+      ];
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>
+            Diplomacy <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
+          </div>
+          {!legendCollapsed && (
+            <>
+              <div style={{ fontSize: "0.72rem", color: viewer ? "#9ed6ad" : "#e8c873", marginBottom: 4 }}>
+                {viewer ? `Viewing as ${viewerName}` : "Pick a faction in the sidebar (or connect Live) to set the viewpoint."}
+                {viewer && !haveMatrix && <div style={{ color: "#e8c873" }}>No live diplomacy data — connect Live to see war/alliance relations.</div>}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {ROWS.map(([c, lab]) => (
+                  <div key={lab} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem" }}>
+                    <span style={{ width: 12, height: 12, borderRadius: 2, background: `rgb(${c[0]},${c[1]},${c[2]})`, border: "1px solid rgba(0,0,0,0.35)", flexShrink: 0 }} />
+                    <span style={{ color: "#eee" }}>{lab}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 6, fontSize: "0.66rem", color: "#888", lineHeight: 1.4 }}>
+                Deep dives: 🧰 Tools → 🕊 Diplomacy Heatmap · 🕸 Diplomacy Web.
+              </div>
+            </>
+          )}
+        </div>
+      );
+    }
+
     if (colorMode === "unrestrisk" || colorMode === "trueincome" || colorMode === "corruptionmap" || colorMode === "growthmap" || colorMode === "tierforecast") {
       const CFG = {
         unrestrisk: { title: "Unrest risk", grad: "linear-gradient(to right, rgb(60,170,45), rgb(190,170,60), rgb(220,50,45))", labels: ["stable", "tense", "riot risk"] },
