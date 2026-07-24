@@ -5440,6 +5440,29 @@ function App() {
   const [playerFaction, setPlayerFaction] = useState(() => {
     try { return localStorage.getItem("playerFaction") || null; } catch { return null; }
   });
+  // Background pre-warm for the per-faction model modes (Growth, Corruption,
+  // Income, Public Order). The first getFactionMetrics call for a mod pays a
+  // one-time ~400ms model-parse cost (EDB/traits/regions/income features);
+  // every faction after that is ~1ms because those caches are faction-
+  // independent and shared. So we warm ONE faction on idle after load — then
+  // whichever per-faction mode the user opens first paints without the hitch.
+  const _metricsWarmedRef = useRef(null);
+  useEffect(() => {
+    if (!modDataDir || !window.electronAPI?.getFactionMetrics) return;
+    if (_metricsWarmedRef.current === modDataDir) return;
+    const fac = (playerFaction || selectedFaction || (factions && factions[0]) || "").toString();
+    if (!fac) return;
+    _metricsWarmedRef.current = modDataDir;
+    const schedule = typeof window.requestIdleCallback === "function"
+      ? (cb) => window.requestIdleCallback(cb, { timeout: 5000 })
+      : (cb) => setTimeout(cb, 1200);
+    const id = schedule(() => {
+      window.electronAPI.getFactionMetrics(modDataDir, fac.toLowerCase())
+        .then(() => console.log(`[metrics] pre-warmed model caches via ${fac}`))
+        .catch(() => { _metricsWarmedRef.current = null; /* allow retry */ });
+    });
+    return () => { if (typeof window.cancelIdleCallback === "function" && typeof id === "number") window.cancelIdleCallback(id); };
+  }, [modDataDir, playerFaction, selectedFaction, factions]);
   // Ref mirror so the save-snapshot handler (inside an effect) always sees the
   // current playerFaction without re-subscribing on every change.
   const playerFactionRef = useRef(playerFaction);

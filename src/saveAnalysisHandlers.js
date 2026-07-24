@@ -377,17 +377,21 @@ ipcMain.handle("get-faction-metrics", async (_event, modDataDir, faction) => {
       if (s.totalIncome > maxIncome) maxIncome = s.totalIncome;
       if (s.corruption > maxCorr) maxCorr = s.corruption;
     }
-    // population projection (60-turn horizon) for the Tier Forecast mode —
-    // per-faction like corruption (user 2026-07-24: no all-faction sweep)
+    // Growth + Public Order + Tier fields, per-faction (user 2026-07-24: no
+    // all-faction sweep). PERF (2026-07-24): use turns=1, not 60. The Growth
+    // map computes turns-to-next-tier with a closed-form formula from
+    // growth%/pop/threshold, so the expensive 60-turn trajectory simulation
+    // (~330ms/faction) is unused — a 1-turn projection yields the same growth%,
+    // po, tierNow, nextTierAt, popNow and declining in ~1/7th the time,
+    // removing the hitch when the mode is first opened.
     try {
       const pp = require("./popProjection.js");
-      const proj = pp.projectPopulation(modDataDir, faction, 60);
+      const proj = pp.projectPopulation(modDataDir, faction, 1);
       for (const s of (proj && proj.settlements) || []) {
         const e = byRegion[s.region] = byRegion[s.region] || { settlement: s.settlement, faction: String(faction).toLowerCase() };
         e.growth = s.growthPctPerTurn; e.po = s.po;
         e.tierNow = s.tierNow; e.nextTierAt = s.nextTierAt;
-        e.tierTurns = s.reachesNextTierAtTurn; e.popNow = s.popNow;
-        e.declining = s.declining;
+        e.popNow = s.popNow; e.declining = s.declining;
       }
     } catch { /* budget metrics still usable without the projection */ }
     const data = { faction: String(faction).toLowerCase(), byRegion, maxIncome, maxCorr, ms: Date.now() - t0 };

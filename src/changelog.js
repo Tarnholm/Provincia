@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1405",
+    date: "2026-07-24",
+    items: [
+      { type: "improvement", text: "**Removed the hitch when opening Growth (and Corruption/Income/Public Order).** These per-faction model modes paid a one-time ~400ms cost to parse the economy/trait/region model the first time one was opened. That model is shared across all of them, so the app now warms it quietly in the background shortly after a mod loads — whichever of these modes you open first now paints immediately instead of stalling." },
+    ],
+  },
+  {
     version: "0.9.1404",
     date: "2026-07-24",
     items: [
