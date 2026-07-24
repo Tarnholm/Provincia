@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1408",
+    date: "2026-07-24",
+    items: [
+      { type: "fix", text: "**HTML Report preview fixed.** Preview used a popup window, which the app's window policy always blocks — so it silently never opened. It now writes a temp file and opens it in your default browser, with clear status feedback." },
+    ],
+  },
+  {
     version: "0.9.1407",
     date: "2026-07-24",
     items: [

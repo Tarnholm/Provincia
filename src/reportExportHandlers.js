@@ -36,6 +36,29 @@ function registerReportExportHandlers(ipcMain, deps) {
       return { error: e && e.message ? e.message : String(e) };
     }
   });
+
+  // "preview-html-report" (html) → write to a temp file and open it in the
+  // system browser. The renderer's old preview used window.open(blobURL),
+  // which the app's setWindowOpenHandler always DENIES — Preview never worked
+  // in the packaged app (user report 2026-07-24). shell.openPath on a real
+  // temp file is the reliable route and matches the button's promise
+  // ("open in a browser without saving"). The temp file is rewritten on each
+  // preview and left for the OS temp cleaner.
+  ipcMain.handle("preview-html-report", async (_event, html) => {
+    try {
+      if (typeof html !== "string" || !html.trim()) return { error: "empty report HTML" };
+      const os = require("os");
+      const path = require("path");
+      const { shell } = require("electron");
+      const p = path.join(os.tmpdir(), "provincia-report-preview.html");
+      fs.writeFileSync(p, html, "utf8");
+      const err = await shell.openPath(p);
+      if (err) return { error: err };
+      return { ok: true, path: p };
+    } catch (e) {
+      return { error: e && e.message ? e.message : String(e) };
+    }
+  });
 }
 
 module.exports = { registerReportExportHandlers };

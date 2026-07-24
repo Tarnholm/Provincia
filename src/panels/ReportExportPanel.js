@@ -63,13 +63,16 @@ export default function ReportExportPanel({ collect, onClose }) {
     return slug + "-" + new Date().toISOString().slice(0, 10) + ".html";
   };
 
-  const preview = () => {
+  const preview = async () => {
+    // window.open(blobURL) is DENIED by the app's window-open policy, so the
+    // old preview silently never opened (fixed 2026-07-24). Preview now goes
+    // through main: temp file + system browser via shell.openPath.
     try {
-      const url = URL.createObjectURL(new Blob([assemble()], { type: "text/html" }));
-      const w = window.open(url, "_blank");
-      if (!w) setStatus("Preview window was blocked — use Export… and open the saved file instead.");
-      // Give the new window time to load before releasing the blob.
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      setStatus("Opening preview…");
+      const r = await window.electronAPI?.previewHtmlReport?.(assemble());
+      if (!r) setStatus("Preview IPC unavailable — previewHtmlReport missing from the preload bridge.");
+      else if (r.ok) setStatus("Preview opened in your browser.");
+      else setStatus("Preview failed: " + (r.error || "unknown error"));
     } catch (e) { setStatus("Preview failed: " + (e?.message || String(e))); }
   };
 
