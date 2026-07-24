@@ -1,6 +1,6 @@
 {
   "name": "provincia",
-  "version": "0.9.1416",
+  "version": "0.9.1417",
   "description": "Provincia — Rome: Total War mod data viewer",
   "author": "Tarnholm",
   "license": "MIT",
@@ -61,6 +61,7 @@
       "src/buildingsWorker.js",
       "src/messageLogParser.js",
       "src/aiMovementAnalyzer.js",
+      "src/aiMovementRun.js",
       "src/aiModFileAudit.js",
       "src/unitParser.js",
       "src/buildingParser.js",

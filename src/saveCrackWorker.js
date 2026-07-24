@@ -25,7 +25,7 @@
 const fs = require("fs");
 const { parentPort } = require("worker_threads");
 
-parentPort.on("message", (payload) => {
+parentPort.on("message", async (payload) => {
   // Capture the parsers' console.log diagnostics so the main thread can persist
   // them to provincia.log. Restored in finally so a throw can't leak the patch.
   const logs = [];
@@ -59,6 +59,12 @@ parentPort.on("message", (payload) => {
       // skipping this worker's own ~3s re-crack.
       const { computeTradeNetwork } = require("./tradeNetwork.js");
       result = computeTradeNetwork(buf, modDataDir, campaign ? { campaign } : {}, preCracked || null);
+    } else if (mode === "aiMovement") {
+      // Full AI-log analysis (+ optional save cross-reference and mod-file
+      // audit). Runs here because the save crack alone blocks ~12s — on the
+      // main thread that froze the UI and the mouse (user report 2026-07-25).
+      const { runAiMovementAnalysis } = require("./aiMovementRun.js");
+      result = await runAiMovementAnalysis(payload);
     } else {
       throw new Error("unknown crack-worker mode: " + mode);
     }

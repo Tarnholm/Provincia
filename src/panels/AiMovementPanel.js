@@ -164,7 +164,11 @@ export default function AiMovementPanel({
           </div>
         )}
         {result && result.usable !== false && (
-          <div style={{ overflowY: "auto", padding: "8px 16px" }}>
+          <>
+          {/* FIXED header — the summary, tabs and filters stay put; only the
+              list below scrolls (user 2026-07-25). flexShrink:0 keeps it from
+              being squeezed by the scroller's flex:1. */}
+          <div style={{ padding: "8px 16px 6px", flexShrink: 0, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
             {result.saveError && (
               <div style={{ marginBottom: 6, fontSize: "0.74rem", color: "#e87a6a" }}>Save cross-reference failed: {result.saveError}</div>
             )}
@@ -191,6 +195,39 @@ export default function AiMovementPanel({
                 ))}
               </div>
             )}
+            {/* filters live in the fixed header too, so they're always reachable */}
+            {tab === "findings" && (
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+              {Object.entries(KIND_META).map(([k, m]) => {
+                const on = kindFilter.has(k);
+                const n = (result.findingCounts && result.findingCounts[k]) || 0;
+                return (
+                  <button key={k}
+                    onClick={() => setKindFilter((prev) => { const s2 = new Set(prev); if (s2.has(k)) s2.delete(k); else s2.add(k); return s2; })}
+                    title={m.desc}
+                    style={{ padding: "2px 10px", borderRadius: 10, cursor: "pointer", fontSize: "0.72rem", border: `1px solid ${m.color}`, background: on ? m.color + "33" : "transparent", color: on ? "#eee" : "#777" }}>
+                    {m.label} {n}
+                  </button>
+                );
+              })}
+              {result.cannotFlee > 0 && (
+                <span title="Beaten armies with NOWHERE to retreat (context-free engine line, not attributable to a specific army)"
+                  style={{ fontSize: "0.72rem", color: "#e87a6a" }}>· {result.cannotFlee}× cannot-find-flee-tile</span>
+              )}
+              {result.save && (
+                <label title="Show only findings the save proves went wrong" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.72rem", color: onlyConfirmed ? "#e87a6a" : "#888", cursor: "pointer" }}>
+                  <input type="checkbox" checked={onlyConfirmed} onChange={() => setOnlyConfirmed((v) => !v)} />
+                  proven only
+                </label>
+              )}
+              <input value={factionFilter} onChange={(e) => setFactionFilter(e.target.value)} placeholder="Filter faction / army…"
+                style={{ marginLeft: "auto", width: 170, padding: "3px 8px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)", color: "#f0f0f0", fontSize: "0.74rem", outline: "none" }} />
+            </div>
+            )}
+          </div>
+
+          {/* SCROLLER — just the results */}
+          <div style={{ overflowY: "auto", padding: "8px 16px", flex: 1, minHeight: 0 }}>
             {tab === "leads" && result.modLeads && (
               <div>
                 <div style={{ fontSize: "0.7rem", color: "#888", marginBottom: 6 }}>
@@ -211,34 +248,6 @@ export default function AiMovementPanel({
               </div>
             )}
             {tab === "findings" && (<>
-            {/* kind filter chips + summary counts */}
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
-              {Object.entries(KIND_META).map(([k, m]) => {
-                const on = kindFilter.has(k);
-                const n = (result.findingCounts && result.findingCounts[k]) || 0;
-                return (
-                  <button key={k}
-                    onClick={() => setKindFilter((prev) => { const s = new Set(prev); if (s.has(k)) s.delete(k); else s.add(k); return s; })}
-                    title={m.desc}
-                    style={{ padding: "2px 10px", borderRadius: 10, cursor: "pointer", fontSize: "0.72rem", border: `1px solid ${m.color}`, background: on ? m.color + "33" : "transparent", color: on ? "#eee" : "#777" }}>
-                    {m.label} {n}
-                  </button>
-                );
-              })}
-              {result.cannotFlee > 0 && (
-                <span title="Beaten armies with NOWHERE to retreat (context-free engine line, not attributable to a specific army)"
-                  style={{ fontSize: "0.72rem", color: "#e87a6a" }}>· {result.cannotFlee}× cannot-find-flee-tile</span>
-              )}
-              {result.save && (
-                <label title="Show only findings the save proves went wrong" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.72rem", color: onlyConfirmed ? "#e87a6a" : "#888", cursor: "pointer" }}>
-                  <input type="checkbox" checked={onlyConfirmed} onChange={() => setOnlyConfirmed((v) => !v)} />
-                  proven only
-                </label>
-              )}
-              <input value={factionFilter} onChange={(e) => setFactionFilter(e.target.value)} placeholder="Filter faction / army…"
-                style={{ marginLeft: "auto", width: 170, padding: "3px 8px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)", color: "#f0f0f0", fontSize: "0.74rem", outline: "none" }} />
-            </div>
-
             {/* findings table */}
             {visible.length === 0 && (
               <div style={{ color: (result.findings || []).length ? "#e8c873" : "#8fd18f", fontSize: "0.8rem", padding: "8px 2px" }}>
@@ -261,9 +270,17 @@ export default function AiMovementPanel({
                   <span style={{ color: m.color, fontWeight: 700, width: 86, flexShrink: 0 }}>{m.label}</span>
                   <span style={{ color: "#eee", fontWeight: 600 }}>{f.name}</span>
                   <span style={{ color: "#9a8f7a" }}>{flabel(f.faction)}</span>
-                  <span style={{ color: "#8fc9d8", flexShrink: 0 }}>t{f.fromTurn}–{f.toTurn}</span>
+                  {f.fromTurn != null && f.toTurn != null && (
+                    <span style={{ color: "#8fc9d8", flexShrink: 0 }}>
+                      {f.fromTurn === f.toTurn ? `t${f.fromTurn}` : `t${f.fromTurn}–${f.toTurn}`}
+                    </span>
+                  )}
                   <span style={{ color: "#bbb", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{f.detail}</span>
-                  <span style={{ color: "#cfc6b0", flexShrink: 0 }}>{f.region ? f.region.replace(/_/g, " ") : `(${f.x},${f.y})`}</span>
+                  <span style={{ color: "#cfc6b0", flexShrink: 0 }}>
+                    {f.region
+                      ? f.region.replace(/_/g, " ")
+                      : (f.x != null && f.y != null ? `(${f.x},${f.y})` : "")}
+                  </span>
                   </div>
                   {(f.verdict || f.reqVsHave) && (
                     <div style={{ margin: "0 0 3px 92px", fontSize: "0.7rem", color: /NEVER arrived/.test(f.verdict || "") || f.impossible ? "#e87a6a" : "#8fd18f" }}>
@@ -295,6 +312,7 @@ export default function AiMovementPanel({
               </div>
             )}
           </div>
+          </>
         )}
       </div>
     </div>,

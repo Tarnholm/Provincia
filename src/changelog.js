@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1417",
+    date: "2026-07-25",
+    items: [
+      { type: "fix", text: "**The app no longer freezes while the AI Movement Lab analyses a log + save.** Cracking a 45MB save takes about 12 seconds and it was running on the main thread, so the whole UI — mouse included — locked up for the duration. The entire pipeline (log streaming, save crack, cross-reference and mod-file audit) now runs in a worker thread: measured on the 346MB reference log plus the turn-102 save, 15.3 seconds of work with a worst main-thread stall of 111ms instead of a multi-second freeze." },
+      { type: "fix", text: "**Findings list no longer shows “(null,null)” or a bare “t–”.** AI-decision findings have no map tile or turn span (unlike movement findings), and those empty values were being printed literally. They’re now simply omitted, and a single-turn span reads “t12” rather than “t12–12”." },
+      { type: "improvement", text: "**The summary, tabs and filters now stay pinned while you scroll** — only the results list moves, so the cross-reference totals and the filter chips remain reachable in a list of thousands of findings." },
+    ],
+  },
+  {
     version: "0.9.1416",
     date: "2026-07-25",
     items: [
