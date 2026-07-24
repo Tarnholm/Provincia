@@ -254,6 +254,8 @@ function analyzeMovementLog(text, opts = {}) {
 //                     in ≥ MIN_ABORT_TURNS distinct turns.
 
 const AI_DEFAULTS = {
+  ABANDON_GAP: 6,        // silent for this many turns before the log ends…
+  ABANDON_MIN_HITS: 5,   // …after having been actively commanded this much
   MIN_MISSION_TURNS: 4,
   CHURN_MIN: 10,
   MIN_STALL_TURNS: 6,
@@ -281,7 +283,17 @@ function createAiDecisionAnalyzer(opts = {}) {
   const churn = new Map();         // char → { assigns, releases, faction, regs:Set }
   const stalls = new Map();        // faction|regId → { faction, regId, gatherTurns:Set, lastReq, lastAlloc }
   const aborts = new Map();        // regId → Set(turnIdx)
+  const charSeen = new Map();      // char → { first, last, hits, faction } (abandonment)
   let lines = 0, matched = 0;
+
+  // Any line naming a character counts as "the AI is still managing them".
+  const RX_ANY_CHAR = /char '([^']+)'|character '([^']+)'|army '([^']+)'/;
+  const noteChar = (name) => {
+    if (!name) return;
+    const e = charSeen.get(name);
+    if (e) { e.last = turnIdx; e.hits++; }
+    else charSeen.set(name, { first: turnIdx, last: turnIdx, hits: 1, faction: curFaction });
+  };
 
   const feedLine = (l) => {
     lines++;
@@ -296,6 +308,7 @@ function createAiDecisionAnalyzer(opts = {}) {
       matched++; return;
     }
     if ((m = AI_RX.mission.exec(l)) || (m = AI_RX.toldMove.exec(l))) {
+      noteChar(m[1]);
       const key = m[1] + "|" + m[2];
       const e = missions.get(key) || { char: m[1], sett: m[2], faction: curFaction, turns: new Set() };
       e.turns.add(turnIdx);
@@ -303,12 +316,14 @@ function createAiDecisionAnalyzer(opts = {}) {
       matched++; return;
     }
     if ((m = AI_RX.assigned.exec(l))) {
+      noteChar(m[1]);
       const e = churn.get(m[1]) || { assigns: 0, releases: 0, faction: curFaction, regs: new Set() };
       e.assigns++; e.regs.add(m[2]); e.faction = e.faction || curFaction;
       churn.set(m[1], e);
       matched++; return;
     }
     if ((m = AI_RX.released.exec(l))) {
+      noteChar(m[1]);
       const e = churn.get(m[1]) || { assigns: 0, releases: 0, faction: curFaction, regs: new Set() };
       e.releases++;
       churn.set(m[1], e);
@@ -319,6 +334,7 @@ function createAiDecisionAnalyzer(opts = {}) {
       s.add(turnIdx); aborts.set(m[1], s);
       matched++; return;
     }
+    { const cm = RX_ANY_CHAR.exec(l); if (cm) noteChar(cm[1] || cm[2] || cm[3]); }
     if ((m = AI_RX.campaign.exec(l))) {
       regName.set(m[2], m[1]);
       const req = +m[4], alloc = +m[5];
@@ -380,6 +396,21 @@ function createAiDecisionAnalyzer(opts = {}) {
           region: nameOf(regId), x: null, y: null,
           detail: `campaign aborted for insufficient strength in ${ts.size} separate turns`,
           severity: Math.min(3, Math.floor(ts.size / cfg.MIN_ABORT_TURNS)),
+        });
+      }
+    }
+    // abandoned: the AI actively commanded this character, then went silent for
+    // the rest of the log. Whether that's a death or an ORPHANED army the AI
+    // forgot about can only be settled by a save (correlateWithSave does that).
+    for (const [name, e] of charSeen) {
+      const silentFor = turnIdx - e.last;
+      if (silentFor >= cfg.ABANDON_GAP && e.hits >= cfg.ABANDON_MIN_HITS) {
+        findings.push({
+          kind: "abandoned", name, faction: e.faction || "?",
+          fromTurn: e.first, toTurn: e.last, turns: silentFor,
+          region: null, x: null, y: null,
+          detail: `commanded for ${e.hits} orders up to turn ${e.last}, then never mentioned again (${silentFor} turns of silence)`,
+          severity: Math.min(3, Math.floor(silentFor / cfg.ABANDON_GAP)),
         });
       }
     }
@@ -446,6 +477,22 @@ function correlateWithSave(findings, saveFacts) {
         e.verdict = "unknown — save has no owner record for " + tgt;
       }
     }
+    // ── abandoned: did the AI orphan a LIVE army, or did the char just die? ──
+    if (f.kind === "abandoned") {
+      const alive = F.aliveNames || {}, dead = F.deadNames || {};
+      const k = String(f.name || "").replace(/^(Captain|Admiral|General)\s+/i, "").replace(/_/g, " ").trim().toLowerCase();
+      if (alive[k]) {
+        e.orphaned = true;
+        e.verdict = `ORPHANED — still alive at turn ${F.turn}, but the AI issued it no orders after turn ${f.toTurn}`;
+        e.severity = Math.min(3, (e.severity || 1) + 1); // a live forgotten army is worse than a dead one
+      } else if (dead[k]) {
+        e.orphaned = false;
+        e.verdict = `died — not an AI fault (dead in the turn-${F.turn} save)`;
+        e.severity = 0;                                  // benign: sort it to the bottom
+      } else {
+        e.verdict = `unknown — no character named "${f.name}" in the turn-${F.turn} save (destroyed, or a name the save spells differently)`;
+      }
+    }
     // ── actor-side: could this faction ever have afforded the campaign? ──
     if (fac && fac !== "?") {
       e.factionMenAtSave = men[fac] != null ? men[fac] : null;
@@ -483,8 +530,22 @@ function buildSaveFacts(save, regionOfSettlement) {
     const f = String(fx || "?").toLowerCase();
     settlementsByFaction[f] = (settlementsByFaction[f] || 0) + 1;
   }
+  // Character names, normalised, split alive/dead. Used to settle "abandoned"
+  // findings: still-alive = the AI ORPHANED a live army; dead = benign.
+  const aliveNames = {}, deadNames = {};
+  const norm = (n) => String(n || "").replace(/^(Captain|Admiral|General)\s+/i, "").replace(/_/g, " ").trim().toLowerCase();
+  const ch = save.characters || {};
+  for (const c of (ch.v1 || [])) {
+    const k = norm(c.firstName); if (!k) continue;
+    if (c.isDead) deadNames[k] = true; else aliveNames[k] = true;
+  }
+  for (const c of (ch.family || [])) {
+    const k = norm(c.fullName || c.firstName); if (!k) continue;
+    if (c.alive === false) deadNames[k] = true; else aliveNames[k] = true;
+  }
   return {
     turn: save.turn,
+    aliveNames, deadNames,
     ownerByCity: save.ownerByCity || {},
     unitsByFactionRegion, menByFaction, unitsByFaction, navalByFaction, navalWorld,
     settlementsByFaction,

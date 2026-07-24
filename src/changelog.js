@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1411",
+    date: "2026-07-24",
+    items: [
+      { type: "feature", text: "**AI Movement Lab now answers “why did that army disappear?”** New ABANDONED detector: any character the AI actively commanded and then went silent on. Attach a save and each one is settled — still alive means the AI ORPHANED a live army (a real bug), dead means it simply died (marked benign and sorted away), and unmatched names say “unknown” instead of guessing. On the reference campaign: 2,255 armies went silent, and 1,140 of them were still alive at turn 102 while only 45 had actually died." },
+      { type: "feature", text: "**New “Mod-file leads” tab — findings turned into edits.** Cross-references the AI log and save against the mod’s AI-relevant files (feral_descr_ai_personality, descr_strat, descr_sm_factions, export_descr_unit) and reports which FILE and which KEY to change, with the evidence: e.g. “Volcae: personality ai_volcae → super_aggressive (aggresiveness 100) — max aggression on a 3-settlement faction that fields 1,006 men but asks for 35,053 strength; retier to passive.” Also flags factions with overseas objectives but no fleet (distinguishing ‘needs a starting transport’ from ‘cannot own any ship in EDU’)." },
+    ],
+  },
+  {
     version: "0.9.1410",
     date: "2026-07-24",
     items: [

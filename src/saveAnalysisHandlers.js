@@ -447,7 +447,27 @@ async function _correlateSave(result, savePath, modDataDir) {
     const imp = result.findings.filter((f) => f.impossible);
     result.save.confirmedNeverArrived = sm.length;
     result.save.impossibleCampaigns = imp.length;
-    _writeLog(`[ai-movement] correlated with ${path.basename(savePath)} (turn ${facts.turn}): ${sm.length} confirmed-never-arrived, ${imp.length} impossible campaigns, in ${result.save.ms}ms`);
+    result.save.orphanedArmies = result.findings.filter((f) => f.orphaned).length;
+    // Mod-file audit: turn the findings into file-level leads (which file, which
+    // key, what to change) using the AI-relevant mod files the user named.
+    try {
+      const { auditModFiles } = require("./aiModFileAudit.js");
+      const rd = (rel, enc) => { try { return fs.readFileSync(path.join(modDataDir, rel), enc || "latin1"); } catch { return null; } };
+      const audit = auditModFiles({
+        findings: result.findings,
+        saveFacts: facts,
+        files: {
+          aiPersonality: rd("feral_descr_ai_personality.txt"),
+          strat: rd(path.join("world", "maps", "campaign", "imperial_campaign", "descr_strat.txt")),
+          smFactions: rd("descr_sm_factions.txt"),
+          edu: rd("export_descr_unit.txt"),
+        },
+      });
+      result.modLeads = audit.leads;
+      result.factionProfiles = audit.factions;
+      _writeLog(`[ai-movement] mod-file audit: ${audit.leads.length} leads across ${Object.keys(audit.factions).length} factions`);
+    } catch (e) { result.auditError = e && e.message ? e.message : String(e); }
+    _writeLog(`[ai-movement] correlated with ${path.basename(savePath)} (turn ${facts.turn}): ${sm.length} confirmed-never-arrived, ${imp.length} impossible campaigns, ${result.save.orphanedArmies} orphaned armies, in ${result.save.ms}ms`);
   } catch (e) {
     result.saveError = e && e.message ? e.message : String(e);
   }

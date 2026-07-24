@@ -21,6 +21,7 @@ const KIND_META = {
   assign_churn: { color: "#e8c873", label: "Thrashed army", desc: "controller assigns/releases this army over and over" },
   campaign_stall: { color: "#cf8f6a", label: "Stalled campaign", desc: "gathering for a target but never reaches required strength" },
   aborted_hotspot: { color: "#c9a0dc", label: "Abort hotspot", desc: "campaign for this region aborted many turns for insufficient strength" },
+  abandoned: { color: "#d88fb0", label: "Abandoned army", desc: "the AI commanded it, then went silent — attach a save to tell an ORPHANED live army from a character who simply died" },
 };
 
 export default function AiMovementPanel({
@@ -38,6 +39,7 @@ export default function AiMovementPanel({
   const [factionFilter, setFactionFilter] = useState("");
   const [savePath, setSavePath] = useState(null);      // optional .sav to cross-reference
   const [onlyConfirmed, setOnlyConfirmed] = useState(false);
+  const [tab, setTab] = useState("findings"); // "findings" | "leads"
 
   const run = async (logPath) => {
     setBusy(true); setError(null);
@@ -153,12 +155,44 @@ export default function AiMovementPanel({
                 <b style={{ color: "#8fc9d8" }}>Cross-referenced with turn {result.save.turn}</b>
                 {" — "}
                 <b style={{ color: "#e87a6a" }}>{result.save.confirmedNeverArrived}</b> orders confirmed never to have arrived,{" "}
-                <b style={{ color: "#e87a6a" }}>{result.save.impossibleCampaigns}</b> campaigns the faction could never afford.
+                <b style={{ color: "#e87a6a" }}>{result.save.impossibleCampaigns}</b> campaigns the faction could never afford,{" "}
+                <b style={{ color: "#e87a6a" }}>{result.save.orphanedArmies}</b> armies orphaned while still alive.
                 <div style={{ color: "#9a8f7a", fontSize: "0.7rem" }}>
                   World at that turn: {result.save.navalWorld} ships total · {result.save.sieges} active sieges · {result.save.factionsWithUnits} factions still fielding troops.
                 </div>
               </div>
             )}
+            {result.modLeads && result.modLeads.length > 0 && (
+              <div style={{ display: "flex", gap: 2, marginBottom: 8, padding: 2, background: "rgba(0,0,0,0.25)", borderRadius: 5 }}>
+                {[["findings", `Findings (${result.findings.length})`], ["leads", `Mod-file leads (${result.modLeads.length})`]].map(([k, lab]) => (
+                  <div key={k} onClick={() => setTab(k)}
+                    style={{ flex: 1, padding: "3px 8px", fontSize: "0.74rem", textAlign: "center", cursor: "pointer", borderRadius: 4, userSelect: "none",
+                      background: tab === k ? "rgba(255,255,255,0.14)" : "transparent", color: tab === k ? "#fff" : "#bbb", fontWeight: tab === k ? 600 : 400 }}>
+                    {lab}
+                  </div>
+                ))}
+              </div>
+            )}
+            {tab === "leads" && result.modLeads && (
+              <div>
+                <div style={{ fontSize: "0.7rem", color: "#888", marginBottom: 6 }}>
+                  Each lead names the file and the key to edit, with the log/save evidence behind it.
+                </div>
+                {result.modLeads.map((l, i) => (
+                  <div key={i} style={{ marginBottom: 7, padding: "6px 9px", borderRadius: 6, borderLeft: `3px solid ${l.severity >= 3 ? "#e87a6a" : l.severity === 2 ? "#e8c873" : "#8fc9d8"}`, background: "rgba(255,255,255,0.03)" }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
+                      <b style={{ color: "#eee" }}>{flabel(l.faction)}</b>
+                      <code style={{ fontSize: "0.7rem", color: "#8fc9d8" }}>{l.file}</code>
+                      <span style={{ fontSize: "0.7rem", color: "#9a8f7a" }}>{l.key}</span>
+                    </div>
+                    <div style={{ fontSize: "0.74rem", color: "#e8c873", marginTop: 2 }}>{l.issue}</div>
+                    <div style={{ fontSize: "0.74rem", color: "#8fd18f" }}>→ {l.suggestion}</div>
+                    <div style={{ fontSize: "0.68rem", color: "#888", marginTop: 1 }}>{l.evidence}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {tab === "findings" && (<>
             {/* kind filter chips + summary counts */}
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
               {Object.entries(KIND_META).map(([k, m]) => {
@@ -218,6 +252,7 @@ export default function AiMovementPanel({
               );
             })}
 
+            </>)}
             {/* faction wander table */}
             {facRows.length > 0 && (
               <div style={{ marginTop: 12 }}>
