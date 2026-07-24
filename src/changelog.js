@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1419",
+    date: "2026-07-25",
+    items: [
+      { type: "improvement", text: "**Added the tests that would have caught yesterday’s two Lab failures before release.** An end-to-end test now runs a real 346MB campaign_ai_log plus a real turn-102 save through the actual worker and pins the results (log parsed, 102-turn cross-reference, every impossible campaign attributed to a cause, every mod-file lead naming an editable file), and a second test statically walks the worker’s whole require graph and fails if anything in it reaches for Electron or other main-process-only bindings. That static check is the one that matters: in development Electron resolves from node_modules so the bad require succeeds, and only the packaged app failed — which is exactly how it shipped. Both were verified by reintroducing the bug and watching them fail. Tests skip cleanly on machines without the reference files." },
+    ],
+  },
+  {
     version: "0.9.1418",
     date: "2026-07-25",
     items: [
