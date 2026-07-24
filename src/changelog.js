@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1403",
+    date: "2026-07-24",
+    items: [
+      { type: "fix", text: "**Fixed missing garrisons and field armies across much of the map (all of Italy, and more).** The map RIS ships (map_regions.tga) is RLE-compressed, but the starting-armies builder read it as uncompressed — every pixel lookup was garbage, so armies whose position didn’t happen to land on a valid region were silently dropped. Added RLE decoding: regions with armies jumped from ~500 to 1304 of 1311. Rome, Campania, Etruria, Latium and the rest of Italy now show their garrisons and field armies again — which also fixes the Armies map mode, army composition on hover, and the Reach mode’s army seeds." },
+    ],
+  },
+  {
     version: "0.9.1402",
     date: "2026-07-24",
     items: [

@@ -14,8 +14,50 @@
 const fs = require("fs");
 const path = require("path");
 
+// ── RLE → uncompressed TGA normaliser ───────────────────────────────────
+// The builder's pixel math assumes an UNCOMPRESSED true-color TGA (imageType
+// 2), but RIS ships map_regions.tga RLE-compressed (imageType 10). Feeding RLE
+// bytes to the raw offset readers yielded garbage pixels → armies whose coords
+// didn't accidentally land on a valid region were dropped (most of Italy).
+// This decodes an RLE TGA into an equivalent uncompressed one (same 18-byte
+// header with imageType flipped to 2) so every downstream reader works
+// unchanged. Uncompressed input is returned as-is; anything unexpected too.
+function ensureUncompressedTga(buf) {
+  if (!buf || buf.length < 18 || buf[2] !== 10) return buf; // only RLE true-color
+  const idLen = buf[0];
+  const w = buf[12] | (buf[13] << 8);
+  const h = buf[14] | (buf[15] << 8);
+  const stride = buf[16] / 8;
+  if (!w || !h || !stride) return buf;
+  const dataOff = 18 + idLen;
+  const px = w * h;
+  const out = Buffer.alloc(18 + px * stride);
+  buf.copy(out, 0, 0, 18);          // reuse header
+  out[2] = 2;                        // mark uncompressed
+  out[0] = 0;                        // drop image-ID (we didn't copy it)
+  let sp = dataOff, dp = 18, count = 0;
+  while (count < px && sp < buf.length) {
+    const packet = buf[sp++];
+    const n = (packet & 0x7f) + 1;
+    if (packet & 0x80) {             // RLE packet: one pixel repeated n times
+      for (let k = 0; k < n && count < px; k++) {
+        for (let b = 0; b < stride; b++) out[dp++] = buf[sp + b];
+        count++;
+      }
+      sp += stride;
+    } else {                          // raw packet: n literal pixels
+      for (let k = 0; k < n && count < px; k++) {
+        for (let b = 0; b < stride; b++) out[dp++] = buf[sp++];
+        count++;
+      }
+    }
+  }
+  return out;
+}
+
 // ── Minimal TGA reader — supports uncompressed 24/32-bit BGR(A) ──────────
-function readTga(buf) {
+function readTga(rawBuf) {
+  const buf = ensureUncompressedTga(rawBuf);
   const idLen = buf[0];
   const w = buf[12] | (buf[13] << 8);
   const h = buf[14] | (buf[15] << 8);
@@ -38,7 +80,8 @@ function readTga(buf) {
 // adjacent to a region-coloured pixel), then buckets armies into
 // garrison/field per region. Synthetic garrisoned_army entries (no x/y) are
 // snapped to their settlement tile via the captured `region` field.
-function buildStartingArmiesByRegion(armies, tgaBuf, regionsMap, factions) {
+function buildStartingArmiesByRegion(armies, tgaBufRaw, regionsMap, factions) {
+  const tgaBuf = ensureUncompressedTga(tgaBufRaw); // RIS map is RLE — decode first
   // 0.9.853: region → owning faction (inverted from descr_strat
   // faction→regions). Used below so a FOREIGN army on/next to a settlement
   // tile (a besieger / passing stack, e.g. the Roman Aulus Gabinius beside
@@ -202,7 +245,8 @@ function charType(line) {
   return "general";
 }
 
-function parseArmiesClassified(text, tgaBuf, mapHeight) {
+function parseArmiesClassified(text, tgaBufRaw, mapHeight) {
+  const tgaBuf = tgaBufRaw ? ensureUncompressedTga(tgaBufRaw) : null;
   const tga = tgaBuf ? readTga(tgaBuf) : null;
   const getPixel = tga ? tga.getPixel : () => null;
   const armies = [];
