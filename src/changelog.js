@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1397",
+    date: "2026-07-24",
+    items: [
+      { type: "improvement", text: "**Four more Tools folded into their map modes.** Victory Progress → the Victory mode legend (faction list ranked by completion; click one for its held/missing breakdown with jump-to-region chips). Battle Ledger → the War mode legend (per-faction won/lost + recent battles, click to jump). Mercenary Pools → the Mercenaries mode legend (▸ on a pool lists its units with costs/replenish/restrictions, click for the unit card). Population Projection removed — the Growth mode covers it. The Tools menu is down to genuinely non-map tools." },
+    ],
+  },
+  {
     version: "0.9.1396",
     date: "2026-07-24",
     items: [

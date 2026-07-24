@@ -64,7 +64,6 @@ import CommandPalette from "./panels/CommandPalette";
 import WealthPanel from "./panels/WealthPanel";
 import DashboardModal from "./panels/DashboardModal";
 import ArmySetupModal from "./panels/ArmySetupModal";
-import VictoryProgressPanel from "./panels/VictoryProgressPanel";
 import SubmodDriftPanel from "./panels/SubmodDriftPanel";
 import EconBaselinePanel from "./panels/EconBaselinePanel";
 import ReportExportPanel from "./panels/ReportExportPanel";
@@ -74,11 +73,9 @@ import TimelinePlayerPanel from "./panels/TimelinePlayerPanel";
 import UnitComparePanel from "./panels/UnitComparePanel";
 import RecruitPlannerPanel from "./panels/RecruitPlannerPanel";
 import DiploHeatmapPanel from "./panels/DiploHeatmapPanel";
-import MercPoolsPanel from "./panels/MercPoolsPanel";
 import TraitExplorerPanel from "./panels/TraitExplorerPanel";
 import CampaignAutopsyPanel from "./panels/CampaignAutopsyPanel";
 import BuildOrderPanel from "./panels/BuildOrderPanel";
-import PopProjectionPanel from "./panels/PopProjectionPanel";
 import DefinitionLocatorPanel from "./panels/DefinitionLocatorPanel";
 import WhatIfPanel from "./panels/WhatIfPanel";
 
@@ -104,7 +101,6 @@ class ToolPanelBoundary extends React.Component {
     return this.props.children;
   }
 }
-import BattleLedgerPanel from "./panels/BattleLedgerPanel";
 import { createLedger } from "./battleLedger";
 import { planRecruitUpgrades } from "./recruitPlanner";
 import { computeVictoryProgress } from "./victoryProgress";
@@ -2959,6 +2955,8 @@ function App() {
   const [aorLegendFilter, setAorLegendFilter] = useState("");
   // Legions legend: which legion's unit list is expanded (tag or null).
   const [legionUnitsOpen, setLegionUnitsOpen] = useState(null);
+  // Mercenaries legend: which pool's unit list is expanded (name or null).
+  const [mercUnitsOpen, setMercUnitsOpen] = useState(null);
 
   // Prevent zooming out past the fitted view
   const minZoom = 1,
@@ -2995,10 +2993,6 @@ function App() {
   // Mercenaries map layer (2026-06-08): parsed descr_mercenaries pools. Loaded
   // lazily the first time the Mercenaries map mode is selected.
   const [mapMercData, setMapMercData] = useState(null);
-  // 🪙 Mercenary Pool browser (2026-07-24). Declared HERE (not with the other
-  // tool-panel states) because the merc-data fetch effect below reads it —
-  // declaring it later TDZ-crashes the whole app on mount.
-  const [showMercPools, setShowMercPools] = useState(false);
   // Mercenaries pool filter: null = show ALL pools; else a Set of ENABLED pool names
   // (lets the user isolate pools one-by-one to spot gaps/overlaps). Regions in a
   // multi-pool overlap colour by their first enabled pool.
@@ -3822,14 +3816,14 @@ function App() {
   // modDataDir useState above — its dep array reads modDataDir, so placing it earlier
   // TDZ-crashes the whole app on mount (gray screen; this is what broke v0.9.979).
   useEffect(() => {
-    if ((colorMode !== "mercenaries" && !showMercPools) || !modDataDir) return;
+    if (colorMode !== "mercenaries" || !modDataDir) return;
     let cancelled = false;
     (async () => {
       try { const r = await window.electronAPI.getMercenaryPools?.(modDataDir); if (!cancelled && r && r.byRegion) setMapMercData(r); }
       catch (e) { console.warn("[mercenaries] load failed", e); }
     })();
     return () => { cancelled = true; };
-  }, [colorMode, showMercPools, modDataDir]);
+  }, [colorMode, modDataDir]);
   // Mercenary pool names differ per mod, so clear the cached pools + any pool
   // filter when the mod changes (a stale filter Set would hide every region).
   useEffect(() => { setMapMercData(null); setMercPoolFilter(null); }, [modDataDir]);
@@ -11693,7 +11687,6 @@ function App() {
   // Army Setup overlay (2026-06-07): virtual-tax budget vs editable floor +
   // current army/upkeep/balance + recruitable pool + swap suggestions.
   const [showArmySetup, setShowArmySetup] = useState(false);
-  const [showVictoryProgress, setShowVictoryProgress] = useState(false); // 🏆 per-faction win-condition progress (2026-07-17)
   const [showSubmodDrift, setShowSubmodDrift] = useState(false); // 🧭 submod stale-override scanner (2026-07-17)
   const [showEconBaseline, setShowEconBaseline] = useState(false); // 📈 economy regression baseline (2026-07-17)
   const [showReportExport, setShowReportExport] = useState(false); // 📄 shareable HTML report (2026-07-17)
@@ -11707,24 +11700,21 @@ function App() {
   const [showTraitExplorer, setShowTraitExplorer] = useState(false); // 🎭 trait browser (2026-07-17)
   const [showCampaignAutopsy, setShowCampaignAutopsy] = useState(false); // ⚰ campaign post-mortem (2026-07-17)
   const [showBuildOrder, setShowBuildOrder] = useState(false); // 🔨 build-order payback ranking (2026-07-17)
-  const [showPopProjection, setShowPopProjection] = useState(false); // 📉 settlement growth projection (2026-07-17)
   const [showDefLocator, setShowDefLocator] = useState(false); // ⌖ "where is this defined?" (2026-07-17)
   const [showWhatIf, setShowWhatIf] = useState(false); // 🧪 in-shadow EDB/EDU tweak → economy diff (2026-07-17)
   // Crash fallback for the tool-panel boundary: close every tool panel.
   const closeAllToolPanels = () => {
-    setShowVictoryProgress(false); setShowSubmodDrift(false); setShowEconBaseline(false);
+    setShowSubmodDrift(false); setShowEconBaseline(false);
     setShowReportExport(false); setShowSaveCompare(false); setShowModLint(false);
     setShowTimelinePlayer(false); setShowUnitCompare(false); setShowRecruitPlanner(false);
-    setShowDiploHeatmap(false); setShowPopProjection(false); setShowDefLocator(false);
-    setShowBattleLedger(false); setShowWhatIf(false); setShowMercPools(false);
+    setShowDiploHeatmap(false); setShowDefLocator(false);
+    setShowWhatIf(false);
   };
   // Battle ledger (2026-07-17): accumulates battle events from the raw live
   // log feed. The ledger instance lives on a ref (survives renders); snapshots
   // are pushed to state ~1/s from the onLogLines subscription.
   const battleLedgerRef = useRef(null);
   if (!battleLedgerRef.current) battleLedgerRef.current = createLedger();
-  const [battleLedgerSnap, setBattleLedgerSnap] = useState(null);
-  const [showBattleLedger, setShowBattleLedger] = useState(false);
   const battleLedgerLastPush = useRef(0);
   // Gathers whatever analysis data is loaded right now into the report
   // contract (src/reportExport.js header). Sections missing their source
@@ -14966,7 +14956,6 @@ function App() {
                     display: "flex", flexDirection: "column", gap: 2,
                   }}>
                     {[
-                      { icon: "🏆", label: "Victory Progress", color: "#d9c964", desc: "Every faction's win-condition completion — held vs required, what's missing, who holds it.", open: () => setShowVictoryProgress(true) },
                       { icon: "🧭", label: "Submod Drift", color: "#e8c873", desc: "Scan a submod folder for stale overrides of the base mod (the 'Could not find string' bug class).", open: () => setShowSubmodDrift(true) },
                       { icon: "📏", label: "Mod Lint", color: "#e8a0a0", desc: "Consistency checks across EDB/EDU/strat/resources — undeclared hidden resources, missing units, dead conditions.", open: () => setShowModLint(true) },
                       { icon: "📈", label: "Economy Baseline", color: "#8fd18f", desc: "Snapshot all faction economies; diff after mod edits to catch balance breakage (~20s on RIS).", open: () => setShowEconBaseline(true) },
@@ -14976,13 +14965,10 @@ function App() {
                       { icon: "⚖", label: "Unit Comparator", color: "#d8b88f", desc: "Side-by-side EDU stats for up to 6 units, best-in-row highlighting + cost-effectiveness ratios.", open: () => setShowUnitCompare(true) },
                       { icon: "🏗", label: "Recruit Planner", color: "#a8d8a0", desc: "For the selected settlement: what each next building upgrade unlocks for recruitment.", open: () => { if (lockedRegionInfo || regionInfo) setShowRecruitPlanner(true); else pushToast("Select a region first — the planner works on the selected settlement.", "info", 5000); } },
                       { icon: "🕊", label: "Diplomacy Heatmap", color: "#d8a0a0", desc: "NxN heatmap of the live diplomacy matrix — war blocs and alliance clusters at a glance.", open: () => setShowDiploHeatmap(true) },
-                      { icon: "🪙", label: "Mercenary Pools", color: "#d9c964", desc: "Browse every mercenary pool — units, costs, replenish rates, faction restrictions; highlight a pool's regions on the map.", open: () => setShowMercPools(true) },
-                      { icon: "📉", label: "Population Projection", color: "#9ed6ad", desc: "Project every settlement N seasons forward; flag decline, stalls, tier-ups and unrest risk.", open: () => setShowPopProjection(true) },
                       { icon: "🎭", label: "Trait Explorer", color: "#c9b8e0", desc: "Browse every character trait — filter by effect (tax, law, command…), see levels/thresholds/effects, and in live mode who carries each.", open: () => setShowTraitExplorer(true) },
                       { icon: "⚰", label: "Campaign Autopsy", color: "#cf8f6a", desc: "Post-mortem over a scanned saves timeline — each faction's settlement/treasury/army arc, when they peaked, declined or were wiped, and who won.", open: () => setShowCampaignAutopsy(true) },
                       { icon: "🔨", label: "Build-Order Optimizer", color: "#d8c088", desc: "For the selected settlement: rank its buildable structures by payback time (cost ÷ extra income per turn).", open: () => { if (lockedRegionInfo || regionInfo) setShowBuildOrder(true); else pushToast("Select a region first — the optimizer works on the selected settlement.", "info", 5000); } },
                       { icon: "⌖", label: "Find Definition", color: "#c8c8e8", desc: "Where is this unit/building/region defined? File + line across all mod files, click to open in editor.", open: () => setShowDefLocator(true) },
-                      { icon: "⚔", label: "Battle Ledger", color: "#d8a08f", desc: "Live-mode battle history per faction — fought/won/lost, sieges, armies destroyed, opponents.", open: () => { setBattleLedgerSnap(battleLedgerRef.current ? battleLedgerRef.current.snapshot() : null); setShowBattleLedger(true); } },
                       { icon: "🧪", label: "What-If Sandbox", color: "#b8d8e8", desc: "Apply a hypothetical EDB/EDU tweak in a shadow copy and diff every faction's economy — the mod itself is never touched.", open: () => setShowWhatIf(true) },
                     ].map((t) => (
                       <button
@@ -15945,6 +15931,66 @@ function App() {
       }
       return { label: "Hidden Resources", value: hrs.length ? hrs.join(", ") : "None" };
     }
+    if (colorMode === "victory") {
+      // Victory Progress folded into the mode legend (2026-07-24, was a 🧰
+      // panel): faction list ranked by completion; pick one for its held /
+      // missing breakdown with click-to-highlight / dblclick-jump.
+      const rows = computeVictoryProgress({ victoryConditions, regions, currentOwnerByCity, initialOwnerByCity });
+      if (!rows.length) return null;
+      const sel = selectedFaction && selectedFaction.toLowerCase();
+      const selRow = sel ? rows.find((r) => r.faction.toLowerCase() === sel) : null;
+      const flabel = (id) => (factionDisplayNames && factionDisplayNames[id]) || String(id).replace(/_/g, " ");
+      const pctColor = (pct) => pct >= 100 ? "#8fb46e" : pct >= 60 ? "#e8c873" : pct >= 30 ? "#cf8f6a" : "#a06a5a";
+      const jump = (regionName, dbl) => {
+        const hit = Object.entries(regions).find(([, rd2]) => rd2 && (rd2.region === regionName || rd2.city === regionName));
+        if (!hit) return;
+        if (dbl) onSearchActivate({ type: "region", payload: { region: hit[1], rgbKey: hit[0] } });
+        else setSelectedProvinces([hit[0]]);
+      };
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>
+            Victory Progress <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
+          </div>
+          {!legendCollapsed && (selRow ? (
+            <>
+              <div onClick={() => setSelectedFaction(null)} style={{ fontSize: "0.7rem", color: "#8fc9d8", cursor: "pointer", marginBottom: 3 }}>&#8249; all factions</div>
+              <div style={{ fontSize: "0.74rem", fontWeight: 700, color: "#e8d9a0" }}>{flabel(selRow.faction)} — {Math.round(selRow.pct)}% ({selRow.heldCount}/{selRow.requiredCount})</div>
+              <div style={{ fontSize: "0.68rem", color: "#aaa", marginBottom: 3 }}>{selRow.conditionsText}</div>
+              <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", marginBottom: 5 }}>
+                <div style={{ height: 6, borderRadius: 3, width: `${Math.min(100, selRow.pct)}%`, background: pctColor(selRow.pct) }} />
+              </div>
+              {selRow.missing.length > 0 && (
+                <>
+                  <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>Missing ({selRow.missing.length}):</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, maxHeight: "26vh", overflowY: "auto" }}>
+                    {selRow.missing.map((m) => (
+                      <span key={m.region} onClick={() => !m.unmatched && jump(m.region, false)} onDoubleClick={() => !m.unmatched && jump(m.region, true)}
+                        title={m.unmatched ? "Name not on this map" : `Held by ${m.currentOwner ? flabel(m.currentOwner) : "nobody"} — click: highlight · dblclick: jump`}
+                        style={{ fontSize: "0.68rem", padding: "1px 7px", borderRadius: 8, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", color: m.unmatched ? "#776" : "#a8c8d8", cursor: m.unmatched ? "default" : "pointer" }}>
+                        {String(m.city || m.region).replace(/_/g, " ")}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              )}
+              {selRow.missing.length === 0 && <div style={{ fontSize: "0.7rem", color: "#8fb46e" }}>All conditions met.</div>}
+            </>
+          ) : (
+            <div style={{ maxHeight: "34vh", overflowY: "auto", paddingRight: 2 }}>
+              <div style={{ fontSize: "0.68rem", color: "#999", marginBottom: 3 }}>Click a faction for its held / missing breakdown:</div>
+              {rows.map((r) => (
+                <div key={r.faction} onClick={() => setSelectedFaction(r.faction)} title={r.conditionsText}
+                  style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer", padding: "0 3px" }}>
+                  <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{flabel(r.faction)}</span>
+                  <span style={{ color: pctColor(r.pct), whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{Math.round(r.pct)}% ({r.heldCount}/{r.requiredCount})</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      );
+    }
     if (colorMode === "diplomacy") {
       const viewer = (selectedFaction || playerFaction || "").toLowerCase();
       const owner = ((currentOwnerByCity && currentOwnerByCity[info.city]) || info.faction || "").toLowerCase();
@@ -16059,9 +16105,40 @@ function App() {
                           style={{ fontSize: "0.72rem", lineHeight: 1, color: "#7fd17f", flexShrink: 0, padding: "0 4px", borderRadius: 3, border: "1px solid rgba(127,209,127,0.4)", cursor: "pointer" }}>＋</span>)}
                     <span onClick={(e) => { e.stopPropagation(); solo(p.name); }} title="Show only this pool"
                       style={{ fontSize: "0.6rem", color: "#cf9ee8", flexShrink: 0, padding: "0 3px", borderRadius: 3, border: "1px solid rgba(207,158,232,0.3)", cursor: "pointer" }}>only</span>
+                    {(p.units || []).length > 0 && (
+                      <span onClick={(e) => { e.stopPropagation(); setMercUnitsOpen(mercUnitsOpen === p.name ? null : p.name); }}
+                        title={mercUnitsOpen === p.name ? "Hide units" : "Show this pool's units (cost / replenish / restrictions)"}
+                        style={{ fontSize: "0.7rem", color: "#aaa", flexShrink: 0, padding: "0 2px", userSelect: "none", cursor: "pointer" }}>{mercUnitsOpen === p.name ? "▾" : "▸"}</span>
+                    )}
                   </div>
                 );
               })}
+              {mercUnitsOpen && (() => {
+                // Expanded pool units (absorbed from the old 🪙 Mercenary Pools
+                // panel): cost / replenish / max / faction restrictions; click
+                // a unit for its unit card.
+                const pool = shown.find((x) => x.name === mercUnitsOpen);
+                if (!pool) return null;
+                return (
+                  <div style={{ margin: "2px 0 6px 18px", display: "flex", flexDirection: "column", gap: 1 }}>
+                    {(pool.units || []).map((u, i) => (
+                      <div key={u.name + i}
+                        onClick={() => {
+                          const fac = (unitOwnership && unitOwnership[u.name] && unitOwnership[u.name][0]) || "slave";
+                          setInfoPopup({ type: "unit", name: u.name, faction: fac, label: u.name.replace(/^merc /i, "").replace(/_/g, " ") });
+                        }}
+                        title={`cost ${u.cost ?? "?"} · replenish ${Array.isArray(u.replenish) ? u.replenish.join("–") : "?"} · max ${u.max ?? "?"}${(u.restrict || []).length ? ` · only: ${u.restrict.join(", ")}` : ""}
+Click for unit card`}
+                        onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
+                        onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                        style={{ display: "flex", justifyContent: "space-between", gap: 6, padding: "1px 3px", borderRadius: 3, cursor: "pointer", fontSize: "0.7rem" }}>
+                        <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textTransform: "capitalize" }}>{u.name.replace(/^merc /i, "").replace(/_/g, " ")}</span>
+                        <span style={{ color: "#e8c873", whiteSpace: "nowrap", flexShrink: 0 }}>{u.cost != null ? u.cost.toLocaleString() : "—"} dn</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
               <div style={{ marginTop: 6, fontSize: "0.62rem", color: "#888" }}>Darker‑gray regions have mercs but their pool is hidden; flat gray = none. Overlaps colour by the first shown pool. ＋ adds the selected region to a pool.</div>
             </>
           )}
@@ -16489,7 +16566,51 @@ function App() {
             <div style={labelRow}>
               <span>quiet</span><span>older</span><span>recent</span>
             </div>
-            <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>Battles & sieges from the live game log (fills during play; see 🧰 Battle Ledger for the full record). Switch modes to refresh.</div>
+            {(() => {
+              // Battle Ledger folded in (2026-07-24, was a 🧰 panel): recent
+              // events + per-faction won/lost from the live ledger.
+              const snap = battleLedgerRef.current ? battleLedgerRef.current.snapshot() : null;
+              if (!snap || !snap.events || !snap.events.length) return (
+                <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>Battles & sieges fill in from the live game log during play.</div>
+              );
+              const jump = (loc, dbl) => {
+                const l = String(loc || "").toLowerCase();
+                const hit = Object.entries(regions).find(([, rd2]) => rd2 && (String(rd2.city || "").toLowerCase() === l || String(rd2.region || "").toLowerCase() === l));
+                if (!hit) return;
+                if (dbl) onSearchActivate({ type: "region", payload: { region: hit[1], rgbKey: hit[0] } });
+                else setSelectedProvinces([hit[0]]);
+              };
+              const facRows = Object.entries(snap.byFaction || {})
+                .map(([f, x]) => ({ f, fought: x.fought || 0, won: x.won || 0, lost: x.lost || 0 }))
+                .filter((x) => x.fought > 0)
+                .sort((a, b) => b.fought - a.fought).slice(0, 10);
+              return (
+                <>
+                  {facRows.length > 0 && (
+                    <div style={{ marginTop: 5 }}>
+                      <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>Most battles (won/lost):</div>
+                      {facRows.map((x) => (
+                        <div key={x.f} style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem" }}>
+                          <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(factionDisplayNames && factionDisplayNames[x.f]) || String(x.f).replace(/_/g, " ")}</span>
+                          <span style={{ whiteSpace: "nowrap" }}><span style={{ color: "#8fd18f" }}>{x.won}</span><span style={{ color: "#888" }}> / </span><span style={{ color: "#e87a6a" }}>{x.lost}</span></span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ marginTop: 5, maxHeight: "24vh", overflowY: "auto", paddingRight: 2 }}>
+                    <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>Recent ({Math.min(25, snap.events.length)} of {snap.events.length}):</div>
+                    {snap.events.slice(0, 25).map((e, i) => (
+                      <div key={i} onClick={() => jump(e.settlement || e.location, false)} onDoubleClick={() => jump(e.settlement || e.location, true)}
+                        title="Click: highlight · double-click: jump"
+                        style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.7rem", cursor: "pointer" }}>
+                        <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{String(e.kind || "battle").replace(/_/g, " ")}{e.settlement || e.location ? ` — ${String(e.settlement || e.location).replace(/_/g, " ")}` : ""}</span>
+                        <span style={{ color: "#9a8f7a", whiteSpace: "nowrap" }}>{e.faction ? String(e.faction).replace(/_/g, " ") : ""}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
           </>}
         </div>
       );
@@ -22019,9 +22140,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
       {showSaveCompare && <SaveComparePanel modDataDir={modDataDir} onClose={() => setShowSaveCompare(false)} />}
       {showModLint && <ModLintPanel modDataDir={modDataDir} onClose={() => setShowModLint(false)} />}
       {showUnitCompare && <UnitComparePanel modDataDir={modDataDir} unitOwnership={unitOwnership} factionDisplayNames={factionDisplayNames} onClose={() => setShowUnitCompare(false)} />}
-      {showPopProjection && <PopProjectionPanel modDataDir={modDataDir} factions={factions} factionDisplayNames={factionDisplayNames} initialFaction={null} onClose={() => setShowPopProjection(false)} />}
       {showDefLocator && <DefinitionLocatorPanel modDataDir={modDataDir} initialQuery="" onClose={() => setShowDefLocator(false)} />}
-      {showBattleLedger && <BattleLedgerPanel ledgerSnapshot={battleLedgerSnap} liveActive={liveLogActive} onClose={() => setShowBattleLedger(false)} />}
       {showWhatIf && <WhatIfPanel modDataDir={modDataDir} onClose={() => setShowWhatIf(false)} />}
       {showDiploHeatmap && (
         <DiploHeatmapPanel
@@ -22032,18 +22151,6 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           factionColors={factionColors}
           liveActive={liveLogActive}
           onClose={() => setShowDiploHeatmap(false)}
-        />
-      )}
-      {showMercPools && (
-        <MercPoolsPanel
-          mercData={mapMercData}
-          regions={regions}
-          onHighlightRegions={(keys, jump) => { setSelectedProvinces(keys); if (jump) zoomToProvinces(keys); }}
-          onOpenUnit={(name) => {
-            const fac = (unitOwnership && unitOwnership[name] && unitOwnership[name][0]) || "slave";
-            setInfoPopup({ type: "unit", name, faction: fac, label: name.replace(/_/g, " ") });
-          }}
-          onClose={() => setShowMercPools(false)}
         />
       )}
       {showTraitExplorer && (
@@ -22107,16 +22214,6 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           factionColors={factionColors}
           factionDisplayNames={factionDisplayNames}
           onClose={() => setShowTimelinePlayer(false)}
-        />
-      )}
-      {showVictoryProgress && (
-        <VictoryProgressPanel
-          victoryConditions={victoryConditions}
-          regions={regions}
-          currentOwnerByCity={currentOwnerByCity}
-          initialOwnerByCity={initialOwnerByCity}
-          factionDisplayNames={factionDisplayNames}
-          onClose={() => setShowVictoryProgress(false)}
         />
       )}
       </ToolPanelBoundary>

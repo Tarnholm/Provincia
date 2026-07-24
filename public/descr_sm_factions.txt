@@ -19026,6 +19026,31 @@
 			"surnames": "blank_surnames",
 		},
 
+		;;information for when this faction emerges
+		"emergence":
+		{
+			;;units to use if we emerge inside a settlement
+			"settlement units":
+			[
+				"psiloi",
+				"greek slingers",
+				"greek archers",
+				"greek peltasts",
+				"greek hoplites",
+				"thureophoroi",
+				"machairaphoroi",
+				"ptolemaic phalanx of the kleruchoi",
+				"ptolemaic agema of the kleruchoi",
+				"ptolemaic basilikon agema",
+				"prodromoi",
+				"ptolemaic xystophoroi katoikoi",
+				"ptolemaic agema cavalry",
+			],
+
+			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
+			"strength": 3.5,
+		},
+
 		"logos":
 		{
 			;;logo to use in the loading screens (seperate as sprite sheets aren't loaded at that point)
