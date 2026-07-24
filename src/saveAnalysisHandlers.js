@@ -453,9 +453,24 @@ async function _correlateSave(result, savePath, modDataDir) {
     try {
       const { auditModFiles } = require("./aiModFileAudit.js");
       const rd = (rel, enc) => { try { return fs.readFileSync(path.join(modDataDir, rel), enc || "latin1"); } catch { return null; } };
+      // Resource endowment per faction (descr_sm_resources trade values ×
+      // descr_strat resource placements), via the app's verified parsers.
+      let resourceWealth = {};
+      try {
+        const { factionResourceWealth } = require("./aiModFileAudit.js");
+        const im = require("./incomeModel.js");
+        const gv = require("./growthEval.js");
+        resourceWealth = factionResourceWealth({
+          ownerByCity: facts.ownerByCity,
+          regionOfSettlement: regionOfSettlement,
+          resourceValues: im.parseResourceValues(modDataDir) || {},
+          resourcesByRegion: gv.parseResources(path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt")) || {},
+        });
+      } catch { /* leads still work without resource evidence */ }
       const audit = auditModFiles({
         findings: result.findings,
         saveFacts: facts,
+        resourceWealth,
         economy: result.economy || {},
         buildAppetite: result.buildAppetite || {},
         files: {

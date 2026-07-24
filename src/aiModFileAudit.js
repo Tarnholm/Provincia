@@ -12,9 +12,15 @@
 //   descr_regions.txt              — region ↔ settlement names.
 //   descr_sm_factions.txt          — culture + default religion per faction.
 //   export_descr_unit.txt          — which factions may own naval units.
-//   export_descr_buildings.txt     — recruitment gating (naval especially).
-//   descr_sm_resources.txt         — (reserved: resource values for economy
-//                                    leads; parsed only if present.)
+//   export_descr_buildings.txt     — the military_industrial_complex ladder
+//                                    (cost / build turns / settlement_min per
+//                                    level) = the recruitment ceiling, plus
+//                                    recruitment gating generally.
+//   descr_sm_resources.txt         — resource trade values; combined with
+//                                    descr_strat's `resource` placements into a
+//                                    per-faction endowment, so an income
+//                                    problem can be blamed on (or CLEARED of)
+//                                    poor land against the map median.
 //
 // PURE-ish: takes already-read file TEXT (caller does the I/O), so it's unit
 // testable. Returns per-faction facts + concrete leads with a `file` field
@@ -132,12 +138,43 @@ function parseSmFactions(text) {
   return out;
 }
 
+// Per-faction resource endowment, for the genuinely INCOME-limited factions.
+// `resourceValues` = descr_sm_resources (resource → { tradeValue, tier }) and
+// `resourcesByRegion` = descr_strat's `resource <type>, n, x, y; Region` lines —
+// both come from the app's already-verified parsers (incomeModel /
+// growthEval), passed in so this module stays pure. Answers "is this faction
+// income-limited because it sits on poor land?" from the files themselves.
+function factionResourceWealth({ ownerByCity = {}, regionOfSettlement = {}, resourceValues = {}, resourcesByRegion = {} } = {}) {
+  const out = {};
+  for (const [city, fx] of Object.entries(ownerByCity)) {
+    const f = String(fx || "?").toLowerCase();
+    const e = out[f] = out[f] || { regions: 0, resources: 0, tradeValue: 0, mineable: 0, topResource: null, topValue: 0 };
+    e.regions++;
+    const reg = regionOfSettlement[city] || city;
+    const list = resourcesByRegion[reg];
+    if (!list) continue;
+    for (const r of (list instanceof Set ? [...list] : list)) {
+      const v = resourceValues[String(r).toLowerCase()];
+      if (!v) continue;
+      e.resources++;
+      e.tradeValue += v.tradeValue || 0;
+      if (v.mineable) e.mineable++;
+      if ((v.tradeValue || 0) > e.topValue) { e.topValue = v.tradeValue || 0; e.topResource = r; }
+    }
+  }
+  for (const e of Object.values(out)) {
+    e.tradeValuePerRegion = e.regions ? +(e.tradeValue / e.regions).toFixed(2) : 0;
+    e.resourcesPerRegion = e.regions ? +(e.resources / e.regions).toFixed(2) : 0;
+  }
+  return out;
+}
+
 /**
  * auditModFiles({ findings, saveFacts, files })
  *   files: { aiPersonality, strat, smFactions, edu } — raw TEXT, any may be null
  * → { factions: {faction: facts}, leads: [ {severity, faction, file, key, issue, suggestion, evidence} ] }
  */
-function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = {}, buildAppetite = {} } = {}) {
+function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = {}, buildAppetite = {}, resourceWealth = {} } = {}) {
   const { personalities, diplomatic } = parseAiPersonality(files.aiPersonality);
   const strat = parseStratFactions(files.strat);
   const naval = parseNavalOwners(files.edu);
@@ -189,10 +226,19 @@ function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = 
       settlementsAtSave: setts[k] != null ? setts[k] : null,
       navalAtSave: navalNow[k] || 0,
       bestSettlementTier: tierNow[k] != null ? tierNow[k] : null,
+      resourceWealth: resourceWealth[k] || null,
       economy: economy[k] || null,
       buildAppetite: buildAppetite[k] || null,
       symptoms: sym[k] || null,
     };
+  }
+
+  // Map-wide median trade value per region, so "poor land" is measured against
+  // this campaign rather than an invented threshold.
+  let medianTradePerRegion = null;
+  {
+    const vals = Object.values(resourceWealth).filter((r) => r && r.regions > 0).map((r) => r.tradeValuePerRegion).sort((a, b) => a - b);
+    if (vals.length) medianTradePerRegion = vals[Math.floor(vals.length / 2)];
   }
 
   // ── leads: each names the FILE and KEY to edit, with its evidence ────────
@@ -257,15 +303,29 @@ function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = 
         evidence: `biggest ask ${s.maxReq.toLocaleString()} strength` + (F.menAtSave != null ? `, fields ${F.menAtSave.toLocaleString()} men` : "") + `, holds ${F.settlementsAtSave ?? "?"} settlement(s)`,
       });
     }
-    // 3c. income-limited: infrastructure is fine, the money/production isn't
+    // 3c. income-limited: infrastructure is fine, the money/production isn't.
+    //     Quantified against the map: how resource-rich is its land really?
     if (s.incomeBlocked > 0 && !s.recruitBlocked) {
+      const rw = F.resourceWealth;
+      const poorLand = rw && medianTradePerRegion != null && rw.tradeValuePerRegion < medianTradePerRegion * 0.6;
       leads.push({
-        severity: 2, faction: k,
-        file: "descr_strat.txt + descr_sm_resources.txt",
-        key: "starting economy / regional resources for this faction",
-        issue: `INCOME-limited: ${s.incomeBlocked} impossible campaign(s) despite adequate military infrastructure (tier ${s.micMax})`,
-        suggestion: "its towns can build the troops but it never affords them — check starting denari, regional resource values and trade access rather than the AI profile",
-        evidence: `biggest ask ${s.maxReq.toLocaleString()} strength` + (F.menAtSave != null ? `, fields ${F.menAtSave.toLocaleString()} men` : "") + (F.startDenari != null ? `, started with ${F.startDenari.toLocaleString()} denari` : ""),
+        severity: poorLand ? 3 : 2, faction: k,
+        file: poorLand ? "descr_strat.txt (resource placements) + descr_sm_resources.txt (trade values)" : "descr_strat.txt + descr_sm_resources.txt",
+        key: poorLand ? "regional resource endowment for this faction's provinces" : "starting economy / regional resources for this faction",
+        issue: `INCOME-limited: ${s.incomeBlocked} impossible campaign(s) despite adequate military infrastructure (tier ${s.micMax})` +
+          (rw && medianTradePerRegion != null
+            ? (poorLand
+              ? ` — and its land IS genuinely poor: ${rw.tradeValuePerRegion} trade value per region vs a map median of ${medianTradePerRegion}`
+              // stating the negative matters: it stops anyone "fixing" resources that are already normal
+              : ` — but its land is NOT the problem (${rw.tradeValuePerRegion} trade value per region vs a map median of ${medianTradePerRegion}), so look at tax base / settlement size / army upkeep instead of resources`)
+            : ""),
+        suggestion: poorLand
+          ? "this faction sits on low-value land — add/raise resources in its provinces (descr_strat resource lines) or raise those resource trade values, rather than touching the AI profile"
+          : "its towns can build the troops and its land is ordinary — the shortfall is tax base or upkeep, so look at settlement growth (population/farm level) and army maintenance rather than resources or the AI profile",
+        evidence: `biggest ask ${s.maxReq.toLocaleString()} strength` +
+          (F.menAtSave != null ? `, fields ${F.menAtSave.toLocaleString()} men` : "") +
+          (F.startDenari != null ? `, started with ${F.startDenari.toLocaleString()} denari` : "") +
+          (rw ? `; ${rw.resources} resource(s) across ${rw.regions} region(s), total trade value ${rw.tradeValue}` + (rw.topResource ? `, best is ${rw.topResource}` : "") : ""),
       });
     }
     // 3d. rich but stalled — the engine's own finance report says money is NOT
@@ -323,4 +383,4 @@ function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = 
   return { factions, leads };
 }
 
-module.exports = { auditModFiles, parseAiPersonality, parseStratFactions, parseNavalOwners, parseSmFactions, parseMicLadder, SETTLEMENT_TIERS };
+module.exports = { auditModFiles, parseAiPersonality, parseStratFactions, parseNavalOwners, parseSmFactions, parseMicLadder, factionResourceWealth, SETTLEMENT_TIERS };

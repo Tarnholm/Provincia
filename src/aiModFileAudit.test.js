@@ -299,3 +299,50 @@ building market
     expect(leads.some((l) => /SETTLEMENT-TIER LOCKED/.test(l.issue))).toBe(false);
   });
 });
+
+describe("resource endowment (descr_sm_resources × descr_strat placements)", () => {
+  it("sums trade value per faction from its regions' resources", async () => {
+    const { factionResourceWealth } = await import("./aiModFileAudit.js");
+    const w = factionResourceWealth({
+      ownerByCity: { Rome: "romans_julii", Capua: "romans_julii", Sparta: "sparta" },
+      regionOfSettlement: { Rome: "Roma", Capua: "Campania", Sparta: "Lakonia" },
+      resourceValues: { gold: { tradeValue: 3, mineable: true }, grain: { tradeValue: 1 }, dyes: { tradeValue: 2 } },
+      resourcesByRegion: { Roma: new Set(["gold", "grain"]), Campania: ["dyes"], Lakonia: ["grain"] },
+    });
+    expect(w.romans_julii).toMatchObject({ regions: 2, resources: 3, tradeValue: 6, mineable: 1, topResource: "gold" });
+    expect(w.romans_julii.tradeValuePerRegion).toBe(3);
+    expect(w.sparta).toMatchObject({ regions: 1, tradeValue: 1 });
+  });
+
+  it("states the NEGATIVE when land is ordinary, so resources aren't chased", () => {
+    const files = {
+      aiPersonality: "personality ai_x\nbuilding_priority b\nmilitary_priority m\ndiplomatic_priority passive\n",
+      strat: "faction	x, ai_x\ndenari	9000\n", smFactions: "", edu: "", edb: "",
+    };
+    const saveFacts = { turn: 102, menByFaction: { x: 900 }, settlementsByFaction: { x: 20 }, tierByFaction: { x: 3 } };
+    // x sits exactly at the median of the two factions supplied → not poor land
+    const resourceWealth = { x: { regions: 4, resources: 8, tradeValue: 20, tradeValuePerRegion: 5, topResource: "gold" },
+                             y: { regions: 4, resources: 8, tradeValue: 20, tradeValuePerRegion: 5, topResource: "gold" } };
+    const findings = [{ kind: "campaign_stall", faction: "x", region: "Z", detail: "still 0/9000 strength", impossible: true, blockedBy: "income", micMax: 3 }];
+    const { leads } = auditModFiles({ findings, saveFacts, files, resourceWealth });
+    const l = leads.find((q) => /INCOME-limited/.test(q.issue));
+    expect(l).toBeTruthy();
+    expect(l.issue).toMatch(/land is NOT the problem/);
+    expect(l.suggestion).toMatch(/tax base or upkeep/);
+  });
+
+  it("flags genuinely poor land when it IS below the map median", () => {
+    const files = { aiPersonality: "", strat: "", smFactions: "", edu: "", edb: "" };
+    const saveFacts = { turn: 102, menByFaction: { poorland: 900 }, settlementsByFaction: { poorland: 20 }, tierByFaction: { poorland: 3 } };
+    const resourceWealth = {
+      poorland: { regions: 4, resources: 2, tradeValue: 4, tradeValuePerRegion: 1, topResource: "grain" },
+      rich1: { regions: 4, tradeValuePerRegion: 8 }, rich2: { regions: 4, tradeValuePerRegion: 9 },
+    };
+    const findings = [{ kind: "campaign_stall", faction: "poorland", region: "Z", detail: "still 0/9000 strength", impossible: true, blockedBy: "income", micMax: 3 }];
+    const { leads } = auditModFiles({ findings, saveFacts, files, resourceWealth });
+    const l = leads.find((q) => /INCOME-limited/.test(q.issue));
+    expect(l.issue).toMatch(/land IS genuinely poor/);
+    expect(l.severity).toBe(3);
+    expect(l.file).toMatch(/descr_sm_resources/);
+  });
+});

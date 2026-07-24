@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1415",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**AI Movement Lab now reads descr_sm_resources too — completing the AI-relevant file set.** Each faction gets a resource endowment (its provinces’ resources × their trade values) measured against the map median, so an income problem can be blamed on poor land — or cleared of it. On the reference campaign it CLEARED all 22 income-limited factions: every one sits at or near the median (3.1–6.4 against a median of 5), so their shortfall is tax base and upkeep, not resources. Leads now say that outright instead of staying silent, which stops anyone “fixing” resources that were never the problem." },
+      { type: "improvement", text: "**Mod files now mined: descr_strat, descr_regions, descr_sm_factions, feral_descr_ai_personality, export_descr_unit, export_descr_buildings and descr_sm_resources** — every faction profile carries its AI personality and aggression, starting position, culture, naval ownership, settlement tier, military-infrastructure ceiling, economy over the campaign, build appetite and resource endowment." },
+    ],
+  },
+  {
     version: "0.9.1414",
     date: "2026-07-25",
     items: [
