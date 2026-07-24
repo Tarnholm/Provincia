@@ -1325,7 +1325,7 @@ function splitAorsByLayer(tags, cityName) {
   return { primary, secondary, all };
 }
 
-const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource", "aor", "legions", "income", "public_order", "mercenaries"]);
+const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource", "aor", "legions", "public_order", "mercenaries"]);
 
 // Dev-toggle tracer (2026-07-16 "dev button does nothing" hunt). Every step of
 // the toggle logs to provincia.log so a dead click is attributable: handler
@@ -1964,8 +1964,6 @@ function App() {
   // Per-region model metrics for the Unrest/Income/Corruption/Growth modes.
   // Fetched lazily on first activation (full-faction sweep, ~1-2 min cold,
   // cached in main). Declared early — colorize dep array reads it.
-  const [mapMetrics, setMapMetrics] = useState(null);
-  const mapMetricsBusyRef = useRef(false);
   // Corruption mode computes ONLY the selected faction (user 2026-07-24) —
   // no all-faction sweep. Cached per faction in the main process.
   const [factionMetrics, setFactionMetrics] = useState(null);
@@ -2920,6 +2918,8 @@ function App() {
       // 2026-07-24: Unrest + Happiness merged into Public Order
       if (saved === "unrestrisk" || saved === "happiness") return "public_order";
       if (saved === "tierforecast") return "growthmap"; // Tier Forecast merged into Growth
+      if (saved === "wealth" || saved === "income") return "trueincome"; // three income modes merged
+      if (saved === "pop_growth") return "population"; // headroom folded into Population
       return saved;
     }
   );
@@ -4387,27 +4387,12 @@ function App() {
   // Metrics fetch for the Unrest/Income/Corruption/Growth modes (state lives
   // early in the file — the colorize dep array reads it; effects live HERE
   // because their dep arrays need colorMode/modDataDir initialized).
-  useEffect(() => { setMapMetrics(null); }, [modDataDir]);
-  useEffect(() => {
-    const METRIC_MODES = ["trueincome"]; // corruption/growth/public_order fetch per-faction instead
-    if (!METRIC_MODES.includes(colorMode) || mapMetrics || mapMetricsBusyRef.current || !modDataDir) return;
-    const api = window.electronAPI;
-    if (!api?.getMapModeMetrics) return;
-    mapMetricsBusyRef.current = true;
-    let stale = false;
-    const poll = () => api.getMapModeMetrics(modDataDir).then((r) => {
-      if (stale) { mapMetricsBusyRef.current = false; return; }
-      if (r && r.byRegion) { console.log(`[map-metrics] ${r.factions} factions in ${r.ms}ms`); setMapMetrics(r); mapMetricsBusyRef.current = false; }
-      else if (r && r.busy) setTimeout(poll, 3000);
-      else mapMetricsBusyRef.current = false;
-    }).catch(() => { mapMetricsBusyRef.current = false; });
-    poll();
-    return () => { stale = true; };
-  }, [colorMode, mapMetrics, modDataDir]);
   // Per-faction metrics for the Corruption mode: fetch when the mode is active
   // and a faction is picked; skip when we already hold that faction's numbers.
   useEffect(() => {
-    const wantsFM = colorMode === "corruptionmap" || colorMode === "growthmap" || (colorMode === "public_order" && !saveHappinessByCity);
+    const wantsFM = colorMode === "corruptionmap" || colorMode === "growthmap"
+      || (colorMode === "public_order" && !saveHappinessByCity)
+      || (colorMode === "trueincome" && !(saveIncomeByCity && Object.keys(saveIncomeByCity).length > 0));
     if (!wantsFM || !modDataDir || !selectedFaction) return;
     const want = selectedFaction.toLowerCase();
     if (factionMetrics && factionMetrics.faction === want) return;
@@ -4418,7 +4403,7 @@ function App() {
       else if (r && r.error) console.warn("[faction-metrics]", r.error);
     }).catch(() => {});
     return () => { stale = true; };
-  }, [colorMode, modDataDir, selectedFaction, factionMetrics, saveHappinessByCity]);
+  }, [colorMode, modDataDir, selectedFaction, factionMetrics, saveHappinessByCity, saveIncomeByCity]);
   useEffect(() => { setFactionMetrics(null); }, [modDataDir]);
   // Settlement income explainer (2026-07-17): fetched on demand from the
   // region panel's "≡ explain" button; null = closed. First call per faction
@@ -9319,68 +9304,6 @@ function App() {
           if (v >= 2) return base;
           return [6, 6, 10];
         }));
-      } else if (colorMode === "pop_growth") {
-        // Headroom = pop_level (cap from descr_strat) − current population
-        // bracket. Green = lots of room to grow, red = capped.
-        const getPop = (r) => populationData[r.region] || populationData[r.region?.split("-")[0]] || populationData[r.city] || 0;
-        // Derive cap from r.pop_level (the descr_regions value), which is
-        // a 1-15 scale roughly mapping to maximum settlement size.
-        const ratio = (r) => {
-          const cap = parseInt(r.pop_level || "0", 10) || 0;
-          if (cap <= 0) return 0;
-          // Pop is a raw count; divide by an empirical 1500/level scale so
-          // 100% = at-cap. Clamp so visualisation stays in 0..1.
-          const pop = getPop(r);
-          return Math.min(1.5, pop / (cap * 1500));
-        };
-        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
-          const t = Math.min(1, ratio(r));
-          // Green (room) → orange (filling) → red (capped)
-          const red   = t < 0.5 ? Math.round(70 + t * 2 * 180) : 250;
-          const green = t < 0.5 ? Math.round(200 - t * 2 * 60)  : Math.round(140 - (t - 0.5) * 2 * 130);
-          const blue  = 40;
-          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x1F) - 16) * 0.5;
-          return [
-            Math.max(0, Math.min(255, red + v)),
-            Math.max(0, Math.min(255, green + v)),
-            Math.max(0, Math.min(255, blue + v)),
-          ];
-        }));
-      } else if (colorMode === "wealth") {
-        // Approximate per-region income from on-tile resources + farm level
-        // + port level. Resources contribute their `amount`; farms contribute
-        // (farm_level * 2); ports contribute (port_level * 4). It's a crude
-        // proxy, not the exact game-side formula, but enough to surface
-        // wealthy vs poor at a glance.
-        const score = (r) => {
-          let s = 0;
-          const resList = resourcesData[r.region] || resourcesData[r.city] || [];
-          // Trade goods only — slaves and ambience don't generate income.
-          for (const x of resList) {
-            const cat = x.category || "trade";
-            if (cat !== "trade") continue;
-            s += (x.amount || 1);
-          }
-          const farm = parseInt(r.farm_level || "0", 10) || 0;
-          s += farm * 2;
-          const portM = String(r.tags || "").match(/\bbase_port_level_(\d+)\b/);
-          if (portM) s += parseInt(portM[1], 10) * 4;
-          return s;
-        };
-        const max = Math.max(1, ...Object.values(regions).map(score));
-        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
-          const t = Math.min(1, score(r) / max);
-          // Dark grey (poor) → bright gold (wealthy)
-          const red   = Math.round(60 + t * 200);
-          const green = Math.round(60 + t * 160);
-          const blue  = Math.round(60 + t * 30);
-          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x1F) - 16) * 0.5;
-          return [
-            Math.max(0, Math.min(255, red + v)),
-            Math.max(0, Math.min(255, green + v)),
-            Math.max(0, Math.min(255, blue + v)),
-          ];
-        }));
       } else if (colorMode === "recruitment") {
         // Per-region count of unique recruitable units. Reuses the same
         // filter logic as RegionInfo's `recruitable` prop, but only the
@@ -9506,78 +9429,6 @@ function App() {
             Math.max(0, Math.min(255, band[2] + j)),
           ];
         }));
-      } else if (colorMode === "income") {
-        // Per-turn income heatmap. Prefer the live save-parser value
-        // (saveIncomeByCity, { perTurn, cumulative }); fall back to the
-        // descr_strat-derived wealth proxy (same formula as the wealth
-        // mode) so the map still has a meaningful spread when the live
-        // income field hasn't loaded yet or the user hasn't opened a save.
-        const GREY = [70, 70, 70];
-        const incomeByRgb = new Map();
-        let minV = Infinity, maxV = -Infinity, withData = 0;
-        const liveAvailable = saveIncomeByCity && Object.keys(saveIncomeByCity).length > 0;
-        if (liveAvailable) {
-          for (const [k, r] of Object.entries(regions)) {
-            const entry = saveIncomeByCity[r.city];
-            if (entry && typeof entry.perTurn === "number") {
-              incomeByRgb.set(k, entry.perTurn);
-              if (entry.perTurn < minV) minV = entry.perTurn;
-              if (entry.perTurn > maxV) maxV = entry.perTurn;
-              withData++;
-            }
-          }
-        } else {
-          for (const [k, r] of Object.entries(regions)) {
-            let s = 0;
-            const resList = resourcesData[r.region] || resourcesData[r.city] || [];
-            // Trade goods only — slaves/ambience don't drive income.
-            for (const x of resList) {
-              const cat = x.category || "trade";
-              if (cat !== "trade") continue;
-              s += (x.amount || 1);
-            }
-            const farm = parseInt(r.farm_level || "0", 10) || 0;
-            s += farm * 2;
-            const portM = String(r.tags || "").match(/\bbase_port_level_(\d+)\b/);
-            if (portM) s += parseInt(portM[1], 10) * 4;
-            if (s > 0) {
-              incomeByRgb.set(k, s);
-              if (s < minV) minV = s;
-              if (s > maxV) maxV = s;
-              withData++;
-            }
-          }
-        }
-        const hasAnyData = withData > 0;
-        if (!hasAnyData) { minV = 0; maxV = 0; }
-        console.log(`[heatmap] mode income: range min=${minV} max=${maxV} (${withData} regions with data, source=${liveAvailable ? "live" : "estimated"})`);
-        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
-          if (!hasAnyData) return GREY;
-          const k = `${pr},${pg},${pb}`;
-          const val = incomeByRgb.get(k);
-          if (typeof val !== "number") return GREY;
-          const span = Math.max(0.001, maxV - minV);
-          const t = Math.min(1, Math.max(0, (val - minV) / span));
-          // Dark slate → tan → bright gold
-          let red, green, blue;
-          if (t < 0.5) {
-            const u = t * 2;
-            red   = Math.round(50 + u * (190 - 50));
-            green = Math.round(60 + u * (160 - 60));
-            blue  = Math.round(80 + u * (110 - 80));
-          } else {
-            const u = (t - 0.5) * 2;
-            red   = Math.round(190 + u * (255 - 190));
-            green = Math.round(160 + u * (215 - 160));
-            blue  = Math.round(110 + u * (60 - 110));
-          }
-          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x1F) - 16) * 0.5;
-          return [
-            Math.max(0, Math.min(255, red + v)),
-            Math.max(0, Math.min(255, green + v)),
-            Math.max(0, Math.min(255, blue + v)),
-          ];
-        }));
       } else if (colorMode === "homeland") {
         // 0.9.465: four-state coloring per user spec.
         //   GREEN  — homeland owned by selected faction with correct gov (gov4 / govD)
@@ -9695,12 +9546,59 @@ function App() {
         // of baking into the nearest-neighbour-upscaled offscreen — that was
         // the blocky/pixelated look (fixed 2026-07-18).
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => [Math.round(pr * 0.22 + 28), Math.round(pg * 0.22 + 28), Math.round(pb * 0.22 + 30)]));
-      } else if (colorMode === "trueincome" || colorMode === "corruptionmap" || colorMode === "growthmap") {
+      } else if (colorMode === "trueincome") {
+        // Income (2026-07-24 merge of trueincome + dev income + dev wealth):
+        // live save exact per-turn income when present -> per-SELECTED-faction
+        // model income (same fetch as Corruption/Growth) -> static estimate
+        // (resources + farm + port, the old wealth proxy) so the map is never
+        // empty. Gold scale, sqrt for spread.
+        const incByRgb = new Map();
+        let source = "estimate";
+        if (saveIncomeByCity && Object.keys(saveIncomeByCity).length > 0) {
+          source = "live save";
+          for (const [k, r] of Object.entries(regions)) {
+            const entry = saveIncomeByCity[r.city];
+            if (entry && typeof entry.perTurn === "number") incByRgb.set(k, entry.perTurn);
+          }
+        } else if (factionMetrics && factionMetrics.byRegion) {
+          source = "model (" + factionMetrics.faction + ")";
+          for (const [k, r] of Object.entries(regions)) {
+            const e = factionMetrics.byRegion[r.region];
+            if (e && typeof e.income === "number") incByRgb.set(k, e.income);
+          }
+        } else {
+          for (const [k, r] of Object.entries(regions)) {
+            let sc = 0;
+            for (const x of (resourcesData[r.region] || resourcesData[r.city] || [])) {
+              if ((x.category || "trade") !== "trade") continue;
+              sc += (x.amount || 1);
+            }
+            sc += (parseInt(r.farm_level || "0", 10) || 0) * 2;
+            const portM = String(r.tags || "").match(/port_level_(\d+)/);
+            if (portM) sc += parseInt(portM[1], 10) * 4;
+            if (sc > 0) incByRgb.set(k, sc);
+          }
+        }
+        let maxV = 1;
+        for (const v of incByRgb.values()) if (v > maxV) maxV = v;
+        console.log(`[income] ${incByRgb.size} regions (source: ${source}, max ${maxV})`);
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
+          const val = incByRgb.get(`${pr},${pg},${pb}`);
+          let base = [45, 47, 52];
+          if (typeof val === "number") {
+            const t = Math.sqrt(Math.max(0, val) / maxV);
+            base = [Math.round(50 + t * 205), Math.round(48 + t * 157), 45];
+          }
+          if (devFlatColors) return base;
+          const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.5;
+          return [Math.max(0,Math.min(255,base[0]+v)), Math.max(0,Math.min(255,base[1]+v)), Math.max(0,Math.min(255,base[2]+v))];
+        }));
+      } else if (colorMode === "corruptionmap" || colorMode === "growthmap") {
         // Model-metric modes (2026-07-17, player modes 29-32): per-settlement
         // values from the cracked models (campaign-start state), one shared
         // main-process sweep (get-map-mode-metrics), lazily fetched + cached.
         // corruption reads the per-faction fetch; the other metric modes read the sweep
-        const mm = (colorMode === "corruptionmap" || colorMode === "growthmap") ? (factionMetrics && factionMetrics.byRegion) : (mapMetrics && mapMetrics.byRegion);
+        const mm = factionMetrics && factionMetrics.byRegion;
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions, (r, pr, pg, pb) => {
           const e = mm && mm[r.region];
           let base = [45, 47, 52];
@@ -9709,10 +9607,7 @@ function App() {
               const t = Math.sqrt(Math.max(0, e.corruption) / ((factionMetrics && factionMetrics.maxCorr) || 1));
               base = [Math.round(55 + t * 165), Math.round(140 - t * 95), Math.round(60 - t * 20)];
             } else
-            if (colorMode === "trueincome" && e.income != null) {
-              const t = Math.sqrt(Math.max(0, e.income) / (mapMetrics.maxIncome || 1));
-              base = [Math.round(50 + t * 205), Math.round(48 + t * 157), 45];
-            } else if (colorMode === "growthmap" && e.growth != null) {
+ if (colorMode === "growthmap" && e.growth != null) {
               const g = Math.max(-2, Math.min(4, e.growth));
               base = g < 0 ? [200, 60, 45] : g < 0.5 ? [190, 170, 60] : [Math.round(80 - g * 8), Math.round(120 + g * 25), 50];
             }
@@ -9990,7 +9885,7 @@ function App() {
         else clearTimeout(_handle);
       }
     };
-  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion, regionAdjacency, playerFaction, diplomacyMatrix, mapMetrics, factionMetrics, tradeLanes, regionCentroids]);
+  }, [colorMode, aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion, regionAdjacency, playerFaction, diplomacyMatrix, factionMetrics, tradeLanes, regionCentroids]);
 
   // Cache the dimming overlay — active whenever provinces are selected.
   // When `pinFaction` is on AND a faction is selected, the dim is much
@@ -14539,7 +14434,6 @@ function App() {
       ]},
       { id: "population", title: "Population", members: [
         { key: "population", label: "Population", badge: "mode.population" },
-        { key: "pop_growth", label: "Pop Headroom", badge: "devmode.pop_growth", dev: true },
       ]},
       { id: "economy", title: "Economy", members: [
         { key: "resource", label: "Resources", badge: "mode.resource" },
@@ -14549,8 +14443,6 @@ function App() {
         { key: "corruptionmap", label: "Corruption", badge: "mode.corruptionmap" },
         { key: "growthmap", label: "Growth", badge: "mode.growthmap" },
         { key: "tradelanes", label: "Trade Lanes", badge: "mode.tradelanes" },
-        { key: "wealth", label: "Wealth", badge: "devmode.wealth", dev: true },
-        { key: "income", label: "Income", badge: "devmode.income", dev: true },
         { key: "port_level", label: "Port Level", badge: "devmode.port_level", dev: true },
         { key: "rivertrade", label: "River Trade", badge: "devmode.rivertrade", dev: true },
       ]},
@@ -15931,7 +15823,11 @@ function App() {
     }
     if (colorMode === "population") {
       const pop = populationData[info.region] || populationData[info.region?.split("-")[0]] || populationData[info.city];
-      return pop != null ? { label: "Population", value: pop.toLocaleString() } : null;
+      if (pop == null) return null;
+      // headroom folded in from the old Pop Headroom dev mode (2026-07-24)
+      const cap = parseInt(info.pop_level || "0", 10) || 0;
+      const head = cap > 0 ? ` \u00b7 ${Math.round(Math.min(1.5, pop / (cap * 1500)) * 100)}% of ~${(cap * 1500).toLocaleString()} cap` : "";
+      return { label: "Population", value: `${pop.toLocaleString()}${head}` };
     }
     if (colorMode === "farm") {
       const m = String(info.tags || "").match(/\bFarm(\d+)\b/);
@@ -15978,23 +15874,12 @@ function App() {
       }
       return best ? { label: "Religion", value: best.replace(/_/g, " ") } : null;
     }
-    if (colorMode === "pop_growth") {
-      const pop = populationData[info.region] || populationData[info.region?.split("-")[0]] || populationData[info.city] || 0;
-      const cap = parseInt(info.pop_level || "0", 10) || 0;
-      if (cap <= 0) return { label: "Pop Headroom", value: "Unknown" };
-      const ratio = Math.min(1.5, pop / (cap * 1500));
-      const pct = Math.round(ratio * 100);
-      return { label: "Pop Headroom", value: `${pop.toLocaleString()} / ~${(cap * 1500).toLocaleString()} (${pct}%)` };
-    }
-    if (colorMode === "wealth") {
-      const resList = resourcesData[info.region] || resourcesData[info.city] || [];
-      let resSum = 0;
-      for (const x of resList) resSum += (x.amount || 1);
-      const farm = parseInt(info.farm_level || "0", 10) || 0;
-      const portM = String(info.tags || "").match(/\bbase_port_level_(\d+)\b/);
-      const port = portM ? parseInt(portM[1], 10) : 0;
-      const total = resSum + farm * 2 + port * 4;
-      return { label: "Wealth (est.)", value: `${total} (resources ${resSum}, farm ×${farm}, port ×${port})` };
+    if (colorMode === "trueincome") {
+      const live = saveIncomeByCity && saveIncomeByCity[info.city];
+      if (live && typeof live.perTurn === "number") return { label: "Income", value: `${live.perTurn.toLocaleString()} dn/turn (live save)` };
+      const e = factionMetrics && factionMetrics.byRegion && factionMetrics.byRegion[info.region];
+      if (e && typeof e.income === "number") return { label: "Income", value: `${Math.round(e.income).toLocaleString()} dn/turn (model)` };
+      return { label: "Income", value: "Estimate map \u2014 pick a faction or connect Live for real numbers" };
     }
     if (colorMode === "growthmap") {
       const e = factionMetrics && factionMetrics.byRegion && factionMetrics.byRegion[info.region];
@@ -16024,21 +15909,6 @@ function App() {
       const e = factionMetrics && factionMetrics.byRegion && factionMetrics.byRegion[info.region];
       if (e && typeof e.po === "number") return { label: "Public Order", value: `${Math.round(e.po)}% (model, normal tax)` };
       return { label: "Public Order", value: saveHappinessByCity ? "No data" : "Pick a faction (or connect Live)" };
-    }
-    if (colorMode === "income") {
-      if (saveIncomeByCity && saveIncomeByCity[info.city] && typeof saveIncomeByCity[info.city].perTurn === "number") {
-        const pt = saveIncomeByCity[info.city].perTurn;
-        return { label: "Income", value: `${pt.toLocaleString()} / turn` };
-      }
-      // Fall back to wealth-proxy estimate so the hover row stays useful.
-      const resList = resourcesData[info.region] || resourcesData[info.city] || [];
-      let resSum = 0;
-      for (const x of resList) resSum += (x.amount || 1);
-      const farm = parseInt(info.farm_level || "0", 10) || 0;
-      const portM = String(info.tags || "").match(/\bbase_port_level_(\d+)\b/);
-      const port = portM ? parseInt(portM[1], 10) : 0;
-      const total = resSum + farm * 2 + port * 4;
-      return { label: "Income (est.)", value: `${total.toLocaleString()} / turn` };
     }
     // Dev modes
     if (colorMode === "terrain") {
@@ -16325,7 +16195,7 @@ function App() {
 
     if (colorMode === "trueincome" || colorMode === "corruptionmap" || colorMode === "growthmap") {
       const CFG = {
-        trueincome: { title: "Income (model)", grad: "linear-gradient(to right, rgb(50,48,45), rgb(160,130,45), rgb(255,205,45))", labels: ["poor", "", mapMetrics ? `${mapMetrics.maxIncome} dn` : "richest"] },
+        trueincome: { title: "Income", grad: "linear-gradient(to right, rgb(50,48,45), rgb(160,130,45), rgb(255,205,45))", labels: ["poor", "", "richest"] },
         corruptionmap: { title: "Corruption", grad: "linear-gradient(to right, rgb(55,140,60), rgb(140,95,50), rgb(220,45,40))", labels: ["clean", "", factionMetrics ? `-${factionMetrics.maxCorr} dn` : "worst"] },
         growthmap: { title: "Growth", grad: "linear-gradient(to right, rgb(200,60,45), rgb(190,170,60), rgb(60,180,50))", labels: ["declining", "flat", "booming"] },
       }[colorMode];
@@ -16337,6 +16207,42 @@ function App() {
             <div style={labelRow}>
               <span>{CFG.labels[0]}</span><span>{CFG.labels[1]}</span><span>{CFG.labels[2]}</span>
             </div>
+            {colorMode === "trueincome" && (() => {
+              // Settlement list: live save incomes (all factions) or the
+              // selected faction's model incomes, richest first.
+              const rowsI = [];
+              if (saveIncomeByCity && Object.keys(saveIncomeByCity).length > 0) {
+                for (const r of Object.values(regions)) {
+                  const e = saveIncomeByCity[r.city];
+                  if (e && typeof e.perTurn === "number") rowsI.push({ region: r.region, city: r.city, inc: e.perTurn });
+                }
+              } else if (factionMetrics && factionMetrics.byRegion) {
+                for (const [reg, e] of Object.entries(factionMetrics.byRegion)) {
+                  if (e && typeof e.income === "number") rowsI.push({ region: reg, city: e.settlement || reg, inc: e.income });
+                }
+              }
+              if (!rowsI.length) return null;
+              rowsI.sort((a, b) => b.inc - a.inc);
+              const jump = (regionName, dbl) => {
+                const hit = Object.entries(regions).find(([, rd2]) => rd2 && rd2.region === regionName);
+                if (!hit) return;
+                if (dbl) onSearchActivate({ type: "region", payload: { region: hit[1], rgbKey: hit[0] } });
+                else setSelectedProvinces([hit[0]]);
+              };
+              return (
+                <div style={{ marginTop: 6, maxHeight: "30vh", overflowY: "auto", paddingRight: 2 }}>
+                  <div style={{ fontSize: "0.7rem", color: "#cfc6b0", fontWeight: 700, marginBottom: 2 }}>Richest first:</div>
+                  {rowsI.slice(0, 40).map((r) => (
+                    <div key={r.region} onClick={() => jump(r.region, false)} onDoubleClick={() => jump(r.region, true)}
+                      title="Click: highlight - double-click: jump"
+                      style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: "0.72rem", cursor: "pointer" }}>
+                      <span style={{ color: "#ddd", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{String(r.city).replace(/_/g, " ")}</span>
+                      <span style={{ color: "#e8c873", whiteSpace: "nowrap" }}>{Math.round(r.inc).toLocaleString()} dn</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
             {colorMode === "growthmap" && factionMetrics && factionMetrics.byRegion && (() => {
               // Settlement list: growth %/turn + turns to next tier (the old
               // Tier Forecast, merged here 2026-07-24), slowest growers last.
@@ -16406,7 +16312,7 @@ function App() {
                 </div>
               );
             })()}
-            {(colorMode === "corruptionmap" || colorMode === "growthmap") && (
+            {(colorMode === "corruptionmap" || colorMode === "growthmap" || (colorMode === "trueincome" && !(saveIncomeByCity && Object.keys(saveIncomeByCity).length > 0))) && (
               <div style={{ marginTop: 5, fontSize: "0.7rem", color: selectedFaction ? "#9ed6ad" : "#e8c873" }}>
                 {selectedFaction
                   ? `${(factionDisplayNames && factionDisplayNames[selectedFaction.toLowerCase()]) || selectedFaction.replace(/_/g, " ")} — computed for this faction only`
@@ -16414,9 +16320,7 @@ function App() {
               </div>
             )}
             <div style={{ fontSize: "0.68rem", color: "#999", marginTop: 4 }}>
-              {mapMetrics
-                ? `Per-settlement model values at campaign start (${mapMetrics.factions} factions).`
-                : "Computing all factions… first time takes a minute or two, then it's cached."}
+              Per-settlement model values at campaign start (selected faction).
             </div>
           </>}
         </div>
@@ -16609,33 +16513,6 @@ function App() {
         </div>
       );
     }
-    if (colorMode === "pop_growth") {
-      return (
-        <div style={panelStyle}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Pop Headroom <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
-          {!legendCollapsed && <>
-            <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(70,200,40), rgb(250,140,40), rgb(250,10,40))" }} />
-            <div style={labelRow}>
-              <span>Empty</span><span>Half</span><span>Capped</span>
-            </div>
-          </>}
-        </div>
-      );
-    }
-    if (colorMode === "wealth") {
-      return (
-        <div style={panelStyle}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Wealth (est.) <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
-          {!legendCollapsed && <>
-            <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(60,60,60), rgb(160,140,80), rgb(255,220,90))" }} />
-            <div style={labelRow}>
-              <span>Poor</span><span>Mid</span><span>Wealthy</span>
-            </div>
-            <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 4 }}>Resources + farm + port. Approximate, not exact game formula.</div>
-          </>}
-        </div>
-      );
-    }
     if (colorMode === "recruitment") {
       return (
         <div style={panelStyle}>
@@ -16716,806 +16593,6 @@ function App() {
           </>}
         </div>
       );
-    }
-    if (colorMode === "income") {
-      const liveAvailable = saveIncomeByCity && Object.keys(saveIncomeByCity).length > 0;
-      const vals = [];
-      if (liveAvailable) {
-        for (const r of Object.values(regions)) {
-          const e = saveIncomeByCity[r.city];
-          if (e && typeof e.perTurn === "number") vals.push(e.perTurn);
-        }
-      } else {
-        for (const r of Object.values(regions)) {
-          let s = 0;
-          const resList = resourcesData[r.region] || resourcesData[r.city] || [];
-          for (const x of resList) s += (x.amount || 1);
-          const farm = parseInt(r.farm_level || "0", 10) || 0;
-          s += farm * 2;
-          const portM = String(r.tags || "").match(/\bbase_port_level_(\d+)\b/);
-          if (portM) s += parseInt(portM[1], 10) * 4;
-          if (s > 0) vals.push(s);
-        }
-      }
-      const hasData = vals.length > 0;
-      const minV = hasData ? Math.min(...vals) : 0;
-      const maxV = hasData ? Math.max(...vals) : 0;
-      const midV = hasData ? Math.round((minV + maxV) / 2) : 0;
-      return (
-        <div style={panelStyle}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Income <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
-          {!legendCollapsed && <>
-            {hasData ? <>
-              <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(50,60,80), rgb(190,160,110), rgb(255,215,60))" }} />
-              <div style={labelRow}>
-                <span>{minV.toLocaleString()}</span>
-                <span>{midV.toLocaleString()}</span>
-                <span>{maxV.toLocaleString()}</span>
-              </div>
-              <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 4 }}>
-                {liveAvailable ? "Per-turn settlement income (live save)." : "Estimated from resources/farm/port (no live save)."}
-              </div>
-            </> : (
-              <div style={{ fontSize: "0.72rem", color: "#aaa", fontStyle: "italic" }}>
-                Heatmap requires a live save game.
-              </div>
-            )}
-          </>}
-        </div>
-      );
-    }
-
-    if (colorMode === "government") {
-      const GOV_LEGEND = [
-        { level: "gov1", label: "Government A", color: [130, 70, 180] },
-        { level: "gov2", label: "Government B", color: [210, 130, 40] },
-        { level: "gov3", label: "Government C", color: [190, 60, 150] },
-        { level: "gov4", label: "Government D", color: [25, 100, 45] },
-      ];
-      // Count regions per gov type
-      const govCounts = {};
-      for (const gov of Object.values(governmentMap)) {
-        govCounts[gov.level] = (govCounts[gov.level] || 0) + 1;
-      }
-      return (
-        <div style={panelStyle}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 6, ...collapseToggle }} onClick={onCollapseClick}>
-            Government <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
-          </div>
-          {!legendCollapsed && GOV_LEGEND.map(g => (
-            <div key={g.level} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-              <div style={{ width: 12, height: 12, borderRadius: 2, flexShrink: 0,
-                background: `rgb(${g.color[0]},${g.color[1]},${g.color[2]})` }} />
-              <span>{g.label}</span>
-              <span style={{ marginLeft: "auto", color: "#aaa", fontSize: "0.7rem" }}>{govCounts[g.level] || 0}</span>
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    if (colorMode === "legions") {
-      // Legionary recruitment legend: one row per named legion (fixed
-      // LEGION_AORS palette — same colours as the map render), sorted by
-      // zone size. Click to isolate the zone, shift-click to add.
-      const counts = {};
-      for (const r of Object.values(regions)) {
-        for (const a of getAors(r.tags)) if (LEGION_AOR_TAGS.has(a)) counts[a] = (counts[a] || 0) + 1;
-      }
-      const entries = Object.keys(LEGION_AORS).filter((t) => counts[t])
-        .sort((a, b) => (counts[b] - counts[a]) || a.localeCompare(b));
-      if (entries.length === 0) {
-        return (
-          <div style={panelStyle}>
-            <div style={{ fontWeight: 700, marginBottom: 4 }}>Legionary Recruitment</div>
-            <div style={{ fontSize: "0.72rem", color: "#aaa", fontStyle: "italic" }}>
-              No legion recruitment tags (aor_*_early / aor_praetorian) found in this campaign's descr_regions.txt.
-            </div>
-          </div>
-        );
-      }
-      const activeSet = legendFilter instanceof Set ? legendFilter : null;
-      const getMatchingKeys = (tag) => {
-        const out = [];
-        for (const [rgbKey, r] of Object.entries(regions)) {
-          if (getAors(r.tags).includes(tag)) out.push(rgbKey);
-        }
-        return out;
-      };
-      const handleLegendClick = (tag, isShift) => {
-        setLegendFilter(prev => {
-          const current = prev instanceof Set ? new Set(prev) : new Set();
-          if (isShift) {
-            if (current.has(tag)) current.delete(tag);
-            else current.add(tag);
-          } else {
-            if (current.size === 1 && current.has(tag)) current.clear();
-            else { current.clear(); current.add(tag); }
-          }
-          const allKeys = [...current].flatMap(t => getMatchingKeys(t));
-          const unique = [...new Set(allKeys)];
-          setSelectedProvinces(unique);
-          if (unique.length > 0 && !isShift) zoomToProvinces(unique);
-          return current.size === 0 ? null : current;
-        });
-      };
-      return (
-        <div style={panelStyle}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>
-            Legionary Recruitment ({entries.length}) <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
-          </div>
-          {!legendCollapsed && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: "40vh", overflowY: "auto" }}>
-              {entries.map((tag) => {
-                const { name, col } = LEGION_AORS[tag];
-                const isActive = activeSet && activeSet.has(tag);
-                const dimmed = activeSet && !isActive;
-                const unitNames = unitOwnership ? Object.keys(unitOwnership).filter((n) => n !== "__dictionary") : [];
-                const units = legionUnitsFor(tag, unitNames);
-                const open = legionUnitsOpen === tag;
-                const dictMap = (unitOwnership && unitOwnership.__dictionary) || {};
-                return (
-                  <React.Fragment key={tag}>
-                  <div
-                    onClick={(e) => handleLegendClick(tag, e.shiftKey)}
-                    title={`${counts[tag]} region(s) tagged with aor_${tag}\nClick to isolate · Shift-click to add`}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 6,
-                      padding: "2px 4px", fontSize: "0.72rem",
-                      borderRadius: 3, cursor: "pointer",
-                      background: isActive ? "rgba(255,255,255,0.10)" : "transparent",
-                      opacity: dimmed ? 0.42 : 1,
-                      transition: "opacity 0.12s, background 0.12s",
-                    }}
-                  >
-                    <span style={{
-                      width: 12, height: 12, borderRadius: 2, flexShrink: 0,
-                      background: `rgb(${col[0]}, ${col[1]}, ${col[2]})`,
-                      border: "1px solid rgba(0,0,0,0.35)",
-                    }} />
-                    <span style={{ flex: 1, color: "#eee" }}>{name}</span>
-                    <span style={{ color: "#888", fontVariantNumeric: "tabular-nums", fontSize: "0.68rem" }}>
-                      {counts[tag]}
-                    </span>
-                    {units.length > 0 && (
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const next = open ? null : tag;
-                          setLegionUnitsOpen(next);
-                          if (next) {
-                            // warm the icons for the expanded legion's units
-                            prefetchUnitIcons(activeDataDir, units.map((u) => [((unitOwnership[u] || [])[0] || "romans_julii"), u, dictMap[u]]), bumpIconCacheVersionCoalesced);
-                          }
-                        }}
-                        title={open ? "Hide units" : `Show this legion's ${units.length} unit${units.length === 1 ? "" : "s"}`}
-                        style={{ color: "#aaa", fontSize: "0.68rem", padding: "0 2px", userSelect: "none" }}
-                      >{open ? "▾" : "▸"}</span>
-                    )}
-                  </div>
-                  {open && (
-                    <div style={{ margin: "0 0 3px 20px", display: "flex", flexDirection: "column", gap: 1 }}>
-                      {units.map((u) => {
-                        const fac = (unitOwnership[u] || [])[0] || "romans_julii";
-                        const ic = getCachedUnitIcon(activeDataDir, fac, u);
-                        return (
-                          <div
-                            key={u}
-                            onClick={(e) => { e.stopPropagation(); setInfoPopup({ type: "unit", name: u, faction: fac, label: prettyLegionUnit(u) }); }}
-                            title="Open unit info"
-                            onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
-                            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                            style={{ display: "flex", alignItems: "center", gap: 6, padding: "1px 3px", borderRadius: 3, cursor: "pointer", fontSize: "0.7rem", color: "#ccc" }}
-                          >
-                            {ic
-                              ? <img src={ic} alt="" style={{ width: 16, height: 21, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} />
-                              : <span style={{ width: 16, height: 21, background: "rgba(255,255,255,0.06)", borderRadius: 2, flexShrink: 0 }} />}
-                            <span>{prettyLegionUnit(u)}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  </React.Fragment>
-                );
-              })}
-              <div style={{ marginTop: 6, fontSize: "0.66rem", color: "#888", lineHeight: 1.4 }}>
-                Where each named legion can be recruited (aor_*_early hidden resources).
-                <br />Click an entry to isolate · Shift-click to add · ▸ lists the legion's units — click one for its unit card.
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    if (colorMode === "aor") {
-      // 0.9.486: AOR legend. Lists every aor_X tag found across regions,
-      // with the same color it gets in the map render. Sorted by region
-      // count (most-used AORs at the top) so the user can see at a glance
-      // which AOR is the most common (helps spot dominant recruitment
-      // zones). Multi-AOR regions get a small "+N" marker on each AOR
-      // they belong to in the future click-to-filter pass.
-      // Match the map's palette assignment: count first, then walk each
-      // region's AOR list MOST-FREQUENT-FIRST so dominant AORs claim
-      // distinct palette slots before less-common ones get them. Without
-      // this the same AOR would get different colours in the legend vs map.
-      const counts = {};
-      for (const r of Object.values(regions)) {
-        for (const a of getAors(r.tags)) counts[a] = (counts[a] || 0) + 1;
-      }
-      const seen = {};
-      for (const r of Object.values(regions)) {
-        const list = getAors(r.tags).slice().sort((a, b) => {
-          const da = counts[a] || 0, db = counts[b] || 0;
-          return da !== db ? db - da : a.localeCompare(b);
-        });
-        for (const a of list) {
-          if (seen[a]) continue;
-          const facId = PRIMARY_AOR_TO_FACTION[a] || SECONDARY_AOR_TO_FACTION[a];
-          const fc = facId ? factionColors[facId.toLowerCase()] : null;
-          if (fc && Array.isArray(fc.primary)) {
-            seen[a] = fc.primary;
-          } else {
-            seen[a] = CULTURE_PALETTE[stableAorColorIndex(a, CULTURE_PALETTE.length)];
-          }
-        }
-      }
-      const entries = Object.entries(seen)
-        .filter(([n]) => !SPECIALTY_AOR_BARE.has(n) && !LEGION_AOR_TAGS.has(n)) // specialty + legion AORs aren't AOR-map zones (legions have their own mode)
-        .sort((a, b) => (counts[b[0]] - counts[a[0]]) || a[0].localeCompare(b[0]));
-      if (entries.length === 0) {
-        return (
-          <div style={panelStyle}>
-            <div style={{ fontWeight: 700, marginBottom: 4 }}>Areas of Recruitment</div>
-            <div style={{ fontSize: "0.72rem", color: "#aaa", fontStyle: "italic" }}>
-              No `aor_*` tags found in the current campaign's descr_regions.txt.
-            </div>
-          </div>
-        );
-      }
-      console.log(`[aor] legend: ${entries.length} unique AORs across ${Object.values(counts).reduce((a, b) => a + b, 0)} region-tags`);
-
-      // 0.9.635: click an AOR to isolate every region tagged with it
-      // (primary fill OR stripe overlay); shift-click to add more. Same
-      // shared legendFilter state + selectedProvinces highlight infra
-      // as the culture / religion legends.
-      const activeSet = legendFilter instanceof Set ? legendFilter : null;
-      const getMatchingKeys = (name) => {
-        const out = [];
-        for (const [rgbKey, r] of Object.entries(regions)) {
-          if (getAors(r.tags).includes(name)) out.push(rgbKey);
-        }
-        return out;
-      };
-      const handleLegendClick = (name, isShift) => {
-        setLegendFilter(prev => {
-          const current = prev instanceof Set ? new Set(prev) : new Set();
-          if (isShift) {
-            if (current.has(name)) current.delete(name);
-            else current.add(name);
-          } else {
-            if (current.size === 1 && current.has(name)) current.clear();
-            else { current.clear(); current.add(name); }
-          }
-          const allKeys = [...current].flatMap(n => getMatchingKeys(n));
-          const unique = [...new Set(allKeys)];
-          setSelectedProvinces(unique);
-          if (unique.length > 0 && !isShift) zoomToProvinces(unique);
-          return current.size === 0 ? null : current;
-        });
-      };
-
-      // Primary/secondary breakdown for the layer toggle. Counts come from
-      // counts[] which is the per-AOR region tally we just built above.
-      const primaryCount = entries.filter(([n]) => PRIMARY_AOR_TAGS.has(n)).length;
-      const secondaryCount = entries.length - primaryCount;
-      const tabBase = {
-        flex: 1, padding: "3px 6px", fontSize: "0.7rem", textAlign: "center",
-        cursor: "pointer", borderRadius: 3, userSelect: "none",
-        transition: "background 0.12s, color 0.12s",
-      };
-      const tabActive = { background: "rgba(255,255,255,0.14)", color: "#fff", fontWeight: 600 };
-      const tabIdle = { background: "transparent", color: "#bbb" };
-      return (
-        <div style={panelStyle}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>
-            Areas of Recruitment ({entries.length}) <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
-          </div>
-          {!legendCollapsed && (
-            <>
-              <div
-                style={{ display: "flex", gap: 2, marginBottom: 4, padding: 2, background: "rgba(0,0,0,0.25)", borderRadius: 4 }}
-                title="Primary = AORs mapped in PRIMARY_AOR_TO_FACTION (faction colours). Secondary = the narrower sub-cultural / regional AORs."
-              >
-                <div style={{ ...tabBase, ...(aorView === "primary" ? tabActive : tabIdle) }} onClick={() => setAorView("primary")}>
-                  Primary ({primaryCount})
-                </div>
-                <div style={{ ...tabBase, ...(aorView === "secondary" ? tabActive : tabIdle) }} onClick={() => setAorView("secondary")}>
-                  Secondary ({secondaryCount})
-                </div>
-              </div>
-              <input
-                value={aorLegendFilter}
-                onChange={(e) => setAorLegendFilter(e.target.value)}
-                placeholder="Filter AORs…"
-                style={{
-                  width: "100%", marginBottom: 4, padding: "3px 6px",
-                  fontSize: "0.72rem", borderRadius: 3,
-                  background: "rgba(0,0,0,0.30)", color: "#eee",
-                  border: "1px solid rgba(255,255,255,0.10)", outline: "none",
-                }}
-              />
-            <div style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: "30vh", overflowY: "auto" }}>
-              {entries
-                .filter(([n]) => aorView === "primary" ? PRIMARY_AOR_TAGS.has(n) : !PRIMARY_AOR_TAGS.has(n))
-                .filter(([n]) => !aorLegendFilter || n.toLowerCase().includes(aorLegendFilter.toLowerCase()))
-                .map(([name, col]) => {
-                const isActive = activeSet && activeSet.has(name);
-                const dimmed = activeSet && !isActive;
-                return (
-                  <div
-                    key={name}
-                    onClick={(e) => handleLegendClick(name, e.shiftKey)}
-                    title={`${counts[name]} region(s) tagged with aor_${name}\nClick to isolate · Shift-click to add`}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 6,
-                      padding: "2px 4px", fontSize: "0.72rem",
-                      borderRadius: 3, cursor: "pointer",
-                      background: isActive ? "rgba(255,255,255,0.10)" : "transparent",
-                      opacity: dimmed ? 0.42 : 1,
-                      transition: "opacity 0.12s, background 0.12s",
-                    }}
-                  >
-                    <span style={{
-                      width: 12, height: 12, borderRadius: 2, flexShrink: 0,
-                      background: `rgb(${col[0]}, ${col[1]}, ${col[2]})`,
-                      border: "1px solid rgba(0,0,0,0.35)",
-                    }} />
-                    <span style={{ flex: 1, textTransform: "capitalize", color: "#eee" }}>
-                      {name.replace(/_/g, " ")}
-                    </span>
-                    <span style={{ color: "#888", fontVariantNumeric: "tabular-nums", fontSize: "0.68rem" }}>
-                      {counts[name]}
-                    </span>
-                  </div>
-                );
-              })}
-              <div style={{ marginTop: 6, fontSize: "0.66rem", color: "#888", lineHeight: 1.4 }}>
-                Stripes = regions with multiple AORs (each AOR's color appears in rotation).
-                <br />Click an entry to isolate · Shift-click to add · Click again to clear.
-              </div>
-            </div>
-            </>
-          )}
-        </div>
-      );
-    }
-
-    if (colorMode === "culture" || colorMode === "religion") {
-      // Build swatch list and region counts from visible regions
-      const seen = {};
-      const counts = {}; // name → number of regions
-      let ci = 0;
-      for (const r of Object.values(regions)) {
-        if (colorMode === "culture" && r.culture) {
-          if (!seen[r.culture]) {
-            seen[r.culture] = CULTURE_PALETTE[ci % CULTURE_PALETTE.length];
-            ci++;
-          }
-          counts[r.culture] = (counts[r.culture] || 0) + 1;
-        }
-        if (colorMode === "religion") {
-          let best = null, bestLvl = -1;
-          for (const hit of String(r.tags || "").matchAll(/\brel_([a-z_]+?)_(\d+)\b/g)) {
-            const lvl = parseInt(hit[2], 10);
-            if (lvl > bestLvl) { best = hit[1]; bestLvl = lvl; }
-          }
-          if (best) {
-            if (!seen[best]) seen[best] = RELIGION_COLORS[best] || [128, 128, 128];
-            counts[best] = (counts[best] || 0) + 1;
-          }
-        }
-      }
-      const entries = Object.entries(seen).sort((a, b) => a[0].localeCompare(b[0]));
-      if (entries.length === 0) return null;
-
-      // legendFilter is now a Set<string> or null
-      const activeSet = legendFilter instanceof Set ? legendFilter : null;
-
-      const getMatchingKeys = (name) => {
-        const matching = [];
-        for (const [rgbKey, r] of Object.entries(regions)) {
-          if (colorMode === "culture") {
-            if (r.culture === name) matching.push(rgbKey);
-          } else {
-            let best = null, bestLvl = -1;
-            for (const hit of String(r.tags || "").matchAll(/\brel_([a-z_]+?)_(\d+)\b/g)) {
-              const lvl = parseInt(hit[2], 10);
-              if (lvl > bestLvl) { best = hit[1]; bestLvl = lvl; }
-            }
-            if (best === name) matching.push(rgbKey);
-          }
-        }
-        return matching;
-      };
-
-      const handleLegendClick = (name, isShift) => {
-        setLegendFilter(prev => {
-          const current = prev instanceof Set ? new Set(prev) : new Set();
-          if (isShift) {
-            // Shift: toggle this entry in the set
-            if (current.has(name)) current.delete(name);
-            else current.add(name);
-          } else {
-            // Regular: if only this one selected, deselect all; else select only this
-            if (current.size === 1 && current.has(name)) current.clear();
-            else { current.clear(); current.add(name); }
-          }
-          // Recompute selected provinces as union of all selected cultures
-          const allKeys = [...current].flatMap(n => getMatchingKeys(n));
-          const unique = [...new Set(allKeys)];
-          setSelectedProvinces(unique);
-          if (unique.length > 0 && !isShift) zoomToProvinces(unique);
-          return current.size === 0 ? null : current;
-        });
-      };
-
-      // Determine which legend entries are currently active on the map
-      // (provinces selected via map clicks that belong to a culture)
-      const activeOnMap = new Set(
-        selectedProvinces.map(k => colorMode === "culture" ? regions[k]?.culture : (() => {
-          let best = null, bestLvl = -1;
-          for (const hit of String(regions[k]?.tags || "").matchAll(/\brel_([a-z_]+?)_(\d+)\b/g)) {
-            const lvl = parseInt(hit[2], 10);
-            if (lvl > bestLvl) { best = hit[1]; bestLvl = lvl; }
-          }
-          return best;
-        })()).filter(Boolean)
-      );
-
-      return (
-        <div className="legend-panel" style={{ ...panelStyle, maxHeight: canvasSize.height - 100, overflowY: "auto" }}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 6, ...collapseToggle }} onClick={onCollapseClick}>
-            {colorMode === "culture" ? "Culture" : "Religion"} <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
-            {!legendCollapsed && <span style={{ fontWeight: 400, fontSize: "0.7rem", marginLeft: 6, color: "#aaa" }}>shift+click multi-select</span>}
-          </div>
-          {!legendCollapsed && (
-            <input
-              type="text"
-              value={legendSearch}
-              onChange={(e) => setLegendSearch(e.target.value)}
-              className="legend-search-input"
-              placeholder="Search..."
-              style={{
-                width: "100%", boxSizing: "border-box", padding: "4px 10px", marginBottom: 4,
-                borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)",
-                color: "#eee", fontSize: "0.74rem", outline: "none",
-                transition: "border-color 0.15s, box-shadow 0.15s",
-              }}
-            />
-          )}
-          <div style={{ display: legendCollapsed ? "none" : "flex", flexDirection: "column", gap: 2 }}>
-            {colorMode === "religion" ? (
-              // Grouped religion legend
-              Object.entries(RELIGION_GROUPS).map(([groupName, groupRels]) => {
-                let groupEntries = entries.filter(([name]) => groupRels.includes(name));
-                // Apply legend search filter
-                const lq = legendSearch.trim().toLowerCase();
-                if (lq) {
-                  groupEntries = groupEntries.filter(([name]) => name.replace(/_/g, " ").toLowerCase().includes(lq));
-                  if (groupEntries.length === 0 && !groupName.toLowerCase().includes(lq)) return null;
-                }
-                if (groupEntries.length === 0) return null;
-                const isGroupCollapsed = lq ? false : collapsedRelGroups.has(groupName);
-                const groupHasSelected = groupEntries.some(([name]) => activeSet?.has(name));
-                const groupRegionCount = groupEntries.reduce((sum, [name]) => sum + (counts[name] || 0), 0);
-                return (
-                  <div key={groupName}>
-                    <div onClick={(e) => {
-                      if (e.shiftKey) {
-                        // Shift+click: select all religions in this group
-                        const groupNames = groupEntries.map(([name]) => name);
-                        setLegendFilter(prev => {
-                          const current = prev instanceof Set ? new Set(prev) : new Set();
-                          const allSelected = groupNames.every(n => current.has(n));
-                          if (allSelected) groupNames.forEach(n => current.delete(n));
-                          else groupNames.forEach(n => current.add(n));
-                          const allKeys = [...current].flatMap(n => getMatchingKeys(n));
-                          const unique = [...new Set(allKeys)];
-                          setSelectedProvinces(unique);
-                          if (unique.length > 0) zoomToProvinces(unique);
-                          return current.size === 0 ? null : current;
-                        });
-                      } else {
-                        setCollapsedRelGroups(prev => {
-                          const s = new Set(prev);
-                          if (s.has(groupName)) s.delete(groupName); else s.add(groupName);
-                          return s;
-                        });
-                      }
-                    }} style={{
-                      padding: "3px 4px", cursor: "pointer", fontWeight: 700, fontSize: "0.72rem",
-                      color: groupHasSelected ? "#e8a030" : "#aaa", userSelect: "none",
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      borderBottom: "1px solid rgba(255,255,255,0.08)", marginTop: 2,
-                    }}>
-                      <span>{isGroupCollapsed ? "\u25B6" : "\u25BC"} {groupName}</span>
-                      <span style={{ fontWeight: 400, fontSize: "0.65rem", color: "#666" }}>{groupEntries.length} types, {groupRegionCount} regions</span>
-                    </div>
-                    {!isGroupCollapsed && groupEntries.map(([name, rgb]) => {
-                      const selected = activeSet?.has(name);
-                      const onMap = activeOnMap.has(name);
-                      const dimmed = activeSet && activeSet.size > 0 && !selected;
-                      return (
-                        <div key={name} onClick={(e) => handleLegendClick(name, e.shiftKey)} style={{
-                          display: "flex", alignItems: "center", gap: 6,
-                          padding: "2px 4px 2px 14px", borderRadius: 4, cursor: "pointer",
-                          background: selected ? "rgba(220,166,74,0.25)" : onMap ? "rgba(255,255,255,0.12)" : "transparent",
-                          opacity: dimmed ? 0.4 : 1,
-                          transition: "opacity 0.15s, background 0.15s",
-                        }}>
-                          <div style={{ width: 10, height: 10, borderRadius: 2, flexShrink: 0,
-                            background: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`,
-                            outline: selected ? "2px solid #dca64a" : onMap ? "2px solid #fff" : "none",
-                          }} />
-                          <span style={{
-                            textTransform: "capitalize", flex: 1, fontSize: "0.72rem",
-                            fontWeight: onMap ? 700 : 400,
-                            color: onMap && !selected ? "#fff" : "inherit",
-                          }}>{name.replace(/_/g, " ")}</span>
-                          <span style={{ fontSize: "0.62rem", color: "#666", flexShrink: 0 }}>({counts[name] || 0})</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })
-            ) : (
-              // Grouped culture legend with nested sub-groups
-              (() => {
-                const lq = legendSearch.trim().toLowerCase();
-                // Build culture → { main, sub } mapping
-                const cultureGroupMap = {};
-                for (const r of Object.values(regions)) {
-                  if (r.culture && !cultureGroupMap[r.culture]) {
-                    cultureGroupMap[r.culture] = classifyCultureGroup(r);
-                  }
-                }
-                // Filter entries by legend search
-                const filteredEntries = lq ? entries.filter(([name]) => name.replace(/_/g, " ").toLowerCase().includes(lq)) : entries;
-                // Build main → { sub → entries[] }
-                const mainGroups = {};
-                for (const [name, rgb] of filteredEntries) {
-                  const { main, sub } = cultureGroupMap[name] || { main: "Other", sub: null };
-                  if (!mainGroups[main]) mainGroups[main] = {};
-                  const subKey = sub || "__direct__";
-                  if (!mainGroups[main][subKey]) mainGroups[main][subKey] = [];
-                  mainGroups[main][subKey].push([name, rgb]);
-                }
-                const mainOrder = Object.keys(mainGroups).sort((a, b) => a === "Other" ? 1 : b === "Other" ? -1 : a.localeCompare(b));
-
-                const renderCultureEntry = (name, rgb, indent) => {
-                  const selected = activeSet?.has(name);
-                  const onMap = activeOnMap.has(name);
-                  const dimmed = activeSet && activeSet.size > 0 && !selected;
-                  return (
-                    <div key={name} onClick={(e) => handleLegendClick(name, e.shiftKey)} style={{
-                      display: "flex", alignItems: "center", gap: 6,
-                      padding: `2px 4px 2px ${indent}px`, borderRadius: 4, cursor: "pointer",
-                      background: selected ? "rgba(220,166,74,0.25)" : onMap ? "rgba(255,255,255,0.12)" : "transparent",
-                      opacity: dimmed ? 0.4 : 1, transition: "opacity 0.15s, background 0.15s",
-                    }}>
-                      <div style={{ width: 10, height: 10, borderRadius: 2, flexShrink: 0,
-                        background: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`,
-                        outline: selected ? "2px solid #dca64a" : onMap ? "2px solid #fff" : "none",
-                      }} />
-                      <span style={{ textTransform: "capitalize", flex: 1, fontSize: "0.72rem",
-                        fontWeight: onMap ? 700 : 400, color: onMap && !selected ? "#fff" : "inherit",
-                      }}>{name.replace(/_/g, " ")}</span>
-                      <span style={{ fontSize: "0.62rem", color: "#666", flexShrink: 0 }}>({counts[name] || 0})</span>
-                    </div>
-                  );
-                };
-
-                return mainOrder.map(mainName => {
-                  const subs = mainGroups[mainName];
-                  const subKeys = Object.keys(subs).sort((a, b) => a === "__direct__" ? -1 : b === "__direct__" ? 1 : a.localeCompare(b));
-                  const allEntries = subKeys.flatMap(k => subs[k]);
-                  const hasSubs = subKeys.length > 1 || (subKeys.length === 1 && subKeys[0] !== "__direct__");
-                  const isMainCollapsed = lq ? false : (collapsedCulGroups.has(mainName) || collapsedCulGroups.has("__all__"));
-                  const mainHasSelected = allEntries.some(([name]) => activeSet?.has(name));
-                  const mainRegionCount = allEntries.reduce((sum, [name]) => sum + (counts[name] || 0), 0);
-
-                  return (
-                    <div key={mainName}>
-                      {/* Main group header */}
-                      <div onClick={(e) => {
-                        if (e.shiftKey) {
-                          // Shift+click: select all cultures in this main group
-                          const groupCultureNames = allEntries.map(([name]) => name);
-                          setLegendFilter(prev => {
-                            const current = prev instanceof Set ? new Set(prev) : new Set();
-                            const allSelected = groupCultureNames.every(n => current.has(n));
-                            if (allSelected) groupCultureNames.forEach(n => current.delete(n));
-                            else groupCultureNames.forEach(n => current.add(n));
-                            const allKeys = [...current].flatMap(n => getMatchingKeys(n));
-                            const unique = [...new Set(allKeys)];
-                            setSelectedProvinces(unique);
-                            if (unique.length > 0) zoomToProvinces(unique);
-                            return current.size === 0 ? null : current;
-                          });
-                        } else {
-                          setCollapsedCulGroups(prev => {
-                            const s = new Set(prev); s.delete("__all__");
-                            if (s.has(mainName)) s.delete(mainName); else s.add(mainName);
-                            return s;
-                          });
-                        }
-                      }} style={{
-                        padding: "3px 4px", cursor: "pointer", fontWeight: 700, fontSize: "0.72rem",
-                        color: mainHasSelected ? "#e8a030" : "#aaa", userSelect: "none",
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                        borderBottom: "1px solid rgba(255,255,255,0.08)", marginTop: 2,
-                      }}>
-                        <span>{isMainCollapsed ? "\u25B6" : "\u25BC"} {mainName}</span>
-                        <span style={{ fontWeight: 400, fontSize: "0.65rem", color: "#666" }}>{allEntries.length}, {mainRegionCount} reg</span>
-                      </div>
-                      {!isMainCollapsed && (
-                        hasSubs ? (
-                          // Render sub-groups inside the main group
-                          subKeys.map(subKey => {
-                            const subEntries = subs[subKey];
-                            const subLabel = subKey === "__direct__" ? `${mainName} (core)` : subKey.replace(/^.*? — /, "");
-                            const isSubCollapsed = lq ? false : collapsedCulGroups.has(`sub:${subKey}`);
-                            const subRegionCount = subEntries.reduce((sum, [name]) => sum + (counts[name] || 0), 0);
-                            return (
-                              <div key={subKey}>
-                                <div onClick={(e) => {
-                                  if (e.shiftKey) {
-                                    const subCultureNames = subEntries.map(([name]) => name);
-                                    setLegendFilter(prev => {
-                                      const current = prev instanceof Set ? new Set(prev) : new Set();
-                                      const allSel = subCultureNames.every(n => current.has(n));
-                                      if (allSel) subCultureNames.forEach(n => current.delete(n));
-                                      else subCultureNames.forEach(n => current.add(n));
-                                      const allKeys = [...current].flatMap(n => getMatchingKeys(n));
-                                      const unique = [...new Set(allKeys)];
-                                      setSelectedProvinces(unique);
-                                      if (unique.length > 0) zoomToProvinces(unique);
-                                      return current.size === 0 ? null : current;
-                                    });
-                                  } else {
-                                    setCollapsedCulGroups(prev => {
-                                      const s = new Set(prev); const k = `sub:${subKey}`;
-                                      if (s.has(k)) s.delete(k); else s.add(k);
-                                      return s;
-                                    });
-                                  }
-                                }} style={{
-                                  padding: "2px 4px 2px 10px", cursor: "pointer", fontWeight: 600, fontSize: "0.68rem",
-                                  color: "#888", userSelect: "none",
-                                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                                }}>
-                                  <span>{isSubCollapsed ? "\u25B9" : "\u25BF"} {subLabel}</span>
-                                  <span style={{ fontWeight: 400, fontSize: "0.6rem", color: "#555" }}>{subEntries.length}, {subRegionCount} reg</span>
-                                </div>
-                                {!isSubCollapsed && subEntries.map(([name, rgb]) => renderCultureEntry(name, rgb, 20))}
-                              </div>
-                            );
-                          })
-                        ) : (
-                          // No sub-groups — render entries directly
-                          allEntries.map(([name, rgb]) => renderCultureEntry(name, rgb, 14))
-                        )
-                      )}
-                    </div>
-                  );
-                });
-              })()
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    // ── Dev mode legends (interactive, with counts and toggles) ──────
-    // Shared renderer for all dev legends
-    function renderDevLegend(title, classify, colorsMap, labelsMap) {
-      // Build category → { rgb, label, count, rgbKeys[] }
-      const cats = {};
-      for (const [rgbKey, r] of Object.entries(regions)) {
-        const cat = classify(r, rgbKey);
-        if (!cats[cat]) {
-          const rgb = colorsMap[cat] || [100, 100, 100];
-          cats[cat] = { rgb, label: labelsMap[cat] || cat, count: 0, rgbKeys: [] };
-        }
-        cats[cat].count++;
-        cats[cat].rgbKeys.push(rgbKey);
-      }
-      // Sort by label, but put "unknown"/"none"/"no" entries last
-      let entries = Object.entries(cats).sort((a, b) => {
-        const aLow = /^(none|unknown|no )/.test(a[1].label.toLowerCase()) ? 1 : 0;
-        const bLow = /^(none|unknown|no )/.test(b[1].label.toLowerCase()) ? 1 : 0;
-        if (aLow !== bLow) return aLow - bLow;
-        return a[1].label.localeCompare(b[1].label);
-      });
-      // Apply legend search filter
-      const lq = legendSearch.trim().toLowerCase();
-      if (lq) entries = entries.filter(([, { label }]) => label.toLowerCase().includes(lq));
-
-      const activeSet = legendFilter instanceof Set ? legendFilter : null;
-
-      const handleClick = (catKey, isShift) => {
-        setLegendFilter(prev => {
-          const current = prev instanceof Set ? new Set(prev) : new Set();
-          if (isShift) {
-            if (current.has(catKey)) current.delete(catKey);
-            else current.add(catKey);
-          } else {
-            if (current.size === 1 && current.has(catKey)) current.clear();
-            else { current.clear(); current.add(catKey); }
-          }
-          const allKeys = [...current].flatMap(k => cats[k]?.rgbKeys || []);
-          const unique = [...new Set(allKeys)];
-          setSelectedProvinces(unique);
-          if (unique.length > 0 && !isShift) zoomToProvinces(unique);
-          return current.size === 0 ? null : current;
-        });
-      };
-
-      return (
-        <div className="legend-panel" style={{ ...panelStyle, maxHeight: canvasSize.height - 100, overflowY: "auto", borderLeft: "3px solid #e8a030" }}>
-          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 6, color: "#e8a030", ...collapseToggle }} onClick={onCollapseClick}>
-            {title} <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
-            {!legendCollapsed && <span style={{ fontWeight: 400, fontSize: "0.7rem", marginLeft: 6, color: "#aaa" }}>shift+click multi</span>}
-          </div>
-          {!legendCollapsed && (
-            <input
-              type="text"
-              value={legendSearch}
-              onChange={(e) => setLegendSearch(e.target.value)}
-              className="legend-search-input"
-              placeholder="Search..."
-              style={{
-                width: "100%", boxSizing: "border-box", padding: "4px 10px", marginBottom: 4,
-                borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)",
-                color: "#eee", fontSize: "0.74rem", outline: "none",
-                transition: "border-color 0.15s, box-shadow 0.15s",
-              }}
-            />
-          )}
-          <div style={{ display: legendCollapsed ? "none" : "flex", flexDirection: "column", gap: 2 }}>
-            {entries.map(([catKey, { rgb, label, count }]) => {
-              const selected = activeSet?.has(catKey);
-              const dimmed = activeSet && activeSet.size > 0 && !selected;
-              return (
-                <div key={catKey} onClick={(e) => handleClick(catKey, e.shiftKey)} style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  padding: "2px 4px", borderRadius: 4, cursor: "pointer",
-                  background: selected ? "rgba(220,166,74,0.25)" : "transparent",
-                  opacity: dimmed ? 0.4 : 1,
-                  transition: "opacity 0.15s, background 0.15s",
-                }}>
-                  <div style={{ width: 12, height: 12, borderRadius: 2, flexShrink: 0,
-                    background: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`,
-                    outline: selected ? "2px solid #dca64a" : "none",
-                  }} />
-                  <span style={{ flex: 1 }}>{label}</span>
-                  <span style={{ color: "#aaa", fontSize: "0.7rem" }}>({count})</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      );
-    }
-
-    if (colorMode === "terrain") {
-      return renderDevLegend("Terrain Types",
-        (r) => getTagValue(r.tags, TERRAIN_TAGS) || "unknown",
-        { ...TERRAIN_COLORS, unknown: [100, 100, 100] },
-        { ...TERRAIN_LABELS, unknown: "Unknown" });
     }
     if (colorMode === "climate") {
       return renderDevLegend("Climates",
@@ -18574,7 +17651,6 @@ function App() {
           ["aor", "Areas of Recruitment"], ["terrain", "Terrain"], ["climate", "Climate"],
           ["port_level", "Port Level"], ["irrigation", "Irrigation"], ["earthquakes", "Earthquakes"],
           ["rivertrade", "River Trade"], ["hidden_resource", "Hidden Resource"],
-          ["income", "Income"],
           ["public_order", "Public Order"], ["loyalist", "Loyalist"],
         ];
         for (const [m, label] of MODES) {

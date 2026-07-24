@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1395",
+    date: "2026-07-24",
+    items: [
+      { type: "improvement", text: "**Three income modes merged into one Income (Economy).** The model Income, the dev live-save Income and the dev Wealth proxy were all answering “how rich is this settlement”. Now one mode with three data tiers: exact per-turn income from the live save when connected → the selected faction's model income (computed per faction, ~1s) → a static resources+farm+port estimate so the map is never empty. Legend lists settlements richest-first (click to highlight, double-click to jump); hover says which source you're seeing. The old all-faction background sweep is gone entirely." },
+      { type: "improvement", text: "**Pop Headroom merged into Population.** Hovering in Population mode now shows the population AND how full the settlement is against its cap — the separate dev mode is gone." },
+    ],
+  },
+  {
     version: "0.9.1394",
     date: "2026-07-24",
     items: [
