@@ -704,25 +704,18 @@ export default function AiMovementPanel({
               const missions = Object.entries(missionTotals).sort((a, b) => b[1] - a[1]);
               const missionMax = missions.length ? missions[0][1] : 0;
 
-              const health = Object.entries(result.factionHealth || {});
-              const stable = health.filter(([, e]) => e.countIsStable);
-              const unstable = health.filter(([, e]) => !e.countIsStable);
-              // Ranked by the ungoverned COUNT, not by a share.
-              //
-              // The engine's "ungoverned cities N / M" line does NOT give a usable M.
-              // It matches descr_strat at turn 1 (218 of 221 factions) but diverges
-              // badly later — seleucid reads 36 against the save's 110 — and it is not
-              // even stable across the engine's own passes within one turn. So M is
-              // something narrower than "settlements owned" and any percentage built on
-              // it would be wrong. The SAVE's settlement count is authoritative and is
-              // used for the share where we have it.
-              const ungoverned = stable
-                .filter(([, e]) => e.medianUngoverned >= 1)
-                .map(([f, e]) => {
-                  const owned = (result.expansion && result.expansion.ownedNow && result.expansion.ownedNow[f]) || null;
-                  return [f, e, owned ? e.medianUngoverned / owned : null, owned];
-                })
-                .sort((a, b) => b[1].medianUngoverned - a[1].medianUngoverned);
+              // factionHealth is no longer the source for governance (the save is) — it is
+              // kept only for the corroboration figure the section quotes.
+              // Governance comes from the SAVE, which states it exactly per settlement
+              // (settlementFields.governorUuid). The AI log's version was tried first and
+              // rejected twice over: its "of N settlements" denominator is not a
+              // settlement count, and its numerator has to be thrown away for the ~11
+              // factions whose readings shift mid-turn — which are precisely the big
+              // conquering factions most worth knowing about. Using the save recovers
+              // them: seleucid's real figure is 49 of 110 ungoverned, and the log-based
+              // version hid it entirely.
+              const gov = result.governance || null;
+              const govRows = gov ? gov.rows.filter((r) => r.ungoverned > 0) : [];
 
               const blind = Object.entries(result.invasionTargets || {})
                 .filter(([, e]) => e.samples >= 5 && e.zeroPct >= 0.95)
@@ -780,32 +773,37 @@ export default function AiMovementPanel({
 
                   {/* ── governance ── */}
                   <div style={sec}>
-                    <div style={h}>Settlements left ungoverned</div>
+                    <div style={h}>Settlements with no governor</div>
                     <div style={sub}>
-                      The engine's own count, as a median across turns rather than a mean —
-                      it writes this line about three times per season and the value is not
-                      always stable across those passes. Shown as a count, not a share: the
-                      engine's accompanying "of N settlements" figure disagrees with the save
-                      (seleucid reads 36 against 110) and is not a settlement total, so a
-                      percentage built on it would be wrong.
+                      {gov
+                        ? <>Read from the save, which records this per settlement — {gov.totalUngoverned.toLocaleString()} ungoverned
+                            across {gov.factions} factions. The AI log agrees within two settlements for{" "}
+                            {Math.round((gov.logAgreementWithin2 || 0) * 100)}% of the {gov.logFactionsChecked} factions
+                            whose log reading is usable, which is why this figure is trusted rather than assumed.</>
+                        : <>Needs a save — the AI log's own version of this number is not reliable enough to show on its own.</>}
                     </div>
-                    {ungoverned.length === 0 ? (
-                      <div style={empty}>✓ No faction with a stable count leaves a settlement ungoverned.</div>
-                    ) : ungoverned.slice(0, 12).map(([f, e, share, owned]) => (
-                      <div key={f} style={{ fontSize: "0.72rem", color: share != null && share > 0.4 ? "#e87a6a" : "#bbb" }}>
-                        <b>{flabel(f)}</b> — {e.medianUngoverned} settlement{e.medianUngoverned === 1 ? "" : "s"} ungoverned
-                        {owned
-                          ? ` of ${owned} held (${Math.round(share * 100)}%, denominator from the save)`
-                          : ""}
+                    {!gov ? (
+                      <div style={{ fontSize: "0.72rem", color: "#9a8f7a" }}>
+                        Load a save to see governor coverage.
+                      </div>
+                    ) : govRows.length === 0 ? (
+                      <div style={empty}>✓ Every settlement on the map has a governor.</div>
+                    ) : govRows.slice(0, 12).map((r) => (
+                      <div key={r.faction} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem" }}>
+                        <div style={{ width: 150, textAlign: "right", color: "#bbb" }}>{flabel(r.faction)}</div>
+                        <div title={`${r.ungoverned} of ${r.owned} settlements have no governor`}
+                          style={{ height: 9, width: `${Math.max(1, r.share * 100)}%`, maxWidth: 200,
+                            background: r.share > 0.4 ? "#e87a6a" : r.share > 0.25 ? "#e8c873" : "#9a8f7a", borderRadius: 2 }} />
+                        <div style={{ color: r.share > 0.4 ? "#e87a6a" : "#888" }}>
+                          {r.ungoverned} of {r.owned} ({Math.round(r.share * 100)}%)
+                        </div>
                       </div>
                     ))}
-                    {unstable.length > 0 && (
+                    {govRows.length > 0 && (
                       <div style={{ fontSize: "0.68rem", color: "#9a8f7a", marginTop: 4 }}>
-                        {unstable.length} faction{unstable.length === 1 ? "" : "s"} excluded because the
-                        engine's own passes disagreed about the settlement count mid-turn — its
-                        territory was changing as the turn ran, so no single number describes it:{" "}
-                        {unstable.slice(0, 6).map(([f]) => flabel(f)).join(", ")}
-                        {unstable.length > 6 ? `, +${unstable.length - 6} more` : ""}.
+                        An ungoverned settlement gets no governor bonuses, so its public order,
+                        growth and income all run below what the same settlement would manage with
+                        one. A faction sitting above ~40% is short of characters, not buildings.
                       </div>
                     )}
                   </div>

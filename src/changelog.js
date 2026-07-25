@@ -13,6 +13,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1451",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**463 settlements across 85 factions have no governor — and the biggest offenders were being hidden.** Governor coverage now comes from the save, which records it per settlement, instead of from the AI log. That recovers every faction the log-based version had to exclude for unstable readings, which were exactly the large conquering factions worth knowing about: **seleucid 49 of 110 ungoverned (45%), ptolemaic 35 of 101, antigonid 17 of 40, indians 11 of 19 (58%)**. An ungoverned settlement gets no governor bonuses, so its public order, growth and income all run below what the same settlement manages with one — a faction above ~40% is short of characters, not buildings." },
+      { type: "improvement", text: "**The save figure is trusted because the log independently corroborates it, not because it is convenient.** Over the 75 factions whose log reading is usable, the two agree within two settlements for **95%** of them. That comparison is reported in the panel alongside the number and asserted in the integration test, so the corroboration cannot quietly lapse." },
+      { type: "fix", text: "**This finishes the validation started in v0.9.1450, which had only checked half the field.** That release established the log's *denominator* was unusable and switched to a count. The numerator needed the same scrutiny: it turns out to be sound where the stability flag says it is sound (96% within ±2 across 113 stable factions) and badly wrong where it does not — seleucid's log median reads 7 against a true 49. So the flag was doing real work, but keeping the log as the source meant discarding the most interesting factions to respect it. The save has no such limitation." },
+      { type: "improvement", text: "Share is now guaranteed to be a real fraction — the test asserts ungoverned never exceeds settlements held and every share falls in (0, 1], so a bad denominator can never again produce a percentage above 100. The panel's bars are coloured by severity with the count spelled out beside them, and it states plainly that it needs a save rather than silently rendering nothing." },
+    ],
+  },
+
+  {
     version: "0.9.1450",
     date: "2026-07-25",
     items: [

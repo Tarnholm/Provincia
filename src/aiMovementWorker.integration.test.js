@@ -130,6 +130,33 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
     expect(r.expansion.netNonRebel).toBeLessThan(0);             // -17
     // slave must never appear among the "real faction" rows
     expect(r.expansion.rows.some((x) => x.faction === "slave")).toBe(false);
+    // ── GOVERNANCE, FROM THE SAVE ──
+    // The AI log's "ungoverned cities N / M" was tried as the source and rejected: its
+    // denominator is not a settlement count (only 26% of factions land within 10% of
+    // the save), and its numerator must be discarded for the ~11 factions whose
+    // readings shift mid-turn — exactly the big conquering factions worth knowing
+    // about. The save states it per settlement, so it is used instead.
+    expect(r.governance).toBeTruthy();
+    expect(r.governance.source).toMatch(/governorUuid/);
+    expect(r.governance.totalUngoverned).toBeGreaterThan(300);   // 463
+    expect(r.governance.factions).toBeGreaterThan(50);           // 85
+    // The log must independently corroborate, or the save reading is being trusted on
+    // faith. Over factions with a usable log reading the two agree within 2 for ~95%.
+    expect(r.governance.logFactionsChecked).toBeGreaterThan(40);
+    expect(r.governance.logAgreementWithin2).toBeGreaterThan(0.8);
+    // Recovering seleucid is the point of the change: the log-based version hid it
+    // entirely because its reading was unstable.
+    const sel = r.governance.rows.find((x) => x.faction === "seleucid");
+    expect(sel, "seleucid should appear — the log-based version excluded it").toBeTruthy();
+    expect(sel.ungoverned).toBeGreaterThan(30);
+    expect(sel.owned).toBeGreaterThan(90);
+    // Shares must be real fractions, never a share above 1 from a bad denominator.
+    for (const row of r.governance.rows) {
+      expect(row.ungoverned).toBeLessThanOrEqual(row.owned);
+      expect(row.share).toBeGreaterThan(0);
+      expect(row.share).toBeLessThanOrEqual(1);
+    }
+
     // ── LEAD ORDER, and the provenance check that must stay SILENT here ──
     // v0.9.1447/1448 put two provenance caveats above these leads, on the strength of
     // a 51-turn gap and a "different campaigns" verdict. BOTH WERE WRONG, from one bad
