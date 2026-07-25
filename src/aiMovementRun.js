@@ -107,7 +107,14 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
       // qualifies all of it. On the reference data the log covers turns 1-51 and the
       // save is turn 102 — the world had as long again to change as the log observed.
       try {
-        const { logStartsAtCampaignStart, logSaveAlignment, provenanceLeads } = require("./aiProvenance.js");
+        const { logStartsAtCampaignStart, logSaveAlignment, sameCampaignCheck, provenanceLeads } = require("./aiProvenance.js");
+        // Settlements per faction as the SAVE has them, for the same-campaign test.
+        const saveCounts = {};
+        for (const fx of Object.values(facts.ownerByCity || {})) {
+          const k = String(fx).toLowerCase();
+          saveCounts[k] = (saveCounts[k] || 0) + 1;
+        }
+        const same = sameCampaignCheck({ factionHealth: result.factionHealth, saveCounts });
         const startsAt = logStartsAtCampaignStart({ factionHealth: result.factionHealth, startCounts });
         const alignment = logSaveAlignment({
           logTurns: result.totalTurns,
@@ -115,12 +122,12 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
           startsAtTurn1: !!(startsAt && startsAt.startsAtTurn1),
         });
         if (alignment) {
-          result.provenance = { ...alignment, opening: startsAt };
+          result.provenance = { ...alignment, opening: startsAt, sameCampaign: same };
           // Held rather than unshifted here: the expansion lead below ALSO unshifts
           // itself, so anything placed first now gets displaced. Applied after every
           // other lead source, because a caveat that appears below the finding it
           // qualifies has already failed at its job.
-          result._provenanceLeads = provenanceLeads(alignment);
+          result._provenanceLeads = provenanceLeads(alignment, same);
           _log(`[ai-movement] provenance: log turns 1-${alignment.logTurns}, save turn ${alignment.saveTurn}, ` +
             `gap ${alignment.gapTurns}, confidence ${alignment.confidence}` +
             (startsAt ? ` (opening state matched ${startsAt.matched}/${startsAt.compared} factions)` : ""));

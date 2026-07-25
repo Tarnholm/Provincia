@@ -138,18 +138,34 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
     // failed at its job if it appears below the finding built on that pairing.
     //
     // The original intent — outcome above scale — is preserved directly below.
+    // TWO provenance leads, in escalating order. The different-CAMPAIGN verdict comes
+    // first: if the files are not the same playthrough, no gap arithmetic makes them
+    // comparable, so the timing caveat is the weaker of the two statements.
     expect(r.modLeads[0].faction).toBe("all (data provenance)");
-    expect(r.modLeads[0].issue).toMatch(/DIFFERENT MOMENTS/);
+    expect(r.modLeads[0].issue).toMatch(/DIFFERENT CAMPAIGNS/);
+    expect(r.modLeads[1].issue).toMatch(/DIFFERENT MOMENTS/);
     expect(r.provenance.confidence).toBe("poor");
     expect(r.provenance.gapTurns).toBe(51);
+
+    // The rebel faction is the contradiction: the log leaves it at ~31 settlements
+    // after a continuous decline from a 413 peak, the save has 522. ~17x, and a
+    // faction cannot recover that from near-death — conquered settlements go to the
+    // conqueror. The factor must be computed from a ROBUST tail value: the log's very
+    // last rebel sample is a stray "1", and using it raw reported 522x.
+    const sc = r.provenance.sameCampaign;
+    expect(sc.sameCampaign).toBe(false);
+    expect(sc.contradictions[0].faction).toBe("slave");
+    expect(sc.contradictions[0].factor).toBeGreaterThan(10);
+    expect(sc.contradictions[0].factor).toBeLessThan(30);   // not 522: the stray sample
+    expect(sc.compared).toBeGreaterThan(50);
     // The log really does open at the campaign start (218 of 221 factions match
     // descr_strat), which is what makes the 51-turn gap a fact rather than a guess.
     expect(r.provenance.opening.startsAtTurn1).toBe(true);
     expect(r.provenance.opening.matchShare).toBeGreaterThan(0.9);
 
-    expect(r.modLeads[1].faction).toBe("all (campaign outcome)");
-    expect(r.modLeads[1].issue).toMatch(/CONQUEST IS NOT WORKING/);
-    expect(r.modLeads[2].faction).toBe("all (map scale)");
+    expect(r.modLeads[2].faction).toBe("all (campaign outcome)");
+    expect(r.modLeads[2].issue).toMatch(/CONQUEST IS NOT WORKING/);
+    expect(r.modLeads[3].faction).toBe("all (map scale)");
 
     // ── STRENGTH SCALE ──
     // BOTH SIDES MUST BE THE SAME UNIT. v0.9.1435/1437 compared the requirement

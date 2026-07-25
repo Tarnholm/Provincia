@@ -997,6 +997,28 @@ function createAiDecisionAnalyzer(opts = {}) {
             const keys = [...e.byTurn.keys()].sort((a, b) => a - b);
             return keys.length ? e.byTurn.get(keys[0]).of : 0;
           })(),
+          // The count as LAST seen. Pairs with firstSettlements to give the log's own
+          // trajectory, and is what a save can be checked against: a faction the log
+          // leaves nearly dead cannot hold hundreds of settlements in a save from the
+          // same campaign, however many turns later it is. That is how the reference
+          // log and save were shown to disagree beyond what elapsed time can explain.
+          //
+          // The series carries occasional stray readings — the rebel faction's very
+          // last sample on the reference log is a lone "1" against a run of ~30. Taking
+          // the raw last value let that single outlier turn a genuine 17x divergence
+          // into a reported 522x, so this is the MEDIAN OF THE LAST FIVE TURNS: still
+          // "where the log leaves this faction", but a stray sample cannot set it.
+          lastSettlements: (() => {
+            const keys = [...e.byTurn.keys()].sort((a, b) => a - b);
+            if (!keys.length) return 0;
+            const tail = keys.slice(-5).map((k) => e.byTurn.get(k).of).sort((a, b) => a - b);
+            return tail[tail.length >> 1];
+          })(),
+          maxSeenSettlements: (() => {
+            let mx = 0;
+            for (const v of e.byTurn.values()) if (v.of > mx) mx = v.of;
+            return mx;
+          })(),
           // Turns where the engine's own passes DISAGREED about the settlement count
           // (values compared, not samples counted). High means this faction's count is
           // being mutated mid-turn, so no single number describes it — the rebel

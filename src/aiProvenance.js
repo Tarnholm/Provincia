@@ -113,12 +113,85 @@ function logSaveAlignment({ logTurns = 0, saveTurn = 0, startsAtTurn1 = false } 
 }
 
 /**
+ * Are the log and the save even from the SAME campaign?
+ *
+ * logStartsAtCampaignStart only establishes that the log begins at a campaign start —
+ * which any campaign's log does. It cannot tell two playthroughs apart. This does, by
+ * looking for divergence that elapsed time cannot explain.
+ *
+ * The signal that motivated it: the reference log leaves the independent peoples at
+ * ~30 settlements after 51 turns of continuous, monotonic decline (497 → 450 → 413 →
+ * … → 31 → 30). The save, 51 turns later, shows them holding 522. A faction cannot
+ * grow 17-fold from near-death; conquered settlements pass to the conqueror, not back
+ * to the rebels. So the two describe different playthroughs, and no amount of elapsed
+ * time reconciles them.
+ *
+ * Only large, directional contradictions count. A faction that gains or loses normally
+ * over 51 turns proves nothing — the point is to catch the impossible, not the busy.
+ *
+ * @param {Object} a
+ * @param {Object<string,{lastSettlements:number, maxSeenSettlements:number}>} a.factionHealth
+ * @param {Object<string,number>} a.saveCounts  faction → settlements in the save
+ * @param {number} [a.factor]  how many times larger counts as impossible
+ * @returns {{compared:number, contradictions:Array, sameCampaign:boolean}|null}
+ */
+function sameCampaignCheck({ factionHealth = null, saveCounts = null, factor = 5 } = {}) {
+  if (!factionHealth || !saveCounts) return null;
+  let compared = 0;
+  const contradictions = [];
+  for (const [fac, e] of Object.entries(factionHealth)) {
+    const now = saveCounts[String(fac).toLowerCase()];
+    const end = e && e.lastSettlements;
+    if (!now || !end) continue;
+    compared++;
+    // Ignore tiny absolute numbers: 1 → 6 is a factor of 6 and entirely ordinary.
+    if (now < 40) continue;
+    if (now >= end * factor) {
+      contradictions.push({
+        faction: fac,
+        logEnd: end,
+        logPeak: e.maxSeenSettlements || end,
+        save: now,
+        factor: +(now / end).toFixed(1),
+      });
+    }
+  }
+  if (!compared) return null;
+  contradictions.sort((a, b) => b.factor - a.factor);
+  return { compared, contradictions, sameCampaign: contradictions.length === 0 };
+}
+
+/**
  * A lead when the pairing is weak. Deliberately severity "warn" and faction-agnostic:
  * it does not describe a mod bug, it qualifies every other finding on the screen.
  */
-function provenanceLeads(alignment) {
-  if (!alignment || alignment.confidence === "good") return [];
-  return [{
+function provenanceLeads(alignment, sameCampaign = null) {
+  const leads = [];
+
+  // A different-campaign verdict outranks a timing caveat: if the two files are not
+  // the same playthrough, no gap arithmetic makes them comparable.
+  if (sameCampaign && sameCampaign.contradictions.length) {
+    const worst = sameCampaign.contradictions.slice(0, 3)
+      .map((c) => `${c.faction}: log ends at ${c.logEnd} settlements (peak ${c.logPeak}), save has ${c.save} — ${c.factor}x`)
+      .join(" · ");
+    leads.push({
+      severity: 3,
+      faction: "all (data provenance)",
+      file: "(no file — this is about the log and save you selected)",
+      key: "log and save disagree beyond what time explains",
+      issue: `THIS LOG AND THIS SAVE LOOK LIKE DIFFERENT CAMPAIGNS. ${sameCampaign.contradictions.length} faction(s) hold ` +
+        `far more territory in the save than the log leaves them with, by a margin elapsed time cannot explain — ` +
+        `conquered settlements pass to the conqueror, not back to their former owner. Every finding that pairs the ` +
+        `two (never-arrived verdicts, unaffordable campaigns, orphaned armies) is unsafe.`,
+      suggestion: `Re-run with a save from the same playthrough as this log. Findings that rest on the log alone — ` +
+        `orders issued, strength requirements, script errors, invasion targets — are unaffected and remain valid.`,
+      evidence: `${worst}${sameCampaign.contradictions.length > 3 ? ` · +${sameCampaign.contradictions.length - 3} more` : ""} · ` +
+        `${sameCampaign.compared} factions compared`,
+    });
+  }
+
+  if (!alignment || alignment.confidence === "good") return leads;
+  return leads.concat([{
     severity: "warn",
     faction: "all (data provenance)",
     file: "(no file — this is about the log and save you selected)",
@@ -129,7 +202,7 @@ function provenanceLeads(alignment) {
       : `Confirm the log and save come from the same campaign. Log-only findings are unaffected.`,
     evidence: `log: ${alignment.logTurns} turn blocks · save: turn ${alignment.saveTurn}` +
       (alignment.gapTurns != null ? ` · gap: ${alignment.gapTurns} turns` : " · gap: not determinable"),
-  }];
+  }]);
 }
 
-module.exports = { logStartsAtCampaignStart, logSaveAlignment, provenanceLeads };
+module.exports = { logStartsAtCampaignStart, logSaveAlignment, sameCampaignCheck, provenanceLeads };

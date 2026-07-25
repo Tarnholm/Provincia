@@ -7,7 +7,7 @@
 // a world 51 turns further on. That was only noticed because two sources disagreed
 // about the rebel faction's size and both numbers survived scrutiny.
 import { describe, it, expect } from "vitest";
-import { logStartsAtCampaignStart, logSaveAlignment, provenanceLeads } from "./aiProvenance.js";
+import { logStartsAtCampaignStart, logSaveAlignment, sameCampaignCheck, provenanceLeads } from "./aiProvenance.js";
 
 // Shaped like the analyser's real factionHealth output.
 const health = (m) => Object.fromEntries(Object.entries(m).map(([f, n]) => [f, { firstSettlements: n }]));
@@ -90,5 +90,66 @@ describe("logSaveAlignment", () => {
   it("says nothing without both turn numbers", () => {
     expect(logSaveAlignment({ logTurns: 0, saveTurn: 102 })).toBeNull();
     expect(logSaveAlignment({ logTurns: 51, saveTurn: 0 })).toBeNull();
+  });
+});
+
+describe("sameCampaignCheck", () => {
+  const fh = (m) => Object.fromEntries(Object.entries(m).map(([f, [last, peak]]) =>
+    [f, { lastSettlements: last, maxSeenSettlements: peak }]));
+
+  it("catches the reference pair: a faction cannot recover 17-fold from near-death", () => {
+    // The real numbers. The log leaves the rebels at ~31 after a continuous decline
+    // from 497; the save has 522. Conquered settlements pass to the conqueror, not
+    // back to their former owner, so no elapsed time explains this.
+    const r = sameCampaignCheck({
+      factionHealth: fh({ slave: [31, 413], carthage: [43, 43], ptolemaic: [93, 97] }),
+      saveCounts: { slave: 522, carthage: 48, ptolemaic: 101 },
+    });
+    expect(r.sameCampaign).toBe(false);
+    expect(r.contradictions).toHaveLength(1);
+    expect(r.contradictions[0].faction).toBe("slave");
+    expect(r.contradictions[0].factor).toBeCloseTo(16.8, 1);
+  });
+
+  it("does not flag ordinary growth over many turns", () => {
+    // Every one of these grew, some substantially. Growth is not a contradiction —
+    // the check exists to catch the impossible, not the busy. A version that fired on
+    // normal expansion would be noise on every run.
+    const r = sameCampaignCheck({
+      factionHealth: fh({ a: [40, 40], b: [90, 95], c: [26, 26] }),
+      saveCounts: { a: 48, b: 101, c: 33 },
+    });
+    expect(r.sameCampaign).toBe(true);
+    expect(r.contradictions).toHaveLength(0);
+  });
+
+  it("ignores small absolute counts where a large ratio is unremarkable", () => {
+    // 2 -> 12 is a factor of 6 and completely ordinary for a small faction finding its
+    // feet. Only counts big enough to be meaningful are judged.
+    const r = sameCampaignCheck({
+      factionHealth: fh({ tiny: [2, 3] }),
+      saveCounts: { tiny: 12 },
+    });
+    expect(r.sameCampaign).toBe(true);
+  });
+
+  it("gives no verdict without both sides", () => {
+    expect(sameCampaignCheck({ factionHealth: fh({ a: [1, 1] }) })).toBeNull();
+    expect(sameCampaignCheck({ saveCounts: { a: 1 } })).toBeNull();
+    expect(sameCampaignCheck({ factionHealth: fh({ a: [1, 1] }), saveCounts: { zzz: 99 } })).toBeNull();
+  });
+
+  it("outranks the timing caveat in the lead order", () => {
+    // If the two files are not the same playthrough, gap arithmetic cannot rescue
+    // them — so the different-campaign lead must come first.
+    const alignment = logSaveAlignment({ logTurns: 51, saveTurn: 102, startsAtTurn1: true });
+    const same = sameCampaignCheck({
+      factionHealth: fh({ slave: [31, 413] }),
+      saveCounts: { slave: 522 },
+    });
+    const leads = provenanceLeads(alignment, same);
+    expect(leads).toHaveLength(2);
+    expect(leads[0].issue).toMatch(/DIFFERENT CAMPAIGNS/);
+    expect(leads[1].issue).toMatch(/DIFFERENT MOMENTS/);
   });
 });
