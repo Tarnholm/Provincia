@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1424",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**Two new AI problems detected, plus an espionage health check.** GARRISON STRIPPED: towns whose defenders the AI keeps pulling out — 727 cases on the reference log, worst being Mediolanum with its garrison split apart in 29 separate turns and 206 units removed in total, which is how AI factions lose their own cities. WAR SPAM: factions authorising attacks against far more enemies than they can fight — 80 of them, with Seleucid authorising against 17 different factions while its own campaigns sat stalled. The Lab also now reports espionage usage, and on this campaign 69% of faction-turns assigned no agents at all." },
+    ],
+  },
+  {
     version: "0.9.1423",
     date: "2026-07-25",
     items: [

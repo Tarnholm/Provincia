@@ -246,3 +246,59 @@ describe("worker-safety of the analysis pipeline", () => {
     expect(r.error).toMatch(/no log path/);
   });
 });
+
+describe("garrison-stripping, war-spam and espionage detectors (real line shapes)", () => {
+  it("flags a town whose garrison is repeatedly split apart", async () => {
+    const { createAiDecisionAnalyzer } = await import("./aiMovementAnalyzer.js");
+    const an = createAiDecisionAnalyzer({ MIN_STRIP_TURNS: 3 });
+    for (let t = 1; t <= 4; t++) {
+      an.feedLine(`AI: \t\t\t\tstart 'insubres' for year -${280 - t}, season summer`);
+      an.feedLine("AI: campaign: garrison of settlement 'Mediolanum' told to split, 9 units leaving, priority 650.");
+    }
+    const r = an.finish();
+    const f = r.findings.find((x) => x.kind === "garrison_stripped");
+    expect(f).toBeTruthy();
+    expect(f.name).toBe("Mediolanum");
+    expect(f.faction).toBe("insubres");
+    expect(f.turns).toBe(4);
+    expect(f.detail).toMatch(/36 units pulled out/);      // 4 × 9
+    expect(f.detail).toMatch(/worst single order: 9/);
+  });
+
+  it("flags a faction authorising attacks on many factions at once", async () => {
+    const { createAiDecisionAnalyzer } = await import("./aiMovementAnalyzer.js");
+    const an = createAiDecisionAnalyzer({ MIN_WAR_TARGETS: 3 });
+    an.feedLine("AI: \t\t\t\tstart 'seleucid' for year -270, season summer");
+    for (const t of ["bithynia", "cius", "parni", "byzantium"]) {
+      an.feedLine(`AI: mildir: invade_<other> attack authorised against '${t}'.`);
+    }
+    const r = an.finish();
+    const f = r.findings.find((x) => x.kind === "war_spam");
+    expect(f).toBeTruthy();
+    expect(f.faction).toBe("seleucid");
+    expect(f.turns).toBe(4);                               // 4 distinct targets
+    expect(f.detail).toMatch(/4 different factions/);
+    expect(f.detail).toMatch(/bithynia/);
+  });
+
+  it("does not flag a faction with only a couple of war targets", async () => {
+    const { createAiDecisionAnalyzer } = await import("./aiMovementAnalyzer.js");
+    const an = createAiDecisionAnalyzer({ MIN_WAR_TARGETS: 6 });
+    an.feedLine("AI: \t\t\t\tstart 'rome' for year -270, season summer");
+    an.feedLine("AI: mildir: invade_<other> attack authorised against 'samnites'.");
+    an.feedLine("AI: mildir: invade_<other> attack authorised against 'taras'.");
+    expect(an.finish().findings.some((x) => x.kind === "war_spam")).toBe(false);
+  });
+
+  it("reports espionage usage, including turns where no agents were assigned", async () => {
+    const { createAiDecisionAnalyzer } = await import("./aiMovementAnalyzer.js");
+    const an = createAiDecisionAnalyzer();
+    an.feedLine("AI: \t\t\t\tstart 'rome' for year -270, season summer");
+    an.feedLine("AI: 3 spies assigned this turn");
+    an.feedLine("AI: 0 assassins assigned this turn");
+    an.feedLine("AI: 0 spies assigned this turn");
+    const r = an.finish();
+    expect(r.agents).toMatchObject({ reports: 3, spies: 3, assassins: 0 });
+    expect(r.agents.zeroTurnPct).toBeCloseTo(2 / 3, 2);
+  });
+});

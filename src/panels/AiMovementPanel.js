@@ -21,6 +21,8 @@ const KIND_META = {
   assign_churn: { color: "#e8c873", label: "Thrashed army", desc: "controller assigns/releases this army over and over" },
   campaign_stall: { color: "#cf8f6a", label: "Stalled campaign", desc: "gathering for a target but never reaches required strength" },
   aborted_hotspot: { color: "#c9a0dc", label: "Abort hotspot", desc: "campaign for this region aborted many turns for insufficient strength" },
+  garrison_stripped: { color: "#c9924a", label: "Garrison stripped", desc: "the AI keeps pulling defenders out of this town — how AI factions lose their own cities" },
+  war_spam: { color: "#d05858", label: "War spam", desc: "authorised attacks against many factions at once — aggression far beyond what it can execute" },
   rich_but_stalled: { color: "#8fd18f", label: "Rich but stalled", desc: "the engine's own finance report says it had money — income is NOT this faction's problem" },
   abandoned: { color: "#d88fb0", label: "Abandoned army", desc: "the AI commanded it, then went silent — attach a save to tell an ORPHANED live army from a character who simply died" },
 };
@@ -275,6 +277,12 @@ export default function AiMovementPanel({
                 <div style={{ color: "#9a8f7a", fontSize: "0.7rem" }}>
                   World at that turn: {result.save.navalWorld} ships total · {result.save.sieges} active sieges · {result.save.factionsWithUnits} factions still fielding troops.
                 </div>
+              </div>
+            )}
+            {result.agents && (
+              <div style={{ marginBottom: 6, fontSize: "0.72rem", color: result.agents.zeroTurnPct > 0.5 ? "#e8c873" : "#9a8f7a" }}>
+                Espionage: {result.agents.spies.toLocaleString()} spy and {result.agents.assassins.toLocaleString()} assassin assignments across {result.agents.reports.toLocaleString()} faction-turns
+                {result.agents.zeroTurnPct > 0.5 ? ` — but ${Math.round(result.agents.zeroTurnPct * 100)}% of those turns assigned none at all` : ""}.
               </div>
             )}
             {result.modLeads && result.modLeads.length > 0 && (

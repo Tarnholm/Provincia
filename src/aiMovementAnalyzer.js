@@ -269,6 +269,8 @@ function analyzeMovementLog(text, opts = {}) {
 //                     in ≥ MIN_ABORT_TURNS distinct turns.
 
 const AI_DEFAULTS = {
+  MIN_STRIP_TURNS: 4,    // same town's garrison split apart in this many turns
+  MIN_WAR_TARGETS: 6,    // attack authorisations against this many factions
   ABANDON_GAP: 6,        // silent for this many turns before the log ends…
   ABANDON_MIN_HITS: 5,   // …after having been actively commanded this much
   MIN_MISSION_TURNS: 4,
@@ -289,6 +291,12 @@ const AI_RX = {
   finance: /^AI: finance: est income (-?\d+), est maintenance (-?\d+), est outgoings (-?\d+) -- spending max (-?\d+), spending norm (-?\d+); balance (\w+), state (AFS_\w+)/,
   // AI: -- building 'Training Grounds' at priority 3674.
   buildWant: /^AI: -- building '([^']+)' at priority (\d+)/,
+  // AI: campaign: garrison of settlement 'Carthage' told to split, 10 units leaving, priority 650.
+  garrisonSplit: /^AI: campaign: garrison of settlement '([^']+)' told to split, (\d+) units leaving, priority (\d+)/,
+  // AI: mildir: invade_<other> attack authorised against 'epirus'.
+  warAuth: /^AI: mildir: \S+ attack authorised against '([^']+)'/,
+  // AI: 0 spies assigned this turn  |  AI: 0 assassins assigned this turn
+  agents: /^AI: (\d+) (spies|assassins) assigned this turn/,
 };
 
 // Economic states the engine reports, poorest → richest. "Rich but stalled" is
@@ -313,6 +321,9 @@ function createAiDecisionAnalyzer(opts = {}) {
   const charSeen = new Map();      // char → { first, last, hits, faction } (abandonment)
   const finance = new Map();       // faction → economy profile over the log
   const buildWant = new Map();     // faction → buildings EVALUATED (candidates, not decisions) + top military priority
+  const garrisonSplits = new Map(); // settlement → { faction, turns:Set, unitsTotal, maxUnits }
+  const warAuths = new Map();       // faction → { targets:Set, count }
+  const agentUse = { spies: 0, assassins: 0, reports: 0, zeroReports: 0 };
   let lines = 0, matched = 0;
 
   // Any line naming a character counts as "the AI is still managing them".
@@ -370,6 +381,27 @@ function createAiDecisionAnalyzer(opts = {}) {
       e.states[m[7]] = (e.states[m[7]] || 0) + 1;
       if (AFS_RICH.has(m[7])) e.rich++; else if (AFS_POOR.has(m[7])) e.poor++;
       finance.set(f, e);
+      matched++; return;
+    }
+    if ((m = AI_RX.garrisonSplit.exec(l))) {
+      const e = garrisonSplits.get(m[1]) || { faction: curFaction, turns: new Set(), unitsTotal: 0, maxUnits: 0 };
+      e.turns.add(turnIdx); e.unitsTotal += +m[2];
+      if (+m[2] > e.maxUnits) e.maxUnits = +m[2];
+      e.faction = e.faction || curFaction;
+      garrisonSplits.set(m[1], e);
+      matched++; return;
+    }
+    if ((m = AI_RX.warAuth.exec(l))) {
+      const f = curFaction || "?";
+      const e = warAuths.get(f) || { targets: new Set(), count: 0 };
+      e.targets.add(m[1]); e.count++;
+      warAuths.set(f, e);
+      matched++; return;
+    }
+    if ((m = AI_RX.agents.exec(l))) {
+      const n = +m[1];
+      agentUse[m[2]] += n; agentUse.reports++;
+      if (n === 0) agentUse.zeroReports++;
       matched++; return;
     }
     if ((m = AI_RX.buildWant.exec(l))) {
@@ -487,6 +519,35 @@ function createAiDecisionAnalyzer(opts = {}) {
         });
       }
     }
+    // garrison_stripped: the AI keeps pulling defenders out of the same town.
+    // Occasionally that's a legitimate offensive; over many turns it's a town
+    // being cannibalised, which is how AI factions lose their own cities.
+    for (const [sett, e] of garrisonSplits) {
+      if (e.turns.size >= cfg.MIN_STRIP_TURNS) {
+        const ts = [...e.turns].sort((a, b) => a - b);
+        findings.push({
+          kind: "garrison_stripped", name: sett, faction: e.faction || "?",
+          fromTurn: ts[0], toTurn: ts[ts.length - 1], turns: e.turns.size,
+          region: sett, x: null, y: null,
+          detail: `garrison split apart in ${e.turns.size} separate turns — ${e.unitsTotal} units pulled out in total (worst single order: ${e.maxUnits})`,
+          severity: Math.min(3, Math.floor(e.turns.size / cfg.MIN_STRIP_TURNS)),
+        });
+      }
+    }
+    // war_spam: authorising attacks on many factions at once. Paired with the
+    // stall findings this is the aggression-vs-capability mismatch measured
+    // straight from the AI's own decisions.
+    for (const [fac, e] of warAuths) {
+      if (e.targets.size >= cfg.MIN_WAR_TARGETS) {
+        findings.push({
+          kind: "war_spam", name: fac, faction: fac,
+          fromTurn: null, toTurn: null, turns: e.targets.size,
+          region: null, x: null, y: null,
+          detail: `authorised attacks against ${e.targets.size} different factions (${e.count} authorisations): ${[...e.targets].slice(0, 8).join(", ")}${e.targets.size > 8 ? "…" : ""}`,
+          severity: e.targets.size >= cfg.MIN_WAR_TARGETS * 2 ? 3 : 2,
+        });
+      }
+    }
     findings.sort((p, q) => q.severity - p.severity || q.turns - p.turns);
     const findingCounts = {};
     for (const f of findings) findingCounts[f.kind] = (findingCounts[f.kind] || 0) + 1;
@@ -499,6 +560,17 @@ function createAiDecisionAnalyzer(opts = {}) {
       parsedLines: matched, moveLines: 0, fleeLines: 0, cannotFlee: 0,
       armies: churn.size,
       findings, findingCounts, factionStats: {},
+      // Espionage health: the engine reports agents assigned each turn. If that
+      // is always zero, the AI never uses spies/assassins at all — a whole
+      // subsystem sitting idle. Reported as a global stat because the lines
+      // carry no faction attribution.
+      agents: agentUse.reports
+        ? {
+          reports: agentUse.reports,
+          spies: agentUse.spies, assassins: agentUse.assassins,
+          zeroTurnPct: +(agentUse.zeroReports / agentUse.reports).toFixed(3),
+        }
+        : null,
       // per-faction economy + build appetite, for the audit's leads
       economy: Object.fromEntries([...finance].map(([f, e]) => [f, {
         reports: e.reports, richPct: e.reports ? e.rich / e.reports : 0, poorPct: e.reports ? e.poor / e.reports : 0,
