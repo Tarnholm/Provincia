@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1427",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**The Lab now reads descr_character.txt, and it connects your own comment to the AI's worst habit.** `starting_action_points` is the global movement budget every character begins a turn with — RIS runs 128 where vanilla RTW:R ships 80. The line's own comment reads *\"99 = AI doesn't leave cities undefended, but is passive in harrassing\"*, and the reference log contains 727 settlements whose garrisons their own owner pulled out, with 4,000+ units removed. That is precisely the symptom the comment describes, so the Lab now surfaces the setting next to the measured count and quotes your note back rather than proposing a number of its own. It also flags that this is a single global value, so it moves the player too." },
+      { type: "improvement", text: "Each candidate value stays attached to the comment it came from. The file mentions both 99 and 124, but they are different claims — 124 is annotated \"HIGHLY RECOMMENDED AS PER MEDIEVAL 2 AI'S\" — so the Lab quotes the \"undefended cities\" line against 99 only, and mentions 124 separately. A summary that merged them would put words in your mouth." },
+      { type: "improvement", text: "The lead stays silent unless the symptom is actually in the log. A high setting on its own is not a finding — without garrison-stripping there is nothing to report, and saying otherwise would be theorising instead of measuring." },
+    ],
+  },
+  {
     version: "0.9.1426",
     date: "2026-07-25",
     items: [

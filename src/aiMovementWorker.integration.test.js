@@ -90,6 +90,16 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
     // leads must point at real, editable mod files
     expect([...files].some((f) => f.includes("feral_descr_ai_personality.txt"))).toBe(true);
     expect([...files].some((f) => f.includes("descr_strat.txt"))).toBe(true);
+
+    // the world-level starting_action_points lead: RIS runs 128 against vanilla's
+    // 80, and the file's own comment names 99 as the value where the AI stops
+    // leaving cities undefended — which is the symptom this log is full of.
+    const ap = r.modLeads.find((l) => l.file === "descr_character.txt");
+    expect(ap, "expected the starting_action_points lead").toBeTruthy();
+    expect(ap.key).toBe("starting_action_points 128");
+    expect(ap.evidence).toMatch(/128 vs 80 in vanilla/);
+    // the inline comment's quote must be attached to 99, never to 124
+    expect(ap.suggestion).toMatch(/says of 99:/);
     for (const l of r.modLeads) {
       expect(l.faction, "lead without a faction").toBeTruthy();
       expect(l.file, "lead without a file to edit").toBeTruthy();

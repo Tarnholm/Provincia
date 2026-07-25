@@ -88,6 +88,7 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
           smFactions: rd("descr_sm_factions.txt"),
           edu: rd("export_descr_unit.txt"),
           edb: rd("export_descr_buildings.txt"),
+          character: rd("descr_character.txt"),
         },
       });
       result.modLeads = audit.leads;

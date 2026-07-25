@@ -195,6 +195,57 @@ function factionFarmWealth({ ownerByCity = {}, regionOfSettlement = {}, farmByRe
  *   files: { aiPersonality, strat, smFactions, edu } — raw TEXT, any may be null
  * → { factions: {faction: facts}, leads: [ {severity, faction, file, key, issue, suggestion, evidence} ] }
  */
+// ── descr_character.txt ─────────────────────────────────────────────────────
+// One file-level global, declared before the first `type` block, controlling the
+// movement budget every character starts each turn with. Vanilla RTW:R ships 80.
+//
+// RIS annotates its own value, and those annotations are the best possible
+// evidence for a suggestion — better than anything we could infer:
+//   starting_action_points 128 ;99 = AI doesn't leave cities undefended, but is passive in harrassing
+//   ;124 HIGHLY RECOMMENDED VALUE AS PER MEDIEVAL 2 AI'S (ex: SKYNET) ; x2 due to new map size so 128
+// So we capture the value, its trailing comment, and any numbers the surrounding
+// comments name as alternatives, and quote them back rather than inventing a
+// target of our own.
+const VANILLA_ACTION_POINTS = 80; // Contents/Resources/Data/data/descr_character.txt:44
+
+function parseActionPoints(text) {
+  if (!text) return null;
+  const lines = String(text).split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const m = /^\s*starting_action_points\s+(\d+)\s*(?:;(.*))?$/.exec(lines[i]);
+    if (!m) continue;
+    const value = +m[1];
+    const comment = (m[2] || "").trim();
+    // Numbers the modder names as alternatives, kept SEPARATE by which comment
+    // they came from. The inline comment and the following comment lines say
+    // different things (";99 = AI doesn't leave cities undefended" vs ";124
+    // HIGHLY RECOMMENDED …"), so merging them would attach one comment's
+    // reasoning to the other's number — a misquote, not a summary.
+    const nums = (s) => [...String(s).matchAll(/\b(\d{2,3})\b/g)]
+      .map((m) => +m[1])
+      .filter((n) => n !== value && n >= 20 && n <= 500);
+    const inlineThresholds = [...new Set(nums(comment))].sort((a, b) => a - b);
+    const nearbyComments = [];
+    for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+      const t = lines[j].trim();
+      if (!t.startsWith(";")) break;
+      const c = t.replace(/^;+/, "").trim();
+      if (c) nearbyComments.push(c);
+    }
+    const otherThresholds = [...new Set(nearbyComments.flatMap(nums))]
+      .filter((n) => !inlineThresholds.includes(n))
+      .sort((a, b) => a - b);
+    return {
+      value, line: i + 1, comment,
+      inlineThresholds,     // numbers the INLINE comment's text is about
+      otherThresholds,      // numbers mentioned in adjacent comments
+      nearbyComments,
+      vanilla: VANILLA_ACTION_POINTS,
+    };
+  }
+  return null;
+}
+
 function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = {}, buildAppetite = {}, resourceWealth = {}, farmWealth = {} } = {}) {
   const { personalities, diplomatic } = parseAiPersonality(files.aiPersonality);
   const strat = parseStratFactions(files.strat);
@@ -414,8 +465,53 @@ function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = 
       });
     }
   }
+
+  // ── WORLD-LEVEL lead: descr_character.txt starting_action_points ───────────
+  // Not per-faction — one global value that governs how far every character can
+  // move in a turn, and therefore how far the AI will wander from its cities.
+  //
+  // This lead exists because the RIS file documents its own tradeoff in a
+  // comment, and the log measures the exact symptom that comment describes.
+  // We are not theorising: we quote the modder's note back to them next to the
+  // count, and let them decide. Nothing here asserts causation.
+  const ap = parseActionPoints(files.character);
+  if (ap && ap.value != null) {
+    const stripFindings = findings.filter((f) => f.kind === "garrison_stripped");
+    const unitsPulled = stripFindings.reduce((n, f) => n + (f.unitsLeaving || 0), 0);
+    // Only worth raising when the symptom is actually present in the log.
+    if (stripFindings.length >= 25) {
+      // A threshold the FILE names (e.g. ";99 = AI doesn't leave cities
+      // undefended") is far better evidence than any number we could pick — but
+      // only the inline comment's own numbers may be quoted alongside its text.
+      const noted = (ap.inlineThresholds || []).filter((t) => t < ap.value);
+      const others = (ap.otherThresholds || []).filter((t) => t < ap.value);
+      leads.push({
+        severity: 3,
+        faction: "all (world setting)",
+        file: "descr_character.txt",
+        key: `starting_action_points ${ap.value}`,
+        issue:
+          `${stripFindings.length} settlement(s) had their garrison pulled out by their own owner` +
+          (unitsPulled ? ` (${unitsPulled.toLocaleString()} units removed in total)` : "") +
+          ` — the movement budget every character starts with is the setting that governs how far the AI ranges from its cities`,
+        suggestion:
+          (noted.length
+            // quote the inline comment verbatim next to ITS number — no paraphrase
+            ? `the value is ${ap.value}; this line's own comment says of ${noted.join("/")}: "${ap.comment}". That comment is better authority on what to try than anything measured here.`
+            : `try lowering starting_action_points below ${ap.value} and re-measuring`) +
+          (others.length ? ` The file also mentions ${others.join(" and ")} nearby.` : "") +
+          ` The Lab's before/after tab compares two runs per-turn, so the change is directly testable.`,
+        evidence:
+          `descr_character.txt:${ap.line} — ${ap.value}` +
+          (ap.vanilla != null ? ` vs ${ap.vanilla} in vanilla RTW:R` : "") +
+          (ap.nearbyComments && ap.nearbyComments.length ? ` · adjacent note: "${ap.nearbyComments[0]}"` : "") +
+          ` · this is a single global value, so changing it affects every faction including the player`,
+      });
+    }
+  }
+
   leads.sort((a, b) => b.severity - a.severity || (b.evidence || "").length - (a.evidence || "").length);
   return { factions, leads };
 }
 
-module.exports = { auditModFiles, parseAiPersonality, parseStratFactions, parseNavalOwners, parseSmFactions, parseMicLadder, factionResourceWealth, factionFarmWealth, SETTLEMENT_TIERS };
+module.exports = { auditModFiles, parseAiPersonality, parseStratFactions, parseNavalOwners, parseSmFactions, parseMicLadder, factionResourceWealth, factionFarmWealth, parseActionPoints, SETTLEMENT_TIERS };

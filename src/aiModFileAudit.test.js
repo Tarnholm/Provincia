@@ -1,7 +1,7 @@
 // AI ↔ mod-file audit — parsers checked against REAL RIS file syntax, and the
 // lead rules checked end-to-end on a small hand-built world.
 import { describe, it, expect } from "vitest";
-import { auditModFiles, parseAiPersonality, parseStratFactions, parseNavalOwners, parseSmFactions } from "./aiModFileAudit.js";
+import { auditModFiles, parseAiPersonality, parseStratFactions, parseNavalOwners, parseSmFactions , parseActionPoints } from "./aiModFileAudit.js";
 
 // verbatim-shaped excerpts from RIS data files
 const AI_PERS = `
@@ -409,5 +409,98 @@ building market
     const tl = leads.find((l) => /SETTLEMENT-TIER LOCKED/.test(l.issue));
     expect(tl.suggestion).toMatch(/farm land is ordinary, so growth is not the blocker/);
     expect(tl.suggestion).not.toMatch(/descr_regions/);
+  });
+});
+
+// ── descr_character.txt: starting_action_points ──────────────────────────────
+// The one world-level lead. It exists because the RIS file DOCUMENTS its own
+// tradeoff in a comment and the log measures the exact symptom that comment
+// describes — so the test's real job is to prove we quote the modder accurately
+// rather than paraphrasing two different comments into one claim.
+describe("parseActionPoints", () => {
+  const REAL = [
+    ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;",
+    "starting_action_points\t128 ;99 = AI doesn't leave cities undefended, but is passive in harrassing",
+    ";124 HIGHLY RECOMMENDED VALUE AS PER MEDIEVAL 2 AI'S (ex: SKYNET) ; x2 due to new map size so 128",
+    "",
+    "type\t\t\tnamed character",
+  ].join("\n");
+
+  it("reads the value, its line and the inline comment verbatim", () => {
+    const ap = parseActionPoints(REAL);
+    expect(ap.value).toBe(128);
+    expect(ap.line).toBe(2);
+    expect(ap.comment).toBe("99 = AI doesn't leave cities undefended, but is passive in harrassing");
+    expect(ap.vanilla).toBe(80); // vanilla RTW:R descr_character.txt:44
+  });
+
+  it("keeps each candidate number with the comment it came from", () => {
+    const ap = parseActionPoints(REAL);
+    // "99" is what the inline comment is ABOUT; "124" comes from a different
+    // comment making a different claim. Merging them would misquote the modder.
+    expect(ap.inlineThresholds).toEqual([99]);
+    expect(ap.otherThresholds).toEqual([124]);
+    expect(ap.nearbyComments[0]).toMatch(/HIGHLY RECOMMENDED/);
+  });
+
+  it("does not mistake the value itself, or stray big numbers, for alternatives", () => {
+    const ap = parseActionPoints("starting_action_points\t128 ;128 is current, 99 is calmer, 100000 is nonsense");
+    expect(ap.inlineThresholds).toEqual([99]);
+  });
+
+  it("returns null when the file is absent or has no such setting", () => {
+    expect(parseActionPoints(null)).toBeNull();
+    expect(parseActionPoints("type general\nwage_base 0")).toBeNull();
+  });
+
+  it("handles the setting with no comment at all", () => {
+    const ap = parseActionPoints("starting_action_points 80");
+    expect(ap).toMatchObject({ value: 80, comment: "", inlineThresholds: [], otherThresholds: [] });
+  });
+});
+
+describe("auditModFiles — starting_action_points lead", () => {
+  const character = "starting_action_points\t128 ;99 = AI doesn't leave cities undefended, but is passive in harrassing\n;124 HIGHLY RECOMMENDED VALUE\n";
+  const strips = (n) => Array.from({ length: n }, (_, i) => ({
+    kind: "garrison_stripped", name: "Town" + i, faction: "f" + i, turns: 3, unitsLeaving: 4, severity: 2,
+  }));
+
+  it("quotes the inline comment against ITS number, and lists the other separately", () => {
+    const { leads } = auditModFiles({ findings: strips(30), files: { character } });
+    const l = leads.find((x) => x.file === "descr_character.txt");
+    expect(l).toBeTruthy();
+    expect(l.severity).toBe(3);
+    expect(l.key).toBe("starting_action_points 128");
+    // the quote must sit next to 99 only
+    expect(l.suggestion).toMatch(/says of 99: "99 = AI doesn't leave cities undefended/);
+    expect(l.suggestion).toMatch(/also mentions 124 nearby/);
+    // and must NOT attribute the quote to 124
+    expect(l.suggestion).not.toMatch(/99\/124|99 and 124.*undefended/);
+  });
+
+  it("counts the symptom it is reporting, and cites the vanilla baseline", () => {
+    const { leads } = auditModFiles({ findings: strips(30), files: { character } });
+    const l = leads.find((x) => x.file === "descr_character.txt");
+    expect(l.issue).toMatch(/^30 settlement\(s\) had their garrison pulled out/);
+    expect(l.issue).toMatch(/120 units removed in total/); // 30 × 4
+    expect(l.evidence).toMatch(/128 vs 80 in vanilla RTW:R/);
+    // it must warn that this is global, not per-faction
+    expect(l.evidence).toMatch(/affects every faction including the player/);
+    expect(l.faction).toBe("all (world setting)");
+  });
+
+  it("stays quiet when the symptom is not actually in the log", () => {
+    // the setting being high is not by itself a finding — without garrison
+    // stripping there is nothing to report, and saying otherwise would be
+    // theorising rather than measuring
+    expect(auditModFiles({ findings: strips(5), files: { character } }).leads
+      .some((l) => l.file === "descr_character.txt")).toBe(false);
+    expect(auditModFiles({ findings: [], files: { character } }).leads
+      .some((l) => l.file === "descr_character.txt")).toBe(false);
+  });
+
+  it("stays quiet when descr_character.txt was not readable", () => {
+    expect(auditModFiles({ findings: strips(60), files: {} }).leads
+      .some((l) => l.file === "descr_character.txt")).toBe(false);
   });
 });
