@@ -26,13 +26,12 @@ function analyse(text) {
 describe("keepLine follows the analyser's own patterns", () => {
   it("keeps one example of every shape the analyser reads", () => {
     // ── HARVESTED, NOT HAND-WRITTEN ──
-    // One verbatim line per pattern, lifted from the 4.4M-line reference log by
-    // scripts/harvest-ailog-samples.js. Hand-typed fixtures encode what I imagine
-    // the engine emits, and this project has already been bitten by exactly that
-    // (a falsifier that examined a shape the producer never emits, so it passed
-    // while testing nothing). Every pattern below is therefore proven to have a
-    // real example — a pattern with no match in the log is a speculative pattern
-    // and the harvester reports it rather than letting it sit here unexercised.
+    // One verbatim line per pattern, lifted from the reference campaign_ai_log by
+    // scripts/harvest-ailog-samples.js --write. Do not edit by hand: a typed sample
+    // encodes what the engine is IMAGINED to emit, and this project has already been
+    // bitten by exactly that (a falsifier that passed while testing nothing). Every
+    // pattern below is proven to have a real example; the harvester refuses to write
+    // this block if any pattern has none, because that pattern is speculative.
     //
     // Note the faction header's TABS after "AI:" and absence of "+": a retyped
     // version of that pattern got both wrong.
@@ -66,6 +65,7 @@ describe("keepLine follows the analyser's own patterns", () => {
       "AI: Diplomat CC: Character \"Cassivellaunus\" told to move to settlement \"Vesontio\". Task: DIPLOMACY. Initiate: Yes. Priority 1000",
       "AI: production: sufficient numbers of troops but enough cash for more, so continuing to recruit.",
       "err: no building of this type in settlement",
+      "AI: campaign: campaign for 'Armenian Rebels Settlement' (reg 1306, des 129) using strategy ACS_DEFEND_BORDER. required str 0 (ACZ_STAY_AT_HOME), allocated str 0; num res 0.sudo set_building_health local hinterland_region",
       "AI: naval controller: ARMY resource for char 'Admiral Yahua' assigned for reg 0.",
     ];
     expect(samples).toHaveLength(AI_LOG_LINE_PATTERNS.length);

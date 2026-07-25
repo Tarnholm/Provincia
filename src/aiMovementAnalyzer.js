@@ -347,6 +347,10 @@ const AI_RX = {
   // and it names a real mod-script bug: the commonest is a set_building_health
   // aimed at a building the settlement does not have (555x on the reference log).
   scriptErr: /^\s*err: (.+?)\s*$/,
+  // A console command echoed because it failed. Deliberately UNANCHORED: the engine
+  // appends console output to the end of an AI line without a newline, and 111 of
+  // the 555 failing commands on the reference log are hidden that way.
+  consoleCmd: /sudo ([a-z_]+)((?: [^\s]+)*)\s*$/,
 };
 
 // Economic states the engine reports, poorest → richest. "Rich but stalled" is
@@ -385,6 +389,11 @@ function createAiDecisionAnalyzer(opts = {}) {
   const worldwide = new Map();    // faction -> { assigned, released }
   const diplomats = new Map();    // faction -> { orders, byTask:{} }
   const scriptErrs = new Map();   // message -> count
+  // The command most recently echoed as failing, so the err: that follows can be
+  // attributed to it. Cleared once consumed: two errors in a row must not both be
+  // blamed on one command (that is how a 111 became a 221 on the first attempt).
+  let lastConsoleCmd = null;
+  const cmdFailures = new Map();  // "cmd args" -> { cmd, args, count, messages:Map }
   const missions = new Map();      // char|sett → { char, sett, faction, turns:Set }
   const churn = new Map();         // char → { assigns, releases, faction, regs:Set }
   const stalls = new Map();        // faction|regId → { faction, regId, gatherTurns:Set, lastReq, lastAlloc }
@@ -414,9 +423,16 @@ function createAiDecisionAnalyzer(opts = {}) {
   // recognised non-AI signal. Testing the patterns alone reported `err:` lines as
   // parsed while the handler never ran — an optimistic coverage number, which is
   // the one kind of coverage number that is worse than none.
+  // This predicate must mirror what feedLine can actually REACH, not re-state the
+  // rules independently — the two drifting apart is how the err:-handler bug hid
+  // (see aiLogCoverage.test.js). Every early return in feedLine needs a twin here.
   const coverage = createCoverageTracker((line) => {
     const c = line.charCodeAt(0);
     if (c === 101 /* 'e' */ && AI_RX.scriptErr.test(line)) return true;
+    // A bare console echo — a line that is nothing but "sudo <cmd>". The mid-line
+    // concatenated form is NOT claimed by feedLine (the AI line it is glued to gets
+    // its own chance at the handlers below), so it must not be claimed here either.
+    if (c === 115 /* 's' */ && AI_RX.consoleCmd.test(line)) return true;
     if (c !== 65 /* 'A' */) return false;
     return AI_RX_LIST.some((rx) => rx.test(line));
   });
@@ -453,7 +469,26 @@ function createAiDecisionAnalyzer(opts = {}) {
     if (l.charCodeAt(0) === 101 /* 'e' */ && (m = AI_RX.scriptErr.exec(l))) {
       const msg = m[1].slice(0, 120);
       scriptErrs.set(msg, (scriptErrs.get(msg) || 0) + 1);
+      // Attribute it to the command echoed just before, if there was one.
+      if (lastConsoleCmd) {
+        const key = lastConsoleCmd;
+        const e = cmdFailures.get(key) || { command: key, count: 0, messages: new Map() };
+        e.count++;
+        e.messages.set(msg, (e.messages.get(msg) || 0) + 1);
+        cmdFailures.set(key, e);
+        lastConsoleCmd = null;
+      }
       matched++; return;
+    }
+    // Console-command echo. Checked before the AI: fast path because these lines do
+    // not start with "AI:" — and scanned unanchored because the engine concatenates
+    // them onto the tail of an AI line without a newline.
+    if (l.indexOf("sudo ") >= 0 && (m = AI_RX.consoleCmd.exec(l))) {
+      lastConsoleCmd = (m[1] + (m[2] || "")).trim().slice(0, 160);
+      // NOT counted as parsed here: an AI line carrying a trailing console command
+      // is still an AI line, and the handlers below must get their chance at it.
+      // Only a line that is nothing BUT the echo is claimed.
+      if (l.charCodeAt(0) === 115 /* 's' */) { matched++; return; }
     }
     // Fast path: everything else worth reading is AI-prefixed. Worth ~4M charCode
     // checks instead of ~4M regex attempts, so it stays — but any new non-AI
@@ -862,6 +897,18 @@ function createAiDecisionAnalyzer(opts = {}) {
         total: e.total, byLevel: e.byLevel,
         topReason: Object.entries(e.byReason).sort((a, b) => b[1] - a[1])[0] || null,
       }])),
+      // Failed console commands WITH the command that failed — the actionable form.
+      // `count` is a failure count, NOT a rate: the console echoes only failures, so
+      // this file contains no denominator. Callers must not present it as a ratio.
+      failedConsoleCommands: [...cmdFailures.values()]
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 30)
+        .map((e) => ({
+          command: e.command,
+          count: e.count,
+          note: "failures only; the console does not echo successful commands",
+          messages: [...e.messages.entries()].sort((a, b) => b[1] - a[1]).map(([message, n]) => ({ message, n })),
+        })),
       // Console/script commands that failed. Shares this log with the AI output
       // but is a genuine mod-script defect: a command aimed at something absent.
       scriptCommandErrors: [...scriptErrs.entries()].sort((x, y) => y[1] - x[1]).slice(0, 20).map(([message, count]) => ({ message, count })),

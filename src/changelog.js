@@ -13,6 +13,18 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1445",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**A failed script command now names the command, the file and the line.** Last release recovered 555 `err: no building of this type in settlement` lines, but that text names nothing you can act on. Each error is now paired with the command that caused it, and cross-referenced against the campaign script — producing one lead: **five `set_building_health` calls at RIS_Campaign_Script.txt lines 4623-4627, each failing exactly 111 times, 555 total.** The suggested fix is the `if SettlementBuildingExists = ...` guard the same script already uses four lines later." },
+      { type: "fix", text: "**A parser blind spot found while doing it: the engine sometimes writes console output with NO newline, gluing it onto the end of an AI line.** 111 of the 555 failing commands are hidden that way — the line ends `...num res 0.sudo set_building_health local hinterland_region 100`. Anchoring on `^sudo` missed every one, and worse, it mis-attributed their errors to whichever command came before, inflating one count from 111 to 221. The scan is now unanchored and each error is charged to exactly one command." },
+      { type: "improvement", text: "**Three tempting explanations were checked and rejected before this lead was written.** That the building chains don't exist — all four `governmentA`–`D` **are** declared in EDB. That `local` is an unexpanded variable — `local` is correct scope syntax, used properly by the same script seventeen lines earlier. That it's a deliberate try-all-four where three must fail — then one would *succeed*, and all five counts are identical, including a chain that isn't part of any mutually-exclusive set. So the lead reports what is measured (every call fails, always) and does not assert a cause. It also states plainly that these are failure **counts, not rates**: the console echoes only failures, so this log has no denominator." },
+      { type: "improvement", text: "**A 5,872-item finding was investigated and deliberately NOT shipped.** `is busy constructing **invalid**` looked like a major defect across 1,077 settlements. Two probes failed to distinguish it from a normal busy settlement, and the one asymmetry found ran *against* the bug reading. Unexplained is not the same as broken, so nothing was published — that would have been 5,872 false accusations. Recorded as ruled-out so it is not re-chased." },
+      { type: "improvement", text: "**Guards tightened where this round found them wanting.** The coverage invariant caught real drift (the new command handler made the two counters disagree by exactly 444) but only because I looked — its first version re-implemented the predicate inline, which is precisely the anti-pattern it exists to catch. It now reads both numbers from the same analyser run, and on the reference log they agree exactly at 2,239,227. The sample harvester is now a maintained script (`--write`) that refuses to update the fixture if any pattern lacks a real example, and the reporter's embedded copy is synced from it — 31/31, verified on the frozen build. Extract re-measured rather than estimated: **6.58 MB xz against the 7 MB attachment ceiling**, so it still fits whole, but headroom is now 6% and the next pattern should re-check it." },
+    ],
+  },
+
+  {
     version: "0.9.1444",
     date: "2026-07-25",
     items: [

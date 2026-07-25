@@ -215,6 +215,22 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
         const { regionTerrain, terrainLeads } = require("./aiTerrainAudit.js");
         const dg2 = require("./descrStratGeneral.js");
         const parsers2 = await import("./parsers.js"); // ESM
+        // FAILED CONSOLE COMMANDS — the campaign script's own commands, rejected by
+        // the engine. These arrive in the AI log because the console shares the file,
+        // and they are the only findings here that name a script LINE, so they are
+        // worth resolving even though nothing else in this path is script-related.
+        try {
+          const { auditFailedConsoleCommands } = require("./aiScriptAudit.js");
+          const scriptPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "RIS_Campaign_Script.txt");
+          let campaignScript = null;
+          try { campaignScript = fs.readFileSync(scriptPath, "latin1"); } catch { /* no script → no lead, by design */ }
+          const cl = auditFailedConsoleCommands({ failures: result.failedConsoleCommands, campaignScript });
+          if (cl.length) {
+            result.modLeads = result.modLeads.concat(cl);
+            _log(`[ai-movement] failed console commands: ${cl.length} lead(s) from ${(result.failedConsoleCommands || []).length} distinct command(s)`);
+          }
+        } catch (e) { _log(`[ai-movement] console-command audit skipped: ${e && e.message}`); }
+
         const base = path.join(modDataDir, "world", "maps", "base");
         const groundTga = dg2.tgaToRaw(fs.readFileSync(path.join(base, "map_ground_types.tga")));
         const regionTga = dg2.tgaToRaw(fs.readFileSync(path.join(base, "map_regions.tga")));

@@ -41,6 +41,7 @@ AI_LOG_LINE_PATTERNS = [
     r"""^AI: Diplomat CC: Character "([^"]+)" told to move to settlement "([^"]+)"\. Task: (\w+)\. Initiate: (\w+)\. Priority (\d+)""",
     r"""^AI: production: (sufficient numbers of troops[^.]*|not enough cash[^.]*|no more useful[^.]*)\.?$""",
     r"""^\s*err: (.+?)\s*$""",
+    r"""sudo ([a-z_]+)((?: [^\s]+)*)\s*$""",
     r"""char '([^']+)'|character '([^']+)'|army '([^']+)'""",
 ]
 

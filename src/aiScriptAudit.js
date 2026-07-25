@@ -121,6 +121,79 @@ function catchAllCoverage(text) {
  * @param {object} a.files     { senate, formationsAi } raw text (may be null)
  * @returns {{leads: Array}}
  */
+/**
+ * Locate a failing console command in the campaign script and report it with lines.
+ *
+ * `failures` is the analyser's `failedConsoleCommands`. Its counts are FAILURES, not
+ * rates — the game console echoes a command only when it fails, so this log has no
+ * denominator and nothing here may imply a percentage.
+ *
+ * Returns [] when the script text is absent: a lead that cannot name a line is not
+ * worth emitting, and guessing the location would be worse than staying quiet.
+ */
+function auditFailedConsoleCommands({ failures, campaignScript } = {}) {
+  const leads = [];
+  const list = Array.isArray(failures) ? failures : [];
+  if (!list.length || !campaignScript) return leads;
+
+  const lines = String(campaignScript).split(/\r?\n/);
+
+  // Group by command NAME: five different set_building_health calls in one block is
+  // one problem to fix, not five leads to read.
+  const byName = new Map();
+  for (const f of list) {
+    const name = String(f.command || "").split(/\s+/)[0];
+    if (!name) continue;
+    const e = byName.get(name) || { name, total: 0, calls: [], messages: new Map() };
+    e.total += f.count || 0;
+    e.calls.push(f);
+    for (const m of f.messages || []) e.messages.set(m.message, (e.messages.get(m.message) || 0) + m.n);
+    byName.set(name, e);
+  }
+
+  for (const e of [...byName.values()].sort((a, b) => b.total - a.total)) {
+    // Find where the script issues it. console_command is how a campaign script
+    // reaches the console; a bare occurrence also counts.
+    const at = [];
+    for (let i = 0; i < lines.length; i++) {
+      const raw = lines[i];
+      const t = raw.trim();
+      if (t.startsWith(";")) continue;             // commented out — not running
+      if (t.indexOf(e.name) < 0) continue;
+      if (!/^(?:console_command\s+)?/.test(t)) continue;
+      at.push(i + 1);
+    }
+    if (!at.length) continue;                       // cannot name a line → say nothing
+
+    const span = at.length > 1 ? `lines ${at[0]}-${at[at.length - 1]}` : `line ${at[0]}`;
+    const msgs = [...e.messages.entries()].sort((a, b) => b[1] - a[1]);
+    const each = e.calls
+      .slice(0, 6)
+      .map((c) => `${c.command} (${c.count}x)`)
+      .join(" · ");
+
+    // Only claim "never succeeds" when every call in the group failed the SAME number
+    // of times. Equal counts across calls that are not mutually exclusive is what
+    // rules out the "one of the set succeeds" reading; unequal counts do not, so the
+    // wording softens rather than overclaiming.
+    const counts = e.calls.map((c) => c.count);
+    const allEqual = counts.length > 1 && counts.every((c) => c === counts[0]);
+
+    leads.push({
+      severity: "warn",
+      faction: "all (campaign script)",
+      file: "RIS_Campaign_Script.txt",
+      key: e.name,
+      issue: allEqual
+        ? `EVERY ${e.name} CALL IN THIS BLOCK FAILS — ${at.length} calls at ${span}, each failing exactly ${counts[0]} times (${e.total} total). Equal counts across calls that are not mutually exclusive means none of them is succeeding, so the whole block is dead.`
+        : `${e.name} FAILS REPEATEDLY — ${e.total} failures across ${at.length} call site(s) at ${span}.`,
+      suggestion: `Guard each call with the condition this same script already uses a few lines later, e.g. "if SettlementBuildingExists = <chain>" ... "end_if". That removes the console errors; if the intent was to repair a building the settlement should have, the real question is why it does not have it.`,
+      evidence: `${each}${e.calls.length > 6 ? " · …" : ""} · engine said: ${msgs.map(([m, n]) => `"${m}" ${n}x`).join(", ")} · NOTE these are failure COUNTS, not rates: the console echoes only failures, so this log carries no denominator.`,
+    });
+  }
+  return leads;
+}
+
 function auditScriptErrors({ findings, files } = {}) {
   const leads = [];
   const list = Array.isArray(findings) ? findings : [];
@@ -279,4 +352,4 @@ function auditScriptErrors({ findings, files } = {}) {
   return { leads };
 }
 
-module.exports = { auditScriptErrors, parseSenateOffices, officeCandidates, countFormationsAfter, catchAllCoverage, parseHasOfficeRefs };
+module.exports = { auditScriptErrors, auditFailedConsoleCommands, parseSenateOffices, officeCandidates, countFormationsAfter, catchAllCoverage, parseHasOfficeRefs };

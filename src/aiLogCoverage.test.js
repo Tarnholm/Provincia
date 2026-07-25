@@ -26,31 +26,65 @@ const REAL_SIGNAL = [
   "err: no building of this type in settlement",
   "AI: ltgd: number of invasion targets: 0",
   "AI: campaign: mission attack residence: char 'Ulkos' attacking sett 'Nasium', priority 90.",
+  // A bare console echo. Starts with 's', so it is only seen because feedLine checks
+  // for it above the AI:-prefix fast path — the same trap the err: handler fell into.
+  "sudo set_building_health local governmentA 100",
+];
+
+// The concatenated form: the engine appends console output to an AI line with no
+// newline. feedLine deliberately does NOT claim these (the AI line it is glued to
+// still needs the handlers below), so the tracker must not claim them either. Listed
+// apart because the invariant for them is "both sides agree it is NOT signal here".
+const CONCATENATED = [
+  "AI: campaign: campaign for 'Armenian Rebels Settlement' (reg 1306, des 129) using strategy ACS_DEFEND_BORDER. required str 0 (ACZ_STAY_AT_HOME), allocated str 0; num res 0.sudo set_building_health local hinterland_region 100",
 ];
 
 describe("coverage tracker agrees with the analyser", () => {
   it("counts a line as signal only if the analyser actually reads it", () => {
-    for (const line of REAL_SIGNAL) {
-      // What the tracker claims.
-      const t = createCoverageTracker((l) => {
-        const c = l.charCodeAt(0);
-        if (c === 101 && AI_RX.scriptErr.test(l)) return true;
-        if (c !== 65) return false;
-        return Object.values(AI_RX).some((rx) => rx.test(l));
-      });
-      t.feedLine(line);
-      const claimedSignal = t.finish().signalLines === 1;
-
-      // What the analyser does. `parsedLines` is incremented by every handler that
-      // claims a line, so it is the honest witness of whether the line reached one.
-      // (Not `lines`, which counts everything fed in regardless of the fast path.)
+    // Deliberately uses the analyser's OWN tracker via its `vocabulary` output rather
+    // than a copy of the predicate. A first version of this test re-implemented the
+    // predicate inline — which is precisely the anti-pattern it exists to catch, and
+    // it duly failed to notice when a new handler (consoleCmd) was added. The two
+    // numbers must come from the same run to be worth comparing.
+    for (const line of [...REAL_SIGNAL, ...CONCATENATED]) {
       const a = createAiDecisionAnalyzer();
       a.feedLine(line);
-      const actuallyRead = (a.finish().parsedLines || 0) > 0;
+      const out = a.finish();
+      const claimedSignal = out.vocabulary.signalLines;   // what the tracker counted
+      const actuallyRead = out.parsedLines || 0;          // what a handler claimed
 
-      expect(actuallyRead, `tracker says signal but analyser discards it: ${line.slice(0, 70)}`)
+      expect(actuallyRead, `tracker and analyser disagree on: ${line.slice(0, 70)}`)
         .toBe(claimedSignal);
     }
+  });
+
+  it("attributes a failed command to the command, in both line forms", () => {
+    // "555x no building of this type in settlement" names neither the command nor
+    // the file and is not actionable. Paired with its command it points straight at
+    // RIS_Campaign_Script.txt:4623-4627.
+    const a = createAiDecisionAnalyzer();
+    a.feedLine(CONCATENATED[0]);
+    a.feedLine("err: no building of this type in settlement");
+    a.feedLine("sudo set_building_health local governmentA 100");
+    a.feedLine("err: no building of this type in settlement");
+    const cmds = a.finish().failedConsoleCommands;
+    expect(cmds.map((c) => c.command)).toEqual([
+      "set_building_health local hinterland_region 100",
+      "set_building_health local governmentA 100",
+    ]);
+    // Each error is blamed on exactly ONE command. Not clearing the pending command
+    // is how a count of 111 first came out as 221.
+    expect(cmds.every((c) => c.count === 1)).toBe(true);
+  });
+
+  it("does not blame a second error on an already-consumed command", () => {
+    const a = createAiDecisionAnalyzer();
+    a.feedLine("sudo set_building_health local governmentA 100");
+    a.feedLine("err: no building of this type in settlement");
+    a.feedLine("err: no building of this type in settlement");
+    const cmds = a.finish().failedConsoleCommands;
+    expect(cmds).toHaveLength(1);
+    expect(cmds[0].count).toBe(1);
   });
 
   it("reads err: lines despite the AI:-prefix fast path", () => {
