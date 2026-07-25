@@ -13,6 +13,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1449",
+    date: "2026-07-25",
+    items: [
+      { type: "fix", text: "**Retracting v0.9.1447 and 1448 in full: the \"51-turn gap\" and the \"different campaigns\" verdict were both wrong.** RIS runs **four turns per year**, twice the base game. The log's season field only ever reads *summer* or *winter* — two labels for four turns — so counting distinct (year, season) blocks gave 51 for a log that spans 26 years and about **104 turns**. The turn-102 save is therefore **inside** the log's span, not 51 turns past it. Corrected figures: gap **0.25 years**, overlaps true, confidence **good**. The caveats no longer fire and the outcome lead is back at the top where it belongs." },
+      { type: "fix", text: "**The \"different campaigns\" claim rested on a single faction — and it was the one faction already known to be special.** It fired only on the rebels: the log leaves them near 31 settlements, the save has 522. With the timescale corrected, that is two figures 17x apart *at the same moment*, which means the two sources are not measuring the same thing for that faction — not that the campaigns differ. aiExpansion.js has excluded the rebels from its arithmetic all along for exactly this reason, and this check now does too. It also requires **two or more** factions to diverge before drawing any conclusion, and reports a lone outlier as an outlier instead of a verdict." },
+      { type: "improvement", text: "**Comparison is now done in years, not turn-block counts.** Years are stated unambiguously on every faction header; turn blocks depend on how many season labels the engine happens to emit, which is the assumption that broke. The timescale is a named constant (4 for RIS) because nothing in the mod data states it — there is no `timescale` anywhere in RIS/data — so it is declared and overridable rather than silently inferred. A test pins the failure directly: the same inputs at 2 turns/year invent a 25-year gap and raise a caveat; at 4 they do not." },
+      { type: "improvement", text: "What survives from those two releases is the check itself, now correct and quiet on good data: it still verifies the log opens at the campaign start (**218 of 221 factions match descr_strat**, which is what licenses the year arithmetic) and will still speak up when a log and save genuinely do not belong together. The lesson recorded alongside it is that a caveat which fires on sound data is not caution, it is noise — and it cost two releases to learn." },
+    ],
+  },
+
+  {
     version: "0.9.1448",
     date: "2026-07-25",
     items: [

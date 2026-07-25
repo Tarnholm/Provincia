@@ -116,8 +116,12 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
         }
         const same = sameCampaignCheck({ factionHealth: result.factionHealth, saveCounts });
         const startsAt = logStartsAtCampaignStart({ factionHealth: result.factionHealth, startCounts });
+        // Years, not turn-block counts: the log's season field only reads summer/winter
+        // (two labels for RIS's four turns a year), so counting blocks undercounts
+        // turns by 2x. That undercount is what produced a phantom 51-turn gap.
         const alignment = logSaveAlignment({
-          logTurns: result.totalTurns,
+          firstYear: result.firstYear,
+          lastYear: result.lastYear,
           saveTurn: save && save.turn,
           startsAtTurn1: !!(startsAt && startsAt.startsAtTurn1),
         });
@@ -128,8 +132,8 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
           // other lead source, because a caveat that appears below the finding it
           // qualifies has already failed at its job.
           result._provenanceLeads = provenanceLeads(alignment, same);
-          _log(`[ai-movement] provenance: log turns 1-${alignment.logTurns}, save turn ${alignment.saveTurn}, ` +
-            `gap ${alignment.gapTurns}, confidence ${alignment.confidence}` +
+          _log(`[ai-movement] provenance: log spans ${alignment.logYears}y, save turn ${alignment.saveTurn} (~year ${alignment.saveYear}), ` +
+            `gap ${alignment.gapYears} year(s), confidence ${alignment.confidence}` +
             (startsAt ? ` (opening state matched ${startsAt.matched}/${startsAt.compared} factions)` : ""));
         }
       } catch (e) { _log(`[ai-movement] provenance check skipped: ${e && e.message}`); }
