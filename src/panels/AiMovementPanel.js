@@ -185,6 +185,14 @@ export default function AiMovementPanel({
   };
 
   // Who is actually in trouble — 5,592 findings collapse to a few dozen rows.
+  // Does this run have any of the activity fields to show? A scripting_log has none
+  // of them, and an empty tab is worse than no tab.
+  const hasActivity = !!(result && (
+    Object.keys(result.missionTypes || {}).length ||
+    Object.keys(result.factionHealth || {}).length ||
+    Object.keys(result.invasionTargets || {}).length ||
+    (result.failedConsoleCommands || []).length
+  ));
   const factionRows = useMemo(() => {
     if (!result) return [];
     const out = {};
@@ -422,7 +430,7 @@ export default function AiMovementPanel({
             )}
             {result.modLeads && result.modLeads.length > 0 && (
               <div style={{ display: "flex", gap: 2, marginBottom: 6, padding: 2, background: "rgba(0,0,0,0.25)", borderRadius: 5 }}>
-                {[["findings", `Findings (${result.findings.length})`], ["leads", `Mod-file leads (${result.modLeads.length})`], ["factions", `By faction (${factionRows.length})`], ...(hotspotRows.length ? [["hotspots", `Hotspots (${hotspotRows.length})`]] : []), ...(diff ? [["diff", "Before / after"]] : [])].map(([k, lab]) => (
+                {[["findings", `Findings (${result.findings.length})`], ["leads", `Mod-file leads (${result.modLeads.length})`], ["factions", `By faction (${factionRows.length})`], ...(hotspotRows.length ? [["hotspots", `Hotspots (${hotspotRows.length})`]] : []), ...(hasActivity ? [["activity", "AI activity"]] : []), ...(diff ? [["diff", "Before / after"]] : [])].map(([k, lab]) => (
                   <div key={k} onClick={() => setTab(k)}
                     style={{ flex: 1, padding: "3px 8px", fontSize: "0.74rem", textAlign: "center", cursor: "pointer", borderRadius: 4, userSelect: "none",
                       background: tab === k ? "rgba(255,255,255,0.14)" : "transparent", color: tab === k ? "#fff" : "#bbb", fontWeight: tab === k ? 600 : 400 }}>
@@ -682,6 +690,123 @@ export default function AiMovementPanel({
                         </div>
                       ))}
                     </>
+                  )}
+                </div>
+              );
+            })()}
+            {tab === "activity" && (() => {
+              // Totals across factions. Per-faction detail lives in the By-faction tab;
+              // what belongs here is the shape of what the AI did overall.
+              const missionTotals = {};
+              for (const per of Object.values(result.missionTypes || {})) {
+                for (const [k, n] of Object.entries(per)) missionTotals[k] = (missionTotals[k] || 0) + n;
+              }
+              const missions = Object.entries(missionTotals).sort((a, b) => b[1] - a[1]);
+              const missionMax = missions.length ? missions[0][1] : 0;
+
+              const health = Object.entries(result.factionHealth || {});
+              const stable = health.filter(([, e]) => e.countIsStable);
+              const unstable = health.filter(([, e]) => !e.countIsStable);
+              const ungoverned = stable
+                .filter(([, e]) => e.medianUngoverned >= 1 && e.medianSettlements > 0)
+                .map(([f, e]) => [f, e, e.medianUngoverned / e.medianSettlements])
+                .sort((a, b) => b[2] - a[2]);
+
+              const blind = Object.entries(result.invasionTargets || {})
+                .filter(([, e]) => e.samples >= 5 && e.zeroPct >= 0.95)
+                .sort((a, b) => b[1].samples - a[1].samples);
+
+              const sec = { marginBottom: 12 };
+              const h = { fontSize: "0.74rem", color: "#eee", fontWeight: 600, marginBottom: 3 };
+              const sub = { fontSize: "0.68rem", color: "#888", marginBottom: 5 };
+              const empty = { fontSize: "0.72rem", color: "#8fd18f" };
+
+              return (
+                <div>
+                  {/* ── what the AI ORDERED ── */}
+                  <div style={sec}>
+                    <div style={h}>Orders issued, by type</div>
+                    <div style={sub}>
+                      Every mission the AI gave, counted. An AI that never issues an assault
+                      order is passive for a different reason than one that issues them and
+                      never arrives — only this breakdown tells the two apart.
+                    </div>
+                    {missions.length === 0 ? (
+                      <div style={{ fontSize: "0.72rem", color: "#e8c873" }}>
+                        No mission orders parsed at all. For a campaign log that is a parsing
+                        fault, not a passive AI — check the log is a campaign_ai_log.
+                      </div>
+                    ) : missions.map(([k, n]) => (
+                      <div key={k} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 1 }}>
+                        <div style={{ width: 150, fontSize: "0.7rem", color: "#bbb", textAlign: "right" }}>{k}</div>
+                        <div title={`${n.toLocaleString()} orders`}
+                          style={{ height: 9, width: `${Math.max(1, (n / missionMax) * 100)}%`, maxWidth: 260,
+                            background: /attack|siege/.test(k) ? "#e87a6a" : /move/.test(k) ? "#8fc9d8" : "#9a8f7a",
+                            borderRadius: 2 }} />
+                        <div style={{ fontSize: "0.68rem", color: "#888" }}>{n.toLocaleString()}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* ── can it even SEE anything to attack ── */}
+                  <div style={sec}>
+                    <div style={h}>Factions that see no invasion target</div>
+                    <div style={sub}>
+                      The engine's own count of targets it considers invadable. A faction
+                      reporting zero will never attack however strong it grows — a different
+                      problem from being too weak, and one no strength figure would reveal.
+                    </div>
+                    {blind.length === 0 ? (
+                      <div style={empty}>✓ Every faction sees at least one invasion target.</div>
+                    ) : blind.map(([f, e]) => (
+                      <div key={f} style={{ fontSize: "0.72rem", color: "#e8c873" }}>
+                        <b>{flabel(f)}</b> — zero targets in {Math.round(e.zeroPct * 100)}% of {e.samples} readings
+                        {e.max > 0 ? ` (best it ever saw: ${e.max})` : " (never saw one)"}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* ── governance ── */}
+                  <div style={sec}>
+                    <div style={h}>Settlements left ungoverned</div>
+                    <div style={sub}>
+                      Median across turns, not an average: the engine writes this line about
+                      three times per season and the value is not always stable across those
+                      passes, so a mean mixes a settled count with one still being mutated.
+                    </div>
+                    {ungoverned.length === 0 ? (
+                      <div style={empty}>✓ No faction with a stable count leaves a settlement ungoverned.</div>
+                    ) : ungoverned.slice(0, 12).map(([f, e, share]) => (
+                      <div key={f} style={{ fontSize: "0.72rem", color: share > 0.4 ? "#e87a6a" : "#bbb" }}>
+                        <b>{flabel(f)}</b> — {e.medianUngoverned} of {e.medianSettlements} ungoverned ({Math.round(share * 100)}%)
+                      </div>
+                    ))}
+                    {unstable.length > 0 && (
+                      <div style={{ fontSize: "0.68rem", color: "#9a8f7a", marginTop: 4 }}>
+                        {unstable.length} faction{unstable.length === 1 ? "" : "s"} excluded because the
+                        engine's own passes disagreed about the settlement count mid-turn — its
+                        territory was changing as the turn ran, so no single number describes it:{" "}
+                        {unstable.slice(0, 6).map(([f]) => flabel(f)).join(", ")}
+                        {unstable.length > 6 ? `, +${unstable.length - 6} more` : ""}.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ── failed script commands ── */}
+                  {(result.failedConsoleCommands || []).length > 0 && (
+                    <div style={sec}>
+                      <div style={h}>Script commands the engine rejected</div>
+                      <div style={sub}>
+                        Failure counts, not rates — the console echoes a command only when it
+                        fails, so this log holds no denominator.
+                      </div>
+                      {result.failedConsoleCommands.slice(0, 8).map((c, i) => (
+                        <div key={i} style={{ fontSize: "0.72rem", color: "#e8c873" }}>
+                          <code style={{ color: "#8fc9d8" }}>{c.command}</code> — {c.count.toLocaleString()}x
+                          <span style={{ color: "#888" }}> ({c.messages.map((m) => m.message).join("; ")})</span>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               );

@@ -118,3 +118,76 @@ describe("coverage tracker agrees with the analyser", () => {
     }
   });
 });
+
+// ── the contract the AI-activity panel depends on ──
+//
+// The panel reads these fields directly. When a field is computed but rendered
+// nowhere the gap is invisible (nine of them were, until they were counted); when a
+// field is rendered but its SHAPE drifts, the panel shows blanks or NaN and that is
+// invisible too. So the shape is asserted here, derived from what the analyser really
+// emits rather than from what the panel hopes for.
+describe("AI-activity field contract", () => {
+  const analyse = (lines) => {
+    const a = createAiDecisionAnalyzer();
+    for (const l of lines) a.feedLine(l);
+    return a.finish();
+  };
+
+  it("reports ungoverned settlements as a per-turn median, with a stability flag", () => {
+    // Two turns of the SAME faction. Within turn 1 the engine's passes disagree
+    // (5 then 9 settlements), which is what the rebel faction really does; turn 2 is
+    // consistent. The median must come from one reading per turn, and the disagreement
+    // must be recorded — averaging all four samples is what produced the original
+    // nonsense (rebels reported holding 79 settlements when they hold ~500).
+    const out = analyse([
+      "AI: \t\t\t\tstart 'carthage' for year -270, season summer",
+      "AI: named cc: leader status 'free', heir status 'free', ungoverned cities 1 / 5, adoptees 0, resources 1 (total str 100).",
+      "AI: named cc: leader status 'free', heir status 'free', ungoverned cities 2 / 9, adoptees 0, resources 1 (total str 100).",
+      "AI: \t\t\t\tstart 'carthage' for year -270, season winter",
+      "AI: named cc: leader status 'free', heir status 'free', ungoverned cities 3 / 9, adoptees 0, resources 1 (total str 100).",
+    ]);
+    const h = out.factionHealth.carthage;
+    expect(h.turns).toBe(2);
+    expect(h.samples).toBe(3);
+    // Last reading per turn: turn1 -> 9, turn2 -> 9. Median 9, NOT the mean of 5,9,9.
+    expect(h.medianSettlements).toBe(9);
+    expect(h.unstableTurns).toBe(1);
+    expect(h.countIsStable).toBe(false);   // 1 of 2 turns disagreed
+  });
+
+  it("calls a count stable when the engine's passes agree", () => {
+    const out = analyse([
+      "AI: \t\t\t\tstart 'carthage' for year -270, season summer",
+      "AI: named cc: leader status 'free', heir status 'free', ungoverned cities 2 / 9, adoptees 0, resources 1 (total str 100).",
+      "AI: named cc: leader status 'free', heir status 'free', ungoverned cities 2 / 9, adoptees 0, resources 1 (total str 100).",
+    ]);
+    const h = out.factionHealth.carthage;
+    expect(h.unstableTurns).toBe(0);
+    expect(h.countIsStable).toBe(true);
+    // A stability flag that is true for everything would be worthless; the test above
+    // pins the false case, so the pair together prove it discriminates.
+  });
+
+  it("tallies mission orders by type, including the assault orders", () => {
+    const out = analyse([
+      "AI: \t\t\t\tstart 'carthage' for year -270, season summer",
+      "AI: campaign: mission attack residence: char 'X' attacking sett 'Y', priority 90.",
+      "AI: campaign: mission siege residence: char 'X' besieging sett 'Y', priority 90.",
+      "AI: campaign: mission attack residence: char 'Z' attacking sett 'W', priority 80.",
+    ]);
+    expect(out.missionTypes.carthage["attack residence"]).toBe(2);
+    expect(out.missionTypes.carthage["siege residence"]).toBe(1);
+  });
+
+  it("exposes the engine's invasion-target count with a zero share", () => {
+    const out = analyse([
+      "AI: \t\t\t\tstart 'chios' for year -270, season summer",
+      "AI: ltgd: number of invasion targets: 0",
+      "AI: ltgd: number of invasion targets: 0",
+    ]);
+    const t = out.invasionTargets.chios;
+    expect(t.samples).toBe(2);
+    expect(t.zeroPct).toBe(1);
+    expect(t.max).toBe(0);
+  });
+});

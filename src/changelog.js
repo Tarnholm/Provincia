@@ -13,6 +13,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1446",
+    date: "2026-07-25",
+    items: [
+      { type: "fix", text: "**Nine fields were being computed on every run and displayed nowhere — and the first one examined turned out to be wrong.** `factionHealth` averaged the engine's \"ungoverned cities N / M\" line, which is written about three times per season, once per AI pass. For most factions the value is stable across those passes (carthage reads 41→41→43, a real settlement count) but for the rebels it *decays within a single season* — 497→450→413 — because its territory is being processed as the passes run. Averaging the two together is meaningless, and it had the rebels holding **79 settlements when they hold about 500**." },
+      { type: "improvement", text: "**Now reported as the median of one reading per turn, with an explicit stability flag.** `countIsStable` is computed by comparing the passes' actual values, not by counting samples — a sample count carries no information about agreement, and a first attempt that used one was thrown away for exactly that reason. On the reference campaign **22 of 224 factions are flagged unstable and excluded** (rebels, ptolemaic, seleucid — all mid-conquest), leaving **127 factions with a defensible ungoverned count**: indians 10 of 17, carthage 9 of 36, pontus 6 of 15. The panel names the excluded factions and says why rather than hiding them." },
+      { type: "feature", text: "**New \"AI activity\" tab surfaces what the AI actually did.** Orders issued by type, with assault and siege orders coloured apart from movement — the AI issues **8,683 attack-residence and 8,652 siege-residence orders**, so it does order assaults, and a faction that issues none is passive for a different reason than one that issues them and never arrives. Plus the engine's own invasion-target count (a faction reporting zero will never attack however strong it grows), ungoverned settlements, and the rejected script commands. Every section has an explicit empty state, because a section that silently renders nothing makes a parsing regression look like a clean campaign." },
+      { type: "improvement", text: "**A contradiction between two sources was chased down rather than averaged over.** The log shows the rebel faction collapsing from 497 settlements to ~30; the save says it *grew* 499 → 522. Rebels cannot do both. Resolved by establishing that the log's figure is not a stable per-turn count for that faction while the save-vs-descr_strat comparison is independent of the log and stands — so the \"conquest is not working\" lead is unaffected. The stability flag now encodes what was learned, so the next reader does not have to re-derive it." },
+    ],
+  },
+
+  {
     version: "0.9.1445",
     date: "2026-07-25",
     items: [

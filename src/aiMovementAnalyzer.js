@@ -627,8 +627,29 @@ function createAiDecisionAnalyzer(opts = {}) {
     }
     if ((m = AI_RX.factionHealth.exec(l))) {
       const f = curFaction || "?";
-      const e = health.get(f) || { samples: 0, ungovSum: 0, ofSum: 0, strSum: 0 };
-      e.samples++; e.ungovSum += +m[3]; e.ofSum += +m[4]; e.strSum += +m[7];
+      // The engine emits this line ~3x per season (one per AI pass), and the value is
+      // NOT stable across passes for every faction: carthage reads 41→41→43 (a real
+      // settlement count) but the rebel faction reads 497→450→413 within one season,
+      // because its settlements are being processed as the passes run. A flat average
+      // over passes therefore mixes a stable quantity with a decrementing counter and
+      // is meaningless for the latter — which is exactly how this field first came out
+      // claiming the rebels held 79 settlements when they hold ~500.
+      //
+      // So keep ONE value per turn (the last pass, i.e. the settled state) and report
+      // the MEDIAN across turns. A median also survives the odd truncated pass.
+      const e = health.get(f) || { samples: 0, byTurn: new Map(), strSum: 0 };
+      e.samples++;
+      e.strSum += +m[7];
+      const of = +m[4];
+      const prev = e.byTurn.get(turnIdx);
+      // `unstable` records that this turn's passes actually DISAGREED about the count.
+      // It must compare values, not count samples: every faction gets ~3 passes a
+      // season, so a sample count carries no information about agreement at all.
+      e.byTurn.set(turnIdx, {
+        ungoverned: +m[3],
+        of,
+        unstable: prev ? (prev.unstable || prev.of !== of) : false,
+      });
       health.set(f, e);
       matched++; return;
     }
@@ -947,12 +968,35 @@ function createAiDecisionAnalyzer(opts = {}) {
         avgAssassins: +(e.assassinsSum / e.samples).toFixed(2),
         maxSpies: e.maxSpies,
       }])),
-      factionHealth: Object.fromEntries([...health].map(([f, e]) => [f, {
-        samples: e.samples,
-        avgUngoverned: +(e.ungovSum / e.samples).toFixed(2),
-        avgSettlements: +(e.ofSum / e.samples).toFixed(2),
-        avgTotalStrength: Math.round(e.strSum / e.samples),
-      }])),
+      // Ungoverned settlements per faction, as the MEDIAN of one reading per turn —
+      // see the note at the handler for why averaging over the engine's ~3 passes per
+      // season produces nonsense. `passVariance` is carried deliberately: it is the
+      // number of turns whose passes disagreed about the settlement count, and it is
+      // the signal that told us the average could not be trusted. A caller that finds
+      // it high should not treat that faction's figures as a settled count.
+      factionHealth: Object.fromEntries([...health].map(([f, e]) => {
+        const rows = [...e.byTurn.values()];
+        const med = (arr) => {
+          if (!arr.length) return 0;
+          const s = [...arr].sort((a, b) => a - b);
+          const i = s.length >> 1;
+          return s.length % 2 ? s[i] : +((s[i - 1] + s[i]) / 2).toFixed(1);
+        };
+        return [f, {
+          turns: rows.length,
+          samples: e.samples,
+          medianUngoverned: med(rows.map((r) => r.ungoverned)),
+          medianSettlements: med(rows.map((r) => r.of)),
+          maxSettlements: rows.reduce((a, r) => (r.of > a ? r.of : a), 0),
+          avgTotalStrength: Math.round(e.strSum / e.samples),
+          // Turns where the engine's own passes DISAGREED about the settlement count
+          // (values compared, not samples counted). High means this faction's count is
+          // being mutated mid-turn, so no single number describes it — the rebel
+          // faction behaves this way and must not be read as a settled count.
+          unstableTurns: rows.filter((r) => r.unstable).length,
+          countIsStable: rows.length > 0 && rows.filter((r) => r.unstable).length / rows.length < 0.2,
+        }];
+      })),
       constructionBlocked: (() => {
         const rows = [...blocked].filter(([, e]) => e.invalid > 0).sort((a, b) => b[1].invalid - a[1].invalid);
         return { settlements: rows.length, totalInvalid: rows.reduce((a, [, e]) => a + e.invalid, 0), worst: rows.slice(0, 10).map(([k, e]) => ({ settlement: k, invalid: e.invalid })) };
