@@ -29,6 +29,18 @@ AI_LOG_LINE_PATTERNS = [
     r"""^AI: ltgd: defend \([^)]*\) vs fac '([^']+)': (.+?) >> (ALD_\w+)""",
     r"""^AI: -- troop type '([^']+)' at priority (\d+)""",
     r"""^AI: region control: settlement '([^']+)', \(pop (\d+), old order (-?\d+)\), tax (TAX_LEVEL_\w+) due to (.+?)\.?$""",
+    r"""^AI: production: started recruitment of '([^']+)' at '([^']+)', priority (\d+), prod type (AI_PROD_\w+)""",
+    r"""^AI: production: started '([^']+)' at '([^']+)', priority (\d+), prod type (AI_PROD_\w+)""",
+    r"""^AI: ltgd: number of invasion targets: (\d+)""",
+    r"""^AI: number of spies (\d+), number of assassins (\d+)""",
+    r"""^AI: named cc: leader status '([^']+)', heir status '([^']+)', ungoverned cities (\d+) \/ (\d+), adoptees (\d+), resources (\d+) \(total str (\d+)\)""",
+    r"""^AI: production: settlement '([^']+)' is busy constructing (.+?), considering repairs""",
+    r"""^AI: campaign: mission ([a-z]+(?: \([a-z]+\)| [a-z]+)*): """,
+    r"""^AI: worldwide: char '([^']+)' assigned \(in region (\d+)\) at priority (\d+)""",
+    r"""^AI: resource for char '([^']+)' released by worldwide controller in region (\d+)""",
+    r"""^AI: Diplomat CC: Character "([^"]+)" told to move to settlement "([^"]+)"\. Task: (\w+)\. Initiate: (\w+)\. Priority (\d+)""",
+    r"""^AI: production: (sufficient numbers of troops[^.]*|not enough cash[^.]*|no more useful[^.]*)\.?$""",
+    r"""^\s*err: (.+?)\s*$""",
     r"""char '([^']+)'|character '([^']+)'|army '([^']+)'""",
 ]
 

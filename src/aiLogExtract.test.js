@@ -25,33 +25,48 @@ function analyse(text) {
 
 describe("keepLine follows the analyser's own patterns", () => {
   it("keeps one example of every shape the analyser reads", () => {
-    // verbatim lines from the reference log — note the faction header uses TABS
-    // after "AI:" and no "+", which a retyped pattern got wrong
+    // ── HARVESTED, NOT HAND-WRITTEN ──
+    // One verbatim line per pattern, lifted from the 4.4M-line reference log by
+    // scripts/harvest-ailog-samples.js. Hand-typed fixtures encode what I imagine
+    // the engine emits, and this project has already been bitten by exactly that
+    // (a falsifier that examined a shape the producer never emits, so it passed
+    // while testing nothing). Every pattern below is therefore proven to have a
+    // real example — a pattern with no match in the log is a speculative pattern
+    // and the harvester reports it rather than letting it sit here unexercised.
+    //
+    // Note the faction header's TABS after "AI:" and absence of "+": a retyped
+    // version of that pattern got both wrong.
     const samples = [
       "AI: \t\t\t\tstart 'dummies' for year -270, season summer",
-      "AI: campaign: mission move nonlocal: char 'Ariston of Chios' moving towards sett 'Erythrai', priority 90.",
-      "AI: named cc: army 'Ulkos' told to move to 'Nasium', priority 12.",
-      "AI: campaign: res for char 'Ulkos' assigned to reg 44 at priority 9.",
-      "AI: resource for char 'Ulkos' released by controller",
-      "AI: campaign for region '129' aborted because of insufficient available strength.",
-      "AI: campaign: campaign for 'Pella' (reg 1306, des 129) using strategy ACS_GATHERING. required str 400 (ACZ_SOLID), allocated str 120; num res 3.",
-      "AI: finance: est income 500, est maintenance 100, est outgoings 200 -- spending max 300, spending norm 250; balance AFB_OK, state AFS_ENOUGH",
-      "AI: -- building 'Training Grounds' at priority 3674",
-      "AI: campaign: garrison of settlement 'Mediolanum' told to split, 3 units leaving, priority 5",
-      "AI: mildir: xyz attack authorised against 'epirus'",
-      "AI: 12 spies assigned this turn",
-      // the 13th is the unanchored character-mention catch-all the abandonment
-      // detector counts on — a line that names a character but matches none of
-      // the twelve specific shapes above
-      "AI: ltgd: army 'Ulkos' being considered for something else",
-      // ── the AI's own strategic reasoning, added 2026-07-25 ──
-      // These five were 47% of the log's previously-unparsed lines. `-- troop type`
-      // alone is 656,132 lines: the troop-side twin of the build-appetite line.
+      "AI: campaign: mission move nonlocal: char 'Captain Proteus' moving towards sett 'Pella', priority 400.",
+      "AI: named cc: army 'Bellovesus' told to move to 'Decetia', priority 100.",
+      "AI: campaign: res for char 'Captain Nabag' assigned to reg 1017 at priority 1.",
+      "AI: resource for char 'Captain Bodmelqart' released by controller",
+      "AI: campaign for region '1040' aborted because of insufficient available strength.",
+      "AI: campaign: campaign for 'Armenian Rebels Settlement' (reg 1306, des 129) using strategy ACS_DEFEND_BORDER. required str 0 (ACZ_STAY_AT_HOME), allocated str 0; num res 0.",
+      "AI: finance: est income 101, est maintenance 378, est outgoings 378 -- spending max 0, spending norm -277; balance AFB_EARN_MINUTE, state AFS_PAUPER",
+      "AI: -- building 'Small Treasury' at priority 171.",
+      "AI: campaign: garrison of settlement 'Carthage' told to split, 10 units leaving, priority 650.",
+      "AI: mildir: invade_<other> attack authorised against 'slave'.",
+      "AI: 0 spies assigned this turn",
       "AI: ltgd: army strength 2125, free army strength 2125, navy strength 0.",
       "AI: ltgd: 'carthage' invade 'corsi', not at war, good production against strongest neighbour >> ALI_START_PLAN (200).",
       "AI: ltgd: defend (frontline .000132, free 9.486274, product 21.18303) vs fac 'acragas': not at war, bad frontline, decent free strength >> ALD_DEFEND_DEEP.",
       "AI: -- troop type 'Caetrati Infantry' at priority 40.",
-      "AI: region control: settlement 'Akanthos', (pop 1200, old order 0), tax TAX_LEVEL_EXTORTIONATE due to high order",
+      "AI: region control: settlement 'Roman Rebels 1 Settlement', (pop 400, old order 0), tax TAX_LEVEL_LOW due to enough money",
+      "AI: production: started recruitment of 'hyrkanian foot archers' at 'Parnon Taphai', priority 25, prod type AI_PROD_TYPE_BALANCED.",
+      "AI: production: started 'building new, garrison' at 'Sexi', priority 6496, prod type AI_PROD_TYPE_MILITARY.",
+      "AI: ltgd: number of invasion targets: 0",
+      "AI: number of spies 0, number of assassins 0.",
+      "AI: named cc: leader status 'free', heir status 'free', ungoverned cities 0 / 1, adoptees 0, resources 0 (total str 0).",
+      "AI: production: settlement 'Iol' is busy constructing building upgrade, military_industrial_complex to level 1, considering repairs.",
+      "AI: campaign: mission move: char 'Admiral Baalshafot' moving towards tile (123, 356) in region (0), priority 924 (move towards a position to take on a passenger).",
+      "AI: worldwide: char 'Ptolemaios' assigned (in region 1256) at priority 0.",
+      "AI: resource for char 'Ptolemaios' released by worldwide controller in region 1252.",
+      "AI: Diplomat CC: Character \"Cassivellaunus\" told to move to settlement \"Vesontio\". Task: DIPLOMACY. Initiate: Yes. Priority 1000",
+      "AI: production: sufficient numbers of troops but enough cash for more, so continuing to recruit.",
+      "err: no building of this type in settlement",
+      "AI: naval controller: ARMY resource for char 'Admiral Yahua' assigned for reg 0.",
     ];
     expect(samples).toHaveLength(AI_LOG_LINE_PATTERNS.length);
     for (const s of samples) expect(keepLine(s), `should keep: ${s.slice(0, 60)}`).toBe(true);

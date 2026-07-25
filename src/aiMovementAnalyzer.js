@@ -313,6 +313,40 @@ const AI_RX = {
   troopWant: /^AI: -- troop type '([^']+)' at priority (\d+)/,
   // Tax level per settlement, with the engine's stated reason.
   taxChoice: /^AI: region control: settlement '([^']+)', \(pop (\d+), old order (-?\d+)\), tax (TAX_LEVEL_\w+) due to (.+?)\.?$/,
+  // ── what the AI actually DID, as opposed to what it wanted ──
+  // troopWant/buildWant are appetite; these two are actions taken.
+  recruitStarted: /^AI: production: started recruitment of '([^']+)' at '([^']+)', priority (\d+), prod type (AI_PROD_\w+)/,
+  buildStarted: /^AI: production: started '([^']+)' at '([^']+)', priority (\d+), prod type (AI_PROD_\w+)/,
+  // How many invasion targets the AI can see AT ALL. Zero means it will not
+  // attack whatever its strength — the most direct possible check on passivity.
+  invasionTargets: /^AI: ltgd: number of invasion targets: (\d+)/,
+  // Agents HELD, distinct from the agents-assigned-this-turn line.
+  agentTotals: /^AI: number of spies (\d+), number of assassins (\d+)/,
+  // Faction health snapshot: ungoverned cities is the interesting term.
+  factionHealth: /^AI: named cc: leader status '([^']+)', heir status '([^']+)', ungoverned cities (\d+) \/ (\d+), adoptees (\d+), resources (\d+) \(total str (\d+)\)/,
+  // A settlement the engine says is mid-construction on something invalid.
+  buildBlocked: /^AI: production: settlement '([^']+)' is busy constructing (.+?), considering repairs/,
+  // The WHOLE mission family, 11 types over 81,317 lines on the reference log:
+  // move 25,888 · move nonlocal 22,027 · attack residence 8,683 · siege residence
+  // 8,652 · merge (army) 7,066 · attack enemy (army) 3,310 · do nothing 3,166 ·
+  // attack enemy (navy) 1,234 · merge (navy) 809 · merge garrison 354 · wait for
+  // passengers 128. Only "move nonlocal" was read before, so the orders that
+  // matter most — 8,683 assaults and 8,652 sieges — went uncounted. Matched
+  // generically and aggregated by TYPE, alongside (not instead of) the specific
+  // handlers that build findings.
+  missionAny: /^AI: campaign: mission ([a-z]+(?: \([a-z]+\)| [a-z]+)*): /,
+  // The worldwide (as opposed to campaign) controller assigning and releasing
+  // characters — the agent-side twin of the campaign resource lines.
+  worldwideAssign: /^AI: worldwide: char '([^']+)' assigned \(in region (\d+)\) at priority (\d+)/,
+  worldwideRelease: /^AI: resource for char '([^']+)' released by worldwide controller in region (\d+)/,
+  // A diplomat given a destination, with its task and priority.
+  diplomatOrder: /^AI: Diplomat CC: Character "([^"]+)" told to move to settlement "([^"]+)"\. Task: (\w+)\. Initiate: (\w+)\. Priority (\d+)/,
+  // The engine's stated reason for continuing or halting recruitment.
+  productionReason: /^AI: production: (sufficient numbers of troops[^.]*|not enough cash[^.]*|no more useful[^.]*)\.?$/,
+  // A console/script command that FAILED. Not AI output, but it shares this log
+  // and it names a real mod-script bug: the commonest is a set_building_health
+  // aimed at a building the settlement does not have (555x on the reference log).
+  scriptErr: /^\s*err: (.+?)\s*$/,
 };
 
 // Economic states the engine reports, poorest → richest. "Rich but stalled" is
@@ -341,6 +375,16 @@ function createAiDecisionAnalyzer(opts = {}) {
   const defend = new Map();    // faction -> { total, byDecision:{} }
   const troopWant = new Map(); // faction -> { picks, top:{name,priority} }
   const taxChoice = new Map(); // faction -> { total, byLevel:{}, byReason:{} }
+  const recruited = new Map();   // faction -> { total, byUnit:Map }
+  const built = new Map();       // faction -> { total, byItem:Map }
+  const invTargets = new Map();  // faction -> { samples, zero, sum, max }
+  const agentsHeld = new Map();  // faction -> { samples, spiesSum, assassinsSum, maxSpies }
+  const health = new Map();      // faction -> { samples, ungovSum, ofSum, strSum }
+  const blocked = new Map();     // settlement -> { total, invalid }
+  const missionTypes = new Map(); // faction -> Map(type -> count)
+  const worldwide = new Map();    // faction -> { assigned, released }
+  const diplomats = new Map();    // faction -> { orders, byTask:{} }
+  const scriptErrs = new Map();   // message -> count
   const missions = new Map();      // char|sett → { char, sett, faction, turns:Set }
   const churn = new Map();         // char → { assigns, releases, faction, regs:Set }
   const stalls = new Map();        // faction|regId → { faction, regId, gatherTurns:Set, lastReq, lastAlloc }
@@ -360,10 +404,61 @@ function createAiDecisionAnalyzer(opts = {}) {
     else charSeen.set(name, { first: turnIdx, last: turnIdx, hits: 1, faction: curFaction });
   };
 
+  // Complete accounting of the file: every line is either signal we parse, known
+  // vocabulary that carries none, or genuinely new — and the third case is
+  // reported so a changed engine or mod cannot slip past unnoticed.
+  const { createCoverageTracker } = require("./aiLogVocabulary.js");
+  const AI_RX_LIST = Object.values(AI_RX);
+  // The predicate must mirror feedLine's own reachability, not just the pattern
+  // list: feedLine fast-paths out of any line that is neither AI-prefixed nor a
+  // recognised non-AI signal. Testing the patterns alone reported `err:` lines as
+  // parsed while the handler never ran — an optimistic coverage number, which is
+  // the one kind of coverage number that is worse than none.
+  const coverage = createCoverageTracker((line) => {
+    const c = line.charCodeAt(0);
+    if (c === 101 /* 'e' */ && AI_RX.scriptErr.test(line)) return true;
+    if (c !== 65 /* 'A' */) return false;
+    return AI_RX_LIST.some((rx) => rx.test(line));
+  });
+
   const feedLine = (l) => {
     lines++;
-    if (l.charCodeAt(0) !== 65 /* 'A' */) return; // every interesting line starts "AI:"
+    coverage.feedLine(l);
+    // Mission-type tally. Deliberately BEFORE the if-chain and without a return:
+    // several mission types are also handled specifically below (move nonlocal
+    // builds stuck-mission findings), and both need to see the line.
+    //
+    // It must still count toward parsedLines, or the parse rate under-reports the
+    // 8,683 attack-residence and 8,652 siege-residence orders that ONLY this tally
+    // reads. Bumping here would double-count the types a specific handler also
+    // claims, so the bump is deferred to the fall-through at the end of feedLine —
+    // reached only when no specific handler took the line.
+    let missionTallied = false;
+    {
+      const mt = AI_RX.missionAny.exec(l);
+      if (mt) {
+        missionTallied = true;
+        const f = curFaction || "?";
+        let m2 = missionTypes.get(f);
+        if (!m2) missionTypes.set(f, m2 = new Map());
+        m2.set(mt[1], (m2.get(mt[1]) || 0) + 1);
+      }
+    }
     let m;
+    // NOT every interesting line starts "AI:" — the game console and the campaign
+    // script write into this same file. `err: ...` lines are script-command
+    // failures and must be read BEFORE the fast-path guard below, which was
+    // silently discarding all 555 of them while the coverage tracker (which has no
+    // such guard) counted them as parsed. The two disagreeing is what exposed it.
+    if (l.charCodeAt(0) === 101 /* 'e' */ && (m = AI_RX.scriptErr.exec(l))) {
+      const msg = m[1].slice(0, 120);
+      scriptErrs.set(msg, (scriptErrs.get(msg) || 0) + 1);
+      matched++; return;
+    }
+    // Fast path: everything else worth reading is AI-prefixed. Worth ~4M charCode
+    // checks instead of ~4M regex attempts, so it stays — but any new non-AI
+    // pattern must be handled above it, as scriptErr now is.
+    if (l.charCodeAt(0) !== 65 /* 'A' */) return;
     if ((m = AI_RX.factionStart.exec(l))) {
       curFaction = m[1];
       const ys = m[2] + "|" + m[3];
@@ -442,6 +537,73 @@ function createAiDecisionAnalyzer(opts = {}) {
       matched++; return;
     }
     { const cm = RX_ANY_CHAR.exec(l); if (cm) noteChar(cm[1] || cm[2] || cm[3]); }
+    if ((m = AI_RX.worldwideAssign.exec(l))) {
+      const f = curFaction || "?";
+      const e = worldwide.get(f) || { assigned: 0, released: 0 };
+      e.assigned++; worldwide.set(f, e);
+      matched++; return;
+    }
+    if ((m = AI_RX.worldwideRelease.exec(l))) {
+      const f = curFaction || "?";
+      const e = worldwide.get(f) || { assigned: 0, released: 0 };
+      e.released++; worldwide.set(f, e);
+      matched++; return;
+    }
+    if ((m = AI_RX.diplomatOrder.exec(l))) {
+      const f = curFaction || "?";
+      const e = diplomats.get(f) || { orders: 0, byTask: {} };
+      e.orders++;
+      e.byTask[m[3]] = (e.byTask[m[3]] || 0) + 1;
+      diplomats.set(f, e);
+      matched++; return;
+    }
+    if ((m = AI_RX.productionReason.exec(l))) { matched++; return; }
+    if ((m = AI_RX.invasionTargets.exec(l))) {
+      const f = curFaction || "?";
+      const n = +m[1];
+      const e = invTargets.get(f) || { samples: 0, zero: 0, sum: 0, max: 0 };
+      e.samples++; e.sum += n; if (n === 0) e.zero++; if (n > e.max) e.max = n;
+      invTargets.set(f, e);
+      matched++; return;
+    }
+    if ((m = AI_RX.recruitStarted.exec(l))) {
+      const f = curFaction || "?";
+      const e = recruited.get(f) || { total: 0, byUnit: new Map() };
+      e.total++;
+      e.byUnit.set(m[1], (e.byUnit.get(m[1]) || 0) + 1);
+      recruited.set(f, e);
+      matched++; return;
+    }
+    if ((m = AI_RX.buildStarted.exec(l))) {
+      const f = curFaction || "?";
+      const e = built.get(f) || { total: 0, byItem: new Map() };
+      e.total++;
+      e.byItem.set(m[1], (e.byItem.get(m[1]) || 0) + 1);
+      built.set(f, e);
+      matched++; return;
+    }
+    if ((m = AI_RX.agentTotals.exec(l))) {
+      const f = curFaction || "?";
+      const e = agentsHeld.get(f) || { samples: 0, spiesSum: 0, assassinsSum: 0, maxSpies: 0 };
+      e.samples++; e.spiesSum += +m[1]; e.assassinsSum += +m[2];
+      if (+m[1] > e.maxSpies) e.maxSpies = +m[1];
+      agentsHeld.set(f, e);
+      matched++; return;
+    }
+    if ((m = AI_RX.factionHealth.exec(l))) {
+      const f = curFaction || "?";
+      const e = health.get(f) || { samples: 0, ungovSum: 0, ofSum: 0, strSum: 0 };
+      e.samples++; e.ungovSum += +m[3]; e.ofSum += +m[4]; e.strSum += +m[7];
+      health.set(f, e);
+      matched++; return;
+    }
+    if ((m = AI_RX.buildBlocked.exec(l))) {
+      const e = blocked.get(m[1]) || { total: 0, invalid: 0 };
+      e.total++;
+      if (/\*\*invalid\*\*/.test(m[2])) e.invalid++;
+      blocked.set(m[1], e);
+      matched++; return;
+    }
     if ((m = AI_RX.ltgdStrength.exec(l))) {
       const f = curFaction || "?";
       const e = ltgd.get(f) || { samples: 0, armySum: 0, freeSum: 0, navySum: 0, freeMax: 0 };
@@ -508,6 +670,9 @@ function createAiDecisionAnalyzer(opts = {}) {
       }
       matched++; return;
     }
+    // Fall-through: no specific handler claimed the line. If the mission tally read
+    // it, that still counts as parsed — see the note at the tally.
+    if (missionTallied) matched++;
   };
 
   const finish = () => {
@@ -697,6 +862,54 @@ function createAiDecisionAnalyzer(opts = {}) {
         total: e.total, byLevel: e.byLevel,
         topReason: Object.entries(e.byReason).sort((a, b) => b[1] - a[1])[0] || null,
       }])),
+      // Console/script commands that failed. Shares this log with the AI output
+      // but is a genuine mod-script defect: a command aimed at something absent.
+      scriptCommandErrors: [...scriptErrs.entries()].sort((x, y) => y[1] - x[1]).slice(0, 20).map(([message, count]) => ({ message, count })),
+      // Every mission type the AI issued, per faction. A faction that never issues
+      // "attack residence" is passive in a different way from one that issues them
+      // and never arrives — and only this tally distinguishes the two.
+      missionTypes: Object.fromEntries([...missionTypes].map(([f, m2]) => [f, Object.fromEntries([...m2].sort((a, b) => b[1] - a[1]))])),
+      worldwideControl: Object.fromEntries([...worldwide].map(([f, e]) => [f, e])),
+      diplomatOrders: Object.fromEntries([...diplomats].map(([f, e]) => [f, e])),
+      // ── COMPLETE FILE ACCOUNTING ──
+      // What fraction of the log the tool can account for, and what it cannot.
+      // `unknownShapes` is the important field: anything listed there is
+      // vocabulary nobody has examined yet.
+      vocabulary: coverage.finish(),
+      // ── what the AI actually DID (vs merely wanted) ──
+      recruitedUnits: Object.fromEntries([...recruited].map(([f, e]) => [f, {
+        total: e.total,
+        distinctUnits: e.byUnit.size,
+        topUnit: [...e.byUnit.entries()].sort((a, b) => b[1] - a[1])[0] || null,
+      }])),
+      builtItems: Object.fromEntries([...built].map(([f, e]) => [f, {
+        total: e.total,
+        distinctItems: e.byItem.size,
+        topItem: [...e.byItem.entries()].sort((a, b) => b[1] - a[1])[0] || null,
+      }])),
+      // Invasion targets VISIBLE to the AI. A faction whose count is always zero
+      // will never attack, however strong it is — a completely different problem
+      // from being too weak, and one no strength figure would reveal.
+      invasionTargets: Object.fromEntries([...invTargets].map(([f, e]) => [f, {
+        samples: e.samples, zeroPct: +(e.zero / e.samples).toFixed(3),
+        avg: +(e.sum / e.samples).toFixed(2), max: e.max,
+      }])),
+      agentsHeld: Object.fromEntries([...agentsHeld].map(([f, e]) => [f, {
+        samples: e.samples,
+        avgSpies: +(e.spiesSum / e.samples).toFixed(2),
+        avgAssassins: +(e.assassinsSum / e.samples).toFixed(2),
+        maxSpies: e.maxSpies,
+      }])),
+      factionHealth: Object.fromEntries([...health].map(([f, e]) => [f, {
+        samples: e.samples,
+        avgUngoverned: +(e.ungovSum / e.samples).toFixed(2),
+        avgSettlements: +(e.ofSum / e.samples).toFixed(2),
+        avgTotalStrength: Math.round(e.strSum / e.samples),
+      }])),
+      constructionBlocked: (() => {
+        const rows = [...blocked].filter(([, e]) => e.invalid > 0).sort((a, b) => b[1].invalid - a[1].invalid);
+        return { settlements: rows.length, totalInvalid: rows.reduce((a, [, e]) => a + e.invalid, 0), worst: rows.slice(0, 10).map(([k, e]) => ({ settlement: k, invalid: e.invalid })) };
+      })(),
       askByTarget: Object.fromEntries([...maxReqByTarget].map(([regId, req]) => [nameOf(regId), req])),
       askDistribution: (() => {
         const v = [...maxReqByTarget.values()].sort((a, b) => a - b);
