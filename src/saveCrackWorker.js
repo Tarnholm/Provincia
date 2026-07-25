@@ -64,7 +64,11 @@ parentPort.on("message", async (payload) => {
       // audit). Runs here because the save crack alone blocks ~12s — on the
       // main thread that froze the UI and the mouse (user report 2026-07-25).
       const { runAiMovementAnalysis } = require("./aiMovementRun.js");
-      result = await runAiMovementAnalysis(payload);
+      // Progress messages are distinguishable from the final reply by having no
+      // `ok` field, so the parent's once("message") handler ignores them.
+      result = await runAiMovementAnalysis(payload, (p2) => {
+        try { parentPort.postMessage({ progress: p2 }); } catch { /* progress is advisory */ }
+      });
     } else {
       throw new Error("unknown crack-worker mode: " + mode);
     }

@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1422",
+    date: "2026-07-25",
+    items: [
+      { type: "improvement", text: "**The AI analysis now tells you what it’s doing.** A run over a 346MB log plus a save takes about fifteen seconds, and until now the only feedback was a button reading “Analyzing…”. It now reports its phase live — streaming the log (with a running line count), cracking the save, cross-referencing, auditing the mod files — so a long run is visibly progressing rather than possibly hung." },
+    ],
+  },
+  {
     version: "0.9.1421",
     date: "2026-07-25",
     items: [

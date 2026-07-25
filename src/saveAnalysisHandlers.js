@@ -46,16 +46,25 @@ function registerSaveAnalysisHandlers(ipcMain, { _writeLog, getLastSaveBuf }) {
   // It returns the small result object and the crack's own [trade]/[diplo]
   // diagnostics, which we replay into provincia.log. Rejects on worker
   // failure so callers can fall back to a synchronous crack (never a regression).
-  const runCrackWorker = (mode, payload) => new Promise((resolve, reject) => {
+  const runCrackWorker = (mode, payload, onProgress) => new Promise((resolve, reject) => {
     let worker;
     try { worker = new Worker(CRACK_WORKER_PATH); }
     catch (e) { reject(e); return; }
-    worker.once("message", (msg) => {
+    // A long analysis posts advisory { progress } notes before its final reply.
+    // They must not resolve the promise, so the settling handler skips them.
+    worker.on("message", (msg) => {
+      if (!msg || !msg.progress) return;
+      if (onProgress) { try { onProgress(msg.progress); } catch { /* advisory only */ } }
+    });
+    const settle = (msg) => {
+      if (msg && msg.progress) return;           // a progress note, keep waiting
+      worker.off("message", settle);
       worker.terminate();
       if (msg && Array.isArray(msg.logs)) { for (const line of msg.logs) { try { _writeLog(line); } catch { /* */ } } }
       if (msg && msg.ok) resolve(msg.result);
       else reject(new Error(msg && msg.error ? msg.error : "crack worker failed"));
-    });
+    };
+    worker.on("message", settle);
     worker.once("error", (err) => { worker.terminate(); reject(err); });
     worker.postMessage({ mode, ...payload });
   });
@@ -541,7 +550,13 @@ ipcMain.handle("analyze-ai-movement", async (_event, logPath, modDataDir, savePa
     }
     if (fs.statSync(p).isDirectory()) p = path.join(p, "message_log.txt");
     if (!fs.existsSync(p)) return { error: "log not found: " + p };
-    const result = await runCrackWorker("aiMovement", { logPath: p, modDataDir: modDataDir || null, savePath: savePath || null });
+    const { BrowserWindow } = require("electron");
+    const win = BrowserWindow.getAllWindows()[0];
+    const result = await runCrackWorker(
+      "aiMovement",
+      { logPath: p, modDataDir: modDataDir || null, savePath: savePath || null },
+      (prog) => { try { if (win && !win.isDestroyed()) win.webContents.send("ai-movement-progress", prog); } catch { /* advisory */ } }
+    );
     // replay the worker's diagnostics into provincia.log
     if (result && Array.isArray(result.logs)) { for (const line of result.logs) { try { _writeLog(line); } catch { /* */ } } delete result.logs; }
     return result;

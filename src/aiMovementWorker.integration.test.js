@@ -36,11 +36,15 @@ const REF_SAVE = path.join(REF_DIR, "save_Autosave   Dummies   Turn 102 Start.sa
 const MOD_DIR = "C:/RIS/RIS/data";
 const haveRefs = fs.existsSync(REF_LOG) && fs.existsSync(REF_SAVE) && fs.existsSync(MOD_DIR);
 
-function runWorker(payload, timeoutMs = 120000) {
+function runWorker(payload, timeoutMs = 120000, collectProgress = null) {
   return new Promise((resolve, reject) => {
     const w = new Worker(WORKER);
     const timer = setTimeout(() => { w.terminate(); reject(new Error("worker timed out")); }, timeoutMs);
-    w.once("message", (msg) => { clearTimeout(timer); w.terminate(); resolve(msg); });
+    w.on("message", (msg) => {
+      // advisory progress notes arrive before the final reply and must not settle it
+      if (msg && msg.progress) { if (collectProgress) collectProgress.push(msg.progress); return; }
+      clearTimeout(timer); w.terminate(); resolve(msg);
+    });
     w.once("error", (err) => { clearTimeout(timer); w.terminate(); reject(err); });
     w.postMessage(payload);
   });
@@ -123,4 +127,26 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
     // and the save banner must be suppressed rather than showing zeroes
     expect(r.save).toBeUndefined();
   }, 120000);
+});
+
+describe("progress reporting", () => {
+  it.runIf(haveRefs)("streams phase notes while working, without disturbing the final result", async () => {
+    const notes = [];
+    const msg = await runWorker(
+      { mode: "aiMovement", logPath: REF_LOG, modDataDir: MOD_DIR, savePath: REF_SAVE },
+      180000, notes
+    );
+    expect(msg.ok, `worker failed: ${msg.error}`).toBe(true);
+    // the run still returns everything
+    expect(msg.result.findings.length).toBeGreaterThan(4000);
+    // and it told us what it was doing along the way
+    expect(notes.length).toBeGreaterThan(5);
+    const phases = new Set(notes.map((n) => n.phase));
+    expect(phases.has("log")).toBe(true);
+    expect(phases.has("save")).toBe(true);
+    for (const n of notes) {
+      expect(typeof n.phase).toBe("string");
+      expect(typeof n.detail).toBe("string");
+    }
+  }, 240000);
 });

@@ -138,6 +138,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   pickAiSaveFile: () => ipcRenderer.invoke("pick-ai-save-file"),
   saveAiBaseline: (result, label) => ipcRenderer.invoke("save-ai-baseline", result, label),
   exportAiReport: (result, suggestedName) => ipcRenderer.invoke("export-ai-report", result, suggestedName),
+  onAiMovementProgress: (handler) => {
+    const fn = (_e, prog) => handler(prog);
+    ipcRenderer.on("ai-movement-progress", fn);
+    return () => ipcRenderer.removeListener("ai-movement-progress", fn);
+  },
   listAiBaselines: () => ipcRenderer.invoke("list-ai-baselines"),
   compareAiBaseline: (baselineFile, result) => ipcRenderer.invoke("compare-ai-baseline", baselineFile, result),
   deleteAiBaseline: (baselineFile) => ipcRenderer.invoke("delete-ai-baseline", baselineFile),

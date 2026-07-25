@@ -44,16 +44,17 @@ export default function AiMovementPanel({
   const [baselines, setBaselines] = useState(null);   // saved runs to compare against
   const [diff, setDiff] = useState(null);             // before/after comparison
   const [baseBusy, setBaseBusy] = useState(false);
+  const [progress, setProgress] = useState(null);   // live phase note while analysing
 
   const run = async (logPath) => {
-    setBusy(true); setError(null);
+    setBusy(true); setError(null); setProgress(null);
     try {
       const r = await window.electronAPI.analyzeAiMovement(logPath || null, modDataDir || null, savePath || null);
       if (r && r.canceled) { setBusy(false); return; }
       if (!r || r.error) setError((r && r.error) || "analysis failed");
       else setResult(r);
     } catch (e) { setError(e && e.message ? e.message : String(e)); }
-    setBusy(false);
+    setBusy(false); setProgress(null);
   };
 
   const pickSave = async () => {
@@ -62,6 +63,13 @@ export default function AiMovementPanel({
       if (r && r.path) setSavePath(r.path);
     } catch { /* cancelled */ }
   };
+
+  // A run takes ~15s on a 346MB log + 45MB save; the worker posts phase notes
+  // so the button isn't just "Analyzing…" for a quarter of a minute.
+  React.useEffect(() => {
+    const off = window.electronAPI?.onAiMovementProgress?.((p2) => setProgress(p2));
+    return () => { if (typeof off === "function") off(); };
+  }, []);
 
   const refreshBaselines = async () => {
     try { const r = await window.electronAPI?.listAiBaselines?.(); if (r && r.baselines) setBaselines(r.baselines); }
@@ -153,9 +161,15 @@ export default function AiMovementPanel({
               Analyze current game log
             </button>
           )}
-          <span style={{ fontSize: "0.68rem", color: "#888" }}>
-            Takes message_log.txt (movement traces) or campaign_ai_log.txt (AI decisions, any size — 300MB telemetry streams fine).
-          </span>
+          {busy && progress ? (
+            <span style={{ fontSize: "0.72rem", color: "#8fc9d8" }}>
+              <span style={{ opacity: 0.7 }}>{progress.phase}:</span> {progress.detail}
+            </span>
+          ) : (
+            <span style={{ fontSize: "0.68rem", color: "#888" }}>
+              Takes message_log.txt (movement traces) or campaign_ai_log.txt (AI decisions, any size — 300MB telemetry streams fine).
+            </span>
+          )}
           <div style={{ flexBasis: "100%", display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
             <button onClick={pickSave} disabled={busy}
               style={{ padding: "3px 10px", borderRadius: 6, cursor: busy ? "default" : "pointer", border: "1px solid rgba(143,201,216,0.4)", background: savePath ? "rgba(143,201,216,0.18)" : "transparent", color: "#8fc9d8", fontSize: "0.74rem" }}>
