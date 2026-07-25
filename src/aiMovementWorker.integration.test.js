@@ -153,6 +153,20 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
     expect(r.strengthScale.factionsAbleToMeetMedianAsk).toBeLessThan(r.strengthScale.factions * 0.25);
     // it must be the FIRST lead, since it reframes all the per-faction ones
     expect(r.modLeads[1].issue).toMatch(/THE REQUIREMENTS DO NOT FIT THIS MAP/);
+    // The FLOOR is the sharper half of the finding: a median of 23,902 could just
+    // mean well-defended targets, but 13,603 for a settlement held by 1-2 units
+    // means nothing on the map is takeable by a typical faction.
+    expect(r.strengthScale.askFloor).toBeGreaterThan(1000);
+    expect(r.strengthScale.floorRatio).toBeGreaterThan(3);
+    expect(r.strengthScale.pairedTargets).toBeGreaterThan(200);   // 919
+    // the requirement must be shown to TRACK the defence, monotonically —
+    // otherwise "the problem is the floor, not the slope" would be unfounded
+    const bd = r.strengthScale.askByDefenders;
+    expect(Array.isArray(bd)).toBe(true);
+    expect(bd.length).toBeGreaterThan(2);
+    expect(bd[0].medianAsk).toBeLessThan(bd[bd.length - 2].medianAsk);
+    expect(r.modLeads[1].issue).toMatch(/does not scale down for weak targets/);
+    expect(r.modLeads[1].evidence).toMatch(/the problem is the floor, not the slope/);
     expect(r.modLeads[1].evidence).toMatch(/ACS_DEFEND_\*\) postures excluded/);
 
     // ── LAND REACHABILITY ──

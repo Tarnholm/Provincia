@@ -600,6 +600,11 @@ function createAiDecisionAnalyzer(opts = {}) {
       // with the save's men-per-faction in _correlateSave, this answers a question
       // no per-faction lead can: are the requirements themselves calibrated for
       // the states that exist on this map?
+      // Per-target asks, keyed by SETTLEMENT name so the caller can join them to
+      // the save's garrisons. Needed to answer a sharper question than the median:
+      // does the requirement scale DOWN for a near-undefended target, or is there
+      // a floor? (On the reference data there is a floor — see askByDefenders.)
+      askByTarget: Object.fromEntries([...maxReqByTarget].map(([regId, req]) => [nameOf(regId), req])),
       askDistribution: (() => {
         const v = [...maxReqByTarget.values()].sort((a, b) => a - b);
         if (!v.length) return null;

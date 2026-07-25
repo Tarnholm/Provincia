@@ -395,11 +395,22 @@ export default function AiMovementPanel({
                 <b style={{ color: "#e87a6a" }}>{result.strengthScale.ratio}×</b>{", and only "}
                 <b>{result.strengthScale.factionsAbleToMeetMedianAsk}</b>{" of "}{result.strengthScale.factions}
                 {" factions could field it at all."}
+                {result.strengthScale.askFloor && (
+                  <div style={{ marginTop: 3 }}>
+                    And it does not scale down: a settlement held by just <b>1–2 units</b> still demands a median{" "}
+                    <b>{result.strengthScale.askFloor.toLocaleString()}</b>{" — "}
+                    <b style={{ color: "#e87a6a" }}>{result.strengthScale.floorRatio}×</b>{" the median faction's entire army. "}
+                    <span style={{ color: "#e8c873" }}>There is no target on this map a typical faction can take.</span>
+                  </div>
+                )}
                 <div style={{ color: "#9a8f7a", fontSize: "0.7rem", marginTop: 2 }}>
                   This sits upstream of every per-faction lead: it is why campaigns gather forever and never launch.
                   Ask p75 {result.strengthScale.askP75.toLocaleString()} · p95 {result.strengthScale.askP95.toLocaleString()} ·
                   {" "}{result.strengthScale.totalMen.toLocaleString()} men on the whole map.
-                  Defensive postures are excluded from the ask — those read as frontier totals rather than one stack.
+                  {result.strengthScale.askByDefenders
+                    ? ` The requirement does track the defence (${result.strengthScale.askByDefenders.map((b) => `${b.lo}–${b.hi === null ? "+" : b.hi} units → ${b.medianAsk.toLocaleString()}`).join(", ")}), so the problem is the floor rather than the slope.`
+                    : ""}
+                  {" "}Defensive postures are excluded from the ask — those read as frontier totals rather than one stack.
                 </div>
               </div>
             )}

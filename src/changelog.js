@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1437",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**The strength requirement has a floor, and that is the real problem.** A median demand of 23,902 men could simply mean the map's targets are well defended — so the Lab now pairs each target's requirement against the garrison actually standing there. The requirement does track the defence, cleanly: **1–2 defending units → 13,603 · 3–5 → 20,172 · 6–10 → 27,528 · 11–20 → 33,503**, over 919 targets. But look at the first bucket. A settlement held by **one or two units** still demands **13,603 men — 9.2× the median faction's entire army.** There is no target on this map a typical faction can take. The problem is the floor, not the slope, and that distinction changes what is worth tuning." },
+      { type: "improvement", text: "Both halves of the comparison are now stated in the lead and the banner, so the reasoning is visible rather than asserted: what is demanded, what is defending, and what the asking faction actually has." },
+    ],
+  },
+  {
     version: "0.9.1436",
     date: "2026-07-25",
     items: [

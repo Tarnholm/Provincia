@@ -68,8 +68,42 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
           factionsAbleToMeetMedianAsk: menVals.filter((n) => n >= ask.median).length,
           ratio: medianMen ? +(ask.median / medianMen).toFixed(1) : null,
         };
+        // Does the requirement scale DOWN for a weakly-held target, or is there a
+        // floor? This is the sharper question: a median of 23,902 could just mean
+        // the map's targets are well defended. A FLOOR means even an almost-empty
+        // settlement is out of reach, which is a different and worse problem.
+        if (result.askByTarget) {
+          const unitsInRegion = new Map();
+          for (const [key, n] of Object.entries(facts.unitsByFactionRegion || {})) {
+            const reg = key.slice(key.indexOf("|") + 1);
+            unitsInRegion.set(reg, (unitsInRegion.get(reg) || 0) + (typeof n === "number" ? n : 0));
+          }
+          const pairs = [];
+          for (const [sett, req] of Object.entries(result.askByTarget)) {
+            const reg = regionOfSettlement[sett] || sett;
+            const u = unitsInRegion.get(reg);
+            if (u != null) pairs.push({ req, units: u });
+          }
+          if (pairs.length > 50) {
+            const med = (arr) => { const v = arr.slice().sort((a, b) => a - b); return v[Math.floor(v.length / 2)]; };
+            const bucket = (lo, hi) => {
+              const b = pairs.filter((p) => p.units >= lo && p.units <= hi);
+              return b.length ? { lo, hi: hi === Infinity ? null : hi, targets: b.length, medianAsk: med(b.map((p) => p.req)) } : null;
+            };
+            const buckets = [bucket(1, 2), bucket(3, 5), bucket(6, 10), bucket(11, 20), bucket(21, Infinity)].filter(Boolean);
+            const weakest = buckets[0];
+            result.strengthScale.askByDefenders = buckets;
+            result.strengthScale.pairedTargets = pairs.length;
+            if (weakest) {
+              result.strengthScale.askFloor = weakest.medianAsk;
+              result.strengthScale.floorRatio = medianMen ? +(weakest.medianAsk / medianMen).toFixed(1) : null;
+            }
+          }
+        }
+        const S2 = result.strengthScale;
         _log(`[ai-movement] strength scale: median offensive ask ${ask.median.toLocaleString()} vs median faction ${medianMen.toLocaleString()} men ` +
-          `(${result.strengthScale.ratio}×); only ${result.strengthScale.factionsAbleToMeetMedianAsk} of ${menVals.length} factions could field the median ask`);
+          `(${S2.ratio}×); only ${S2.factionsAbleToMeetMedianAsk} of ${menVals.length} factions could field the median ask` +
+          (S2.askFloor ? `; even targets held by 1-2 units demand a median ${S2.askFloor.toLocaleString()} (${S2.floorRatio}× the median faction)` : ""));
       }
     }
 
@@ -163,7 +197,11 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
               `THE REQUIREMENTS DO NOT FIT THIS MAP. Across ${S.askTargets.toLocaleString()} targets the AI's median offensive requirement is ` +
               `${S.askMedian.toLocaleString()} men, but the median faction fields ${S.menMedian.toLocaleString()} — a factor of ${S.ratio}. ` +
               `Only ${S.factionsAbleToMeetMedianAsk} of ${S.factions} factions could field the median requirement at all, and it is ` +
-              `${((S.askMedian / S.totalMen) * 100).toFixed(1)}% of every soldier on the map.`,
+              `${((S.askMedian / S.totalMen) * 100).toFixed(1)}% of every soldier on the map.` +
+              (S.askFloor
+                ? ` And it does not scale down for weak targets: a settlement held by just 1-2 units still demands a median ` +
+                  `${S.askFloor.toLocaleString()} — ${S.floorRatio}× the median faction's entire army. There is no target on this map a typical faction can take.`
+                : ``),
             suggestion:
               `This is the structural reason campaigns gather forever and never launch, and it sits upstream of every per-faction lead below. ` +
               `The requirement itself is computed by the engine, so the levers are on this side: fewer and larger factions, or substantially ` +
@@ -172,7 +210,12 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
               `ask percentiles median ${S.askMedian.toLocaleString()} / p75 ${S.askP75.toLocaleString()} / p95 ${S.askP95.toLocaleString()} · ` +
               `faction men median ${S.menMedian.toLocaleString()} / p75 ${S.menP75.toLocaleString()} / max ${S.menMax.toLocaleString()} · ` +
               `${S.totalMen.toLocaleString()} men total across ${S.factions} factions · defensive (ACS_DEFEND_*) postures excluded from the ask, ` +
-              `since those read as frontier totals rather than one stack`,
+              `since those read as frontier totals rather than one stack` +
+              (S.askByDefenders
+                ? ` · the requirement DOES track the defence — median ask by defending units: ` +
+                  S.askByDefenders.map((b) => `${b.lo}-${b.hi === null ? "+" : b.hi}→${b.medianAsk.toLocaleString()}`).join(", ") +
+                  ` over ${S.pairedTargets} targets — so the problem is the floor, not the slope`
+                : ``),
           });
         }
       }
