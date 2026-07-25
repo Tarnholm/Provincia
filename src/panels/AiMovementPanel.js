@@ -808,6 +808,46 @@ export default function AiMovementPanel({
                     )}
                   </div>
 
+                  {/* ── who is governing, and why we cannot say more ── */}
+                  {result.governorLink && (
+                    <div style={sec}>
+                      <div style={h}>Who governs — and a caveat about the save</div>
+                      <div style={sub}>
+                        Settlements can be linked to the character governing them
+                        ({result.governorLink.resolved} of {result.governorLink.withGovernor} resolved). But the
+                        faction recorded on those character records is not usable, so the Lab
+                        cannot say whether a faction is short of characters or simply not
+                        deploying the ones it has — those need different fixes, and a
+                        plausible wrong answer would be worse than none.
+                      </div>
+                      <div style={{ fontSize: "0.72rem", color: result.governorLink.factionFieldUsable ? "#8fd18f" : "#e8c873" }}>
+                        Governor faction matches the settlement's owner{" "}
+                        <b>{Math.round((result.governorLink.agreement || 0) * 100)}%</b> of the time
+                        {result.governorLink.worseThanRandom
+                          ? <> — below the {Math.round((result.governorLink.randomBaseline || 0) * 100)}% a random
+                              pairing would score, so it is misattributed rather than merely noisy.</>
+                          : <> (random pairing would score {Math.round((result.governorLink.randomBaseline || 0) * 100)}%).</>}
+                      </div>
+                      {(result.governorLink.systematicRelabel?.strongExamples || []).length > 0 && (
+                        <div style={{ fontSize: "0.68rem", color: "#9a8f7a", marginTop: 3 }}>
+                          Partly structured, which is the useful part for a fix:{" "}
+                          {result.governorLink.systematicRelabel.strongExamples.slice(0, 3)
+                            .map((e) => `${flabel(e.owner)}'s governors are labelled ${flabel(e.mislabelledAs)} ${e.n} times of ${e.of}`)
+                            .join("; ")}. The records themselves look right — the governors in Roman
+                          cities carry Roman names — so it is the label that is wrong, not the link.
+                        </div>
+                      )}
+                      {result.familyIntegrity && !result.familyIntegrity.usableAsRoster && (
+                        <div style={{ fontSize: "0.68rem", color: "#9a8f7a", marginTop: 3 }}>
+                          The family roster cannot fill the gap either: only{" "}
+                          {Math.round((result.familyIntegrity.fatherResolution || 0) * 100)}% of its own father
+                          references resolve within it, and the shortfall is male-skewed, so per-faction
+                          character counts built on it come out wrong.
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* ── failed script commands ── */}
                   {(result.failedConsoleCommands || []).length > 0 && (
                     <div style={sec}>

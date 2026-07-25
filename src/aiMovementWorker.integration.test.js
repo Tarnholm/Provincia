@@ -157,6 +157,29 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
       expect(row.share).toBeLessThanOrEqual(1);
     }
 
+    // ── WHO GOVERNS: the link resolves, the faction label does not ──
+    // The id space was found by elimination: governorUuid resolves against
+    // v1.secondaryUuid 645/848 and against primaryUuid or family.uuid 0/848. With 842
+    // distinct ids over a 1,358-value pool in a 32-bit space, chance predicts ~none.
+    expect(r.governorLink).toBeTruthy();
+    expect(r.governorLink.resolved).toBeGreaterThan(500);          // 645
+    expect(r.governorLink.idSpace).toMatch(/secondaryUuid/);
+    // The falsifier: a governor must belong to the faction owning the settlement. It
+    // scores 1% against a 17.6% random baseline — BELOW chance, which is what rules out
+    // "noisy but roughly right" and forced a plausible verdict to be thrown away.
+    expect(r.governorLink.factionFieldUsable).toBe(false);
+    expect(r.governorLink.agreement).toBeLessThan(0.1);
+    expect(r.governorLink.worseThanRandom).toBe(true);
+    expect(r.governorLink.randomBaseline).toBeGreaterThan(r.governorLink.agreement);
+    // Large-sample relabels are the actionable detail for a parser fix, and must be
+    // surfaced even though the GLOBAL pattern does not hold.
+    const strong = r.governorLink.systematicRelabel.strongExamples;
+    expect(strong.length).toBeGreaterThan(0);
+    expect(strong.some((e) => e.owner === "romans_julii")).toBe(true);
+    // The min-sample floor must be published, because without it the same data reads as
+    // "65 of 102 owners consistently relabelled" — an artifact of single-governor owners.
+    expect(r.governorLink.systematicRelabel.minSample).toBe(3);
+
     // ── WHY THERE IS NO character-shortage LEAD ──
     // The obvious follow-up to 463 ungoverned settlements is "shortage or deployment
     // failure?". The save's family roster cannot answer it, and this pins WHY so the

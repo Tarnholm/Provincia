@@ -13,6 +13,18 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1454",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**Settlements can now be linked to the character governing them — the id space was found by elimination.** `settlementFields.governorUuid` resolves against `characters.v1[].secondaryUuid` **645 of 848 times**, and against `v1[].primaryUuid` or `family[].uuid` **0 of 848**. With 842 distinct ids over a 1,358-value pool in a 32-bit space, chance predicts essentially none, so the shared space is real. That join was the missing piece for asking who is actually governing." },
+      { type: "fix", text: "**And it immediately disqualified the answer it was built for.** With the link in hand, a supply-vs-assignment verdict came out reading perfectly plausibly — 20 factions with spare characters, 1 genuinely short. Then the falsifier ran: a governor must belong to the faction that owns the settlement, and the recorded faction agrees just **1% of the time against a 17.6% random-pairing baseline**. Below chance is the tell — that is misattribution, not noise. **Rome's governor is recorded as belonging to seleucid_rebels2.** The verdict was discarded rather than shipped with a caveat, because a plausible wrong answer costs more than a missing one." },
+      { type: "improvement", text: "**What IS established is that the character records are right and only the label is wrong.** The governors sitting in Roman cities are named Numerius, Gaius, Publius, Quintus and Decimus — Roman praenomina — while labelled seleucid_rebels2. The misattribution is partly structured, and the large-sample cases are reported as concrete leads for a parser fix: **romans_julii → seleucid_rebels2 (25 of 25), ptolemaic → antigonid (41 of 49), antigonid → carthage (15 of 18)**. Use `factionFromSettlement`, which comes from ownership and is independently verified; every link carries both labels so nothing silently prefers one." },
+      { type: "fix", text: "**A second self-correction inside the same investigation.** The first reading called this a single global index shift on the strength of \"65 of 102 owner factions carry one dominant wrong label\". That was an artifact of counting owners who hold a **single** governor, for whom a dominant label is trivially 100%. Requiring three or more gives 17 of 38, and at ten or more only about half relabel consistently — carthage (3 of 10) and seleucid (16 of 46) scatter. The code claims `partlyConsistent`, never an index shift, and publishes its minimum sample beside the ratio so the figure cannot be quoted without it." },
+      { type: "improvement", text: "The 463-ungoverned finding is unaffected and now runs through the shared `governorCoverage()`, which needs no character data at all — which is exactly why it survives the faction problem. The panel states plainly that the Lab cannot distinguish shortage from deployment failure, and why, rather than leaving a conspicuous gap. Suite is at 923 tests, including a falsifier for each of the three claims and one that deliberately feeds an inverted gender bit to prove that guard still fires." },
+    ],
+  },
+
+  {
     version: "0.9.1453",
     date: "2026-07-25",
     items: [

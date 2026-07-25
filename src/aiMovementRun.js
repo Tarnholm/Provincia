@@ -104,38 +104,21 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
       }
       // ── GOVERNANCE, FROM THE SAVE (authoritative) ─────────────────────────────
       // Which settlements have no governor. The save states this exactly, per
-      // settlement, via settlementFields.governorUuid — so it is preferred over the
-      // AI log's "ungoverned cities N / M" line for two reasons: the log's DENOMINATOR
-      // is not a settlement count at all (see aiExpansion.ownedNow), and the log's
-      // numerator has to be discarded for the ~11 factions whose readings are unstable
-      // mid-turn, which are exactly the big conquering factions worth knowing about.
+      // settlement, via settlementFields.governorUuid — preferred over the AI log's
+      // "ungoverned cities N / M" line, whose denominator is not a settlement count and
+      // whose numerator must be discarded for the ~11 factions with unstable readings,
+      // which are exactly the big conquering factions worth knowing about.
       //
-      // The log is kept as CORROBORATION, not as the source: across the 113 factions
-      // whose log readings are stable, the two agree within ±2 settlements for 96% of
-      // them and within ±5 for 99%. That agreement is why the save reading is trusted
-      // here rather than merely assumed.
+      // The log is kept as CORROBORATION: across the factions whose log reading is
+      // stable, the two agree within +/-2 settlements for ~95%. That agreement is why
+      // the save reading is trusted here rather than merely assumed.
       try {
-        const sfields = save && save.settlementFields;
-        const owners = facts.ownerByCity;
-        if (sfields && owners) {
-          const per = {};
-          for (const [city, fx] of Object.entries(owners)) {
-            const k = String(fx).toLowerCase();
-            const g = sfields[city] && sfields[city].governorUuid;
-            const e = per[k] || (per[k] = { owned: 0, ungoverned: 0 });
-            e.owned++;
-            // 0 and 0xffffffff are both "no governor" sentinels.
-            if (!(g && g !== 0 && g !== 0xffffffff)) e.ungoverned++;
-          }
-          const rows = Object.entries(per)
-            .map(([faction, e]) => ({
-              faction, owned: e.owned, ungoverned: e.ungoverned,
-              share: e.owned ? +(e.ungoverned / e.owned).toFixed(3) : null,
-            }))
-            .filter((r) => r.ungoverned > 0)
-            .sort((a, b) => b.ungoverned - a.ungoverned);
+        const { governorCoverage, governorLink } = require("./governorLink.js");
+        const cov = governorCoverage({ settlementFields: save && save.settlementFields, ownerByCity: facts.ownerByCity });
+        if (cov) {
           let agree = 0, checked = 0;
-          for (const r of rows) {
+          for (const r of cov.rows) {
+            if (!r.ungoverned) continue;
             const lg = result.factionHealth && result.factionHealth[r.faction];
             if (!lg || !lg.countIsStable) continue;
             checked++;
@@ -143,17 +126,32 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
           }
           result.governance = {
             source: "save (settlementFields.governorUuid)",
-            factions: rows.length,
-            totalUngoverned: rows.reduce((a, r) => a + r.ungoverned, 0),
-            rows: rows.slice(0, 40),
-            // How well the AI log independently agrees, over the factions where its
-            // reading is usable. Reported so the number carries its own corroboration.
+            factions: cov.rows.filter((r) => r.ungoverned > 0).length,
+            totalUngoverned: cov.totalUngoverned,
+            rows: cov.rows.filter((r) => r.ungoverned > 0).slice(0, 40)
+              .map((r) => ({ faction: r.faction, owned: r.owned, ungoverned: r.ungoverned, share: r.ungovernedShare })),
             logAgreementWithin2: checked ? +(agree / checked).toFixed(3) : null,
             logFactionsChecked: checked,
           };
-          _log(`[ai-movement] governance: ${result.governance.totalUngoverned} ungoverned settlements across ` +
-            `${rows.length} factions (from the save); AI log agrees within 2 for ` +
-            `${agree}/${checked} factions with a stable reading`);
+          _log(`[ai-movement] governance: ${cov.totalUngoverned} ungoverned settlements across ` +
+            `${result.governance.factions} factions (from the save); AI log agrees within 2 for ${agree}/${checked}`);
+        }
+
+        // WHO is governing. The id space was found by elimination (governorUuid resolves
+        // against v1.secondaryUuid 645/848, and against primaryUuid or family.uuid 0/848)
+        // and is reported with its own falsifier, because the character records' faction
+        // field turns out to be unusable — see the module header.
+        const link = governorLink({
+          settlementFields: save && save.settlementFields,
+          ownerByCity: facts.ownerByCity,
+          v1: save && save.characters && save.characters.v1,
+        });
+        if (link) {
+          result.governorLink = link;
+          _log(`[ai-movement] governor link: ${link.resolved}/${link.withGovernor} resolved via ` +
+            `v1.secondaryUuid; record faction agrees with settlement owner ` +
+            `${Math.round((link.agreement || 0) * 100)}% (random baseline ` +
+            `${Math.round((link.randomBaseline || 0) * 100)}%) — faction field usable: ${link.factionFieldUsable ? "yes" : "NO"}`);
         }
       } catch (e) { _log(`[ai-movement] governance skipped: ${e && e.message}`); }
 

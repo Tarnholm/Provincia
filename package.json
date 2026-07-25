@@ -1,6 +1,6 @@
 {
   "name": "provincia",
-  "version": "0.9.1453",
+  "version": "0.9.1454",
   "description": "Provincia — Rome: Total War mod data viewer",
   "author": "Tarnholm",
   "license": "MIT",
@@ -73,6 +73,7 @@
       "src/aiExpansion.js",
       "src/aiProvenance.js",
       "src/familyIntegrity.js",
+      "src/governorLink.js",
       "src/unitParser.js",
       "src/buildingParser.js",
       "src/ownershipParser.js",
