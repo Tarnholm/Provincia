@@ -4137,6 +4137,17 @@ ipcMain.handle("updater-quit-and-install", () => {
 const { registerRegionOwnersCsvHandler } = require("./src/regionOwnersCsvHandler.js");
 registerRegionOwnersCsvHandler(ipcMain, { dialog, BrowserWindow, getActiveModDataDir: () => activeModDataDir });
 
+// Bundled RIS Crash Reporter (2026-07-25) — it used to be a separate program a
+// tester had to remember to start before the game. Provincia now ships it and
+// runs it with the Python runtime it already bundles, so launching Provincia is
+// enough. See src/crashReporterHandlers.js.
+try {
+  const { registerCrashReporterHandlers } = require("./src/crashReporterHandlers.js");
+  registerCrashReporterHandlers(ipcMain, { app, BrowserWindow, writeLog: _logLine });
+} catch (e) {
+  console.warn("[crash-reporter] registration failed:", e && e.message);
+}
+
 // Single-instance lock: a second launch would run duplicate save/log watchers
 // against the same files and the same provincia.log fd — focus the existing
 // window instead.

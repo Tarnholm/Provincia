@@ -143,6 +143,19 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.on("ai-movement-progress", fn);
     return () => ipcRenderer.removeListener("ai-movement-progress", fn);
   },
+  // Bundled crash reporter — Provincia runs it so a tester no longer has to
+  // start a second program before launching the game.
+  crashReporterStatus: () => ipcRenderer.invoke("crash-reporter-status"),
+  crashReporterStart: () => ipcRenderer.invoke("crash-reporter-start"),
+  crashReporterStop: () => ipcRenderer.invoke("crash-reporter-stop"),
+  crashReporterConfigPath: () => ipcRenderer.invoke("crash-reporter-config-path"),
+  crashReporterGetName: () => ipcRenderer.invoke("crash-reporter-get-name"),
+  crashReporterSetName: (name) => ipcRenderer.invoke("crash-reporter-set-name", name),
+  onCrashReporterStatus: (handler) => {
+    const fn = (_e, st) => handler(st);
+    ipcRenderer.on("crash-reporter-status", fn);
+    return () => ipcRenderer.removeListener("crash-reporter-status", fn);
+  },
   listAiBaselines: () => ipcRenderer.invoke("list-ai-baselines"),
   compareAiBaseline: (baselineFile, result) => ipcRenderer.invoke("compare-ai-baseline", baselineFile, result),
   deleteAiBaseline: (baselineFile) => ipcRenderer.invoke("delete-ai-baseline", baselineFile),

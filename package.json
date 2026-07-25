@@ -1,6 +1,6 @@
 {
   "name": "provincia",
-  "version": "0.9.1437",
+  "version": "0.9.1438",
   "description": "Provincia — Rome: Total War mod data viewer",
   "author": "Tarnholm",
   "license": "MIT",
@@ -10,7 +10,7 @@
     "bundle-data": "node scripts/bundle-mod-data.js",
     "fetch-runtime": "node scripts/fetch-runtime.js",
     "bundle-mac-demo": "node scripts/bundle-mac-demo.js",
-    "prebuild": "node scripts/bundle-mod-data.js && node scripts/fetch-runtime.js",
+    "prebuild": "node scripts/gen-ailog-patterns.js && node scripts/bundle-mod-data.js && node scripts/fetch-runtime.js",
     "build": "vite build",
     "test": "vitest run",
     "electron": "electron .",
@@ -22,7 +22,8 @@
     "changelog:trim": "node scripts/trim-changelog.js",
     "changelog:check": "node scripts/trim-changelog.js --check",
     "ship": "node scripts/ship.js",
-    "submit-fp": "node scripts/submit-false-positive.js"
+    "submit-fp": "node scripts/submit-false-positive.js",
+    "gen:ailog-patterns": "node scripts/gen-ailog-patterns.js"
   },
   "dependencies": {
     "electron-updater": "^6.8.3",
@@ -153,7 +154,9 @@
       "src/diagnostics.js",
       "src/startingArmiesBuilder.js",
       "src/economyParser.js",
-      "src/parsers.js"
+      "src/parsers.js",
+      "src/crashReporterHandlers.js",
+      "src/aiLogExtract.js"
     ],
     "extraMetadata": {
       "main": "main.js"
@@ -170,6 +173,10 @@
       {
         "from": "bundled-mod",
         "to": "bundled-mod"
+      },
+      {
+        "from": "crash-reporter",
+        "to": "crash-reporter"
       }
     ],
     "publish": [

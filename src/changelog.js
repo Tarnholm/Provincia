@@ -13,6 +13,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1438",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**The crash reporter is built into Provincia — you no longer run two programs.** Tools → ⚑ Crash Reporter. Set your RIS Discord name once, press start, then play: it watches for the game, and when the game exits it uploads the report by itself. It is the same reporter, driven by the Python runtime Provincia already ships, so there is nothing extra to install. Its output is shown live in the panel, and its settings live in your user folder so they survive updates. Provincia's own copy never self-updates (that would fight Provincia's updater), and it is stopped when Provincia closes rather than being left orphaned." },
+      { type: "feature", text: "**Reports now carry what the AI Movement Lab needs — including the AI's own decision log, which was never collected before.** campaign_ai_log.txt is where every finding in the Lab comes from, and a 102-turn campaign writes about 330 MB of it. Attaching that is impossible, but it turns out only 23% of the lines are ever read: a verbatim extract of exactly those compresses to **3.2 MB**, comfortably inside an attachment. Verified on the 330 MB reference log — the Lab produces **all 6,399 findings identically, in the same order**, from the extract as from the original, with matching turn counts, economy blocks and strength distributions. Reports also gain a verbatim copy of every `Script Error` line, which the existing human-readable version could not be parsed from." },
+      { type: "improvement", text: "The filter patterns are generated from the analyser's own definitions rather than copied, because a copy drifts and a drifted filter loses data silently. That is not hypothetical: the first hand-written version guessed the faction turn header as \"+start\" where the log has a tab-indented \"start\", matched nothing, and would have discarded every turn boundary — and with it all faction attribution — without a single error. A test now runs the analyser over both the full log and an extract and requires identical findings." },
+      { type: "fix", text: "Three bugs the real-data testing caught before any of this shipped, each of which would have quietly lost information: Python's `match()` anchors where JavaScript's `test()` searches, which dropped one pattern and 83,427 lines; an off-by-one skipped everything before the first turn header, losing the log's preamble; and a hand-rolled turn-header check counted 23,337 turn blocks in a log that has 51, which would have made the size-trimming nonsense." },
+      { type: "fix", text: "When it runs inside Provincia the reporter never prompts on a console it does not have — the \"what is your Discord name?\" question and every \"press Enter to close\" would otherwise raise an error and take it down before it watched anything. Standalone behaviour is unchanged. The name is collected in Provincia's UI instead, and start stays disabled until it is set, because a report tagged \"unnamed\" cannot be followed up." },
+    ],
+  },
+  {
     version: "0.9.1437",
     date: "2026-07-25",
     items: [

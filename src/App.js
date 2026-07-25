@@ -73,6 +73,7 @@ import UnitComparePanel from "./panels/UnitComparePanel";
 import RecruitPlannerPanel from "./panels/RecruitPlannerPanel";
 import DiploHeatmapPanel from "./panels/DiploHeatmapPanel";
 import AiMovementPanel from "./panels/AiMovementPanel";
+import CrashReporterPanel from "./panels/CrashReporterPanel";
 import TraitExplorerPanel from "./panels/TraitExplorerPanel";
 import CampaignAutopsyPanel from "./panels/CampaignAutopsyPanel";
 import BuildOrderPanel from "./panels/BuildOrderPanel";
@@ -11890,6 +11891,9 @@ function App() {
   const [showDefLocator, setShowDefLocator] = useState(false); // ⌖ "where is this defined?" (2026-07-17)
   const [showWhatIf, setShowWhatIf] = useState(false); // 🧪 in-shadow EDB/EDU tweak → economy diff (2026-07-17)
   const [showAiMovement, setShowAiMovement] = useState(false); // ⚔ AI movement pathology analyzer (2026-07-24)
+  // ⚑ Bundled crash reporter (2026-07-25) — Provincia now ships and runs it, so
+  // a tester no longer has to start a second program before launching the game.
+  const [showCrashReporter, setShowCrashReporter] = useState(false);
   // Crash fallback for the tool-panel boundary: close every tool panel.
   const closeAllToolPanels = () => {
     setShowSubmodDrift(false); setShowEconBaseline(false);
@@ -15160,6 +15164,7 @@ function App() {
                       { icon: "⌖", label: "Find Definition", color: "#c8c8e8", desc: "Where is this unit/building/region defined? File + line across all mod files, click to open in editor.", open: () => setShowDefLocator(true) },
                       { icon: "🧪", label: "What-If Sandbox", color: "#b8d8e8", desc: "Apply a hypothetical EDB/EDU tweak in a shadow copy and diff every faction's economy — the mod itself is never touched.", open: () => setShowWhatIf(true) },
                       { icon: "⚔", label: "AI Movement Lab", color: "#8fc9d8", desc: "Analyze a campaign log for AI pathing problems — stuck armies, ping-pong loops, orders that never arrive, flee loops. Works on any message_log.txt incl. Discord telemetry downloads.", open: () => setShowAiMovement(true) },
+                      { icon: "⚑", label: "Crash Reporter", color: "#8fd18f", desc: "Watch this session and send a report if the game crashes — logs, save, and an extract of the AI decision log for the Movement Lab. Bundled, so you no longer run a separate reporter program.", open: () => setShowCrashReporter(true) },
                     ].map((t) => (
                       <button
                         key={t.label}
@@ -23183,6 +23188,9 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
       {showUnitCompare && <UnitComparePanel modDataDir={modDataDir} unitOwnership={unitOwnership} factionDisplayNames={factionDisplayNames} onClose={() => setShowUnitCompare(false)} />}
       {showDefLocator && <DefinitionLocatorPanel modDataDir={modDataDir} initialQuery="" onClose={() => setShowDefLocator(false)} />}
       {showWhatIf && <WhatIfPanel modDataDir={modDataDir} onClose={() => setShowWhatIf(false)} />}
+      {showCrashReporter && (
+        <CrashReporterPanel onClose={() => setShowCrashReporter(false)} />
+      )}
       {showAiMovement && (
         <AiMovementPanel
           defaultLogDir={liveLogDir}

@@ -1,0 +1,65 @@
+; Example config for RIS Crash Reporter.
+; Rename to crash_reporter.ini (next to the .exe) and edit as needed.
+; The .exe will auto-create this file on first run if it doesn't exist.
+
+[reporter]
+; Discord webhook URL to post reports to. Leave the baked-in default unless
+; you specifically want to point a tester at a different channel.
+webhook_url = https://discord.com/api/webhooks/1509586141605531688/32aTJVpv1Au53i5CZtjEnFv5MEQiuCRz9_-jBtOZDIirEozPoPD97UrbyIng2iV52tVZ
+
+; Name attached to every report (your Discord username — the installer sets
+; this). Defaults to the Windows username if blank.
+tester_name =
+
+; Optional override for RTW Remastered log folder. Leave blank for auto-detect.
+; Typical path:
+;   %LOCALAPPDATA%\Feral Interactive\Total War ROME REMASTERED\VFS\Local\Rome\logs
+log_dir =
+
+; Free-text mod name / build tag included in every report. Leave BLANK to
+; auto-detect the active mod from the game's mod_loading.txt (recommended);
+; set a value here only to override the auto-detected name.
+mod_name =
+
+; "true" = zip and attach the most recent save game with each report.
+upload_save = true
+; Skip the save if its ZIP is larger than this many MB (Discord webhook
+; ceiling — raise it if your report channel is on a boosted server).
+max_save_mb = 8
+
+; "true" = sample the game's peak working set during the session and show the
+; memory trend (start -> peak) in the report. Helps spot the memory leak /
+; resource exhaustion behind late-session crashes (fow-off / all_ai marathons).
+sample_memory = true
+
+; "true"  = always send a report on exit (even clean ones — useful for play-time tracking)
+; "false" = only send when a crash, an engine assert, or 5+ errors are detected
+always_report = true
+
+; "true"  = flag sessions whose log lacks an engine clean-shutdown marker as an
+;           ORANGE "unclean shutdown" report (ended on a battle/load line —
+;           could be a mid-battle quit OR a silent CTD; worth a human glance).
+; "false" = treat those as a normal clean exit (quieter channel, but you may
+;           miss silent crashes that didn't end on a recognizable gameplay line).
+; Note: a log that ends mid turn-processing (e.g. post-battle trait handling) is
+; always flagged RED "suspected crash" regardless of this setting.
+flag_unclean_shutdown = true
+
+; Extra game-process filenames to watch for, comma-separated. Useful if a
+; Steam update renames the RR exe — the built-in defaults
+; ("Total War ROME REMASTERED.exe", "RomeTW.exe", "RomeTW_BI.exe", "RomeTW_ALX.exe")
+; are always included.
+rtw_process_names =
+
+; Mods allowed during beta sessions: comma-separated substrings matched
+; CASE-SENSITIVELY against each enabled mod's display name. The default "RIS"
+; covers the beta ("[PublicBETA] RIS ...") and official submods ("4 Romans RIS").
+; Any enabled mod matching none of these is flagged 🚫 in the report and the
+; tester is told to disable it.
+allowed_mod_substrings = RIS
+
+; Send a filtered extract of campaign_ai_log.txt for Provincia's AI Movement
+; Lab. The raw file reaches ~330MB, so only the ~13 line shapes the Lab reads
+; are kept (about 23% of lines) and the result is lzma-compressed to a few MB.
+; The game only writes that log when launched with -ai_log.
+upload_ai_log = true

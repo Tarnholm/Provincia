@@ -329,8 +329,6 @@ function createAiDecisionAnalyzer(opts = {}) {
   const agentUse = { spies: 0, assassins: 0, reports: 0, zeroReports: 0 };
   let lines = 0, matched = 0;
 
-  // Any line naming a character counts as "the AI is still managing them".
-  const RX_ANY_CHAR = /char '([^']+)'|character '([^']+)'|army '([^']+)'/;
   const noteChar = (name) => {
     if (!name) return;
     const e = charSeen.get(name);
@@ -928,4 +926,32 @@ function buildSaveFacts(save, regionOfSettlement) {
   };
 }
 
-module.exports = { analyzeMovementLog, createAiDecisionAnalyzer, createScriptLogAnalyzer, correlateWithSave, buildSaveFacts, DEFAULTS, AI_DEFAULTS };
+// Any line naming a character counts as "the AI is still managing them" for the
+// abandonment detector. Module-scope so the line manifest can export it.
+const RX_ANY_CHAR = /char '([^']+)'|character '([^']+)'|army '([^']+)'/;
+
+// ════════════════════════════════════════════════════════════════════════
+// LINE MANIFEST (2026-07-25) — the exact line shapes this analyser consumes.
+//
+// The crash reporter has to ship campaign_ai_log data back from testers, and the
+// raw file is 330MB. It cannot attach that, but it does not need to: only 21.8%
+// of the lines are ever read, and a verbatim extract of just those compresses to
+// 7.5MB. That extract is only equivalent to the original if the reporter filters
+// on EXACTLY these patterns — so they are defined here, once, and exported.
+//
+// This exists because hand-copying them went wrong immediately: the faction turn
+// header is `AI: <tabs>start 'faction' …`, and a retyped version guessed
+// `+start`, which matched nothing and would have dropped every turn boundary
+// (and with it all faction attribution) without any error.
+//
+// src/aiLogExtract.js consumes this, and its test asserts the analyser produces
+// identical findings from an extract and from the full log.
+// The manifest is NOT just AI_RX. The `abandoned` detector also counts any line
+// that merely NAMES a character as evidence the AI is still managing them, via
+// RX_ANY_CHAR — a much broader, unanchored match. Leaving it out of the manifest
+// cost 560 findings (abandoned 1,695 instead of 2,255) in the extract-equivalence
+// test, because dropped mentions pushed characters below the 5-order threshold.
+// It is included here so an extract really is equivalent, and the test proves it.
+const AI_LOG_LINE_PATTERNS = [...Object.values(AI_RX).map((rx) => rx.source), RX_ANY_CHAR.source];
+
+module.exports = { analyzeMovementLog, createAiDecisionAnalyzer, createScriptLogAnalyzer, AI_LOG_LINE_PATTERNS, AI_RX, correlateWithSave, buildSaveFacts, DEFAULTS, AI_DEFAULTS };
