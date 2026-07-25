@@ -13,6 +13,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1439",
+    date: "2026-07-25",
+    items: [
+      { type: "fix", text: "**The bundled reporter would have silently sent no AI log at all — caught by a self-test written for exactly this.** Provincia drives it with the embeddable Python it ships, and that distribution does not put a script's own directory on the import path, so the reporter could not find its line filter. It would have run perfectly, watched the game, uploaded a report, and simply omitted the campaign_ai_log extract, with no error anywhere. A normal `python crash_reporter.py` does add that directory, which is why it only appeared once the reporter was bundled. The reporter now adds its own directory itself, so it works under any host." },
+      { type: "improvement", text: "**The standalone build for testers who do not use Provincia gets the same upgrade, plus a gate.** Its build now names the filter as an explicit hidden import (PyInstaller's static scan can miss one inside a try/except), refuses to build if the generated file is absent, and then runs the freshly built exe's `--selftest` and fails the build if it does not pass. That check verifies the filter loads AND that it classifies lines correctly, so a build that would quietly stop sending AI data cannot reach a tester." },
+      { type: "fix", text: "The size guard that trims an over-large extract did not converge: it recomputed how much to drop from the already-reduced count, so each pass dropped less than the one before. Asking for a 256 KB result settled at 2,182 KB and stopped. It now halves the retained turn blocks monotonically and hits 249 KB, 853 KB and 3,313 KB for 256 KB / 1 MB / 7 MB ceilings, always starting on a whole turn header so no record is cut in half." },
+      { type: "improvement", text: "New tests keep all of this honest: the generated Python filter must be byte-identical to what the analyser's manifest produces right now (a stale copy fails the suite), everything the reporter needs must be listed for packaging, and the reporter must pass its own self-test under Provincia's runtime." },
+    ],
+  },
+  {
     version: "0.9.1438",
     date: "2026-07-25",
     items: [

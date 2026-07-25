@@ -262,6 +262,20 @@ MAX_REPORT_BYTES = 7 * 1024 * 1024  # Discord file-attachment ceiling
 # attempt ("+start" instead of "AI: <tabs>start"), matched nothing, and would
 # have silently dropped every turn boundary. If the module is missing the extract
 # is skipped with a note — it is never approximated with a guessed filter.
+# The embeddable Python that Provincia bundles ships a ._pth file, and with one
+# present Python does not put the script's own directory on sys.path — so a
+# sibling module is not importable by default. A normal `python crash_reporter.py`
+# does add it, which is why this only showed up once the reporter was bundled.
+# Add it ourselves so the import works under any host. Frozen builds have the
+# module inside the exe and need nothing.
+if not getattr(sys, "frozen", False):
+    try:
+        _here = os.path.dirname(os.path.abspath(__file__))
+        if _here and _here not in sys.path:
+            sys.path.insert(0, _here)
+    except Exception:  # pragma: no cover - __file__ absent in odd hosts
+        pass
+
 try:
     from ai_log_patterns import keep_ai_log_line as _keep_ai_line
     from ai_log_patterns import is_turn_block as _is_turn_block
@@ -339,13 +353,18 @@ def extract_ai_log(log_dir: Path, max_bytes: int = MAX_REPORT_BYTES,
         return bytes(out), kept, total, blocks
 
     blob, kept, total, blocks = sweep(0)
+    total_blocks = blocks
     dropped = 0
-    # Halve the retained blocks until it fits. A handful of passes at most, and
-    # each pass is a plain sequential read.
+    # Halve the RETAINED block count, monotonically, against the total from the
+    # first sweep. Recomputing the skip from the already-reduced count (the
+    # original bug) makes each pass skip fewer blocks than the last, so the loop
+    # oscillates and never converges: a 256 KB ceiling settled at 2,182 KB.
+    retained = total_blocks
     guard = 0
-    while len(blob) > max_bytes and blocks > 1 and guard < 12:
+    while len(blob) > max_bytes and retained > 1 and guard < 24:
         guard += 1
-        dropped = blocks - max(1, blocks // 2)
+        retained = max(1, retained // 2)
+        dropped = total_blocks - retained
         blob, kept, total, blocks = sweep(dropped)
 
     if kept == 0:
@@ -2327,7 +2346,57 @@ def main():
     return 0
 
 
+def selftest() -> int:
+    """Report whether this build can do everything it claims. Exit 0 = healthy.
+
+    Exists because the AI-log filter is a conditional import: a frozen build that
+    failed to bundle ai_log_patterns.py would keep working and just stop sending
+    the AI decision log, silently. build.bat runs this and refuses to ship a build
+    that fails it.
+    """
+    ok = True
+    print("%s v%s" % (APP_NAME, APP_VERSION))
+    print("frozen:", bool(getattr(sys, "frozen", False)))
+
+    print("ai_log_patterns importable:", AI_LOG_FILTER_AVAILABLE)
+    if not AI_LOG_FILTER_AVAILABLE:
+        print("  FAIL: the AI Movement Lab extract would be skipped in every report.")
+        print("        Add ai_log_patterns to the PyInstaller hiddenimports, and make")
+        print("        sure the file exists (Provincia generates it:")
+        print("        npm run gen:ailog-patterns).")
+        ok = False
+    else:
+        # prove the filter actually works, not merely that the module loaded
+        header = "AI: \t\t\t\tstart 'dummies' for year -270, season summer"
+        checks = [
+            ("faction turn header", _keep_ai_line(header), True),
+            ("is_turn_block on it", _is_turn_block(header), True),
+            ("unanchored char mention", _keep_ai_line("AI: ltgd: army 'Ulkos' considered"), True),
+            ("unrelated line dropped", _keep_ai_line("AI: ltgd: considering invade of epirus"), False),
+        ]
+        for label, got, want in checks:
+            good = (bool(got) == want)
+            print("  %-26s %-5s %s" % (label, str(bool(got)), "ok" if good else "FAIL (expected %s)" % want))
+            if not good:
+                ok = False
+
+    for mod in ("lzma", "zipfile", "ctypes", "urllib.request"):
+        try:
+            __import__(mod)
+            print("  module %-16s ok" % mod)
+        except Exception as exc:
+            print("  module %-16s FAIL: %r" % (mod, exc))
+            ok = False
+
+    print("SELFTEST:", "PASS" if ok else "FAIL")
+    return 0 if ok else 1
+
+
 if __name__ == "__main__":
+    # --selftest must run before the update check and before any log watching:
+    # it is a build-verification step, not a mode of the reporter.
+    if "--selftest" in sys.argv:
+        sys.exit(selftest())
     log_line(f"===== process start: v{APP_VERSION} argv={sys.argv[1:]} =====")
     try:
         code = main()
