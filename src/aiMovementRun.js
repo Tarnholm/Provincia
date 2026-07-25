@@ -102,6 +102,31 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
         const n = (v && v.settlements ? v.settlements.length : 0);
         if (n) startCounts[String(fac).toLowerCase()] = n;
       }
+      // ── PROVENANCE FIRST: is this log paired with a save from the same moment? ──
+      // Everything below cross-references the two, so the strength of that pairing
+      // qualifies all of it. On the reference data the log covers turns 1-51 and the
+      // save is turn 102 — the world had as long again to change as the log observed.
+      try {
+        const { logStartsAtCampaignStart, logSaveAlignment, provenanceLeads } = require("./aiProvenance.js");
+        const startsAt = logStartsAtCampaignStart({ factionHealth: result.factionHealth, startCounts });
+        const alignment = logSaveAlignment({
+          logTurns: result.totalTurns,
+          saveTurn: save && save.turn,
+          startsAtTurn1: !!(startsAt && startsAt.startsAtTurn1),
+        });
+        if (alignment) {
+          result.provenance = { ...alignment, opening: startsAt };
+          // Held rather than unshifted here: the expansion lead below ALSO unshifts
+          // itself, so anything placed first now gets displaced. Applied after every
+          // other lead source, because a caveat that appears below the finding it
+          // qualifies has already failed at its job.
+          result._provenanceLeads = provenanceLeads(alignment);
+          _log(`[ai-movement] provenance: log turns 1-${alignment.logTurns}, save turn ${alignment.saveTurn}, ` +
+            `gap ${alignment.gapTurns}, confidence ${alignment.confidence}` +
+            (startsAt ? ` (opening state matched ${startsAt.matched}/${startsAt.compared} factions)` : ""));
+        }
+      } catch (e) { _log(`[ai-movement] provenance check skipped: ${e && e.message}`); }
+
       const exp = expansionReport({ startCounts, nowOwnerByCity: facts.ownerByCity });
       if (exp) {
         result.expansion = exp;
@@ -291,6 +316,13 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
             (rv.excluded.length ? ` and EXCLUDED ${rv.excluded.length} faction(s): ${rv.excluded.slice(0, 5).join(", ")}` : " with no contradictions"));
         }
       } catch (e) { result.terrainError = e && e.message ? e.message : String(e); }
+
+    // LAST, so nothing can displace it: if the log and save describe different
+    // moments, that caveat belongs above every finding that pairs the two.
+    if (result._provenanceLeads && result._provenanceLeads.length) {
+      result.modLeads = result._provenanceLeads.concat(result.modLeads || []);
+    }
+    delete result._provenanceLeads;
       _log(`[ai-movement] mod-file audit: ${audit.leads.length} leads across ${Object.keys(audit.factions).length} factions`);
     } catch (e) { result.auditError = e && e.message ? e.message : String(e); }
     _log(`[ai-movement] correlated with ${path.basename(savePath)} (turn ${facts.turn}): ${sm.length} confirmed-never-arrived, ${imp.length} impossible campaigns, ${result.save.orphanedArmies} orphaned armies, in ${result.save.ms}ms`);

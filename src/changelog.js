@@ -13,6 +13,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1447",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**The Lab now checks whether your log and your save describe the same moment — and on the reference pair, they do not.** The log covers turns 1-51; the save is turn 102. So every \"the army never arrived\" verdict was being decided against a world **51 turns after the log stopped talking about it** — as long again as the log ever observed. A new provenance check states the relationship and now sits as the FIRST lead, above the findings it qualifies, because a caveat that appears below them has already failed at its job." },
+      { type: "improvement", text: "**The gap is a fact, not a guess, because the log is anchored first.** If a log's opening settlement counts match descr_strat's starting ownership, it begins at turn 1 — and only then does \"the save is 51 turns later\" mean anything. On this campaign **218 of 221 factions match (98.6%)**, so the anchor holds. Where it does not hold, the check refuses to compute a gap at all and says the log's turn range cannot be established, rather than doing arithmetic on an assumption." },
+      { type: "fix", text: "**Found by chasing a contradiction rather than averaging it away.** The log shows the independent peoples already down to 413 settlements in their very first logged turn and falling; the save shows them holding 522. Both numbers survived scrutiny — the 522 are real named settlements, not placeholders or unresolved owners — which left the pairing itself as the thing that did not hold. The \"conquest is not working\" lead is unaffected as a net statement, but it now carries the caveat, and the modder can see that the net figure may hide a collapse followed by a recovery as factions were wiped out." },
+      { type: "improvement", text: "Two guards earned their keep on this change. The worker-safety test caught that the new module was missing from the packaged file list — it would have been **absent from app.asar in the shipped build**, the exact silent failure that whitelist exists to prevent. And the integration test's \"outcome lead must be first\" assertion failed, correctly: that ordering was a deliberate decision, so it was re-argued and updated in place rather than quietly relaxed, with the original intent (outcome above scale) preserved directly beneath." },
+    ],
+  },
+
+  {
     version: "0.9.1446",
     date: "2026-07-25",
     items: [

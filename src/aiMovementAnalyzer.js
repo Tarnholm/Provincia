@@ -989,6 +989,14 @@ function createAiDecisionAnalyzer(opts = {}) {
           medianSettlements: med(rows.map((r) => r.of)),
           maxSettlements: rows.reduce((a, r) => (r.of > a ? r.of : a), 0),
           avgTotalStrength: Math.round(e.strSum / e.samples),
+          // The count as first seen. Used to establish PROVENANCE: if a log's opening
+          // state matches descr_strat's starting ownership, the log begins at turn 1,
+          // which is what makes "the save is N turns beyond this log" a statement
+          // rather than a guess. Taken from the earliest turn, not the median.
+          firstSettlements: (() => {
+            const keys = [...e.byTurn.keys()].sort((a, b) => a - b);
+            return keys.length ? e.byTurn.get(keys[0]).of : 0;
+          })(),
           // Turns where the engine's own passes DISAGREED about the settlement count
           // (values compared, not samples counted). High means this faction's count is
           // being mutated mid-turn, so no single number describes it — the rebel

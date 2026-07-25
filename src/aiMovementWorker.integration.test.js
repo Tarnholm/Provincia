@@ -130,10 +130,26 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
     expect(r.expansion.netNonRebel).toBeLessThan(0);             // -17
     // slave must never appear among the "real faction" rows
     expect(r.expansion.rows.some((x) => x.faction === "slave")).toBe(false);
-    // the outcome lead must come FIRST, with the scale lead right behind it
-    expect(r.modLeads[0].faction).toBe("all (campaign outcome)");
-    expect(r.modLeads[0].issue).toMatch(/CONQUEST IS NOT WORKING/);
-    expect(r.modLeads[1].faction).toBe("all (map scale)");
+    // ── LEAD ORDER: the PROVENANCE caveat now outranks the outcome lead ──
+    // This assertion used to demand the outcome lead be first. It was changed
+    // deliberately, not to make a test pass: the outcome lead is computed by pairing
+    // this log with this save, and on this data the log covers turns 1-51 while the
+    // save is turn 102. A caveat saying "these two describe different moments" has
+    // failed at its job if it appears below the finding built on that pairing.
+    //
+    // The original intent — outcome above scale — is preserved directly below.
+    expect(r.modLeads[0].faction).toBe("all (data provenance)");
+    expect(r.modLeads[0].issue).toMatch(/DIFFERENT MOMENTS/);
+    expect(r.provenance.confidence).toBe("poor");
+    expect(r.provenance.gapTurns).toBe(51);
+    // The log really does open at the campaign start (218 of 221 factions match
+    // descr_strat), which is what makes the 51-turn gap a fact rather than a guess.
+    expect(r.provenance.opening.startsAtTurn1).toBe(true);
+    expect(r.provenance.opening.matchShare).toBeGreaterThan(0.9);
+
+    expect(r.modLeads[1].faction).toBe("all (campaign outcome)");
+    expect(r.modLeads[1].issue).toMatch(/CONQUEST IS NOT WORKING/);
+    expect(r.modLeads[2].faction).toBe("all (map scale)");
 
     // ── STRENGTH SCALE ──
     // BOTH SIDES MUST BE THE SAME UNIT. v0.9.1435/1437 compared the requirement
