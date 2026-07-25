@@ -64,7 +64,19 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
           resourcesByRegion: gv.parseResources(path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt")) || {},
         });
       } catch { /* leads still work without resource evidence */ }
+      // Farm endowment per faction — explains WHY its settlements stay small,
+      // which is the upstream cause of the settlement-tier lock.
+      let farmWealth = {};
+      try {
+        const { factionFarmWealth } = require("./aiModFileAudit.js");
+        const gv2 = require("./growthEval.js");
+        const { byRegion } = gv2.parseRegions(modDataDir);
+        const farmByRegion = {};
+        for (const [reg, r] of Object.entries(byRegion || {})) if (r && r.farmN != null) farmByRegion[reg] = r.farmN;
+        farmWealth = factionFarmWealth({ ownerByCity: facts.ownerByCity, regionOfSettlement, farmByRegion });
+      } catch { /* leads still work without farm evidence */ }
       const audit = auditModFiles({
+        farmWealth,
         findings: result.findings,
         saveFacts: facts,
         resourceWealth,

@@ -346,3 +346,68 @@ describe("resource endowment (descr_sm_resources × descr_strat placements)", ()
     expect(l.file).toMatch(/descr_sm_resources/);
   });
 });
+
+describe("farm endowment — why a faction's towns never grow", () => {
+  it("sums farm levels per faction from its regions", async () => {
+    const { factionFarmWealth } = await import("./aiModFileAudit.js");
+    const w = factionFarmWealth({
+      ownerByCity: { A: "poorfarm", B: "poorfarm", C: "richfarm" },
+      regionOfSettlement: { A: "Ra", B: "Rb", C: "Rc" },
+      farmByRegion: { Ra: 3, Rb: 4, Rc: 11 },
+    });
+    expect(w.poorfarm).toMatchObject({ regions: 2, farmSum: 7, farmMax: 4, lowFarm: 2 });
+    expect(w.poorfarm.farmAvg).toBe(3.5);
+    expect(w.richfarm).toMatchObject({ regions: 1, farmMax: 11, lowFarm: 0 });
+  });
+
+  const EDB = `
+building military_industrial_complex
+{
+	levels mic_1 mic_2
+	{
+			mic_1 requires factions { all, }
+			{
+				construction  4
+				cost  3000
+				settlement_min town
+			}
+			mic_2 requires factions { all, }
+			{
+				construction  6
+				cost  6000
+				settlement_min large_town
+			}
+	}
+}
+building market
+{
+	levels trader
+}
+`;
+  const files = { aiPersonality: "", strat: "", smFactions: "", edu: "", edb: EDB };
+  const findings = [{ kind: "campaign_stall", faction: "poorfarm", region: "X", detail: "still 0/20000 strength", impossible: true, blockedBy: "recruitment", micMax: 1 }];
+  const saveFacts = { turn: 102, menByFaction: { poorfarm: 900 }, settlementsByFaction: { poorfarm: 20 }, tierByFaction: { poorfarm: 1 } };
+
+  it("blames poor farmland when the faction's land really is below the map median", () => {
+    const farmWealth = {
+      poorfarm: { regions: 3, farmAvg: 3, farmMax: 4, lowFarm: 3 },
+      other1: { regions: 3, farmAvg: 7 }, other2: { regions: 3, farmAvg: 8 },
+    };
+    const { leads } = auditModFiles({ findings, saveFacts, files, farmWealth });
+    const tl = leads.find((l) => /SETTLEMENT-TIER LOCKED/.test(l.issue));
+    expect(tl).toBeTruthy();
+    expect(tl.suggestion).toMatch(/average Farm 3 against a map median of 7/);
+    expect(tl.suggestion).toMatch(/descr_regions\.txt/);
+  });
+
+  it("says growth is NOT the blocker when the farmland is ordinary", () => {
+    const farmWealth = {
+      poorfarm: { regions: 3, farmAvg: 7, farmMax: 8, lowFarm: 0 },
+      other1: { regions: 3, farmAvg: 7 }, other2: { regions: 3, farmAvg: 7 },
+    };
+    const { leads } = auditModFiles({ findings, saveFacts, files, farmWealth });
+    const tl = leads.find((l) => /SETTLEMENT-TIER LOCKED/.test(l.issue));
+    expect(tl.suggestion).toMatch(/farm land is ordinary, so growth is not the blocker/);
+    expect(tl.suggestion).not.toMatch(/descr_regions/);
+  });
+});

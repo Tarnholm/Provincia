@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1425",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**The Lab now explains WHY a faction’s towns never grow, using descr_regions farm levels.** The settlement-tier lock says a faction can’t build military infrastructure because its towns are too small; this goes one step upstream and checks whether its provinces can feed growth at all. On the reference campaign 8 of the 91 tier-locked factions are genuinely farm-poor — Hadhramaut averages Farm 3.1 against a map median of 6.2, so its towns will never reach large_town — and those leads now point at raising the Farm level in descr_regions.txt. The other 83 are explicitly told their farmland is ordinary, so growth is NOT their blocker and the settlement_min gate is." },
+    ],
+  },
+  {
     version: "0.9.1424",
     date: "2026-07-25",
     items: [

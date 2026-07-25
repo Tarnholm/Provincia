@@ -169,12 +169,33 @@ function factionResourceWealth({ ownerByCity = {}, regionOfSettlement = {}, reso
   return out;
 }
 
+// Per-faction FARM endowment. The settlement-tier lock explains why a faction
+// can't build military infrastructure; farm level explains why its settlements
+// never grow in the first place — RIS carries a Farm<N> tag per region in
+// descr_regions and growth scales off it. `farmByRegion` comes from the app's
+// verified parser (growthEval.parseRegions → byRegion[region].farmN).
+function factionFarmWealth({ ownerByCity = {}, regionOfSettlement = {}, farmByRegion = {} } = {}) {
+  const out = {};
+  for (const [city, fx] of Object.entries(ownerByCity)) {
+    const f = String(fx || "?").toLowerCase();
+    const e = out[f] = out[f] || { regions: 0, farmSum: 0, farmMax: 0, lowFarm: 0 };
+    const reg = regionOfSettlement[city] || city;
+    const farm = farmByRegion[reg];
+    if (farm == null) continue;
+    e.regions++; e.farmSum += farm;
+    if (farm > e.farmMax) e.farmMax = farm;
+    if (farm <= 4) e.lowFarm++;
+  }
+  for (const e of Object.values(out)) e.farmAvg = e.regions ? +(e.farmSum / e.regions).toFixed(2) : 0;
+  return out;
+}
+
 /**
  * auditModFiles({ findings, saveFacts, files })
  *   files: { aiPersonality, strat, smFactions, edu } — raw TEXT, any may be null
  * → { factions: {faction: facts}, leads: [ {severity, faction, file, key, issue, suggestion, evidence} ] }
  */
-function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = {}, buildAppetite = {}, resourceWealth = {} } = {}) {
+function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = {}, buildAppetite = {}, resourceWealth = {}, farmWealth = {} } = {}) {
   const { personalities, diplomatic } = parseAiPersonality(files.aiPersonality);
   const strat = parseStratFactions(files.strat);
   const naval = parseNavalOwners(files.edu);
@@ -227,6 +248,7 @@ function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = 
       navalAtSave: navalNow[k] || 0,
       bestSettlementTier: tierNow[k] != null ? tierNow[k] : null,
       resourceWealth: resourceWealth[k] || null,
+      farmWealth: farmWealth[k] || null,
       economy: economy[k] || null,
       buildAppetite: buildAppetite[k] || null,
       symptoms: sym[k] || null,
@@ -239,6 +261,11 @@ function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = 
   {
     const vals = Object.values(resourceWealth).filter((r) => r && r.regions > 0).map((r) => r.tradeValuePerRegion).sort((a, b) => a - b);
     if (vals.length) medianTradePerRegion = vals[Math.floor(vals.length / 2)];
+  }
+  let medianFarm = null;
+  {
+    const vals = Object.values(farmWealth).filter((r) => r && r.regions > 0).map((r) => r.farmAvg).sort((a, b) => a - b);
+    if (vals.length) medianFarm = vals[Math.floor(vals.length / 2)];
   }
 
   // ── leads: each names the FILE and KEY to edit, with its evidence ────────
@@ -359,7 +386,15 @@ function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = 
           file: "export_descr_buildings.txt",
           key: `military_industrial_complex ${nextLv} → settlement_min ${need.settlementMin} (cost ${need.cost}, ${need.turns} turns)`,
           issue: `SETTLEMENT-TIER LOCKED: its best town is tier ${F.bestSettlementTier} (${SETTLEMENT_TIERS[F.bestSettlementTier] || "?"}), so ${nextLv} is unreachable however rich it gets — and without it the troop tiers its campaigns demand do not exist for this faction`,
-          suggestion: `lower ${nextLv}'s settlement_min, or lower the mic_tier_* requirement on mid-tier units, or give this faction a settlement that can actually grow`,
+          suggestion: (() => {
+            const fw = F.farmWealth;
+            const poorFarm = fw && medianFarm != null && fw.farmAvg < medianFarm * 0.75;
+            return poorFarm
+              // if the land can't feed growth, raising the farm level is the
+              // upstream fix — the settlement_min is only the symptom's gate
+              ? `its provinces average Farm ${fw.farmAvg} against a map median of ${medianFarm}, so its towns will never grow into ${need.settlementMin} — raise the Farm level on its regions in descr_regions.txt, or lower ${nextLv}'s settlement_min`
+              : `lower ${nextLv}'s settlement_min, or lower the mic_tier_* requirement on mid-tier units, or give this faction a settlement that can actually grow (its farm land is ordinary, so growth is not the blocker)`;
+          })(),
           evidence: `${s.impossible} impossible campaign(s), biggest ask ${s.maxReq.toLocaleString()} strength` +
             (F.menAtSave != null ? `, fields ${F.menAtSave.toLocaleString()} men` : "") +
             (s.micMax != null ? `, military infrastructure tier ${s.micMax}` : "") +
@@ -383,4 +418,4 @@ function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = 
   return { factions, leads };
 }
 
-module.exports = { auditModFiles, parseAiPersonality, parseStratFactions, parseNavalOwners, parseSmFactions, parseMicLadder, factionResourceWealth, SETTLEMENT_TIERS };
+module.exports = { auditModFiles, parseAiPersonality, parseStratFactions, parseNavalOwners, parseSmFactions, parseMicLadder, factionResourceWealth, factionFarmWealth, SETTLEMENT_TIERS };
