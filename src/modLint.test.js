@@ -6,7 +6,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { lintMod, parseUnitTypeToken, lintFormations, VANILLA_UNIT_TYPES } from "./modLint.js";
+import { lintMod, parseUnitTypeToken, lintFormations, lintFormationValues, VANILLA_UNIT_TYPES, DOCUMENTED_FORMATION_VALUES } from "./modLint.js";
 
 const SM_RESOURCES = `;; synthetic descr_sm_resources
 "resources":
@@ -389,5 +389,86 @@ describe("formations-unknown-unit-type", () => {
     expect(VANILLA_UNIT_TYPES.size).toBe(29);
     expect(VANILLA_UNIT_TYPES.has("pilum_infantry"), "the defective token must NOT be whitelisted").toBe(false);
     expect(VANILLA_UNIT_TYPES.has("heavy_pilum_infantry")).toBe(true);
+  });
+});
+
+// ── the confidence grading, and the trap that motivated it ───────────────────
+// Absence from vanilla is NOT evidence of invalidity. I nearly reported
+// `unit_density loose` (20 uses in RIS, 0 in vanilla) and `block_formation square`
+// (4 in RIS, 0 in vanilla) as defects on that basis alone — the file's own header
+// documents both as legal. So a token that merely fails to appear in vanilla is a
+// warning, while a NEAR MISS of a real token (a dropped prefix, a typo) is an
+// error. `pilum_infantry` is the latter, and the engine confirmed it 413 times.
+describe("formations rule grades findings by confidence", () => {
+  it("treats a near miss as an error — the pilum_infantry case", () => {
+    const hits = [];
+    lintFormations("\t\tunit_type pilum_infantry 1.0", (sev, check, file, detail) => hits.push({ sev, detail }));
+    expect(hits).toHaveLength(1);
+    expect(hits[0].sev).toBe("error");
+    expect(hits[0].detail).toMatch(/dropped prefix/);
+  });
+
+  it("treats a wholly novel token as a WARNING, not an accusation", () => {
+    const hits = [];
+    lintFormations("\t\tunit_type wibble_wobble 1.0", (sev, check, file, detail) => hits.push({ sev, detail }));
+    expect(hits).toHaveLength(1);
+    expect(hits[0].sev).toBe("warn");
+    expect(hits[0].detail).toMatch(/may be a deliberate extension/);
+    expect(hits[0].detail).toMatch(/absence from vanilla is not proof/);
+    // and it points at the evidence that would settle it
+    expect(hits[0].detail).toMatch(/error_log/);
+  });
+});
+
+// ── values the file's own header documents ───────────────────────────────────
+describe("formations-bad-value", () => {
+  it("accepts every documented value, including the two vanilla never uses", () => {
+    const body = [
+      "\t\tunit_density close",
+      "\t\tunit_density loose",          // 0 uses in vanilla, documented as legal
+      "\t\tblock_formation line",
+      "\t\tblock_formation column",
+      "\t\tblock_formation square",      // 0 uses in vanilla, documented as legal
+    ].join("\n");
+    const hits = [];
+    const r = lintFormationValues(body, (sev, check, file, detail) => hits.push(detail));
+    expect(hits, "a documented value was wrongly flagged").toEqual([]);
+    expect(r).toMatchObject({ checked: 5, bad: 0 });
+  });
+
+  it("flags a value the header does not list, and quotes the legal set", () => {
+    const hits = [];
+    const r = lintFormationValues("\t\tunit_density sparse\n\t\tunit_density sparse", (sev, check, file, detail) => hits.push({ sev, check, detail }));
+    expect(r).toMatchObject({ checked: 2, bad: 1 });
+    expect(hits).toHaveLength(1);
+    expect(hits[0].sev).toBe("error");
+    expect(hits[0].check).toBe("formations-bad-value");
+    expect(hits[0].detail).toMatch(/line 1/);
+    expect(hits[0].detail).toMatch(/\(2 uses\)/);
+    expect(hits[0].detail).toMatch(/"loose", "close"/);
+    expect(hits[0].detail).toMatch(/this file's own header documents/);
+  });
+
+  it("flags a bad block_formation too", () => {
+    const hits = [];
+    lintFormationValues("\t\tblock_formation circle", (s, c, f, d) => hits.push(d));
+    expect(hits[0]).toMatch(/block_formation "circle"/);
+    expect(hits[0]).toMatch(/"square", "column", "line"/);
+  });
+
+  it("ignores comments and a missing file", () => {
+    const hits = [];
+    lintFormationValues(";\tunit_density\t\t\t\teither loose or close", (s, c, f, d) => hits.push(d));
+    expect(hits, "the header's own documentation line must not be parsed as data").toEqual([]);
+    expect(lintFormationValues(null, () => hits.push(1))).toEqual({ checked: 0, bad: 0 });
+  });
+
+  it("does not check unit_formation, whose documented list is open-ended", () => {
+    // the header ends that line with "(wedge, square, ...)" — an incomplete list
+    // cannot be validated, and guessing would produce false positives
+    expect(Object.keys(DOCUMENTED_FORMATION_VALUES).sort()).toEqual(["block_formation", "unit_density"]);
+    const hits = [];
+    lintFormationValues("\t\tunit_formation anything_at_all", (s, c, f, d) => hits.push(d));
+    expect(hits).toEqual([]);
   });
 });

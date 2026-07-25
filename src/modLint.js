@@ -174,6 +174,48 @@ function parseUnitTypeToken(line) {
   return token || null;
 }
 
+
+// Values the file's OWN HEADER documents. This is better evidence than vanilla
+// usage, and it matters: I nearly reported `unit_density loose` (20 uses in RIS,
+// 0 in vanilla) and `block_formation square` (4 in RIS, 0 in vanilla) as defects
+// on absence-from-vanilla alone. The header lists both —
+//     ;  unit_density      either loose or close
+//     ;  block_formation   the formation to organise the block into (square, column, line)
+// — so both are perfectly valid and vanilla simply never happens to use them.
+// ABSENCE FROM VANILLA IS NOT EVIDENCE OF INVALIDITY. `unit_formation` is
+// deliberately absent below: its header line ends in "(wedge, square, ...)", and an
+// open-ended list cannot be checked.
+const DOCUMENTED_FORMATION_VALUES = {
+  unit_density: new Set(["loose", "close"]),
+  block_formation: new Set(["square", "column", "line"]),
+};
+
+function lintFormationValues(formationsTxt, push) {
+  if (!formationsTxt) return { checked: 0, bad: 0 };
+  const lines = formationsTxt.split(/\r?\n/);
+  const bad = new Map();   // "key=value" -> { key, value, count, firstLine }
+  let checked = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const code = lines[i].replace(/;.*$/, "");
+    const m = /^\s*(unit_density|block_formation)\s+(\S+)/.exec(code);
+    if (!m) continue;
+    const [, key, value] = m;
+    checked++;
+    if (DOCUMENTED_FORMATION_VALUES[key].has(value)) continue;
+    const k = key + "=" + value;
+    const e = bad.get(k) || { key, value, count: 0, firstLine: i + 1 };
+    e.count++;
+    bad.set(k, e);
+  }
+  for (const e of [...bad.values()].sort((a, b) => b.count - a.count)) {
+    push("error", "formations-bad-value", FORMATIONS_REL,
+      `line ${e.firstLine}: ${e.key} "${e.value}" (${e.count} use${e.count === 1 ? "" : "s"}) is not one of the values this file's own header documents — ` +
+      `${e.key} must be ${[...DOCUMENTED_FORMATION_VALUES[e.key]].map((v) => `"${v}"`).join(", ")}. ` +
+      `The engine reports an unknown value here as a parse error and discards the enclosing block.`);
+  }
+  return { checked, bad: bad.size };
+}
+
 function lintFormations(formationsTxt, push) {
   if (!formationsTxt) return { checked: 0, unknown: 0 };
   const unknown = new Map();   // token -> { count, firstLine }
@@ -194,13 +236,20 @@ function lintFormations(formationsTxt, push) {
     const near = [...VANILLA_UNIT_TYPES]
       .filter((v) => v.includes(token) || token.includes(v))
       .sort((a, b) => a.length - b.length);
-    push("error", "formations-unknown-unit-type", FORMATIONS_REL,
+    // Confidence matters here. A token that is a NEAR MISS of a real one (a
+    // dropped prefix, a typo) is almost certainly a defect — that is the
+    // `pilum_infantry` case, and the engine confirmed it 413 times in the v7.12
+    // telemetry. A wholly novel token might instead be a deliberate extension the
+    // engine accepts and vanilla simply never used, exactly as `unit_density
+    // loose` and `block_formation square` turned out to be. So a near miss is an
+    // error and a novel token is a warning, rather than accusing both equally.
+    push(near.length ? "error" : "warn", "formations-unknown-unit-type", FORMATIONS_REL,
       `line ${e.firstLine}: unit_type "${token}" (${e.count} use${e.count === 1 ? "" : "s"}) is not a unit class or category the engine knows — ` +
       `it appears in NONE of the three vanilla descr_formations_ai.txt files, which between them use ${VANILLA_UNIT_TYPES.size} distinct tokens. ` +
       `The engine logs "Failed to find either a unit class or unit category. Provided: '${token}'" and the block's units get no assigned position.` +
       (near.length
         ? ` Vanilla does use ${near.slice(0, 3).map((v) => `"${v}"`).join(", ")} — a dropped prefix is the likely cause.`
-        : ` No similar vanilla token exists, so check this is not simply a typo.`));
+        : ` No similar vanilla token exists, so this may be a deliberate extension rather than a defect — absence from vanilla is not proof the engine rejects it. Check the game's error_log for "Failed to find either a unit class or unit category" naming this token before changing anything.`));
   }
   return { checked, unknown: unknown.size };
 }
@@ -423,10 +472,11 @@ function lintMod(modDataDir) {
 
   // ---- check 7 ----
   const formationsStats = lintFormations(formationsTxt, push);
+  const formationValueStats = lintFormationValues(formationsTxt, push);
 
   const counts = { fatal: 0, error: 0, warn: 0 };
   for (const w of warnings) counts[w.severity] = (counts[w.severity] || 0) + 1;
-  return { warnings, counts, ms: Date.now() - t0, formations: formationsStats };
+  return { warnings, counts, ms: Date.now() - t0, formations: formationsStats, formationValues: formationValueStats };
 }
 
-module.exports = { lintMod, scanEduTypes, scanSmResources, scanScriptGrants, parseUnitTypeToken, lintFormations, VANILLA_UNIT_TYPES };
+module.exports = { lintMod, scanEduTypes, scanSmResources, scanScriptGrants, parseUnitTypeToken, lintFormations, lintFormationValues, VANILLA_UNIT_TYPES, DOCUMENTED_FORMATION_VALUES };

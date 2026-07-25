@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1441",
+    date: "2026-07-25",
+    items: [
+      { type: "fix", text: "**Hardened yesterday's formations rule against the mistake I nearly made with it a third time.** Chasing the still-unexplained parse failure in descr_formations_ai.txt, I found `unit_density loose` (20 uses in RIS, **0 in vanilla**) and `block_formation square` (4 in RIS, 0 in vanilla) and was about to report both as defects. The file's own header documents them: *\"unit_density — either loose or close\"* and *\"block_formation — the formation to organise the block into (square, column, line)\"*. **Absence from vanilla is not evidence of invalidity.** So the rule now grades by confidence: a token that is a near miss of a real one — a dropped prefix or typo, which is the `pilum_infantry` case the engine confirmed 413 times — stays an error, while a wholly novel token is a warning that says plainly it may be a deliberate extension and points at the game's own error_log as the thing that would settle it." },
+      { type: "feature", text: "**New check: `unit_density` and `block_formation` values are validated against the list the file's own header documents** — better evidence than vanilla usage, and it would catch a plain typo like `unit_density sparse`. 536 values checked on the real mod, 0 bad, which is the correct answer and confirms `loose` and `square` pass. `unit_formation` is deliberately not checked: its documented list ends in \"(wedge, square, ...)\", and an open-ended list cannot be validated without inventing the rest." },
+      { type: "improvement", text: "Ruled out, so nobody re-chases it: the line-2369 parse failure is **not** caused by any of these. That formation contains zero bare `pilum_infantry`, no `unit_density loose` and no `block_formation square`, and every token it uses is one vanilla uses too. It remains a separate, unexplained defect — which is now recorded as such rather than being quietly attached to a nearby finding." },
+    ],
+  },
+  {
     version: "0.9.1440",
     date: "2026-07-25",
     items: [
