@@ -78,6 +78,17 @@ export default function AiMovementPanel({
     } catch (e) { setError(e?.message || String(e)); }
     setBaseBusy(false);
   };
+  const exportReport = async () => {
+    if (!result) return;
+    setBaseBusy(true);
+    try {
+      const stem = (result.logPath || "ai-report").split(/[\/]/).pop().replace(/\.[^.]+$/, "");
+      const r = await window.electronAPI?.exportAiReport?.(result, "ai-report-" + stem);
+      if (r && r.error) setError(r.error);
+      else if (r && r.ok) setError(null);
+    } catch (e) { setError(e?.message || String(e)); }
+    setBaseBusy(false);
+  };
   const compareTo = async (file) => {
     if (!result) return;
     setBaseBusy(true);
@@ -251,6 +262,11 @@ export default function AiMovementPanel({
                   </select>
                 </>
               )}
+              <button onClick={exportReport} disabled={baseBusy}
+                title="Write a Markdown review document (leads grouped by file) plus CSVs of every finding and lead"
+                style={{ marginLeft: "auto", padding: "2px 9px", borderRadius: 5, cursor: baseBusy ? "default" : "pointer", border: "1px solid rgba(159,184,216,0.4)", background: "rgba(159,184,216,0.14)", color: "#9fb8d8", fontSize: "0.72rem" }}>
+                ⤓ Export report
+              </button>
               {baseBusy && <span style={{ fontSize: "0.7rem", color: "#8fc9d8" }}>working…</span>}
             </div>
             {/* filters live in the fixed header too, so they're always reachable */}

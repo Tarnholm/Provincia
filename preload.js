@@ -137,6 +137,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   analyzeAiMovement: (logPath, modDataDir, savePath) => ipcRenderer.invoke("analyze-ai-movement", logPath, modDataDir, savePath),
   pickAiSaveFile: () => ipcRenderer.invoke("pick-ai-save-file"),
   saveAiBaseline: (result, label) => ipcRenderer.invoke("save-ai-baseline", result, label),
+  exportAiReport: (result, suggestedName) => ipcRenderer.invoke("export-ai-report", result, suggestedName),
   listAiBaselines: () => ipcRenderer.invoke("list-ai-baselines"),
   compareAiBaseline: (baselineFile, result) => ipcRenderer.invoke("compare-ai-baseline", baselineFile, result),
   deleteAiBaseline: (baselineFile) => ipcRenderer.invoke("delete-ai-baseline", baselineFile),

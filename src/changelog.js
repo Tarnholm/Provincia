@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1421",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**Export the AI analysis as a report the team can work from.** “⤸ Export report” writes a Markdown review document plus CSVs: the Markdown opens with what was analysed and the save-verified totals, then groups every mod-file lead under the file you would edit — which is effectively the to-do list — followed by the worst-affected factions and the worst individual cases per problem type. The CSVs carry every finding and every lead in full for spreadsheets. On the reference campaign that is a 56KB review document, a 5,592-row findings sheet and a 677-row leads sheet, so 677 leads stop being something you scroll past in a dialog." },
+    ],
+  },
+  {
     version: "0.9.1420",
     date: "2026-07-25",
     items: [

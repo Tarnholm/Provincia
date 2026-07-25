@@ -419,6 +419,40 @@ ipcMain.handle("pick-ai-save-file", async () => {
   } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
 });
 
+// IPC: export an AI-analysis run to files the team can work from — a Markdown
+// review document (the leads ARE the to-do list) plus CSVs of every finding and
+// lead. Writes next to a user-chosen folder/name via a Save dialog.
+ipcMain.handle("export-ai-report", async (_event, result, suggestedName) => {
+  try {
+    if (!result || result.error) return { error: "nothing to export" };
+    const { dialog } = require("electron");
+    const { toMarkdown, toFindingsCsv, toLeadsCsv } = require("./aiReportExport.js");
+    let base = String(suggestedName || "ai-report").replace(/[^a-z0-9._-]+/gi, "-").slice(0, 60) || "ai-report";
+    if (!/\.md$/i.test(base)) base += ".md";
+    const r = await dialog.showSaveDialog({
+      title: "Export AI Movement Lab report",
+      defaultPath: base,
+      filters: [{ name: "Markdown", extensions: ["md"] }],
+    });
+    if (r.canceled || !r.filePath) return { canceled: true };
+    const mdPath = r.filePath;
+    const stem = mdPath.replace(/\.md$/i, "");
+    const written = [];
+    fs.writeFileSync(mdPath, toMarkdown(result, { generatedAt: new Date().toISOString() }), "utf8");
+    written.push(mdPath);
+    const fCsv = stem + "-findings.csv";
+    fs.writeFileSync(fCsv, toFindingsCsv(result), "utf8");
+    written.push(fCsv);
+    if ((result.modLeads || []).length) {
+      const lCsv = stem + "-leads.csv";
+      fs.writeFileSync(lCsv, toLeadsCsv(result), "utf8");
+      written.push(lCsv);
+    }
+    _writeLog(`[ai-report] exported ${written.length} file(s) to ${path.dirname(mdPath)}`);
+    return { ok: true, files: written };
+  } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+});
+
 // ── AI-run baselines (2026-07-25) — the before/after harness ───────────────
 // Save a compact digest of an analysis run, then compare a later run against it
 // to see whether a mod change actually reduced the AI's problems. Digests are
