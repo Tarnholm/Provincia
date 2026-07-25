@@ -707,10 +707,22 @@ export default function AiMovementPanel({
               const health = Object.entries(result.factionHealth || {});
               const stable = health.filter(([, e]) => e.countIsStable);
               const unstable = health.filter(([, e]) => !e.countIsStable);
+              // Ranked by the ungoverned COUNT, not by a share.
+              //
+              // The engine's "ungoverned cities N / M" line does NOT give a usable M.
+              // It matches descr_strat at turn 1 (218 of 221 factions) but diverges
+              // badly later — seleucid reads 36 against the save's 110 — and it is not
+              // even stable across the engine's own passes within one turn. So M is
+              // something narrower than "settlements owned" and any percentage built on
+              // it would be wrong. The SAVE's settlement count is authoritative and is
+              // used for the share where we have it.
               const ungoverned = stable
-                .filter(([, e]) => e.medianUngoverned >= 1 && e.medianSettlements > 0)
-                .map(([f, e]) => [f, e, e.medianUngoverned / e.medianSettlements])
-                .sort((a, b) => b[2] - a[2]);
+                .filter(([, e]) => e.medianUngoverned >= 1)
+                .map(([f, e]) => {
+                  const owned = (result.expansion && result.expansion.ownedNow && result.expansion.ownedNow[f]) || null;
+                  return [f, e, owned ? e.medianUngoverned / owned : null, owned];
+                })
+                .sort((a, b) => b[1].medianUngoverned - a[1].medianUngoverned);
 
               const blind = Object.entries(result.invasionTargets || {})
                 .filter(([, e]) => e.samples >= 5 && e.zeroPct >= 0.95)
@@ -770,15 +782,21 @@ export default function AiMovementPanel({
                   <div style={sec}>
                     <div style={h}>Settlements left ungoverned</div>
                     <div style={sub}>
-                      Median across turns, not an average: the engine writes this line about
-                      three times per season and the value is not always stable across those
-                      passes, so a mean mixes a settled count with one still being mutated.
+                      The engine's own count, as a median across turns rather than a mean —
+                      it writes this line about three times per season and the value is not
+                      always stable across those passes. Shown as a count, not a share: the
+                      engine's accompanying "of N settlements" figure disagrees with the save
+                      (seleucid reads 36 against 110) and is not a settlement total, so a
+                      percentage built on it would be wrong.
                     </div>
                     {ungoverned.length === 0 ? (
                       <div style={empty}>✓ No faction with a stable count leaves a settlement ungoverned.</div>
-                    ) : ungoverned.slice(0, 12).map(([f, e, share]) => (
-                      <div key={f} style={{ fontSize: "0.72rem", color: share > 0.4 ? "#e87a6a" : "#bbb" }}>
-                        <b>{flabel(f)}</b> — {e.medianUngoverned} of {e.medianSettlements} ungoverned ({Math.round(share * 100)}%)
+                    ) : ungoverned.slice(0, 12).map(([f, e, share, owned]) => (
+                      <div key={f} style={{ fontSize: "0.72rem", color: share != null && share > 0.4 ? "#e87a6a" : "#bbb" }}>
+                        <b>{flabel(f)}</b> — {e.medianUngoverned} settlement{e.medianUngoverned === 1 ? "" : "s"} ungoverned
+                        {owned
+                          ? ` of ${owned} held (${Math.round(share * 100)}%, denominator from the save)`
+                          : ""}
                       </div>
                     ))}
                     {unstable.length > 0 && (

@@ -13,6 +13,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1450",
+    date: "2026-07-25",
+    items: [
+      { type: "fix", text: "**The ungoverned-settlements percentage shipped in v0.9.1446 was built on a denominator that does not hold up, and is now gone.** The engine's \"ungoverned cities N / M\" line gives an M that matches descr_strat almost exactly at turn 1 — 218 of 221 factions — which is what made it look like a settlement count. Checked against the save at the other end of the campaign it falls apart: only **26% of factions land within 10%**, and it does not improve with faction size — **seleucid reads 36 against the save's 110**. It is also not stable across the engine's own passes within a single turn. So M is something narrower than \"settlements owned\" and any share computed from it was wrong." },
+      { type: "improvement", text: "**The section now leads with the count, and takes its denominator from the save where one exists.** \"10 settlements ungoverned of 19 held (53%, denominator from the save)\" is defensible; \"10 of 17\" was not. `expansionReport` now exposes `ownedNow` — per-faction settlements as the save has them — precisely so nothing else reaches for the log's figure again, and the reason is written at the field. Where the save has no count the share is simply omitted rather than guessed." },
+      { type: "improvement", text: "This was found by validating a number already on screen instead of trusting it. The turn-1 agreement was genuinely strong, and that is exactly what made the field convincing — a check at one end of a campaign says nothing about the other. The rebel faction had already been excluded for behaving oddly here; the useful discovery is that the same weakness affects every faction, just less visibly." },
+    ],
+  },
+
+  {
     version: "0.9.1449",
     date: "2026-07-25",
     items: [

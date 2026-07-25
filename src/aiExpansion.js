@@ -84,6 +84,13 @@ function expansionReport({ startCounts = null, nowOwnerByCity = null, rebelFacti
     topLosers: shrank.slice(-8).reverse(),
     wipedOutNames: wipedOut.map((r) => r.faction).slice(0, 40),
     rows,
+    // Settlements each faction holds in the SAVE. Exposed because the save is the
+    // authoritative count: the AI log's "ungoverned cities N / M" gives an M that
+    // matches descr_strat at turn 1 but diverges badly later (seleucid reads 36
+    // against 110 here) and is not stable across the engine's own passes, so it must
+    // not be used as a denominator. Anything wanting "what share of a faction's
+    // settlements are X" should divide by this.
+    ownedNow: Object.fromEntries(rows.map((r) => [r.faction, r.now])),
   };
 }
 
