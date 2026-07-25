@@ -117,6 +117,31 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
           if (terrain.unknownColours.length) result.terrainUnknownColours = terrain.unknownColours.slice(0, 8);
           _log(`[ai-movement] terrain: ${terrain.world.regions} regions, median difficulty ${terrain.world.medianDifficulty}%, ${tl.annotated} findings annotated, ${tl.leads.length} leads`);
         }
+        // LAND REACHABILITY — the definitive version of the same question. A
+        // flood fill over walkable ground says whether a route exists at all,
+        // and the save falsifies the model if it is wrong about this map.
+        const { landComponents, reachabilityVerdicts } = require("./aiTerrainAudit.js");
+        const comps = landComponents({ groundTga, regionTga, colToRegion });
+        if (comps) {
+          const rv = reachabilityVerdicts({
+            findings: result.findings, components: comps,
+            ownerByCity: facts.ownerByCity, regionOfSettlement,
+            navalByFaction: facts.navalByFaction || null,
+            unitsByFactionRegion: facts.unitsByFactionRegion || null,
+          });
+          result.reachability = {
+            components: comps.components, mainlandRegions: comps.mainlandRegions,
+            walkablePx: comps.walkablePx, verdicts: rv.verdicts,
+            reliable: rv.reliable, contradictions: rv.contradictions.length,
+            excludedFactions: rv.excluded.length,
+          };
+          // Leads are published per surviving faction — a model that is wrong
+          // about one strait is not thereby wrong about Britain.
+          result.modLeads = result.modLeads.concat(rv.leads);
+          _log(`[ai-movement] reachability: ${comps.components} land components (mainland holds ${comps.mainlandRegions} regions), ` +
+            `${rv.verdicts} orders proven to have NO land route, ${rv.leads.length} leads` +
+            (rv.excluded.length ? `; ${rv.excluded.length} faction(s) EXCLUDED — the save contradicts the model there (${rv.excluded.slice(0, 5).join(", ")})` : "; no contradictions"));
+        }
       } catch (e) { result.terrainError = e && e.message ? e.message : String(e); }
       _log(`[ai-movement] mod-file audit: ${audit.leads.length} leads across ${Object.keys(audit.factions).length} factions`);
     } catch (e) { result.auditError = e && e.message ? e.message : String(e); }

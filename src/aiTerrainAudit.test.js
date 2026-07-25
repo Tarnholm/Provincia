@@ -5,7 +5,7 @@
 // 2N+1 convention), and getting that scaling wrong would silently attribute
 // terrain to the wrong regions.
 import { describe, it, expect } from "vitest";
-import { regionTerrain, terrainLeads, GROUND_TYPES, MOVEMENT_KINDS } from "./aiTerrainAudit.js";
+import { regionTerrain, terrainLeads, landComponents, reachabilityVerdicts, GROUND_TYPES, MOVEMENT_KINDS } from "./aiTerrainAudit.js";
 
 // RGB triples as the palette keys them ("r,g,b"); the raw buffers are BGR.
 const C = {
@@ -204,5 +204,208 @@ describe("terrainLeads", () => {
   it("degrades quietly when terrain could not be read at all", () => {
     expect(terrainLeads({ findings: stuck("Alpina", "x", 9), terrain: null })).toEqual({ leads: [], annotated: 0 });
     expect(terrainLeads({})).toEqual({ leads: [], annotated: 0 });
+  });
+});
+
+// ── LAND REACHABILITY ────────────────────────────────────────────────────────
+// The point of the flood fill is that it upgrades a hedge ("may be failing on
+// the ground") into a fact ("there is no land route"). A claim that strong has to
+// be falsifiable, so the falsification path is tested as carefully as the happy
+// one.
+describe("landComponents", () => {
+  // 3×2 regions → 6×4 ground. A vertical wall of high mountains splits the map,
+  // so the left and right sides must come out as separate components.
+  const R = { L: [1, 0, 0], M: [2, 0, 0], Rt: [3, 0, 0] };
+  const regions3 = img([
+    [R.L, R.M, R.Rt],
+    [R.L, R.M, R.Rt],
+  ]);
+  const cols3 = { "1,0,0": "West", "2,0,0": "Wall", "3,0,0": "East" };
+
+  it("separates land masses split by impassable ground", () => {
+    const ground = img([
+      [C.fertile, C.fertile, C.highMountains, C.highMountains, C.fertile, C.fertile],
+      [C.fertile, C.fertile, C.highMountains, C.highMountains, C.fertile, C.fertile],
+      [C.fertile, C.fertile, C.highMountains, C.highMountains, C.fertile, C.fertile],
+      [C.fertile, C.fertile, C.highMountains, C.highMountains, C.fertile, C.fertile],
+    ]);
+    const c = landComponents({ groundTga: ground, regionTga: regions3, colToRegion: cols3 });
+    expect(c.components).toBe(2);
+    expect(c.compsOfRegion.West).toHaveLength(1);
+    expect(c.compsOfRegion.East).toHaveLength(1);
+    expect(c.compsOfRegion.West[0]).not.toBe(c.compsOfRegion.East[0]);
+    // the all-impassable middle region has no walkable land at all
+    expect(c.compsOfRegion.Wall).toBeUndefined();
+  });
+
+  it("joins land masses when a walkable corridor exists", () => {
+    const ground = img([
+      [C.fertile, C.fertile, C.highMountains, C.highMountains, C.fertile, C.fertile],
+      [C.fertile, C.fertile, C.hills, C.hills, C.fertile, C.fertile],   // the pass
+      [C.fertile, C.fertile, C.highMountains, C.highMountains, C.fertile, C.fertile],
+      [C.fertile, C.fertile, C.highMountains, C.highMountains, C.fertile, C.fertile],
+    ]);
+    const c = landComponents({ groundTga: ground, regionTga: regions3, colToRegion: cols3 });
+    expect(c.components).toBe(1);
+    expect(c.compsOfRegion.West[0]).toBe(c.compsOfRegion.East[0]);
+    // rough ground walks — that is what makes it a pass
+    expect(c.compsOfRegion.Wall[0]).toBe(c.compsOfRegion.West[0]);
+  });
+
+  it("does not leak across a diagonal touch (4-connected, not 8)", () => {
+    // two fertile pixels meeting only at a corner must stay separate, or a single
+    // touching pixel would fuse whole landmasses
+    const M = C.highMountains;
+    const ground = img([
+      [C.fertile, M, M, M, M, M],
+      [M, C.fertile, M, M, M, M],
+      [M, M, M, M, M, M],
+      [M, M, M, M, M, M],
+    ]);
+    const c = landComponents({ groundTga: ground, regionTga: regions3, colToRegion: cols3 });
+    expect(c.components).toBe(2);
+  });
+
+  it("treats sea as impassable, so an island is its own component", () => {
+    const ground = img([
+      [C.fertile, C.fertile, C.shallowSea, C.shallowSea, C.fertile, C.fertile],
+      [C.fertile, C.fertile, C.shallowSea, C.shallowSea, C.fertile, C.fertile],
+      [C.fertile, C.fertile, C.shallowSea, C.shallowSea, C.fertile, C.fertile],
+      [C.fertile, C.fertile, C.shallowSea, C.shallowSea, C.fertile, C.fertile],
+    ]);
+    const c = landComponents({ groundTga: ground, regionTga: regions3, colToRegion: cols3 });
+    expect(c.components).toBe(2);
+    expect(c.compsOfRegion.West[0]).not.toBe(c.compsOfRegion.East[0]);
+  });
+
+  it("names the mainland as the component holding the most regions", () => {
+    // West+Wall connected (2 regions), East cut off by a sea channel (1)
+    const ground = img([
+      [C.fertile, C.fertile, C.fertile, C.fertile, C.shallowSea, C.fertile],
+      [C.fertile, C.fertile, C.fertile, C.fertile, C.shallowSea, C.fertile],
+      [C.fertile, C.fertile, C.fertile, C.fertile, C.shallowSea, C.fertile],
+      [C.fertile, C.fertile, C.fertile, C.fertile, C.shallowSea, C.fertile],
+    ]);
+    const c = landComponents({ groundTga: ground, regionTga: regions3, colToRegion: cols3 });
+    expect(c.mainlandRegions).toBe(2);
+    expect(c.mainland).toBe(c.mainOfRegion.West);
+    expect(c.mainOfRegion.East).not.toBe(c.mainland);
+  });
+
+  it("returns null instead of guessing when an input is missing", () => {
+    expect(landComponents()).toBeNull();
+    expect(landComponents({ groundTga: regions3, regionTga: null, colToRegion: cols3 })).toBeNull();
+  });
+});
+
+describe("reachabilityVerdicts", () => {
+  // Island = comp 1, Mainland/Inland = comp 0, FarIsle = comp 2
+  const components = {
+    compsOfRegion: { Island: [1], Mainland: [0], Inland: [0], FarIsle: [2] },
+    mainOfRegion: { Island: 1, Mainland: 0, Inland: 0, FarIsle: 2 },
+    mainland: 0, mainlandRegions: 2, components: 3, walkablePx: 100, regionsWithLand: 4,
+  };
+  const ownerByCity = { IslandTown: "islanders", MainTown: "continentals" };
+  const regionOfSettlement = { IslandTown: "Island", MainTown: "Mainland", InlandTown: "Inland" };
+  const order = (faction, region, n = 1) => Array.from({ length: n }, (_, i) => ({
+    kind: "stuck_mission", name: "Gen" + i, faction, region, detail: "re-issued every turn",
+  }));
+
+  it("proves no land route and writes it into the finding's own verdict", () => {
+    const findings = order("islanders", "InlandTown", 2);
+    const r = reachabilityVerdicts({ findings, components, ownerByCity, regionOfSettlement, navalByFaction: {} });
+    expect(r.reliable).toBe(true);
+    expect(r.verdicts).toBe(2);
+    expect(findings[0].noLandRoute).toBe(true);
+    expect(findings[0].verdict).toMatch(/^NO LAND ROUTE — Inland shares no walkable land/);
+    expect(findings[0].verdict).toMatch(/and it has no ships/);
+  });
+
+  it("distinguishes 'has ships but never embarks' from 'has no ships at all'", () => {
+    const withFleet = order("islanders", "InlandTown", 1);
+    const r1 = reachabilityVerdicts({ findings: withFleet, components, ownerByCity, regionOfSettlement, navalByFaction: { islanders: 4 } });
+    expect(withFleet[0].verdict).toMatch(/it has 4 ship\(s\), so this needs a transport/);
+    expect(r1.leads[0].file).toBe("descr_strat.txt");
+    expect(r1.leads[0].suggestion).toMatch(/never embarks/);
+
+    const noFleet = order("islanders", "InlandTown", 1);
+    const r2 = reachabilityVerdicts({ findings: noFleet, components, ownerByCity, regionOfSettlement, navalByFaction: {} });
+    expect(r2.leads[0].file).toMatch(/export_descr_unit\.txt/);
+    expect(r2.leads[0].suggestion).toMatch(/give this faction a navy/);
+  });
+
+  it("stays silent when a land route DOES exist", () => {
+    const findings = order("continentals", "InlandTown", 5);
+    const r = reachabilityVerdicts({ findings, components, ownerByCity, regionOfSettlement, navalByFaction: {} });
+    expect(r.verdicts).toBe(0);
+    expect(r.leads).toEqual([]);
+    expect(findings[0].noLandRoute).toBeUndefined();
+  });
+
+  it("EXCLUDES a faction whose units the model cannot account for", () => {
+    // The falsifier has to use a signal the home set is NOT built from. Owning a
+    // region puts its component in the home set, so "they already own it" can
+    // never fire. UNIT positions are independent: a faction with no ships whose
+    // units stand on a disconnected landmass could neither walk nor sail there,
+    // so the model is wrong about that faction and it is dropped.
+    const findings = order("islanders", "FarIsle", 3);
+    const r = reachabilityVerdicts({
+      findings, components, ownerByCity, regionOfSettlement,
+      navalByFaction: {},                                   // no ships anywhere
+      unitsByFactionRegion: { islanders: { Inland: 4 } },    // yet units inland
+    });
+    expect(r.reliable).toBe(false);
+    expect(r.contradictions).toHaveLength(1);
+    expect(r.contradictions[0]).toMatchObject({ faction: "islanders", region: "Inland" });
+    expect(r.excluded).toEqual(["islanders"]);
+    // no verdict is issued for the excluded faction…
+    expect(r.verdicts).toBe(0);
+    expect(r.leads).toEqual([]);
+    expect(findings[0].noLandRoute).toBeUndefined();
+    expect(findings[0].verdict).toBeUndefined();
+  });
+
+  it("does not exclude a faction that owns ships — it could have sailed", () => {
+    const findings = order("islanders", "FarIsle", 2);
+    const r = reachabilityVerdicts({
+      findings, components, ownerByCity, regionOfSettlement,
+      navalByFaction: { islanders: 2 },
+      unitsByFactionRegion: { islanders: { Inland: 4 } },
+    });
+    expect(r.contradictions).toEqual([]);
+    expect(r.excluded).toEqual([]);
+    expect(r.verdicts).toBe(2);
+  });
+
+  it("excludes only the disproved faction, not the whole run", () => {
+    const findings = [...order("islanders", "FarIsle", 2), ...order("continentals", "FarIsle", 2)];
+    const r = reachabilityVerdicts({
+      findings, components, ownerByCity, regionOfSettlement,
+      navalByFaction: {},
+      unitsByFactionRegion: { islanders: { Inland: 1 } },
+    });
+    expect(r.excluded).toEqual(["islanders"]);
+    // the continentals' verdicts still stand
+    expect(r.verdicts).toBe(2);
+    expect(r.leads.map((l) => l.faction)).toEqual(["continentals"]);
+  });
+
+  it("skips findings with no faction named — there is nothing to test against", () => {
+    const findings = [{ kind: "aborted_hotspot", faction: "?", region: "Island" }];
+    expect(reachabilityVerdicts({ findings, components, ownerByCity, regionOfSettlement }).verdicts).toBe(0);
+  });
+
+  it("only judges movement findings, never economic or political ones", () => {
+    const findings = [{ kind: "garrison_stripped", faction: "islanders", region: "InlandTown" }];
+    const r = reachabilityVerdicts({ findings, components, ownerByCity, regionOfSettlement });
+    expect(r.verdicts).toBe(0);
+    expect(findings[0].noLandRoute).toBeUndefined();
+  });
+
+  it("degrades quietly with no components or no save", () => {
+    expect(reachabilityVerdicts({ findings: order("islanders", "InlandTown"), components: null, ownerByCity }))
+      .toMatchObject({ verdicts: 0, reliable: null, leads: [] });
+    expect(reachabilityVerdicts({ findings: order("islanders", "InlandTown"), components, ownerByCity: null }))
+      .toMatchObject({ verdicts: 0, leads: [] });
   });
 });

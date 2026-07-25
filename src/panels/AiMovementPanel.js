@@ -568,8 +568,10 @@ export default function AiMovementPanel({
                     // Scripting-log verdicts ("BLOCK DISCARDED …") are the
                     // opposite, so severity decides the colour — otherwise a
                     // parse failure rendered as a green ✓.
-                    const bad = f.impossible || /NEVER arrived/.test(f.verdict || "") || f.kind === "script_error" || f.kind === "script_runtime_error";
-                    const icon = f.impossible ? "⛔ " : bad ? "✕ " : "✓ ";
+                    const bad = f.impossible || f.noLandRoute || /NEVER arrived/.test(f.verdict || "") ||
+                      f.kind === "script_error" || f.kind === "script_runtime_error";
+                    // a proven-impossible route is the strongest bad news here
+                    const icon = (f.impossible || f.noLandRoute) ? "⛔ " : bad ? "✕ " : "✓ ";
                     return (
                     <div style={{ margin: "0 0 3px 102px", fontSize: "0.7rem", color: bad ? "#e87a6a" : "#8fd18f" }}>
                       {icon}

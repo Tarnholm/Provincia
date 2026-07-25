@@ -13,6 +13,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1431",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**The Lab can now PROVE an order was impossible, not just suspect it.** Flooding the walkable ground of map_ground_types.tga into connected land masses answers the question outright: if the ordering faction's territory and the target share no walkable land, an army cannot walk there — no hedging required. **37 orders across 14 factions are now proven to have had no land route**, and the reference log's champion stuck mission falls out of it exactly: Ariston of Chios was ordered to Erythrai in 50 of 51 turns; Chios is an island, Erythrai sits in mainland Mimas, and Chios owns no ships. Also caught: the Corsi ordered at mainland Etruria and Sardinia, Qataban and Himyar ordered across the Bab-el-Mandeb into the Horn of Africa, Sardinians at Corsica, and Cretan and Aegean city-states at the mainland. Every one of them has no navy, so the fix is concrete — a starting transport in descr_strat.txt, or a ship type they may own in export_descr_unit.txt." },
+      { type: "improvement", text: "The land masses were validated against geography before anything was built on them: the fill yields 2,176 components over 1.92M walkable pixels, and they match the real world — one continental mass of 1,017 regions containing Roma, Etruria, Arvernia and Aeduia, with Britain its own 45-region mass, Ireland 5, Sicily 16, Crete 11, Cyprus 5, and Sardinia, Corsica, Euboea and Scandinavia each separate. Regions that genuinely straddle two masses (44 of them, either side of an impassable ridge) keep both, so a real two-sided province is never wrongly called unreachable." },
+      { type: "improvement", text: "**The claim is falsifiable, and the check actually fires.** My first attempt asked \"does the save show them already holding the region we call unreachable?\" — which can never trigger, because owning a region puts its land mass into that faction's own reachable set. That was dead code pretending to be a safety net. The real check uses a signal the model is not built from: where each faction's units are standing. A faction the save says owns no ships, with units on a disconnected land mass, could neither have walked nor sailed there — so the model is wrong about it and that faction is dropped from the verdicts, rather than one bad strait discrediting the whole map. On the reference save it ran against all 125 factions fielding troops and found zero contradictions." },
+      { type: "fix", text: "A proven-impossible route now renders as ⛔ in red. It was being drawn as a green ✓, because the good/bad decision was still keyed off an older verdict's wording." },
+    ],
+  },
+  {
     version: "0.9.1430",
     date: "2026-07-25",
     items: [

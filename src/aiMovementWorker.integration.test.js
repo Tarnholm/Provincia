@@ -113,6 +113,32 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
       expect(f.terrain.difficulty).toBeLessThanOrEqual(100);
     }
 
+    // ── LAND REACHABILITY ──
+    // The flood fill must reproduce real geography: one continental mass holding
+    // the great majority of regions, with Britain, Ireland, Sicily, Crete,
+    // Cyprus and the Aegean islands separate. And the falsifier must have RUN and
+    // found nothing — a model that excludes nobody because it tested nobody is
+    // worthless, so the contradiction count and the exclusion count are both
+    // asserted at zero while verdicts are non-zero.
+    expect(r.reachability).toBeTruthy();
+    expect(r.reachability.components).toBeGreaterThan(500);      // 2,176
+    expect(r.reachability.mainlandRegions).toBeGreaterThan(800); // 1,017 of 1,311
+    expect(r.reachability.mainlandRegions).toBeLessThan(1311);   // …but NOT all of them
+    expect(r.reachability.contradictions).toBe(0);
+    expect(r.reachability.excludedFactions).toBe(0);
+    expect(r.reachability.verdicts).toBeGreaterThan(10);         // 37
+
+    const noRoute = r.findings.filter((f) => f.noLandRoute);
+    expect(noRoute.length).toBe(r.reachability.verdicts);
+    for (const f of noRoute) expect(f.verdict).toMatch(/^NO LAND ROUTE — /);
+    // the reference log's champion stuck mission: Ariston of Chios was ordered to
+    // Erythrai in 50 of 51 turns. Chios is an island; Erythrai is in mainland
+    // Mimas. If this ever stops being caught, the fill has broken.
+    const ariston = noRoute.find((f) => /Ariston/.test(f.name || ""));
+    expect(ariston, "Ariston of Chios → Erythrai should be proven unreachable").toBeTruthy();
+    expect(ariston.faction).toBe("chios");
+    expect(ariston.verdict).toMatch(/Mimas shares no walkable land/);
+
     // the world-level starting_action_points lead: RIS runs 128 against vanilla's
     // 80, and the file's own comment names 99 as the value where the AI stops
     // leaving cities undefended — which is the symptom this log is full of.
