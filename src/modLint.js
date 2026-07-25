@@ -127,6 +127,84 @@ function scanScriptGrants(modDataDir) {
   return grants;
 }
 
+
+// ---- check 7: descr_formations_ai.txt unit_type tokens the engine cannot resolve ----
+//
+// WHY, and why it is NARROW. The v7.12 telemetry showed the engine rejecting a
+// formation token 413 times across 32 sessions, in its own words:
+//     Failed to find either a unit class or unit category. Provided: 'pilum_infantry'
+// alongside 462 `unit_class != UCL_NUM_CLASSES || unit_category != UC_NUM_CATEGORIES`
+// asserts and 2,893 `is_template_formation() Failed`. That file is also named by 352
+// script faults — five times the next worst.
+//
+// The vocabulary is DERIVED FROM VANILLA, not invented. My first attempt assumed
+// every underscore-joined token was a mod invention and would have condemned 192
+// lines; the three shipped vanilla files disproved that outright —
+// heavy_pilum_infantry, light_pilum_infantry, spearmen_pilum_infantry,
+// non_phalanx_spear, ranged_missile_infantry, chanting_screeching, phalanx,
+// swimming and carrying_siege_engine * are all tokens vanilla itself uses. The one
+// real defect is the BARE `pilum_infantry`: 0 uses in vanilla, 28 in RIS, and
+// exactly the token the engine names. Guessing would have produced 164 false
+// accusations, so the rule reports only what vanilla's own usage contradicts.
+const FORMATIONS_REL = "descr_formations_ai.txt";
+
+// Every `unit_type` value used by the three vanilla descr_formations_ai.txt files
+// (Rome, BI, Alexander), extracted 2026-07-25. To regenerate:
+//   awk '{gsub(/[ \t]+/," ");} /unit_type/{sub(/^ /,""); print}' <vanilla file> \
+//     | sed -E 's/^unit_type //; s/ [0-9.]+$//' | sort -u
+const VANILLA_UNIT_TYPES = new Set([
+  "any", "infantry", "cavalry", "missile", "siege", "handler", "spearmen", "phalanx",
+  "heavy infantry", "light infantry", "missile infantry", "skirmish infantry",
+  "heavy cavalry", "light cavalry", "missile cavalry", "skirmish cavalry",
+  "spearmen infantry", "spearmen cavalry",
+  "general_unit", "non_phalanx_spear", "ranged_missile_infantry",
+  "heavy_pilum_infantry", "light_pilum_infantry", "spearmen_pilum_infantry",
+  "chanting_screeching", "swimming",
+  "carrying_siege_engine tower", "carrying_siege_engine ladder", "carrying_siege_engine ram",
+]);
+
+// Pull the unit_type token out of one line, or null. Exported for the tests.
+function parseUnitTypeToken(line) {
+  // strip the comment first — vanilla has "unit_type siege 1 ;; right artillery ..."
+  const code = String(line).replace(/;.*$/, "");
+  const m = /^\s*unit_type\s+(.+?)\s*$/.exec(code);
+  if (!m) return null;
+  // `unit_type <token(s)> <ratio>` — drop the trailing ratio, normalise spacing
+  const token = m[1].replace(/\s+-?[\d.]+\s*$/, "").replace(/\s+/g, " ").trim();
+  return token || null;
+}
+
+function lintFormations(formationsTxt, push) {
+  if (!formationsTxt) return { checked: 0, unknown: 0 };
+  const unknown = new Map();   // token -> { count, firstLine }
+  let checked = 0;
+  const lines = formationsTxt.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const token = parseUnitTypeToken(lines[i]);
+    if (!token) continue;
+    checked++;
+    if (VANILLA_UNIT_TYPES.has(token)) continue;
+    const e = unknown.get(token) || { count: 0, firstLine: i + 1 };
+    e.count++;
+    unknown.set(token, e);
+  }
+  for (const [token, e] of [...unknown].sort((a, b) => b[1].count - a[1].count)) {
+    // A near-miss against a real token is the strong case: a dropped prefix or a
+    // typo rather than a deliberate extension.
+    const near = [...VANILLA_UNIT_TYPES]
+      .filter((v) => v.includes(token) || token.includes(v))
+      .sort((a, b) => a.length - b.length);
+    push("error", "formations-unknown-unit-type", FORMATIONS_REL,
+      `line ${e.firstLine}: unit_type "${token}" (${e.count} use${e.count === 1 ? "" : "s"}) is not a unit class or category the engine knows — ` +
+      `it appears in NONE of the three vanilla descr_formations_ai.txt files, which between them use ${VANILLA_UNIT_TYPES.size} distinct tokens. ` +
+      `The engine logs "Failed to find either a unit class or unit category. Provided: '${token}'" and the block's units get no assigned position.` +
+      (near.length
+        ? ` Vanilla does use ${near.slice(0, 3).map((v) => `"${v}"`).join(", ")} — a dropped prefix is the likely cause.`
+        : ` No similar vanilla token exists, so check this is not simply a typo.`));
+  }
+  return { checked, unknown: unknown.size };
+}
+
 function lintMod(modDataDir) {
   const t0 = Date.now();
   const warnings = [];
@@ -140,6 +218,9 @@ function lintMod(modDataDir) {
   const edbTxt = readLatin1(edbPath);
   const eduTxt = readLatin1(eduPath);
   const stratTxt = readLatin1(stratPath);
+  // descr_formations_ai.txt: battle-AI formation templates. Optional — plenty of
+  // mods never touch it — so a missing file is silence, not a warning.
+  const formationsTxt = readLatin1(path.join(modDataDir, FORMATIONS_REL));
   if (!edbTxt) push("fatal", "missing-file", "export_descr_buildings.txt", "export_descr_buildings.txt not found — EDB checks skipped");
   if (!eduTxt) push("fatal", "missing-file", "export_descr_unit.txt", "export_descr_unit.txt not found — unit checks skipped");
   if (!stratTxt) push("fatal", "missing-file", STRAT_REL, "descr_strat.txt not found — army checks skipped");
@@ -340,9 +421,12 @@ function lintMod(modDataDir) {
     }
   }
 
+  // ---- check 7 ----
+  const formationsStats = lintFormations(formationsTxt, push);
+
   const counts = { fatal: 0, error: 0, warn: 0 };
   for (const w of warnings) counts[w.severity] = (counts[w.severity] || 0) + 1;
-  return { warnings, counts, ms: Date.now() - t0 };
+  return { warnings, counts, ms: Date.now() - t0, formations: formationsStats };
 }
 
-module.exports = { lintMod, scanEduTypes, scanSmResources, scanScriptGrants };
+module.exports = { lintMod, scanEduTypes, scanSmResources, scanScriptGrants, parseUnitTypeToken, lintFormations, VANILLA_UNIT_TYPES };

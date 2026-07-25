@@ -6,7 +6,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { lintMod } from "./modLint.js";
+import { lintMod, parseUnitTypeToken, lintFormations, VANILLA_UNIT_TYPES } from "./modLint.js";
 
 const SM_RESOURCES = `;; synthetic descr_sm_resources
 "resources":
@@ -298,5 +298,96 @@ describe("edb-and-or-precedence", () => {
     const one = "\t\ta requires not is_player and homeland and size1 or size2\n";
     const w = lintEdb(`building x\n{\n\tlevels a\n\t{\n${one}${one}${one}\n\t}\n}\n`);
     expect(w).toHaveLength(1);
+  });
+});
+
+// ── check 7: descr_formations_ai.txt unit_type tokens ────────────────────────
+// This rule came out of v7.12 telemetry, where the engine rejected a formation
+// token 413 times across 32 sessions. The property that matters is that it is
+// NARROW: the first attempt at it assumed every underscore-joined token was a mod
+// invention and would have condemned 192 lines, when the three vanilla files use
+// most of them. These tests pin that — real vanilla tokens must pass, and only the
+// genuinely absent one may fail.
+describe("formations-unknown-unit-type", () => {
+  it("extracts the token from every real line shape, comment and ratio included", () => {
+    const cases = [
+      ["\t\tunit_type heavy infantry 2.0", "heavy infantry"],
+      ["\t\tunit_type any\t\t0.0", "any"],
+      ["\t\tunit_type siege 1 ;; right artillery shooting position", "siege"],
+      ["\t\tunit_type carrying_siege_engine tower 1.0", "carrying_siege_engine tower"],
+      ["\t\tunit_type spearmen", "spearmen"],
+      ["\t\tunit_type missile cavalry -1.0", "missile cavalry"],
+      ["  ; unit_type specifies units that can be allocated", null],
+      ["\t\tunit_density close", null],
+      ["", null],
+    ];
+    for (const [line, want] of cases) {
+      expect(parseUnitTypeToken(line), JSON.stringify(line)).toBe(want);
+    }
+  });
+
+  it("accepts every token vanilla itself uses — the false-positive trap", () => {
+    // every one of these LOOKS like a mod invention (underscores, odd names) and
+    // is in fact used by the shipped vanilla files
+    const tokens = [
+      "heavy_pilum_infantry", "light_pilum_infantry", "spearmen_pilum_infantry",
+      "non_phalanx_spear", "ranged_missile_infantry", "chanting_screeching",
+      "phalanx", "swimming", "general_unit",
+      "carrying_siege_engine ram", "spearmen cavalry", "skirmish infantry",
+    ];
+    const body = tokens.map((t) => "\t\tunit_type " + t + " 1.0").join("\n");
+    const hits = [];
+    const r = lintFormations(body, (sev, check, file, detail) => hits.push({ sev, check, detail }));
+    expect(hits, "a vanilla token was wrongly flagged").toEqual([]);
+    expect(r).toMatchObject({ checked: tokens.length, unknown: 0 });
+  });
+
+  it("flags a token vanilla never uses, and names the near miss", () => {
+    const body = [
+      "\t\tunit_type heavy infantry 2.0",
+      "\t\tunit_type pilum_infantry 1.0",
+      "\t\tunit_type pilum_infantry 0.5",
+    ].join("\n");
+    const hits = [];
+    const r = lintFormations(body, (sev, check, file, detail) => hits.push({ sev, check, file, detail }));
+    expect(r).toMatchObject({ checked: 3, unknown: 1 });
+    expect(hits).toHaveLength(1);
+    expect(hits[0].sev).toBe("error");
+    expect(hits[0].check).toBe("formations-unknown-unit-type");
+    expect(hits[0].file).toBe("descr_formations_ai.txt");
+    expect(hits[0].detail).toMatch(/line 2/);                    // first occurrence
+    expect(hits[0].detail).toMatch(/\(2 uses\)/);
+    expect(hits[0].detail).toMatch(/NONE of the three vanilla/);
+    // quote the engine's own wording, so the message is greppable against a log
+    expect(hits[0].detail).toMatch(/Failed to find either a unit class or unit category\. Provided: 'pilum_infantry'/);
+    expect(hits[0].detail).toMatch(/heavy_pilum_infantry/);
+    expect(hits[0].detail).toMatch(/dropped prefix/);
+  });
+
+  it("says so plainly when there is no similar vanilla token", () => {
+    const hits = [];
+    lintFormations("\t\tunit_type wibble_wobble 1.0", (s, c, f, d) => hits.push(d));
+    expect(hits[0]).toMatch(/No similar vanilla token exists/);
+  });
+
+  it("stays silent when the mod has no formations file at all", () => {
+    const hits = [];
+    expect(lintFormations(null, () => hits.push(1))).toEqual({ checked: 0, unknown: 0 });
+    expect(lintFormations("", () => hits.push(1))).toEqual({ checked: 0, unknown: 0 });
+    expect(hits).toEqual([]);
+  });
+
+  it("reports a count of what it examined, so a silently-inert rule is detectable", () => {
+    // a rule that checks nothing and reports nothing looks identical to a clean
+    // file — the same trap as a falsifier that examined zero pairs
+    const r = lintFormations("\t\tunit_type any 1.0\n\t\tunit_type any 1.0", () => {});
+    expect(r.checked).toBe(2);
+  });
+
+  it("keeps the full vanilla vocabulary, and never whitelists the defect", () => {
+    // if this size drops, someone trimmed the set and false positives follow
+    expect(VANILLA_UNIT_TYPES.size).toBe(29);
+    expect(VANILLA_UNIT_TYPES.has("pilum_infantry"), "the defective token must NOT be whitelisted").toBe(false);
+    expect(VANILLA_UNIT_TYPES.has("heavy_pilum_infantry")).toBe(true);
   });
 });
