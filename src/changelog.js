@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1423",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**New “By faction” view makes thousands of findings navigable.** Instead of scrolling 5,592 rows, you get one row per faction — worst first — with its totals for unaffordable campaigns, orders that never arrived and orphaned armies, plus a chip breakdown of its problem mix. Click a faction to jump straight to its findings." },
+      { type: "improvement", text: "**The Lab remembers what you were working on.** The attached save and the last log you analysed persist between sessions, and a “↻ Re-run last log” button repeats the previous analysis in one click — which is the normal loop when you tweak the mod, play forward and re-measure." },
+    ],
+  },
+  {
     version: "0.9.1422",
     date: "2026-07-25",
     items: [

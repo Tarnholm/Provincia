@@ -38,13 +38,23 @@ export default function AiMovementPanel({
   const [error, setError] = useState(null);
   const [kindFilter, setKindFilter] = useState(() => new Set(Object.keys(KIND_META)));
   const [factionFilter, setFactionFilter] = useState("");
-  const [savePath, setSavePath] = useState(null);      // optional .sav to cross-reference
+  // Remember the attached save across sessions — re-running after a mod tweak
+  // is the normal workflow, and re-picking a 45MB file every time is friction.
+  const [savePath, setSavePath] = useState(() => {
+    try { return localStorage.getItem("aiLabSavePath") || null; } catch { return null; }
+  });
+  React.useEffect(() => {
+    try { if (savePath) localStorage.setItem("aiLabSavePath", savePath); else localStorage.removeItem("aiLabSavePath"); } catch { /* ignore */ }
+  }, [savePath]);
   const [onlyConfirmed, setOnlyConfirmed] = useState(false);
   const [tab, setTab] = useState("findings"); // "findings" | "leads" | "diff"
   const [baselines, setBaselines] = useState(null);   // saved runs to compare against
   const [diff, setDiff] = useState(null);             // before/after comparison
   const [baseBusy, setBaseBusy] = useState(false);
   const [progress, setProgress] = useState(null);   // live phase note while analysing
+  const [lastLog, setLastLog] = useState(() => {
+    try { return localStorage.getItem("aiLabLastLog") || null; } catch { return null; }
+  });
 
   const run = async (logPath) => {
     setBusy(true); setError(null); setProgress(null);
@@ -52,7 +62,10 @@ export default function AiMovementPanel({
       const r = await window.electronAPI.analyzeAiMovement(logPath || null, modDataDir || null, savePath || null);
       if (r && r.canceled) { setBusy(false); return; }
       if (!r || r.error) setError((r && r.error) || "analysis failed");
-      else setResult(r);
+      else {
+        setResult(r);
+        if (r.logPath) { setLastLog(r.logPath); try { localStorage.setItem("aiLabLastLog", r.logPath); } catch { /* ignore */ } }
+      }
     } catch (e) { setError(e && e.message ? e.message : String(e)); }
     setBusy(false); setProgress(null);
   };
@@ -126,6 +139,23 @@ export default function AiMovementPanel({
     onHighlightRegion(regionName, dbl);
   };
 
+  // Who is actually in trouble — 5,592 findings collapse to a few dozen rows.
+  const factionRows = useMemo(() => {
+    if (!result) return [];
+    const out = {};
+    for (const f of (result.findings || [])) {
+      const k = String(f.faction || "?").toLowerCase();
+      if (k === "?") continue;
+      const e = out[k] = out[k] || { faction: k, total: 0, impossible: 0, neverArrived: 0, orphaned: 0, kinds: {} };
+      e.total++;
+      e.kinds[f.kind] = (e.kinds[f.kind] || 0) + 1;
+      if (f.impossible) e.impossible++;
+      if (/NEVER arrived/.test(f.verdict || "")) e.neverArrived++;
+      if (f.orphaned) e.orphaned++;
+    }
+    return Object.values(out).sort((a, b) => b.total - a.total);
+  }, [result]);
+
   const facRows = useMemo(() => {
     if (!result) return [];
     return Object.entries(result.factionStats || {})
@@ -154,6 +184,13 @@ export default function AiMovementPanel({
             style={{ padding: "4px 12px", borderRadius: 6, cursor: busy ? "default" : "pointer", border: "1px solid rgba(220,166,74,0.4)", background: "rgba(220,166,74,0.18)", color: "#dca64a", fontWeight: 600, fontSize: "0.78rem" }}>
             {busy ? "Analyzing…" : "Open log file…"}
           </button>
+          {lastLog && (
+            <button onClick={() => run(lastLog)} disabled={busy}
+              title={"Re-analyse " + lastLog}
+              style={{ padding: "4px 12px", borderRadius: 6, cursor: busy ? "default" : "pointer", border: "1px solid rgba(143,201,216,0.35)", background: "rgba(143,201,216,0.12)", color: "#8fc9d8", fontSize: "0.78rem" }}>
+              ↻ Re-run last log
+            </button>
+          )}
           {defaultLogDir && (
             <button onClick={() => run(defaultLogDir)} disabled={busy}
               title={defaultLogDir}
@@ -242,7 +279,7 @@ export default function AiMovementPanel({
             )}
             {result.modLeads && result.modLeads.length > 0 && (
               <div style={{ display: "flex", gap: 2, marginBottom: 6, padding: 2, background: "rgba(0,0,0,0.25)", borderRadius: 5 }}>
-                {[["findings", `Findings (${result.findings.length})`], ["leads", `Mod-file leads (${result.modLeads.length})`], ...(diff ? [["diff", "Before / after"]] : [])].map(([k, lab]) => (
+                {[["findings", `Findings (${result.findings.length})`], ["leads", `Mod-file leads (${result.modLeads.length})`], ["factions", `By faction (${factionRows.length})`], ...(diff ? [["diff", "Before / after"]] : [])].map(([k, lab]) => (
                   <div key={k} onClick={() => setTab(k)}
                     style={{ flex: 1, padding: "3px 8px", fontSize: "0.74rem", textAlign: "center", cursor: "pointer", borderRadius: 4, userSelect: "none",
                       background: tab === k ? "rgba(255,255,255,0.14)" : "transparent", color: tab === k ? "#fff" : "#bbb", fontWeight: tab === k ? 600 : 400 }}>
@@ -316,6 +353,43 @@ export default function AiMovementPanel({
 
           {/* SCROLLER — just the results */}
           <div style={{ overflowY: "auto", padding: "8px 16px", flex: 1, minHeight: 0 }}>
+            {tab === "factions" && (
+              <div>
+                <div style={{ fontSize: "0.7rem", color: "#888", marginBottom: 6 }}>
+                  Worst-affected factions first. Click one to filter the findings list to it.
+                </div>
+                <div style={{ display: "flex", gap: 8, fontSize: "0.7rem", color: "#9a8f7a", padding: "0 4px 2px", fontWeight: 700 }}>
+                  <span style={{ width: 170 }}>Faction</span>
+                  <span style={{ width: 60, textAlign: "right" }}>Findings</span>
+                  <span style={{ width: 84, textAlign: "right" }}>Unafford.</span>
+                  <span style={{ width: 84, textAlign: "right" }}>Never arr.</span>
+                  <span style={{ width: 70, textAlign: "right" }}>Orphaned</span>
+                  <span style={{ flex: 1 }}>Problem mix</span>
+                </div>
+                {factionRows.map((r) => (
+                  <div key={r.faction}
+                    onClick={() => { setFactionFilter(r.faction); setTab("findings"); }}
+                    title={`Show ${r.faction}'s findings`}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                    style={{ display: "flex", gap: 8, alignItems: "baseline", fontSize: "0.74rem", padding: "2px 4px", borderRadius: 4, cursor: "pointer" }}>
+                    <span style={{ width: 170, color: "#eee", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{flabel(r.faction)}</span>
+                    <span style={{ width: 60, textAlign: "right", color: "#ddd", fontVariantNumeric: "tabular-nums" }}>{r.total}</span>
+                    <span style={{ width: 84, textAlign: "right", color: r.impossible ? "#e87a6a" : "#666", fontVariantNumeric: "tabular-nums" }}>{r.impossible || ""}</span>
+                    <span style={{ width: 84, textAlign: "right", color: r.neverArrived ? "#e87a6a" : "#666", fontVariantNumeric: "tabular-nums" }}>{r.neverArrived || ""}</span>
+                    <span style={{ width: 70, textAlign: "right", color: r.orphaned ? "#d88fb0" : "#666", fontVariantNumeric: "tabular-nums" }}>{r.orphaned || ""}</span>
+                    <span style={{ flex: 1, display: "flex", gap: 4, flexWrap: "wrap" }}>
+                      {Object.entries(r.kinds).sort((a, b) => b[1] - a[1]).map(([k, n]) => (
+                        <span key={k} title={(KIND_META[k] && KIND_META[k].desc) || k}
+                          style={{ fontSize: "0.66rem", padding: "0 5px", borderRadius: 7, border: `1px solid ${(KIND_META[k] && KIND_META[k].color) || "#666"}55`, color: (KIND_META[k] && KIND_META[k].color) || "#999" }}>
+                          {(KIND_META[k] && KIND_META[k].label) || k} {n}
+                        </span>
+                      ))}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
             {tab === "diff" && diff && (() => {
               const VERDICT = {
                 improved: { color: "#8fd18f", text: "IMPROVED" },
