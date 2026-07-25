@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1429",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**Mod Lint now catches `requires` clauses whose and/or grouping doesn't mean what it looks like — 44 of them in RIS.** RTW has no parentheses and evaluates conditions strictly left-to-right with no operator precedence (which is exactly how Provincia's own EDB evaluator reads them, and that evaluator was calibrated line-for-line against the in-game growth scroll). So `not is_player and homeland and size1 or size2 or size3` actually reads as `(((not is_player and homeland) and size1) or size2) or size3` — meaning **size2 or size3 alone satisfies it**, and the \"HOMELAND AND CAPITAL GROWTH BUFF FOR AI\" block applies regardless of whether the faction is the AI or the region is a homeland. The same shape appears on AOR recruitment gates, where a single `hidden_resource aor_galatian` sits after the `or` that follows the faction list and the `mic_tier` check." },
+      { type: "improvement", text: "The warning prints the **actual** left-to-right grouping rather than describing it, because the two shapes behave differently: with a pure-`or` tail a trailing term really does satisfy the whole clause (31 cases), but when another `and` trails the `or` it does not — `A and B or C and D` is `((A and B) or C) and D` (13 cases). Claiming a short-circuit there would be worse than saying nothing, so each case gets the reading that is true for it. Both are unit-tested." },
+      { type: "improvement", text: "Long `factions { … }` lists collapse to a count, each distinct clause is reported once however many building levels repeat it, and commented-out lines are skipped. It is a warning, not an error — this shape can be intentional, so the message states the reading and asks you to confirm rather than declaring a bug." },
+    ],
+  },
+  {
     version: "0.9.1428",
     date: "2026-07-25",
     items: [

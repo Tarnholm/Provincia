@@ -237,3 +237,66 @@ describe("modLint — missing files degrade to fatal findings, no throw", () => 
     } finally { try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* */ } }
   });
 });
+
+// ── check 6: requires clauses mixing and/or without grouping ─────────────────
+// RTW's requires syntax has no parentheses and evaluates left-to-right with no
+// operator precedence — which is how this app's own EDB evaluator reads it
+// (src/growthEval.js evalReq, calibrated line-for-line against the in-game
+// growth scroll). So `A and B or C` is (A and B) or C, and C alone satisfies it.
+//
+// The rule's whole value is being RIGHT about the reading, so the two shapes are
+// tested separately: a pure-`or` tail really does short-circuit, but a tail
+// containing another `and` does NOT, and claiming otherwise would be worse than
+// staying quiet.
+describe("edb-and-or-precedence", () => {
+  const lintEdb = (body) => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "modlint-andor-"));
+    fs.writeFileSync(path.join(dir, "export_descr_buildings.txt"), body);
+    const r = lintMod(dir);
+    fs.rmSync(dir, { recursive: true, force: true });
+    return r.warnings.filter((w) => w.check === "edb-and-or-precedence");
+  };
+
+  it("shows the true left-to-right grouping and the short-circuit for a pure-or tail", () => {
+    const w = lintEdb(`building x\n{\n\tlevels a\n\t{\n\t\ta requires not is_player and homeland and size1 or size2 or size3\n\t}\n}\n`);
+    expect(w).toHaveLength(1);
+    expect(w[0].severity).toBe("warn");
+    expect(w[0].detail).toMatch(/\(\(\(\(not is_player and homeland\) and size1\) or size2\) or size3\)/);
+    expect(w[0].detail).toMatch(/"size2" or "size3" alone satisfies the whole condition/);
+  });
+
+  it("does NOT claim a short-circuit when an `and` trails the `or`", () => {
+    // A and B or C and D  →  ((A and B) or C) and D — C alone is NOT enough
+    const w = lintEdb(`building x\n{\n\tlevels a\n\t{\n\t\ta requires mic_tier_1 and hidden_resource aor_gallic or hidden_resource aor_belgic and aor_tier_1\n\t}\n}\n`);
+    expect(w).toHaveLength(1);
+    expect(w[0].detail).toMatch(/\(\(\(mic_tier_1 and hidden_resource aor_gallic\) or hidden_resource aor_belgic\) and aor_tier_1\)/);
+    expect(w[0].detail).not.toMatch(/alone satisfies/);
+    expect(w[0].detail).toMatch(/Note the trailing "and"/);
+  });
+
+  it("ignores clauses that are pure `and`, pure `or`, or lead with the `or`", () => {
+    expect(lintEdb(`building x\n{\n\tlevels a\n\t{\n\t\ta requires size1 and size2 and size3\n\t}\n}\n`)).toHaveLength(0);
+    expect(lintEdb(`building x\n{\n\tlevels a\n\t{\n\t\ta requires size1 or size2 or size3\n\t}\n}\n`)).toHaveLength(0);
+    // no `and` before the first `or` → the reading is unsurprising
+    expect(lintEdb(`building x\n{\n\tlevels a\n\t{\n\t\ta requires size1 or size2 and size3\n\t}\n}\n`)).toHaveLength(0);
+  });
+
+  it("skips commented-out lines", () => {
+    expect(lintEdb(`building x\n{\n\tlevels a\n\t{\n\t\t;a requires not is_player and homeland and size1 or size2\n\t}\n}\n`)).toHaveLength(0);
+  });
+
+  it("collapses long faction lists so the message stays readable", () => {
+    const facs = "factions { " + Array.from({ length: 40 }, (_, i) => "f" + i).join(", ") + ", }";
+    const w = lintEdb(`building x\n{\n\tlevels a\n\t{\n\t\ta requires ${facs} and size1 or size2\n\t}\n}\n`);
+    expect(w).toHaveLength(1);
+    expect(w[0].detail).toMatch(/factions \{…40\}/);
+    expect(w[0].detail).not.toMatch(/f17/);        // no name dump
+    expect(w[0].detail.length).toBeLessThan(500);
+  });
+
+  it("reports each distinct clause once, however many levels repeat it", () => {
+    const one = "\t\ta requires not is_player and homeland and size1 or size2\n";
+    const w = lintEdb(`building x\n{\n\tlevels a\n\t{\n${one}${one}${one}\n\t}\n}\n`);
+    expect(w).toHaveLength(1);
+  });
+});

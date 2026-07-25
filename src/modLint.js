@@ -273,6 +273,73 @@ function lintMod(modDataDir) {
     }
   }
 
+  // ---- check 6: requires clauses that mix `and` with a trailing `or` ----
+  // RTW's requires syntax has NO parentheses, and the conditions are evaluated
+  // left-to-right with no operator precedence — which is how this app's own EDB
+  // evaluator reads them (src/growthEval.js evalReq, calibrated line-for-line
+  // against the in-game growth scroll). Under that rule
+  //     A and B or C
+  // means (A and B) or C, so C ALONE satisfies the clause. When an author writes
+  //     not is_player and homeland and size1 or size2 or size3
+  // the intent is almost always "AI, in a homeland region, at size 1-3", but the
+  // trailing terms make size2/size3 sufficient on their own.
+  //
+  // Reported as a WARNING, not an error: a clause of this shape *can* be exactly
+  // what the author meant, and the engine's own precedence is not something this
+  // app can prove — so the message states the reading and asks for confirmation
+  // rather than declaring a bug.
+  if (edbTxt) {
+    const seenClause = new Set();
+    const lines = edbTxt.split(/\r?\n/);
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      if (ln.trim().startsWith(";")) continue;          // commented-out
+      const m = /\brequires\s+(.+)$/.exec(ln.replace(/;.*$/, ""));
+      if (!m) continue;
+      const clause = m[1].trim();
+      if (!clause) continue;
+      // only the risky shape: at least one `and` BEFORE the first `or`
+      const firstOr = clause.search(/\bor\b/);
+      if (firstOr < 0) continue;
+      if (!/\band\b/.test(clause.slice(0, firstOr))) continue;
+      // dedupe — RIS repeats the same clause across many building levels
+      const key = clause.toLowerCase();
+      if (seenClause.has(key)) continue;
+      seenClause.add(key);
+      // `factions { a, b, c, … }` lists run to 40+ names and would swamp the
+      // message, so collapse them to a count. The clause is quoted once, not
+      // twice — the point is the trailing terms, not the whole condition.
+      const abbrev = (s) => s.replace(/factions\s*\{([^}]*)\}/g, (_, g) => {
+        const n = g.split(",").map((x) => x.trim()).filter(Boolean).length;
+        return `factions {…${n}}`;
+      });
+      // Show the ACTUAL left-to-right grouping rather than describing it, so the
+      // message is right even when the tail contains further `and`s — in
+      // `A and B or C and D` the reading is ((A and B) or C) and D, and C does
+      // NOT satisfy the clause on its own. Getting that wrong would be worse
+      // than not reporting at all.
+      const shown = abbrev(clause);
+      const toks = shown.split(/\s+(and|or)\s+/);
+      let grouped = toks[0];
+      for (let t = 1; t < toks.length; t += 2) grouped = `(${grouped} ${toks[t]} ${toks[t + 1]})`;
+      // Does a trailing term short-circuit the whole thing? Only when every
+      // operator after the first `or` is also `or`.
+      const ops = [];
+      for (let t = 1; t < toks.length; t += 2) ops.push(toks[t]);
+      const firstOrIdx = ops.indexOf("or");
+      const allOrAfter = ops.slice(firstOrIdx).every((o) => o === "or");
+      const orTerms = [];
+      for (let t = 1; t < toks.length; t += 2) if (toks[t] === "or") orTerms.push(toks[t + 1]);
+      push("warn", "edb-and-or-precedence", "export_descr_buildings.txt",
+        `line ${i + 1}: requires "${shown}" mixes and/or without grouping. RTW has no parentheses and evaluates ` +
+        `left-to-right, so it reads as ${grouped}. ` +
+        (allOrAfter
+          ? `That means ${orTerms.map((t2) => `"${t2}"`).join(" or ")} alone satisfies the whole condition, bypassing every term before the first "or".`
+          : `Note the trailing "and" — the grouping is not "either side of the or", which is usually what this shape is meant to express.`) +
+        ` Confirm that is intended.`);
+    }
+  }
+
   const counts = { fatal: 0, error: 0, warn: 0 };
   for (const w of warnings) counts[w.severity] = (counts[w.severity] || 0) + 1;
   return { warnings, counts, ms: Date.now() - t0 };
