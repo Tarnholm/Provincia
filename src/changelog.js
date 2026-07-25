@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1442",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**Drop a crash report's attachment straight into the AI Movement Lab — it now opens compressed logs itself.** The reporter ships its campaign_ai_log extract as a `.txt.xz`, because that is the only way a 330 MB log fits an attachment. Until now the pipeline stopped one step short of useful: the report arrived, and then somebody had to find a 7-Zip and unpack it before Provincia would look at it. `.gz` and `.xz` are now unpacked automatically — `.gz` with Node's own zlib, `.xz` with the Python runtime Provincia already bundles, since Node has no xz." },
+      { type: "improvement", text: "**Verified end to end on the real thing, not in principle.** The reporter was run against the 330 MB reference log to produce a genuine 3.24 MB `.xz` attachment, which was then handed to the Lab: identical `logKind`, turn count, **all 6,399 findings in the same order**, and identical save-verified totals (1,207 never-arrived, 402 unaffordable, 1,140 orphaned), 716 mod-file leads, 37 proven-no-route orders, the same 23,902 median strength requirement and the same +23 independents delta. A 3 MB attachment now yields exactly the analysis the 330 MB original does." },
+      { type: "improvement", text: "The unpacked copy goes to a temp file rather than memory (these extracts are ~107 MB decompressed) and is removed however the run ends, including on failure. A corrupt archive is reported as such instead of throwing or handing back junk, and if the bundled Python is missing the message says to extract it manually rather than failing obscurely." },
+    ],
+  },
+  {
     version: "0.9.1441",
     date: "2026-07-25",
     items: [

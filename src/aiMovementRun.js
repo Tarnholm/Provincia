@@ -318,12 +318,30 @@ async function runAiMovementAnalysis({ logPath, modDataDir, savePath }, onProgre
   // Progress is advisory only — the analysis must never fail because a
   // progress consumer threw or wasn't supplied.
   const _prog = (phase, detail) => { try { if (onProgress) onProgress({ phase, detail }); } catch { /* ignore */ } };
+  // Set when a compressed log was unpacked to a temp dir, so it can be removed
+  // however the run ends — a 107MB extract must not be left behind.
+  let unpacked = null;
   try {
     // The file picker stays on the main thread (Electron isn't available in a
     // worker), so the caller always hands us a resolved path.
-    const p = logPath;
+    let p = logPath;
     if (!p) return { error: "no log path supplied" };
     if (!fs.existsSync(p)) return { error: "log not found: " + p };
+    // The crash reporter ships its campaign_ai_log extract as .txt.xz — that is the
+    // only way a 330MB log fits an attachment. Unpack it here so a report can be
+    // dropped straight in, instead of stopping one step short and asking the user
+    // to find a 7-Zip first. .gz uses Node's zlib; .xz uses the Python runtime
+    // Provincia already bundles (Node has no xz).
+    if (unpacked === null && /\.(gz|xz|lzma)$/i.test(p)) {
+      const { openMaybeCompressed } = require("./logDecompress.js");
+      _prog("log", "unpacking the compressed log");
+      const got = openMaybeCompressed(p, { log: _log });
+      if (got.error) return { error: got.error };
+      if (got.pending) await got.pending;      // the .gz path streams
+      unpacked = got.temp;
+      p = got.path;
+      _log(`[ai-movement] unpacked ${path.basename(logPath)} -> ${path.basename(p)}`);
+    }
     // ── campaign_ai_log? (decision log, can be 300MB+ telemetry) → STREAM ──
     // Detect by content, not filename: read the first 4KB and look for the
     // engine's own banner / "AI:" prefix density.
@@ -454,6 +472,10 @@ async function runAiMovementAnalysis({ logPath, modDataDir, savePath }, onProgre
     await _correlateSave(result, savePath, modDataDir, _log);
     _log(`[ai-movement] ${path.basename(p)}: ${result.moveLines} moves, ${result.armies} armies, ${result.findings.length} findings in ${result.ms}ms`);
     return result;
-  } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+  } catch (e) {
+    return { error: e && e.message ? e.message : String(e) };
+  } finally {
+    if (unpacked) { require("./logDecompress.js").cleanup(unpacked); _log(`[ai-movement] removed the unpacked temp copy`); }
+  }
 }
 module.exports = { runAiMovementAnalysis };
