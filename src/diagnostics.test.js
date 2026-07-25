@@ -395,3 +395,56 @@ describe("diagnostics — orchestrator", () => {
     expect(report.summary.ok).toBe(true);
   });
 });
+
+// ── checkFamily must catch a PARTIAL roster, not just an unread one ──
+//
+// The count floor catches "the family table wasn't read". It did not catch, and could
+// not catch, what actually went wrong on 2026-07-25: a roster of 2,846 well-formed
+// records — every one named, no duplicate uuids — in which only 15% of its own father
+// references and 11% of its spouse references resolved. 416 referenced fathers were
+// absent, 257 of them present in `characters.v1` instead. A floor of 1 waves that
+// through, and the wrongness is invisible downstream: the missing members are mostly
+// male, so the survivors read 19% male and yield 48 "alive adult males" map-wide
+// against 848 settlements that demonstrably have a governor.
+describe("checkFamily — partial-read detection", () => {
+  const roster = (n, opts = {}) => {
+    const out = [];
+    for (let i = 1; i <= n; i++) {
+      out.push({
+        uuid: i, firstName: "N" + i, alive: true, age: 30,
+        gender: i % 2 ? "male" : "female",
+        // resolve inside the array, or point outside it
+        fatherUuid: opts.dangling ? 90000 + i : (i > 2 ? 1 : 0),
+        spouseUuid: opts.dangling ? 95000 + i : (i % 2 ? i + 1 : i - 1),
+      });
+    }
+    return out;
+  };
+
+  test("flags a roster whose own references point outside it", () => {
+    const r = runDiagnostics({ family: roster(40, { dangling: true }), playerFaction: "dummies" });
+    const fam = (r.checks || r).find((c) => c.name === "family");
+    expect(fam.ok).toBe(false);
+    expect(fam.detail).toMatch(/references resolve within it/);
+    // Must name the SKEW, not just the shortfall: a uniform undercount would still
+    // give correct ratios, and this failure does not.
+    expect(fam.detail).toMatch(/skewed|% male/);
+    // And point at the fix, since the missing members are recoverable.
+    expect(fam.detail).toMatch(/characters\.v1/);
+  });
+
+  test("stays quiet on a roster whose references resolve", () => {
+    // A guard that fires on good data is noise, and noise gets ignored — which is how
+    // the original floor came to be trusted.
+    const r = runDiagnostics({ family: roster(40), playerFaction: "dummies" });
+    const fam = (r.checks || r).find((c) => c.name === "family");
+    expect(fam.detail || "").not.toMatch(/references resolve within it/);
+  });
+
+  test("does not judge a roster too small to measure", () => {
+    // Three relatives with no resolvable parents is a fresh campaign, not a bad read.
+    const r = runDiagnostics({ family: roster(3, { dangling: true }), playerFaction: "dummies" });
+    const fam = (r.checks || r).find((c) => c.name === "family");
+    expect(fam.detail || "").not.toMatch(/references resolve within it/);
+  });
+});

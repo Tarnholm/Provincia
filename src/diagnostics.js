@@ -421,6 +421,49 @@ function checkFamily(family, playerFaction, leader, minMembers, opts) {
     reasons.push(`only ${total} family members (< floor ${floor}) — under-read?`);
   }
 
+  // ── INTERNAL REFERENCE RESOLUTION ─────────────────────────────────────────
+  // The count floor above catches a roster that was not read AT ALL. It does not
+  // catch one that was read PARTIALLY, and that is the failure that actually
+  // occurred (found 2026-07-25): 2,846 well-formed records, every one named, no
+  // duplicate uuids — and only 15% of its own father references and 11% of its
+  // spouse references resolving inside it. 416 referenced fathers were simply
+  // absent, 257 of them present in `characters.v1` instead. That sailed straight
+  // past a floor of 1.
+  //
+  // It matters because the shortfall is not uniform: the missing members are
+  // mostly male, so the survivors read 19% male and produce 48 "alive adult
+  // males" map-wide against 848 settlements that demonstrably have a governor.
+  // A uniform undercount would still give correct ratios; this one does not.
+  //
+  // A roster's own references are the right test because they need no external
+  // data — the roster itself says who ought to be in it.
+  if (total >= 20) {
+    const have = new Set(family.map((r) => r && r.uuid).filter(Boolean));
+    let refs = 0, hits = 0;
+    for (const r of family) {
+      if (!r) continue;
+      for (const u of [r.fatherUuid, r.spouseUuid]) {
+        if (!u || u === 0xffffffff) continue;
+        refs++;
+        if (have.has(u)) hits++;
+      }
+    }
+    if (refs >= 20) {
+      const resolution = hits / refs;
+      if (resolution < 0.5) {
+        sev = SEV.WARN; ok = false;
+        const males = family.filter((r) => r && r.gender === "male").length;
+        reasons.push(
+          `only ${Math.round(resolution * 100)}% of the roster's own father/spouse references resolve ` +
+          `within it (${hits}/${refs}) — PARTIAL read, not a clean one. Survivors are ` +
+          `${Math.round((males / total) * 100)}% male, so the shortfall is skewed and per-faction ` +
+          `character counts built on this will be wrong. The missing members are typically in ` +
+          `characters.v1; union the two before counting`
+        );
+      }
+    }
+  }
+
   // Placeholder/_rebel attribution: family members must never be tagged to a
   // `_rebel` (singular UI-banner) faction. The save-cracker explicitly drops
   // those markers; any surviving attribution is a regression.

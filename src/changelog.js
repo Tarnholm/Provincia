@@ -13,6 +13,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1453",
+    date: "2026-07-25",
+    items: [
+      { type: "fix", text: "**The diagnostic that exists to catch an unread family roster could not catch a PARTIALLY read one — the failure that actually happened.** Its test was a count against a floor of 1, so yesterday's 2,846 well-formed records sailed straight through while only 15% of their own father references resolved. It now measures internal reference resolution and warns below 50%. On the reference save it correctly fails at **12% (330 of 2,731 references)** where before it passed clean." },
+      { type: "improvement", text: "**Proven in both directions, because a guard that cannot fire is worse than none.** It fails on the real incomplete roster and stays silent on a synthetic one whose references all resolve — a guard that fires on good data becomes noise, and noise gets ignored, which is how the original floor came to be trusted in the first place. It also declines to judge rosters too small to measure: three relatives with no resolvable parents is a fresh campaign, not a bad read." },
+      { type: "improvement", text: "The warning names the **skew** rather than just the shortfall, and points at the fix. A uniform undercount would still give correct per-faction ratios; this one is male-skewed, so it does not — and the missing members are recoverable, typically sitting in `characters.v1`. Anyone hitting this should union the two lists before counting rather than assume the roster is what the save holds." },
+      { type: "improvement", text: "Checked the two places that actually consume this data. `aiMovementAnalyzer` was already safe — it unions `family` with `v1` and only builds alive/dead name sets, so incompleteness costs it nothing. The diagnostic was the gap, and it was the one component whose entire job was noticing." },
+    ],
+  },
+
+  {
     version: "0.9.1452",
     date: "2026-07-25",
     items: [
