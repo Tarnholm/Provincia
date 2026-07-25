@@ -251,9 +251,9 @@ function landComponents({ groundTga, regionTga, colToRegion, minShare = 0.05, mi
  */
 function reachabilityVerdicts({
   findings = [], components = null, ownerByCity = null,
-  regionOfSettlement = null, navalByFaction = null, unitsByFactionRegion = null,
+  regionOfSettlement = null, startingAdmirals = null, unitsByFactionRegion = null,
 } = {}) {
-  if (!components || !ownerByCity) return { verdicts: 0, reliable: null, contradictions: [], leads: [], excluded: [] };
+  if (!components || !ownerByCity) return { verdicts: 0, reliable: null, contradictions: [], leads: [], excluded: [], tested: 0 };
   const { compsOfRegion } = components;
   const regionOf = (name) => (compsOfRegion[name] ? name : (regionOfSettlement && regionOfSettlement[name]) || null);
 
@@ -269,23 +269,35 @@ function reachabilityVerdicts({
   }
 
   // ── the falsifier: units somewhere a no-navy faction could not have got to ──
+  //
+  // `unitsByFactionRegion` is a FLAT map keyed "faction|Region" → unit count, NOT
+  // a nested {faction: {region: n}}. The first version of this loop assumed the
+  // nested shape, so `Object.keys(1)` gave [] and the body never ran — the check
+  // silently tested NOTHING while reporting "no contradictions", which is the
+  // exact failure mode it exists to prevent. `tested` is returned so a caller can
+  // tell "found nothing" from "looked at nothing".
   const contradictions = [];
   const excluded = new Set();
+  let tested = 0;
   if (unitsByFactionRegion) {
-    for (const [fac, byRegion] of Object.entries(unitsByFactionRegion)) {
-      const f = String(fac || "?").toLowerCase();
-      const ships = navalByFaction ? (navalByFaction[f] || 0) : 0;
-      if (ships > 0) continue;                 // could have sailed — proves nothing
+    for (const key of Object.keys(unitsByFactionRegion)) {
+      const bar = key.indexOf("|");
+      if (bar < 0) continue;                      // not the expected shape
+      const f = key.slice(0, bar).toLowerCase();
+      const regName = key.slice(bar + 1);
+      if (!f || f === "?") continue;
+      // A faction that starts with an admiral could have sailed, so its units
+      // being somewhere disconnected proves nothing.
+      if (startingAdmirals && (startingAdmirals[f] || 0) > 0) continue;
       const home = homeComps.get(f);
       if (!home || !home.size) continue;
-      for (const regName of Object.keys(byRegion || {})) {
-        const reg = regionOf(regName);
-        const cs = reg ? compsOfRegion[reg] : null;
-        if (!cs || !cs.length) continue;
-        if (!cs.some((c) => home.has(c))) {
-          contradictions.push({ faction: f, region: reg, why: "has units there but no ships and no land route" });
-          excluded.add(f);
-        }
+      const reg = regionOf(regName);
+      const cs = reg ? compsOfRegion[reg] : null;
+      if (!cs || !cs.length) continue;
+      tested++;
+      if (!cs.some((c) => home.has(c))) {
+        contradictions.push({ faction: f, region: reg, why: "has units there, starts with no admiral, and there is no land route" });
+        excluded.add(f);
       }
     }
   }
@@ -305,14 +317,21 @@ function reachabilityVerdicts({
     candidates.push({ f, fac, targetReg });
   }
 
+  // The ships clause states what descr_strat.txt actually says (starting
+  // admirals), NOT a per-faction ship count from the save: naval units in the
+  // save carry no faction, so every ship lands under "?" and a save-derived
+  // "this faction has no ships" would be asserting nothing. See
+  // buildSaveFacts' navalFactionKnown.
   const perFaction = new Map();
   for (const { f, fac, targetReg } of candidates) {
-    const ships = navalByFaction ? (navalByFaction[fac] || 0) : null;
+    const adm = startingAdmirals ? (startingAdmirals[fac] || 0) : null;
     f.noLandRoute = true;
     f.verdict = `NO LAND ROUTE — ${targetReg} shares no walkable land with any of ${fac}'s settlements` +
-      (ships === null ? "" : ships > 0 ? `; it has ${ships} ship(s), so this needs a transport` : "; and it has no ships");
+      (adm === null ? ""
+        : adm > 0 ? `; descr_strat gives it ${adm} starting admiral(s), so this needs a transport in range`
+          : "; and descr_strat gives it no starting admiral");
     let e = perFaction.get(fac);
-    if (!e) perFaction.set(fac, e = { faction: fac, hits: 0, regions: new Set(), ships });
+    if (!e) perFaction.set(fac, e = { faction: fac, hits: 0, regions: new Set(), admirals: adm });
     e.hits++; e.regions.add(targetReg);
   }
 
@@ -322,13 +341,13 @@ function reachabilityVerdicts({
     leads.push({
       severity: 3,
       faction: e.faction,
-      file: e.ships ? "descr_strat.txt" : "export_descr_unit.txt + descr_strat.txt",
+      file: e.admirals ? "descr_strat.txt" : "export_descr_unit.txt + descr_strat.txt",
       key: regs.slice(0, 3).join(", ") + (regs.length > 3 ? ` +${regs.length - 3}` : ""),
       issue:
         `${e.hits} move order(s) to ${regs.length} region(s) an army CANNOT WALK TO — no shared walkable land with any settlement this faction owns` +
-        (e.ships ? `` : `, and it has no ships to carry them`),
-      suggestion: e.ships
-        ? `it owns ${e.ships} ship(s) but the army never embarks — check it has a transport in range, or give it a starting fleet near these objectives in descr_strat.txt`
+        (e.admirals ? `` : `, and descr_strat.txt gives it no starting admiral to carry them`),
+      suggestion: e.admirals
+        ? `descr_strat.txt starts it with ${e.admirals} admiral(s) but the army never embarks — check a transport is in range of these objectives, or move its starting fleet nearer them`
         : `either give this faction a navy (a starting transport in descr_strat.txt, and a ship type it may own in export_descr_unit.txt) or it will re-issue these orders forever`,
       evidence: `verified against the save: the faction holds none of ${regs.slice(0, 6).join(", ")}, and none share a land component with its territory`,
     });
@@ -336,9 +355,11 @@ function reachabilityVerdicts({
   leads.sort((a, b) => b.severity - a.severity);
   return {
     verdicts: candidates.length,
-    // "reliable" is now per-faction rather than all-or-nothing: it reports
-    // whether the model survived everywhere it could be tested.
-    reliable: contradictions.length === 0,
+    // "reliable" is only meaningful alongside `tested`: zero contradictions out
+    // of zero checks is not evidence of anything, which is exactly how the first
+    // version of this fooled itself.
+    reliable: tested > 0 ? contradictions.length === 0 : null,
+    tested,
     contradictions,
     excluded: [...excluded],
     leads,

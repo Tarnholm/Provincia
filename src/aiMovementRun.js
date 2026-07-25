@@ -123,10 +123,25 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
         const { landComponents, reachabilityVerdicts } = require("./aiTerrainAudit.js");
         const comps = landComponents({ groundTga, regionTga, colToRegion });
         if (comps) {
+          // Starting admirals come from descr_strat.txt, NOT from the save: naval
+          // units in the save carry no faction, so a save-derived per-faction ship
+          // count is all "?" and would assert nothing (see navalFactionKnown).
+          let startingAdmirals = null;
+          try {
+            const { parseStratFactions } = require("./aiModFileAudit.js");
+            const stratTxt = rd(path.join("world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"));
+            if (stratTxt) {
+              startingAdmirals = {};
+              for (const [fac, v] of Object.entries(parseStratFactions(stratTxt) || {})) {
+                startingAdmirals[String(fac).toLowerCase()] = v.admirals || 0;
+              }
+            }
+          } catch { /* the verdict simply omits the naval clause */ }
+
           const rv = reachabilityVerdicts({
             findings: result.findings, components: comps,
             ownerByCity: facts.ownerByCity, regionOfSettlement,
-            navalByFaction: facts.navalByFaction || null,
+            startingAdmirals,
             unitsByFactionRegion: facts.unitsByFactionRegion || null,
           });
           result.reachability = {
@@ -134,13 +149,18 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
             walkablePx: comps.walkablePx, verdicts: rv.verdicts,
             reliable: rv.reliable, contradictions: rv.contradictions.length,
             excludedFactions: rv.excluded.length,
+            // how many (faction, region) pairs the falsifier actually examined —
+            // "found nothing" and "looked at nothing" must not read the same
+            falsifierTested: rv.tested,
+            navalFactionKnown: facts.navalFactionKnown,
           };
           // Leads are published per surviving faction — a model that is wrong
           // about one strait is not thereby wrong about Britain.
           result.modLeads = result.modLeads.concat(rv.leads);
           _log(`[ai-movement] reachability: ${comps.components} land components (mainland holds ${comps.mainlandRegions} regions), ` +
-            `${rv.verdicts} orders proven to have NO land route, ${rv.leads.length} leads` +
-            (rv.excluded.length ? `; ${rv.excluded.length} faction(s) EXCLUDED — the save contradicts the model there (${rv.excluded.slice(0, 5).join(", ")})` : "; no contradictions"));
+            `${rv.verdicts} orders proven to have NO land route, ${rv.leads.length} leads; ` +
+            `falsifier examined ${rv.tested} (faction, region) pair(s)` +
+            (rv.excluded.length ? ` and EXCLUDED ${rv.excluded.length} faction(s): ${rv.excluded.slice(0, 5).join(", ")}` : " with no contradictions"));
         }
       } catch (e) { result.terrainError = e && e.message ? e.message : String(e); }
       _log(`[ai-movement] mod-file audit: ${audit.leads.length} leads across ${Object.keys(audit.factions).length} factions`);

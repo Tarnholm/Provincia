@@ -13,6 +13,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1434",
+    date: "2026-07-25",
+    items: [
+      { type: "fix", text: "**Correcting v0.9.1431: the falsification check I was so pleased with was itself dead code.** That release said the terrain model \"ran against all 125 factions fielding troops and found zero contradictions\". It ran against none of them. The save's unit index is a flat map keyed `\"faction|Region\"`, not the nested `{faction: {region: n}}` I assumed, so the loop's inner iteration produced an empty list every time and the check examined nothing while reporting a clean bill of health. It now examines **816 faction-region pairs on the reference save and still finds zero contradictions** — the conclusion survives, but it was unearned when I published it. The run reports how many pairs were checked, and \"no contradictions out of nothing checked\" is now reported as unknown rather than as a pass." },
+      { type: "fix", text: "**And the naval claim in those verdicts was based on nothing.** Naval units in the save carry no faction — all 50 ships land under \"?\" — so \"this faction has no ships\" was reading an empty bucket and always coming out true. That is why v0.9.1431 asserted every one of the 14 stranded factions lacked a navy. The truth from descr_strat.txt is more interesting: **8 of them do start with a fleet and still never embark** (Chios among them, with one admiral), while 6 genuinely have none. Those are different bugs with different fixes, and the leads now say which is which. The save's per-faction ship count is flagged as unusable at source so nothing else can quietly depend on it." },
+      { type: "improvement", text: "The unit tests were the root cause: their fixtures used the nested shape I had imagined rather than the one the code actually produces, so they passed while the real path did nothing. They now use the real flat-key shape, and one test deliberately feeds the wrong shape and asserts it yields zero checks — the failure mode is pinned, not just fixed." },
+      { type: "improvement", text: "Also ruled out, so nobody spends time on it: a sea-reachability counterpart to the land model. Three probes established that of the 14 stranded faction-target pairs, all 14 have a sea route and none lack one — so it would produce no findings — and whether ships may enter the map's deepest water class is not stated anywhere in the mod files. Two of those probes failed for reasons that were my error rather than the model's, which is recorded alongside." },
+    ],
+  },
+  {
     version: "0.9.1433",
     date: "2026-07-25",
     items: [

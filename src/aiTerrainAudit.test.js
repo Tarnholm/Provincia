@@ -313,30 +313,67 @@ describe("reachabilityVerdicts", () => {
 
   it("proves no land route and writes it into the finding's own verdict", () => {
     const findings = order("islanders", "InlandTown", 2);
-    const r = reachabilityVerdicts({ findings, components, ownerByCity, regionOfSettlement, navalByFaction: {} });
+    const r = reachabilityVerdicts({
+      findings, components, ownerByCity, regionOfSettlement, startingAdmirals: {},
+      unitsByFactionRegion: { "islanders|Island": 3 },   // consistent with the model
+    });
+    expect(r.tested).toBeGreaterThan(0);
     expect(r.reliable).toBe(true);
     expect(r.verdicts).toBe(2);
     expect(findings[0].noLandRoute).toBe(true);
     expect(findings[0].verdict).toMatch(/^NO LAND ROUTE — Inland shares no walkable land/);
-    expect(findings[0].verdict).toMatch(/and it has no ships/);
+    expect(findings[0].verdict).toMatch(/and descr_strat gives it no starting admiral/);
   });
 
-  it("distinguishes 'has ships but never embarks' from 'has no ships at all'", () => {
+  it("reports reliable=null when the falsifier had nothing to examine", () => {
+    // Zero contradictions out of zero checks is not evidence. Reporting `true`
+    // here is exactly how the first version of this fooled itself, so the
+    // difference between "found nothing" and "looked at nothing" is asserted.
+    const findings = order("islanders", "InlandTown", 2);
+    const r = reachabilityVerdicts({ findings, components, ownerByCity, regionOfSettlement, startingAdmirals: {} });
+    expect(r.tested).toBe(0);
+    expect(r.reliable).toBeNull();
+    // verdicts still stand — the model is not disproved, merely untested here
+    expect(r.verdicts).toBe(2);
+  });
+
+  it("reads the REAL flat 'faction|Region' key shape buildSaveFacts emits", () => {
+    // THE BUG THIS PINS: unitsByFactionRegion is a FLAT map keyed
+    // "faction|Region" -> count, NOT {faction: {region: n}}. The first version
+    // assumed nested, so Object.keys(4) returned [] and the falsifier examined
+    // nothing while reporting "no contradictions" — and that false reassurance
+    // was shipped.
+    const nested = reachabilityVerdicts({
+      findings: order("islanders", "FarIsle", 3), components, ownerByCity, regionOfSettlement,
+      startingAdmirals: {}, unitsByFactionRegion: { islanders: { Inland: 4 } },   // the WRONG shape
+    });
+    expect(nested.tested, "the nested shape carries no usable keys").toBe(0);
+    expect(nested.reliable).toBeNull();
+
+    const flat = reachabilityVerdicts({
+      findings: order("islanders", "FarIsle", 3), components, ownerByCity, regionOfSettlement,
+      startingAdmirals: {}, unitsByFactionRegion: { "islanders|Inland": 4 },      // the REAL shape
+    });
+    expect(flat.tested).toBe(1);
+    expect(flat.excluded).toEqual(["islanders"]);
+  });
+
+  it("distinguishes 'starts with a fleet but never embarks' from 'has no fleet at all'", () => {
     const withFleet = order("islanders", "InlandTown", 1);
-    const r1 = reachabilityVerdicts({ findings: withFleet, components, ownerByCity, regionOfSettlement, navalByFaction: { islanders: 4 } });
-    expect(withFleet[0].verdict).toMatch(/it has 4 ship\(s\), so this needs a transport/);
+    const r1 = reachabilityVerdicts({ findings: withFleet, components, ownerByCity, regionOfSettlement, startingAdmirals: { islanders: 4 } });
+    expect(withFleet[0].verdict).toMatch(/descr_strat gives it 4 starting admiral\(s\), so this needs a transport in range/);
     expect(r1.leads[0].file).toBe("descr_strat.txt");
     expect(r1.leads[0].suggestion).toMatch(/never embarks/);
 
     const noFleet = order("islanders", "InlandTown", 1);
-    const r2 = reachabilityVerdicts({ findings: noFleet, components, ownerByCity, regionOfSettlement, navalByFaction: {} });
+    const r2 = reachabilityVerdicts({ findings: noFleet, components, ownerByCity, regionOfSettlement, startingAdmirals: {} });
     expect(r2.leads[0].file).toMatch(/export_descr_unit\.txt/);
     expect(r2.leads[0].suggestion).toMatch(/give this faction a navy/);
   });
 
   it("stays silent when a land route DOES exist", () => {
     const findings = order("continentals", "InlandTown", 5);
-    const r = reachabilityVerdicts({ findings, components, ownerByCity, regionOfSettlement, navalByFaction: {} });
+    const r = reachabilityVerdicts({ findings, components, ownerByCity, regionOfSettlement, startingAdmirals: {} });
     expect(r.verdicts).toBe(0);
     expect(r.leads).toEqual([]);
     expect(findings[0].noLandRoute).toBeUndefined();
@@ -351,8 +388,8 @@ describe("reachabilityVerdicts", () => {
     const findings = order("islanders", "FarIsle", 3);
     const r = reachabilityVerdicts({
       findings, components, ownerByCity, regionOfSettlement,
-      navalByFaction: {},                                   // no ships anywhere
-      unitsByFactionRegion: { islanders: { Inland: 4 } },    // yet units inland
+      startingAdmirals: {},                                  // nobody starts with a fleet
+      unitsByFactionRegion: { "islanders|Inland": 4 },        // yet units inland
     });
     expect(r.reliable).toBe(false);
     expect(r.contradictions).toHaveLength(1);
@@ -365,12 +402,12 @@ describe("reachabilityVerdicts", () => {
     expect(findings[0].verdict).toBeUndefined();
   });
 
-  it("does not exclude a faction that owns ships — it could have sailed", () => {
+  it("does not exclude a faction that starts with an admiral — it could have sailed", () => {
     const findings = order("islanders", "FarIsle", 2);
     const r = reachabilityVerdicts({
       findings, components, ownerByCity, regionOfSettlement,
-      navalByFaction: { islanders: 2 },
-      unitsByFactionRegion: { islanders: { Inland: 4 } },
+      startingAdmirals: { islanders: 2 },
+      unitsByFactionRegion: { "islanders|Inland": 4 },
     });
     expect(r.contradictions).toEqual([]);
     expect(r.excluded).toEqual([]);
@@ -381,8 +418,8 @@ describe("reachabilityVerdicts", () => {
     const findings = [...order("islanders", "FarIsle", 2), ...order("continentals", "FarIsle", 2)];
     const r = reachabilityVerdicts({
       findings, components, ownerByCity, regionOfSettlement,
-      navalByFaction: {},
-      unitsByFactionRegion: { islanders: { Inland: 1 } },
+      startingAdmirals: {},
+      unitsByFactionRegion: { "islanders|Inland": 1 },
     });
     expect(r.excluded).toEqual(["islanders"]);
     // the continentals' verdicts still stand

@@ -127,6 +127,15 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
     expect(r.reachability.contradictions).toBe(0);
     expect(r.reachability.excludedFactions).toBe(0);
     expect(r.reachability.verdicts).toBeGreaterThan(10);         // 37
+    // THE POINT OF THE FALSIFIER: it must actually have examined something.
+    // v0.9.1431 reported "no contradictions" while examining NOTHING, because it
+    // assumed a nested {faction:{region:n}} shape where buildSaveFacts emits a
+    // flat "faction|Region" map. 816 pairs get checked on this save.
+    expect(r.reachability.falsifierTested, "the falsifier examined nothing — it is not really checking the model").toBeGreaterThan(100);
+    expect(r.reachability.reliable).toBe(true);
+    // and the save's per-faction ship counts must be reported as UNusable, since
+    // naval units carry no faction (all 50 land under "?")
+    expect(r.reachability.navalFactionKnown).toBe(false);
 
     const noRoute = r.findings.filter((f) => f.noLandRoute);
     expect(noRoute.length).toBe(r.reachability.verdicts);
@@ -138,6 +147,14 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
     expect(ariston, "Ariston of Chios → Erythrai should be proven unreachable").toBeTruthy();
     expect(ariston.faction).toBe("chios");
     expect(ariston.verdict).toMatch(/Mimas shares no walkable land/);
+    // The naval clause must come from descr_strat.txt, not from the save. Chios
+    // DOES start with an admiral — v0.9.1431 claimed the opposite for all 14 of
+    // these factions because it trusted the save's faction-less ship counts.
+    expect(ariston.verdict).toMatch(/descr_strat gives it 1 starting admiral/);
+    const hasFleet = noRoute.filter((f) => /starting admiral\(s\), so this needs/.test(f.verdict));
+    const noFleet = noRoute.filter((f) => /no starting admiral/.test(f.verdict));
+    expect(hasFleet.length, "some of these factions DO start with a fleet and still never embark").toBeGreaterThan(0);
+    expect(noFleet.length + hasFleet.length).toBe(noRoute.length);
 
     // the world-level starting_action_points lead: RIS runs 128 against vanilla's
     // 80, and the file's own comment names 99 as the value where the AI stops

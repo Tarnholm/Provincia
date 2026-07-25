@@ -875,11 +875,21 @@ function buildSaveFacts(save, regionOfSettlement) {
     const k = norm(c.fullName || c.firstName); if (!k) continue;
     if (c.alive === false) deadNames[k] = true; else aliveNames[k] = true;
   }
+  // KNOWN LIMITATION, reported rather than hidden (found 2026-07-25): naval units
+  // in the save do not carry a faction, so every ship lands under "?" —
+  // navalByFaction comes out as {"?": 50} on the reference save. Per-faction ship
+  // counts are therefore NOT available from the save, and anything claiming "this
+  // faction has no ships" on that basis is claiming nothing. Consumers must check
+  // this flag; descr_strat's starting admirals is the fact to use instead.
+  const namedNaval = Object.keys(navalByFaction).filter((k) => k && k !== "?").length;
+  const navalFactionKnown = navalWorld === 0 ? null : namedNaval > 0;
+
   return {
     turn: save.turn,
     aliveNames, deadNames,
     ownerByCity: save.ownerByCity || {},
     unitsByFactionRegion, menByFaction, unitsByFaction, navalByFaction, navalWorld,
+    navalFactionKnown,
     settlementsByFaction, micByFaction, tierByFaction,
     regionOfSettlement: regionOfSettlement || {},
     sieges: (save.sieges || []).length,
