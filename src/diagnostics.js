@@ -501,7 +501,7 @@ function checkFamily(family, playerFaction, leader, minMembers, opts) {
 // Input: { turn, currentYear, seasonIndex }
 function checkTurnYear(turn, currentYear, seasonIndex) {
   if (turn == null) {
-    return check("turnYear", true, "turn unknown (null) — turn/year crack absent for this save", SEV.INFO);
+    return check("turnYear", true, "turn unknown (null) — turn/year not decoded for this save", SEV.INFO);
   }
   let sev = SEV.INFO, ok = true;
   const reasons = [];

@@ -128,16 +128,16 @@ function registerCampaignAutopsyHandlers(ipcMain, deps = {}) {
         ({ rows, errors } = await crackRowsInParallel(files, modDataDir));
       } catch (werr) {
         if (!werr || !werr.infra) throw werr;
-        _writeLog(`[analyze-campaign] worker infra failed (${werr.message || werr}) — cracking on main thread`);
+        _writeLog(`[analyze-campaign] worker infra failed (${werr.message || werr}) — reading on main thread`);
         ({ rows, errors } = crackRowsSync(files, modDataDir));
       }
       if (rows.length === 0) {
-        return { error: `Cracked 0 of ${files.length} save(s)` + (errors.length ? `: ${errors[0].file} — ${errors[0].error}` : ".") };
+        return { error: `Could not read any of the ${files.length} save(s)` + (errors.length ? `: ${errors[0].file} — ${errors[0].error}` : ".") };
       }
       const result = analyzeCampaign(rows);
       result.scanned = files.length;
       result.errors = errors;
-      _writeLog(`[analyze-campaign] scanned ${files.length} save(s), cracked ${rows.length}, in ${Date.now() - t0}ms — ${result.factions.length} factions, winner ${result.winner || "—"}${errors.length ? `, ${errors.length} crack error(s)` : ""}`);
+      _writeLog(`[analyze-campaign] scanned ${files.length} save(s), read ${rows.length}, in ${Date.now() - t0}ms — ${result.factions.length} factions, winner ${result.winner || "—"}${errors.length ? `, ${errors.length} read error(s)` : ""}`);
       return result;
     } catch (err) {
       const msg = err && err.message ? err.message : String(err);

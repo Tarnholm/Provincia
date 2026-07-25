@@ -1798,7 +1798,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         )}
         {liveIncome && typeof liveIncome.perTurn === "number" && (
           <div style={{ marginBottom: 2 }}
-            title="Per-turn settlement income (denarii). u32 at settlement_name_offset-1586, decoded 2026-05-10 via save-cracker session 3. STRONG-confidence: one clean correlation across rome1..rome10 turn boundaries; exact game-UI semantics not fully pinned.">
+            title="Per-turn settlement income (denarii). u32 at settlement_name_offset-1586, decoded 2026-05-10 (save-format analysis, session 3). STRONG-confidence: one clean correlation across rome1..rome10 turn boundaries; exact game-UI semantics not fully pinned.">
             <strong>Income:</strong>{" "}
             <span style={{ color: liveIncome.perTurn >= 0 ? "#7ed27e" : "#e85050", fontVariantNumeric: "tabular-nums" }}>
               {liveIncome.perTurn >= 0 ? "+" : ""}{liveIncome.perTurn.toLocaleString()}
@@ -1819,7 +1819,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         {(devMode || true) && onExplainIncome && (
           <div style={{ marginBottom: 2 }}>
             <button onClick={(e) => { e.stopPropagation(); onExplainIncome(); }}
-              title="Explain this settlement's income — line-itemed tax / farming / mining / trade from the cracked turn-1 income model (src/incomeModel.js)"
+              title="Explain this settlement's income — line-itemed tax / farming / mining / trade from the decoded turn-1 income model (src/incomeModel.js)"
               style={{ padding: "0 6px", fontSize: "0.65rem", background: "rgba(168, 134, 92, 0.18)", color: "#ffe6a8", border: "1px solid rgba(168, 134, 92, 0.6)", borderRadius: 3, cursor: "pointer", fontWeight: 600 }}>
               ≡ explain income
             </button>
@@ -2024,7 +2024,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           const anyBuilt = mp.levels.some((l) => l.built);
           return (
             <div style={{ marginTop: 4 }}
-              title={"Predicted per-turn mining income (cracked formula: 5 × mine_resource × Σ deposit qty × trade value).\nBase value — governor Mining bonuses and public-order income scaling not included."}>
+              title={"Predicted per-turn mining income (decoded formula: 5 × mine_resource × Σ deposit qty × trade value).\nBase value — governor Mining bonuses and public-order income scaling not included."}>
               <div style={{ fontWeight: 700, fontSize: "0.75rem", marginBottom: 2, color: "#cfc6b0" }}>
                 Mining{anyBuilt ? ` (current: +${mp.currentIncome}/turn)` : " potential"}:
               </div>

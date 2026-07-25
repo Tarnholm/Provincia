@@ -78,7 +78,7 @@ parentPort.on("message", async (payload) => {
         try { parentPort.postMessage({ progress: p2 }); } catch { /* progress is advisory */ }
       });
     } else {
-      throw new Error("unknown crack-worker mode: " + mode);
+      throw new Error("unknown save-worker mode: " + mode);
     }
 
     console.log = origLog;

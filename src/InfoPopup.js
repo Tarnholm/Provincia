@@ -449,7 +449,7 @@ function AncillariesSection({ ancillaries: initialAncillaries, character, modDat
       background: "rgba(0,0,0,0.3)", borderRadius: 6,
       fontSize: "0.78rem", color: "#ddd",
     }}
-    title="Ancillaries (retinue items / followers). Decoded 2026-05-10 via save-cracker session 6: inline in the character record between the trait block and portrait paths.">
+    title="Ancillaries (retinue items / followers). Decoded 2026-05-10 (save-format analysis, session 6): inline in the character record between the trait block and portrait paths.">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
         <span style={{ color: "#9ab" }}>Ancillaries ({ancillaries.length}){devMode ? " — dev edit" : ""}</span>
         {savingMsg && <span style={{ color: "#dca64a", fontSize: "0.66rem" }}>{savingMsg}</span>}
@@ -1239,7 +1239,7 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
                   background: "rgba(0,0,0,0.3)", borderRadius: 6,
                   fontSize: "0.78rem", color: "#ddd",
                 }}
-                title={`Children's primary uuids stored as a 4-slot array at character record +54..+66 (LAYOUT_A) / +50..+62 (LAYOUT_B). Decoded 2026-05-11 via save-cracker session 13 (218/218 parent-child hits verified in Rome T1). Slot order is by birth; dead children preserve their slot, so unresolved uuids are dropped from this list.`}>
+                title={`Children's primary uuids stored as a 4-slot array at character record +54..+66 (LAYOUT_A) / +50..+62 (LAYOUT_B). Decoded 2026-05-11 (save-format analysis, session 13) (218/218 parent-child hits verified in Rome T1). Slot order is by birth; dead children preserve their slot, so unresolved uuids are dropped from this list.`}>
                   <span style={{ color: "#9ab" }}>Children:</span>{" "}
                   <span style={{ color: "#eee", textTransform: "capitalize" }}>{resolvedChildren.join(", ")}</span>
                 </div>
@@ -1250,7 +1250,7 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
                   background: "rgba(0,0,0,0.3)", borderRadius: 6,
                   fontSize: "0.78rem", color: "#ddd",
                 }}
-                title="Clan-head / cognomen link (u32 name-index at character record +18). Decoded 2026-05-11 via save-cracker session 8. Roman characters bound to a gens / patron clan get this set when adopted, married in, or sworn to. Most chars have a 0xffffffff sentinel here.">
+                title="Clan-head / cognomen link (u32 name-index at character record +18). Decoded 2026-05-11 (save-format analysis, session 8). Roman characters bound to a gens / patron clan get this set when adopted, married in, or sworn to. Most chars have a 0xffffffff sentinel here.">
                   <span style={{ color: "#9ab" }}>Clan / family head:</span>{" "}
                   <span style={{ color: "#eee", textTransform: "capitalize" }}>{humanize(clanHead.name)}</span>
                   {typeof clanHead.relType === "number" && clanHead.relType > 0 && (

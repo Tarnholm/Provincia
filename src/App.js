@@ -6627,7 +6627,7 @@ function App() {
         setLastTurnEvents(d.lastTurnEvents ?? null);
         if (d.eventSchedule !== undefined) setSaveEventSchedule(d.eventSchedule);
         if (d.factionKnowledge !== undefined) setSaveFactionKnowledge(d.factionKnowledge);
-        console.log(`[live-init] cracker-extras: treas=${Array.isArray(d.factionTreasuries) ? d.factionTreasuries.length : "none"} owners=${Array.isArray(d.factionRecordOwners) ? d.factionRecordOwners.length : "none"} diplo=${d.allFactionDiplomacy ? Object.keys(d.allFactionDiplomacy).length : "none"} sched=${d.eventSchedule ? d.eventSchedule.count : "none"} fk=${d.factionKnowledge ? d.factionKnowledge.factionsWithTail : "none"}`);
+        console.log(`[live-init] save-extras: treas=${Array.isArray(d.factionTreasuries) ? d.factionTreasuries.length : "none"} owners=${Array.isArray(d.factionRecordOwners) ? d.factionRecordOwners.length : "none"} diplo=${d.allFactionDiplomacy ? Object.keys(d.allFactionDiplomacy).length : "none"} sched=${d.eventSchedule ? d.eventSchedule.count : "none"} fk=${d.factionKnowledge ? d.factionKnowledge.factionsWithTail : "none"}`);
       }
       if (result?.baseline) setLiveSaveFile(result.baseline);
       if (result?.baseline) {

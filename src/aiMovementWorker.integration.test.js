@@ -91,6 +91,28 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
     expect([...files].some((f) => f.includes("feral_descr_ai_personality.txt"))).toBe(true);
     expect([...files].some((f) => f.includes("descr_strat.txt"))).toBe(true);
 
+    // ── map_ground_types.tga ──
+    // The palette must cover the whole file (it does: exactly 14 colours on the
+    // RIS map), and mission targets must resolve THROUGH the settlement→region
+    // map — keyed by region alone only 15 of 6,399 findings resolve.
+    expect(r.terrainError).toBeUndefined();
+    expect(r.terrainWorld.regions).toBe(1311);
+    expect(r.terrainWorld.scale).toBeCloseTo(2, 1);   // 2041×1401 vs 1020×700
+    expect(r.terrainUnknownColours).toBeUndefined();  // 100% palette coverage
+    expect(r.findings.filter((f) => f.terrain).length).toBeGreaterThan(1000);
+    const terr = r.modLeads.filter((l) => l.file === "map_ground_types.tga");
+    expect(terr.length).toBeGreaterThan(5);
+    for (const l of terr) {
+      expect(l.evidence).toMatch(/land px/);          // always show the sample size
+      expect(l.faction).not.toBe("?");                // never a bare "?" bucket
+    }
+    // every annotated difficulty must be a real 0-100 score
+    for (const f of r.findings) {
+      if (!f.terrain) continue;
+      expect(f.terrain.difficulty).toBeGreaterThanOrEqual(0);
+      expect(f.terrain.difficulty).toBeLessThanOrEqual(100);
+    }
+
     // the world-level starting_action_points lead: RIS runs 128 against vanilla's
     // 80, and the file's own comment names 99 as the value where the AI stops
     // leaving cities undefended — which is the symptom this log is full of.

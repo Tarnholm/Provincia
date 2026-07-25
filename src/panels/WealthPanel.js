@@ -275,7 +275,7 @@ export default function WealthPanel({
                 title={r.wealth == null
                   ? "No starting denarii found in descr_strat for this faction."
                   : r.wealthIsLive
-                  ? `Live treasury from save (decoded 2026-05-10 via save-cracker session 5). ${typeof r.wealthTurnStart === "number" && r.wealthTurnStart !== r.wealth ? `Started this turn at ${r.wealthTurnStart.toLocaleString()}, mid-turn delta ${(r.wealth - r.wealthTurnStart >= 0 ? "+" : "") + (r.wealth - r.wealthTurnStart).toLocaleString()}.` : ""}`
+                  ? `Live treasury from save (decoded 2026-05-10 (save-format analysis, session 5)). ${typeof r.wealthTurnStart === "number" && r.wealthTurnStart !== r.wealth ? `Started this turn at ${r.wealthTurnStart.toLocaleString()}, mid-turn delta ${(r.wealth - r.wealthTurnStart >= 0 ? "+" : "") + (r.wealth - r.wealthTurnStart).toLocaleString()}.` : ""}`
                   : "Starting denarii from descr_strat. Live treasury not loaded (no save active, or non-RIS-imperial campaign)."}>
                 {r.wealth == null ? "—" : r.wealth.toLocaleString()}
                 {r.wealthIsLive && <span style={{ color: "#4a8", marginLeft: 4, fontSize: "0.7rem", fontWeight: 400 }}>·live</span>}

@@ -57,7 +57,7 @@ function registerSaveCompareHandlers(ipcMain, deps = {}) {
       return await summarizeInWorker(savePath, modDataDir);
     } catch (err) {
       if (!err || !err.infra) throw err; // real crack failure — surface it
-      _writeLog("[compare-saves] worker infra failed (" + (err.message || err) + ") — falling back to synchronous crack");
+      _writeLog("[compare-saves] worker infra failed (" + (err.message || err) + ") — falling back to a synchronous read");
       return summarizeSync(savePath, modDataDir);
     }
   };
@@ -72,9 +72,9 @@ function registerSaveCompareHandlers(ipcMain, deps = {}) {
         if (!fs.existsSync(p)) return { error: "Save file not found: " + p };
       }
       const t0 = Date.now();
-      _writeLog("[compare-saves] cracking A: " + path.basename(savePathA));
+      _writeLog("[compare-saves] reading A: " + path.basename(savePathA));
       const sumA = await summarizeOne(savePathA, modDataDir);
-      _writeLog("[compare-saves] cracking B: " + path.basename(savePathB));
+      _writeLog("[compare-saves] reading B: " + path.basename(savePathB));
       const sumB = await summarizeOne(savePathB, modDataDir);
       const result = diffSaveSummaries(sumA, sumB);
       _writeLog("[compare-saves] done in " + (Date.now() - t0) + "ms — "

@@ -91,7 +91,7 @@ export default function SaveComparePanel({ modDataDir, onClose }) {
               color: (!saveA || !saveB || busy) ? "#777" : "#e8c873",
               border: "1px solid " + ((!saveA || !saveB || busy) ? "rgba(255,255,255,0.15)" : "#a08a4a"),
               borderRadius: 5, padding: "3px 14px", cursor: (!saveA || !saveB || busy) ? "default" : "pointer", fontSize: "0.78rem", fontWeight: 600 }}>
-            {busy ? "Comparing… (cracks both saves, ~10s)" : "Compare"}
+            {busy ? "Comparing… (reads both saves, ~10s)" : "Compare"}
           </button>
         </div>
 

@@ -61,7 +61,7 @@ const path = require("path");
 // (truth + 0.5×govSqualor), subtracted per-settlement at runtime (see computeFactionGrowth).
 const COEF = { intercept: 0.9564, farmN: -0.0105, farmLevel: 0.5101, healthSum: 0.4939, pgOther: 0.5037, popPer1000: -0.4177, hiPopRelief: 0.0893, govLevel: -0.7301, hasPort: -0.0426 };
 const ACCURACY = { withinHalf: 0.99, bracketMatch: 0.97, mae: 0.10, n: 308,
-  note: "no-save model: the FULL cracked RIS growth model from the mod files — engine squalor formula (floor(effPop/1500), 2x-tier-base doubling, descr_cultures bases), granaries, summer port bonus, chain-required additive farm bonuses, governor traits with anti-trait cancellation, squalor clamp. LIVE-VERIFIED line-for-line against the in-game growth scroll across six factions (2026-06-10); ~97% exact bracket on the historical save corpus (residue = stale-file rows). If the plan drifts from the game, FIRST verify the selected mod folder is the one the campaign runs." };
+  note: "no-save model: the FULL decoded RIS growth model from the mod files — engine squalor formula (floor(effPop/1500), 2x-tier-base doubling, descr_cultures bases), granaries, summer port bonus, chain-required additive farm bonuses, governor traits with anti-trait cancellation, squalor clamp. LIVE-VERIFIED line-for-line against the in-game growth scroll across six factions (2026-06-10); ~97% exact bracket on the historical save corpus (residue = stale-file rows). If the plan drifts from the game, FIRST verify the selected mod folder is the one the campaign runs." };
 
 // SAVE-AWARE model: adds the per-settlement development value stored at settlement
 // mechanics slot marker−1528 (settlementFields.growthDevValue) — the last hidden growth

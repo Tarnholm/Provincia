@@ -62,7 +62,7 @@ function registerSaveAnalysisHandlers(ipcMain, { _writeLog, getLastSaveBuf }) {
       worker.terminate();
       if (msg && Array.isArray(msg.logs)) { for (const line of msg.logs) { try { _writeLog(line); } catch { /* */ } } }
       if (msg && msg.ok) resolve(msg.result);
-      else reject(new Error(msg && msg.error ? msg.error : "crack worker failed"));
+      else reject(new Error(msg && msg.error ? msg.error : "save worker failed"));
     };
     worker.on("message", settle);
     worker.once("error", (err) => { worker.terminate(); reject(err); });
@@ -1452,7 +1452,7 @@ ipcMain.handle("scan-saves-timeline", async (_event, dir, modDataDir, opts) => {
       const { rows, errors } = await crackRowsInParallel(files, modDataDir, factionOverride);
       return finalizeTimeline(assembleTimeline(rows, errors, files.length, factionOverride, allCampaigns), computeDelta);
     } catch (werr) {
-      _writeLog(`[timeline] worker fallback (${werr && werr.message}) — cracking on main thread`);
+      _writeLog(`[timeline] worker fallback (${werr && werr.message}) — reading on main thread`);
       return finalizeTimeline(buildTimeline([dir], modDataDir, factionOverride, allCampaigns), computeDelta);
     }
   } catch (e) {

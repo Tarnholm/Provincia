@@ -13,6 +13,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1430",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**The Lab now reads map_ground_types.tga, so \"the army never arrives\" can be checked against the ground it was ordered across.** Every other mod file answers whether a faction *can* raise the troops a campaign needs; this one answers whether the route exists at all. High mountains and dense forest are impassable, so a corridor of them turns a short-looking order into an impossible one. 1,848 findings on the reference log now carry their target region's terrain, and 22 leads flag factions whose failures cluster on ground far harder than the map's own median — the Salassi against Salassia (84% hard, 68% impassable, the Great St Bernard), the Indians against Bariy and Paropamisadai (the Hindu Kush), Saba and the Minaeans in the Yemeni highlands." },
+      { type: "improvement", text: "Mission targets resolve through the settlement→region map, because the AI log names a settlement (\"moving towards sett 'Erythrai'\") while the terrain map is keyed by region — without that translation only 15 of 6,399 findings resolved. Thresholds are relative to each map's own median rather than fixed numbers, so this works on any mod. Regions too small for their percentages to mean anything are annotated but never turned into a lead: a third of the RIS map's regions have under 200 land pixels, and \"95% impassable\" measured over 98 pixels is not evidence about a route. The land-pixel count is always shown so you can judge it yourself." },
+      { type: "improvement", text: "The RGB→terrain palette was verified against the real file before any of this was built: exactly 14 distinct colours, 100.000% covered, no unknowns. Findings whose cause terrain cannot explain — garrison stripping, war spam — are deliberately left alone." },
+      { type: "change", text: "**Internal save-format jargon is gone from everything you can see.** One word had leaked out of the save-reading internals into tooltips, buttons, error messages, progress text and the changelog itself — 33 places across 18 files. They now all say \"read\" (for the action) or \"decoded\" (for provenance: \"decoded 2026-05-10\", \"the decoded income model\"). A test enforces this permanently across the renderer, the main process and the preload bridge, and it proves its own teeth by checking it still catches the word in each shape it previously appeared in. It caught this very changelog entry on the first attempt." },
+    ],
+  },
+  {
     version: "0.9.1429",
     date: "2026-07-25",
     items: [
@@ -76,7 +86,7 @@ const CHANGELOG = [
     version: "0.9.1422",
     date: "2026-07-25",
     items: [
-      { type: "improvement", text: "**The AI analysis now tells you what it’s doing.** A run over a 346MB log plus a save takes about fifteen seconds, and until now the only feedback was a button reading “Analyzing…”. It now reports its phase live — streaming the log (with a running line count), cracking the save, cross-referencing, auditing the mod files — so a long run is visibly progressing rather than possibly hung." },
+      { type: "improvement", text: "**The AI analysis now tells you what it’s doing.** A run over a 346MB log plus a save takes about fifteen seconds, and until now the only feedback was a button reading “Analyzing…”. It now reports its phase live — streaming the log (with a running line count), reading the save, cross-referencing, auditing the mod files — so a long run is visibly progressing rather than possibly hung." },
     ],
   },
   {
@@ -112,7 +122,7 @@ const CHANGELOG = [
     version: "0.9.1417",
     date: "2026-07-25",
     items: [
-      { type: "fix", text: "**The app no longer freezes while the AI Movement Lab analyses a log + save.** Cracking a 45MB save takes about 12 seconds and it was running on the main thread, so the whole UI — mouse included — locked up for the duration. The entire pipeline (log streaming, save crack, cross-reference and mod-file audit) now runs in a worker thread: measured on the 346MB reference log plus the turn-102 save, 15.3 seconds of work with a worst main-thread stall of 111ms instead of a multi-second freeze." },
+      { type: "fix", text: "**The app no longer freezes while the AI Movement Lab analyses a log + save.** Reading a 45MB save takes about 12 seconds and it was running on the main thread, so the whole UI — mouse included — locked up for the duration. The entire pipeline (log streaming, save read, cross-reference and mod-file audit) now runs in a worker thread: measured on the 346MB reference log plus the turn-102 save, 15.3 seconds of work with a worst main-thread stall of 111ms instead of a multi-second freeze." },
       { type: "fix", text: "**Findings list no longer shows “(null,null)” or a bare “t–”.** AI-decision findings have no map tile or turn span (unlike movement findings), and those empty values were being printed literally. They’re now simply omitted, and a single-turn span reads “t12” rather than “t12–12”." },
       { type: "improvement", text: "**The summary, tabs and filters now stay pinned while you scroll** — only the results list moves, so the cross-reference totals and the filter chips remain reachable in a list of thousands of findings." },
     ],
@@ -986,7 +996,7 @@ const CHANGELOG = [
     version: "0.9.1299",
     date: "2026-07-17",
     items: [
-      { type: "feature", text: "**Build-Order Optimizer (🧰 Tools).** Select a settlement, and it ranks every structure you could build there by payback time — construction cost divided by the extra income per turn it would add (computed from the same cracked economy model as the income maps). Fastest-paying builds first; walls/happiness/recruitment-only buildings are flagged as non-income at the bottom. A toggle switches between the one settlement and the whole faction." },
+      { type: "feature", text: "**Build-Order Optimizer (🧰 Tools).** Select a settlement, and it ranks every structure you could build there by payback time — construction cost divided by the extra income per turn it would add (computed from the same decoded economy model as the income maps). Fastest-paying builds first; walls/happiness/recruitment-only buildings are flagged as non-income at the bottom. A toggle switches between the one settlement and the whole faction." },
     ],
   },
   {
@@ -1008,7 +1018,7 @@ const CHANGELOG = [
     version: "0.9.1296",
     date: "2026-07-17",
     items: [
-      { type: "feature", text: "**Trade Lanes map mode (Economy).** The cracked sea-trade network drawn on the map: every lane as a golden line between its two regions, thickness and brightness = trade flow, over a dimmed map. The last of the player map-mode series — nine modes total." },
+      { type: "feature", text: "**Trade Lanes map mode (Economy).** The decoded sea-trade network drawn on the map: every lane as a golden line between its two regions, thickness and brightness = trade flow, over a dimmed map. The last of the player map-mode series — nine modes total." },
     ],
   },
   {
@@ -1029,7 +1039,7 @@ const CHANGELOG = [
     version: "0.9.1293",
     date: "2026-07-17",
     items: [
-      { type: "feature", text: "**Four model-powered map modes: Unrest, Income, Corruption, Growth.** *Unrest* (Government) colors every settlement by public-order risk, green stable → red riot line. In Economy: *Income* shows each settlement's real modeled net income in denarii, *Corruption* shows exactly where distance-to-capital corruption bleeds money, and *Growth* shows squalor-aware population growth — declining red, booming green. All four come from the cracked economy/growth/PO models (campaign-start values); the first activation computes every faction (a minute or two) and is then cached." },
+      { type: "feature", text: "**Four model-powered map modes: Unrest, Income, Corruption, Growth.** *Unrest* (Government) colors every settlement by public-order risk, green stable → red riot line. In Economy: *Income* shows each settlement's real modeled net income in denarii, *Corruption* shows exactly where distance-to-capital corruption bleeds money, and *Growth* shows squalor-aware population growth — declining red, booming green. All four come from the decoded economy/growth/PO models (campaign-start values); the first activation computes every faction (a minute or two) and is then cached." },
     ],
   },
   {

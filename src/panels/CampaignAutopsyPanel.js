@@ -139,7 +139,7 @@ export default function CampaignAutopsyPanel({ modDataDir, timeline, onScanTimel
                 {analysis.factions.length} faction{analysis.factions.length === 1 ? "" : "s"} across {analysis.turns.length} recorded turn{analysis.turns.length === 1 ? "" : "s"}
                 {analysis.turns.length > 0 && <> (turn {analysis.turns[0]} → {analysis.turns[analysis.turns.length - 1]})</>}
                 {typeof analysis.scanned === "number" && <> · {analysis.scanned} save(s) scanned</>}
-                {Array.isArray(analysis.errors) && analysis.errors.length > 0 && <span style={{ color: "#e0a860" }}> · {analysis.errors.length} crack error(s)</span>}
+                {Array.isArray(analysis.errors) && analysis.errors.length > 0 && <span style={{ color: "#e0a860" }}> · {analysis.errors.length} read error(s)</span>}
                 <span style={{ color: "#667", marginLeft: 8 }}>· sorted by final settlements</span>
               </div>
 

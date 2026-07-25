@@ -197,7 +197,7 @@ function TimelineSection({ timeline, scanning, onScan, modDataDir }) {
         <button
           onClick={onScan}
           disabled={scanning || !modDataDir}
-          title={modDataDir ? "Pick a folder of saves to crack and chart" : "Load a mod first"}
+          title={modDataDir ? "Pick a folder of saves to read and chart" : "Load a mod first"}
           style={{
             background: "rgba(220,166,74,0.18)", border: "1px solid rgba(220,166,74,0.4)",
             color: "#dca64a", padding: "4px 11px", borderRadius: 5,

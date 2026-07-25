@@ -699,7 +699,7 @@ function parseFactionEconomy(buffer, context) {
         counts: "Per-line counts (Generals&Admirals 34, Units 82, Agents/Buildings 0) " +
                 "are NOT a stored finance field — no count record found near the faction " +
                 "record/econ-block; the engine tallies them at runtime from the character " +
-                "roster + army/unit lists. Derived from crackSave, never from an offset.",
+                "roster + army/unit lists. Derived from the save read itself, never from a fixed offset.",
         perSettlement: "No per-settlement category split: marker-1586 income = " +
                 "population×taxCoefficient exactly (pure pop-tax); same-pop port vs " +
                 "inland cities are identical. Trade/farming/tax split exists only at " +

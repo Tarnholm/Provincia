@@ -21,7 +21,7 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
     const { crackSave } = require("./saveCracker.js");
     const { correlateWithSave, buildSaveFacts } = require("./aiMovementAnalyzer.js");
     const t0 = Date.now();
-    if (_prog) _prog("save", "cracking the save file");
+    if (_prog) _prog("save", "reading the save file");
     const save = crackSave(await fs.promises.readFile(savePath), modDataDir || null, {});
     // settlement → region name, so "did they reach the target's region?" works
     let regionOfSettlement = {};
@@ -93,6 +93,31 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
       });
       result.modLeads = audit.leads;
       result.factionProfiles = audit.factions;
+      // ── map_ground_types.tga: can the ground the AI is ordered across even be
+      // walked? The other files say whether a faction CAN raise the troops; this
+      // one says whether the route exists. Annotates movement findings with the
+      // target region's terrain and adds leads where failures cluster on ground
+      // far harder than the map's own median.
+      try {
+        if (_prog) _prog("audit", "reading map_ground_types.tga");
+        const { regionTerrain, terrainLeads } = require("./aiTerrainAudit.js");
+        const dg2 = require("./descrStratGeneral.js");
+        const parsers2 = await import("./parsers.js"); // ESM
+        const base = path.join(modDataDir, "world", "maps", "base");
+        const groundTga = dg2.tgaToRaw(fs.readFileSync(path.join(base, "map_ground_types.tga")));
+        const regionTga = dg2.tgaToRaw(fs.readFileSync(path.join(base, "map_regions.tga")));
+        const rmap = parsers2.parseDescrRegions(fs.readFileSync(path.join(base, "descr_regions.txt"), "latin1"));
+        const colToRegion = {};
+        for (const [rgbKey, v] of Object.entries(rmap || {})) if (v && v.region) colToRegion[rgbKey] = v.region;
+        const terrain = regionTerrain({ groundTga, regionTga, colToRegion });
+        if (terrain) {
+          const tl = terrainLeads({ findings: result.findings, terrain, regionOfSettlement });
+          result.modLeads = result.modLeads.concat(tl.leads);
+          result.terrainWorld = terrain.world;
+          if (terrain.unknownColours.length) result.terrainUnknownColours = terrain.unknownColours.slice(0, 8);
+          _log(`[ai-movement] terrain: ${terrain.world.regions} regions, median difficulty ${terrain.world.medianDifficulty}%, ${tl.annotated} findings annotated, ${tl.leads.length} leads`);
+        }
+      } catch (e) { result.terrainError = e && e.message ? e.message : String(e); }
       _log(`[ai-movement] mod-file audit: ${audit.leads.length} leads across ${Object.keys(audit.factions).length} factions`);
     } catch (e) { result.auditError = e && e.message ? e.message : String(e); }
     _log(`[ai-movement] correlated with ${path.basename(savePath)} (turn ${facts.turn}): ${sm.length} confirmed-never-arrived, ${imp.length} impossible campaigns, ${result.save.orphanedArmies} orphaned armies, in ${result.save.ms}ms`);

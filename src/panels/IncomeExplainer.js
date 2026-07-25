@@ -81,7 +81,7 @@ export default function IncomeExplainer({ data, onClose }) {
       {/* ── Mining ── */}
       <div style={{ marginTop: 8 }}>
         <SectionHeader label="Mining" value={`+${data.mining.income.toLocaleString()} dn/turn`}
-          hint={"Cracked mining formula, validated to the denarius on live saves: 5 × mine_resource(effective) × Σ(deposit qty × trade value). Base value — governor Mining bonuses excluded."} />
+          hint={"Decoded mining formula, validated to the denarius on live saves: 5 × mine_resource(effective) × Σ(deposit qty × trade value). Base value — governor Mining bonuses excluded."} />
         {data.mining.mineSum > 0 || data.mining.income > 0 ? (
           <>
             <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
