@@ -157,6 +157,22 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
       expect(row.share).toBeLessThanOrEqual(1);
     }
 
+    // ── WHY THERE IS NO character-shortage LEAD ──
+    // The obvious follow-up to 463 ungoverned settlements is "shortage or deployment
+    // failure?". The save's family roster cannot answer it, and this pins WHY so the
+    // gap is documented rather than silent: its own references barely resolve, and the
+    // shortfall is male-skewed, so per-faction counts come out wrong.
+    expect(r.familyIntegrity).toBeTruthy();
+    expect(r.familyIntegrity.usableAsRoster).toBe(false);
+    expect(r.familyIntegrity.fatherResolution).toBeLessThan(0.5);   // 0.15
+    expect(r.familyIntegrity.spouseResolution).toBeLessThan(0.5);   // 0.11
+    expect(r.familyIntegrity.missingFathers).toBeGreaterThan(100);  // 416
+    expect(r.familyIntegrity.missingFoundInV1).toBeGreaterThan(100); // 257 — same roster
+    // The gender DECODE is correct and must stay separated from the coverage problem,
+    // or someone will rewrite a bit-flag that was never broken.
+    expect(r.familyIntegrity.genderDecodeChecks.fathersMaleShare).toBe(1);
+    expect(r.familyIntegrity.genderDecodeChecks.spousesOppositeShare).toBe(1);
+
     // ── LEAD ORDER, and the provenance check that must stay SILENT here ──
     // v0.9.1447/1448 put two provenance caveats above these leads, on the strength of
     // a 51-turn gap and a "different campaigns" verdict. BOTH WERE WRONG, from one bad

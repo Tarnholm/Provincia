@@ -157,6 +157,24 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
         }
       } catch (e) { _log(`[ai-movement] governance skipped: ${e && e.message}`); }
 
+      // WHY THERE IS NO "is this a character shortage or a deployment failure?" LEAD.
+      // That is the obvious next question about ungoverned settlements and it has two
+      // different fixes, so it matters — but the save's family roster cannot answer it.
+      // Rather than leave that as a silent gap, the roster's own integrity is measured
+      // and reported, so the absence of the lead has a stated reason.
+      try {
+        const { familyIntegrity } = require("./familyIntegrity.js");
+        const ch = save && save.characters;
+        const fi = familyIntegrity({ family: ch && ch.family, v1: ch && ch.v1 });
+        if (fi) {
+          result.familyIntegrity = fi;
+          _log(`[ai-movement] family roster: ${fi.records} records, father refs resolve ` +
+            `${Math.round((fi.fatherResolution || 0) * 100)}%, spouse ${Math.round((fi.spouseResolution || 0) * 100)}%, ` +
+            `${fi.malePct != null ? Math.round(fi.malePct * 100) : "?"}% male — ` +
+            `usable as a roster: ${fi.usableAsRoster ? "yes" : "NO"}`);
+        }
+      } catch (e) { _log(`[ai-movement] family integrity skipped: ${e && e.message}`); }
+
       // ── PROVENANCE FIRST: is this log paired with a save from the same moment? ──
       // Everything below cross-references the two, so the strength of that pairing
       // qualifies all of it. On the reference data the log covers turns 1-51 and the
