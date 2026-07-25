@@ -541,14 +541,22 @@ ipcMain.handle("analyze-ai-movement", async (_event, logPath, modDataDir, savePa
     let p = logPath;
     if (!p) {
       const r = await dialog.showOpenDialog({
-        title: "Pick a message_log.txt or campaign_ai_log.txt to analyze",
+        title: "Pick a message_log.txt, campaign_ai_log.txt or scripting_log.txt to analyze",
         filters: [{ name: "RTW logs", extensions: ["txt", "log"] }],
         properties: ["openFile"],
       });
       if (r.canceled || !r.filePaths.length) return { canceled: true };
       p = r.filePaths[0];
     }
-    if (fs.statSync(p).isDirectory()) p = path.join(p, "message_log.txt");
+    // A directory means "the live log folder". message_log.txt stays the default
+    // (that's what the quick-launch button has always meant), but if it isn't
+    // there, fall back to the other kinds instead of reporting "log not found"
+    // at a path the user never chose.
+    if (fs.statSync(p).isDirectory()) {
+      const dir = p;
+      const prefer = ["message_log.txt", "campaign_ai_log.txt", "scripting_log.txt"];
+      p = prefer.map((n) => path.join(dir, n)).find((c) => fs.existsSync(c)) || path.join(dir, prefer[0]);
+    }
     if (!fs.existsSync(p)) return { error: "log not found: " + p };
     const { BrowserWindow } = require("electron");
     const win = BrowserWindow.getAllWindows()[0];

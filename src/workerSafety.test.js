@@ -80,4 +80,19 @@ describe("saveCrackWorker require graph is worker-safe", () => {
     }
     expect(offences, "worker graph must not touch Electron — it has no bindings in the packaged app").toEqual([]);
   });
+
+  // The OTHER way this breaks in the packaged app and not in dev: build.files is
+  // an explicit allow-list, so a new module that dev resolves happily off disk
+  // is simply absent from app.asar. Symptom is the same shape as the v1417 bug
+  // ("Cannot find module './aiScriptAudit.js'"), and equally invisible to every
+  // runtime test. Assert membership statically instead.
+  it("has every module in the graph whitelisted in package.json build.files", () => {
+    const root = path.resolve(__dirname, "..");
+    const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+    const allowed = new Set((pkg.build && pkg.build.files) || []);
+    const missing = graph
+      .map((g) => path.relative(root, g.file).split(path.sep).join("/"))
+      .filter((rel) => !allowed.has(rel));
+    expect(missing, "these worker modules would be absent from app.asar — add them to package.json build.files").toEqual([]);
+  });
 });

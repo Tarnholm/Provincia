@@ -127,6 +127,55 @@ async function runAiMovementAnalysis({ logPath, modDataDir, savePath }, onProgre
       const n = fs.readSync(fd, head, 0, 4096, 0);
       fs.closeSync(fd);
       const headStr = head.slice(0, n).toString("latin1");
+      // ── scripting_log.txt? → the engine's own parse/runtime complaints about
+      // the mod's data files. Highest-confidence signal in the Lab: every entry
+      // names a file and a line, so nothing has to be inferred. Detected by the
+      // two line shapes that only this log produces.
+      const isScriptLog = /^\s*Script Error in /m.test(headStr) ||
+        /^\s*\([^)]*\.txt::\d+\) Executing command /m.test(headStr);
+      if (isScriptLog) {
+        _prog("log", "streaming the scripting log");
+        const readline = require("readline");
+        const { createScriptLogAnalyzer } = require("./aiMovementAnalyzer.js");
+        const an = createScriptLogAnalyzer();
+        const t0 = Date.now();
+        await new Promise((resolve, reject) => {
+          const rl = readline.createInterface({ input: fs.createReadStream(p, { encoding: "latin1" }), crlfDelay: Infinity });
+          let _n = 0;
+          rl.on("line", (line) => {
+            an.feedLine(line);
+            if ((++_n % 250000) === 0) _prog("log", "reading the scripting log - " + _n.toLocaleString() + " lines");
+          });
+          rl.on("close", resolve);
+          rl.on("error", reject);
+        });
+        const result = an.finish();
+        result.ms = Date.now() - t0;
+        result.logPath = p;
+        result.logBytes = fs.statSync(p).size;
+        // Cross-check the errors against the mod files so each one arrives with
+        // a resolved fix where the files can prove it. No save needed — these
+        // are static data-file bugs, not behaviour.
+        try {
+          if (modDataDir) {
+            _prog("audit", "resolving the errors against the mod files");
+            const { auditScriptErrors } = require("./aiScriptAudit.js");
+            const rd = (rel) => { try { return fs.readFileSync(path.join(modDataDir, rel), "latin1"); } catch { return null; } };
+            const audit = auditScriptErrors({
+              findings: result.findings,
+              files: {
+                senate: rd("descr_senate.txt"),
+                formationsAi: rd("descr_formations_ai.txt"),
+                traits: rd("export_descr_character_traits.txt"),
+              },
+            });
+            result.modLeads = audit.leads;
+            _log(`[ai-movement] script audit: ${audit.leads.length} leads from ${result.findings.length} engine errors`);
+          }
+        } catch (e) { result.auditError = e && e.message ? e.message : String(e); }
+        _log(`[ai-movement] ${path.basename(p)} (scripting): ${result.lines.toLocaleString()} lines, ${result.findings.length} engine errors in ${result.ms}ms`);
+        return result;
+      }
       const isAiLog = headStr.includes("campaign ai log start") ||
         (headStr.match(/^AI:/gm) || []).length > 5;
       if (isAiLog) {

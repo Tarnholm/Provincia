@@ -70,6 +70,11 @@ function toMarkdown(result, opts = {}) {
     L.push(`**AI decision log** · ${result.totalTurns} turn blocks` +
       (result.firstYear != null ? ` (${result.firstYear} → ${result.lastYear})` : "") +
       ` · ${nf(result.lines)} lines`);
+  } else if (result.logKind === "scripting") {
+    // These are the engine's own errors in the mod's data files: each names a
+    // file and a line, so unlike the behavioural logs there is nothing to
+    // interpret and no save to cross-reference.
+    L.push(`**Scripting log** · ${nf(result.lines)} lines · ${nf((result.findings || []).length)} engine error(s) in the mod's data files`);
   } else {
     L.push(`**Movement log** · ${result.totalTurns} turns · ${nf(result.moveLines)} moves · ${nf(result.armies)} armies`);
   }

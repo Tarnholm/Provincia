@@ -35,13 +35,21 @@ parentPort.on("message", async (payload) => {
     const { mode, savePath, saveBuf, modDataDir, campaign, preCracked } = payload;
     // postMessage delivers Buffers as Uint8Array on the worker side — wrap back
     // into a real Buffer so the byte-reading parsers work.
+    // The aiMovement mode never touches `buf` — it opens the log itself and
+    // (optionally) reads the save inside runAiMovementAnalysis. Reading it here
+    // too would duplicate a 44MB read, and would make a save MANDATORY, which
+    // is wrong for scripting_log.txt: those are static data-file errors that
+    // need no save at all.
+    const needsSave = mode !== "aiMovement";
     let buf;
-    if (savePath && fs.existsSync(savePath)) {
-      buf = fs.readFileSync(savePath);
-    } else if (saveBuf) {
-      buf = Buffer.isBuffer(saveBuf) ? saveBuf : Buffer.from(saveBuf.buffer, saveBuf.byteOffset, saveBuf.byteLength);
-    } else {
-      throw new Error("no save buffer available");
+    if (needsSave) {
+      if (savePath && fs.existsSync(savePath)) {
+        buf = fs.readFileSync(savePath);
+      } else if (saveBuf) {
+        buf = Buffer.isBuffer(saveBuf) ? saveBuf : Buffer.from(saveBuf.buffer, saveBuf.byteOffset, saveBuf.byteLength);
+      } else {
+        throw new Error("no save buffer available");
+      }
     }
 
     let result;

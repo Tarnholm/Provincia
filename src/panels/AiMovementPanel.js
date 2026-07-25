@@ -25,6 +25,9 @@ const KIND_META = {
   war_spam: { color: "#d05858", label: "War spam", desc: "authorised attacks against many factions at once — aggression far beyond what it can execute" },
   rich_but_stalled: { color: "#8fd18f", label: "Rich but stalled", desc: "the engine's own finance report says it had money — income is NOT this faction's problem" },
   abandoned: { color: "#d88fb0", label: "Abandoned army", desc: "the AI commanded it, then went silent — attach a save to tell an ORPHANED live army from a character who simply died" },
+  // scripting_log (the engine's own errors in the mod's data files)
+  script_error: { color: "#f0787a", label: "Data-file error", desc: "the engine could not parse something in a mod file — it names the file, line and column, so nothing has to be inferred" },
+  script_runtime_error: { color: "#e0a35a", label: "Broken condition", desc: "a script condition referenced something that does not exist, so the branch behind it never runs" },
 };
 
 export default function AiMovementPanel({
@@ -175,7 +178,9 @@ export default function AiMovementPanel({
             <span style={{ fontSize: "0.72rem", color: "#888" }}>
               {result.logKind === "campaign_ai"
                 ? `AI decision log · ${result.totalTurns} turn blocks (${result.firstYear} → ${result.lastYear}) · ${(result.lines || 0).toLocaleString()} lines · ${result.findings.length} findings · ${result.ms}ms`
-                : `movement log · ${result.totalTurns} turns · ${result.moveLines.toLocaleString()} moves · ${result.armies} armies · ${result.findings.length} findings · ${result.ms}ms`}
+                : result.logKind === "scripting"
+                  ? `scripting log · ${(result.lines || 0).toLocaleString()} lines · ${result.findings.length} engine error${result.findings.length === 1 ? "" : "s"} · ${result.ms}ms`
+                  : `movement log · ${result.totalTurns} turns · ${result.moveLines.toLocaleString()} moves · ${result.armies} armies · ${result.findings.length} findings · ${result.ms}ms`}
             </span>
           )}
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#bbb", fontSize: "1.1rem", cursor: "pointer" }}>✕</button>
@@ -200,13 +205,25 @@ export default function AiMovementPanel({
               Analyze current game log
             </button>
           )}
+          {/* The scripting log lives in the same folder but answers a different
+              question — "are the mod's data files valid?" — and needs no save,
+              so it gets its own one-click entry rather than hiding behind the
+              file picker. */}
+          {defaultLogDir && (
+            <button onClick={() => run(defaultLogDir.replace(/[\\/]?$/, "/") + "scripting_log.txt")} disabled={busy}
+              title={"Read scripting_log.txt — the engine's own errors in the mod's data files (file, line and column). No save needed."}
+              style={{ padding: "4px 12px", borderRadius: 6, cursor: busy ? "default" : "pointer", border: "1px solid rgba(240,120,122,0.35)", background: "rgba(240,120,122,0.12)", color: "#f0a0a2", fontSize: "0.78rem" }}>
+              ⚠ Check mod files
+            </button>
+          )}
           {busy && progress ? (
             <span style={{ fontSize: "0.72rem", color: "#8fc9d8" }}>
               <span style={{ opacity: 0.7 }}>{progress.phase}:</span> {progress.detail}
             </span>
           ) : (
             <span style={{ fontSize: "0.68rem", color: "#888" }}>
-              Takes message_log.txt (movement traces) or campaign_ai_log.txt (AI decisions, any size — 300MB telemetry streams fine).
+              Takes message_log.txt (movement traces), campaign_ai_log.txt (AI decisions, any size — 300MB telemetry streams fine),
+              or scripting_log.txt (the engine's own errors in the mod's data files — no save needed).
             </span>
           )}
           <div style={{ flexBasis: "100%", display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
@@ -511,7 +528,9 @@ export default function AiMovementPanel({
               <div style={{ color: (result.findings || []).length ? "#e8c873" : "#8fd18f", fontSize: "0.8rem", padding: "8px 2px" }}>
                 {(result.findings || []).length
                   ? "No findings match the current filters — widen them to see the rest."
-                  : "No problems found — the AI moved cleanly in this log."}
+                  : result.logKind === "scripting"
+                    ? "No data-file errors — the engine parsed every mod file it loaded."
+                    : "No problems found — the AI moved cleanly in this log."}
               </div>
             )}
             {visible.map((f, i) => {
@@ -525,9 +544,13 @@ export default function AiMovementPanel({
                   onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
                   onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                   style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "3px 4px", borderRadius: 4, cursor: f.region ? "pointer" : "default", fontSize: "0.76rem", borderLeft: `3px solid ${m.color}`, marginBottom: 2 }}>
-                  <span style={{ color: m.color, fontWeight: 700, width: 86, flexShrink: 0 }}>{m.label}</span>
+                  <span style={{ color: m.color, fontWeight: 700, width: 96, flexShrink: 0 }}>{m.label}</span>
                   <span style={{ color: "#eee", fontWeight: 600 }}>{f.name}</span>
-                  <span style={{ color: "#9a8f7a" }}>{flabel(f.faction)}</span>
+                  {/* scripting-log findings belong to no faction — printing a
+                      placeholder there is the same noise as the old (null,null) */}
+                  {f.faction && f.faction !== "—" && f.faction !== "?" && (
+                    <span style={{ color: "#9a8f7a" }}>{flabel(f.faction)}</span>
+                  )}
                   {f.fromTurn != null && f.toTurn != null && (
                     <span style={{ color: "#8fc9d8", flexShrink: 0 }}>
                       {f.fromTurn === f.toTurn ? `t${f.fromTurn}` : `t${f.fromTurn}–${f.toTurn}`}
@@ -540,13 +563,21 @@ export default function AiMovementPanel({
                       : (f.x != null && f.y != null ? `(${f.x},${f.y})` : "")}
                   </span>
                   </div>
-                  {(f.verdict || f.reqVsHave) && (
-                    <div style={{ margin: "0 0 3px 92px", fontSize: "0.7rem", color: /NEVER arrived/.test(f.verdict || "") || f.impossible ? "#e87a6a" : "#8fd18f" }}>
-                      {f.impossible ? "⛔ " : /NEVER arrived/.test(f.verdict || "") ? "✕ " : "✓ "}
+                  {(f.verdict || f.reqVsHave) && (() => {
+                    // A verdict is only GOOD news when it confirms the AI coped.
+                    // Scripting-log verdicts ("BLOCK DISCARDED …") are the
+                    // opposite, so severity decides the colour — otherwise a
+                    // parse failure rendered as a green ✓.
+                    const bad = f.impossible || /NEVER arrived/.test(f.verdict || "") || f.kind === "script_error" || f.kind === "script_runtime_error";
+                    const icon = f.impossible ? "⛔ " : bad ? "✕ " : "✓ ";
+                    return (
+                    <div style={{ margin: "0 0 3px 102px", fontSize: "0.7rem", color: bad ? "#e87a6a" : "#8fd18f" }}>
+                      {icon}
                       {f.reqVsHave || f.verdict}
                       {f.factionSettlements != null && f.kind === "campaign_stall" ? ` · holds ${f.factionSettlements} settlement(s)` : ""}
                     </div>
-                  )}
+                    );
+                  })()}
                   </div>
               );
             })}

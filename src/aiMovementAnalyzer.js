@@ -592,6 +592,137 @@ function createAiDecisionAnalyzer(opts = {}) {
 }
 
 // ════════════════════════════════════════════════════════════════════════
+// scripting_log.txt ANALYSER (2026-07-25) — the engine's OWN complaints about
+// the mod's data files.
+//
+// The AI logs describe *behaviour* ("this army gathered for 20 turns"), which
+// always needs interpretation. scripting_log.txt is different: the engine names
+// a file, a line and a column, and says what it could not parse. Every one of
+// those is a concrete bug with an address, so this is the highest-confidence
+// signal in the whole Lab — nothing has to be inferred.
+//
+// Real shapes from the RIS log (verified against the user's live 93,673-line
+// scripting_log before writing a single regex):
+//   Script Error in Q:\...\RIS/data/descr_formations_ai.txt, at line 1066, column 1. Group Formation script error: Formation early_germanic_pike_and_throw_envelopment does not cover all unit types in the formation blocks preference list
+//   Script Error in Q:\...\descr_strat.txt, at line 40847, column 59. you have chosen an invalid tile(357, 398) for Skerviaidos (illyrian_kingdom)
+//   Error while executing HasOffice for character Biggus Dickus, no office named Aedile assigned to senate roman_senate
+//
+// DELIBERATELY NOT REPORTED: the log's 8,132 bare `[FAILED]` markers and 5,377
+// `HasResource [...::FAILED]` lines. Those are ordinary condition evaluations
+// coming out false — the normal way a campaign script decides not to fire. They
+// are the single largest pattern in the file and reporting them would bury the
+// 13 real errors under 13,000 non-problems.
+//
+// Streaming (feedLine/finish) to match the other analysers and because these
+// logs reach tens of MB in a long campaign.
+const SCRIPT_RX = {
+  // file, line, column, message — the path prefix varies by machine, so only
+  // the basename is kept (that's what the modder actually opens).
+  scriptError: /^\s*Script Error in (?:.*[\\/])?([^\\/,]+), at line (\d+), column (\d+)\.\s*(.+)$/,
+  // runtime failures naming a definition the script expected to exist
+  execError: /^\s*Error while executing (\w+) for character ([^,]+), (.+)$/,
+};
+
+// A parse error means the engine DISCARDED the block — the mod is running
+// without it. An incomplete-coverage warning means the block loaded but has a
+// gap. The first kind is worse, so it sorts first.
+function scriptErrorIsFatal(message) {
+  return /(^|: )(Expected\b|unknown\b|at least one\b)/i.test(message) || /invalid tile/i.test(message);
+}
+
+function createScriptLogAnalyzer() {
+  const byFileLine = new Map(); // file:line:message → { file, line, column, message, count }
+  const execErrors = new Map(); // command|reason → { command, reason, chars:Set, count }
+  let lines = 0;
+  let matched = 0;
+
+  const feedLine = (l) => {
+    lines++;
+    if (l.indexOf("Error") === -1) return; // cheap reject — >99.9% of lines
+    let m;
+    if ((m = SCRIPT_RX.scriptError.exec(l))) {
+      const message = m[4].trim();
+      const key = `${m[1]}:${m[2]}:${message}`;
+      const e = byFileLine.get(key) || { file: m[1], line: +m[2], column: +m[3], message, count: 0 };
+      e.count++;
+      byFileLine.set(key, e);
+      matched++;
+      return;
+    }
+    if ((m = SCRIPT_RX.execError.exec(l))) {
+      const reason = m[3].trim();
+      const key = `${m[1]}|${reason}`;
+      const e = execErrors.get(key) || { command: m[1], reason, chars: new Set(), count: 0 };
+      e.count++;
+      e.chars.add(m[2].trim());
+      execErrors.set(key, e);
+      matched++;
+    }
+  };
+
+  const finish = () => {
+    const findings = [];
+    for (const e of byFileLine.values()) {
+      const fatal = scriptErrorIsFatal(e.message);
+      findings.push({
+        kind: "script_error",
+        name: e.file,
+        faction: "—",
+        fromTurn: null, toTurn: null, turns: e.count,
+        region: null, x: null, y: null,
+        file: e.file, line: e.line, column: e.column,
+        message: e.message,
+        detail:
+          `${e.file}:${e.line}:${e.column} — ${e.message}` +
+          (e.count > 1 ? ` (reported ${e.count}×)` : ""),
+        verdict: fatal
+          ? "BLOCK DISCARDED — the engine could not parse it, so the mod runs without this entry"
+          : "loaded with a gap — the engine fell back to defaults for the missing cases",
+        severity: fatal ? 3 : 2,
+      });
+    }
+    for (const e of execErrors.values()) {
+      const who = [...e.chars].slice(0, 3).join(", ");
+      const more = e.chars.size > 3 ? ` +${e.chars.size - 3} more` : "";
+      findings.push({
+        kind: "script_runtime_error",
+        name: e.command,
+        faction: "—",
+        fromTurn: null, toTurn: null, turns: e.count,
+        region: null, x: null, y: null,
+        detail:
+          `${e.command} failed ${e.count}× — ${e.reason}` +
+          (who ? ` (character: ${who}${more})` : ""),
+        verdict: "condition could not be evaluated — the script branch behind it never runs",
+        severity: 2,
+      });
+    }
+    findings.sort((p, q) => q.severity - p.severity || q.turns - p.turns || p.name.localeCompare(q.name));
+
+    const findingCounts = {};
+    for (const f of findings) findingCounts[f.kind] = (findingCounts[f.kind] || 0) + 1;
+
+    const usable = matched > 0;
+    return {
+      logKind: "scripting",
+      usable,
+      emptyReason: usable
+        ? null
+        : `no script errors in this log — ${lines.toLocaleString()} lines scanned. That is genuinely good news: the engine parsed every data file it was asked to load. It also means there is nothing here to fix, so use campaign_ai_log.txt for AI behaviour instead.`,
+      totalTurns: 0,
+      parsedLines: matched,
+      moveLines: 0, fleeLines: 0, cannotFlee: 0, armies: 0,
+      lines,
+      findings,
+      findingCounts,
+      factionStats: {},
+    };
+  };
+
+  return { feedLine, finish };
+}
+
+// ════════════════════════════════════════════════════════════════════════
 // LOG ↔ SAVE CORRELATION (2026-07-24) — turn a log finding into a verdict by
 // checking the world state in an actual save. The log says what the AI TRIED;
 // the save says whether it worked.
@@ -755,4 +886,4 @@ function buildSaveFacts(save, regionOfSettlement) {
   };
 }
 
-module.exports = { analyzeMovementLog, createAiDecisionAnalyzer, correlateWithSave, buildSaveFacts, DEFAULTS, AI_DEFAULTS };
+module.exports = { analyzeMovementLog, createAiDecisionAnalyzer, createScriptLogAnalyzer, correlateWithSave, buildSaveFacts, DEFAULTS, AI_DEFAULTS };

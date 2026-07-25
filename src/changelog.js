@@ -13,6 +13,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1426",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**The Lab now reads scripting_log.txt and finds real bugs in the mod's data files — with the exact file, line and column.** This is a third log kind and the highest-confidence signal in the whole tool: the AI logs describe behaviour that needs interpreting, whereas here the engine itself names what it could not parse, so nothing is inferred. On your live log it pulls 13 genuine errors out of 93,673 lines in 22ms, and no save is needed. Two are fully diagnosed: `Aedile_tenure` in descr_senate.txt names an office RIS no longer has (it was split into PlebeianAedile and CuruleAedile), so that restriction can never be satisfied and the Praetor office behind it is unobtainable — the same dead name is used by 3 `Condition HasOffice Aedile` triggers in export_descr_character_traits.txt, and `PontifexMaximus` is dead there too. Also found: descr_formations_ai.txt fails to parse at line 2369 (26 of its 32 formations are declared after that point), 5 formation groups have no catch-all block while the 21 the engine accepted all do, and two characters — Skerviaidos and Dionysios — start on invalid tiles and so are not placed where descr_strat.txt says." },
+      { type: "improvement", text: "**Each error arrives with a fix resolved from your mod files, or an honest \"not resolvable\".** Office leads list the offices that actually exist and name the rename; formation leads cite the file's own catch-all statistics as evidence. Where the cause genuinely can't be pinned down — the descr_formations_ai parse failure, where the engine's column number points at where it gave up recovering rather than at the offending token — the lead reports the measured blast radius and stops, instead of guessing. The Lab also sweeps every office reference in the mod statically, so it finds dead ones the log hasn't hit yet." },
+      { type: "improvement", text: "The log's 13,000+ ordinary `[FAILED]` condition checks are deliberately excluded — those are just campaign scripts deciding not to fire, and reporting them would bury the 13 real errors. A one-click **⚠ Check mod files** button reads the scripting log straight from your game folder." },
+      { type: "fix", text: "The analysis worker no longer demands a save file up front. It never used that copy — the save is read further down the pipeline — so this removes a redundant 44MB read on every run, and makes the save-free scripting-log mode possible at all." },
+      { type: "fix", text: "A new packaging guard walks the worker's entire require graph and fails the test suite if any module is missing from the build whitelist. This is the exact bug that shipped in v0.9.1417 (\"Cannot find module 'electron'\") in its other form, and it is invisible to every runtime test because modules resolve fine off disk in development — it only breaks in the packaged app. Verified to actually catch it." },
+    ],
+  },
+  {
     version: "0.9.1425",
     date: "2026-07-25",
     items: [

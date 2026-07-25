@@ -150,3 +150,54 @@ describe("progress reporting", () => {
     }
   }, 240000);
 });
+
+// ── scripting_log.txt ─────────────────────────────────────────────────────────
+// A third log kind, and the only one that needs no save: the engine's own errors
+// in the mod's data files. Pinned against the user's live log so a regex or
+// detection regression shows up here rather than silently reporting "clean".
+describe("scripting_log.txt — the engine's own mod-file errors", () => {
+  const LIVE_SCRIPT = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/logs/scripting_log.txt";
+  const haveScript = fs.existsSync(LIVE_SCRIPT) && fs.existsSync(MOD_DIR);
+
+  it.runIf(haveScript)("analyses it WITHOUT a save and resolves each error against the mod files", async () => {
+    // deliberately no savePath: these are static data-file bugs. The worker used
+    // to demand a save buffer up front, which made this mode impossible.
+    const msg = await runWorker({ mode: "aiMovement", logPath: LIVE_SCRIPT, modDataDir: MOD_DIR });
+    expect(msg.ok, `worker failed: ${msg.error}`).toBe(true);
+    const r = msg.result;
+    expect(r.error).toBeUndefined();
+    expect(r.logKind).toBe("scripting");
+    expect(r.usable).toBe(true);
+    expect(r.lines).toBeGreaterThan(90000);        // 93,673
+    expect(r.save).toBeUndefined();                // no save asked for, none claimed
+
+    // 13 real errors out of 93,673 lines — the log's 13,000+ ordinary [FAILED]
+    // condition checks must NOT be in here.
+    expect(r.findings.length).toBeGreaterThan(8);
+    expect(r.findings.length).toBeLessThan(60);
+    for (const f of r.findings) expect(["script_error", "script_runtime_error"]).toContain(f.kind);
+
+    // the files the engine actually complained about
+    const files = new Set(r.findings.map((f) => f.file).filter(Boolean));
+    for (const want of ["descr_formations_ai.txt", "descr_senate.txt", "descr_strat.txt"]) {
+      expect([...files], `expected an error in ${want}`).toContain(want);
+    }
+    // paths are reduced to basenames — never the modder's Q:\Feral build path
+    for (const f of r.findings) if (f.file) expect(f.file).not.toMatch(/[\\/]/);
+
+    // ── leads: every one must name a file, a key and a suggestion ──
+    expect(r.modLeads.length).toBeGreaterThan(5);
+    expect(r.auditError).toBeUndefined();
+    for (const l of r.modLeads) {
+      expect(l.file).toBeTruthy();
+      expect(l.key).toBeTruthy();
+      expect(l.suggestion).toBeTruthy();
+      expect(l.evidence).toBeTruthy();
+    }
+    // the senate rename is fully resolvable from the files, so it must be resolved
+    const aedile = r.modLeads.find((l) => l.key === "Aedile_tenure");
+    expect(aedile, "the dead Aedile_tenure reference should be reported").toBeTruthy();
+    expect(aedile.suggestion).toMatch(/PlebeianAedile_tenure|CuruleAedile_tenure/);
+    expect(aedile.evidence).toMatch(/offices that DO exist/);
+  }, 120000);
+});
