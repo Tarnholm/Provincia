@@ -358,6 +358,30 @@ export default function AiMovementPanel({
                 )}
               </div>
             )}
+            {/* CAMPAIGN OUTCOME — the only number here that says whether any of
+                the AI's effort produced anything. Above the scale banner, because
+                this is the observation and that is its explanation. */}
+            {result.expansion && result.expansion.comparable && (
+              <div style={{ marginBottom: 8, padding: "6px 9px", borderRadius: 6, background: result.expansion.rebelDelta >= 0 ? "rgba(232,122,106,0.12)" : "rgba(143,209,143,0.10)", border: `1px solid ${result.expansion.rebelDelta >= 0 ? "rgba(232,122,106,0.38)" : "rgba(143,209,143,0.3)"}`, fontSize: "0.75rem", lineHeight: 1.5 }}>
+                <b style={{ color: result.expansion.rebelDelta >= 0 ? "#e87a6a" : "#8fd18f" }}>
+                  {result.expansion.rebelDelta >= 0 ? "Conquest is not working" : "Conquest is making progress"}
+                </b>
+                {" — the independent peoples went from "}
+                <b>{result.expansion.rebelBefore}</b>{" settlements to "}
+                <b>{result.expansion.rebelAfter}</b>
+                {result.expansion.rebelDelta !== 0 ? ` (${result.expansion.rebelDelta > 0 ? "+" : ""}${result.expansion.rebelDelta})` : ""}
+                {", while the "}{result.expansion.factions}{" real factions "}
+                {result.expansion.netNonRebel >= 0 ? "gained " : "lost "}
+                <b>{Math.abs(result.expansion.netNonRebel)}</b>{" between them and "}
+                <b style={{ color: "#e87a6a" }}>{result.expansion.wipedOut}</b>{" were wiped out."}
+                <div style={{ color: "#9a8f7a", fontSize: "0.7rem", marginTop: 2 }}>
+                  {result.expansion.grew} gained ground · {result.expansion.shrank} lost · {result.expansion.unchanged} unchanged.
+                  {result.expansion.topGainers.length ? ` Biggest gainers: ${result.expansion.topGainers.slice(0, 4).map((r) => `${flabel(r.faction)} ${r.before}→${r.after}`).join(", ")}.` : ""}
+                  {" Start ownership from descr_strat.txt against the save"}
+                  {result.expansion.divergence ? ` (${result.expansion.divergence} settlements apart — founded or razed mid-campaign)` : ""}.
+                </div>
+              </div>
+            )}
             {/* The strength-scale mismatch. Placed above everything else because
                 it reframes the rest: if almost no faction could field the median
                 requirement, then "this faction is poor" is a symptom of the map's

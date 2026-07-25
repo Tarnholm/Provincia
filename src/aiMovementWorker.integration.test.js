@@ -113,6 +113,28 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
       expect(f.terrain.difficulty).toBeLessThanOrEqual(100);
     }
 
+    // ── CAMPAIGN OUTCOME ──
+    // The scoreboard: did the AI take anything in 102 turns? The two sides come
+    // from different sources (descr_strat vs the save), so the report must also
+    // certify they are close enough to difference — 6 of 1,305 here (0.46%).
+    expect(r.expansionError).toBeUndefined();
+    expect(r.expansion).toBeTruthy();
+    expect(r.expansion.comparable, "start and save populations diverged too far to compare").toBe(true);
+    expect(r.expansion.divergencePct).toBeLessThan(2);
+    expect(r.expansion.startTotal).toBeGreaterThan(1000);        // 1,305
+    expect(r.expansion.nowTotal).toBeGreaterThan(1000);          // 1,311
+    // the independents are RIS's design (499 at start), so only the delta matters
+    expect(r.expansion.rebelBefore).toBeGreaterThan(400);
+    expect(r.expansion.rebelDelta).toBeGreaterThanOrEqual(0);    // +23: they GREW
+    expect(r.expansion.wipedOut).toBeGreaterThan(50);            // 97 of 220
+    expect(r.expansion.netNonRebel).toBeLessThan(0);             // -17
+    // slave must never appear among the "real faction" rows
+    expect(r.expansion.rows.some((x) => x.faction === "slave")).toBe(false);
+    // the outcome lead must come FIRST, with the scale lead right behind it
+    expect(r.modLeads[0].faction).toBe("all (campaign outcome)");
+    expect(r.modLeads[0].issue).toMatch(/CONQUEST IS NOT WORKING/);
+    expect(r.modLeads[1].faction).toBe("all (map scale)");
+
     // ── STRENGTH SCALE ──
     // The most structural number the Lab produces: what the AI demands against
     // what the map's factions can field. Both sides must be men-equivalent, which
@@ -130,9 +152,8 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
     // only a handful of factions can meet the median ask — that IS the finding
     expect(r.strengthScale.factionsAbleToMeetMedianAsk).toBeLessThan(r.strengthScale.factions * 0.25);
     // it must be the FIRST lead, since it reframes all the per-faction ones
-    expect(r.modLeads[0].faction).toBe("all (map scale)");
-    expect(r.modLeads[0].issue).toMatch(/THE REQUIREMENTS DO NOT FIT THIS MAP/);
-    expect(r.modLeads[0].evidence).toMatch(/ACS_DEFEND_\*\) postures excluded/);
+    expect(r.modLeads[1].issue).toMatch(/THE REQUIREMENTS DO NOT FIT THIS MAP/);
+    expect(r.modLeads[1].evidence).toMatch(/ACS_DEFEND_\*\) postures excluded/);
 
     // ── LAND REACHABILITY ──
     // The flood fill must reproduce real geography: one continental mass holding

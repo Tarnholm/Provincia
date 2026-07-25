@@ -73,6 +73,27 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
       }
     }
 
+    // ── DID THE AI ACTUALLY GET ANYWHERE? ─────────────────────────────────────
+    // Everything else in the Lab measures attempts. This measures the outcome, by
+    // comparing descr_strat's starting ownership against the save's.
+    try {
+      const { expansionReport } = require("./aiExpansion.js");
+      const gv3 = require("./growthEval.js");
+      const st = gv3.parseStrat(path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"));
+      const startCounts = {};
+      for (const [fac, v] of Object.entries(st || {})) {
+        const n = (v && v.settlements ? v.settlements.length : 0);
+        if (n) startCounts[String(fac).toLowerCase()] = n;
+      }
+      const exp = expansionReport({ startCounts, nowOwnerByCity: facts.ownerByCity });
+      if (exp) {
+        result.expansion = exp;
+        _log(`[ai-movement] expansion: independents ${exp.rebelBefore}→${exp.rebelAfter} (${exp.rebelDelta >= 0 ? "+" : ""}${exp.rebelDelta}), ` +
+          `${exp.factions} real factions net ${exp.netNonRebel >= 0 ? "+" : ""}${exp.netNonRebel}, ${exp.wipedOut} wiped out` +
+          (exp.comparable ? "" : ` — NOT COMPARABLE (${exp.divergencePct}% count divergence)`));
+      }
+    } catch (e) { result.expansionError = e && e.message ? e.message : String(e); }
+
     // Mod-file audit: turn the findings into file-level leads (which file, which
     // key, what to change) using the AI-relevant mod files the user named.
     try {
@@ -155,6 +176,15 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
           });
         }
       }
+
+      // Inserted AFTER the scale lead so it lands ABOVE it: "conquest is not
+      // working" is the observation a reader should meet first, and the strength
+      // gap immediately below is the explanation for it.
+      try {
+        const { expansionLeads } = require("./aiExpansion.js");
+        const el = expansionLeads(result.expansion);
+        if (el.length) result.modLeads = el.concat(result.modLeads);
+      } catch { /* the report still stands without a lead */ }
       // ── map_ground_types.tga: can the ground the AI is ordered across even be
       // walked? The other files say whether a faction CAN raise the troops; this
       // one says whether the route exists. Annotates movement findings with the
