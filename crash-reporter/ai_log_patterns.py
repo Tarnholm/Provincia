@@ -24,6 +24,11 @@ AI_LOG_LINE_PATTERNS = [
     r"""^AI: campaign: garrison of settlement '([^']+)' told to split, (\d+) units leaving, priority (\d+)""",
     r"""^AI: mildir: \S+ attack authorised against '([^']+)'""",
     r"""^AI: (\d+) (spies|assassins) assigned this turn""",
+    r"""^AI: ltgd: army strength (\d+), free army strength (\d+), navy strength (\d+)""",
+    r"""^AI: ltgd: '([^']+)' invade '([^']+)', (.+?) >> (ALI_\w+) \((\d+)\)""",
+    r"""^AI: ltgd: defend \([^)]*\) vs fac '([^']+)': (.+?) >> (ALD_\w+)""",
+    r"""^AI: -- troop type '([^']+)' at priority (\d+)""",
+    r"""^AI: region control: settlement '([^']+)', \(pop (\d+), old order (-?\d+)\), tax (TAX_LEVEL_\w+) due to (.+?)\.?$""",
     r"""char '([^']+)'|character '([^']+)'|army '([^']+)'""",
 ]
 

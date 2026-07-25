@@ -44,66 +44,49 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
     result.save.confirmedNeverArrived = sm.length;
     result.save.impossibleCampaigns = imp.length;
     result.save.orphanedArmies = result.findings.filter((f) => f.orphaned).length;
-    // ── STRENGTH SCALE ────────────────────────────────────────────────────────
-    // The single most structural number in the whole analysis: what the AI asks
-    // for, against what the factions on this map can actually field. Per-faction
-    // leads can only ever say "this one is poor"; this says whether the
-    // requirements suit the states that exist at all.
+    // ── STRENGTH SCALE ─────────────────────────────────────────────────────────
+    // What the AI DEMANDS of a campaign, against what it BELIEVES it has spare.
     //
-    // Both sides are men-equivalent — cross-checked on the reference data, where
-    // the log's `allocated str 27,183` lines up with Ptolemaic's 28,246 soldiers
-    // in the save, and unit sizes there are a sane 64 men at the median.
-    if (result.askDistribution) {
-      const menVals = Object.values(facts.menByFaction || {}).filter((n) => n > 0).sort((a, b) => a - b);
-      if (menVals.length) {
-        const q = (pp) => menVals[Math.min(menVals.length - 1, Math.floor(menVals.length * pp))];
-        const medianMen = q(0.5);
+    // BOTH SIDES MUST BE IN THE ENGINE'S OWN UNIT. An earlier version of this
+    // compared the requirement against the save's SOLDIER COUNTS and reported a
+    // 16x gap — wrong, because "strength" is a derived metric, not a headcount.
+    // The engine's own `ltgd: army strength N, free army strength N` lines settle
+    // it: across 124 pairable factions the strength/men ratio is p25 21.8,
+    // median 32.7, p75 59.6, with 76% inside 2x of the median. Ptolemaic reports
+    // 589,755 strength against 28,246 soldiers. The one coincidence that made the
+    // old comparison look sound (an `allocated str 27,183` line sitting near
+    // Ptolemaic's 28,246 men) was exactly that — a coincidence.
+    //
+    // So the comparison is requirement vs the AI's own FREE strength: what it
+    // considers available for offence, which is the number it weighs against a
+    // campaign's requirement.
+    if (result.askDistribution && result.ltgdStrength) {
+      const freeStrengthVals = Object.entries(result.ltgdStrength)
+        .filter(([f, e]) => f !== "?" && e && e.avgFree > 0)
+        .map(([, e]) => e.avgFree)
+        .sort((a, b) => a - b);
+      if (freeStrengthVals.length >= 20) {
+        const q = (pp) => freeStrengthVals[Math.min(freeStrengthVals.length - 1, Math.floor(freeStrengthVals.length * pp))];
+        const medianFree = q(0.5);
         const ask = result.askDistribution;
+        // Headcounts are kept for context but clearly labelled as a DIFFERENT
+        // unit, so nobody repeats the mistake of dividing one by the other.
+        const menVals = Object.values(facts.menByFaction || {}).filter((n) => n > 0).sort((a, b) => a - b);
         result.strengthScale = {
+          unit: "engine strength points (NOT men — roughly 33x a headcount)",
           askTargets: ask.targets, askMedian: ask.median, askP75: ask.p75, askP95: ask.p95, askMax: ask.max,
-          factions: menVals.length,
-          menMedian: medianMen, menP75: q(0.75), menMax: menVals[menVals.length - 1],
+          factions: freeStrengthVals.length,
+          freeMedian: medianFree, freeP25: q(0.25), freeP75: q(0.75), freeMax: freeStrengthVals[freeStrengthVals.length - 1],
+          factionsAbleToMeetMedianAsk: freeStrengthVals.filter((n) => n >= ask.median).length,
+          ratio: medianFree ? +(ask.median / medianFree).toFixed(2) : null,
+          // context only, in a different unit
+          menMedian: menVals.length ? menVals[Math.floor(menVals.length / 2)] : null,
           totalMen: menVals.reduce((a, b) => a + b, 0),
-          // how many factions could field the MEDIAN ask at all
-          factionsAbleToMeetMedianAsk: menVals.filter((n) => n >= ask.median).length,
-          ratio: medianMen ? +(ask.median / medianMen).toFixed(1) : null,
         };
-        // Does the requirement scale DOWN for a weakly-held target, or is there a
-        // floor? This is the sharper question: a median of 23,902 could just mean
-        // the map's targets are well defended. A FLOOR means even an almost-empty
-        // settlement is out of reach, which is a different and worse problem.
-        if (result.askByTarget) {
-          const unitsInRegion = new Map();
-          for (const [key, n] of Object.entries(facts.unitsByFactionRegion || {})) {
-            const reg = key.slice(key.indexOf("|") + 1);
-            unitsInRegion.set(reg, (unitsInRegion.get(reg) || 0) + (typeof n === "number" ? n : 0));
-          }
-          const pairs = [];
-          for (const [sett, req] of Object.entries(result.askByTarget)) {
-            const reg = regionOfSettlement[sett] || sett;
-            const u = unitsInRegion.get(reg);
-            if (u != null) pairs.push({ req, units: u });
-          }
-          if (pairs.length > 50) {
-            const med = (arr) => { const v = arr.slice().sort((a, b) => a - b); return v[Math.floor(v.length / 2)]; };
-            const bucket = (lo, hi) => {
-              const b = pairs.filter((p) => p.units >= lo && p.units <= hi);
-              return b.length ? { lo, hi: hi === Infinity ? null : hi, targets: b.length, medianAsk: med(b.map((p) => p.req)) } : null;
-            };
-            const buckets = [bucket(1, 2), bucket(3, 5), bucket(6, 10), bucket(11, 20), bucket(21, Infinity)].filter(Boolean);
-            const weakest = buckets[0];
-            result.strengthScale.askByDefenders = buckets;
-            result.strengthScale.pairedTargets = pairs.length;
-            if (weakest) {
-              result.strengthScale.askFloor = weakest.medianAsk;
-              result.strengthScale.floorRatio = medianMen ? +(weakest.medianAsk / medianMen).toFixed(1) : null;
-            }
-          }
-        }
         const S2 = result.strengthScale;
-        _log(`[ai-movement] strength scale: median offensive ask ${ask.median.toLocaleString()} vs median faction ${medianMen.toLocaleString()} men ` +
-          `(${S2.ratio}×); only ${S2.factionsAbleToMeetMedianAsk} of ${menVals.length} factions could field the median ask` +
-          (S2.askFloor ? `; even targets held by 1-2 units demand a median ${S2.askFloor.toLocaleString()} (${S2.floorRatio}× the median faction)` : ""));
+        _log(`[ai-movement] strength scale: median offensive requirement ${ask.median.toLocaleString()} vs median faction FREE strength ` +
+          `${medianFree.toLocaleString()} (${S2.ratio}x) — ${S2.factionsAbleToMeetMedianAsk} of ${S2.factions} factions can meet it. ` +
+          `Both figures are engine strength points, not men.`);
       }
     }
 
@@ -178,43 +161,37 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
       result.modLeads = audit.leads;
       result.factionProfiles = audit.factions;
 
-      // ── WORLD-LEVEL: the strength-scale mismatch ────────────────────────────
-      // Put first because it reframes every per-faction lead below it. If almost
-      // no faction on the map could field the median requirement, then "this
-      // faction is poor" is a symptom of the map's shape, not of that faction.
-      if (result.strengthScale && result.strengthScale.factions > 20) {
+      // ── WORLD-LEVEL: how far the AI's demands sit above its spare strength ──
+      // Reported as a proportion, in the engine's own unit, with the share of
+      // factions that fall short. An earlier version of this claimed a 16x gap by
+      // dividing strength points by soldier counts; that was a unit error.
+      if (result.strengthScale && result.strengthScale.factions >= 20) {
         const S = result.strengthScale;
-        const ableePct = Math.round((S.factionsAbleToMeetMedianAsk / S.factions) * 100);
-        // Only raise it when the gap is large AND few factions can meet it —
-        // a 4x gap that most factions clear anyway is not a structural problem.
-        if (S.ratio >= 4 && ableePct <= 25) {
+        const shortPct = Math.round((1 - S.factionsAbleToMeetMedianAsk / S.factions) * 100);
+        // Only worth a lead when most factions genuinely fall short. A requirement
+        // the majority can meet is not a structural problem.
+        if (shortPct >= 50) {
           result.modLeads.unshift({
             severity: 3,
             faction: "all (map scale)",
-            file: "descr_strat.txt (faction count / starting armies)",
-            key: `median ask ${S.askMedian.toLocaleString()} vs median faction ${S.menMedian.toLocaleString()} men`,
+            file: "descr_strat.txt (starting armies) + export_descr_buildings.txt (recruitment)",
+            key: `median requirement ${S.askMedian.toLocaleString()} vs median free strength ${S.freeMedian.toLocaleString()}`,
             issue:
-              `THE REQUIREMENTS DO NOT FIT THIS MAP. Across ${S.askTargets.toLocaleString()} targets the AI's median offensive requirement is ` +
-              `${S.askMedian.toLocaleString()} men, but the median faction fields ${S.menMedian.toLocaleString()} — a factor of ${S.ratio}. ` +
-              `Only ${S.factionsAbleToMeetMedianAsk} of ${S.factions} factions could field the median requirement at all, and it is ` +
-              `${((S.askMedian / S.totalMen) * 100).toFixed(1)}% of every soldier on the map.` +
-              (S.askFloor
-                ? ` And it does not scale down for weak targets: a settlement held by just 1-2 units still demands a median ` +
-                  `${S.askFloor.toLocaleString()} — ${S.floorRatio}× the median faction's entire army. There is no target on this map a typical faction can take.`
-                : ``),
+              `${shortPct}% OF FACTIONS CANNOT MEET A TYPICAL CAMPAIGN'S REQUIREMENT. Across ${S.askTargets.toLocaleString()} targets the median ` +
+              `offensive requirement is ${S.askMedian.toLocaleString()} strength; the median faction reports ${S.freeMedian.toLocaleString()} FREE strength ` +
+              `(${S.ratio}x). Only ${S.factionsAbleToMeetMedianAsk} of ${S.factions} factions clear it, and the lower quartile sits at ${S.freeP25.toLocaleString()}.`,
             suggestion:
-              `This is the structural reason campaigns gather forever and never launch, and it sits upstream of every per-faction lead below. ` +
-              `The requirement itself is computed by the engine, so the levers are on this side: fewer and larger factions, or substantially ` +
-              `thicker starting forces in descr_strat.txt. Raising one small faction's economy cannot close a ${S.ratio}× gap.`,
+              `The requirement is not absurd — it is close to what a typical faction has spare — so the gap is closable, which the earlier ` +
+              `framing of this finding wrongly suggested it was not. The levers are thicker starting forces in descr_strat.txt and faster access to ` +
+              `mid-tier troops (the mic ladder's settlement_min gates in export_descr_buildings.txt). Re-measure this ratio afterwards; the ` +
+              `before/after tab compares two runs per-turn.`,
             evidence:
-              `ask percentiles median ${S.askMedian.toLocaleString()} / p75 ${S.askP75.toLocaleString()} / p95 ${S.askP95.toLocaleString()} · ` +
-              `faction men median ${S.menMedian.toLocaleString()} / p75 ${S.menP75.toLocaleString()} / max ${S.menMax.toLocaleString()} · ` +
-              `${S.totalMen.toLocaleString()} men total across ${S.factions} factions · defensive (ACS_DEFEND_*) postures excluded from the ask, ` +
-              `since those read as frontier totals rather than one stack` +
+              `requirement median ${S.askMedian.toLocaleString()} / p75 ${S.askP75.toLocaleString()} / p95 ${S.askP95.toLocaleString()} · ` +
+              `free strength p25 ${S.freeP25.toLocaleString()} / median ${S.freeMedian.toLocaleString()} / p75 ${S.freeP75.toLocaleString()} / max ${S.freeMax.toLocaleString()} · ` +
+              `BOTH in engine strength points, taken from the AI's own \`ltgd: free army strength\` reports — NOT soldier counts, which run about 33x smaller · ` +
+              `defensive (ACS_DEFEND_*) postures excluded from the requirement, since those read as frontier totals` +
               (S.askByDefenders
-                ? ` · the requirement DOES track the defence — median ask by defending units: ` +
-                  S.askByDefenders.map((b) => `${b.lo}-${b.hi === null ? "+" : b.hi}→${b.medianAsk.toLocaleString()}`).join(", ") +
-                  ` over ${S.pairedTargets} targets — so the problem is the floor, not the slope`
+                ? ` · median requirement by defending units: ` + S.askByDefenders.map((b) => `${b.lo}-${b.hi === null ? "+" : b.hi}→${b.medianAsk.toLocaleString()}`).join(", ")
                 : ``),
           });
         }

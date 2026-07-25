@@ -297,6 +297,22 @@ const AI_RX = {
   warAuth: /^AI: mildir: \S+ attack authorised against '([^']+)'/,
   // AI: 0 spies assigned this turn  |  AI: 0 assassins assigned this turn
   agents: /^AI: (\d+) (spies|assassins) assigned this turn/,
+  // ── the AI's own strategic reasoning (ltgd = long-term goal decisions) ──
+  // Its view of its OWN strength. "free" is the operative number: what it thinks
+  // is available for offence, which is what it weighs against a campaign's
+  // required strength.
+  ltgdStrength: /^AI: ltgd: army strength (\d+), free army strength (\d+), navy strength (\d+)/,
+  // Invade decision WITH REASON and priority, e.g.
+  //   AI: ltgd: 'carthage' invade 'corsi', not at war, good production against strongest neighbour >> ALI_START_PLAN (200).
+  ltgdInvade: /^AI: ltgd: '([^']+)' invade '([^']+)', (.+?) >> (ALI_\w+) \((\d+)\)/,
+  // Defend posture WITH REASON, e.g.
+  //   AI: ltgd: defend (frontline .000132, free 9.486274, product 21.18303) vs fac 'acragas': not at war, bad frontline, decent free strength >> ALD_DEFEND_DEEP.
+  ltgdDefend: /^AI: ltgd: defend \([^)]*\) vs fac '([^']+)': (.+?) >> (ALD_\w+)/,
+  // What the AI WANTS to recruit — the troop-side twin of buildWant, and the
+  // single largest unparsed shape in the log (656,132 lines).
+  troopWant: /^AI: -- troop type '([^']+)' at priority (\d+)/,
+  // Tax level per settlement, with the engine's stated reason.
+  taxChoice: /^AI: region control: settlement '([^']+)', \(pop (\d+), old order (-?\d+)\), tax (TAX_LEVEL_\w+) due to (.+?)\.?$/,
 };
 
 // Economic states the engine reports, poorest → richest. "Rich but stalled" is
@@ -317,6 +333,14 @@ function createAiDecisionAnalyzer(opts = {}) {
   // Biggest OFFENSIVE ask per target, for the strength-scale report. Per target
   // rather than per line so a heavily-logged region cannot dominate it.
   const maxReqByTarget = new Map();
+
+  // ── the AI's own reasoning, accumulated per faction ──
+  // strength: what it believes it has. invade/defend: what it decided and why.
+  const ltgd = new Map();      // faction -> { samples, armySum, freeSum, navySum, freeMax }
+  const invade = new Map();    // faction -> { total, byDecision:{}, byReason:{}, targets:Set, bestPriority }
+  const defend = new Map();    // faction -> { total, byDecision:{} }
+  const troopWant = new Map(); // faction -> { picks, top:{name,priority} }
+  const taxChoice = new Map(); // faction -> { total, byLevel:{}, byReason:{} }
   const missions = new Map();      // char|sett → { char, sett, faction, turns:Set }
   const churn = new Map();         // char → { assigns, releases, faction, regs:Set }
   const stalls = new Map();        // faction|regId → { faction, regId, gatherTurns:Set, lastReq, lastAlloc }
@@ -418,6 +442,52 @@ function createAiDecisionAnalyzer(opts = {}) {
       matched++; return;
     }
     { const cm = RX_ANY_CHAR.exec(l); if (cm) noteChar(cm[1] || cm[2] || cm[3]); }
+    if ((m = AI_RX.ltgdStrength.exec(l))) {
+      const f = curFaction || "?";
+      const e = ltgd.get(f) || { samples: 0, armySum: 0, freeSum: 0, navySum: 0, freeMax: 0 };
+      e.samples++; e.armySum += +m[1]; e.freeSum += +m[2]; e.navySum += +m[3];
+      if (+m[2] > e.freeMax) e.freeMax = +m[2];
+      ltgd.set(f, e);
+      matched++; return;
+    }
+    if ((m = AI_RX.ltgdInvade.exec(l))) {
+      const f = m[1].toLowerCase();
+      const e = invade.get(f) || { total: 0, byDecision: {}, byReason: {}, targets: new Set(), bestPriority: 0 };
+      e.total++;
+      e.byDecision[m[4]] = (e.byDecision[m[4]] || 0) + 1;
+      const reason = m[3].trim().slice(0, 80);
+      e.byReason[reason] = (e.byReason[reason] || 0) + 1;
+      e.targets.add(m[2].toLowerCase());
+      if (+m[5] > e.bestPriority) e.bestPriority = +m[5];
+      invade.set(f, e);
+      matched++; return;
+    }
+    if ((m = AI_RX.ltgdDefend.exec(l))) {
+      const f = curFaction || "?";
+      const e = defend.get(f) || { total: 0, byDecision: {} };
+      e.total++;
+      e.byDecision[m[3]] = (e.byDecision[m[3]] || 0) + 1;
+      defend.set(f, e);
+      matched++; return;
+    }
+    if ((m = AI_RX.troopWant.exec(l))) {
+      const f = curFaction || "?";
+      const e = troopWant.get(f) || { picks: 0, topName: null, topPriority: 0 };
+      e.picks++;
+      if (+m[2] > e.topPriority) { e.topPriority = +m[2]; e.topName = m[1]; }
+      troopWant.set(f, e);
+      matched++; return;
+    }
+    if ((m = AI_RX.taxChoice.exec(l))) {
+      const f = curFaction || "?";
+      const e = taxChoice.get(f) || { total: 0, byLevel: {}, byReason: {} };
+      e.total++;
+      e.byLevel[m[4]] = (e.byLevel[m[4]] || 0) + 1;
+      const reason = m[5].trim().slice(0, 60);
+      e.byReason[reason] = (e.byReason[reason] || 0) + 1;
+      taxChoice.set(f, e);
+      matched++; return;
+    }
     if ((m = AI_RX.campaign.exec(l))) {
       regName.set(m[2], m[1]);
       const req = +m[4], alloc = +m[5];
@@ -602,6 +672,31 @@ function createAiDecisionAnalyzer(opts = {}) {
       // the save's garrisons. Needed to answer a sharper question than the median:
       // does the requirement scale DOWN for a near-undefended target, or is there
       // a floor? (On the reference data there is a floor — see askByDefenders.)
+      // ── the AI's OWN reasoning, per faction ──
+      // Its view of its strength, and the invade/defend choices it made with the
+      // reasons it gave. For an AI that will not attack, its stated reason for not
+      // attacking is the most direct evidence there is.
+      ltgdStrength: Object.fromEntries([...ltgd].map(([f, e]) => [f, {
+        samples: e.samples,
+        avgArmy: Math.round(e.armySum / e.samples),
+        avgFree: Math.round(e.freeSum / e.samples),
+        avgNavy: Math.round(e.navySum / e.samples),
+        maxFree: e.freeMax,
+      }])),
+      invadeDecisions: Object.fromEntries([...invade].map(([f, e]) => [f, {
+        total: e.total, byDecision: e.byDecision,
+        distinctTargets: e.targets.size,
+        bestPriority: e.bestPriority,
+        topReason: Object.entries(e.byReason).sort((a, b) => b[1] - a[1])[0] || null,
+      }])),
+      defendDecisions: Object.fromEntries([...defend].map(([f, e]) => [f, { total: e.total, byDecision: e.byDecision }])),
+      troopAppetite: Object.fromEntries([...troopWant].map(([f, e]) => [f, {
+        picks: e.picks, topTroop: e.topName, topPriority: e.topPriority,
+      }])),
+      taxChoices: Object.fromEntries([...taxChoice].map(([f, e]) => [f, {
+        total: e.total, byLevel: e.byLevel,
+        topReason: Object.entries(e.byReason).sort((a, b) => b[1] - a[1])[0] || null,
+      }])),
       askByTarget: Object.fromEntries([...maxReqByTarget].map(([regId, req]) => [nameOf(regId), req])),
       askDistribution: (() => {
         const v = [...maxReqByTarget.values()].sort((a, b) => a - b);

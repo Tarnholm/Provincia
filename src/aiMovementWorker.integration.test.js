@@ -136,38 +136,29 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
     expect(r.modLeads[1].faction).toBe("all (map scale)");
 
     // ── STRENGTH SCALE ──
-    // The most structural number the Lab produces: what the AI demands against
-    // what the map's factions can field. Both sides must be men-equivalent, which
-    // is why the log's allocated-strength values line up with the save's soldier
-    // counts (alloc 27,183 vs Ptolemaic's 28,246).
+    // BOTH SIDES MUST BE THE SAME UNIT. v0.9.1435/1437 compared the requirement
+    // against the save's SOLDIER COUNTS and published a 16x gap; "strength" is a
+    // derived metric about 33x a headcount, so that was a unit error. The engine's
+    // own `ltgd: free army strength` reports are the correct right-hand side.
     expect(r.askDistribution).toBeTruthy();
     expect(r.askDistribution.targets).toBeGreaterThan(500);        // 1,117
+    expect(r.ltgdStrength, "the AI's own strength reports must be parsed").toBeTruthy();
+    expect(Object.keys(r.ltgdStrength).length).toBeGreaterThan(100);
     expect(r.strengthScale).toBeTruthy();
-    expect(r.strengthScale.askMedian).toBeGreaterThan(5000);       // 23,902
-    expect(r.strengthScale.menMedian).toBeGreaterThan(100);        // 1,480 — sane, not a broken parse
-    expect(r.strengthScale.menMedian).toBeLessThan(20000);
-    expect(r.strengthScale.totalMen).toBeGreaterThan(100000);      // 443,099
-    expect(r.strengthScale.factions).toBeGreaterThan(50);          // 125
-    expect(r.strengthScale.ratio).toBeGreaterThan(4);              // 16.1x
-    // only a handful of factions can meet the median ask — that IS the finding
-    expect(r.strengthScale.factionsAbleToMeetMedianAsk).toBeLessThan(r.strengthScale.factions * 0.25);
-    // it must be the FIRST lead, since it reframes all the per-faction ones
-    expect(r.modLeads[1].issue).toMatch(/THE REQUIREMENTS DO NOT FIT THIS MAP/);
-    // The FLOOR is the sharper half of the finding: a median of 23,902 could just
-    // mean well-defended targets, but 13,603 for a settlement held by 1-2 units
-    // means nothing on the map is takeable by a typical faction.
-    expect(r.strengthScale.askFloor).toBeGreaterThan(1000);
-    expect(r.strengthScale.floorRatio).toBeGreaterThan(3);
-    expect(r.strengthScale.pairedTargets).toBeGreaterThan(200);   // 919
-    // the requirement must be shown to TRACK the defence, monotonically —
-    // otherwise "the problem is the floor, not the slope" would be unfounded
-    const bd = r.strengthScale.askByDefenders;
-    expect(Array.isArray(bd)).toBe(true);
-    expect(bd.length).toBeGreaterThan(2);
-    expect(bd[0].medianAsk).toBeLessThan(bd[bd.length - 2].medianAsk);
-    expect(r.modLeads[1].issue).toMatch(/does not scale down for weak targets/);
-    expect(r.modLeads[1].evidence).toMatch(/the problem is the floor, not the slope/);
-    expect(r.modLeads[1].evidence).toMatch(/ACS_DEFEND_\*\) postures excluded/);
+    // the unit is stated on the result, so nothing downstream can divide by men
+    expect(r.strengthScale.unit).toMatch(/NOT men/);
+    expect(r.strengthScale.askMedian).toBeGreaterThan(5000);        // 23,902
+    expect(r.strengthScale.freeMedian).toBeGreaterThan(5000);       // 19,772
+    // the ratio must be a modest multiple, NOT the 16x the unit error produced
+    expect(r.strengthScale.ratio).toBeGreaterThan(0.5);
+    expect(r.strengthScale.ratio, "a ratio this large means the units diverged again").toBeLessThan(4);
+    // headcounts are kept as context only, and are ~33x smaller — asserting that
+    // relationship is what would catch a future unit mix-up
+    expect(r.strengthScale.menMedian).toBeLessThan(r.strengthScale.freeMedian / 5);
+    // a meaningful minority clears the requirement; "almost nobody" was the artifact
+    const ablePct = r.strengthScale.factionsAbleToMeetMedianAsk / r.strengthScale.factions;
+    expect(ablePct).toBeGreaterThan(0.1);
+    expect(ablePct).toBeLessThan(0.9);
 
     // ── LAND REACHABILITY ──
     // The flood fill must reproduce real geography: one continental mass holding

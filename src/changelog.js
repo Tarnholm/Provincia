@@ -13,6 +13,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1443",
+    date: "2026-07-25",
+    items: [
+      { type: "fix", text: "**Correcting the headline of v0.9.1435 and 1437: the \"16× gap\" was a unit error, and the real figure is 1.21×.** Those releases compared a campaign's required *strength* against the save's *soldier counts* and concluded that only 3 of 125 factions could ever meet a typical requirement. The justification was a single coincidence — a line reading `allocated str 27,183` sitting near Ptolemaic's 28,246 soldiers. It was exactly that, a coincidence. Newly-parsed lines carry the engine's own accounting of the same quantity, and Ptolemaic's army strength is **589,755** against those 28,246 men. Across 124 comparable factions the strength-to-men ratio runs p25 21.8, median 32.7, p75 59.6, with 76% inside 2× of the median: strength is a derived metric roughly 33× a headcount, not a headcount." },
+      { type: "improvement", text: "**With both sides in the engine's own unit the picture is different and far more useful.** The median offensive requirement is 23,902 strength; the median faction reports 19,772 *free* strength — a ratio of **1.21×**, with **86 of 223 factions** clearing it. So the requirement is not absurd, it is close to what a typical faction has spare, and **61% falling short is a closable gap** rather than the impossibility the old framing implied. The lead now says so and points at the two levers that would move it. The result carries its unit on its face, and a test asserts headcounts stay about 33× smaller so a future mix-up fails loudly." },
+      { type: "feature", text: "**The Lab now reads the AI's own strategic reasoning — parsing coverage went from 21.5% to 47.1% of the log.** A taxonomy of the 3.36M lines it was throwing away found five high-value shapes. It now parses the AI's self-reported army/free/navy strength; its **invade decisions with the reasons it gave** (\"at war, inferior to enemy\" 11,225 times — the most direct evidence there is for why an AI will not attack); its defend postures; what troops it wants to recruit (656,132 lines, the twin of the build-appetite line it already read); and its per-settlement tax choices with reasons (100,169 extortionate, 54,908 low, 3,755 high)." },
+      { type: "improvement", text: "One shape was deliberately left alone: `region control: settlement 'X' has changed from 'A' to 'B'`, 40,685 lines. It reads like a conquest record and is not — the values are production-focus enums, not faction names. Checked before building anything on it. The crash reporter's extract grew with the new patterns and was re-measured rather than assumed: 5.88 MB compressed, still inside the attachment ceiling, so nothing is trimmed and the extract remains equivalent to the full log." },
+    ],
+  },
+  {
     version: "0.9.1442",
     date: "2026-07-25",
     items: [

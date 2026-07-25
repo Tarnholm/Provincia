@@ -44,6 +44,14 @@ describe("keepLine follows the analyser's own patterns", () => {
       // detector counts on — a line that names a character but matches none of
       // the twelve specific shapes above
       "AI: ltgd: army 'Ulkos' being considered for something else",
+      // ── the AI's own strategic reasoning, added 2026-07-25 ──
+      // These five were 47% of the log's previously-unparsed lines. `-- troop type`
+      // alone is 656,132 lines: the troop-side twin of the build-appetite line.
+      "AI: ltgd: army strength 2125, free army strength 2125, navy strength 0.",
+      "AI: ltgd: 'carthage' invade 'corsi', not at war, good production against strongest neighbour >> ALI_START_PLAN (200).",
+      "AI: ltgd: defend (frontline .000132, free 9.486274, product 21.18303) vs fac 'acragas': not at war, bad frontline, decent free strength >> ALD_DEFEND_DEEP.",
+      "AI: -- troop type 'Caetrati Infantry' at priority 40.",
+      "AI: region control: settlement 'Akanthos', (pop 1200, old order 0), tax TAX_LEVEL_EXTORTIONATE due to high order",
     ];
     expect(samples).toHaveLength(AI_LOG_LINE_PATTERNS.length);
     for (const s of samples) expect(keepLine(s), `should keep: ${s.slice(0, 60)}`).toBe(true);
