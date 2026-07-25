@@ -56,7 +56,7 @@ const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
 
 // The top entry of src/changelog.js names the version being shipped. Parsing
 // the first `version: "..."` is enough — entries are newest-first by contract.
-const changelogSrc = fs.readFileSync(path.join(ROOT, "src", "changelog.js"), "utf8");
+let changelogSrc = fs.readFileSync(path.join(ROOT, "src", "changelog.js"), "utf8");
 const verMatch = changelogSrc.match(/version:\s*"([\d.]+)"/);
 if (!verMatch) fail("could not find a version in src/changelog.js.");
 const version = verMatch[1];
@@ -74,10 +74,19 @@ if (tagAtHead && treeDirty) {
 
 // In-app changelog cap (2026-07-16): WelcomeScreen parses the whole module
 // every post-update launch, so only ~5 entries belong in src/changelog.js —
-// older ones move to docs/changelog-archive.js. Warn, don't block.
+// older ones move to docs/changelog-archive.js.
+//
+// This used to only WARN, and was ignored for 146 releases until the file hit
+// 151 entries / 110 KB (2026-07-25). A cap nobody enforces is not a cap, so the
+// trim now runs automatically: it moves the overflow into the archive, verifies
+// both files still import and that no entry was lost or altered, and refuses to
+// write anything if that check fails.
 const entryCount = (changelogSrc.match(/^  \{\s*$/gm) || []).length;
 if (entryCount > 8) {
-  console.warn(`WARNING: src/changelog.js has ${entryCount} entries — cap is ~5. Move the oldest to docs/changelog-archive.js.`);
+  console.log(`\n=== src/changelog.js has ${entryCount} entries (cap ~5) — trimming into docs/changelog-archive.js`);
+  run("Changelog trim", "node", [path.join(ROOT, "scripts", "trim-changelog.js")]);
+  // re-read: the version we ship is parsed from this file further down
+  changelogSrc = fs.readFileSync(path.join(ROOT, "src", "changelog.js"), "utf8");
 }
 
 const firstItem = changelogSrc.match(/text:\s*"(.*?)(?<!\\)"/s);
