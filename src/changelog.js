@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1432",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**New Hotspots tab: where the trouble is, rather than whose it is.** 989 regions are named across the findings, and the table ranks them by how many <b>different</b> factions fail at the same place — because several factions failing at one spot points at the map, not at any one of them. It immediately says something the per-faction view could not: the worst hotspots are contested prizes nobody can staff, not hard ground. Nasium has <b>seven different factions</b> stalled on it at ground difficulty 30; Menosgada and Variscium have five each. Each row shows its faction count, findings, proven-no-route orders, ground difficulty and problem mix, and clicking it highlights the region on the map." },
+      { type: "improvement", text: "**Findings can be sorted.** Six thousand rows in one fixed order were unreadable. \"Worst first\" (the analyser's own severity ranking) stays the default, joined by longest-running, hardest ground, earliest turn and faction A–Z. Sorting works on a copy, so the export and the before/after digest still read the analyser's original ordering." },
+      { type: "fix", text: "**The terrain data added in the last release was being computed and then not shown.** 1,848 findings carried their target's ground difficulty and none of it reached the screen. Each such row now has a ⛰ chip coloured by how hard the ground is, with the full breakdown on hover, and the save banner reports the land-mass count, the proven-no-route total, and whether the terrain model survived being checked against every faction's unit positions. Adding a measurement without surfacing it is only half the work." },
+    ],
+  },
+  {
     version: "0.9.1431",
     date: "2026-07-25",
     items: [

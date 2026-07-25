@@ -52,7 +52,8 @@ export default function AiMovementPanel({
     try { if (savePath) localStorage.setItem("aiLabSavePath", savePath); else localStorage.removeItem("aiLabSavePath"); } catch { /* ignore */ }
   }, [savePath]);
   const [onlyConfirmed, setOnlyConfirmed] = useState(false);
-  const [tab, setTab] = useState("findings"); // "findings" | "leads" | "diff"
+  const [sortBy, setSortBy] = useState("severity");
+  const [tab, setTab] = useState("findings"); // "findings" | "leads" | "factions" | "hotspots" | "diff"
   const [baselines, setBaselines] = useState(null);   // saved runs to compare against
   const [diff, setDiff] = useState(null);             // before/after comparison
   const [baseBusy, setBaseBusy] = useState(false);
@@ -130,12 +131,51 @@ export default function AiMovementPanel({
   const visible = useMemo(() => {
     if (!result) return [];
     const fq = factionFilter.trim().toLowerCase();
-    return (result.findings || []).filter((f) =>
+    const rows = (result.findings || []).filter((f) =>
       kindFilter.has(f.kind) &&
       (!onlyConfirmed || /NEVER arrived/.test(f.verdict || "") || f.impossible) &&
       (!fq || String(f.faction).toLowerCase().includes(fq) || flabel(f.faction).toLowerCase().includes(fq) || String(f.name).toLowerCase().includes(fq)));
+    // Sorting is a copy — mutating result.findings would reorder the array the
+    // export and the digest read from, and the analyser's own order is
+    // meaningful (severity first).
+    const by = {
+      // default: whatever the analyser decided, which is severity-ordered
+      severity: null,
+      duration: (a, b) => (b.turns || 0) - (a.turns || 0),
+      terrain: (a, b) => ((b.terrain && b.terrain.difficulty) || -1) - ((a.terrain && a.terrain.difficulty) || -1),
+      faction: (a, b) => String(a.faction).localeCompare(String(b.faction)) || String(a.name).localeCompare(String(b.name)),
+      turn: (a, b) => (a.fromTurn == null ? Infinity : a.fromTurn) - (b.fromTurn == null ? Infinity : b.fromTurn),
+    }[sortBy];
+    return by ? [...rows].sort(by) : rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, kindFilter, factionFilter, onlyConfirmed, factionDisplayNames]);
+  }, [result, kindFilter, factionFilter, onlyConfirmed, sortBy, factionDisplayNames]);
+
+  // WHERE the trouble is, as opposed to whose it is. The same handful of places
+  // absorb a disproportionate share of failed orders, and a place that several
+  // DIFFERENT factions keep failing at is a map problem rather than a faction
+  // problem — so that count is the thing worth ranking on.
+  const hotspotRows = useMemo(() => {
+    if (!result) return [];
+    const out = new Map();
+    for (const f of (result.findings || [])) {
+      if (!f.region) continue;
+      let e = out.get(f.region);
+      if (!e) out.set(f.region, e = {
+        region: f.region, total: 0, factions: new Set(), kinds: {},
+        noLandRoute: 0, impossible: 0, terrain: null,
+      });
+      e.total++;
+      e.kinds[f.kind] = (e.kinds[f.kind] || 0) + 1;
+      if (f.faction && f.faction !== "?" && f.faction !== "—") e.factions.add(f.faction);
+      if (f.noLandRoute) e.noLandRoute++;
+      if (f.impossible) e.impossible++;
+      if (f.terrain && !e.terrain) e.terrain = f.terrain;
+    }
+    return [...out.values()]
+      .map((e) => ({ ...e, factionCount: e.factions.size, factionList: [...e.factions] }))
+      .sort((a, b) => b.factionCount - a.factionCount || b.total - a.total)
+      .slice(0, 60);
+  }, [result]);
 
   React.useEffect(() => { if (result) refreshBaselines(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [result]);
 
@@ -294,6 +334,28 @@ export default function AiMovementPanel({
                 <div style={{ color: "#9a8f7a", fontSize: "0.7rem" }}>
                   World at that turn: {result.save.navalWorld} ships total · {result.save.sieges} active sieges · {result.save.factionsWithUnits} factions still fielding troops.
                 </div>
+                {/* Land reachability — the strongest claim the Lab makes, so it
+                    reports both the number of proven-impossible orders AND
+                    whether the model survived being falsified. A count with no
+                    confidence attached would be worth less. */}
+                {result.reachability && (
+                  <div style={{ color: "#9a8f7a", fontSize: "0.7rem", marginTop: 2 }}>
+                    Land routes: {result.reachability.components.toLocaleString()} separate land masses on this map
+                    {result.reachability.mainlandRegions ? ` (the largest holds ${result.reachability.mainlandRegions.toLocaleString()} regions)` : ""}
+                    {" — "}
+                    <b style={{ color: result.reachability.verdicts ? "#e87a6a" : "#8fd18f" }}>{result.reachability.verdicts}</b>
+                    {" orders proven to have no walkable route at all."}
+                    {result.reachability.excludedFactions > 0 ? (
+                      <span style={{ color: "#e8c873" }}>
+                        {" "}{result.reachability.excludedFactions} faction(s) excluded — the save contradicts the terrain model there, so no verdict was issued for them.
+                      </span>
+                    ) : (
+                      <span title="Checked by looking for units standing where a navy-less faction could neither have walked nor sailed. Zero such cases means the model held everywhere it could be tested.">
+                        {" "}Model checked against every faction's unit positions: no contradictions.
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             )}
             {result.agents && (
@@ -304,7 +366,7 @@ export default function AiMovementPanel({
             )}
             {result.modLeads && result.modLeads.length > 0 && (
               <div style={{ display: "flex", gap: 2, marginBottom: 6, padding: 2, background: "rgba(0,0,0,0.25)", borderRadius: 5 }}>
-                {[["findings", `Findings (${result.findings.length})`], ["leads", `Mod-file leads (${result.modLeads.length})`], ["factions", `By faction (${factionRows.length})`], ...(diff ? [["diff", "Before / after"]] : [])].map(([k, lab]) => (
+                {[["findings", `Findings (${result.findings.length})`], ["leads", `Mod-file leads (${result.modLeads.length})`], ["factions", `By faction (${factionRows.length})`], ...(hotspotRows.length ? [["hotspots", `Hotspots (${hotspotRows.length})`]] : []), ...(diff ? [["diff", "Before / after"]] : [])].map(([k, lab]) => (
                   <div key={k} onClick={() => setTab(k)}
                     style={{ flex: 1, padding: "3px 8px", fontSize: "0.74rem", textAlign: "center", cursor: "pointer", borderRadius: 4, userSelect: "none",
                       background: tab === k ? "rgba(255,255,255,0.14)" : "transparent", color: tab === k ? "#fff" : "#bbb", fontWeight: tab === k ? 600 : 400 }}>
@@ -370,14 +432,79 @@ export default function AiMovementPanel({
                   proven only
                 </label>
               )}
+              {/* Sorting matters at this scale: 6,000+ findings are unreadable
+                  in one order. "Worst first" is the analyser's own severity
+                  ranking and stays the default. */}
+              <label style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4, fontSize: "0.72rem", color: "#9a8f7a" }}>
+                sort
+                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
+                  title="How to order the findings list"
+                  style={{ padding: "2px 5px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)", color: "#ddd", fontSize: "0.72rem" }}>
+                  <option value="severity">worst first</option>
+                  <option value="duration">longest-running</option>
+                  <option value="terrain">hardest ground</option>
+                  <option value="turn">earliest turn</option>
+                  <option value="faction">faction A–Z</option>
+                </select>
+              </label>
               <input value={factionFilter} onChange={(e) => setFactionFilter(e.target.value)} placeholder="Filter faction / army…"
-                style={{ marginLeft: "auto", width: 170, padding: "3px 8px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)", color: "#f0f0f0", fontSize: "0.74rem", outline: "none" }} />
+                style={{ width: 170, padding: "3px 8px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.35)", color: "#f0f0f0", fontSize: "0.74rem", outline: "none" }} />
             </div>
             )}
           </div>
 
           {/* SCROLLER — just the results */}
           <div style={{ overflowY: "auto", padding: "8px 16px", flex: 1, minHeight: 0 }}>
+            {/* HOTSPOTS — where the trouble is, rather than whose it is. Ranked by
+                how many DIFFERENT factions fail at the same place, because that
+                is what separates a map problem from one faction's bad turn. */}
+            {tab === "hotspots" && (
+              <div>
+                <div style={{ fontSize: "0.7rem", color: "#888", marginBottom: 6 }}>
+                  Places that absorb failed orders, ranked by how many <b>different</b> factions fail there —
+                  several factions failing at one spot points at the map, not at any one of them.
+                  Click a row to highlight the region, double-click to jump to it.
+                </div>
+                <div style={{ display: "flex", gap: 8, fontSize: "0.7rem", color: "#9a8f7a", padding: "0 4px 2px", fontWeight: 700 }}>
+                  <span style={{ width: 168 }}>Region</span>
+                  <span style={{ width: 64, textAlign: "right" }} title="How many distinct factions have a failed order here">Factions</span>
+                  <span style={{ width: 62, textAlign: "right" }}>Findings</span>
+                  <span style={{ width: 74, textAlign: "right" }} title="Orders proven to have no walkable route to here">No route</span>
+                  <span style={{ width: 58, textAlign: "right" }} title="Ground difficulty 0-100 from map_ground_types.tga">Ground</span>
+                  <span style={{ flex: 1 }}>Problem mix</span>
+                </div>
+                {hotspotRows.map((h) => (
+                  <div key={h.region}
+                    onClick={() => jump(h.region, false)}
+                    onDoubleClick={() => jump(h.region, true)}
+                    title={h.factionList.length ? `Failing here: ${h.factionList.slice(0, 12).map(flabel).join(", ")}${h.factionList.length > 12 ? ` +${h.factionList.length - 12} more` : ""}` : "No faction named in the log for these"}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                    style={{ display: "flex", gap: 8, alignItems: "baseline", fontSize: "0.74rem", padding: "2px 4px", borderRadius: 4, cursor: "pointer" }}>
+                    <span style={{ width: 168, color: "#eee", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {h.region.replace(/_/g, " ")}
+                    </span>
+                    <span style={{ width: 64, textAlign: "right", color: h.factionCount >= 3 ? "#e8a06a" : "#cfc6b0", fontWeight: h.factionCount >= 3 ? 700 : 400 }}>{h.factionCount}</span>
+                    <span style={{ width: 62, textAlign: "right", color: "#cfc6b0" }}>{h.total}</span>
+                    <span style={{ width: 74, textAlign: "right", color: h.noLandRoute ? "#e87a6a" : "#666" }}>{h.noLandRoute || "—"}</span>
+                    <span style={{ width: 58, textAlign: "right", color: !h.terrain ? "#666" : h.terrain.difficulty >= 60 ? "#e8a06a" : h.terrain.difficulty >= 35 ? "#e8c873" : "#8fa89a" }}>
+                      {h.terrain ? h.terrain.difficulty : "—"}
+                    </span>
+                    <span style={{ flex: 1, display: "flex", gap: 4, flexWrap: "wrap" }}>
+                      {Object.entries(h.kinds).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, n]) => (
+                        <span key={k} title={(KIND_META[k] && KIND_META[k].desc) || k}
+                          style={{ fontSize: "0.66rem", padding: "0 5px", borderRadius: 7, border: `1px solid ${(KIND_META[k] && KIND_META[k].color) || "#666"}55`, color: (KIND_META[k] && KIND_META[k].color) || "#999" }}>
+                          {(KIND_META[k] && KIND_META[k].label) || k} {n}
+                        </span>
+                      ))}
+                    </span>
+                  </div>
+                ))}
+                {!hotspotRows.length && (
+                  <div style={{ fontSize: "0.75rem", color: "#888" }}>No finding in this log names a region, so there is nothing to rank by place.</div>
+                )}
+              </div>
+            )}
             {tab === "factions" && (
               <div>
                 <div style={{ fontSize: "0.7rem", color: "#888", marginBottom: 6 }}>
@@ -557,6 +684,21 @@ export default function AiMovementPanel({
                     </span>
                   )}
                   <span style={{ color: "#bbb", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{f.detail}</span>
+                  {/* Terrain of the target, when map_ground_types resolved it.
+                      This is the whole point of reading that file, so it belongs
+                      on the row rather than only inside a lead. Coloured by how
+                      hard the ground is, against the map's own median. */}
+                  {f.terrain && (
+                    <span
+                      title={`Target ground: ${f.terrain.impassablePct}% impassable, ${f.terrain.roughPct}% rough — difficulty ${f.terrain.difficulty}/100 (mostly ${f.terrain.dominant}). From map_ground_types.tga.`}
+                      style={{
+                        flexShrink: 0, fontSize: "0.66rem", padding: "0 5px", borderRadius: 7,
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        color: f.terrain.difficulty >= 60 ? "#e8a06a" : f.terrain.difficulty >= 35 ? "#e8c873" : "#8fa89a",
+                      }}>
+                      ⛰ {f.terrain.difficulty}
+                    </span>
+                  )}
                   <span style={{ color: "#cfc6b0", flexShrink: 0 }}>
                     {f.region
                       ? f.region.replace(/_/g, " ")
