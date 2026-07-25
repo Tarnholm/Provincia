@@ -1,7 +1,7 @@
 // AI ↔ mod-file audit — parsers checked against REAL RIS file syntax, and the
 // lead rules checked end-to-end on a small hand-built world.
 import { describe, it, expect } from "vitest";
-import { auditModFiles, parseAiPersonality, parseStratFactions, parseNavalOwners, parseSmFactions , parseActionPoints } from "./aiModFileAudit.js";
+import { auditModFiles, parseAiPersonality, parseStratFactions, parseNavalOwners, parseSmFactions , parseActionPoints, parseFarmGrowthCancellation } from "./aiModFileAudit.js";
 
 // verbatim-shaped excerpts from RIS data files
 const AI_PERS = `
@@ -388,27 +388,63 @@ building market
   const findings = [{ kind: "campaign_stall", faction: "poorfarm", region: "X", detail: "still 0/20000 strength", impossible: true, blockedBy: "recruitment", micMax: 1 }];
   const saveFacts = { turn: 102, menByFaction: { poorfarm: 900 }, settlementsByFaction: { poorfarm: 20 }, tierByFaction: { poorfarm: 1 } };
 
-  it("blames poor farmland when the faction's land really is below the map median", () => {
-    const farmWealth = {
-      poorfarm: { regions: 3, farmAvg: 3, farmMax: 4, lowFarm: 3 },
-      other1: { regions: 3, farmAvg: 7 }, other2: { regions: 3, farmAvg: 8 },
-    };
-    const { leads } = auditModFiles({ findings, saveFacts, files, farmWealth });
+  // REGRESSION GUARD (2026-07-25). v0.9.1425 shipped this lead telling the
+  // modder to "raise the Farm level on its regions in descr_regions.txt". That
+  // advice was wrong and these tests exist so it cannot come back:
+  //   • RIS pairs every region's farming level N with `hidden_resource farmN`
+  //     (1,298 of 1,311 regions, zero mismatches), and hinterland_region's
+  //     ";BASE GROWTH" block applies `population_growth_bonus bonus -N` for it.
+  //     The tag and the penalty are the same number, so raising one deepens the
+  //     other.
+  //   • Provincia's own growth model, calibrated against the in-game growth
+  //     scroll, measures farmN's coefficient at ~-0.01 (src/growthEval.js).
+  const poorWealth = {
+    poorfarm: { regions: 3, farmAvg: 3, farmMax: 4, lowFarm: 3 },
+    other1: { regions: 3, farmAvg: 7 }, other2: { regions: 3, farmAvg: 8 },
+  };
+  // the RIS ";BASE GROWTH" block, abridged — each level cancelled by its own size
+  const BASE_GROWTH = [1, 2, 3].map((n) => `\t\t\t\tpopulation_growth_bonus bonus -${n} requires hidden_resource farm${n}`).join("\n");
+
+  it("refuses to call farm level the fix, and PROVES why from the mod's own EDB", () => {
+    const { leads } = auditModFiles({
+      findings, saveFacts, farmWealth: poorWealth,
+      files: { ...files, edb: EDB + "\n" + BASE_GROWTH },
+    });
     const tl = leads.find((l) => /SETTLEMENT-TIER LOCKED/.test(l.issue));
     expect(tl).toBeTruthy();
+    // the measurement is still reported — it is useful context
     expect(tl.suggestion).toMatch(/average Farm 3 against a map median of 7/);
-    expect(tl.suggestion).toMatch(/descr_regions\.txt/);
+    // …but never as an instruction to raise it
+    expect(tl.suggestion).toMatch(/do NOT raise the Farm level/);
+    expect(tl.suggestion).not.toMatch(/raise the Farm level on its regions/);
+    // and the mechanism is quantified from the file, not asserted in prose
+    expect(tl.suggestion).toMatch(/hidden_resource farm1…farm3/);
+    expect(tl.suggestion).toMatch(/\(3\/3 levels\)/);
+    // the real levers stay first in the sentence
+    expect(tl.suggestion).toMatch(/^lower mic_2's settlement_min/);
   });
 
-  it("says growth is NOT the blocker when the farmland is ordinary", () => {
+  it("downgrades to a cautious note when the EDB does NOT show the cancellation", () => {
+    // same faction, but this mod's EDB has no ";BASE GROWTH" farm rules — so the
+    // strong claim would be unfounded and must not be made
+    const { leads } = auditModFiles({ findings, saveFacts, files, farmWealth: poorWealth });
+    const tl = leads.find((l) => /SETTLEMENT-TIER LOCKED/.test(l.issue));
+    expect(tl.suggestion).toMatch(/average Farm 3 against a map median of 7/);
+    expect(tl.suggestion).toMatch(/check export_descr_buildings' ";BASE GROWTH" block/);
+    expect(tl.suggestion).not.toMatch(/do NOT raise/);
+    expect(tl.suggestion).not.toMatch(/levels\)/);
+  });
+
+  it("says fertility is NOT the blocker when the farmland is ordinary", () => {
     const farmWealth = {
       poorfarm: { regions: 3, farmAvg: 7, farmMax: 8, lowFarm: 0 },
       other1: { regions: 3, farmAvg: 7 }, other2: { regions: 3, farmAvg: 7 },
     };
     const { leads } = auditModFiles({ findings, saveFacts, files, farmWealth });
     const tl = leads.find((l) => /SETTLEMENT-TIER LOCKED/.test(l.issue));
-    expect(tl.suggestion).toMatch(/farm land is ordinary, so growth is not the blocker/);
+    expect(tl.suggestion).toMatch(/farm land is ordinary, so poor fertility is not the blocker/);
     expect(tl.suggestion).not.toMatch(/descr_regions/);
+    expect(tl.suggestion).not.toMatch(/Farm level/);
   });
 });
 
@@ -502,5 +538,25 @@ describe("auditModFiles — starting_action_points lead", () => {
   it("stays quiet when descr_character.txt was not readable", () => {
     expect(auditModFiles({ findings: strips(60), files: {} }).leads
       .some((l) => l.file === "descr_character.txt")).toBe(false);
+  });
+});
+
+describe("parseFarmGrowthCancellation", () => {
+  it("confirms the cancellation only when every farm rule negates its own level", () => {
+    const good = [1, 2, 14].map((n) => `population_growth_bonus bonus -${n} requires hidden_resource farm${n}`).join("\n");
+    expect(parseFarmGrowthCancellation(good)).toMatchObject({
+      found: 3, exact: 3, cancelsExactly: true, minLevel: 1, maxLevel: 14,
+    });
+  });
+
+  it("reports cancelsExactly false when a rule does not match its level", () => {
+    const mixed = "population_growth_bonus bonus -1 requires hidden_resource farm1\n" +
+                  "population_growth_bonus bonus 5 requires hidden_resource farm2";
+    expect(parseFarmGrowthCancellation(mixed)).toMatchObject({ found: 2, exact: 1, cancelsExactly: false });
+  });
+
+  it("returns null when there is no such block, so no claim can be built on it", () => {
+    expect(parseFarmGrowthCancellation(null)).toBeNull();
+    expect(parseFarmGrowthCancellation("building market\n{\n}\n")).toBeNull();
   });
 });

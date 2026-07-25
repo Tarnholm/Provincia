@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1428",
+    date: "2026-07-25",
+    items: [
+      { type: "fix", text: "**Correcting bad advice I shipped in v0.9.1425.** That version told you to \"raise the Farm level on its regions in descr_regions.txt\" for farm-poor tier-locked factions. That is wrong, and here is the proof: RIS pairs every region's farming level N with a matching `Farm<N>` tag — 1,298 of 1,311 regions, zero mismatches — and export_descr_buildings' `hinterland_region` has a \";BASE GROWTH\" block applying `population_growth_bonus bonus -N requires hidden_resource farmN` for all 14 levels. The tag and the penalty are the same number, so raising one deepens the other and fertility nets out. Provincia's own growth model, calibrated line-for-line against the in-game growth scroll, had already measured farm's coefficient at about -0.01 — I should have checked it against the Lab's advice, and didn't." },
+      { type: "improvement", text: "**The Lab now proves that cancellation from your EDB instead of asserting it.** It counts the matching farm rules and reports \"14/14 levels\" as evidence. If you ever change or remove that block, the advice downgrades itself to a cautious \"check the \";BASE GROWTH\" block first\" rather than repeating a claim the files no longer support — both paths are unit-tested. Poor farmland is still reported, because it is useful context; it is just no longer presented as the fix. The real levers stay first in the sentence: `settlement_min`, the `mic_tier_*` unit requirements, or giving the faction a settlement that can grow." },
+      { type: "improvement", text: "The lead now also names what actually governs growth in RIS — squalor, the core_building tier penalties, and the homeland/capital buffs in that same EDB block — so the next thing to look at is obvious." },
+    ],
+  },
+  {
     version: "0.9.1427",
     date: "2026-07-25",
     items: [

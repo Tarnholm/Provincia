@@ -169,11 +169,51 @@ function factionResourceWealth({ ownerByCity = {}, regionOfSettlement = {}, reso
   return out;
 }
 
-// Per-faction FARM endowment. The settlement-tier lock explains why a faction
-// can't build military infrastructure; farm level explains why its settlements
-// never grow in the first place — RIS carries a Farm<N> tag per region in
-// descr_regions and growth scales off it. `farmByRegion` comes from the app's
-// verified parser (growthEval.parseRegions → byRegion[region].farmN).
+// Per-faction FARM endowment — DESCRIPTIVE ONLY, not a lever.
+//
+// It is kept because "this faction's provinces are poor" is useful context when
+// reading a settlement-tier lock, but it must never be presented as the fix.
+// WHY (verified 2026-07-25, correcting an earlier version of the lead):
+//   • RIS carries a `Farm<N>` tag on each region in descr_regions.txt, and that
+//     tag matches the region's farming-level field EXACTLY — 1,298 of 1,311
+//     regions, zero mismatches.
+//   • export_descr_buildings' hinterland_region has a ";BASE GROWTH" block that
+//     applies `population_growth_bonus bonus -N requires hidden_resource farmN`
+//     for N = 1..14. So the tag and its penalty are the same number by
+//     construction: raising one deepens the other.
+//   • Provincia's own growth model, calibrated line-for-line against the in-game
+//     growth scroll, independently lands farmN's coefficient at ~-0.01 —
+//     i.e. zero (src/growthEval.js, "fertility nets to zero").
+// Growth in RIS is instead governed by squalor, the core_building tier penalties
+// (-2/-3/-4/-5) and the AI-only homeland/capital buffs in that same EDB block.
+// `farmByRegion` comes from the app's verified parser
+// (growthEval.parseRegions → byRegion[region].farmN).
+// Prove the farm cancellation from export_descr_buildings itself rather than
+// asserting it in prose. Looks for the ";BASE GROWTH" pattern
+//   population_growth_bonus bonus -N requires hidden_resource farmN
+// and reports how many levels are cancelled exactly (bonus === -N). If RIS ever
+// changes this block, the advice downgrades on its own instead of going stale —
+// which is the whole point of measuring rather than remembering.
+function parseFarmGrowthCancellation(edbText) {
+  if (!edbText) return null;
+  const pairs = [];
+  const rx = /population_growth_bonus\s+bonus\s+(-?\d+)\s+requires\s+hidden_resource\s+farm(\d+)\b/gi;
+  for (const m of String(edbText).matchAll(rx)) {
+    pairs.push({ bonus: +m[1], level: +m[2] });
+  }
+  if (!pairs.length) return null;
+  const exact = pairs.filter((p) => p.bonus === -p.level);
+  const levels = exact.map((p) => p.level).sort((a, b) => a - b);
+  return {
+    found: pairs.length,
+    exact: exact.length,
+    // true only when EVERY farm rule cancels its own level
+    cancelsExactly: exact.length === pairs.length,
+    minLevel: levels.length ? levels[0] : null,
+    maxLevel: levels.length ? levels[levels.length - 1] : null,
+  };
+}
+
 function factionFarmWealth({ ownerByCity = {}, regionOfSettlement = {}, farmByRegion = {} } = {}) {
   const out = {};
   for (const [city, fx] of Object.entries(ownerByCity)) {
@@ -313,6 +353,9 @@ function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = 
     const vals = Object.values(resourceWealth).filter((r) => r && r.regions > 0).map((r) => r.tradeValuePerRegion).sort((a, b) => a - b);
     if (vals.length) medianTradePerRegion = vals[Math.floor(vals.length / 2)];
   }
+  // Measured once: does this mod cancel farm fertility in EDB? (see
+  // parseFarmGrowthCancellation — the lead only claims it when the file shows it)
+  const farmCancel = parseFarmGrowthCancellation(files.edb);
   let medianFarm = null;
   {
     const vals = Object.values(farmWealth).filter((r) => r && r.regions > 0).map((r) => r.farmAvg).sort((a, b) => a - b);
@@ -438,13 +481,26 @@ function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = 
           key: `military_industrial_complex ${nextLv} → settlement_min ${need.settlementMin} (cost ${need.cost}, ${need.turns} turns)`,
           issue: `SETTLEMENT-TIER LOCKED: its best town is tier ${F.bestSettlementTier} (${SETTLEMENT_TIERS[F.bestSettlementTier] || "?"}), so ${nextLv} is unreachable however rich it gets — and without it the troop tiers its campaigns demand do not exist for this faction`,
           suggestion: (() => {
+            const base = `lower ${nextLv}'s settlement_min, or lower the mic_tier_* requirement on mid-tier units, or give this faction a settlement that can actually grow`;
             const fw = F.farmWealth;
             const poorFarm = fw && medianFarm != null && fw.farmAvg < medianFarm * 0.75;
-            return poorFarm
-              // if the land can't feed growth, raising the farm level is the
-              // upstream fix — the settlement_min is only the symptom's gate
-              ? `its provinces average Farm ${fw.farmAvg} against a map median of ${medianFarm}, so its towns will never grow into ${need.settlementMin} — raise the Farm level on its regions in descr_regions.txt, or lower ${nextLv}'s settlement_min`
-              : `lower ${nextLv}'s settlement_min, or lower the mic_tier_* requirement on mid-tier units, or give this faction a settlement that can actually grow (its farm land is ordinary, so growth is not the blocker)`;
+            // CORRECTION (2026-07-25): an earlier version of this lead told the
+            // modder to RAISE the Farm level here. That was wrong. RIS pairs
+            // every region's farming level N with `hidden_resource farmN`, and
+            // hinterland_region's ";BASE GROWTH" block applies
+            // `population_growth_bonus bonus -N` for it — so the tag and the
+            // penalty move together by construction and fertility nets out.
+            // Provincia's own growth model, calibrated live against the in-game
+            // growth scroll, independently measures farmN's coefficient at
+            // ~-0.01 (see src/growthEval.js). So farm level is NOT the lever,
+            // and low farm is a description of the region, not a fixable cause.
+            if (!poorFarm) return `${base} (its farm land is ordinary, so poor fertility is not the blocker)`;
+            const ctx = `${base}. Its provinces do average Farm ${fw.farmAvg} against a map median of ${medianFarm}`;
+            // Only make the cancellation claim when THIS mod's EDB actually
+            // shows it. If the block was changed or removed, say less.
+            return farmCancel && farmCancel.cancelsExactly
+              ? `${ctx}, but do NOT raise the Farm level to fix this: this mod's export_descr_buildings pairs hidden_resource farm${farmCancel.minLevel}…farm${farmCancel.maxLevel} with population_growth_bonus of exactly the same size and opposite sign (${farmCancel.exact}/${farmCancel.found} levels), so raising a region's Farm deepens its own penalty by the same amount and nets out. Growth here is governed by squalor, the core_building tier penalties and the homeland/capital buffs in that same block.`
+              : `${ctx} — check export_descr_buildings' ";BASE GROWTH" block before changing it, since that block can offset a region's Farm level directly.`;
           })(),
           evidence: `${s.impossible} impossible campaign(s), biggest ask ${s.maxReq.toLocaleString()} strength` +
             (F.menAtSave != null ? `, fields ${F.menAtSave.toLocaleString()} men` : "") +
@@ -514,4 +570,4 @@ function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = 
   return { factions, leads };
 }
 
-module.exports = { auditModFiles, parseAiPersonality, parseStratFactions, parseNavalOwners, parseSmFactions, parseMicLadder, factionResourceWealth, factionFarmWealth, parseActionPoints, SETTLEMENT_TIERS };
+module.exports = { auditModFiles, parseAiPersonality, parseStratFactions, parseNavalOwners, parseSmFactions, parseMicLadder, factionResourceWealth, factionFarmWealth, parseActionPoints, parseFarmGrowthCancellation, SETTLEMENT_TIERS };
