@@ -385,17 +385,22 @@ function auditModFiles({ findings = [], saveFacts = null, files = {}, economy = 
       }
     }
 
-    // 2. wants overseas targets but has no navy and never gets one
-    if (s.neverArrived > 0 && (F.startAdmirals === 0 || F.startAdmirals == null) && F.navalAtSave === 0) {
+    // 2. wants overseas targets but has no navy
+    // NOTE (2026-07-25): this used to also require F.navalAtSave === 0, which was
+    // vacuously true for every faction — naval units in the save carry no faction,
+    // so all ships land under "?" and every per-faction count reads 0. The gate now
+    // rests only on descr_strat's starting admirals, which is a real fact.
+    if (s.neverArrived > 0 && (F.startAdmirals === 0 || F.startAdmirals == null)) {
       leads.push({
         severity: F.canOwnShips > 0 ? 2 : 3, faction: k,
         file: "descr_strat.txt" + (F.canOwnShips === 0 ? " + export_descr_unit.txt" : ""),
         key: F.canOwnShips === 0 ? "no starting admiral AND no ship in its ownership list" : "no starting admiral",
-        issue: `${s.neverArrived} order(s) never arrived and the faction has no fleet at start or at save time`,
+        issue: `${s.neverArrived} order(s) never arrived and descr_strat gives this faction no starting admiral`,
         suggestion: F.canOwnShips === 0
           ? "add the faction to a naval unit's `ownership` line (EDU) — it currently cannot own any ship — or drop its overseas objectives"
           : "give it a starting transport in descr_strat, or its overseas objectives will never execute",
-        evidence: `startAdmirals=${F.startAdmirals ?? "?"} , shipTypesOwnable=${F.canOwnShips}, navalAtSave=${F.navalAtSave}`,
+        evidence: `startAdmirals=${F.startAdmirals ?? "?"}, shipTypesOwnable=${F.canOwnShips}` +
+          ` (the save cannot say how many ships it has now — naval units there carry no faction)`,
       });
     }
 

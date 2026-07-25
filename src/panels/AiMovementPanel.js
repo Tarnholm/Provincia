@@ -358,6 +358,27 @@ export default function AiMovementPanel({
                 )}
               </div>
             )}
+            {/* The strength-scale mismatch. Placed above everything else because
+                it reframes the rest: if almost no faction could field the median
+                requirement, then "this faction is poor" is a symptom of the map's
+                shape rather than of that faction. */}
+            {result.strengthScale && result.strengthScale.ratio >= 4 && (
+              <div style={{ marginBottom: 8, padding: "6px 9px", borderRadius: 6, background: "rgba(232,122,106,0.10)", border: "1px solid rgba(232,122,106,0.35)", fontSize: "0.75rem", lineHeight: 1.5 }}>
+                <b style={{ color: "#e87a6a" }}>The requirements do not fit this map</b>
+                {" — across "}{result.strengthScale.askTargets.toLocaleString()}{" targets the AI's median offensive requirement is "}
+                <b>{result.strengthScale.askMedian.toLocaleString()}</b>{" men, while the median faction fields "}
+                <b>{result.strengthScale.menMedian.toLocaleString()}</b>{". That is "}
+                <b style={{ color: "#e87a6a" }}>{result.strengthScale.ratio}×</b>{", and only "}
+                <b>{result.strengthScale.factionsAbleToMeetMedianAsk}</b>{" of "}{result.strengthScale.factions}
+                {" factions could field it at all."}
+                <div style={{ color: "#9a8f7a", fontSize: "0.7rem", marginTop: 2 }}>
+                  This sits upstream of every per-faction lead: it is why campaigns gather forever and never launch.
+                  Ask p75 {result.strengthScale.askP75.toLocaleString()} · p95 {result.strengthScale.askP95.toLocaleString()} ·
+                  {" "}{result.strengthScale.totalMen.toLocaleString()} men on the whole map.
+                  Defensive postures are excluded from the ask — those read as frontier totals rather than one stack.
+                </div>
+              </div>
+            )}
             {result.agents && (
               <div style={{ marginBottom: 6, fontSize: "0.72rem", color: result.agents.zeroTurnPct > 0.5 ? "#e8c873" : "#9a8f7a" }}>
                 Espionage: {result.agents.spies.toLocaleString()} spy and {result.agents.assassins.toLocaleString()} assassin assignments across {result.agents.reports.toLocaleString()} faction-turns

@@ -113,6 +113,27 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
       expect(f.terrain.difficulty).toBeLessThanOrEqual(100);
     }
 
+    // ── STRENGTH SCALE ──
+    // The most structural number the Lab produces: what the AI demands against
+    // what the map's factions can field. Both sides must be men-equivalent, which
+    // is why the log's allocated-strength values line up with the save's soldier
+    // counts (alloc 27,183 vs Ptolemaic's 28,246).
+    expect(r.askDistribution).toBeTruthy();
+    expect(r.askDistribution.targets).toBeGreaterThan(500);        // 1,117
+    expect(r.strengthScale).toBeTruthy();
+    expect(r.strengthScale.askMedian).toBeGreaterThan(5000);       // 23,902
+    expect(r.strengthScale.menMedian).toBeGreaterThan(100);        // 1,480 — sane, not a broken parse
+    expect(r.strengthScale.menMedian).toBeLessThan(20000);
+    expect(r.strengthScale.totalMen).toBeGreaterThan(100000);      // 443,099
+    expect(r.strengthScale.factions).toBeGreaterThan(50);          // 125
+    expect(r.strengthScale.ratio).toBeGreaterThan(4);              // 16.1x
+    // only a handful of factions can meet the median ask — that IS the finding
+    expect(r.strengthScale.factionsAbleToMeetMedianAsk).toBeLessThan(r.strengthScale.factions * 0.25);
+    // it must be the FIRST lead, since it reframes all the per-faction ones
+    expect(r.modLeads[0].faction).toBe("all (map scale)");
+    expect(r.modLeads[0].issue).toMatch(/THE REQUIREMENTS DO NOT FIT THIS MAP/);
+    expect(r.modLeads[0].evidence).toMatch(/ACS_DEFEND_\*\) postures excluded/);
+
     // ── LAND REACHABILITY ──
     // The flood fill must reproduce real geography: one continental mass holding
     // the great majority of regions, with Britain, Ireland, Sicily, Crete,

@@ -314,6 +314,9 @@ function createAiDecisionAnalyzer(opts = {}) {
   let lastYearSeason = null;
   let firstYear = null, lastYear = null;
   const regName = new Map();       // regId → settlement name (self-described by campaign lines)
+  // Biggest OFFENSIVE ask per target, for the strength-scale report. Per target
+  // rather than per line so a heavily-logged region cannot dominate it.
+  const maxReqByTarget = new Map();
   const missions = new Map();      // char|sett → { char, sett, faction, turns:Set }
   const churn = new Map();         // char → { assigns, releases, faction, regs:Set }
   const stalls = new Map();        // faction|regId → { faction, regId, gatherTurns:Set, lastReq, lastAlloc }
@@ -420,6 +423,15 @@ function createAiDecisionAnalyzer(opts = {}) {
     if ((m = AI_RX.campaign.exec(l))) {
       regName.set(m[2], m[1]);
       const req = +m[4], alloc = +m[5];
+      // What the AI DEMANDS, offensive postures only. ACS_DEFEND_* is excluded:
+      // those asks look like frontier totals rather than one stack's worth — the
+      // reference log's extremes (Consentia 890,300, Petelia 312,060) are all
+      // DEFEND_DEEP / DEFEND_BORDER — and mixing the two makes the number
+      // meaningless.
+      if (/^ACS_(GATHERING|ATTACK)/.test(m[3])) {
+        const prev = maxReqByTarget.get(m[2]) || 0;
+        if (req > prev) maxReqByTarget.set(m[2], req);
+      }
       if (m[3] === "ACS_GATHERING" && alloc < req) {
         const key = (curFaction || "?") + "|" + m[2];
         const e = stalls.get(key) || { faction: curFaction || "?", regId: m[2], turns: new Set(), lastReq: req, lastAlloc: alloc };
@@ -584,6 +596,19 @@ function createAiDecisionAnalyzer(opts = {}) {
         militaryPct: e.picks ? e.military / e.picks : 0,
         topMilitaryPriority: e.topMilitaryPriority, topMilitaryName: e.topMilitaryName,
       }])),
+      // The distribution of what the AI asks for, offensive postures only. Paired
+      // with the save's men-per-faction in _correlateSave, this answers a question
+      // no per-faction lead can: are the requirements themselves calibrated for
+      // the states that exist on this map?
+      askDistribution: (() => {
+        const v = [...maxReqByTarget.values()].sort((a, b) => a - b);
+        if (!v.length) return null;
+        const q = (pp) => v[Math.min(v.length - 1, Math.floor(v.length * pp))];
+        return {
+          targets: v.length,
+          p25: q(0.25), median: q(0.5), p75: q(0.75), p95: q(0.95), max: v[v.length - 1],
+        };
+      })(),
       lines,
     };
   };
@@ -790,7 +815,9 @@ function correlateWithSave(findings, saveFacts) {
       e.factionMenAtSave = men[fac] != null ? men[fac] : null;
       e.factionUnitsAtSave = F.unitsByFaction ? (F.unitsByFaction[fac] || 0) : null;
       e.factionSettlements = setts[fac] != null ? setts[fac] : null;
-      e.factionNaval = naval[fac] != null ? naval[fac] : 0;
+      // Naval units in the save carry no faction (all land under "?"), so this
+      // is null rather than a confident 0 — see navalFactionKnown below.
+      e.factionNaval = naval[fac] != null ? naval[fac] : null;
       if (f.kind === "campaign_stall") {
         const req = +(String(f.detail).match(/\/(\d+) strength/) || [0, 0])[1];
         if (req && e.factionMenAtSave != null) {

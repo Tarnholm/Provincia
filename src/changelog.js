@@ -13,6 +13,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1435",
+    date: "2026-07-25",
+    items: [
+      { type: "feature", text: "**The Lab has found the structural reason AI campaigns gather forever and never launch, and it is not any individual faction's economy.** Across 1,117 targets the AI's median *offensive* strength requirement is **23,902 men**. The median faction on this map fields **1,480**. That is a factor of **16**, only **3 of 125** factions could field the median requirement at all, and a single such requirement is 5.4% of every soldier alive on the map (443,099 across 125 factions). This is now the first lead in every report, because it reframes all the per-faction ones beneath it: \"this faction is too poor to launch\" is a symptom of the map's shape, not of that faction. Raising one small faction's income cannot close a 16× gap." },
+      { type: "improvement", text: "The two sides are verified to be the same unit before being compared, which is the whole basis of the claim: the log's `allocated str 27,183` lines up with Ptolemaic's 28,246 soldiers in the save, and unit sizes there are a sane 64 men at the median — so requirement and manpower really are men-equivalent, not one being an abstract score. Defensive postures are excluded from the requirement figure: `ACS_DEFEND_*` asks read as whole-frontier totals rather than one stack's worth (the extremes are all defensive — Consentia 890,300, Petelia 312,060), and mixing them in would make the number meaningless. Requirements are taken as one per target so a heavily-logged region cannot skew the distribution." },
+      { type: "improvement", text: "The lead only appears when the gap is large *and* few factions can clear it — a 4× gap that most factions meet anyway is not a structural problem, and would not be worth putting at the top of a report." },
+      { type: "fix", text: "Two smaller honesty fixes fall out of the same investigation. The \"no navy\" audit lead required the save's per-faction ship count to be zero, which was vacuously true for everyone because naval units in the save carry no faction; the gate now rests only on descr_strat's starting admirals, which is a real fact, and the evidence says outright that the save cannot supply a current ship count. And the per-finding `factionNaval` figure is now null rather than a confident 0." },
+    ],
+  },
+  {
     version: "0.9.1434",
     date: "2026-07-25",
     items: [

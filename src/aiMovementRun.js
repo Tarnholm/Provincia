@@ -44,6 +44,35 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
     result.save.confirmedNeverArrived = sm.length;
     result.save.impossibleCampaigns = imp.length;
     result.save.orphanedArmies = result.findings.filter((f) => f.orphaned).length;
+    // ── STRENGTH SCALE ────────────────────────────────────────────────────────
+    // The single most structural number in the whole analysis: what the AI asks
+    // for, against what the factions on this map can actually field. Per-faction
+    // leads can only ever say "this one is poor"; this says whether the
+    // requirements suit the states that exist at all.
+    //
+    // Both sides are men-equivalent — cross-checked on the reference data, where
+    // the log's `allocated str 27,183` lines up with Ptolemaic's 28,246 soldiers
+    // in the save, and unit sizes there are a sane 64 men at the median.
+    if (result.askDistribution) {
+      const menVals = Object.values(facts.menByFaction || {}).filter((n) => n > 0).sort((a, b) => a - b);
+      if (menVals.length) {
+        const q = (pp) => menVals[Math.min(menVals.length - 1, Math.floor(menVals.length * pp))];
+        const medianMen = q(0.5);
+        const ask = result.askDistribution;
+        result.strengthScale = {
+          askTargets: ask.targets, askMedian: ask.median, askP75: ask.p75, askP95: ask.p95, askMax: ask.max,
+          factions: menVals.length,
+          menMedian: medianMen, menP75: q(0.75), menMax: menVals[menVals.length - 1],
+          totalMen: menVals.reduce((a, b) => a + b, 0),
+          // how many factions could field the MEDIAN ask at all
+          factionsAbleToMeetMedianAsk: menVals.filter((n) => n >= ask.median).length,
+          ratio: medianMen ? +(ask.median / medianMen).toFixed(1) : null,
+        };
+        _log(`[ai-movement] strength scale: median offensive ask ${ask.median.toLocaleString()} vs median faction ${medianMen.toLocaleString()} men ` +
+          `(${result.strengthScale.ratio}×); only ${result.strengthScale.factionsAbleToMeetMedianAsk} of ${menVals.length} factions could field the median ask`);
+      }
+    }
+
     // Mod-file audit: turn the findings into file-level leads (which file, which
     // key, what to change) using the AI-relevant mod files the user named.
     try {
@@ -93,6 +122,39 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
       });
       result.modLeads = audit.leads;
       result.factionProfiles = audit.factions;
+
+      // ── WORLD-LEVEL: the strength-scale mismatch ────────────────────────────
+      // Put first because it reframes every per-faction lead below it. If almost
+      // no faction on the map could field the median requirement, then "this
+      // faction is poor" is a symptom of the map's shape, not of that faction.
+      if (result.strengthScale && result.strengthScale.factions > 20) {
+        const S = result.strengthScale;
+        const ableePct = Math.round((S.factionsAbleToMeetMedianAsk / S.factions) * 100);
+        // Only raise it when the gap is large AND few factions can meet it —
+        // a 4x gap that most factions clear anyway is not a structural problem.
+        if (S.ratio >= 4 && ableePct <= 25) {
+          result.modLeads.unshift({
+            severity: 3,
+            faction: "all (map scale)",
+            file: "descr_strat.txt (faction count / starting armies)",
+            key: `median ask ${S.askMedian.toLocaleString()} vs median faction ${S.menMedian.toLocaleString()} men`,
+            issue:
+              `THE REQUIREMENTS DO NOT FIT THIS MAP. Across ${S.askTargets.toLocaleString()} targets the AI's median offensive requirement is ` +
+              `${S.askMedian.toLocaleString()} men, but the median faction fields ${S.menMedian.toLocaleString()} — a factor of ${S.ratio}. ` +
+              `Only ${S.factionsAbleToMeetMedianAsk} of ${S.factions} factions could field the median requirement at all, and it is ` +
+              `${((S.askMedian / S.totalMen) * 100).toFixed(1)}% of every soldier on the map.`,
+            suggestion:
+              `This is the structural reason campaigns gather forever and never launch, and it sits upstream of every per-faction lead below. ` +
+              `The requirement itself is computed by the engine, so the levers are on this side: fewer and larger factions, or substantially ` +
+              `thicker starting forces in descr_strat.txt. Raising one small faction's economy cannot close a ${S.ratio}× gap.`,
+            evidence:
+              `ask percentiles median ${S.askMedian.toLocaleString()} / p75 ${S.askP75.toLocaleString()} / p95 ${S.askP95.toLocaleString()} · ` +
+              `faction men median ${S.menMedian.toLocaleString()} / p75 ${S.menP75.toLocaleString()} / max ${S.menMax.toLocaleString()} · ` +
+              `${S.totalMen.toLocaleString()} men total across ${S.factions} factions · defensive (ACS_DEFEND_*) postures excluded from the ask, ` +
+              `since those read as frontier totals rather than one stack`,
+          });
+        }
+      }
       // ── map_ground_types.tga: can the ground the AI is ordered across even be
       // walked? The other files say whether a faction CAN raise the troops; this
       // one says whether the route exists. Annotates movement findings with the
