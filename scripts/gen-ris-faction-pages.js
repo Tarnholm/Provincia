@@ -40,6 +40,29 @@ const tga = require(path.join(__dirname, "..", "src", "tgaCodec.js"));
 const rd = (...f) => { try { return fs.readFileSync(path.join(RIS, ...f), "latin1"); } catch { return null; } };
 const STRAT = path.join(RIS, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
 
+
+// ── display names ────────────────────────────────────────────────────────────
+// text/export_buildings.txt (UTF-16LE) maps a building level token to the name the game
+// shows: proconsuls_palace -> "Pro-Consul's Palace", gov4 -> "Homeland", mic_2 ->
+// "Basic Armoury". Printing raw tokens made every page read like a data dump.
+//
+// NOTE units are NOT resolvable this way. Their text keys are not the EDU `type` string
+// (`aor arab levy spearmen` has no entry, though `ballistas` does) - the mapping lives in
+// each unit's `dictionary` field in export_descr_unit.txt, which is not wired up yet. Same
+// for most region tags: resources.txt keys look like SMT_RESOURCE_GOLD and cover only the
+// 104 standard goods, so custom tokens such as `rivertrade` have no display name.
+function loadDisplayNames(file) {
+  const map = {};
+  try {
+    const t = fs.readFileSync(path.join(RIS, "text", file), "utf16le");
+    for (const m of t.matchAll(/\{([^}]+)\}(.*)/g)) map[m[1].trim().toLowerCase()] = m[2].trim();
+  } catch { /* fall back to the raw token */ }
+  return map;
+}
+const BUILDING_NAMES = loadDisplayNames("export_buildings.txt");
+/** Display name for a building level, or the token itself when there is no entry. */
+const bName = (tok) => BUILDING_NAMES[String(tok).toLowerCase()] || null;
+
 const NON_PLAYER = new Set(["slave", "roman_senate", "dummies"]);
 const title = (s) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -275,7 +298,7 @@ ${setts.length ? `${display} begins with **${setts.length} settlement${setts.len
 |---|---|---:|---|
 ${setts.map((s) => `| ${s.region}${s.capital ? " **(capital)**" : ""} | ${String(s.level || "").replace(/_/g, " ")} | ${s.pop != null ? s.pop.toLocaleString("en-US") : "?"} | ${(s.buildings || []).length} building${(s.buildings || []).length === 1 ? "" : "s"} |`).join("\n")}
 
-${setts.map((s) => `**${s.region}** — ${(s.buildings || []).length ? (s.buildings || []).map((b) => `\`${b.level}\``).join(", ") : "_nothing built_"}`).join("\n\n")}
+${setts.map((s) => `**${s.region}** — ${(s.buildings || []).length ? (s.buildings || []).map((b) => bName(b.level) || `\`${b.level}\``).join(", ") : "_nothing built_"}`).join("\n\n")}
 ` : "_This faction holds no settlements at the campaign start._"}
 
 ## Starting characters
