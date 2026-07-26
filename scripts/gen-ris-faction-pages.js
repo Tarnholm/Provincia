@@ -318,6 +318,43 @@ const SCALE = 1;   // full 1020x700; boundaries and markers need the detail
 
 console.log(`intro texts ${Object.keys(intros).length} · characters ${Object.values(chars).reduce((a, v) => a + v.length, 0)} · recruit lines ${recruitRows.length} · region colours ${Object.keys(regionColours).length} · map ${mapRaw ? mapRaw.width + "x" + mapRaw.height : "unavailable"}`);
 
+// ── cross-links ──────────────────────────────────────────────────────────────
+// The tables listed settlement and unit names as plain text, which made the wiki a set of
+// dead ends: a reader looking at a roster could not get to the unit, and a reader looking at
+// a province list could not get to the province. Unit pages are keyed by the EDU dictionary
+// (AOR variants share one page), so the EDB unit type has to be mapped through it.
+// Must match gen-ris-unit-pages.js exactly, or every unit link 404s.
+const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+const unitSlug = (() => {
+  const edu = rd("export_descr_unit.txt") || "";
+  const byType = new Map();
+  let cur = null;
+  for (const raw of edu.split(/\r?\n/)) {
+    const line = raw.replace(/;.*$/, "").trim();
+    let m = /^type\s+(.+)$/.exec(line);
+    if (m) { cur = m[1].trim().toLowerCase(); continue; }
+    if (!cur) continue;
+    m = /^dictionary\s+(\S+)/.exec(line);
+    if (m) { byType.set(cur, slugify(m[1].trim().toLowerCase())); cur = null; }
+  }
+  return byType;
+})();
+const unitPages = (() => {
+  try { return new Set(fs.readdirSync(path.join(OUT, "units")).filter((f) => f.endsWith(".md")).map((f) => f.replace(/\.md$/, ""))); }
+  catch { return new Set(); }
+})();
+const regionPages = (() => {
+  try { return new Set(fs.readdirSync(path.join(OUT, "regions")).filter((f) => f.endsWith(".md")).map((f) => f.replace(/\.md$/, ""))); }
+  catch { return new Set(); }
+})();
+// Region files are named for the region itself, spaces and all, so the target needs encoding.
+const regionLink = (name) => (regionPages.has(name)
+  ? `[${name}](../regions/${encodeURIComponent(name)}.md)` : name);
+const unitLink = (type) => {
+  const s = unitSlug.get(String(type).toLowerCase());
+  return s && unitPages.has(s) ? `[${type}](../units/${s}.md)` : type;
+};
+
 const factions = Object.keys(strat)
   .filter((f) => !NON_PLAYER.has(f))
   .filter((f) => !ONLY.length || ONLY.includes(f))
@@ -337,6 +374,19 @@ for (const f of factions) {
   const cs = chars[f] || [];
   const units = recruitableBy(recruitRows, f);
 
+  // A one-line summary under the title, so the shape of a faction is readable before any
+  // scrolling. 236 faction pages all opened with a map and then a wall of tables.
+  const totalPop = setts.reduce((a, s) => a + (s.pop || 0), 0);
+  const capital = setts.find((s) => s.capital);
+  const glance = [
+    `**${setts.length}** settlement${setts.length === 1 ? "" : "s"}`,
+    capital ? `capital **${capital.region}**` : null,
+    totalPop ? `**${totalPop.toLocaleString("en-US")}** people` : null,
+    `**${cs.length}** character${cs.length === 1 ? "" : "s"}`,
+    `**${units.core.length}** faction unit${units.core.length === 1 ? "" : "s"}`,
+    units.aor.length ? `**${units.aor.length}** regional` : null,
+  ].filter(Boolean).join(" · ");
+
   let mapLine = "";
   if (mapRaw && setts.length) {
     const m = renderFactionMap(mapRaw, regionColours, setts, SCALE);
@@ -351,15 +401,22 @@ for (const f of factions) {
 
 [← all factions](../factions.md) · [wiki index](../README.md)
 
+${glance}
+
 ${mapLine}${intro.descr ? `## The campaign brief\n\n> ${intro.descr.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n\n` : `> _The main-menu text for this faction was not found._\n\n`}## Starting settlements
 
-${setts.length ? `${display} begins with **${setts.length} settlement${setts.length === 1 ? "" : "s"}**.
+${setts.length ? `${display} begins with **${setts.length} settlement${setts.length === 1 ? "" : "s"}** and about **${totalPop.toLocaleString("en-US")}** people.
 
 | Settlement | Size | Population | Already built |
 |---|---|---:|---|
-${setts.map((s) => `| ${s.region}${s.capital ? " **(capital)**" : ""} | ${String(s.level || "").replace(/_/g, " ")} | ${s.pop != null ? s.pop.toLocaleString("en-US") : "?"} | ${(s.buildings || []).length} building${(s.buildings || []).length === 1 ? "" : "s"} |`).join("\n")}
+${setts.map((s) => `| ${regionLink(s.region)}${s.capital ? " **(capital)**" : ""} | ${String(s.level || "").replace(/_/g, " ")} | ${s.pop != null ? s.pop.toLocaleString("en-US") : "?"} | ${(s.buildings || []).length} building${(s.buildings || []).length === 1 ? "" : "s"} |`).join("\n")}
 
-${setts.map((s) => `**${s.region}** — ${(s.buildings || []).length ? (s.buildings || []).map((b) => bName(b.level) || `\`${b.level}\``).join(", ") : "_nothing built_"}`).join("\n\n")}
+<details>
+<summary>What is already built in each settlement</summary>
+
+${setts.map((s) => `**${regionLink(s.region)}** — ${(s.buildings || []).length ? (s.buildings || []).map((b) => bName(b.level) || `\`${b.level}\``).join(", ") : "_nothing built_"}`).join("\n\n")}
+
+</details>
 ` : "_This faction holds no settlements at the campaign start._"}
 
 ## Starting characters
@@ -378,15 +435,20 @@ ${units.core.length ? `These are the backbone of the roster — available wherev
 
 | Unit | Requires |
 |---|---|
-${units.core.map(([u, conds]) => `| ${u} | ${conds.length ? conds.map((c) => `\`${c}\``).join(", ") : "_no further requirement_"} |`).join("\n")}` : `_${display} has no ungated units: every unit on its roster needs a regional resource._`}
+${units.core.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map((c) => `\`${c}\``).join(", ") : "_no further requirement_"} |`).join("\n")}` : `_${display} has no ungated units: every unit on its roster needs a regional resource._`}
 
 ### Regional units (AOR)
 
-${units.aor.length ? `Area-of-recruitment units. Every route to these is gated on a hidden resource, so they can only be raised in the provinces that carry it — taking the right ground is the only way to field them.
+${units.aor.length ? `Area-of-recruitment units. Every route to these is gated on a hidden resource, so they can only be raised in the provinces that carry it — taking the right ground is the only way to field them. Most are open to every faction on paper, which is why the list is long and folded away.
+
+<details>
+<summary><strong>Show all ${units.aor.length} regional units</strong></summary>
 
 | Unit | Requires |
 |---|---|
-${units.aor.map(([u, conds]) => `| ${u} | ${conds.length ? conds.map((c) => `\`${c}\``).join(", ") : "_no further requirement_"} |`).join("\n")}` : `_No area-of-recruitment units are open to ${display}._`}
+${units.aor.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map((c) => `\`${c}\``).join(", ") : "_no further requirement_"} |`).join("\n")}
+
+</details>` : `_No area-of-recruitment units are open to ${display}._`}
 
 > Availability also depends on the settlement: many of these need a specific building
 > level, and some need a resource only certain regions have. This list is what is open to

@@ -89,6 +89,41 @@ function statsOf(b) {
   };
 }
 
+// ── who can actually recruit each unit ───────────────────────────────────────
+// The faction pages answer "what can this faction raise". This is the reverse, which is
+// the question a reader on a unit page has. Split the same way, on the hidden_resource gate
+// the engine enforces: the core list is short and meaningful, while regional availability
+// is usually "everyone, if they take the right province" and so is reported as a count.
+function loadAvailability() {
+  const edb = rd("export_descr_buildings.txt") || "";
+  const byType = new Map();   // unit type -> { core:Set, aor:Set }
+  for (const m of edb.matchAll(/^\s*recruit\s+"([^"]+)"\s+(\d+)\s+requires\s+([^\r\n]+)/gm)) {
+    const type = m[1].trim().toLowerCase();
+    const expr = m[3];
+    const hr = /hidden_resource/i.test(expr);
+    const pos = [], neg = [];
+    for (const fm of expr.matchAll(/(not\s+)?factions\s*\{([^}]*)\}/gi)) {
+      const list = fm[2].split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+      (fm[1] ? neg : pos).push(...list);
+    }
+    let e = byType.get(type);
+    if (!e) { e = { core: new Set(), aor: new Set(), all: false, allCore: false, neg: new Set() }; byType.set(type, e); }
+    for (const n of neg) e.neg.add(n);
+    if (pos.includes("all")) { e.all = true; if (!hr) e.allCore = true; continue; }
+    for (const f of pos) (hr ? e.aor : e.core).add(f);
+  }
+  return byType;
+}
+const availability = loadAvailability();
+
+// Only link factions that actually have a page — slave, the senate and the dummy factions
+// are excluded from the wiki, and linking them was 1,006 broken links once already.
+const factionPages = (() => {
+  try { return new Set(fs.readdirSync(path.join(OUT, "factions")).filter((f) => f.endsWith(".md")).map((f) => f.replace(/\.md$/, ""))); }
+  catch { return new Set(); }
+})();
+const prettyFaction = (f) => String(f).split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+
 // ── build ────────────────────────────────────────────────────────────────────
 const edu = rd("export_descr_unit.txt");
 if (!edu) { console.error("export_descr_unit.txt not found"); process.exit(2); }
@@ -166,9 +201,61 @@ const list = ONLY.length
   : merged;
 fs.mkdirSync(path.join(OUT, "units"), { recursive: true });
 
+// ── where a stat sits in the roster ──────────────────────────────────────────
+// A bare "Defence skill 33" means nothing without the roster to compare against, and RIS
+// stats run far above vanilla, so borrowed intuition misleads. Each stat therefore also
+// shows its rank among all units that have that stat. Drawn with block characters rather
+// than a styled <span>: GitHub strips style attributes when it renders markdown, so a CSS
+// bar would work in the local viewer and silently vanish on the site.
+const SORTED = {};
+for (const k of ["attack", "charge", "armour", "defence", "shield", "morale", "cost", "upkeep", "men"]) {
+  SORTED[k] = merged.map((u) => u.st[k]).filter((v) => v != null).sort((a, b) => a - b);
+}
+function percentile(key, v) {
+  const arr = SORTED[key];
+  if (!arr || !arr.length || v == null) return null;
+  let lo = 0, hi = arr.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (arr[mid] < v) lo = mid + 1; else hi = mid; }
+  return Math.round((lo / arr.length) * 100);
+}
+const BAR_CELLS = 10;
+function bar(key, v) {
+  const p = percentile(key, v);
+  if (p == null) return "";
+  const filled = Math.max(1, Math.round((p / 100) * BAR_CELLS));
+  return `\`${"█".repeat(filled)}${"·".repeat(BAR_CELLS - filled)}\` ${p}%`;
+}
+
+// The mod's descriptions embed their own section headers as bare ALL-CAPS lines
+// ("HISTORICAL BACKGROUND" on 428 units, "GENERAL DESCRIPTION" on 2). Left as-is they read
+// as a shouted line in the middle of a wall of prose; promoted to real headings they give
+// the page a structure and a table of contents entry.
+function sectionise(text) {
+  if (!text) return text;
+  return text.replace(/^([A-Z][A-Z0-9 '\-]{5,})$/gm, (_, h) => {
+    const t = h.trim().toLowerCase();
+    return `### ${t.charAt(0).toUpperCase() + t.slice(1)}`;
+  });
+}
+
 for (const u of list) {
   const s = u.st;
-  const stat = (label, v, suffix) => v == null ? "" : `| ${label} | ${v.toLocaleString("en-US")}${suffix || ""} |\n`;
+  const stat = (label, v, suffix, key) => v == null ? "" :
+    `| ${label} | ${v.toLocaleString("en-US")}${suffix || ""} | ${key ? bar(key, v) : ""} |\n`;
+
+  // Availability, unioned across every variant of this unit: an AOR variant and its parent
+  // are one page here, so the page must answer for all of them.
+  const avail = { core: new Set(), aor: new Set(), all: false, allCore: false };
+  for (const v of u.variants) {
+    const e = availability.get(String(v).toLowerCase());
+    if (!e) continue;
+    for (const f of e.core) if (!e.neg.has(f)) avail.core.add(f);
+    for (const f of e.aor) if (!e.neg.has(f)) avail.aor.add(f);
+    if (e.all) avail.all = true;
+    if (e.allCore) avail.allCore = true;
+  }
+  const coreList = [...avail.core].filter((f) => factionPages.has(f)).sort();
+  const aorCount = [...avail.aor].filter((f) => factionPages.has(f)).length;
   // Every unit has two pieces of art: the roster card shown in the recruitment panel and
   // the info card from the unit's detail panel. Both are shipped, and the inline one links
   // to the other so a click swaps between them. A plain link rather than a script, because
@@ -188,17 +275,32 @@ for (const u of list) {
 
 ${cardMarkup(u)}${u.hasName ? "" : "> _This unit has no display name in the text files, so its internal name is shown._\n\n"}**Class:** ${u.cls || "unknown"} · **Category:** ${u.category || "unknown"}${s.men != null ? ` · **Men per unit:** ${s.men}` : ""}
 
-${u.long || u.short
-  ? `## Description\n\n${u.long || u.short}\n\n`
-  : "> This unit has no written description in the mod yet.\n\n"}## Stats
+## Stats
 
-| | |
-|---|---:|
-${stat("Attack", s.attack)}${stat("Charge bonus", s.charge)}${s.weapon ? `| Weapon | ${s.weapon} |\n` : ""}${stat("Armour", s.armour)}${stat("Defence skill", s.defence)}${stat("Shield", s.shield)}${stat("Morale", s.morale)}${s.discipline ? `| Discipline | ${s.discipline} |\n` : ""}${s.training ? `| Training | ${s.training} |\n` : ""}${stat("Recruitment cost", s.cost, " denarii")}${stat("Upkeep per turn", s.upkeep, " denarii")}${stat("Turns to recruit", s.turns)}
+The bar shows where this unit sits in the whole RIS roster, so a number can be read against
+its peers rather than against vanilla — RIS stats run much higher than the base game's.
+
+| | | Rank in roster |
+|---|---:|---|
+${stat("Attack", s.attack, "", "attack")}${stat("Charge bonus", s.charge, "", "charge")}${s.weapon ? `| Weapon | ${s.weapon} | |\n` : ""}${stat("Armour", s.armour, "", "armour")}${stat("Defence skill", s.defence, "", "defence")}${stat("Shield", s.shield, "", "shield")}${stat("Morale", s.morale, "", "morale")}${s.discipline ? `| Discipline | ${s.discipline} | |\n` : ""}${s.training ? `| Training | ${s.training} | |\n` : ""}${stat("Men per unit", s.men, "", "men")}${stat("Recruitment cost", s.cost, " dn", "cost")}${stat("Upkeep per turn", s.upkeep, " dn", "upkeep")}${stat("Turns to recruit", s.turns)}
 ${u.attributes.length ? `\n**Attributes:** ${u.attributes.map((a) => `\`${a}\``).join(", ")}\n` : ""}
-> Recruitment requirements are listed on each faction's page — availability depends on the
-> faction, the building level and sometimes a resource only certain regions have.
+## Who can recruit it
 
+${avail.allCore
+  ? `Every faction can raise this unit from its own buildings — it is open to \`factions { all }\` with no regional gate.`
+  : coreList.length
+    ? `${coreList.length === 1
+        ? `A core roster unit for one faction, which can raise it anywhere it holds the right building:`
+        : `A core roster unit for ${coreList.length} factions, each able to raise it anywhere they hold the right building:`}\n\n${coreList.slice(0, 40).map((f) => `[${prettyFaction(f)}](../factions/${f}.md)`).join(" · ")}${coreList.length > 40 ? `\n\n_…and ${coreList.length - 40} more._` : ""}`
+    : avail.all || aorCount
+      ? `No faction has this as a core unit — it is area-of-recruitment only, so it can be raised solely in provinces carrying the required hidden resource.`
+      : `_No recruitment route for this unit was found in the building files._`}
+${avail.all && !avail.allCore ? `\nIt is offered to \`factions { all }\` behind a regional gate, so any faction holding the right province can field it.\n` : aorCount ? `\nA further ${aorCount} faction${aorCount === 1 ? "" : "s"} can raise it regionally, in provinces with the required resource.\n` : ""}
+> The exact building level and any resource requirement are listed on each faction's page.
+
+${u.long || u.short
+  ? `## Description\n\n${sectionise(u.long || u.short)}\n\n`
+  : "> This unit has no written description in the mod yet.\n\n"}
 ${u.variants.length > 1 ? `## Recruitment variants
 
 This unit is defined ${u.variants.length} times in the mod — the same troops reached by

@@ -31,6 +31,23 @@ const VAN = valOf("--vanilla",
   "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data");
 const OUT = valOf("--out", "C:/RIS/RIS/wiki");
 
+// Counted off disk rather than written as a literal, so the figure in the README cannot
+// drift from the wiki it describes. Returns 0 on a fresh output directory, and the README
+// then simply reports the overviews it is writing right now.
+function pageCount() {
+  let n = 0;
+  const walk = (dir) => {
+    let entries = [];
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      if (e.isDirectory()) walk(path.join(dir, e.name));
+      else if (/\.md$/i.test(e.name)) n++;
+    }
+  };
+  walk(OUT);
+  return n || 5;
+}
+
 const gv = require(path.join(__dirname, "..", "src", "growthEval.js"));
 const P = require(path.join(__dirname, "..", "src", "parsers.js"));
 
@@ -190,13 +207,18 @@ facts shape most of what plays differently.
 ## Viewing this locally
 
 GitHub renders these pages if you browse the repository. To read them on your own machine
-with the icons, cards and maps showing, **double-click `view-wiki.bat`** (or run
-`./view-wiki.sh` on macOS/Linux). It needs Node.js and nothing else — no install step, no
+with the icons, cards and maps showing, **double-click \`view-wiki.bat\`** (or run
+\`./view-wiki.sh\` on macOS/Linux). It needs Node.js and nothing else — no install step, no
 internet, no account. Your browser opens on its own.
 
-A viewer is needed because a browser shows a `.md` file as raw text, and these pages are
-mostly tables. The sortable tables below are ordinary HTML and work on their own if you
-would rather not run anything.
+A viewer is needed because a browser shows a \`.md\` file as raw text, and these pages are
+mostly tables. It also gives you the things a folder of files cannot: a search box over every
+page (press \`/\` to jump to it), a sidebar to move between
+sections, and a light/dark switch. The sortable tables below are ordinary HTML and work on
+their own if you would rather not run anything.
+
+There are **${pageCount().toLocaleString("en-US")}** pages in total: one per faction, region,
+unit and building chain, plus these overviews.
 
 ## Sortable tables
 
