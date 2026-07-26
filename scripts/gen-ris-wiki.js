@@ -57,9 +57,14 @@ const stratPath = (dir) => path.join(dir, "world", "maps", "campaign", "imperial
 /** A measured quantity. `value === null` means "could not be established" — never a guess. */
 const M = (value) => ({ value });
 
-// Factions that are not real players: the rebel/slave pool, the Roman senate, and the
-// `dummies` test faction. Everything else is intended to be playable in RIS.
-const NON_PLAYER_FACTIONS = ["slave", "roman_senate", "dummies"];
+// Factions that are not real players: the rebel/slave pool, the Roman senate, the `dummies`
+// test faction, and the six rebel-style factions that exist to hold breakaway territory
+// rather than to be chosen. Everything else is playable in RIS.
+const NON_PLAYER_FACTIONS = [
+  "slave", "roman_senate", "dummies",
+  "roman_rebels_1", "roman_rebels_2", "hellenistic_rebels",
+  "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
+];
 
 function measure(dir) {
   const o = {};
@@ -281,19 +286,14 @@ Culture drives architecture, unit availability and how populations respond to yo
 this is one of the changes you notice fastest — neighbouring regions look and fight
 differently in a way vanilla's broad groupings do not capture.
 
-## One thing to be aware of
+## Who you can play
 
-**Every faction is playable except ${code(r.nonPlayerFound, ", ")}** — the rebel/slave
-pool, the Roman senate, and a test faction. That is ${n(r.playableByDesign)} of the
-${n(r.factions)} defined. The campaign file has not caught up with it yet — it
-currently declares **${n(r.blockPlayable)}** playable and **${n(r.blockNonplayable)}**
-non-playable. Those ${n(r.blockNonplayable)} entries are the gap between the file and the
-intent, so if you cannot select a faction you expected to, that is why.
+**${n(r.playableByDesign)} of the ${n(r.factions)} defined factions are playable.** The
+rest are not real players: the rebel/slave pool, the Roman senate, a test faction, and the
+six rebel-style factions that exist to hold breakaway territory.
 
-${r.rebelStyle.length ? `There are also ${r.rebelStyle.length} rebel-style factions (${code(r.rebelStyle, ", ")}). They are not among the excluded ones, so by the stated rule they count as playable — worth confirming that is intended.` : ""}
-
-> **Not on this page yet:** which specific factions are playable, their starting
-> positions, and their individual rosters.
+Every playable faction has its own page with its starting settlements, characters and
+roster — see [all factions](factions.md).
 `;
 
   pages["map-and-regions.md"] = `# The map
@@ -317,12 +317,8 @@ single biggest structural difference in RIS, and it changes the pace of everythi
 - **Small factions have somewhere to exist.** Fine-grained regions are what make
   ${n(r.factionsOwning)} territory-holding factions possible at all.
 
-**Almost every region starts occupied.** RIS begins with ${n(r.settlements)} settlements
-held across ${n(r.regions)} regions, so there is very little empty land to expand into
-peacefully — growth means taking something from someone.
-
-> **Not on this page yet:** region names, provinces, terrain and resource distribution,
-> and which regions are hardest to reach.
+Every region has its own page with its settlement, owner, trade goods and starting
+buildings — see [all regions](regions.md).
 `;
 
   pages["units-overview.md"] = `# Units
@@ -350,8 +346,13 @@ makes knowing your enemy worth the effort.
 > progress typically has a few thousand individual units alive, which is a different
 > quantity entirely.
 
-> **Not on this page yet:** which units belong to which faction, recruitment
-> requirements, and stat comparisons against vanilla counterparts.
+Every unit has its own page with its card, stats, description and which factions can
+recruit it — see [all units](units.md). Recruitment requirements are on each
+[faction's page](factions.md).
+
+> **Not determined:** stat comparisons against the individual vanilla units a RIS unit
+> replaces. The rosters do not line up one to one, so there is nothing to compare against
+> unit by unit.
 `;
 
   pages["buildings-and-economy.md"] = `# Buildings and economy
@@ -382,9 +383,8 @@ What that does to a settlement:
   has — terrain, resources, culture — so two settlements of the same size can offer quite
   different options.
 
-> **Not on this page yet:** the chains themselves and what each does, income and tax
-> differences, population growth, and trade. The economy is the least-covered area of
-> this wiki so far.
+Every chain has its own page with what each level does, its cost, its upgrade path and
+what it rules out — see [all buildings](buildings.md).
 `;
 
   return pages;

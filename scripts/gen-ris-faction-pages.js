@@ -63,7 +63,13 @@ const BUILDING_NAMES = loadDisplayNames("export_buildings.txt");
 /** Display name for a building level, or the token itself when there is no entry. */
 const bName = (tok) => BUILDING_NAMES[String(tok).toLowerCase()] || null;
 
-const NON_PLAYER = new Set(["slave", "roman_senate", "dummies"]);
+// Not real players: the rebel/slave pool, the Roman senate, the `dummies` test faction, and
+// the six rebel-style factions that hold breakaway territory rather than being chosen.
+const NON_PLAYER = new Set([
+  "slave", "roman_senate", "dummies",
+  "roman_rebels_1", "roman_rebels_2", "hellenistic_rebels",
+  "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
+]);
 const title = (s) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 // ── intro text (UTF-16LE) ────────────────────────────────────────────────────

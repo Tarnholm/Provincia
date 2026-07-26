@@ -285,7 +285,13 @@ try {
 // The faction generator skips the three non-player factions, so they have no page and
 // must not be linked. ~1,000 regions are held by `slave` at the campaign start, which is
 // where the 1,006 broken links came from.
-const NO_PAGE = new Set(["slave", "roman_senate", "dummies"]);
+// Must match the exclusion set in gen-ris-faction-pages.js: linking a faction with no page
+// was 1,006 broken links once already.
+const NO_PAGE = new Set([
+  "slave", "roman_senate", "dummies",
+  "roman_rebels_1", "roman_rebels_2", "hellenistic_rebels",
+  "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
+]);
 const hasPage = (f) => !NO_PAGE.has(String(f).toLowerCase());
 const facName = (f) => display[String(f).toLowerCase()] || String(f).replace(/_/g, " ");
 

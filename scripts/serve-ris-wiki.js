@@ -102,6 +102,25 @@ function slugId(s) {
   return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
+// Each `## ` section becomes its own grid item so that on a wide screen they sit side by side
+// instead of stacking down a 62rem column with the rest of the monitor empty. The number of
+// columns is decided by CSS from the viewport, so it adapts to whatever resolution and aspect
+// ratio the reader has rather than being fixed here. Everything before the first `## ` is the
+// lede and spans the full width.
+function sectionise(html) {
+  const parts = html.split(/(?=<h2 )/);
+  if (parts.length < 2) return html;
+  const lede = parts[0].trim();
+  const secs = parts.slice(1).map((s) => {
+    // A table with more than four columns does not fit half a screen, so give that section the
+    // whole row instead of forcing it to scroll sideways inside a narrow column.
+    const firstRow = /<thead><tr>(.*?)<\/tr>/.exec(s);
+    const cols = firstRow ? (firstRow[1].match(/<th/g) || []).length : 0;
+    return `<section class="sec${cols > 4 ? " wide" : ""}">${s.trim()}</section>`;
+  }).join("");
+  return `${lede ? `<div class="lede">${lede}</div>` : ""}<div class="cols">${secs}</div>`;
+}
+
 function renderMarkdown(md, toc) {
   const lines = md.split(/\r?\n/);
   const out = [];
@@ -213,7 +232,22 @@ nav.side a{display:block;color:var(--fg);text-decoration:none;padding:.2rem .45r
   border-radius:6px;line-height:1.4}
 nav.side a:hover{background:var(--acc-soft);color:var(--acc)}
 nav.side a.on{background:var(--acc-soft);color:var(--acc);font-weight:600}
-main{min-width:0;padding:1.6rem 2rem 5rem;max-width:62rem}
+/* Use the width that is there. The cap is generous rather than absent so a 4K monitor does
+   not produce one absurdly wide column on a page that has only a single section. */
+main{min-width:0;padding:1.6rem 2.2rem 5rem;max-width:132rem;margin:0 auto;width:100%}
+
+/* Sections flow into as many columns as the viewport can take at a readable width. The
+   browser decides the count from minmax(), so this responds to the reader's own resolution
+   and aspect ratio: one column on a laptop in portrait, two on 1080p, three or more on a
+   wide desktop. align-items:start keeps a short section from stretching to match a tall one. */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(31rem,1fr));
+  gap:0 2.8rem;align-items:start}
+.sec{min-width:0}
+.sec>h2:first-child{margin-top:1.2rem}
+.lede{max-width:74ch}
+/* A section holding a wide table is allowed to take the whole row rather than being squeezed
+   — the roster and building tables have more columns than a half-width column can show. */
+.sec.wide{grid-column:1/-1}
 
 /* content */
 .crumb{font-size:.8rem;color:var(--dim);margin-bottom:.5rem}
@@ -384,7 +418,7 @@ const server = http.createServer((req, res) => {
     const md = fs.readFileSync(file, "utf8");
     const title = (/^#\s+(.+)$/m.exec(md) || [, path.basename(file)])[1];
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(SHELL(title, renderMarkdown(md, []), rel));
+    res.end(SHELL(title, sectionise(renderMarkdown(md, [])), rel));
     return;
   }
   res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
