@@ -36,8 +36,11 @@ const esc = (s) => String(s)
 // Inline spans. Images before links, since ![]() also matches []().
 function inline(s) {
   let t = esc(s);
-  // Restore <img …> tags the pages embed directly — the region and unit pages use them.
+  // Restore the raw HTML the pages embed directly. <img …> for the region and unit pages,
+  // and <a …>/</a> because each unit page wraps its roster card in a link to the info card
+  // — without this the anchor rendered as visible "&lt;a href=…&gt;" text next to the image.
   t = t.replace(/&lt;img([^&]*?)&gt;/g, "<img$1>");
+  t = t.replace(/&lt;a\s([^&]*?)&gt;/g, "<a $1>").replace(/&lt;\/a&gt;/g, "</a>");
   t = t.replace(/`([^`]+)`/g, (_, c) => `<code>${c}</code>`);
   t = t.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, a, src) => `<img src="${src}" alt="${a}">`);
   t = t.replace(/\[([^\]]*)\]\(([^)\s]+)\)/g, (_, txt, href) => `<a href="${href}">${txt}</a>`);
