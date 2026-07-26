@@ -248,7 +248,15 @@ function lintFormations(formationsTxt, push) {
       `it appears in NONE of the three vanilla descr_formations_ai.txt files, which between them use ${VANILLA_UNIT_TYPES.size} distinct tokens. ` +
       `The engine logs "Failed to find either a unit class or unit category. Provided: '${token}'" and the block's units get no assigned position.` +
       (near.length
-        ? ` Vanilla does use ${near.slice(0, 3).map((v) => `"${v}"`).join(", ")} — a dropped prefix is the likely cause.`
+        ? ` Vanilla does use ${near.slice(0, 3).map((v) => `"${v}"`).join(", ")} — a dropped prefix is the likely cause.` +
+          // Telemetry raises this from "an error the engine logs" to "the error most
+          // associated with sessions that died". Measured 2026-07-26 over 336 sessions
+          // (136 suspected crashes, 200 that survived a high assert volume): the unit
+          // type/category enum assert appears in 11% of crashed sessions against 1% of
+          // survivors — the largest gap of any assert. Meanwhile the two LOUDEST asserts
+          // in this mod are commoner in sessions that survive (87-89% vs 40-43%), so
+          // volume is a poor guide and this quiet one is worth fixing first.
+          ` PRIORITY: the engine assert this produces (unit_class != UCL_NUM_CLASSES || unit_category != UC_NUM_CATEGORIES) is the single assert most associated with CRASHED sessions in tester telemetry — present in 11% of 136 crashed sessions against 1% of 200 that survived. That is a correlation over one mod's reports, not proof of causation, but no other assert separates the two groups as strongly.`
         : ` No similar vanilla token exists, so this may be a deliberate extension rather than a defect — absence from vanilla is not proof the engine rejects it. Check the game's error_log for "Failed to find either a unit class or unit category" naming this token before changing anything.`));
   }
   return { checked, unknown: unknown.size };
