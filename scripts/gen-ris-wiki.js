@@ -187,6 +187,17 @@ every direction a player notices — but not uniformly.** The map and the unit r
 enormously. The building tree does not: it grows *sideways* rather than deeper. Those two
 facts shape most of what plays differently.
 
+## Viewing this locally
+
+GitHub renders these pages if you browse the repository. To read them on your own machine
+with the icons, cards and maps showing, **double-click `view-wiki.bat`** (or run
+`./view-wiki.sh` on macOS/Linux). It needs Node.js and nothing else — no install step, no
+internet, no account. Your browser opens on its own.
+
+A viewer is needed because a browser shows a `.md` file as raw text, and these pages are
+mostly tables. The sortable tables below are ordinary HTML and work on their own if you
+would rather not run anything.
+
 ## Sortable tables
 
 For anything you want to sort or search rather than read, these work on GitHub Pages with
@@ -202,6 +213,7 @@ no server:
 - [The map](map-and-regions.md) — regions, settlements, and what the density changes
 - [Units overview](units-overview.md) — how the roster compares with vanilla
 - [All units](units.md) — the full roster with stats and cards, and a page per unit
+- [All buildings](buildings.md) — a page per chain: what each level does, costs, upgrade path
 - [Buildings and economy](buildings-and-economy.md) — a wider, shallower tree
 
 ## About these pages
