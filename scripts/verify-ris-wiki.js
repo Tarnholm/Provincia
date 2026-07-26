@@ -2,7 +2,7 @@
 /**
  * Verify the generated RIS wiki. Exits non-zero if anything is wrong.
  *
- *   node scripts/verify-ris-wiki.js [--out <dir>] [--quiet]
+ *   node scripts/verify-ris-wiki.js [--out <dir>] [--collisions] [--quiet]
  *
  * WHY THIS EXISTS. Two overview pages were silently absent from the published wiki for
  * several commits because two generators wrote the same filename and the later one won.
@@ -13,7 +13,8 @@
  * MISSING or unreachable, which no amount of reading the output reveals.
  *
  * Checks:
- *   1. Output-filename collisions between generators, read from their source.
+ *   1. Output-filename collisions, observed by RUNNING each generator into its own
+ *      directory and comparing what each produced (--collisions; slow, so opt-in).
  *   2. Every relative link in every page resolves to a file that exists.
  *   3. Every image reference resolves.
  *   4. Orphans: pages nothing links to, so a reader can never reach them.
@@ -36,26 +37,48 @@ const fail = (s) => problems.push(s);
 if (!fs.existsSync(OUT)) { console.error(`wiki not found: ${OUT}`); process.exit(2); }
 
 // ── 1. filename collisions between generators ────────────────────────────────
-// Read each generator's source for the root-level .md filenames it writes. A page written
-// by two generators is lost from whichever runs first.
-{
-  const owners = new Map();   // filename -> [generator, …]
-  for (const f of fs.readdirSync(SCRIPTS).filter((n) => /^gen-ris-.*\.js$/.test(n))) {
-    const src = fs.readFileSync(path.join(SCRIPTS, f), "utf8");
-    const names = new Set();
-    // pages["x.md"]  and  path.join(OUT, "x.md")
-    for (const m of src.matchAll(/pages\["([a-z0-9-]+\.md)"\]/g)) names.add(m[1]);
-    for (const m of src.matchAll(/path\.join\(OUT,\s*"([a-z0-9-]+\.md)"\)/g)) names.add(m[1]);
-    for (const n of names) {
-      if (!owners.has(n)) owners.set(n, []);
-      owners.get(n).push(f);
+// Detected EMPIRICALLY, by running each generator into its own directory and comparing
+// what each actually produced. An earlier version of this check scanned generator SOURCE
+// for `pages["x.md"]` and `path.join(OUT, "x.md")` literals, which is fragile: a path
+// built at runtime slips straight past it, and that is exactly the kind of write that
+// caused the original loss. Running them is slower but cannot be fooled.
+//
+// Skipped unless --collisions is passed, because it regenerates everything.
+if (argv.includes("--collisions")) {
+  const os = require("os");
+  const { execFileSync } = require("child_process");
+  const gens = fs.readdirSync(SCRIPTS).filter((n) => /^gen-ris-.*\.js$/.test(n)).sort();
+  const produced = new Map();   // relative path -> [generator, …]
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), "riswiki-"));
+  for (const g of gens) {
+    const dir = path.join(base, g.replace(/\.js$/, ""));
+    fs.mkdirSync(dir, { recursive: true });
+    try {
+      execFileSync(process.execPath, [path.join(SCRIPTS, g), "--out", dir], { stdio: "ignore", timeout: 900000 });
+    } catch { fail(`generator ${g} exited non-zero when run in isolation`); continue; }
+    const seen = [];
+    (function walk(d, rel) {
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        const r = rel ? `${rel}/${e.name}` : e.name;
+        if (e.isDirectory()) walk(path.join(d, e.name), r); else seen.push(r);
+      }
+    })(dir, "");
+    // Only ROOT-level files can collide meaningfully; per-entity dirs are owned outright
+    // and a clash inside one would mean two generators claim the same entity type.
+    for (const r of seen) {
+      if (!produced.has(r)) produced.set(r, []);
+      produced.get(r).push(g);
     }
+    note(`  ${g.padEnd(30)} produced ${seen.length.toLocaleString("en-US")} files`);
   }
   let collisions = 0;
-  for (const [name, gens] of owners) {
-    if (gens.length > 1) { collisions++; fail(`COLLISION: ${name} is written by ${gens.join(" AND ")} — the later run overwrites the earlier`); }
+  for (const [name, gl] of produced) {
+    if (gl.length > 1) { collisions++; fail(`COLLISION: ${name} is written by ${gl.join(" AND ")} — the later run overwrites the earlier`); }
   }
-  note(`filename collisions: ${collisions === 0 ? "none" : collisions} (${owners.size} root pages claimed across the generators)`);
+  note(`filename collisions: ${collisions === 0 ? "none" : collisions} (observed across ${gens.length} generators, ${produced.size.toLocaleString("en-US")} distinct paths)`);
+  try { fs.rmSync(base, { recursive: true, force: true }); } catch { /* temp dir */ }
+} else {
+  note("filename collisions: skipped (pass --collisions to run every generator and compare)");
 }
 
 // ── walk every markdown file ─────────────────────────────────────────────────
