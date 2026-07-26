@@ -472,3 +472,58 @@ describe("formations-bad-value", () => {
     expect(hits).toEqual([]);
   });
 });
+
+// ── every location, not just the first ──
+//
+// The real defect is a copy-paste: RIS uses the bare `pilum_infantry` 28 times, seven
+// each across four triplex_acies formations. Reporting only the first line sends the
+// modder to fix one of twenty-eight, and the engine's own error names only whichever
+// instance it hit most recently — so the tool has to supply the full list.
+describe("formations lint reports all locations", () => {
+  const FORMATION_FILE = [
+    "begin_formation triplex_acies_defend",
+    "\t\tunit_type\t\theavy_pilum_infantry 3.0",
+    "\t\tunit_type\t\tpilum_infantry 1.0",
+    "end_formation",
+    "begin_formation triplex_acies_maneuver",
+    "\t\tunit_type\t\tpilum_infantry 1.0",
+    "\t\tunit_type\t\tspearmen 0.1",
+    "end_formation",
+  ].join("\n");
+
+  it("names every line and every affected formation", () => {
+    const found = [];
+    lintFormations(FORMATION_FILE, (severity, check, file, detail) => found.push({ severity, check, detail }));
+    const w = found.find((x) => x.check === "formations-unknown-unit-type");
+    expect(w).toBeTruthy();
+    // Lines 3 and 6 of the fixture.
+    expect(w.detail).toContain("All 2 uses are at lines 3, 6");
+    expect(w.detail).toContain("triplex_acies_defend");
+    expect(w.detail).toContain("triplex_acies_maneuver");
+    expect(w.detail).toContain("across 2 formations");
+  });
+
+  it("does not add a location list for a single use", () => {
+    // One use is already named by the leading "line N:" — repeating it would be noise.
+    const one = ["begin_formation x", "\t\tunit_type\t\tbogus_token 1.0", "end_formation"].join("\n");
+    const found = [];
+    lintFormations(one, (severity, check, file, detail) => found.push({ check, detail }));
+    const w = found.find((x) => x.check === "formations-unknown-unit-type");
+    expect(w.detail).not.toContain("All 1 use");
+    expect(w.detail).toContain("line 2:");
+  });
+
+  it("still recognises vanilla tokens as valid", () => {
+    // The guard that matters: heavy_pilum_infantry and spearmen are vanilla's own, and
+    // an earlier version of this rule would have condemned 164 such tokens.
+    const clean = [
+      "begin_formation ok",
+      "\t\tunit_type\t\theavy_pilum_infantry 3.0",
+      "\t\tunit_type\t\tspearmen 0.1",
+      "end_formation",
+    ].join("\n");
+    const found = [];
+    lintFormations(clean, (severity, check) => found.push(check));
+    expect(found).not.toContain("formations-unknown-unit-type");
+  });
+});

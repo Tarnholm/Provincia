@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1459",
+    date: "2026-07-26",
+    items: [
+      { type: "improvement", text: "**The `pilum_infantry` lint now names all 28 locations and the four formations they sit in**, instead of only the first line. It is a copy-paste defect — seven uses each in `triplex_acies_defend`, `triplex_acies_defence_to_offense`, `triplex_acies_maneuver` and `triplex_acies_ad_gladio` — so reporting one line sent the modder to fix one of twenty-eight while the other twenty-seven kept firing. The engine is no help here either: its error names only whichever instance it hit most recently." },
+      { type: "improvement", text: "Formation names are read from the enclosing `begin_formation` block, so the scope of the edit is visible before making it. Three tests cover it: the full location list, no redundant list for a single use (the leading `line N:` already says it), and — the one that matters — that vanilla tokens like `heavy_pilum_infantry` and `spearmen` are still accepted, since an early version of this rule would have condemned 164 of them." },
+    ],
+  },
+
+  {
     version: "0.9.1458",
     date: "2026-07-26",
     items: [

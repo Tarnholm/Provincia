@@ -218,16 +218,29 @@ function lintFormationValues(formationsTxt, push) {
 
 function lintFormations(formationsTxt, push) {
   if (!formationsTxt) return { checked: 0, unknown: 0 };
-  const unknown = new Map();   // token -> { count, firstLine }
+  const unknown = new Map();   // token -> { count, firstLine, lines[], formations:Set }
   let checked = 0;
   const lines = formationsTxt.split(/\r?\n/);
+  // Track the formation block each line sits in. A bad token is almost never a one-off:
+  // RIS uses the bare `pilum_infantry` 28 times, seven each across four triplex_acies
+  // formations — a copy-paste that dropped a prefix. Reporting only the first line sends
+  // the modder to fix one of twenty-eight and leaves the rest firing.
+  let currentFormation = null;
+  const formationOf = [];
+  for (let i = 0; i < lines.length; i++) {
+    const fm = /^\s*(?:begin_formation|formation)\s+(\S+)/.exec(lines[i]);
+    if (fm) currentFormation = fm[1];
+    formationOf[i] = currentFormation;
+  }
   for (let i = 0; i < lines.length; i++) {
     const token = parseUnitTypeToken(lines[i]);
     if (!token) continue;
     checked++;
     if (VANILLA_UNIT_TYPES.has(token)) continue;
-    const e = unknown.get(token) || { count: 0, firstLine: i + 1 };
+    const e = unknown.get(token) || { count: 0, firstLine: i + 1, lines: [], formations: new Set() };
     e.count++;
+    e.lines.push(i + 1);
+    if (formationOf[i]) e.formations.add(formationOf[i]);
     unknown.set(token, e);
   }
   for (const [token, e] of [...unknown].sort((a, b) => b[1].count - a[1].count)) {
@@ -245,7 +258,17 @@ function lintFormations(formationsTxt, push) {
     // error and a novel token is a warning, rather than accusing both equally.
     push(near.length ? "error" : "warn", "formations-unknown-unit-type", FORMATIONS_REL,
       `line ${e.firstLine}: unit_type "${token}" (${e.count} use${e.count === 1 ? "" : "s"}) is not a unit class or category the engine knows — ` +
-      `it appears in NONE of the three vanilla descr_formations_ai.txt files, which between them use ${VANILLA_UNIT_TYPES.size} distinct tokens. ` +
+      // Every location, not just the first. This is a copy-paste defect: fixing one
+      // instance leaves the others firing, and the engine's own error names only
+      // whichever it hit most recently. Formation names come from the enclosing block so
+      // the scope of the edit is visible before making it.
+      (e.count > 1
+        ? `All ${e.count} uses are at lines ${e.lines.slice(0, 40).join(", ")}${e.lines.length > 40 ? ", …" : ""}` +
+          (e.formations.size
+            ? `, across ${e.formations.size} formation${e.formations.size === 1 ? "" : "s"} (${[...e.formations].slice(0, 8).join(", ")}${e.formations.size > 8 ? ", …" : ""})`
+            : "") +
+          `. ` : "") +
+      `It appears in NONE of the three vanilla descr_formations_ai.txt files, which between them use ${VANILLA_UNIT_TYPES.size} distinct tokens. ` +
       `The engine logs "Failed to find either a unit class or unit category. Provided: '${token}'" and the block's units get no assigned position.` +
       (near.length
         ? ` Vanilla does use ${near.slice(0, 3).map((v) => `"${v}"`).join(", ")} — a dropped prefix is the likely cause.` +
