@@ -322,22 +322,6 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
         const { regionTerrain, terrainLeads } = require("./aiTerrainAudit.js");
         const dg2 = require("./descrStratGeneral.js");
         const parsers2 = await import("./parsers.js"); // ESM
-        // FAILED CONSOLE COMMANDS — the campaign script's own commands, rejected by
-        // the engine. These arrive in the AI log because the console shares the file,
-        // and they are the only findings here that name a script LINE, so they are
-        // worth resolving even though nothing else in this path is script-related.
-        try {
-          const { auditFailedConsoleCommands } = require("./aiScriptAudit.js");
-          const scriptPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "RIS_Campaign_Script.txt");
-          let campaignScript = null;
-          try { campaignScript = fs.readFileSync(scriptPath, "latin1"); } catch { /* no script → no lead, by design */ }
-          const cl = auditFailedConsoleCommands({ failures: result.failedConsoleCommands, campaignScript });
-          if (cl.length) {
-            result.modLeads = result.modLeads.concat(cl);
-            _log(`[ai-movement] failed console commands: ${cl.length} lead(s) from ${(result.failedConsoleCommands || []).length} distinct command(s)`);
-          }
-        } catch (e) { _log(`[ai-movement] console-command audit skipped: ${e && e.message}`); }
-
         const base = path.join(modDataDir, "world", "maps", "base");
         const groundTga = dg2.tgaToRaw(fs.readFileSync(path.join(base, "map_ground_types.tga")));
         const regionTga = dg2.tgaToRaw(fs.readFileSync(path.join(base, "map_regions.tga")));
@@ -507,6 +491,32 @@ async function runAiMovementAnalysis({ logPath, modDataDir, savePath }, onProgre
         _log(`[ai-movement] ${path.basename(p)} (scripting): ${result.lines.toLocaleString()} lines, ${result.findings.length} engine errors in ${result.ms}ms`);
         return result;
       }
+  // ── LEADS THAT NEED NO SAVE ───────────────────────────────────────────────
+  // Runs on the log-only path as well as the save path. This was inside
+  // _correlateSave, which meant a report WITHOUT a save produced zero leads — and
+  // that is the common case: of the crash reports arriving from testers, most carry
+  // a log and no usable save pairing. On the first real tester extract analysed
+  // (Neep, v7.12) the Lab found the set_building_health block failing 124 times and
+  // reported no leads at all, purely because no save was attached.
+  //
+  // The failed-console-command lead needs only the AI log and the campaign script, so
+  // there was never a reason for it to sit behind a save.
+  function _logOnlyLeads(result, modDataDir, _log) {
+    if (!modDataDir) return;
+    result.modLeads = result.modLeads || [];
+    try {
+      const { auditFailedConsoleCommands } = require("./aiScriptAudit.js");
+      const scriptPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "RIS_Campaign_Script.txt");
+      let campaignScript = null;
+      try { campaignScript = fs.readFileSync(scriptPath, "latin1"); } catch { /* no script -> no lead, by design */ }
+      const cl = auditFailedConsoleCommands({ failures: result.failedConsoleCommands, campaignScript });
+      if (cl.length) {
+        result.modLeads = result.modLeads.concat(cl);
+        _log(`[ai-movement] failed console commands: ${cl.length} lead(s) from ${(result.failedConsoleCommands || []).length} distinct command(s)`);
+      }
+    } catch (e) { _log(`[ai-movement] console-command audit skipped: ${e && e.message}`); }
+  }
+
       const isAiLog = headStr.includes("campaign ai log start") ||
         (headStr.match(/^AI:/gm) || []).length > 5;
       if (isAiLog) {
@@ -532,6 +542,9 @@ async function runAiMovementAnalysis({ logPath, modDataDir, savePath }, onProgre
         result.logBytes = fs.statSync(p).size;
         _prog("save", "cross-referencing the save (the slow part)");
     await _correlateSave(result, savePath, modDataDir, _log, _prog);
+    // AFTER the save pass so it can append to whatever that produced, but outside it
+    // so it still runs when there is no save — which is most tester reports.
+    _logOnlyLeads(result, modDataDir, _log);
         _log(`[ai-movement] ${path.basename(p)} (campaign_ai, ${(result.logBytes / 1048576).toFixed(0)}MB): ${result.lines.toLocaleString()} lines, ${result.findings.length} findings in ${result.ms}ms`);
         return result;
       }

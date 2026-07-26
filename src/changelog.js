@@ -13,6 +13,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1455",
+    date: "2026-07-26",
+    items: [
+      { type: "fix", text: "**A report without a save produced ZERO leads — and that is most tester reports.** The failed-console-command audit needs only the AI log and the campaign script, but it had been written inside the save-correlation path. Analysing the first real tester extract (Neep, v7.12) showed the Lab finding the `set_building_health` block failing **406 times across 5 call sites** and then reporting no leads at all, purely because no save was attached. It now runs on the log-only path too." },
+      { type: "improvement", text: "**Verified against real tester data for the first time, and the parser generalises.** Neep's 108 MB / 1.47M-line campaign log arrived as a 2.33 MB `.xz` and analysed at **100% coverage, 0 unaccounted lines, 0 previously-unseen shapes** — on a Sparta campaign, not the Dummies campaign every pattern was built from. The parsed/tracked-line invariant held exactly (811,187 = 811,187). 2,381 findings from a 19-turn extract." },
+      { type: "feature", text: "**The set_building_health defect reproduces on another machine, so it is mod-wide rather than campaign-specific.** Neep's log shows governmentA ×124, governmentB ×124, governmentC ×105 — the same block at RIS_Campaign_Script.txt:4623-4627 found on the reference campaign. Because his counts differ across the five calls, the lead correctly says \"fails repeatedly\" instead of \"every call fails\": the stronger claim needs equal counts, and the wording degrades on its own." },
+      { type: "fix", text: "**The telemetry reader was silently a month stale.** `read_telemetry.js` identified reports by the literal text \"RIS Crash Reporter\", but the reporter now titles many posts with just a status (\"🔴 SUSPECTED CRASH\") and splits large ones across several messages. The old filter matched none of those, so the script listed reports up to 2026-06-29 while that day's reports sat in the channel unread. It now recognises the status vocabulary too — 586 reports across 600 messages, against the handful it was finding." },
+    ],
+  },
+
+  {
     version: "0.9.1454",
     date: "2026-07-25",
     items: [
