@@ -187,6 +187,15 @@ every direction a player notices — but not uniformly.** The map and the unit r
 enormously. The building tree does not: it grows *sideways* rather than deeper. Those two
 facts shape most of what plays differently.
 
+## Sortable tables
+
+For anything you want to sort or search rather than read, these work on GitHub Pages with
+no server:
+
+- [Unit roster](units.html) — all 1,172 units, sortable by any stat
+- [Regions](regions.html) — all 1,311, sortable and searchable
+- [Factions](factions.html) — sortable by what each starts with
+
 ## Pages
 
 - [Factions overview](factions-overview.md) — who you can play, and how crowded the world is

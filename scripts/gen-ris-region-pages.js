@@ -121,6 +121,33 @@ const BUILDING_NAMES = loadDisplayNames("export_buildings.txt");
 /** Display name for a building level, or the token itself when there is no entry. */
 const bName = (tok) => BUILDING_NAMES[String(tok).toLowerCase()] || null;
 
+// Building icons, produced by gen-ris-building-icons.js which resolves culture fallbacks
+// and level aliases from descr_ui_buildings.txt. Keyed "<culture>/<level>". Absent map =
+// icons have not been generated yet, and the pages simply omit them.
+let ICONS = {};
+try { ICONS = JSON.parse(fs.readFileSync(path.join(OUT, "icons", "index.json"), "utf8")); } catch { /* no icons yet */ }
+// Built from char codes so no patch script can turn the escapes into real control
+// characters inside the literal - which is exactly what broke this file.
+const SPLIT_EOL = new RegExp(String.fromCharCode(13) + '?' + String.fromCharCode(10));
+const FACTION_CULTURE = (() => {
+  const txt = rd("descr_sm_factions.txt") || "";
+  const out = {};
+  let cur = null;
+  for (const raw of txt.split(SPLIT_EOL)) {
+    const line = raw.replace(/;.*$/, "");
+    let m = /^\s*"([a-z0-9_]+)"\s*:\s*$/.exec(line);
+    if (m && m[1] !== "factions") { cur = m[1].toLowerCase(); continue; }
+    m = /"culture"\s*:\s*"([a-z_]+)"/.exec(line);
+    if (m && cur) { out[cur] = m[1].toLowerCase(); cur = null; }
+  }
+  return out;
+})();
+const iconFor = (faction, level) => {
+  const cul = FACTION_CULTURE[String(faction).toLowerCase()];
+  if (!cul) return null;
+  return ICONS[`${cul}/${String(level).toLowerCase()}`] || null;
+};
+
 const FARM_NOTE = "Farm level sets the region's agricultural base. NOTE Provincia's own " +
   "measurements found RIS cancels farm fertility almost exactly, so a higher number here " +
   "does not translate into faster growth the way it does in vanilla.";
@@ -180,7 +207,7 @@ ${held ? `**Held at campaign start by:** ${hasPage(held.faction) ? `[${facName(h
 ${sect("Trade resources", g.trade)}${sect("Farm level", g.farm, FARM_NOTE)}${sect("Terrain", g.terrain)}${sect("Port", g.port)}${sect("Religion", g.religion)}${sect("Recruitment zones", g.recruitment)}${sect("Cultural homeland", g.culture)}${sect("Geography and gating", g.geography)}${sect("Other tags", g.other)}${r.tags.length ? "" : "_This region carries no tags._\n\n"}## What is already built
 
 ${held && (held.buildings || []).length
-  ? `| Building chain | Level |\n|---|---|\n${held.buildings.map((b) => `| ${b.chain.replace(/_/g, " ")} | ${bName(b.level) ? `**${bName(b.level)}** <br>\`${b.level}\`` : `\`${b.level}\``} |`).join("\n")}`
+  ? `| | Building chain | Level |\n|:-:|---|---|\n${held.buildings.map((b) => `| ${(() => { const ic = iconFor(held.faction, b.level); return ic ? `<img src="../${ic}" alt="" width="32">` : ""; })()} | ${b.chain.replace(/_/g, " ")} | ${bName(b.level) ? `**${bName(b.level)}** <br>\`${b.level}\`` : `\`${b.level}\``} |`).join("\n")}`
   : held ? "_Nothing is built here at the campaign start._" : "_Independent regions have no starting buildings recorded in the campaign file._"}
 `;
 

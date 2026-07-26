@@ -214,35 +214,80 @@ function loadMapPixels() {
 
 function renderFactionMap(mapRaw, regionColours, regions, scale) {
   const { width, height, raw, bpp, desc } = mapRaw;
-  const want = new Set(regions.map((r) => regionColours[r]).filter(Boolean));
+  const want = new Set(regions.map((r) => regionColours[r.region] || regionColours[r]).filter(Boolean));
+  const capitals = new Set(regions.filter((r) => r && r.capital).map((r) => regionColours[r.region]).filter(Boolean));
+  const bottomUp = !(desc & 0x20);
+
+  // Read the source pixel at (x, y) as an "r,g,b" key. Stored BGR, rows bottom-up
+  // unless bit 5 of the descriptor is set - both traps already cost a blank map once.
+  const keyAt = (x, y) => {
+    if (x < 0 || y < 0 || x >= width || y >= height) return null;
+    const sy = bottomUp ? height - 1 - y : y;
+    const si = (sy * width + x) * bpp;
+    return `${raw[si + 2]},${raw[si + 1]},${raw[si]}`;
+  };
+
   const ow = Math.max(1, Math.floor(width / scale)), oh = Math.max(1, Math.floor(height / scale));
   const out = Buffer.alloc(ow * oh * 3);
-  // TGA rows run bottom-to-top unless bit 5 of the descriptor is set, so the image needs
-  // flipping or every map comes out upside down.
-  const bottomUp = !(desc & 0x20);
+  const put = (x, y, r, g, b) => {
+    if (x < 0 || y < 0 || x >= ow || y >= oh) return;
+    const o = (y * ow + x) * 3;
+    out[o] = r; out[o + 1] = g; out[o + 2] = b;
+  };
+
+  // Pass 1: land, sea, the faction's own regions, and REGION BOUNDARIES. A pixel whose
+  // right or lower neighbour belongs to a different region is an edge, which is what makes
+  // individual regions visible inside a faction's territory instead of one red blob.
+  let painted = 0;
+  const sumX = new Map(), sumY = new Map(), count = new Map();
   for (let y = 0; y < oh; y++) {
     for (let x = 0; x < ow; x++) {
-      const sx = Math.min(width - 1, x * scale);
-      let sy = Math.min(height - 1, y * scale);
-      if (bottomUp) sy = height - 1 - sy;
-      const si = (sy * width + sx) * bpp;
-      // Stored BGR, while descr_regions states colours as R G B — matching them in the
-      // wrong order finds nothing at all, which is what the first attempt did.
-      const b = raw[si], g = raw[si + 1], r = raw[si + 2];
-      const key = `${r},${g},${b}`;
-      const o = (y * ow + x) * 3;
-      const isSea = r === 0 && g === 0 && b === 0;
-      if (want.has(key)) { out[o] = 0xd9; out[o + 1] = 0x4f; out[o + 2] = 0x3f; }        // the faction
-      else if (isSea) { out[o] = 0x1b; out[o + 1] = 0x28; out[o + 2] = 0x38; }           // water
-      else { out[o] = 0x3a; out[o + 1] = 0x3a; out[o + 2] = 0x36; }                      // other land
+      const sx = Math.min(width - 1, x * scale), sy = Math.min(height - 1, y * scale);
+      const k = keyAt(sx, sy);
+      const isSea = k === "0,0,0";
+      const mine = want.has(k);
+      const edge = !isSea && (k !== keyAt(sx + scale, sy) || k !== keyAt(sx, sy + scale));
+
+      if (edge) put(x, y, 0x11, 0x11, 0x10);                       // region outline
+      else if (mine) { put(x, y, 0xc8, 0x3c, 0x30); painted++; }    // the faction
+      else if (isSea) put(x, y, 0x18, 0x25, 0x33);                  // water
+      else put(x, y, 0x44, 0x44, 0x3e);                             // other land
+
+      // Centroid accumulation, for settlement markers.
+      if (mine) {
+        sumX.set(k, (sumX.get(k) || 0) + x);
+        sumY.set(k, (sumY.get(k) || 0) + y);
+        count.set(k, (count.get(k) || 0) + 1);
+      }
     }
   }
-  // How many of the faction's regions actually appear in the image. A region whose colour
-  // key is absent from the map would silently not be drawn, so this is counted, and the
-  // caller skips the image entirely rather than publishing an empty map.
-  let painted = 0;
-  for (let i = 0; i < out.length; i += 3) if (out[i] === 0xd9) { painted++; }
-  return { buf: png(ow, oh, out), width: ow, height: oh, matched: want.size, painted };
+
+  // Pass 2: a MARKER at each owned region's centroid, computed from the region's own
+  // pixels so it always lands inside the territory - no coordinates needed from the
+  // campaign file. Capitals get a larger ringed marker.
+  let markers = 0;
+  for (const [k, n] of count) {
+    if (n < 4) continue;                                  // too small to mark legibly
+    const cx = Math.round(sumX.get(k) / n), cy = Math.round(sumY.get(k) / n);
+    const isCap = capitals.has(k);
+    const r = isCap ? 3 : 2;
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (dx * dx + dy * dy > r * r) continue;
+        put(cx + dx, cy + dy, 0xff, 0xf2, 0xd0);          // settlement dot
+      }
+    }
+    if (isCap) {
+      // A ring one pixel out, so the capital reads differently at a glance.
+      for (let a = 0; a < 360; a += 12) {
+        const rad = (a * Math.PI) / 180;
+        put(cx + Math.round(Math.cos(rad) * (r + 2)), cy + Math.round(Math.sin(rad) * (r + 2)), 0x20, 0x20, 0x1c);
+      }
+    }
+    markers++;
+  }
+
+  return { buf: png(ow, oh, out), width: ow, height: oh, matched: want.size, painted, markers };
 }
 
 // ── build ────────────────────────────────────────────────────────────────────
@@ -253,7 +298,7 @@ const chars = loadCharacters();
 const recruitRows = loadRecruitment();
 const regionColours = loadRegionColours();
 const mapRaw = NO_MAPS ? null : loadMapPixels();
-const SCALE = 3;
+const SCALE = 1;   // full 1020x700; boundaries and markers need the detail
 
 console.log(`intro texts ${Object.keys(intros).length} · characters ${Object.values(chars).reduce((a, v) => a + v.length, 0)} · recruit lines ${recruitRows.length} · region colours ${Object.keys(regionColours).length} · map ${mapRaw ? mapRaw.width + "x" + mapRaw.height : "unavailable"}`);
 
@@ -278,7 +323,7 @@ for (const f of factions) {
 
   let mapLine = "";
   if (mapRaw && setts.length) {
-    const m = renderFactionMap(mapRaw, regionColours, setts.map((s) => s.region), SCALE);
+    const m = renderFactionMap(mapRaw, regionColours, setts, SCALE);
     if (m && m.painted > 0) {
       fs.writeFileSync(path.join(OUT, "maps", `${f}.png`), m.buf);
       mapsWritten++;
