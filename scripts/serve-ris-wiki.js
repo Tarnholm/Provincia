@@ -232,9 +232,10 @@ nav.side a{display:block;color:var(--fg);text-decoration:none;padding:.2rem .45r
   border-radius:6px;line-height:1.4}
 nav.side a:hover{background:var(--acc-soft);color:var(--acc)}
 nav.side a.on{background:var(--acc-soft);color:var(--acc);font-weight:600}
-/* Use the width that is there. The cap is generous rather than absent so a 4K monitor does
-   not produce one absurdly wide column on a page that has only a single section. */
-main{min-width:0;padding:1.6rem 2.2rem 5rem;max-width:132rem;margin:0 auto;width:100%}
+/* Every page uses the full width of the window. No max-width: a cap here left the right-hand
+   side of a wide monitor empty, which is the thing being fixed. Readability is handled by
+   splitting content into columns below rather than by throwing the space away. */
+main{min-width:0;padding:1.6rem 2.2rem 5rem;width:100%}
 
 /* Sections flow into as many columns as the viewport can take at a readable width. The
    browser decides the count from minmax(), so this responds to the reader's own resolution
@@ -244,7 +245,10 @@ main{min-width:0;padding:1.6rem 2.2rem 5rem;max-width:132rem;margin:0 auto;width
   gap:0 2.8rem;align-items:start}
 .sec{min-width:0}
 .sec>h2:first-child{margin-top:1.2rem}
-.lede{max-width:74ch}
+.lede{max-width:none}
+/* Prose paragraphs stay readable without narrowing the page: the line length is limited on
+   the paragraph, not on the container, so tables and images beside them still get the width. */
+.lede>p,.sec>p{max-width:104ch}
 /* A section holding a wide table is allowed to take the whole row rather than being squeezed
    — the roster and building tables have more columns than a half-width column can show. */
 .sec.wide{grid-column:1/-1}

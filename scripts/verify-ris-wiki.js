@@ -157,7 +157,13 @@ note(`images: ${images.toLocaleString("en-US")} checked, ${badImages} broken`);
 // A generator that silently produced almost nothing should fail here, not be committed.
 {
   const count = (sub) => { try { return fs.readdirSync(path.join(OUT, sub)).length; } catch { return 0; } };
-  const floors = { factions: 200, regions: 1000, units: 1000, cards: 900, maps: 150 };
+  // buildings/ and icons/ were missing from this list, so the building generators could have
+  // produced nothing and the floor check would have passed in silence while reporting on
+  // everything else.
+  const floors = {
+    factions: 200, regions: 1000, units: 1000, cards: 900, maps: 150,
+    buildings: 60, icons: 200,
+  };
   for (const [dir, min] of Object.entries(floors)) {
     const n = count(dir);
     if (n < min) fail(`TOO FEW in ${dir}/: ${n} (expected at least ${min}) — did that generator fail?`);

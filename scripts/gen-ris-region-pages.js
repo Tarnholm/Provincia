@@ -144,6 +144,20 @@ const FACTION_CULTURE = (() => {
   }
   return out;
 })();
+// Each building chain has its own page (gen-ris-building-pages.js writes one per chain, named
+// for the chain's internal token). Region pages listed the chain as plain text, so a reader
+// looking at what a settlement has built had no way through to what those buildings actually
+// do — the pages existed but nothing pointed at them.
+const buildingPages = (() => {
+  try { return new Set(fs.readdirSync(path.join(OUT, "buildings")).filter((f) => f.endsWith(".md")).map((f) => f.replace(/\.md$/, ""))); }
+  catch { return new Set(); }
+})();
+const chainLink = (chain) => {
+  const c = String(chain);
+  const label = c.replace(/_/g, " ");
+  return buildingPages.has(c) ? `[${label}](../buildings/${c}.md)` : label;
+};
+
 const iconFor = (faction, level) => {
   const cul = FACTION_CULTURE[String(faction).toLowerCase()];
   if (!cul) return null;
@@ -361,7 +375,7 @@ ${rows.length ? `| | |\n|---|---|\n${rows.join("\n")}` : "_This region carries n
 ## What is already built
 
 ${held && (held.buildings || []).length
-  ? `| | Building chain | Level |\n|:-:|---|---|\n${held.buildings.map((b) => `| ${(() => { const ic = iconFor(held.faction, b.level); return ic ? `<img src="../${ic}" alt="" width="32">` : ""; })()} | ${b.chain.replace(/_/g, " ")} | ${bName(b.level) ? `**${bName(b.level)}** <br>\`${b.level}\`` : `\`${b.level}\``} |`).join("\n")}`
+  ? `| | Building chain | Level |\n|:-:|---|---|\n${held.buildings.map((b) => `| ${(() => { const ic = iconFor(held.faction, b.level); return ic ? `<img src="../${ic}" alt="" width="32">` : ""; })()} | ${chainLink(b.chain)} | ${bName(b.level) ? `**${bName(b.level)}** <br>\`${b.level}\`` : `\`${b.level}\``} |`).join("\n")}`
   : held ? "_Nothing is built here at the campaign start._" : "_Independent regions have no starting buildings recorded in the campaign file._"}
 `;
 

@@ -360,6 +360,16 @@ const unitLink = (type) => {
   const s = unitSlug.get(String(type).toLowerCase());
   return s && unitPages.has(s) ? `[${type}](../units/${s}.md)` : type;
 };
+// Building chain pages are named for the chain's internal token, so a built level links
+// through to the chain it belongs to — what it does, what it costs, what it upgrades into.
+const buildingPages = (() => {
+  try { return new Set(fs.readdirSync(path.join(OUT, "buildings")).filter((f) => f.endsWith(".md")).map((f) => f.replace(/\.md$/, ""))); }
+  catch { return new Set(); }
+})();
+const buildingLink = (b) => {
+  const label = bName(b.level) || `\`${b.level}\``;
+  return b.chain && buildingPages.has(String(b.chain)) ? `[${label}](../buildings/${b.chain}.md)` : label;
+};
 
 const factions = Object.keys(strat)
   .filter((f) => !NON_PLAYER.has(f))
@@ -420,7 +430,7 @@ ${setts.map((s) => `| ${regionLink(s.region)}${s.capital ? " **(capital)**" : ""
 <details>
 <summary>What is already built in each settlement</summary>
 
-${setts.map((s) => `**${regionLink(s.region)}** — ${(s.buildings || []).length ? (s.buildings || []).map((b) => bName(b.level) || `\`${b.level}\``).join(", ") : "_nothing built_"}`).join("\n\n")}
+${setts.map((s) => `**${regionLink(s.region)}** — ${(s.buildings || []).length ? (s.buildings || []).map((b) => buildingLink(b)).join(", ") : "_nothing built_"}`).join("\n\n")}
 
 </details>
 ` : "_This faction holds no settlements at the campaign start._"}
