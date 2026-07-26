@@ -7,7 +7,7 @@
 // a world 51 turns further on. That was only noticed because two sources disagreed
 // about the rebel faction's size and both numbers survived scrutiny.
 import { describe, it, expect } from "vitest";
-import { logStartsAtCampaignStart, logSaveAlignment, sameCampaignCheck, provenanceLeads } from "./aiProvenance.js";
+import { logStartsAtCampaignStart, logSaveAlignment, sameCampaignCheck, provenanceLeads, parseCampaignStartYear } from "./aiProvenance.js";
 
 // Shaped like the analyser's real factionHealth output.
 const health = (m) => Object.fromEntries(Object.entries(m).map(([f, n]) => [f, { firstSettlements: n }]));
@@ -169,5 +169,68 @@ describe("sameCampaignCheck", () => {
   it("gives no verdict without both sides", () => {
     expect(sameCampaignCheck({ factionHealth: fh({ a: [1, 1] }) })).toBeNull();
     expect(sameCampaignCheck({ saveCounts: { a: 1 } })).toBeNull();
+  });
+});
+
+describe("campaign start year anchoring", () => {
+  // The crash reporter ships a TAIL of the campaign log (recent turn blocks only), so a
+  // tester's extract NEVER opens at turn 1. Anchoring on "the log starts at the campaign
+  // start" therefore fails for every real report: on the first one analysed the check
+  // could only answer "unknown", and it reported a save year 14 years wrong because it
+  // assumed the log's first year was the campaign's. descr_strat states the start year
+  // outright, which removes the guess entirely.
+  it("reads start_date out of descr_strat", () => {
+    // Built with String.fromCharCode so no editor or patch script can turn the
+    // escape sequences into real whitespace - which is exactly what happened while
+    // writing this test, producing an unterminated string literal.
+    const TAB = String.fromCharCode(9), NL = String.fromCharCode(10);
+    const strat = "campaign" + TAB + "imperial_campaign" + NL
+      + "start_date" + TAB + "-270 summer" + NL
+      + "end_date" + TAB + "14 summer";
+    expect(parseCampaignStartYear(strat)).toBe(-270);
+    expect(parseCampaignStartYear("start_date  -270 summer")).toBe(-270);
+    expect(parseCampaignStartYear("no such line")).toBeNull();
+    expect(parseCampaignStartYear(null)).toBeNull();
+  });
+
+  it("places a TAIL extract correctly against the save", () => {
+    // The real numbers from the first full tester report (Leo, Bithynia): the log covers
+    // -256..-254 and the save is turn 69. At 4 turns/year from -270 that is year -253 —
+    // one year past the log's end, i.e. the same period. Without the anchor this same
+    // input yields "unknown" and a saveYear of -239.
+    const a = logSaveAlignment({ firstYear: -256, lastYear: -254, saveTurn: 69, campaignStartYear: -270 });
+    expect(a.anchoredBy).toBe("descr_strat start_date");
+    expect(a.saveYear).toBe(-253);
+    expect(a.overlaps).toBe(true);
+    expect(a.confidence).toBe("good");
+    expect(provenanceLeads(a)).toHaveLength(0);
+  });
+
+  it("still flags a save genuinely outside a tail extract's span", () => {
+    // The anchor must not turn the check into a rubber stamp: a save far past the tail
+    // is still a bad pairing.
+    const a = logSaveAlignment({ firstYear: -256, lastYear: -254, saveTurn: 200, campaignStartYear: -270 });
+    expect(a.overlaps).toBe(false);
+    expect(a.confidence).toBe("poor");
+    expect(provenanceLeads(a)).toHaveLength(1);
+  });
+
+  it("flags a save from BEFORE the log's window", () => {
+    const a = logSaveAlignment({ firstYear: -240, lastYear: -238, saveTurn: 5, campaignStartYear: -270 });
+    expect(a.overlaps).toBe(false);
+    expect(a.note).toMatch(/before the log begins/);
+  });
+
+  it("falls back to the turn-1 anchor when descr_strat is unavailable", () => {
+    const a = logSaveAlignment({ firstYear: -270, lastYear: -245, saveTurn: 102, startsAtTurn1: true });
+    expect(a.anchoredBy).toBe("log opens at turn 1");
+    expect(a.overlaps).toBe(true);
+  });
+
+  it("refuses a verdict with neither anchor", () => {
+    const a = logSaveAlignment({ firstYear: -256, lastYear: -254, saveTurn: 69, startsAtTurn1: false });
+    expect(a.anchoredBy).toBeNull();
+    expect(a.saveYear).toBeNull();   // never a computed year off a guessed anchor
+    expect(a.confidence).toBe("unknown");
   });
 });

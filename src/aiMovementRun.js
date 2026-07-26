@@ -178,7 +178,18 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
       // qualifies all of it. On the reference data the log covers turns 1-51 and the
       // save is turn 102 — the world had as long again to change as the log observed.
       try {
-        const { logStartsAtCampaignStart, logSaveAlignment, sameCampaignCheck, provenanceLeads } = require("./aiProvenance.js");
+        const { logStartsAtCampaignStart, logSaveAlignment, sameCampaignCheck, provenanceLeads, parseCampaignStartYear } = require("./aiProvenance.js");
+        // descr_strat states the campaign's start year outright. With it, a turn number
+        // converts to a year directly and the log needs no turn-1 anchor — which matters
+        // because the crash reporter ships a TAIL of the log, so a tester's extract never
+        // opens at turn 1. Without this, the first real tester report could only answer
+        // "unknown" and reported a save year 14 years wrong.
+        let campaignStartYear = null;
+        try {
+          campaignStartYear = parseCampaignStartYear(
+            fs.readFileSync(path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"), "latin1")
+          );
+        } catch { /* fall back to the turn-1 anchor */ }
         // Settlements per faction as the SAVE has them, for the same-campaign test.
         const saveCounts = {};
         for (const fx of Object.values(facts.ownerByCity || {})) {
@@ -195,6 +206,7 @@ async function _correlateSave(result, savePath, modDataDir, _log, _prog) {
           lastYear: result.lastYear,
           saveTurn: save && save.turn,
           startsAtTurn1: !!(startsAt && startsAt.startsAtTurn1),
+          campaignStartYear,
         });
         if (alignment) {
           result.provenance = { ...alignment, opening: startsAt, sameCampaign: same };

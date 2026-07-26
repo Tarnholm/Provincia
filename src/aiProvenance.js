@@ -93,21 +93,66 @@ const DEFAULT_TURNS_PER_YEAR = 4;
  * @param {boolean} a.startsAtTurn1
  * @param {number} [a.turnsPerYear]  campaign timescale; RIS uses 4
  */
-function logSaveAlignment({ firstYear = null, lastYear = null, saveTurn = 0, startsAtTurn1 = false, turnsPerYear = DEFAULT_TURNS_PER_YEAR } = {}) {
+/**
+ * The campaign's start year, from descr_strat's own `start_date` line.
+ *
+ * This removes the need to guess. Turn N's year is startYear + (N-1)/turnsPerYear, and
+ * with that the log's years can be compared to the save's turn directly — no anchoring
+ * required. It matters because the crash reporter ships a TAIL of the log (recent turn
+ * blocks only), so a tester's extract never opens at turn 1: on the first real one
+ * analysed, the check could only answer "unknown" and reported a saveYear 14 years wrong,
+ * having assumed the log's first year was the campaign's.
+ */
+function parseCampaignStartYear(descrStratText) {
+  if (!descrStratText) return null;
+  const m = /^\s*start_date\s+(-?\d+)/m.exec(String(descrStratText));
+  return m ? +m[1] : null;
+}
+
+function logSaveAlignment({ firstYear = null, lastYear = null, saveTurn = 0, startsAtTurn1 = false, turnsPerYear = DEFAULT_TURNS_PER_YEAR, campaignStartYear = null } = {}) {
   if (firstYear == null || lastYear == null || !saveTurn || !turnsPerYear) return null;
 
   const logYears = lastYear - firstYear + 1;
-  // Turn 1 is the first turn of the first year, so turn T sits (T-1)/tpy years in.
+  // Prefer descr_strat's start_date. Falling back to the log's own first year is only
+  // valid when the log begins at turn 1, which a reporter extract never does.
+  const anchorYear = campaignStartYear != null ? campaignStartYear : firstYear;
   const saveYearsIn = (saveTurn - 1) / turnsPerYear;
-  const saveYear = firstYear + saveYearsIn;
+  const saveYear = anchorYear + saveYearsIn;
+  const anchoredBy = campaignStartYear != null ? "descr_strat start_date" : (startsAtTurn1 ? "log opens at turn 1" : null);
 
-  if (!startsAtTurn1) {
+  if (!anchoredBy) {
     return {
-      logYears, saveTurn, turnsPerYear, saveYear: +saveYear.toFixed(1),
+      logYears, saveTurn, turnsPerYear, saveYear: null, anchoredBy: null,
       gapYears: null, overlaps: false, confidence: "unknown",
-      note: `This log spans ${logYears} year(s) (${firstYear} to ${lastYear}) but its opening state ` +
-            `does not match the campaign's starting ownership, so which years it covers relative to ` +
-            `turn ${saveTurn} cannot be established. Treat any finding that pairs the two as unverified.`,
+      note: `This log spans ${logYears} year(s) (${firstYear} to ${lastYear}), but without ` +
+            `descr_strat's start_date — and with an opening state that does not match the campaign's ` +
+            `starting ownership — the year of turn ${saveTurn} cannot be established. ` +
+            `Treat any finding that pairs the two as unverified.`,
+    };
+  }
+
+  // With a real anchor the question is simply whether the save's year falls inside the
+  // years the log covers, which works for a tail extract as well as a full log.
+  if (campaignStartYear != null) {
+    const before = saveYear < firstYear - 1 / turnsPerYear;
+    const after = saveYear > lastYear + 1;
+    const gapYears = after ? +(saveYear - lastYear).toFixed(2) : (before ? +(saveYear - firstYear).toFixed(2) : 0);
+    const inside = !before && !after;
+    const severe = Math.abs(gapYears) >= Math.max(2, logYears);
+    return {
+      logYears, saveTurn, turnsPerYear, saveYear: +saveYear.toFixed(1), anchoredBy,
+      gapYears, overlaps: inside,
+      confidence: inside ? "good" : (severe ? "poor" : "fair"),
+      note: inside
+        ? `The log covers ${firstYear} to ${lastYear} and turn ${saveTurn} falls at year ` +
+          `${saveYear.toFixed(0)} (campaign starts ${campaignStartYear}, ${turnsPerYear} turns/year) — ` +
+          `inside that span. Findings that pair the two are comparing the same period.`
+        : `The log covers ${firstYear} to ${lastYear}; turn ${saveTurn} is year ${saveYear.toFixed(0)} ` +
+          `(campaign starts ${campaignStartYear}, ${turnsPerYear} turns/year), ${Math.abs(gapYears)} year(s) ` +
+          `${after ? "after the log ends" : "before the log begins"}` +
+          (severe
+            ? ` — far enough that an army the log describes has had ample time to move, die or be re-tasked, so "it never arrived" is not established by this save.`
+            : `. Close enough that most verdicts hold, but an order given near the edge of the log may simply still be in progress.`),
     };
   }
 
@@ -115,7 +160,7 @@ function logSaveAlignment({ firstYear = null, lastYear = null, saveTurn = 0, sta
   if (saveYear <= lastYear + 1 / turnsPerYear) {
     const gapYears = +Math.max(0, saveYear - lastYear).toFixed(2);
     return {
-      logYears, saveTurn, turnsPerYear, saveYear: +saveYear.toFixed(1), gapYears,
+      logYears, saveTurn, turnsPerYear, saveYear: +saveYear.toFixed(1), anchoredBy, gapYears,
       overlaps: true, confidence: "good",
       note: `The log covers ${firstYear} to ${lastYear} (${logYears} years, about ` +
             `${logYears * turnsPerYear} turns at ${turnsPerYear} turns/year) and turn ${saveTurn} ` +
@@ -127,7 +172,7 @@ function logSaveAlignment({ firstYear = null, lastYear = null, saveTurn = 0, sta
   const gapYears = +(saveYear - lastYear).toFixed(2);
   const severe = gapYears >= logYears;
   return {
-    logYears, saveTurn, turnsPerYear, saveYear: +saveYear.toFixed(1), gapYears,
+    logYears, saveTurn, turnsPerYear, saveYear: +saveYear.toFixed(1), anchoredBy, gapYears,
     overlaps: false, confidence: severe ? "poor" : "fair",
     note: `The log ends at year ${lastYear}; turn ${saveTurn} is year ${saveYear.toFixed(0)}, ` +
           `${gapYears} year(s) later (${Math.round(gapYears * turnsPerYear)} turns at ` +
@@ -253,4 +298,4 @@ function provenanceLeads(alignment, sameCampaign = null) {
   }]);
 }
 
-module.exports = { logStartsAtCampaignStart, logSaveAlignment, sameCampaignCheck, provenanceLeads };
+module.exports = { logStartsAtCampaignStart, logSaveAlignment, sameCampaignCheck, provenanceLeads, parseCampaignStartYear };
