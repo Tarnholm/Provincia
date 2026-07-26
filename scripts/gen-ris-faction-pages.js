@@ -328,7 +328,7 @@ ${units.map(([u, conds]) => `| ${u} | ${conds.length ? conds.map((c) => `\`${c}\
 index.sort((a, b) => b.setts - a.setts || a.display.localeCompare(b.display));
 const idx = `# All factions
 
-[← wiki index](README.md)
+[← wiki index](README.md) · [factions overview](factions-overview.md)
 
 ${index.length} playable factions, each with its own page. Sorted by how much territory they
 start with.

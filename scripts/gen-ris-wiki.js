@@ -189,9 +189,10 @@ facts shape most of what plays differently.
 
 ## Pages
 
-- [Factions](factions.md) — who you can play, and how crowded the world is
+- [Factions overview](factions-overview.md) — who you can play, and how crowded the world is
 - [The map](map-and-regions.md) — regions, settlements, and what the density changes
-- [Units](units.md) — roster size and cultural variety
+- [Units overview](units-overview.md) — how the roster compares with vanilla
+- [All units](units.md) — the full roster with stats and cards, and a page per unit
 - [Buildings and economy](buildings-and-economy.md) — a wider, shallower tree
 
 ## About these pages
@@ -203,7 +204,7 @@ usually because two independent counts of the same thing disagreed, which is a r
 fix the generator rather than to trust a number.
 `;
 
-  pages["factions.md"] = `# Factions
+  pages["factions-overview.md"] = `# Factions
 
 [← back to index](README.md)
 
@@ -239,8 +240,9 @@ differently in a way vanilla's broad groupings do not capture.
 
 ## One thing to be aware of
 
-The figure above is the stated design: every faction except
-${code(r.nonPlayerFound, " and ")}. The campaign file has not caught up with it yet — it
+**Every faction is playable except ${code(r.nonPlayerFound, ", ")}** — the rebel/slave
+pool, the Roman senate, and a test faction. That is ${n(r.playableByDesign)} of the
+${n(r.factions)} defined. The campaign file has not caught up with it yet — it
 currently declares **${n(r.blockPlayable)}** playable and **${n(r.blockNonplayable)}**
 non-playable. Those ${n(r.blockNonplayable)} entries are the gap between the file and the
 intent, so if you cannot select a faction you expected to, that is why.
@@ -280,7 +282,7 @@ peacefully — growth means taking something from someone.
 > and which regions are hardest to reach.
 `;
 
-  pages["units.md"] = `# Units
+  pages["units-overview.md"] = `# Units
 
 [← back to index](README.md)
 
@@ -369,6 +371,18 @@ for (const k of ["playableListed", "playableByDesign", "blockPlayable", "blockNo
 const pages = build(v, r);
 if (DRY) { console.log(`\n(dry run — ${Object.keys(pages).length} pages not written)`); process.exit(0); }
 
+// GUARD: two generators writing the same filename silently loses one of them. That
+// happened twice - factions.md and units.md were both produced here AND by the
+// per-faction / per-unit generators, which run later, so these overview pages were
+// overwritten and never published. Anything owned elsewhere must not be written here.
+const OWNED_ELSEWHERE = new Set(["factions.md", "units.md", "regions.md"]);
+for (const name of Object.keys(pages)) {
+  if (OWNED_ELSEWHERE.has(name)) {
+    console.error(`REFUSING to write ${name}: another generator owns that filename.`);
+    console.error("Rename this page (e.g. <topic>-overview.md) so neither clobbers the other.");
+    process.exit(3);
+  }
+}
 fs.mkdirSync(OUT, { recursive: true });
 for (const [name, body] of Object.entries(pages)) {
   fs.writeFileSync(path.join(OUT, name), body, "utf8");

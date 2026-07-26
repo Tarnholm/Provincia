@@ -128,7 +128,15 @@ console.log(`units in the EDU: ${units.length.toLocaleString("en-US")} · with a
 fs.mkdirSync(path.join(OUT, "cards"), { recursive: true });
 let written = 0, bytes = 0, missing = 0, failed = 0;
 const missingNames = [];
-const todo = LIMIT ? units.slice(0, LIMIT) : units;
+// One card per DICTIONARY, not per type: `sardinian archers`, `aor sardinian archers`
+// and `horde sardinian archers` are one unit and shared one source image, so keying on
+// type wrote the same picture three times under different names (~500 duplicates).
+const seen = new Set();
+const unique = units.filter((u) => {
+  if (!u.dict || seen.has(u.dict)) return false;
+  seen.add(u.dict); return true;
+});
+const todo = LIMIT ? unique.slice(0, LIMIT) : unique;
 
 for (const u of todo) {
   if (!u.dict) { missing++; continue; }
@@ -137,7 +145,7 @@ for (const u of todo) {
   try {
     const r = convert(src, SCALE);
     if (!r) { failed++; continue; }
-    fs.writeFileSync(path.join(OUT, "cards", `${slug(u.type)}.png`), r.buf);
+    fs.writeFileSync(path.join(OUT, "cards", `${slug(u.dict)}.png`), r.buf);
     written++; bytes += r.buf.length;
   } catch { failed++; }
 }

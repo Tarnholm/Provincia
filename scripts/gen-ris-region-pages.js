@@ -143,6 +143,11 @@ try {
   const t = fs.readFileSync(path.join(RIS, "text", "campaign_descriptions.txt"), "utf16le");
   for (const m of t.matchAll(/\{IMPERIAL_CAMPAIGN_([A-Z0-9_]+)_TITLE\}([^\r\n]*)/g)) display[m[1].toLowerCase()] = m[2].trim();
 } catch { /* fall back to tokens */ }
+// The faction generator skips the three non-player factions, so they have no page and
+// must not be linked. ~1,000 regions are held by `slave` at the campaign start, which is
+// where the 1,006 broken links came from.
+const NO_PAGE = new Set(["slave", "roman_senate", "dummies"]);
+const hasPage = (f) => !NO_PAGE.has(String(f).toLowerCase());
 const facName = (f) => display[String(f).toLowerCase()] || String(f).replace(/_/g, " ");
 
 const list = ONLY.length ? regions.filter((r) => ONLY.includes(r.region)) : regions;
@@ -166,7 +171,7 @@ for (const r of list) {
 [← all regions](../regions.md) · [wiki index](../README.md)
 
 **Settlement:** ${r.settlement}
-${held ? `**Held at campaign start by:** [${facName(held.faction)}](../factions/${held.faction}.md)${held.capital ? " — **their capital**" : ""}
+${held ? `**Held at campaign start by:** ${hasPage(held.faction) ? `[${facName(held.faction)}](../factions/${held.faction}.md)` : facName(held.faction)}${held.capital ? " — **their capital**" : ""}
 **Size:** ${String(held.level || "").replace(/_/g, " ")} · **Population:** ${held.pop != null ? held.pop.toLocaleString("en-US") : "unknown"}` : `**Held at campaign start by:** nobody — this region begins independent.
 **If it revolts, the rebels are:** ${r.rebels}`}
 
@@ -193,7 +198,7 @@ begin independent.
 
 | Region | Settlement | Held by | Trade resources | Buildings |
 |---|---|---|---:|---:|
-${index.map((e) => `| [${e.region}](regions/${e.region}.md) | ${e.settlement} | ${e.owner ? `[${e.owner}](factions/${e.ownerTok}.md)` : "_independent_"} | ${e.trade} | ${e.builds} |`).join("\n")}
+${index.map((e) => `| [${e.region}](regions/${e.region}.md) | ${e.settlement} | ${e.owner ? (hasPage(e.ownerTok) ? `[${e.owner}](factions/${e.ownerTok}.md)` : e.owner) : "_independent_"} | ${e.trade} | ${e.builds} |`).join("\n")}
 `;
 fs.writeFileSync(path.join(OUT, "regions.md"), idx, "utf8");
 

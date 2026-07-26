@@ -126,7 +126,44 @@ for (const b of blocks) {
   });
 }
 
-const list = ONLY.length ? rows.filter((r) => ONLY.includes(r.type.toLowerCase())) : rows;
+// ── MERGE AOR / HORDE VARIANTS ───────────────────────────────────────────────
+// Many "units" are the same unit reached a different way. `sardinian archers`,
+// `aor sardinian archers` and `horde sardinian archers` are one troop type with three
+// recruitment routes, and all three share the dictionary key `sardinian_archers`.
+// Keying pages on `type` produced 1,697 pages for 1,172 actual units, and saved ~500
+// cards that were byte-identical images under different names.
+//
+// So the DICTIONARY is the identity and `type` is a variant of it. On the reference data:
+// 1,697 types -> 1,172 dictionaries, 454 of which hold more than one type, covering 979
+// types. 450 types begin "aor ".
+//
+// Stats are taken from the first variant and the others are checked against it; where they
+// disagree the page says so rather than quietly presenting one variant's numbers as the
+// unit's.
+const merged = [];
+{
+  const byDict = new Map();
+  for (const r of rows) {
+    const key = r.dict || `__notype_${r.slug}`;
+    if (!byDict.has(key)) byDict.set(key, []);
+    byDict.get(key).push(r);
+  }
+  for (const [key, group] of byDict) {
+    const head = group[0];
+    const cmp = (a, b) => a.st.attack === b.st.attack && a.st.defence === b.st.defence
+      && a.st.armour === b.st.armour && a.st.morale === b.st.morale && a.st.cost === b.st.cost;
+    merged.push({
+      ...head,
+      slug: slug(key),
+      variants: group.map((g) => g.type),
+      statsDiffer: group.some((g) => !cmp(g, head)),
+    });
+  }
+}
+
+const list = ONLY.length
+  ? merged.filter((r) => ONLY.includes(r.type.toLowerCase()) || ONLY.includes(r.dict))
+  : merged;
 fs.mkdirSync(path.join(OUT, "units"), { recursive: true });
 
 for (const u of list) {
@@ -149,20 +186,27 @@ ${u.attributes.length ? `\n**Attributes:** ${u.attributes.map((a) => `\`${a}\``)
 > Recruitment requirements are listed on each faction's page — availability depends on the
 > faction, the building level and sometimes a resource only certain regions have.
 
-_Internal name: \`${u.type}\`_
+${u.variants.length > 1 ? `## Recruitment variants
+
+This unit is defined ${u.variants.length} times in the mod — the same troops reached by
+different routes. \`aor …\` entries are area-of-recruitment versions, available in regions
+matching that AOR; \`horde …\` versions belong to horde factions.
+
+${u.variants.map((v) => `- \`${v}\``).join("\n")}
+${u.statsDiffer ? `\n> **The variants do NOT all share the same stats.** The figures above are taken from\n> \`${u.type}\`; at least one other variant differs, so check in-game if the exact numbers matter.\n` : "\n_All variants share the same stats._\n"}` : `_Internal name: \`${u.type}\`_`}
 `;
   fs.writeFileSync(path.join(OUT, "units", `${u.slug}.md`), body, "utf8");
 }
 
 // ── index ────────────────────────────────────────────────────────────────────
 const byClass = {};
-for (const u of rows) (byClass[u.cls || "unknown"] = byClass[u.cls || "unknown"] || []).push(u);
+for (const u of merged) (byClass[u.cls || "unknown"] = byClass[u.cls || "unknown"] || []).push(u);
 
 const idx = `# Units
 
 [← wiki index](README.md)
 
-${rows.length.toLocaleString("en-US")} unit types, against vanilla's 261. ${named.toLocaleString("en-US")} have a
+${merged.length.toLocaleString("en-US")} distinct units, against vanilla's 261. (The mod defines ${rows.length.toLocaleString("en-US")} entries; ${(rows.length - merged.length).toLocaleString("en-US")} of those are area-of-recruitment or horde variants of a unit already listed, merged here onto one page each.) ${named.toLocaleString("en-US")} have a
 display name in the text files; ${described.toLocaleString("en-US")} have a written description.
 
 ${placeholder ? `> **${placeholder.toLocaleString("en-US")} units still carry RIS's placeholder text** ("this unit needs a
@@ -176,13 +220,20 @@ ${Object.entries(byClass).sort((a, b) => b[1].length - a[1].length).map(([c, v])
 
 ## Full roster
 
-| Unit | Class | Men | Attack | Defence | Morale | Cost | Upkeep |
-|---|---|---:|---:|---:|---:|---:|---:|
-${rows.slice().sort((a, b) => a.name.localeCompare(b.name)).map((u) => {
+| Unit | Class | Men | Attack | Defence | Morale | Cost | Upkeep | Variants |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+${merged.slice().sort((a, b) => a.name.localeCompare(b.name)).map((u) => {
   const s = u.st;
   const n = (v) => (v == null ? "—" : v.toLocaleString("en-US"));
-  return `| [${u.name}](units/${u.slug}.md) | ${u.cls || "—"} | ${n(s.men)} | ${n(s.attack)} | ${n(s.defence)} | ${n(s.morale)} | ${n(s.cost)} | ${n(s.upkeep)} |`;
+  return `| [${u.name}](units/${u.slug}.md) | ${u.cls || "—"} | ${n(s.men)} | ${n(s.attack)} | ${n(s.defence)} | ${n(s.morale)} | ${n(s.cost)} | ${n(s.upkeep)} | ${u.variants.length > 1 ? u.variants.length : ""} |`;
 }).join("\n")}
+
+## A note on the numbers
+
+RIS rescales unit stats well above vanilla, and unevenly. Measured across both games:
+attack median 8 -> 11, armour 3 -> 7, but **defence skill 3 -> 19** (p95 7 -> 30). So a
+defence figure near 20 is ordinary here, not exceptional - do not read these against
+vanilla intuition.
 
 ## Not here yet
 
@@ -194,7 +245,9 @@ diff against.
 `;
 fs.writeFileSync(path.join(OUT, "units.md"), idx, "utf8");
 
-console.log(`${list.length.toLocaleString("en-US")} unit pages written`);
+console.log(`${list.length.toLocaleString("en-US")} unit pages written (from ${rows.length.toLocaleString("en-US")} EDU entries)`);
+console.log(`  merged away as variants: ${(rows.length - merged.length).toLocaleString("en-US")}`);
+console.log(`  units whose variants disagree on stats: ${merged.filter((m) => m.statsDiffer).length.toLocaleString("en-US")}`);
 console.log(`  with a display name:      ${named.toLocaleString("en-US")} of ${rows.length.toLocaleString("en-US")}`);
 console.log(`  with a real description:  ${described.toLocaleString("en-US")}`);
 console.log(`  still on placeholder text:${placeholder.toLocaleString("en-US")}`);
