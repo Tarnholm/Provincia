@@ -13,6 +13,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1458",
+    date: "2026-07-26",
+    items: [
+      { type: "improvement", text: "**The engine has now confirmed the `pilum_infantry` finding in its own words, in a crashing session.** A tester crashed three times consecutively with an identical signature — 42 asserts, only the two unit-enum ones, 8 `descr_formations_ai` faults, a crash dump each time. The raw assert file contains: `descr_formations_ai.txt:80` / `Failed to find either a unit class or unit category. Provided: 'pilum_infantry'`. The engine names the file, the line and the token that this lint rule predicts statically from the mod files, without running the game." },
+      { type: "fix", text: "**Provincia's line number is the accurate one, and the lint now says so.** The engine reports `descr_formations_ai.txt:80`; the lint reports line 78. Checked directly against the file: line 78 is `unit_type pilum_infantry 1.0` — the engine's figure is two lines late. A modder reading 80 in their log and 78 in the lint would reasonably distrust the tool, so the detail now states which to follow and why." },
+      { type: "improvement", text: "**Reporter v0.1.38, shipped alongside, stops discarding that line.** Its assert matcher captured text up to the first `Failed`, which for a message that *starts* with the word is nothing — so the engine's most actionable output was filed as an assert named `Failed`, appearing as `Failed x14` in three separate crash reports. Resolution failures are now recovered with their token and the file:line the engine named, flagged as a data defect with a known location that needs no crash reproduction to fix." },
+      { type: "improvement", text: "Also verified live: the crash-association ranking and fault-signature notes from v0.1.36/37 are appearing correctly in tester reports, with the unit-enum asserts tagged HIGH-RISK and ordered above asserts firing a thousand times more often." },
+    ],
+  },
+
+  {
     version: "0.9.1457",
     date: "2026-07-26",
     items: [

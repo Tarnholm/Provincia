@@ -256,7 +256,8 @@ function lintFormations(formationsTxt, push) {
           // survivors — the largest gap of any assert. Meanwhile the two LOUDEST asserts
           // in this mod are commoner in sessions that survive (87-89% vs 40-43%), so
           // volume is a poor guide and this quiet one is worth fixing first.
-          ` PRIORITY: the engine assert this produces (unit_class != UCL_NUM_CLASSES || unit_category != UC_NUM_CATEGORIES) is the single assert most associated with CRASHED sessions in tester telemetry — present in 11% of 136 crashed sessions against 1% of 200 that survived. That is a correlation over one mod's reports, not proof of causation, but no other assert separates the two groups as strongly.`
+          ` The game's own error names a line 2 later (it reported descr_formations_ai.txt:80 for the token on line 78 — verified against the file), so trust this line number over the one in your log.` +
+        ` PRIORITY: the engine assert this produces (unit_class != UCL_NUM_CLASSES || unit_category != UC_NUM_CATEGORIES) is the single assert most associated with CRASHED sessions in tester telemetry — present in 11% of 136 crashed sessions against 1% of 200 that survived. That is a correlation over one mod's reports, not proof of causation, but no other assert separates the two groups as strongly.`
         : ` No similar vanilla token exists, so this may be a deliberate extension rather than a defect — absence from vanilla is not proof the engine rejects it. Check the game's error_log for "Failed to find either a unit class or unit category" naming this token before changing anything.`));
   }
   return { checked, unknown: unknown.size };
