@@ -169,11 +169,24 @@ fs.mkdirSync(path.join(OUT, "units"), { recursive: true });
 for (const u of list) {
   const s = u.st;
   const stat = (label, v, suffix) => v == null ? "" : `| ${label} | ${v.toLocaleString("en-US")}${suffix || ""} |\n`;
+  // Every unit has two pieces of art: the roster card shown in the recruitment panel and
+  // the info card from the unit's detail panel. Both are shipped, and the inline one links
+  // to the other so a click swaps between them. A plain link rather than a script, because
+  // GitHub Pages serves these as static markdown and JS in a .md file would not run.
+  function cardMarkup(u) {
+    const has = (n) => fs.existsSync(path.join(OUT, "cards", n));
+    const card = `${u.slug}.png`, info = `${u.slug}_info.png`;
+    if (!has(card)) return has(info) ? `<img src="../cards/${info}" alt="${u.name}" width="164" align="right">\n\n` : "";
+    const img = `<img src="../cards/${card}" alt="${u.name} unit card" width="164" align="right">`;
+    if (!has(info)) return `${img}\n\n`;
+    return `<a href="../cards/${info}" title="Click for the info card">${img}</a>\n\n`;
+  }
+
   const body = `# ${u.name}
 
 [← all units](../units.md) · [wiki index](../README.md)
 
-${fs.existsSync(path.join(OUT, "cards", `${u.slug}.png`)) ? `<img src="../cards/${u.slug}.png" alt="${u.name} unit card" width="164" align="right">\n\n` : ""}${u.hasName ? "" : "> _This unit has no display name in the text files, so its internal name is shown._\n\n"}**Class:** ${u.cls || "unknown"} · **Category:** ${u.category || "unknown"}${s.men != null ? ` · **Men per unit:** ${s.men}` : ""}
+${cardMarkup(u)}${u.hasName ? "" : "> _This unit has no display name in the text files, so its internal name is shown._\n\n"}**Class:** ${u.cls || "unknown"} · **Category:** ${u.category || "unknown"}${s.men != null ? ` · **Men per unit:** ${s.men}` : ""}
 
 ${u.long || u.short
   ? `## Description\n\n${u.long || u.short}\n\n`

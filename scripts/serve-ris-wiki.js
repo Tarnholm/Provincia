@@ -184,10 +184,14 @@ function openBrowser(url) {
 
 // If the chosen port is busy, step up rather than dying - a team member may already have
 // a copy running, or something else may own 8099.
+// The attempt has to advance. Retrying PORT + 1 every time meant that if that port was
+// also busy the handler retried the same number forever, printing the same line on a loop.
+let attempt = PORT;
 server.on("error", (e) => {
-  if (e.code === "EADDRINUSE" && PORT < 8199) {
-    console.log(`  port ${PORT} is in use, trying ${PORT + 1}`);
-    setTimeout(() => server.listen(PORT + 1, "127.0.0.1"), 50);
+  if (e.code === "EADDRINUSE" && attempt < PORT + 40) {
+    attempt += 1;
+    console.log(`  port ${attempt - 1} is in use, trying ${attempt}`);
+    setTimeout(() => server.listen(attempt, "127.0.0.1"), 50);
     return;
   }
   console.error(e.message);

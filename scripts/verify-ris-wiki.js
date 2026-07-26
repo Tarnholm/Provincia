@@ -110,6 +110,21 @@ for (const p of pages) {
     else if (/\.md$/i.test(clean)) linkedTo.add(path.resolve(resolved));
   }
 
+  // Raw HTML anchors. The unit pages wrap the roster card in <a href="…_info.png"> so a
+  // click shows the other card, and the markdown-link pattern above cannot see those: the
+  // count did not move when 1,131 of them were added, so a missing info card would have
+  // gone unreported. Counted as links, since that is what they are.
+  for (const m of body.matchAll(/<a[^>]+href="([^"]+)"/g)) {
+    const target = m[1];
+    if (/^(https?:|mailto:|#)/.test(target)) continue;
+    const clean = target.split("#")[0];
+    if (!clean) continue;
+    links++;
+    const resolved = path.resolve(dir, clean);
+    if (!fs.existsSync(resolved)) { badLinks++; if (badLinks <= 8) fail(`BROKEN <a href> in ${path.relative(OUT, p)}: ${target}`); }
+    else if (/\.md$/i.test(clean)) linkedTo.add(path.resolve(resolved));
+  }
+
   // <img src="..."> as well as markdown images
   for (const m of body.matchAll(/<img[^>]+src="([^"]+)"/g)) {
     images++;

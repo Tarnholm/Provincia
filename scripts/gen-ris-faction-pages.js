@@ -135,22 +135,38 @@ function loadRecruitment() {
       .replace(/(not\s+)?factions\s*\{[^}]*\}/gi, "")
       .replace(/\band\b/gi, " ")
       .split(/\s+/).filter((t) => t && !/^(is_player|or)$/i.test(t));
-    rows.push({ unit, pos, neg, conds: [...new Set(conds)] });
+    // Area-of-recruitment gate. RIS restricts regional units with a hidden_resource, which
+    // is the engine's mechanism for "only in these provinces". Detected from the mechanism
+    // rather than the name: 442 units carry both the `aor` naming convention and a
+    // hidden_resource on every route, and the two signals disagree on only 5 of 1,135
+    // units — 1 named unit with no gate, 4 gated units not named for it. The mechanism is
+    // what the game enforces, so that is what is reported.
+    rows.push({ unit, pos, neg, hr: /hidden_resource/i.test(expr), conds: [...new Set(conds)] });
   }
   return rows;
 }
 
+// Units this faction can raise, split into core and regional. A unit is regional only if
+// EVERY route open to THIS faction is hidden_resource-gated: if a faction has one ungated
+// route to a unit, that unit is core for them even where others need a resource for it.
 function recruitableBy(rows, faction) {
   const out = new Map();
   for (const r of rows) {
     const allowed = r.pos.includes("all") || r.pos.includes(faction);
     if (!allowed || r.neg.includes(faction)) continue;
     const prev = out.get(r.unit);
+    if (!prev) { out.set(r.unit, { conds: r.conds, aor: r.hr }); continue; }
     // Several buildings may offer the same unit; keep the shortest requirement set, which
-    // is the easiest route to it.
-    if (!prev || r.conds.length < prev.length) out.set(r.unit, r.conds);
+    // is the easiest route to it. An ungated route anywhere makes the unit core.
+    if (!r.hr) prev.aor = false;
+    if (r.conds.length < prev.conds.length) prev.conds = r.conds;
   }
-  return [...out.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  const all = [...out.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  return {
+    core: all.filter(([, v]) => !v.aor).map(([u, v]) => [u, v.conds]),
+    aor: all.filter(([, v]) => v.aor).map(([u, v]) => [u, v.conds]),
+    total: all.length,
+  };
 }
 
 // ── map rendering ────────────────────────────────────────────────────────────
@@ -354,11 +370,23 @@ ${cs.map((c) => `| ${c.name} | ${c.role} | ${c.age != null ? c.age : "?"} |`).jo
 
 ## Units you can recruit
 
-${units.length ? `${units.length} unit type${units.length === 1 ? "" : "s"} are available to ${display}. The requirement column is what the mod states for the easiest route to that unit — a building level, a regional resource, or a technology.
+${units.total ? `${units.total} unit type${units.total === 1 ? "" : "s"} are available to ${display}: ${units.core.length} faction unit${units.core.length === 1 ? "" : "s"} and ${units.aor.length} regional. The requirement column is what the mod states for the easiest route to that unit.
+
+### Faction units
+
+${units.core.length ? `These are the backbone of the roster — available wherever ${display} holds a settlement with the right building.
 
 | Unit | Requires |
 |---|---|
-${units.map(([u, conds]) => `| ${u} | ${conds.length ? conds.map((c) => `\`${c}\``).join(", ") : "_no further requirement_"} |`).join("\n")}
+${units.core.map(([u, conds]) => `| ${u} | ${conds.length ? conds.map((c) => `\`${c}\``).join(", ") : "_no further requirement_"} |`).join("\n")}` : `_${display} has no ungated units: every unit on its roster needs a regional resource._`}
+
+### Regional units (AOR)
+
+${units.aor.length ? `Area-of-recruitment units. Every route to these is gated on a hidden resource, so they can only be raised in the provinces that carry it — taking the right ground is the only way to field them.
+
+| Unit | Requires |
+|---|---|
+${units.aor.map(([u, conds]) => `| ${u} | ${conds.length ? conds.map((c) => `\`${c}\``).join(", ") : "_no further requirement_"} |`).join("\n")}` : `_No area-of-recruitment units are open to ${display}._`}
 
 > Availability also depends on the settlement: many of these need a specific building
 > level, and some need a resource only certain regions have. This list is what is open to
@@ -366,7 +394,7 @@ ${units.map(([u, conds]) => `| ${u} | ${conds.length ? conds.map((c) => `\`${c}\
 `;
 
   fs.writeFileSync(path.join(OUT, "factions", `${f}.md`), body, "utf8");
-  index.push({ f, display, setts: setts.length, chars: cs.length, units: units.length, hasIntro: !!intro.descr });
+  index.push({ f, display, setts: setts.length, chars: cs.length, units: units.total, aor: units.aor.length, hasIntro: !!intro.descr });
 }
 
 // index page
@@ -378,9 +406,15 @@ const idx = `# All factions
 ${index.length} playable factions, each with its own page. Sorted by how much territory they
 start with.
 
-| Faction | Settlements | Characters | Recruitable units |
-|---|---:|---:|---:|
-${index.map((e) => `| [${e.display}](factions/${e.f}.md) | ${e.setts} | ${e.chars} | ${e.units} |`).join("\n")}
+The two unit columns are worth reading separately. "Faction units" are what a faction can
+raise from its own buildings anywhere it holds a settlement — that is its actual roster.
+"Regional" units are area-of-recruitment: gated on a hidden resource, so they need the
+right province before they can be fielded at all. Most regional units are open to every
+faction on paper, which is why the combined figure flatters a small faction badly.
+
+| Faction | Settlements | Characters | Faction units | Regional (AOR) |
+|---|---:|---:|---:|---:|
+${index.map((e) => `| [${e.display}](factions/${e.f}.md) | ${e.setts} | ${e.chars} | ${e.units - e.aor} | ${e.aor} |`).join("\n")}
 `;
 fs.writeFileSync(path.join(OUT, "factions.md"), idx, "utf8");
 

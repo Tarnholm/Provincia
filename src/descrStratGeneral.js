@@ -526,25 +526,64 @@ function parseDescrRegions(text) {
   return { regionToCity, rgbToRegion };
 }
 
-// Decode a 24bpp TGA into a raw uncompressed pixel buffer (3 bytes/px, storage order,
-// BGR). Handles both uncompressed (image type 2) AND run-length-encoded (type 10) — RIS
+// Decode a TGA into a raw uncompressed pixel buffer (3 bytes/px, storage order, BGR).
+// Handles both uncompressed (image type 2) AND run-length-encoded (type 10) — RIS
 // re-saved map_regions.tga as RLE in the 2026-07 "alternate maps" update, which the old
 // direct-pixel reader mis-parsed as garbage (every map pixel scan silently broke: no
-// settlement/coast tiles → sea trade collapsed to 0). Returns { W, H, desc, raw }.
+// settlement/coast tiles → sea trade collapsed to 0).
+//
+// Source pixel depth comes from the header (byte 16) and is NOT assumed to be 24. It was,
+// until 2026-07-26: the map files are all 24bpp so nothing noticed, but every 32bpp file
+// decoded to banded garbage. Both packet kinds advanced the read pointer by 3 bytes per
+// pixel, so on a 32bpp file the source drifted 1 byte per pixel — output the right SIZE
+// with progressively rotated channels, which is why it looked like colour stripes and why
+// row 0 alone looked correct. Found via the wiki's building icons and unit cards, which
+// are 32bpp RLE. Alpha is returned separately when present (callers wanting BGR keep
+// reading `raw` unchanged); `srcBpp` is exposed so callers can tell what they were given.
+// Returns { W, H, desc, raw, alpha, srcBpp }.
 function tgaToRaw(buf) {
   const W = buf.readUInt16LE(12), H = buf.readUInt16LE(14), imgType = buf[2], desc = buf[17];
   const dataOff = 18 + buf[0] + (buf[1] === 1 ? buf.readUInt16LE(5) * (buf[7] >> 3) : 0);
-  if (imgType === 2) return { W, H, desc, raw: buf.slice(dataOff, dataOff + W * H * 3) };
+  // Colour depth in bytes for the truecolour types (2/10). 24 and 32 are what RTW ships;
+  // anything else throws rather than being silently mis-strided, which is the bug above.
+  const srcBpp = buf[16] >> 3;
+  if (imgType === 2 || imgType === 10) {
+    if (srcBpp !== 3 && srcBpp !== 4) throw new Error(`unsupported TGA pixel depth ${buf[16]}bpp`);
+  }
+  if (imgType === 2) {
+    if (srcBpp === 3) return { W, H, desc, srcBpp, raw: buf.slice(dataOff, dataOff + W * H * 3) };
+    const raw = Buffer.alloc(W * H * 3), alpha = Buffer.alloc(W * H);
+    for (let i = 0; i < W * H; i++) {
+      const s = dataOff + i * 4, o = i * 3;
+      raw[o] = buf[s]; raw[o + 1] = buf[s + 1]; raw[o + 2] = buf[s + 2]; alpha[i] = buf[s + 3];
+    }
+    return { W, H, desc, srcBpp, raw, alpha };
+  }
   if (imgType === 10) {
     const raw = Buffer.alloc(W * H * 3);
+    const alpha = srcBpp === 4 ? Buffer.alloc(W * H) : null;
     let p = dataOff, o = 0, count = 0; const total = W * H;
     while (count < total && p < buf.length) {
-      const hdr = buf[p++], n = (hdr & 0x7f) + 1;
-      if (hdr & 0x80) { for (let i = 0; i < n; i++) { raw[o] = buf[p]; raw[o + 1] = buf[p + 1]; raw[o + 2] = buf[p + 2]; o += 3; } p += 3; }
-      else { for (let i = 0; i < n * 3; i++) raw[o++] = buf[p++]; }
+      const hdr = buf[p++], n = Math.min((hdr & 0x7f) + 1, total - count);
+      if (hdr & 0x80) {
+        // Run packet: one source pixel repeated n times.
+        const b = buf[p], g = buf[p + 1], r = buf[p + 2], a = srcBpp === 4 ? buf[p + 3] : 255;
+        for (let i = 0; i < n; i++) {
+          raw[o] = b; raw[o + 1] = g; raw[o + 2] = r; o += 3;
+          if (alpha) alpha[count + i] = a;
+        }
+        p += srcBpp;
+      } else {
+        // Literal packet: n distinct source pixels, each srcBpp bytes wide.
+        for (let i = 0; i < n; i++) {
+          raw[o] = buf[p]; raw[o + 1] = buf[p + 1]; raw[o + 2] = buf[p + 2]; o += 3;
+          if (alpha) alpha[count + i] = buf[p + 3];
+          p += srcBpp;
+        }
+      }
       count += n;
     }
-    return { W, H, desc, raw };
+    return { W, H, desc, srcBpp, raw, alpha };
   }
   // Grayscale (8bpp): type 3 uncompressed, type 11 RLE. Expanded to BGR triples
   // (value in all three channels) so callers read it like any other map — used

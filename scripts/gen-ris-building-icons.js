@@ -44,54 +44,11 @@ const rd = (...f) => { try { return fs.readFileSync(path.join(RIS, ...f), "latin
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 
 // ── PNG writer (same as the unit-card generator; no image library) ────────────
-function crc32(buf) {
-  let c, crc = 0xffffffff;
-  for (let i = 0; i < buf.length; i++) {
-    c = (crc ^ buf[i]) & 0xff;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    crc = (crc >>> 8) ^ c;
-  }
-  return (crc ^ 0xffffffff) >>> 0;
-}
-function png(w, h, rgb) {
-  const chunk = (type, data) => {
-    const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
-    const td = Buffer.concat([Buffer.from(type, "ascii"), data]);
-    const cr = Buffer.alloc(4); cr.writeUInt32BE(crc32(td));
-    return Buffer.concat([len, td, cr]);
-  };
-  const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 2;
-  const raw = Buffer.alloc((w * 3 + 1) * h);
-  for (let y = 0; y < h; y++) {
-    raw[y * (w * 3 + 1)] = 0;
-    rgb.copy(raw, y * (w * 3 + 1) + 1, y * w * 3, (y + 1) * w * 3);
-  }
-  return Buffer.concat([
-    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    chunk("IHDR", ihdr), chunk("IDAT", zlib.deflateSync(raw, { level: 9 })), chunk("IEND", Buffer.alloc(0)),
-  ]);
-}
-function convert(file, scale) {
-  const t = dg.tgaToRaw(fs.readFileSync(file));
-  if (!t || !t.W || !t.raw) return null;
-  const bpp = t.raw.length / (t.W * t.H);
-  const bottomUp = !(t.desc & 0x20);
-  const ow = Math.max(1, Math.floor(t.W / scale)), oh = Math.max(1, Math.floor(t.H / scale));
-  const out = Buffer.alloc(ow * oh * 3);
-  for (let y = 0; y < oh; y++) {
-    for (let x = 0; x < ow; x++) {
-      const sx = Math.min(t.W - 1, x * scale);
-      let sy = Math.min(t.H - 1, y * scale);
-      if (bottomUp) sy = t.H - 1 - sy;
-      const si = (sy * t.W + sx) * bpp;
-      const o = (y * ow + x) * 3;
-      // BGR, as with every other TGA in this mod.
-      out[o] = t.raw[si + 2]; out[o + 1] = t.raw[si + 1]; out[o + 2] = t.raw[si];
-    }
-  }
-  return { buf: png(ow, oh, out), w: ow, h: oh };
-}
+// PNG encoding and TGA decoding live in scripts/lib/tgaPng.js — shared with the other
+// wiki image generator. They were duplicated here, and both copies carried the same
+// 32bpp-source bug that made every icon and card render as colour stripes.
+const { png, convert: convertTga } = require(path.join(__dirname, "lib", "tgaPng.js"));
+const convert = (file, scale) => convertTga(dg, file, scale);
 
 // ── faction -> culture ───────────────────────────────────────────────────────
 // descr_sm_factions.txt is JSON-like: `"romans_julii": { … "culture": "roman", … }`.
@@ -215,6 +172,7 @@ console.log(`(culture, level) pairs the regions need: ${needed.size.toLocaleStri
 fs.mkdirSync(path.join(OUT, "icons"), { recursive: true });
 let written = 0, bytes = 0, unresolved = 0, failed = 0, viaFallback = 0, viaAlias = 0;
 const misses = [];
+const seen = new Set();   // icon filenames written this run
 const map = {};   // "culture/level" -> icons/<file>.png, for the region generator
 
 for (const [key, { culture, level }] of needed) {
@@ -222,10 +180,14 @@ for (const [key, { culture, level }] of needed) {
   if (!hit) { unresolved++; if (misses.length < 8) misses.push(key); continue; }
   if (hit.culture !== culture) viaFallback++;
   if (hit.level !== level) viaAlias++;
-  // Named by the art actually used, so identical art is written once and shared.
+  // Named by the art actually used, so identical art is written once and shared. The
+  // "write it once" check is against names seen THIS run, not against the disk: keying off
+  // fs.existsSync meant a stale file was never replaced, so when the TGA decoder was fixed
+  // this generator reported "0 written" and left every broken icon in place.
   const name = `${slug(hit.culture)}__${slug(hit.level)}.png`;
   const dest = path.join(OUT, "icons", name);
-  if (!fs.existsSync(dest)) {
+  if (!seen.has(name)) {
+    seen.add(name);
     try {
       const r = convert(hit.file, SCALE);
       if (!r) { failed++; continue; }

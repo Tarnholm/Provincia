@@ -192,19 +192,24 @@ render();
 }
 
 // ── factions ─────────────────────────────────────────────────────────────────
-// factions.md columns: Faction | Settlements | Characters | Recruitable units
+// factions.md columns: Faction | Settlements | Characters | Faction units | Regional (AOR)
+// The unit count used to be one column. Splitting it in the markdown without splitting it
+// here would have left this view reading the AOR count as the whole roster.
 {
-  const raw = parseTable("factions.md", 4).filter((c) => /^\[/.test(c[0]));
+  const raw = parseTable("factions.md", 5).filter((c) => /^\[/.test(c[0]));
   const rows = raw.map((c) => {
     const f = linkText(c[0]);
-    return [{ text: f.text, href: f.href }, numOf(c[1]), numOf(c[2]), numOf(c[3])];
+    return [{ text: f.text, href: f.href }, numOf(c[1]), numOf(c[2]), numOf(c[3]), numOf(c[4])];
   });
   const columns = [
     { label: "Faction" }, { label: "Settlements", num: true },
-    { label: "Characters", num: true }, { label: "Recruitable units", num: true },
+    { label: "Characters", num: true }, { label: "Faction units", num: true },
+    { label: "Regional (AOR)", num: true },
   ];
   fs.writeFileSync(path.join(OUT, "factions.html"),
-    PAGE("Factions", "Every playable faction, sortable by how much it starts with.",
+    PAGE("Factions", "Every playable faction, sortable by how much it starts with. " +
+      "Faction units are the roster a faction can raise anywhere it holds a settlement; regional (AOR) units " +
+      "need a province carrying the right hidden resource, and are mostly open to everyone on paper.",
       columns, rows, "README.md"), "utf8");
   console.log(`factions.html: ${rows.length.toLocaleString("en-US")} rows`);
 }
