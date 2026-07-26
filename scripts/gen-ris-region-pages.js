@@ -21,6 +21,8 @@ const path = require("path");
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const RIS = valOf("--ris", "C:/RIS/RIS/data");
+// For the region-colour parser and the TGA reader, both already used elsewhere in Provincia.
+const dg = require(path.join(__dirname, "..", "src", "descrStratGeneral.js"));
 const OUT = valOf("--out", "C:/RIS/RIS/wiki");
 const ONLY = (valOf("--only", "") || "").split(",").map((s) => s.trim()).filter(Boolean);
 
@@ -148,6 +150,116 @@ const iconFor = (faction, level) => {
   return ICONS[`${cul}/${String(level).toLowerCase()}`] || null;
 };
 
+// ── trade goods placed on the map ────────────────────────────────────────────
+// The "Trade resources" field used to come from each region's descr_regions tags, which in
+// RIS means it only ever said `rivertrade` — all 422 regions that had anything. The real
+// trade goods are 5,547 `resource <type>, <x>, <y>` placements in descr_strat, positioned on
+// the map rather than assigned to a region, so they have to be looked up through
+// map_regions.tga.
+//
+// COORDINATE CONVENTION, measured rather than assumed. descr_strat y indexes the TGA's
+// storage row directly: RTW counts y from the bottom of the map and the TGA is stored
+// bottom-up, so the two cancel. Verified against the 749 settlements whose city name gives a
+// known region — regressing their coordinates against each region's pixel centroid gives
+// slope 1.00 and r2 0.998, and looking each one up agrees for 747 of 749 (100%).
+//
+// The exact pixel matches only 1% of the time because a settlement's own tile is painted its
+// own colour, so a small neighbourhood is sampled and the commonest region colour wins. The
+// same is true of a resource icon's tile, which is why this is not a single-pixel read.
+function loadMapResources() {
+  const out = new Map();     // region -> Map(type -> count)
+  let placed = 0, resolved = 0, checked = 0, agreed = 0;
+  const stratPath = path.join(RIS, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
+  let strat;
+  try { strat = fs.readFileSync(stratPath, "latin1"); } catch { return { out, placed, resolved, checked, agreed }; }
+
+  let rgbToRegion, regionToCity = {};
+  let t;
+  try {
+    const dr = fs.readFileSync(path.join(RIS, "world", "maps", "base", "descr_regions.txt"), "latin1");
+    const parsed = dg.parseDescrRegions(dr);
+    rgbToRegion = parsed.rgbToRegion;
+    regionToCity = parsed.regionToCity;
+    t = dg.tgaToRaw(fs.readFileSync(path.join(RIS, "world", "maps", "base", "map_regions.tga")));
+  } catch { return { out, placed, resolved, checked, agreed }; }
+
+  const cityOf = (region) => regionToCity[region] || null;
+  const regionAt = (x, y) => {
+    if (x < 0 || y < 0 || x >= t.W || y >= t.H) return null;
+    const i = (y * t.W + x) * 3;
+    return rgbToRegion[`${t.raw[i + 2]},${t.raw[i + 1]},${t.raw[i]}`] || null;
+  };
+  const regionNear = (x, y) => {
+    const votes = new Map();
+    for (let r = 0; r <= 3; r++) {
+      for (let dx = -r; dx <= r; dx++) {
+        for (let dy = -r; dy <= r; dy++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;   // ring only
+          const reg = regionAt(x + dx, y + dy);
+          if (reg) votes.set(reg, (votes.get(reg) || 0) + 1);
+        }
+      }
+      if (votes.size) break;   // nearest ring that finds anything wins
+    }
+    let best = null, n = 0;
+    for (const [reg, c] of votes) if (c > n) { best = reg; n = c; }
+    return best;
+  };
+
+  // `resource <type>, <quantity>, <x>, <y>   ; <settlement>`  — FOUR numeric-ish fields, not
+  // two. Reading the quantity as x put 1,166 placements in one Saharan region and left the x
+  // range at 1-5, which is what gave the error away. The trailing comment names the
+  // settlement, and agreement with it is the check reported below.
+  for (const m of strat.matchAll(/^resource\s+([a-z_]+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*(?:;\s*(.*))?$/gim)) {
+    placed++;
+    const reg = regionNear(+m[3], +m[4]);
+    const note = (m[5] || "").trim();
+    // The trailing comment names the REGION, not its settlement — `; Roma` on a resource
+    // inside the region Roma, whose city is Rome. Comparing it against the city name scored
+    // 1% and looked like a broken mapping when the mapping was fine.
+    if (note) {
+      checked++;
+      if (reg && (reg.toLowerCase() === note.toLowerCase() ||
+                  (cityOf(reg) || "").toLowerCase() === note.toLowerCase())) agreed++;
+    }
+    if (!reg) continue;
+    resolved++;
+    let e = out.get(reg);
+    if (!e) { e = new Map(); out.set(reg, e); }
+    const type = m[1].toLowerCase();
+    e.set(type, (e.get(type) || 0) + 1);
+  }
+  return { out, placed, resolved, checked, agreed };
+}
+const MAP_RESOURCES = loadMapResources();
+
+// ── readable tag names ───────────────────────────────────────────────────────
+// Every region tag was printed as a bare token: `rivertrade`, `rel_dorian_4`,
+// `base_port_level_2`, `aor_akarnanian`. Trade goods have real names in text/resources.txt,
+// keyed SMT_RESOURCE_<GOOD>, so those are looked up. The rest have no text entry anywhere in
+// the mod, so they are humanised from the token itself — prefix stripped, underscores out —
+// with the raw token still shown, because it is what a modder searches the files for.
+const RESOURCE_NAMES = loadDisplayNames("resources.txt");
+const resName = (tok) => RESOURCE_NAMES[`smt_resource_${String(tok).toLowerCase()}`] || null;
+
+const TAG_PREFIXES = [
+  [/^aor_/, ""], [/^homeland_/, ""], [/^rel_/, ""], [/^base_port_level_/, "port level "],
+  [/^Farm/i, "farm level "], [/^gov\d*/, ""],
+];
+function humanise(tok) {
+  let s = String(tok);
+  for (const [re, repl] of TAG_PREFIXES) if (re.test(s)) { s = s.replace(re, repl); break; }
+  s = s.replace(/_+/g, " ").replace(/\s+/g, " ").trim();
+  if (!s) return String(tok);
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+// "Gold (`gold`)" — the readable name first, the token kept for anyone reading the files.
+function tagLabel(tok) {
+  const nice = resName(tok) || humanise(tok);
+  const raw = String(tok);
+  return nice.toLowerCase() === raw.toLowerCase() ? `\`${raw}\`` : `${nice} \`${raw}\``;
+}
+
 const FARM_NOTE = "Farm level sets the region's agricultural base. NOTE Provincia's own " +
   "measurements found RIS cancels farm fertility almost exactly, so a higher number here " +
   "does not translate into faster growth the way it does in vanilla.";
@@ -180,7 +292,7 @@ const facName = (f) => display[String(f).toLowerCase()] || String(f).replace(/_/
 const list = ONLY.length ? regions.filter((r) => ONLY.includes(r.region)) : regions;
 fs.mkdirSync(path.join(OUT, "regions"), { recursive: true });
 
-let withOwner = 0, withBuildings = 0, withTrade = 0;
+let withMapGoods = 0, withOwner = 0, withBuildings = 0, withTrade = 0;
 const index = [];
 
 for (const r of list) {
@@ -190,21 +302,57 @@ for (const r of list) {
   const g = classify(r.tags, res);
   if (g.trade.length) withTrade++;
 
-  const sect = (label, arr, note) => arr.length
-    ? `**${label}:** ${arr.map((t) => `\`${t}\``).join(", ")}${note ? `\n\n> ${note}` : ""}\n\n` : "";
+  // One row per attribute. These were nine consecutive "**Label:** value" lines, which every
+  // markdown renderer folds into a single run-on paragraph — the labels only looked like
+  // separate lines in the source file. A table also puts the values in a column you can scan
+  // down when comparing regions.
+  const rows = [];
+  const addRow = (label, arr, note) => {
+    if (!arr.length) return;
+    rows.push(`| ${label} | ${arr.map(tagLabel).join(", ")} |`);
+    if (note) rows.push(`| | _${note}_ |`);
+  };
+
+  // Trade goods actually placed inside this region's borders, commonest first.
+  const goods = [...(MAP_RESOURCES.out.get(r.region) || new Map())]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const goodsLabel = goods.map(([type, n]) =>
+    `${resName(type) || humanise(type)}${n > 1 ? ` ×${n}` : ""}`);
+  if (goods.length) withMapGoods++;
+
+  const glance = [
+    `**Settlement:** ${r.settlement}`,
+    held ? `**Size:** ${String(held.level || "").replace(/_/g, " ")}` : null,
+    held && held.pop != null ? `**Population:** ${held.pop.toLocaleString("en-US")}` : null,
+    goodsLabel.length ? `**Trade goods:** ${goodsLabel.join(", ")}` : null,
+  ].filter(Boolean).join(" · ");
+
+  if (goodsLabel.length) {
+    rows.push(`| Trade goods on the map | ${goodsLabel.map((l, i) => `${l} \`${goods[i][0]}\``).join(", ")} |`);
+  }
+  addRow("Region resource tags", g.trade);
+  addRow("Farm level", g.farm, FARM_NOTE);
+  addRow("Terrain", g.terrain);
+  addRow("Port", g.port);
+  addRow("Religion", g.religion);
+  addRow("Recruitment zones", g.recruitment);
+  addRow("Cultural homeland", g.culture);
+  addRow("Geography and gating", g.geography);
+  addRow("Other tags", g.other);
 
   const body = `# ${r.region}
 
 [← all regions](../regions.md) · [wiki index](../README.md)
 
-**Settlement:** ${r.settlement}
-${held ? `**Held at campaign start by:** ${hasPage(held.faction) ? `[${facName(held.faction)}](../factions/${held.faction}.md)` : facName(held.faction)}${held.capital ? " — **their capital**" : ""}
-**Size:** ${String(held.level || "").replace(/_/g, " ")} · **Population:** ${held.pop != null ? held.pop.toLocaleString("en-US") : "unknown"}` : `**Held at campaign start by:** nobody — this region begins independent.
-**If it revolts, the rebels are:** ${r.rebels}`}
+${glance}
+
+${held ? `Held at the campaign start by ${hasPage(held.faction) ? `[${facName(held.faction)}](../factions/${held.faction}.md)` : facName(held.faction)}${held.capital ? " — **their capital**" : ""}.` : `This region begins **independent**. If it revolts, the rebels are ${r.rebels}.`}
 
 ## Resources and character
 
-${sect("Trade resources", g.trade)}${sect("Farm level", g.farm, FARM_NOTE)}${sect("Terrain", g.terrain)}${sect("Port", g.port)}${sect("Religion", g.religion)}${sect("Recruitment zones", g.recruitment)}${sect("Cultural homeland", g.culture)}${sect("Geography and gating", g.geography)}${sect("Other tags", g.other)}${r.tags.length ? "" : "_This region carries no tags._\n\n"}## What is already built
+${rows.length ? `| | |\n|---|---|\n${rows.join("\n")}` : "_This region carries no tags._"}
+
+## What is already built
 
 ${held && (held.buildings || []).length
   ? `| | Building chain | Level |\n|:-:|---|---|\n${held.buildings.map((b) => `| ${(() => { const ic = iconFor(held.faction, b.level); return ic ? `<img src="../${ic}" alt="" width="32">` : ""; })()} | ${b.chain.replace(/_/g, " ")} | ${bName(b.level) ? `**${bName(b.level)}** <br>\`${b.level}\`` : `\`${b.level}\``} |`).join("\n")}`
@@ -212,7 +360,7 @@ ${held && (held.buildings || []).length
 `;
 
   fs.writeFileSync(path.join(OUT, "regions", `${r.region}.md`), body, "utf8");
-  index.push({ region: r.region, settlement: r.settlement, owner: held ? facName(held.faction) : null, ownerTok: held ? held.faction : null, trade: g.trade.length, builds: held ? (held.buildings || []).length : 0 });
+  index.push({ region: r.region, settlement: r.settlement, owner: held ? facName(held.faction) : null, ownerTok: held ? held.faction : null, trade: goods.length, builds: held ? (held.buildings || []).length : 0 });
 }
 
 index.sort((a, b) => a.region.localeCompare(b.region));
@@ -223,7 +371,7 @@ const idx = `# All regions
 ${index.length} regions. ${withOwner} are held by a faction at the campaign start; the rest
 begin independent.
 
-| Region | Settlement | Held by | Trade resources | Buildings |
+| Region | Settlement | Held by | Trade goods | Buildings |
 |---|---|---|---:|---:|
 ${index.map((e) => `| [${e.region}](regions/${e.region}.md) | ${e.settlement} | ${e.owner ? (hasPage(e.ownerTok) ? `[${e.owner}](factions/${e.ownerTok}.md)` : e.owner) : "_independent_"} | ${e.trade} | ${e.builds} |`).join("\n")}
 `;
@@ -232,5 +380,8 @@ fs.writeFileSync(path.join(OUT, "regions.md"), idx, "utf8");
 console.log(`${list.length} region pages written`);
 console.log(`  held by a faction at start: ${withOwner}`);
 console.log(`  with something built:       ${withBuildings}`);
+console.log(`  map resource placements: ${MAP_RESOURCES.placed.toLocaleString("en-US")} placed, ${MAP_RESOURCES.resolved.toLocaleString("en-US")} mapped to a region`);
+console.log(`  cross-check vs the file's own settlement comment: ${MAP_RESOURCES.agreed.toLocaleString("en-US")}/${MAP_RESOURCES.checked.toLocaleString("en-US")} agree (${MAP_RESOURCES.checked?Math.round(MAP_RESOURCES.agreed/MAP_RESOURCES.checked*100):0}%)`);
+console.log(`  regions with trade goods:  ${withMapGoods.toLocaleString("en-US")}`);
 console.log(`  with a trade resource:      ${withTrade}`);
 console.log(`  resource vocabulary read:   ${res.tradeable.size} tradeable, ${res.hidden.size} hidden`);
