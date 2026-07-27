@@ -228,6 +228,35 @@ const FARM_TAGS = unionOf(/^farm\d+$/).sort((a, b) => (+a.replace(/\D+/g, "")) -
 const HAZARD_TAGS = ["rivertrade", "seatrade", "earthquake", "earthquakes", "floods", "storms", "volcano"]
   .filter((t) => DECLARED_HIDDEN.has(t) || REGIONS_OF.has(t) || USAGE.has(t));
 
+// ── the other files that could give a tag a meaning ──────────────────────────
+// export_descr_buildings.txt is where nearly everything happens, but it is not the only file
+// that can read a hidden resource, and "nothing conditions on this" is a strong enough claim
+// that it has to be checked everywhere rather than in the one obvious place. These are the
+// remaining consumers: the campaign script and the spawn scripts can add or test one, the
+// mercenary pools and the rebel-faction blocks can name one.
+//
+// The scan is a plain token search, deliberately: a false POSITIVE here only weakens the claim
+// to "referenced somewhere else, go and look", while a false negative would let the page say
+// nothing uses a tag when something does.
+const OTHER_CONSUMERS = (() => {
+  const files = [];
+  const add = (p) => { const t = rd(p); if (t != null) files.push([p, t]); };
+  add(path.join("world", "maps", "campaign", "imperial_campaign", "RIS_Campaign_Script.txt"));
+  add(path.join("world", "maps", "campaign", "imperial_campaign", "descr_mercenaries.txt"));
+  add("descr_rebel_factions.txt");
+  const spawnDir = path.join(RIS, "world", "maps", "campaign", "imperial_campaign", "spawn_scripts");
+  try {
+    for (const f of fs.readdirSync(spawnDir).filter((n) => n.endsWith(".txt"))) {
+      add(path.join("world", "maps", "campaign", "imperial_campaign", "spawn_scripts", f));
+    }
+  } catch { /* no spawn scripts */ }
+  return files;
+})();
+const otherConsumerHits = (tok) => {
+  const re = new RegExp(`\\b${String(tok).replace(/[^a-z0-9_]/gi, "")}\\b`, "i");
+  return OTHER_CONSUMERS.filter(([, t]) => re.test(t)).map(([p]) => path.basename(p));
+};
+
 const TAG_PREFIXES = [
   [/^aor_/, ""], [/^homeland_/, ""], [/^base_port_level_/, "port level "], [/^farm/i, "farm level "],
 ];
@@ -427,7 +456,8 @@ function recruitmentPage(title, file, tokens, lede) {
     if (!f.units.size && !f.regions.length) {
       parts.push(`\n${NOTHING} No region carries it either, so it is dead data in the mod.`);
     } else if (!f.units.size) {
-      parts.push(`\n**No unit is gated on this zone.** ${f.regions.length} ${f.regions.length === 1 ? "region carries" : "regions carry"} it, but nothing in export_descr_buildings.txt, the campaign script, the mercenary pools, the rebel-faction file or the spawn scripts conditions on it — so at present it unlocks nothing.`);
+      const other = otherConsumerHits(f.tok);
+      parts.push(`\n**No unit is gated on this zone.** ${f.regions.length} ${f.regions.length === 1 ? "region carries" : "regions carry"} it, but no \`recruit\` line in export_descr_buildings.txt conditions on it, ${other.length ? `and the only other files that name it are ${other.join(", ")}` : `and the ${OTHER_CONSUMERS.length} other files that could read a hidden resource — the campaign script, the mercenary pools, the rebel-faction blocks and the spawn scripts — do not mention it at all`}. So as the mod ships it unlocks nothing.`);
     } else if (!f.regions.length) {
       parts.push(`\n**No region carries this zone**, so the ${f.units.size} ${f.units.size === 1 ? "unit" : "units"} below cannot be raised anywhere on the map as it ships.`);
       parts.push("\n" + unitTable(f));
@@ -623,4 +653,9 @@ say(`  specialty  ${String(specialty.list.length).padStart(3)} values, ${special
 say(`  homelands  ${String(homeland.list.length).padStart(3)} values, ${homeland.owner.size} paired with a faction, ${homeland.noOwner.length} not determined, ${homeland.noRegion.length} on no region`);
 say(`  display names: ${levelNameMisses} building levels with no text entry, ${unitNameMisses} units with no name, ${unitPageMisses} units whose page is missing`);
 say(`  anchor index -> tags/index.json: ${Object.keys(ANCHORS).length} tokens a region page can link`);
+say(`  other files scanned before claiming a tag unlocks nothing: ${OTHER_CONSUMERS.length} (campaign script, mercenary pools, rebel factions, spawn scripts)`);
+{
+  const named = zones.noUnits.filter((f) => otherConsumerHits(f.tok).length);
+  say(`    of the ${zones.noUnits.length} zones with no unit, ${named.length} are named in one of those files${named.length ? ` (${named.map((f) => f.tok).join(", ")})` : ""}`);
+}
 if (unknownEffects.size) say(`  effect kinds with no wording (shown as the raw key): ${[...unknownEffects].join(", ")}`);

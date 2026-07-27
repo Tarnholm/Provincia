@@ -28,6 +28,11 @@ function setLiteral(src, name) {
 
 const app = read("src/RegionInfo.js");
 const gen = read("scripts/gen-ris-region-pages.js");
+// The third copy. gen-ris-tag-pages.js writes the reference page each category links INTO, so
+// if it disagreed with the region generator a value would be filed under Terrain on the region
+// page and appear on the Climate page — or, worse, appear on neither and lose its link
+// silently, because verify-ris-wiki.js checks that the file exists, not the heading.
+const tags = read("scripts/gen-ris-tag-pages.js");
 
 const PAIRS = [
   ["TERRAIN_TAG_SET", "TERRAIN_TAGS"],
@@ -35,19 +40,22 @@ const PAIRS = [
   ["IRRIGATION_TAG_SET", "IRRIGATION_TAGS"],
   ["SPECIALTY_AOR_TAGS", "SPECIALTY_AOR"],
 ];
+const COPIES = [["the wiki region generator", gen], ["the tag reference generator", tags]];
 
 describe("wiki region-tag categories match Provincia's", () => {
   for (const [appName, genName] of PAIRS) {
-    it(`${genName} matches ${appName}`, () => {
-      const a = setLiteral(app, appName);
-      const b = setLiteral(gen, genName);
-      // A missing set means one side was renamed; that must fail, not skip.
-      expect(a, `${appName} not found in src/RegionInfo.js`).toBeTruthy();
-      expect(b, `${genName} not found in the wiki generator`).toBeTruthy();
-      const missing = [...a].filter((t) => !b.has(t));
-      const extra = [...b].filter((t) => !a.has(t));
-      expect({ missing, extra }).toEqual({ missing: [], extra: [] });
-    });
+    for (const [where, src] of COPIES) {
+      it(`${genName} in ${where} matches ${appName}`, () => {
+        const a = setLiteral(app, appName);
+        const b = setLiteral(src, genName);
+        // A missing set means one side was renamed; that must fail, not skip.
+        expect(a, `${appName} not found in src/RegionInfo.js`).toBeTruthy();
+        expect(b, `${genName} not found in ${where}`).toBeTruthy();
+        const missing = [...a].filter((t) => !b.has(t));
+        const extra = [...b].filter((t) => !a.has(t));
+        expect({ missing, extra }).toEqual({ missing: [], extra: [] });
+      });
+    }
   }
 
   it("the four categories do not overlap", () => {
