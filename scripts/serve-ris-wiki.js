@@ -267,9 +267,16 @@ code{background:var(--acc-soft);color:var(--fg);padding:.08rem .32rem;border-rad
 blockquote{margin:1rem 0;padding:.65rem .95rem;border-left:3px solid var(--acc);
   background:var(--acc-soft);border-radius:0 6px 6px 0}
 blockquote p{margin:.25rem 0}
+/* Tables size to their content. width:100% stretched an 8-row, 5-column summary across a
+   whole 4K monitor with most of it empty — the numbers ended up further from their labels the
+   more screen you had. fit-content on the wrapper keeps the border around the table rather
+   than around the empty space beside it, and max-width caps a genuinely wide table, which
+   then scrolls inside the wrapper as before. */
 .tw{overflow-x:auto;border:1px solid var(--line);border-radius:8px;margin:.9rem 0;
-  background:var(--panel)}
-table{border-collapse:collapse;width:100%;font-size:.9rem}
+  background:var(--panel);width:fit-content;max-width:100%}
+table{border-collapse:collapse;width:auto;font-size:.9rem}
+/* Long prose in a cell would otherwise make a table as wide as its longest sentence. */
+td{max-width:70ch}
 th,td{padding:.42rem .7rem;text-align:left;vertical-align:middle;border-bottom:1px solid var(--line)}
 th{background:var(--bg);position:sticky;top:0;font-weight:600;font-size:.82rem;
   text-transform:uppercase;letter-spacing:.04em;color:var(--dim);white-space:nowrap}

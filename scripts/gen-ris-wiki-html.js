@@ -77,9 +77,11 @@ input,select{background:var(--panel);color:var(--fg);border:1px solid var(--line
 input{min-width:18rem}
 input:focus,select:focus{outline:2px solid var(--acc-soft);border-color:var(--acc)}
 #count{color:var(--dim);font-size:.84rem;font-variant-numeric:tabular-nums}
+/* Sized to content, not stretched: a filtered roster showing three rows should not spread its
+   columns across the whole window. Wide tables still scroll inside the wrapper. */
 .wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel);
- box-shadow:var(--shadow)}
-table{border-collapse:collapse;width:100%;font-size:.89rem}
+ box-shadow:var(--shadow);width:fit-content;max-width:100%}
+table{border-collapse:collapse;width:auto;font-size:.89rem}
 th,td{padding:.38rem .7rem;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
 th{position:sticky;top:0;background:var(--bg);cursor:pointer;user-select:none;
  font-size:.76rem;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);font-weight:600}
