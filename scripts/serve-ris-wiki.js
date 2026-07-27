@@ -285,7 +285,11 @@ function renderMarkdown(md, toc) {
       // The constants are read off the stylesheet below: body cells 0.9rem, headers 0.82rem
       // uppercase with .04em tracking and nowrap, .7rem of padding each side.
       const BODY_PX = 7.0, HEAD_PX = 8.4, PAD_PX = 22.4, GROUP_GAP_PX = 18;
-      const CONTENT_PX = 1380;     // the content column at a typical wide window
+      // The content column at a typical wide window. Raised from 1380 when the sidebar came
+      // down from 15rem to 12.5 and main's side padding from 2.2rem to 1.6: 40px plus 19px
+      // handed back. This constant and that layout have to move together — leave it behind and
+      // the dealing goes on rationing a width the page no longer has.
+      const CONTENT_PX = 1440;
       const textPx = (cell) => {
         let px = 0;
         // An <img width="N"> occupies N pixels regardless of how long its markup is.
@@ -467,9 +471,14 @@ body{margin:0;background:var(--bg);color:var(--fg);
 #theme:hover{border-color:var(--gold);color:var(--gold)}
 
 /* layout */
-.wrap{display:grid;grid-template-columns:15rem minmax(0,1fr);gap:0;align-items:start}
+/* 12.5rem, down from 15. The navigation is a list of short labels and was taking 15rem of a
+   screen whose whole point is fitting three tables across; that is 40px given back to every
+   page. The type comes down with it so the longest label still fits on one line — "Hazards and
+   river trade" is 23 characters, about 154px at .84rem, and the column holds 172 inside its
+   padding. Anything longer wraps rather than being cut, which is the right failure. */
+.wrap{display:grid;grid-template-columns:12.5rem minmax(0,1fr);gap:0;align-items:start}
 nav.side{position:sticky;top:3.1rem;height:calc(100vh - 3.1rem);overflow-y:auto;
-  border-right:1px solid var(--line);padding:1.1rem .9rem 3rem;font-size:.88rem;background:var(--side)}
+  border-right:1px solid var(--line);padding:1.1rem .7rem 3rem;font-size:.84rem;background:var(--side)}
 nav.side h4{margin:1.1rem 0 .35rem;font-size:.7rem;text-transform:uppercase;
   letter-spacing:.09em;color:var(--dim);font-weight:600}
 nav.side h4:first-child{margin-top:0}
@@ -480,7 +489,7 @@ nav.side a.on{background:var(--acc-soft);color:var(--acc);font-weight:600}
 /* Every page uses the full width of the window. No max-width: a cap here left the right-hand
    side of a wide monitor empty, which is the thing being fixed. Readability is handled by
    splitting content into columns below rather than by throwing the space away. */
-main{min-width:0;padding:1.6rem 2.2rem 5rem;width:100%}
+main{min-width:0;padding:1.6rem 1.6rem 5rem;width:100%}
 
 /* Two columns, each a normal-flow block holding whole sections. There is exactly ONE grid row
    here — the two panes — so nothing inside either column can be held back by the height of
