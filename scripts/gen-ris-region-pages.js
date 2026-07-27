@@ -7,7 +7,12 @@
  * Everything comes from descr_regions and descr_strat:
  *   - the settlement, its owner at campaign start, size and population
  *   - trade resources and the terrain/religion tags the region carries
+ *   - who lives there, as percentages, from descr_regions' own ethnicities field
  *   - what is already built there
+ *
+ * This generator also writes the trade-good icons it references, into wiki/resource-icons/,
+ * so running it alone produces pages whose images all resolve. The building icons come from
+ * gen-ris-building-icons.js instead, because those need a culture as well as a level.
  *
  * TAGS ARE CLASSIFIED, NOT DUMPED. A region's tag line mixes several unrelated things —
  * `rome, italy, n_italy, homeland_roman, aor_camillan, rel_italic_4, Farm11, river_valley,
@@ -30,14 +35,23 @@ const gv = require(path.join(__dirname, "..", "src", "growthEval.js"));
 const rd = (...f) => { try { return fs.readFileSync(path.join(RIS, ...f), "latin1"); } catch { return null; } };
 
 // ── descr_regions ────────────────────────────────────────────────────────────
-// Block shape: RegionName / settlement / owner / rebel-name / "R G B" / tags / N / N
+// Block shape, all eight body lines indented under the region name (see App.js
+// patchDescrRegions, which lists the same layout because it edits this file in place):
+//   [0] settlement  [1] owning faction  [2] rebel name  [3] "R G B"
+//   [4] tags        [5] farm level      [6] pop level   [7] ethnicities
+// Indexed off the RGB line rather than off 0, because it is the only line whose shape is
+// unmistakable, and a stray comment or blank line inside a block would otherwise shift
+// everything after it.
 function loadRegions() {
   const lines = (rd("world", "maps", "base", "descr_regions.txt") || "").split(/\r?\n/);
   const out = [];
   for (let i = 0; i < lines.length; i++) {
     if (!/^[A-Za-z][A-Za-z0-9_'\- ]*\s*$/.test(lines[i])) continue;
+    // Window widened from 9 to 14: at 9 it stopped one line short on any block carrying a
+    // comment, and the ethnicities line is the LAST of the eight, so it was the one lost.
+    // Reading past the block is safe — the loop breaks on the next un-indented header.
     const body = [];
-    for (let k = i + 1; k < Math.min(i + 9, lines.length); k++) {
+    for (let k = i + 1; k < Math.min(i + 14, lines.length); k++) {
       const t = lines[k].trim();
       if (!t || t.startsWith(";")) continue;
       if (/^[A-Za-z][A-Za-z0-9_'\- ]*$/.test(lines[k])) break;   // next block header
@@ -54,7 +68,32 @@ function loadRegions() {
       rebels: body[2],
       colour: body[rgbAt],
       tags: tagLine.split(",").map((s) => s.trim()).filter(Boolean),
+      ethnicitiesRaw: body[rgbAt + 4] == null ? null : body[rgbAt + 4],
+      ethnicities: parseEthnicities(body[rgbAt + 4]),
     });
+  }
+  return out;
+}
+
+/**
+ * "dorian 70 italic 30" -> [{name:"dorian", pct:70}, …], the same pairwise walk Provincia's
+ * own region panel uses (parseEthnicities in src/App.js). Returns [] when the line is not a
+ * sequence of name/number pairs, so an unparseable field is reported rather than guessed at.
+ *
+ * WHY THIS FIELD AND NOT THE rel_ TAGS. The trailing digit in `rel_egyptian_4` is a 1-4
+ * STRENGTH TIER, not a percentage — the pages used to print "Egyptian 4, Macedonian 1",
+ * which reads like 4% and 1%. The percentages are here, in field 7, and they sum to exactly
+ * 100 for all 1,311 regions.
+ */
+function parseEthnicities(str) {
+  if (!str) return [];
+  const parts = String(str).trim().split(/\s+/);
+  if (parts.length < 2 || parts.length % 2 !== 0) return [];
+  const out = [];
+  for (let i = 0; i < parts.length - 1; i += 2) {
+    const pct = parseInt(parts[i + 1], 10);
+    if (isNaN(pct) || !/^[a-z_]+$/i.test(parts[i])) return [];
+    out.push({ name: parts[i].toLowerCase(), pct });
   }
   return out;
 }
@@ -67,20 +106,37 @@ function loadRegions() {
 // hidden resources — `rome`, `italy`, `n_italy` are all entries in this file — so treating
 // every declared name as a trade good listed Rome's province tags as merchandise.
 // The `subtype` field is what separates them.
+// Each block also declares its own localised NAME KEY and its own ICON FILE, so neither has
+// to be guessed from the token. That matters here: RIS reuses vanilla slots under new names,
+// and the mapping is not the identity — token `horses` declares "name": "SMT_RESOURCE_FURS",
+// token `salt` declares "SMT_RESOURCE_DOG", token `fish` declares "SMT_RESOURCE_PIG". Looking
+// up `smt_resource_<token>` misses all three and falls through to humanising the token.
 function loadResourceNames() {
   const txt = rd("descr_sm_resources.txt") || "";
   const tradeable = new Set();
   const hidden = new Set();
+  const meta = {};   // token -> { subtype, nameKey, icon }  (non-hidden only)
   // Blocks look like:  "name": { … "subtype": "hidden" … }
   const re = /"([A-Za-z0-9_\-]+)"\s*:\s*\{([\s\S]*?)\n\s*\}/g;
   for (const m of txt.matchAll(re)) {
     const n = m[1].toLowerCase();
     if (n === "resources") continue;
     const st = /"subtype"\s*:\s*"([a-z_]+)"/.exec(m[2]);
-    if (st && st[1] === "hidden") hidden.add(n); else tradeable.add(n);
+    if (st && st[1] === "hidden") { hidden.add(n); continue; }
+    tradeable.add(n);
+    const nm = /"name"\s*:\s*"([A-Za-z0-9_]+)"/.exec(m[2]);
+    const ic = /"icon"\s*:\s*"([^"]+)"/.exec(m[2]);
+    meta[n] = {
+      subtype: st ? st[1] : null,
+      nameKey: nm ? nm[1].toLowerCase() : null,
+      icon: ic ? ic[1] : null,
+    };
   }
-  return { tradeable, hidden };
+  return { tradeable, hidden, meta };
 }
+// Read here rather than in the build section below, because the display-name and icon
+// lookups are both built from it.
+const res = loadResourceNames();
 
 // Tag categories, taken from Provincia's own region panel (src/RegionInfo.js,
 // categoriseTag) so the wiki and the app say the same thing about the same token. Copying
@@ -309,7 +365,79 @@ const MAP_RESOURCES = loadMapResources();
 // the mod, so they are humanised from the token itself — prefix stripped, underscores out —
 // with the raw token still shown, because it is what a modder searches the files for.
 const RESOURCE_NAMES = loadDisplayNames("resources.txt");
-const resName = (tok) => RESOURCE_NAMES[`smt_resource_${String(tok).toLowerCase()}`] || null;
+// The key declared by the resource itself wins; `smt_resource_<token>` is only a fallback for
+// anything descr_sm_resources does not declare. Counted so the report can say which path was
+// used rather than implying every name is authoritative.
+// Counted as DISTINCT TOKENS, not as calls: tagLabel() routes every region tag through here,
+// so `river_valley` asks for a resource name and correctly gets none. Only tokens
+// descr_sm_resources actually declares can be a miss, so only those are counted as one.
+const resNameVia = { declared: new Set(), convention: new Set(), none: new Set() };
+const resName = (tok) => {
+  const t = String(tok).toLowerCase();
+  const key = res.meta[t] && res.meta[t].nameKey;
+  if (key && RESOURCE_NAMES[key]) { resNameVia.declared.add(t); return RESOURCE_NAMES[key]; }
+  if (RESOURCE_NAMES[`smt_resource_${t}`]) { resNameVia.convention.add(t); return RESOURCE_NAMES[`smt_resource_${t}`]; }
+  if (res.meta[t]) resNameVia.none.add(t);
+  return null;
+};
+
+// Ethnicity / belief display names. The mod localises them as `{<TOKEN>_LABEL}` in
+// text/expanded_bi.txt, under its own heading "BIReligion Cultures (Beliefs)" — so `indo_greek`
+// is "Indo-Greek" and `delmato_pannonian` is "Delmato-Pannonian", neither of which humanising
+// the token produces. One key spells the separator with a hyphen instead of an underscore
+// (DELMATO-PANNONIAN_LABEL), hence the second attempt. All 51 tokens used by descr_regions
+// resolve; the counter below would say so if that ever stopped being true.
+const BI_NAMES = loadDisplayNames("expanded_bi.txt");
+const ethNameVia = { declared: new Set(), none: new Set() };
+const ethName = (tok) => {
+  const t = String(tok).toLowerCase();
+  const hit = BI_NAMES[`${t}_label`] || BI_NAMES[`${t.replace(/_/g, "-")}_label`];
+  if (hit) { ethNameVia.declared.add(t); return hit; }
+  ethNameVia.none.add(t);
+  return null;
+};
+
+// Same bar as the unit pages use for stat ranks (scripts/gen-ris-unit-pages.js, `bar`):
+// backticked block characters so the cells line up in a monospace column, with the number
+// beside it. Deliberately NOT a <div> with a width — GitHub strips style attributes, so a CSS
+// bar renders as nothing on Pages.
+const BAR_CELLS = 10;
+const bar = (pct) => {
+  const filled = Math.max(1, Math.min(BAR_CELLS, Math.round((pct / 100) * BAR_CELLS)));
+  return `\`${"█".repeat(filled)}${"·".repeat(BAR_CELLS - filled)}\``;
+};
+
+// ── trade-good icons ─────────────────────────────────────────────────────────
+// Written by this generator, from the icon path each resource declares for itself. Reuses
+// scripts/lib/tgaPng.js: these are 32bpp RLE TGAs with a real alpha channel, and the
+// hand-rolled 24bpp reader that predates that module produced colour stripes on exactly this
+// class of file while throwing nothing at all.
+const { convert: convertTga } = require(path.join(__dirname, "lib", "tgaPng.js"));
+const ICON_SCALE = 3;   // source art is 360x360; the pages show it at 24px
+function writeResourceIcons(tokens) {
+  const dir = path.join(OUT, "resource-icons");
+  fs.mkdirSync(dir, { recursive: true });
+  const map = {};
+  const noDeclaration = [], fileMissing = [], failed = [];
+  let written = 0, bytes = 0;
+  for (const tok of [...tokens].sort()) {
+    const m = res.meta[tok];
+    if (!m || !m.icon) { noDeclaration.push(tok); continue; }
+    // The declared path is relative to the MOD ROOT ("data/ui/resources/…"), while RIS points
+    // at <root>/data, so the leading "data/" has to come off rather than be joined twice.
+    const rel = m.icon.replace(/\\/g, "/");
+    const file = /^data\//i.test(rel) ? path.join(RIS, rel.slice(5)) : path.join(RIS, "..", rel);
+    if (!fs.existsSync(file)) { fileMissing.push(`${tok} -> ${rel}`); continue; }
+    try {
+      const r = convertTga(dg, file, ICON_SCALE);
+      if (!r) { failed.push(tok); continue; }
+      fs.writeFileSync(path.join(dir, `${tok}.png`), r.buf);
+      map[tok] = `resource-icons/${tok}.png`;
+      written++; bytes += r.buf.length;
+    } catch { failed.push(tok); }
+  }
+  return { map, written, bytes, noDeclaration, fileMissing, failed };
+}
 
 const TAG_PREFIXES = [
   [/^aor_/, ""], [/^homeland_/, ""], [/^rel_/, ""], [/^base_port_level_/, "port level "],
@@ -345,10 +473,25 @@ const FARM_NOTE = "Fertility does not drive population growth in RIS. The engine
   "export_descr_buildings.txt), so the two cancel by design. Fertility still describes the " +
   "land; it is growth specifically that it does not change.";
 
+// What the digit on a `rel_<belief>_N` tag actually is, checked in the file that consumes it.
+// The pages used to print the tag humanised — "Egyptian 4, Macedonian 1" — which reads as
+// 4% and 1%. It is not a share of anything: it is a 1-4 strength tier, and
+// export_descr_buildings.txt scales a `religious_belief` bonus by it, e.g.
+//   religious_belief venetic 2 requires hidden_resource rel_venetic_1     (hinterland_region)
+//   religious_belief venetic 8 requires hidden_resource rel_venetic_4
+//   religious_belief venetic 4 requires hidden_resource rel_venetic_1     (governmentA)
+//   religious_belief venetic 16 requires hidden_resource rel_venetic_4
+// The `religion_present_<belief>` aliases near the top of the same file treat any of the four
+// tiers as "present", so the tier is about strength, not presence.
+const RELIGION_NOTE = "The number on a `rel_…` tag is a **1-4 strength tier, not a percentage**. " +
+  "RIS scales the `religious_belief` a region generates by it — `hinterland_region` grants 2/4/6/8 " +
+  "for tiers 1/2/3/4, and the government chains grant 4/8/12/16 (export_descr_buildings.txt). " +
+  "Any tier counts as the belief being present. The population percentages are the separate " +
+  "Ancestry column, from the region's own ethnicities field.";
+
 // ── build ────────────────────────────────────────────────────────────────────
 const regions = loadRegions();
 if (!regions.length) { console.error("no regions parsed — check descr_regions.txt"); process.exit(2); }
-const res = loadResourceNames();
 
 // settlement -> {faction, level, pop, buildings}
 const strat = gv.parseStrat(path.join(RIS, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt")) || {};
@@ -379,7 +522,16 @@ const facName = (f) => display[String(f).toLowerCase()] || String(f).replace(/_/
 const list = ONLY.length ? regions.filter((r) => ONLY.includes(r.region)) : regions;
 fs.mkdirSync(path.join(OUT, "regions"), { recursive: true });
 
+// Only the goods that actually appear on a page get an icon written, so the folder cannot
+// fill up with art nothing references.
+const NEEDED_GOODS = new Set();
+for (const r of list) for (const tok of (MAP_RESOURCES.out.get(r.region) || new Map()).keys()) NEEDED_GOODS.add(tok);
+const RES_ICONS = writeResourceIcons(NEEDED_GOODS);
+const goodIcon = (tok) => (RES_ICONS.map[tok] ? `<img src="../${RES_ICONS.map[tok]}" alt="" width="24">` : "");
+
 let withMapGoods = 0, withOwner = 0, withBuildings = 0, withTrade = 0;
+let withEthnicities = 0, withoutEthnicities = 0;
+const unparseableEth = [];
 const index = [];
 
 for (const r of list) {
@@ -407,16 +559,39 @@ for (const r of list) {
     `${resName(type) || humanise(type)}${n > 1 ? ` ×${n}` : ""}`);
   if (goods.length) withMapGoods++;
 
+  // Who lives here, as percentages. Ancestry comes from descr_regions field 7 and the shares
+  // sum to 100; the belief tier comes from the region's `rel_…` tags. They are NOT the same
+  // list — 1,180 of 1,311 regions name exactly the same set both ways, and the other 131 have
+  // a people present with no established belief of their own (Phoenicians in Libyan Macaea) or
+  // the reverse. So both are shown, and a row with no counterpart says so rather than being
+  // dropped or invented.
+  const relTier = {};
+  for (const t of g.religion) {
+    const m = /^rel_([a-z_]+)_(\d)$/i.exec(String(t));
+    if (m) relTier[m[1].toLowerCase()] = { tier: parseInt(m[2], 10), tag: t };
+    else relTier[String(t).toLowerCase()] = { tier: null, tag: t };   // unrecognised shape, still shown
+  }
+  const eth = [...r.ethnicities].sort((a, b) => b.pct - a.pct || a.name.localeCompare(b.name));
+  if (eth.length) withEthnicities++;
+  else { withoutEthnicities++; if (unparseableEth.length < 8) unparseableEth.push(`${r.region}: ${JSON.stringify(r.ethnicitiesRaw)}`); }
+  const peopleKeys = [...eth.map((e) => e.name), ...Object.keys(relTier).filter((k) => !eth.some((e) => e.name === k))];
+  const peopleRows = peopleKeys.map((k) => {
+    const e = eth.find((x) => x.name === k);
+    const rt = relTier[k];
+    const name = ethName(k) || humanise(k);
+    const share = e ? `${bar(e.pct)} ${e.pct}%` : "_none_";
+    const tier = rt ? (rt.tier == null ? `\`${rt.tag}\`` : `**${rt.tier}** / 4`) : "—";
+    return `| ${name} | ${share} | ${tier} |`;
+  });
+
   const glance = [
     `**Settlement:** ${r.settlement}`,
     held ? `**Size:** ${String(held.level || "").replace(/_/g, " ")}` : null,
     held && held.pop != null ? `**Population:** ${held.pop.toLocaleString("en-US")}` : null,
+    eth.length ? `**People:** ${eth.map((e) => `${ethName(e.name) || humanise(e.name)} ${e.pct}%`).join(", ")}` : null,
     goodsLabel.length ? `**Trade goods:** ${goodsLabel.join(", ")}` : null,
   ].filter(Boolean).join(" · ");
 
-  if (goodsLabel.length) {
-    rows.push(`| Trade goods on the map | ${goodsLabel.map((l, i) => `${l} \`${goods[i][0]}\``).join(", ")} |`);
-  }
   addRow("Region resource tags", g.trade);
   // Fertility is the Farm## tag on a 1-14 scale, NOT descr_regions field 7 — RIS leaves that
   // field at a constant 5 for every region as a placeholder, so reporting it would give the
@@ -430,7 +605,11 @@ for (const r of list) {
   addRow("Climate", g.climate);
   addRow("Irrigation", g.irrigation);
   addRow("Port", g.port);
-  addRow("Religion", g.religion);
+  // Religion is NOT a row here any more: humanised, `rel_egyptian_4` printed as "Egyptian 4",
+  // which reads as a percentage and is a strength tier. It has its own column in "Who lives
+  // here", next to the real percentages, with RELIGION_NOTE explaining the scale. Nothing is
+  // dropped — every rel_ tag on the region appears there, including any that does not match
+  // the `rel_<belief>_<tier>` shape.
   addRow("Recruitment zones", g.recruitment);
   addRow("Specialty recruitment", g.specialty);
   addRow("Cultural homeland", g.culture);
@@ -445,6 +624,18 @@ for (const r of list) {
 ${glance}
 
 ${held ? `Held at the campaign start by ${hasPage(held.faction) ? `[${facName(held.faction)}](../factions/${held.faction}.md)` : facName(held.faction)}${held.capital ? " — **their capital**" : ""}.` : `This region begins **independent**. If it revolts, the rebels are ${r.rebels}.`}
+
+## Who lives here
+
+${peopleRows.length
+  ? `| People | Ancestry | Belief tier |\n|---|---|:-:|\n${peopleRows.join("\n")}\n\n${RELIGION_NOTE}`
+  : "_This region's ethnicities field could not be read, and it carries no religion tags._"}
+
+## Trade goods
+
+${goods.length
+  ? `| | Good | Placed |\n|:-:|---|---:|\n${goods.map(([type, n]) => `| ${goodIcon(type)} | **${resName(type) || humanise(type)}** \`${type}\` | ${n} |`).join("\n")}\n\n_"Placed" counts the resource markers standing inside this region's borders in descr_strat — each one is a deposit on the map, not a level._`
+  : "_No trade goods are placed inside this region._"}
 
 ## Resources and character
 
@@ -483,3 +674,19 @@ console.log(`  cross-check vs the file's own settlement comment: ${MAP_RESOURCES
 console.log(`  regions with trade goods:  ${withMapGoods.toLocaleString("en-US")}`);
 console.log(`  with a trade resource:      ${withTrade}`);
 console.log(`  resource vocabulary read:   ${res.tradeable.size} tradeable, ${res.hidden.size} hidden`);
+console.log(`  resource names (distinct tokens): ${resNameVia.declared.size} via the key the resource declares, ${resNameVia.convention.size} via smt_resource_<token>, ${resNameVia.none.size} declared resources with no text entry${resNameVia.none.size ? ` (${[...resNameVia.none].join(", ")})` : ""}`);
+
+console.log(`\nancestry (descr_regions field 7, "<people> <pct>" pairs):`);
+console.log(`  parsed:     ${withEthnicities.toLocaleString("en-US")} regions`);
+console.log(`  unparseable or absent: ${withoutEthnicities.toLocaleString("en-US")}${unparseableEth.length ? ` — e.g. ${unparseableEth.join("; ")}` : ""}`);
+console.log(`  people display names (distinct tokens): ${ethNameVia.declared.size} from text/expanded_bi.txt <TOKEN>_LABEL, ${ethNameVia.none.size} with no entry (token humanised)${ethNameVia.none.size ? ` — ${[...ethNameVia.none].join(", ")}` : ""}`);
+
+console.log(`\ntrade-good icons -> ${path.join(OUT, "resource-icons")} (1/${ICON_SCALE} of the source art):`);
+console.log(`  goods referenced by a page: ${NEEDED_GOODS.size}`);
+console.log(`  written:                    ${RES_ICONS.written} (${(RES_ICONS.bytes / 1024).toFixed(0)} KB)`);
+console.log(`  no "icon" declared:         ${RES_ICONS.noDeclaration.length}${RES_ICONS.noDeclaration.length ? ` (${RES_ICONS.noDeclaration.join(", ")})` : ""}`);
+console.log(`  declared file not on disk:  ${RES_ICONS.fileMissing.length}${RES_ICONS.fileMissing.length ? ` (${RES_ICONS.fileMissing.join(", ")})` : ""}`);
+// "failed" means the decoder threw or returned nothing. It does NOT mean the images are
+// right: a 32bpp source read as 24bpp produced correctly-sized colour-stripe garbage without
+// throwing once, across 1,132 files. Only opening one shows that.
+console.log(`  threw while decoding:       ${RES_ICONS.failed.length}${RES_ICONS.failed.length ? ` (${RES_ICONS.failed.join(", ")})` : ""}  <- a zero here means nothing threw, not that the art is correct; open one and look`);
