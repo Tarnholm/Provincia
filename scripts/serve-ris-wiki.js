@@ -615,7 +615,8 @@ hr{border:none;border-top:1px solid var(--line);margin:2rem 0}
 
 const NAV = [
   ["Start here", [["/README.md", "Wiki index"], ["/factions.md", "All factions"],
-    ["/regions.md", "All regions"], ["/units.md", "All units"], ["/buildings.md", "All buildings"]]],
+    ["/regions.md", "All regions"], ["/settlements.md", "All settlements"],
+    ["/units.md", "All units"], ["/buildings.md", "All buildings"], ["/trade-goods.md", "Trade goods"]]],
   ["Overviews", [["/factions-overview.md", "Factions vs vanilla"], ["/map-and-regions.md", "The map"],
     ["/units-overview.md", "Roster vs vanilla"]]],
   ["Region tags", [["/tags.md", "All reference tables"], ["/tags/terrain.md", "Terrain"],
@@ -648,8 +649,15 @@ function crumbs(rel) {
   const out = [`<a href="/README.md">RIS wiki</a>`];
   if (segs.length > 1) {
     const section = segs[0];
-    const overview = ["factions", "regions", "units", "buildings"].includes(section)
-      ? `/${section}.md` : null;
+    // Named explicitly rather than derived from the directory: the trade goods live in goods/
+    // but their index is trade-goods.md, so "<dir>.md" would have produced a crumb pointing at
+    // a file that does not exist — which the existence check below turns into an unlinked word,
+    // silently losing the way back up.
+    const INDEX_OF = {
+      factions: "/factions.md", regions: "/regions.md", settlements: "/settlements.md",
+      units: "/units.md", buildings: "/buildings.md", tags: "/tags.md", goods: "/trade-goods.md",
+    };
+    const overview = INDEX_OF[section] || null;
     out.push(overview && fs.existsSync(path.join(ROOT, overview.slice(1)))
       ? `<a href="${overview}">${esc(section)}</a>` : esc(section));
   }

@@ -270,24 +270,41 @@ render();
 }
 
 // ── factions ─────────────────────────────────────────────────────────────────
-// factions.md columns: Faction | Settlements | Characters | Faction units | Regional (AOR)
-// The unit count used to be one column. Splitting it in the markdown without splitting it
-// here would have left this view reading the AOR count as the whole roster.
+// factions.md is no longer ONE table. It is a section per culture, each with its own
+// four-column table (Faction | Settlements | Characters | Units), and this view read a
+// five-column table that stopped existing — so it silently produced a page with a header and
+// no rows. A count assertion below now refuses to write an empty one.
+//
+// Which is a better source anyway: the culture is in the section heading above each table, so
+// this view gains a Culture column the flat table never had, and gains it without the markdown
+// having to repeat the culture on all 230 rows.
 {
-  const raw = parseTable("factions.md", 5).filter((c) => /^\[/.test(c[0]));
-  const rows = raw.map((c) => {
+  let body = "";
+  try { body = fs.readFileSync(path.join(OUT, "factions.md"), "utf8"); } catch { /* stays empty */ }
+  const rows = [];
+  let culture = null;
+  for (const line of body.split(/\r?\n/)) {
+    const h = /^##\s+(.+?)\s*$/.exec(line);
+    if (h) { culture = h[1]; continue; }
+    if (!/^\|/.test(line) || !culture) continue;
+    const c = line.split("|").slice(1, -1).map((x) => x.trim());
+    if (c.length < 4 || !/^\[/.test(c[0])) continue;
     const f = linkText(c[0]);
-    return [{ text: f.text, href: f.href }, numOf(c[1]), numOf(c[2]), numOf(c[3]), numOf(c[4])];
-  });
+    rows.push([{ text: f.text, href: f.href }, culture, numOf(c[1]), numOf(c[2]), numOf(c[3])]);
+  }
   const columns = [
-    { label: "Faction" }, { label: "Settlements", num: true },
-    { label: "Characters", num: true }, { label: "Faction units", num: true },
-    { label: "Regional (AOR)", num: true },
+    { label: "Faction" }, { label: "Culture" }, { label: "Settlements", num: true },
+    { label: "Characters", num: true }, { label: "Units", num: true },
   ];
   fs.writeFileSync(path.join(OUT, "factions.html"),
-    PAGE("Factions", "Every playable faction, sortable by how much it starts with. " +
-      "Faction units are the roster a faction can raise anywhere it holds a settlement; regional (AOR) units " +
-      "need a province carrying the right hidden resource, and are mostly open to everyone on paper.",
+    PAGE("Factions", "Every playable faction, sortable by culture or by how much it starts with. " +
+      "Units is the faction's own roster — what it can raise from its own buildings anywhere it holds a " +
+      "settlement. It excludes regional units, which are gated on holding the right province rather than on " +
+      "being anyone in particular: every faction has between 424 and 443 of those.",
       columns, rows, "README.md"), "utf8");
-  console.log(`factions.html: ${rows.length.toLocaleString("en-US")} rows`);
+  console.log(`factions.html: ${rows.length.toLocaleString("en-US")} rows across ${new Set(rows.map((r) => r[1])).size} cultures`);
+  if (rows.length < 200) {
+    console.error(`  FAILED: factions.html has ${rows.length} rows — factions.md's shape has changed again`);
+    process.exitCode = 1;
+  }
 }
