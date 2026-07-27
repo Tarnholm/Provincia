@@ -54,6 +54,45 @@ describe("the bundled reporter is packaged completely", () => {
   });
 });
 
+describe("the bundled reporter is not older than the standalone one", () => {
+  // Nothing copies the standalone reporter into crash-reporter/, so the two drifted six
+  // versions apart: testers using the standalone installer were on 0.1.38 while Provincia
+  // bundled 0.1.33, and every analyser improvement in between reached only half the users.
+  // The packaging checks above all passed throughout, because a stale file is still a
+  // complete file.
+  const STANDALONE = "C:/dev/RIS-CrashReporter/crash_reporter.py";
+  const versionOf = (f) => (/^APP_VERSION\s*=\s*"([^"]+)"/m.exec(fs.readFileSync(f, "utf8")) || [])[1];
+  const cmp = (a, b) => {
+    const pa = a.split(".").map(Number), pb = b.split(".").map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+      const d = (pa[i] || 0) - (pb[i] || 0);
+      if (d) return d;
+    }
+    return 0;
+  };
+
+  it("declares a version at all", () => {
+    expect(versionOf(path.join(BUNDLE, "crash_reporter.py"))).toMatch(/^\d+\.\d+\.\d+$/);
+  });
+
+  it("is at least the standalone version, where the standalone repo is present", () => {
+    const bundled = versionOf(path.join(BUNDLE, "crash_reporter.py"));
+    if (!fs.existsSync(STANDALONE)) {
+      // Said out loud, because a silent skip is indistinguishable from a pass — which is the
+      // exact confusion that let the drift survive.
+      console.log(`[crash-reporter] standalone absent (${STANDALONE}); drift NOT checked, bundled is ${bundled}`);
+      return;
+    }
+    const standalone = versionOf(STANDALONE);
+    console.log(`[crash-reporter] bundled ${bundled} · standalone ${standalone}`);
+    expect(
+      cmp(bundled, standalone),
+      `bundled reporter ${bundled} is older than standalone ${standalone} — copy ` +
+      `${STANDALONE} into crash-reporter/ and re-run \`npm run gen:ailog-patterns\``
+    ).toBeGreaterThanOrEqual(0);
+  });
+});
+
 describe("the generated Python filter matches the analyser", () => {
   it("is byte-identical to what the generator would write right now", () => {
     const onDisk = fs.readFileSync(path.join(BUNDLE, "ai_log_patterns.py"), "utf8");

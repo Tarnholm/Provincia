@@ -30,7 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 APP_NAME = "RIS Crash Reporter"
-APP_VERSION = "0.1.33"
+APP_VERSION = "0.1.39"
 CONFIG_FILENAME = "crash_reporter.ini"
 LOG_FILENAME = "crash_reporter.log"
 
@@ -106,11 +106,48 @@ FATAL_PATTERNS = [
 # ("...length Failedbuilding_browser scroll opened").
 ASSERT_RE = re.compile(r".*?\bFailed")
 
+# An engine RESOLUTION FAILURE, not an assert: the game could not resolve a name and
+# says which one. These lines START with "Failed", so ASSERT_RE reduced them to the bare
+# word and their content was lost — see the note above this block's history.
+#
+# The captured token is the actionable part. `descr_formations_ai.txt:80` +
+# 'pilum_infantry' identifies a one-line fix in the mod, and Provincia's modLint finds
+# the same token statically without running the game.
+RESOLUTION_FAILURE_RE = re.compile(
+    r"^Failed to (?P<what>[^.]+?)\.\s*Provided:\s*'(?P<token>[^']+)'"
+)
+# A file:line the engine printed just before the failure, so the report can point at it.
+SOURCE_REF_RE = re.compile(r"([A-Za-z0-9_./\\-]+\.txt):(\d+)\s*$")
+
+
+def is_resolution_failure(line):
+    """True when a line is an engine name-resolution failure rather than an assert.
+
+    Matched BEFORE ASSERT_RE so these never land in the assert counter as "Failed".
+    Deliberately narrow: it requires the "Provided: '<token>'" clause, so an ordinary
+    sentence beginning with "Failed" is not swallowed.
+    """
+    return bool(RESOLUTION_FAILURE_RE.match(line.strip()))
+
+
+def parse_resolution_failure(line):
+    """-> (what_failed, token) or None."""
+    m = RESOLUTION_FAILURE_RE.match(line.strip())
+    if not m:
+        return None
+    return m.group("what").strip(), m.group("token").strip()
+
 # Benign/high-frequency asserts the engine + RIS scripts throw constantly and
 # that do NOT indicate a crash. Substring match against the captured expression.
 # These three alone account for ~7.9M lines in a long session — counting them
 # would bury the real signal, so they're suppressed.
 ASSERT_IGNORE_SUBSTRINGS = (
+    # Engine resolution failures start with "Failed" and so collapse to that single
+    # word under ASSERT_RE. They are counted separately, with their token, by
+    # RESOLUTION_FAILURE_RE — not suppressed, re-routed.
+    "Failed to find",
+    "Failed to load",
+    "Failed to open",
     "n < N Failed",
     "min <= max Failed",
     "bdg.construction_type_get()",
@@ -943,6 +980,14 @@ class LogTail:
         # Counted by distinct expression so a million repeats of one assert show
         # as one entry with a big count, not a million flagged lines.
         self.asserts: Counter = Counter()
+        # Engine name-resolution failures, keyed "<what>: '<token>'", plus the file:line
+        # the engine printed just before each. These are NOT asserts — they start with
+        # the word "Failed", so ASSERT_RE reduced them to that single word and their
+        # content was lost. Grimel's three consecutive crash reports each listed
+        # "Failed ×14" as one of only three distinct asserts; what it really said was
+        # "descr_formations_ai.txt:80 / Provided: 'pilum_infantry'".
+        self.resolution_failures: Counter = Counter()
+        self.resolution_source: dict = {}
         # Optional live capture: lines matching any regex in capture_res are kept
         # (most-recent, capped) so the report can show e.g. the last battle setup
         # even when it scrolled far past any attachable tail.
@@ -1015,6 +1060,24 @@ class LogTail:
             # detected separately and deduped by expression. Cheap "Failed in"
             # guard first so we only run the regex on candidate lines.
             if "Failed" in ln:
+                # A resolution failure NAMES what the engine could not resolve, which is
+                # the most actionable line a report can carry. Handled before ASSERT_RE
+                # because these start with "Failed" and would otherwise be filed as an
+                # assert whose expression is that bare word.
+                rf = parse_resolution_failure(ln)
+                if rf:
+                    what, token = rf
+                    key = "%s: '%s'" % (what, token)
+                    if key not in self.resolution_failures:
+                        src = ""
+                        for prev in reversed(self.buffer[-4:]):
+                            sm = SOURCE_REF_RE.search(prev.strip())
+                            if sm:
+                                src = "%s:%s" % (sm.group(1).replace("\\", "/").split("/")[-1], sm.group(2))
+                                break
+                        self.resolution_source[key] = src
+                    self.resolution_failures[key] += 1
+                    continue
                 am = ASSERT_RE.search(ln)
                 if am:
                     expr = am.group(0).strip()
@@ -1932,8 +1995,54 @@ def main():
     if assert_total > 0:
         combined = Counter()
         combined.update(sys_tail.asserts); combined.update(msg_tail.asserts)
-        top = ", ".join(f"{expr} ×{n}" for expr, n in combined.most_common(5))
+        # Ordered by measured crash-association, then volume - see ASSERT_RISK. The
+        # loudest asserts in this mod are the ones sessions most often SURVIVE, so a
+        # plain most_common() ranking buries the informative ones.
+        top = ", ".join(rank_asserts(combined, 5))
         crash_signals.append(f"engine asserts: {assert_total} total, {len(combined)} distinct — {top}")
+        # Resolution failures, with the token and the file:line the engine named. This is
+        # the one signal a modder can act on without any further investigation.
+        _res = Counter()
+        _src = {}
+        for _t in (sys_tail, msg_tail):
+            _res.update(getattr(_t, "resolution_failures", {}) or {})
+            _src.update(getattr(_t, "resolution_source", {}) or {})
+        if _res:
+            _items = []
+            for _k, _n in _res.most_common(5):
+                _where = _src.get(_k) or ""
+                _items.append("%s x%d%s" % (_k, _n, (" at %s" % _where) if _where else ""))
+            crash_signals.append(
+                "⚠ the engine could not resolve %d name(s) — this is a DATA defect with a "
+                "named location, fixable without reproducing the crash: %s"
+                % (len(_res), "; ".join(_items))
+            )
+        _high = [e for e in combined if assert_risk(e)[0] > 0]
+        if _high:
+            # A raw "136 crashes, 200 survivors" is not interpretable: 40% sounds alarming or
+            # reassuring depending on what the reader assumes the normal rate is. Quoted
+            # against the measured baseline instead, so the number means something.
+            #
+            # Measured 2026-07-27 over the 486 telemetry sessions carrying a Session line
+            # (counting messages instead double-counts: the reporter splits large posts and the
+            # continuation parts repeat the status without a session, which inflated the
+            # baseline to 43% and hid the effect):
+            #   baseline crash rate .................. 31% (152/486)
+            #   sessions with this assert family ..... 68% (23/34)  = 2.4x the baseline
+            #   the high-volume asserts, by contrast, are PROTECTIVE, not neutral:
+            #     man_in_front_index ................. 25% (0.76x)
+            #     smp_2 != STRATEGY_MAP_POSITION ..... 25% (0.73x)
+            #   peak working set >=12 GB ............. 34% (1.17x) — no signal; 205 of 486
+            #     sessions exceed 12 GB, so a large working set is normal for this engine and
+            #     is not evidence of anything on its own.
+            crash_signals.append(
+                "⚠ %d assert type(s) here are associated with CRASHED sessions: sessions "
+                "carrying them crash 68%% of the time against a 31%% baseline (2.4x), measured "
+                "over 486 telemetry sessions: %s. The high-volume asserts above them are not "
+                "merely survivable, they are PROTECTIVE (25%% crash rate, 0.76x) - do not "
+                "triage by count alone."
+                % (len(_high), ", ".join(sorted(_high)[:4]))
+            )
         # Auto-tag the dominant long-session CTD class so it's triaged on sight:
         # RTW-R's string ref-count is 16 bits and wraps after hours of play
         # (uni_char_string length/sharing_count asserts). Engine limit, not a
@@ -2048,6 +2157,11 @@ def main():
             summary = None
         if summary:
             crash_signals.append(f"⮑ minidump: {summary}")
+            # Recognise a fault address seen repeatedly across testers, so the report
+            # arrives already triaged instead of looking like a one-off.
+            _note = known_fault_note(summary)
+            if _note:
+                crash_signals.append("  " + _note)
 
     # ---- Final status ----
     # Priority: a HARD signal → crash. Otherwise a confirmed clean shutdown is
@@ -2346,6 +2460,173 @@ def main():
     return 0
 
 
+# One verbatim line per pattern in ai_log_patterns.AI_LOG_LINE_PATTERNS, lifted
+# from the 4.4M-line reference campaign_ai_log by Provincia's
+# scripts/harvest-ailog-samples.js. Every pattern is proven to have a real example,
+# so none is speculative.
+#
+# The selftest asserts this build keeps all of them. That is the check that catches
+# the failure mode with no symptom: a pattern added on the Provincia side, never
+# regenerated here, so the extract quietly arrives missing lines the Lab needs.
+REAL_AI_LOG_SAMPLES = [
+    "AI: \t\t\t\tstart 'dummies' for year -270, season summer",
+    "AI: campaign: mission move nonlocal: char 'Captain Proteus' moving towards sett 'Pella', priority 400.",
+    "AI: named cc: army 'Bellovesus' told to move to 'Decetia', priority 100.",
+    "AI: campaign: res for char 'Captain Nabag' assigned to reg 1017 at priority 1.",
+    "AI: resource for char 'Captain Bodmelqart' released by controller",
+    "AI: campaign for region '1040' aborted because of insufficient available strength.",
+    "AI: campaign: campaign for 'Armenian Rebels Settlement' (reg 1306, des 129) using strategy ACS_DEFEND_BORDER. required str 0 (ACZ_STAY_AT_HOME), allocated str 0; num res 0.",
+    "AI: finance: est income 101, est maintenance 378, est outgoings 378 -- spending max 0, spending norm -277; balance AFB_EARN_MINUTE, state AFS_PAUPER",
+    "AI: -- building 'Small Treasury' at priority 171.",
+    "AI: campaign: garrison of settlement 'Carthage' told to split, 10 units leaving, priority 650.",
+    "AI: mildir: invade_<other> attack authorised against 'slave'.",
+    "AI: 0 spies assigned this turn",
+    "AI: ltgd: army strength 2125, free army strength 2125, navy strength 0.",
+    "AI: ltgd: 'carthage' invade 'corsi', not at war, good production against strongest neighbour >> ALI_START_PLAN (200).",
+    "AI: ltgd: defend (frontline .000132, free 9.486274, product 21.18303) vs fac 'acragas': not at war, bad frontline, decent free strength >> ALD_DEFEND_DEEP.",
+    "AI: -- troop type 'Caetrati Infantry' at priority 40.",
+    "AI: region control: settlement 'Roman Rebels 1 Settlement', (pop 400, old order 0), tax TAX_LEVEL_LOW due to enough money",
+    "AI: production: started recruitment of 'hyrkanian foot archers' at 'Parnon Taphai', priority 25, prod type AI_PROD_TYPE_BALANCED.",
+    "AI: production: started 'building new, garrison' at 'Sexi', priority 6496, prod type AI_PROD_TYPE_MILITARY.",
+    "AI: ltgd: number of invasion targets: 0",
+    "AI: number of spies 0, number of assassins 0.",
+    "AI: named cc: leader status 'free', heir status 'free', ungoverned cities 0 / 1, adoptees 0, resources 0 (total str 0).",
+    "AI: production: settlement 'Iol' is busy constructing building upgrade, military_industrial_complex to level 1, considering repairs.",
+    "AI: campaign: mission move: char 'Admiral Baalshafot' moving towards tile (123, 356) in region (0), priority 924 (move towards a position to take on a passenger).",
+    "AI: worldwide: char 'Ptolemaios' assigned (in region 1256) at priority 0.",
+    "AI: resource for char 'Ptolemaios' released by worldwide controller in region 1252.",
+    "AI: Diplomat CC: Character \"Cassivellaunus\" told to move to settlement \"Vesontio\". Task: DIPLOMACY. Initiate: Yes. Priority 1000",
+    "AI: production: sufficient numbers of troops but enough cash for more, so continuing to recruit.",
+    "err: no building of this type in settlement",
+    "AI: campaign: campaign for 'Armenian Rebels Settlement' (reg 1306, des 129) using strategy ACS_DEFEND_BORDER. required str 0 (ACZ_STAY_AT_HOME), allocated str 0; num res 0.sudo set_building_health local hinterland_region",
+    "AI: naval controller: ARMY resource for char 'Admiral Yahua' assigned for reg 0.",
+]
+
+
+
+# ── ASSERT RISK, from telemetry (see the note in this file's header history) ──
+# Measured 2026-07-26 across 336 sessions: 136 suspected crashes vs 200 that survived
+# a high assert volume. Values are (crash-session share) - (survivor share), so a
+# positive score means "seen far more often in sessions that died".
+#
+# WHY THIS EXISTS: ranking crash signals by COUNT surfaces exactly the wrong asserts.
+# The two loudest in this mod - the string ref-count overflow and the texture-manager
+# assert - are MORE common in sessions that exit cleanly (87-89% of survivors against
+# 40-43% of crashes). A report that leads with them buries the handful that actually
+# track a dead process.
+ASSERT_RISK = [
+    # (substring to match, score, short note shown beside it)
+    ("unit_class != UCL_NUM_CLASSES", 11,
+     "unit type/category enum - tracks descr_formations_ai unit_type tokens"),
+    ("m_class != UCL_NUM_CLASSES", 8,
+     "unit type/category enum - same family as the above"),
+    ("flee_dx", 9, "rout vector out of range during a battle"),
+    ("m_locomotive->tile_path.count()", 7, "empty movement path"),
+    ("m_garrison_residence", 7, "garrison with no residence"),
+    ("num_frontiers ==", 5, "region frontier count mismatch"),
+    ("byte <= buffer_end - buffer_start", 5, "buffer overrun"),
+    # Negative = commonly survived. Never hidden, only de-prioritised and labelled,
+    # because "loud but survivable" is itself useful to know.
+    ("m_status == TEX_MANAGER_DISPLAY_OPEN", -49, "very common; sessions usually survive it"),
+    ("index < this->uni_char_string->length", -44, "string ref-count overflow; engine limit, usually survived"),
+    ("length_squared > 0", -28, "very common; sessions usually survive it"),
+    ("path_handle == -1", -25, "common in battles; usually survived"),
+]
+
+
+def assert_risk(expr):
+    """Score an assert by its measured association with a crashed session.
+
+    Returns (score, note). Unknown asserts score 0 - neither promoted nor demoted,
+    which is the honest default for a signature the telemetry has not seen.
+    """
+    for needle, score, note in ASSERT_RISK:
+        if needle in expr:
+            return score, note
+    return 0, ""
+
+
+def rank_asserts(counter, limit=5):
+    """Order asserts by risk first, volume second, and annotate the known ones.
+
+    Volume still breaks ties, so a high-risk assert firing once does not outrank a
+    high-risk assert firing a thousand times. An assert the telemetry has never seen
+    keeps its volume ordering rather than being pushed to the bottom.
+    """
+    scored = []
+    for expr, n in counter.items():
+        score, note = assert_risk(expr)
+        scored.append((score, n, expr, note))
+    scored.sort(key=lambda t: (-t[0], -t[1]))
+    out = []
+    for score, n, expr, note in scored[:limit]:
+        tag = ""
+        if score > 0:
+            tag = " [HIGH-RISK: %s]" % note
+        elif score < 0:
+            tag = " [%s]" % note
+        out.append("%s x%d%s" % (expr, n, tag))
+    return out
+
+
+
+# ── KNOWN CRASH SIGNATURES, from minidump fault addresses in telemetry ──
+# Measured 2026-07-26 over 50 reports carrying a parsed minidump. Fault addresses are
+# far from uniform: one accounts for nearly half of them.
+#
+#   24x  ACCESS_VIOLATION @ Total War ROME REMASTERED.exe+0x266FD3   <- dominant
+#    8x  ACCESS_VIOLATION @ VCRUNTIME140.dll+0x128D0
+#    5x  INT_DIVIDE_BY_ZERO @ ...+0x868C71
+#    5x  ACCESS_VIOLATION @ ...+0x91FCD0
+#
+# The dominant one spans six testers (Grimel, Neep, Vas, Balbor, eRa73, Vortal) and is
+# ENRICHED for specific asserts against crashes at any other address:
+#
+#   !m_current_image || image == m_current_image      42% vs 23%
+#   unit_class != UCL_NUM_CLASSES || unit_category    17% vs  0%
+#   m_locomotive->tile_path.count()                   25% vs 12%
+#   m_class != UCL_NUM_CLASSES || m_category          13% vs  0%
+#
+# The unit-enum asserts appearing in 0% of other-address crashes is the specific part:
+# they are not general crash noise. They are also what a bad `unit_type` token in
+# descr_formations_ai.txt produces, which is statically detectable before the game runs.
+#
+# HONEST LIMITS: ~4 of the 24 carry the unit-enum assert, so the absolute count is
+# small; co-occurrence at one fault address is not proof of cause; and the strongest
+# enrichment is an IMAGE assert, which may be nearer the actual fault. The note says
+# "associated with", never "caused by".
+KNOWN_FAULT_SIGNATURES = [
+    {
+        "match": "+0x266FD3",
+        "label": "the most common crash signature in RIS telemetry",
+        "detail": (
+            "24 of 50 parsed minidumps land here, across six testers — roughly three times "
+            "the next-commonest address. Sessions hitting it are enriched for "
+            "!m_current_image (42% vs 23% elsewhere), unit_class/m_class != UCL_NUM_CLASSES "
+            "(17%/13% vs 0% at every other address) and m_locomotive->tile_path.count() "
+            "(25% vs 12%). The unit-enum pair is what an unrecognised unit_type token in "
+            "descr_formations_ai.txt produces, and it is statically detectable before the "
+            "game runs. Association, not proven cause."
+        ),
+    },
+]
+
+
+def known_fault_note(summary):
+    """Annotate a minidump summary when it matches a signature seen across testers.
+
+    One report cannot know it is the 24th of its kind, so the aggregate lives here and
+    travels with the build. Returns None for an unrecognised address rather than
+    guessing - a new fault address is information too.
+    """
+    if not summary:
+        return None
+    for sig in KNOWN_FAULT_SIGNATURES:
+        if sig["match"] in summary:
+            return "⚠ %s — %s" % (sig["label"], sig["detail"])
+    return None
+
+
 def selftest() -> int:
     """Report whether this build can do everything it claims. Exit 0 = healthy.
 
@@ -2366,7 +2647,7 @@ def selftest() -> int:
         print("        npm run gen:ailog-patterns).")
         ok = False
     else:
-        # prove the filter actually works, not merely that the module loaded
+        # Prove the filter actually works, not merely that the module loaded.
         header = "AI: \t\t\t\tstart 'dummies' for year -270, season summer"
         checks = [
             ("faction turn header", _keep_ai_line(header), True),
@@ -2379,6 +2660,80 @@ def selftest() -> int:
             print("  %-26s %-5s %s" % (label, str(bool(got)), "ok" if good else "FAIL (expected %s)" % want))
             if not good:
                 ok = False
+
+        # Every pattern's real example must survive the filter. A dropped line means
+        # this build's ai_log_patterns.py is behind Provincia's.
+        try:
+            import ai_log_patterns as _alp
+            n_patterns = len(_alp.AI_LOG_LINE_PATTERNS)
+        except Exception:
+            n_patterns = -1
+        dropped = [x for x in REAL_AI_LOG_SAMPLES if not _keep_ai_line(x)]
+        print("  %-26s %d patterns, %d/%d real lines kept"
+              % ("pattern coverage", n_patterns, len(REAL_AI_LOG_SAMPLES) - len(dropped),
+                 len(REAL_AI_LOG_SAMPLES)))
+        if dropped:
+            ok = False
+            for x in dropped[:6]:
+                print("      DROPPED: %s" % x[:88])
+            print("      This build is behind Provincia. Regenerate with")
+            print("      'npm run gen:ailog-patterns' in C:/dev/Provincia and rebuild.")
+        if n_patterns != len(REAL_AI_LOG_SAMPLES):
+            # Not fatal on its own — a pattern can legitimately share a sample — but
+            # a mismatch means the fixture was not re-harvested and is worth saying.
+            print("      note: %d patterns vs %d samples; re-harvest the fixture."
+                  % (n_patterns, len(REAL_AI_LOG_SAMPLES)))
+
+    # The assert ranking must put a rare HIGH-RISK assert above a very loud benign one.
+    # That inversion is the whole point: the two loudest asserts in this mod are the ones
+    # sessions most often survive (87-89% of survivors vs 40-43% of crashes), so ranking
+    # by count buries the informative ones. Checked here so a future edit to ASSERT_RISK
+    # cannot quietly restore volume ordering.
+    try:
+        from collections import Counter as _C
+        _mix = _C({
+            "length_squared > 0": 14314,                                        # loud, survivable
+            "unit_class != UCL_NUM_CLASSES || unit_category != UC_NUM_CATEGORIES": 14,  # rare, deadly
+        })
+        _ranked = rank_asserts(_mix, 2)
+        _ok = ("unit_class" in _ranked[0]) and ("HIGH-RISK" in _ranked[0]) and ("length_squared" in _ranked[1])
+        print("  %-26s %-5s %s" % ("assert-risk ranking", str(_ok),
+                                   "ok" if _ok else "FAIL (loud benign assert outranked a high-risk one)"))
+        if not _ok:
+            ok = False
+    except Exception as _exc:
+        print("  %-26s FAIL: %r" % ("assert-risk ranking", _exc))
+        ok = False
+
+    # The dominant fault address must be recognised, and an unknown one must NOT be
+    # (a matcher that fires on everything would label every crash as the common one).
+    try:
+        _hit = known_fault_note("ACCESS_VIOLATION in Total War ROME REMASTERED.exe+0x266FD3")
+        _miss = known_fault_note("ACCESS_VIOLATION in Total War ROME REMASTERED.exe+0xDEADBEEF")
+        _ok = bool(_hit) and _miss is None
+        print("  %-26s %-5s %s" % ("known fault signature", str(_ok),
+                                   "ok" if _ok else "FAIL (matcher too broad or not matching)"))
+        if not _ok:
+            ok = False
+    except Exception as _exc:
+        print("  %-26s FAIL: %r" % ("known fault signature", _exc))
+        ok = False
+
+    # Grimel's three consecutive crash reports each showed "Failed x14" as one of only
+    # three distinct asserts. The real line named the file, the line and the token. This
+    # asserts the token is recovered and that a genuine assert is still parsed as one.
+    try:
+        _rf = parse_resolution_failure(
+            "Failed to find either a unit class or unit category. Provided: 'pilum_infantry'")
+        _real = ASSERT_RE.search("unit_class != UCL_NUM_CLASSES || unit_category != UC_NUM_CATEGORIES Failed")
+        _ok = bool(_rf) and _rf[1] == "pilum_infantry"             and not is_resolution_failure("unit_class != UCL_NUM_CLASSES Failed")             and _real is not None and _real.group(0).strip().startswith("unit_class")
+        print("  %-26s %-5s %s" % ("resolution failure", str(_ok),
+                                   "ok" if _ok else "FAIL (token not recovered, or an assert misfiled)"))
+        if not _ok:
+            ok = False
+    except Exception as _exc:
+        print("  %-26s FAIL: %r" % ("resolution failure", _exc))
+        ok = False
 
     for mod in ("lzma", "zipfile", "ctypes", "urllib.request"):
         try:
