@@ -486,8 +486,8 @@ const FARM_NOTE = "Fertility does not drive population growth in RIS. The engine
 const RELIGION_NOTE = "The number on a `rel_…` tag is a **1-4 strength tier, not a percentage**. " +
   "RIS scales the `religious_belief` a region generates by it — `hinterland_region` grants 2/4/6/8 " +
   "for tiers 1/2/3/4, and the government chains grant 4/8/12/16 (export_descr_buildings.txt). " +
-  "Any tier counts as the belief being present. The population percentages are the separate " +
-  "Ancestry column, from the region's own ethnicities field.";
+  "Any tier counts as the belief being present. The percentages on the People row are a " +
+  "different thing entirely: they come from the region's own ethnicities field and sum to 100.";
 
 // ── build ────────────────────────────────────────────────────────────────────
 const regions = loadRegions();
@@ -574,15 +574,18 @@ for (const r of list) {
   const eth = [...r.ethnicities].sort((a, b) => b.pct - a.pct || a.name.localeCompare(b.name));
   if (eth.length) withEthnicities++;
   else { withoutEthnicities++; if (unparseableEth.length < 8) unparseableEth.push(`${r.region}: ${JSON.stringify(r.ethnicitiesRaw)}`); }
-  const peopleKeys = [...eth.map((e) => e.name), ...Object.keys(relTier).filter((k) => !eth.some((e) => e.name === k))];
-  const peopleRows = peopleKeys.map((k) => {
-    const e = eth.find((x) => x.name === k);
-    const rt = relTier[k];
-    const name = ethName(k) || humanise(k);
-    const share = e ? `${bar(e.pct)} ${e.pct}%` : "_none_";
-    const tier = rt ? (rt.tier == null ? `\`${rt.tag}\`` : `**${rt.tier}** / 4`) : "—";
-    return `| ${name} | ${share} | ${tier} |`;
-  });
+  // One row each, read as a sentence: "Indian 80%, Indo-Greek 20%". This was a three-column
+  // table with a bar per people and a belief tier beside it, which spent a whole block of the
+  // page on two numbers — the shares are the answer and they fit on a line.
+  const pName = (k) => ethName(k) || humanise(k);
+  const peopleLine = eth.length
+    ? eth.map((e) => `${pName(e.name)} ${e.pct}%`).join(", ") : null;
+  const beliefLine = Object.keys(relTier).length
+    ? Object.entries(relTier)
+      .sort((a, b) => (b[1].tier || 0) - (a[1].tier || 0) || a[0].localeCompare(b[0]))
+      .map(([k, rt]) => (rt.tier == null ? `\`${rt.tag}\`` : `${pName(k)} ${rt.tier}/4`))
+      .join(", ")
+    : null;
 
   const glance = [
     `**Settlement:** ${r.settlement}`,
@@ -592,6 +595,11 @@ for (const r of list) {
     goodsLabel.length ? `**Trade goods:** ${goodsLabel.join(", ")}` : null,
   ].filter(Boolean).join(" · ");
 
+  if (peopleLine) rows.push(`| People | ${peopleLine} |`);
+  // No explanatory note. The tier reads as "4/4" and that is enough on a player-facing page;
+  // the mechanics of how RIS scales religious_belief are documented at RELIGION_NOTE above for
+  // anyone reading this generator, and do not belong on 1,311 region pages.
+  if (beliefLine) rows.push(`| Beliefs | ${beliefLine} |`);
   addRow("Region resource tags", g.trade);
   // Fertility is the Farm## tag on a 1-14 scale, NOT descr_regions field 7 — RIS leaves that
   // field at a constant 5 for every region as a placeholder, so reporting it would give the
@@ -625,16 +633,10 @@ ${glance}
 
 ${held ? `Held at the campaign start by ${hasPage(held.faction) ? `[${facName(held.faction)}](../factions/${held.faction}.md)` : facName(held.faction)}${held.capital ? " — **their capital**" : ""}.` : `This region begins **independent**. If it revolts, the rebels are ${r.rebels}.`}
 
-## Who lives here
-
-${peopleRows.length
-  ? `| People | Ancestry | Belief tier |\n|---|---|:-:|\n${peopleRows.join("\n")}\n\n${RELIGION_NOTE}`
-  : "_This region's ethnicities field could not be read, and it carries no religion tags._"}
-
 ## Trade goods
 
 ${goods.length
-  ? `| | Good | Placed |\n|:-:|---|---:|\n${goods.map(([type, n]) => `| ${goodIcon(type)} | **${resName(type) || humanise(type)}** \`${type}\` | ${n} |`).join("\n")}\n\n_"Placed" counts the resource markers standing inside this region's borders in descr_strat — each one is a deposit on the map, not a level._`
+  ? `| | Trade good | Amount |\n|:-:|---|---:|\n${goods.map(([type, n]) => `| ${goodIcon(type)} | **${resName(type) || humanise(type)}** | ${n} |`).join("\n")}`
   : "_No trade goods are placed inside this region._"}
 
 ## Resources and character
