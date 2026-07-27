@@ -813,12 +813,34 @@ function recruitSection(rec, held) {
 const list = ONLY.length ? regions.filter((r) => ONLY.includes(r.region)) : regions;
 fs.mkdirSync(path.join(OUT, "regions"), { recursive: true });
 
-// Only the goods that actually appear on a page get an icon written, so the folder cannot
-// fill up with art nothing references.
-const NEEDED_GOODS = new Set();
+// Every declared trade good gets an icon, not only the ones a region page happens to show.
+// This used to be restricted to the goods placed on the map, on the reasoning that the folder
+// should not fill up with art nothing references — but gen-ris-trade-goods.js now writes a
+// page per DECLARED good and puts the icon on each, so the four that are declared and placed
+// nowhere (textiles, villages, shipwrecks, aqueduct) are referenced too. They are still all
+// written from here rather than from both generators: one owner per file is what keeps the
+// collision check in verify-ris-wiki.js meaningful.
+const NEEDED_GOODS = new Set(res.tradeable);
 for (const r of list) for (const tok of (MAP_RESOURCES.out.get(r.region) || new Map()).keys()) NEEDED_GOODS.add(tok);
 const RES_ICONS = writeResourceIcons(NEEDED_GOODS);
 const goodIcon = (tok) => (RES_ICONS.map[tok] ? `<img src="../${RES_ICONS.map[tok]}" alt="" width="24">` : "");
+
+// Each trade good has its own reference page (gen-ris-trade-goods.js writes one per good,
+// named for the good's internal token). The Trade goods table listed the good as plain bold
+// text, so a reader looking at what a region produces had no way through to what that good is
+// worth, what it lets the settlement build, or which other regions have it — the same dead end
+// the region tag values had before the tag reference existed.
+const goodPages = (() => {
+  try { return new Set(fs.readdirSync(path.join(OUT, "goods")).filter((f) => f.endsWith(".md")).map((f) => f.replace(/\.md$/, ""))); }
+  catch { return new Set(); }
+})();
+let goodLinked = 0, goodUnlinked = new Set();
+const goodRef = (tok) => {
+  const label = `**${resName(tok) || humanise(tok)}**`;
+  if (!goodPages.has(tok)) { if (goodPages.size) goodUnlinked.add(tok); return label; }
+  goodLinked++;
+  return `[${label}](../goods/${tok}.md)`;
+};
 
 let withMapGoods = 0, withOwner = 0, withBuildings = 0, withTrade = 0;
 let withEthnicities = 0, withoutEthnicities = 0;
@@ -932,8 +954,10 @@ ${held ? `Held at the campaign start by ${hasPage(held.faction) ? `[${facName(he
 ## Trade goods
 
 ${goods.length
-  ? `| | Trade good | Amount |\n|:-:|---|---:|\n${goods.map(([type, n]) => `| ${goodIcon(type)} | **${resName(type) || humanise(type)}** | ${n} |`).join("\n")}`
+  ? `| | Trade good | Amount |\n|:-:|---|---:|\n${goods.map(([type, n]) => `| ${goodIcon(type)} | ${goodRef(type)} | ${n} |`).join("\n")}`
   : "_No trade goods are placed inside this region._"}
+
+${goods.length ? "See the [trade goods reference](../trade-goods.md) for what each is worth and what it unlocks." : ""}
 
 ## Resources and character
 
@@ -989,6 +1013,7 @@ console.log(`  settlement ladder: ${SETTLE.order.join(" < ")} (${SETTLE.ladders}
 console.log(`  reforms ruled out at turn 0: ${[...EVENT_INACTIVE.values()].filter((v) => v === "inactive").length}/${EVENT_INACTIVE.size}; the rest stay conditional and are named on the page`);
 console.log(`  undecided clause kinds: ${[...recruitStats.undecided].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => `${k} x${n.toLocaleString("en-US")}`).join(", ") || "none"}`);
 console.log(`  tag reference links: ${tagLinked.toLocaleString("en-US")} values linked${tagUnlinked.size ? `, ${tagUnlinked.size} tokens with no reference entry (${[...tagUnlinked].slice(0, 6).join(", ")})` : ""}`);
+console.log(`  trade good links: ${goodLinked.toLocaleString("en-US")} table cells linked to goods/ (${goodPages.size} good pages found)${goodUnlinked.size ? `, ${goodUnlinked.size} goods with no page (${[...goodUnlinked].join(", ")})` : ""}${goodPages.size ? "" : "  <- run gen-ris-trade-goods.js, then this generator again"}`);
 
 console.log(`\nancestry (descr_regions field 7, "<people> <pct>" pairs):`);
 console.log(`  parsed:     ${withEthnicities.toLocaleString("en-US")} regions`);

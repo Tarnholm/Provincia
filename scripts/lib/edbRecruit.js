@@ -546,12 +546,31 @@ function chainTagsOf(edb) {
 }
 
 /**
- * Every place a hidden-resource token is conditioned on, split by whether the token is
+ * Every place a token of one CONDITION KIND is conditioned on, split by whether the token is
  * required or excluded. `not hidden_resource X` is a real consequence too — carrying X
  * BLOCKS the thing — and reporting only the positive uses would miss most of the
  * recruitment vocabulary, where the tags mask each other.
+ *
+ * TWO KINDS SHARE THIS WALK. `hidden_resource <tag>` is what a region tag reference needs
+ * (gen-ris-tag-pages.js); `resource <good>` is what a trade-good reference needs
+ * (gen-ris-trade-goods.js). They are the same traversal — direct mentions on levels, recruit
+ * lines and effect lines, plus everything reached through an `alias`, with the sign flipped
+ * under a `not` — so it is written once and parameterised on the atom pattern rather than
+ * copied. A second copy would drift, and the alias sign-flipping is the half that is easy to
+ * get subtly wrong.
+ *
+ * The two patterns cannot collide: `hidden_resource` has a word character before `resource`,
+ * so an anchored `^resource\s` never matches it.
  */
-function tagUsage(parsed, aliases) {
+const HIDDEN_RESOURCE_ATOM = /^hidden_resource\s+([a-z0-9_\-]+)/i;
+const RESOURCE_ATOM = /^resource\s+([a-z0-9_\-]+)\s*$/i;
+
+/** Every place a `hidden_resource <tag>` clause names a tag. */
+function tagUsage(parsed, aliases) { return usageOf(parsed, aliases, HIDDEN_RESOURCE_ATOM); }
+/** Every place a `resource <good>` clause names a trade good. */
+function resourceUsage(parsed, aliases) { return usageOf(parsed, aliases, RESOURCE_ATOM); }
+
+function usageOf(parsed, aliases, ATOM) {
   const usage = new Map();   // token -> { levels:[], recruits:[], effects:[], aliases:[], blockedRecruits:[], blockedLevels:[], blockedEffects:[] }
   const get = (tok) => {
     const t = tok.toLowerCase();
@@ -571,7 +590,7 @@ function tagUsage(parsed, aliases) {
     if (body == null) return out;
     const { terms } = splitTerms(body);
     for (const { atom, negated } of terms) {
-      const hr = /^hidden_resource\s+([a-z0-9_\-]+)/i.exec(atom.trim());
+      const hr = ATOM.exec(atom.trim());
       if (hr) { merge(out, hr[1].toLowerCase(), negated ? "excludes" : "requires"); continue; }
       const sub = aliases[atom.trim().toLowerCase()];
       if (sub != null) {
@@ -598,7 +617,7 @@ function tagUsage(parsed, aliases) {
     const found = new Map();
     const { terms } = splitTerms(requires);
     for (const { atom, negated } of terms) {
-      const hr = /^hidden_resource\s+([a-z0-9_\-]+)/i.exec(atom.trim());
+      const hr = ATOM.exec(atom.trim());
       if (hr) { merge(found, hr[1].toLowerCase(), negated ? "excludes" : "requires"); continue; }
       const low = atom.trim().toLowerCase();
       if (aliases[low] != null) {
@@ -634,5 +653,5 @@ function tagUsage(parsed, aliases) {
 
 module.exports = {
   SPLIT_EOL, parseAliases, parseEdb, splitTerms, compile, evaluate, settlementRanks,
-  chainTagsOf, tagUsage, parseMajorEvents, majorEventInactiveAtTurn0,
+  chainTagsOf, tagUsage, resourceUsage, parseMajorEvents, majorEventInactiveAtTurn0,
 };

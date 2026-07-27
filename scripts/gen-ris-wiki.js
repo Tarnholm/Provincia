@@ -244,6 +244,8 @@ no server:
 - [Buildings and economy](buildings-and-economy.md) — a wider, shallower tree
 - [Region tag reference](tags.md) — what a region's terrain, climate, water, port, recruitment
   zone, homeland and fertility each decide, established from what the mod conditions on them
+- [Trade goods](trade-goods.md) — a page per good: what it is worth, where on the map it is,
+  who holds it at the start, and what it lets a settlement build or raise
 
 ## About these pages
 

@@ -198,9 +198,12 @@ note(`images: ${images.toLocaleString("en-US")} checked, ${badImages} broken`);
   // buildings/ and icons/ were missing from this list, so the building generators could have
   // produced nothing and the floor check would have passed in silence while reporting on
   // everything else.
+  // goods/ is one page per non-hidden resource declared in descr_sm_resources.txt — 46 as
+  // RIS ships. The floor sits below that so a good being removed from the mod is not a
+  // verification failure, but a generator that produced nothing still is.
   const floors = {
     factions: 200, regions: 1000, units: 1000, cards: 900, maps: 150,
-    buildings: 60, icons: 200,
+    buildings: 60, icons: 200, goods: 40,
   };
   for (const [dir, min] of Object.entries(floors)) {
     const n = count(dir);
