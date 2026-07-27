@@ -128,9 +128,19 @@ function sectionise(html) {
   // beside it. A float does not work that way: the first section flows AROUND the map and then
   // reclaims the full width underneath it. So the lede and the first section share one normal
   // -flow block, and only the sections after them go into the column grid.
+  // The float trick only earns its keep when the lede HAS an image to wrap — a faction page's
+  // territory map. On a region page the lede is three lines of text, and holding the first
+  // section out of the grid to flow around a picture that is not there just pushed it down the
+  // page and left the gap it was meant to remove. So: image in the lede, float layout; no
+  // image, every section goes into the grid and fills the width.
+  const ledeHasImage = /<img\b/i.test(lede);
+  if (!ledeHasImage) {
+    return (lede ? `<div class="lede">${lede}</div>` : "")
+      + `<div class="cols">${parts.slice(1).map((s) => secWrap(s)).join("")}</div>`;
+  }
   const firstSec = parts[1] ? parts[1].trim() : "";
   const restSecs = parts.slice(2).map((s) => secWrap(s)).join("");
-  return (lede ? `<div class="lede">${lede}</div>` : "")
+  return `<div class="lede">${lede}</div>`
     + (firstSec ? `<div class="lede-flow">${firstSec}</div>` : "")
     + (restSecs ? `<div class="cols">${restSecs}</div>` : "");
 }
