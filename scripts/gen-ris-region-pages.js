@@ -82,17 +82,50 @@ function loadResourceNames() {
   return { tradeable, hidden };
 }
 
+// Tag categories, taken from Provincia's own region panel (src/RegionInfo.js,
+// categoriseTag) so the wiki and the app say the same thing about the same token. Copying
+// them corrected two real errors here: `mediterranean`, `arid`, `temperate` and `tropical`
+// are CLIMATES and were being reported as terrain, and the irrigation tags were being filed
+// under "geography and gating" rather than named as irrigation. `earthquake` and `rivertrade`
+// are a hazard and a river-trade flag respectively, not merchandise.
+// Kept in sync by regionTagCategories.test.js, which reads both files.
+const TERRAIN_TAGS = new Set([
+  "river_valley", "floodplains_delta", "grassland", "mountain_valley", "forest",
+  "steppe", "hills", "wetlands", "small_islands_and_rocky_coast", "plateau",
+  "karst_terrain", "mountains", "desert",
+]);
+const CLIMATE_TAGS = new Set([
+  "mediterranean", "humid_sub_tropical", "monsoon", "temperate", "oceanic",
+  "continental", "dry_sub_tropical", "cold_semi_arid", "alpine", "sub_artic",
+  "tropical", "hot_semi_arid", "arid",
+]);
+const IRRIGATION_TAGS = new Set([
+  "irrigation_river", "irrigation_springs", "irrigation_lake", "irrigation_aquifer", "irrigation_oasis",
+]);
+// AORs that gate a unit type or reform era rather than a place — Provincia keeps these on a
+// separate tab for the same reason. A curated list, not derivable from the data.
+const SPECIALTY_AOR = new Set([
+  "aor_camillan", "aor_euzonoi", "aor_deuteroi", "aor_oscan_southern", "aor_thracian_hillmen",
+]);
+
 function classify(tags, res) {
-  const g = { trade: [], farm: [], terrain: [], religion: [], recruitment: [], port: [], culture: [], geography: [], other: [] };
+  const g = {
+    trade: [], farm: [], terrain: [], climate: [], irrigation: [], religion: [],
+    recruitment: [], specialty: [], port: [], culture: [], hazard: [], geography: [], other: [],
+  };
   for (const t of tags) {
     const l = t.toLowerCase();
     if (/^farm\d+$/i.test(t)) g.farm.push(t);
     else if (/^rel_/.test(l)) g.religion.push(t);
+    else if (SPECIALTY_AOR.has(l)) g.specialty.push(t);
     else if (/^aor_/.test(l)) g.recruitment.push(t);
     else if (/^homeland_/.test(l)) g.culture.push(t);
-    else if (/port|harbour|harbor/.test(l)) g.port.push(t);
-    else if (/^(river_valley|mediterranean|desert|steppe|forest|mountain|swamp|coastal|arid|temperate|tropical)/.test(l)) g.terrain.push(t);
-    else if (res.tradeable.has(l) || /^(rivertrade|seatrade)$/.test(l)) g.trade.push(t);
+    else if (/^base_port_level_\d+$/.test(l) || /port|harbour|harbor/.test(l)) g.port.push(t);
+    else if (TERRAIN_TAGS.has(l)) g.terrain.push(t);
+    else if (CLIMATE_TAGS.has(l)) g.climate.push(t);
+    else if (IRRIGATION_TAGS.has(l)) g.irrigation.push(t);
+    else if (l === "earthquake" || l === "rivertrade") g.hazard.push(t);
+    else if (res.tradeable.has(l) || l === "seatrade") g.trade.push(t);
     // Declared but hidden: RIS uses these for geography and gating, not commerce.
     else if (res.hidden.has(l)) g.geography.push(t);
     else g.other.push(t);
@@ -351,12 +384,23 @@ for (const r of list) {
     rows.push(`| Trade goods on the map | ${goodsLabel.map((l, i) => `${l} \`${goods[i][0]}\``).join(", ")} |`);
   }
   addRow("Region resource tags", g.trade);
-  addRow("Farm level", g.farm, FARM_NOTE);
+  // Fertility is the Farm## tag on a 1-14 scale, NOT descr_regions field 7 — RIS leaves that
+  // field at a constant 5 for every region as a placeholder, so reporting it would give the
+  // same answer 1,311 times. Provincia's region panel reads the tag for the same reason.
+  if (g.farm.length) {
+    const v = parseInt(String(g.farm[0]).replace(/\D+/g, ""), 10);
+    rows.push(`| Fertility | **${v}** / 14 \`${g.farm[0]}\` |`);
+    rows.push(`| | _${FARM_NOTE}_ |`);
+  }
   addRow("Terrain", g.terrain);
+  addRow("Climate", g.climate);
+  addRow("Irrigation", g.irrigation);
   addRow("Port", g.port);
   addRow("Religion", g.religion);
   addRow("Recruitment zones", g.recruitment);
+  addRow("Specialty recruitment", g.specialty);
   addRow("Cultural homeland", g.culture);
+  addRow("Hazards and river trade", g.hazard);
   addRow("Geography and gating", g.geography);
   addRow("Other tags", g.other);
 
