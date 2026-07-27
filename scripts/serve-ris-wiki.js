@@ -263,15 +263,55 @@ function renderMarkdown(md, toc) {
       i += 2;
       const body = [];
       while (i < lines.length && /^\|/.test(lines[i])) { body.push(cells(lines[i])); i++; }
-      const th = head.map((h, k) => `<th${align[k] ? ` class="${align[k]}"` : ""}>${inline(h)}</th>`).join("");
-      const tr = body.map((r) => "<tr>" + r.map((c, k) =>
-        `<td${align[k] ? ` class="${align[k]}"` : ""}>${inline(c)}</td>`).join("") + "</tr>").join("");
+      // ── narrow lists run several items to a row ──────────────────────────
+      // A 170-row table of "Zone / Units / Regions" is about 30 characters of content stretched
+      // across a 1,400px screen and 170 rows deep: two thirds empty, and nothing but scrolling
+      // to read it. Where the table is narrow enough that copies of it fit side by side, the
+      // rows are dealt ACROSS instead — items 1, 2, 3 on the first row, 4, 5, 6 on the second —
+      // so the same list is a third as tall and the width is used.
+      //
+      // Dealt across rather than cut into thirds deliberately: a reader scanning the first row
+      // of a table sorted by units expects the top three, not items 1, 58 and 115.
+      //
+      // One table with the columns repeated, not three tables side by side, because then the
+      // rows line up by construction and there is a single header, a single scroll box and no
+      // flex to fall out of alignment when one group's cells wrap.
+      const colWidth = [];
+      for (let k = 0; k < head.length; k++) {
+        colWidth[k] = Math.min(40, Math.max(head[k].replace(/<[^>]*>/g, "").length,
+          ...body.map((r) => (r[k] || "").replace(/<[^>]*>/g, "").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").length)));
+      }
+      const oneWide = colWidth.reduce((a, b) => a + b, 0) + head.length * 3;
+      // 148 characters is about what the content column holds at a normal window width. The
+      // spare 6 is the gap between one copy of the table and the next.
+      const UP = body.length > 24 ? Math.max(1, Math.min(3, Math.floor(148 / (oneWide + 6)))) : 1;
+
+      const cls = (k, first) => {
+        const c = `${align[k] || ""}${first && k === 0 ? " grp" : ""}`.trim();
+        return c ? ` class="${c}"` : "";
+      };
+      const thOne = (first) => head.map((h, k) => `<th${cls(k, first)}>${inline(h)}</th>`).join("");
+      const tdOf = (r, first) => head.map((_, k) =>
+        `<td${cls(k, first)}>${r ? inline(r[k] || "") : ""}</td>`).join("");
+
+      let th, tr, rowCount;
+      if (UP > 1) {
+        th = Array.from({ length: UP }, (_, g) => thOne(g > 0)).join("");
+        rowCount = Math.ceil(body.length / UP);
+        tr = Array.from({ length: rowCount }, (_, r) => "<tr>"
+          + Array.from({ length: UP }, (_, g) => tdOf(body[r * UP + g], g > 0)).join("") + "</tr>").join("");
+      } else {
+        th = thOne(false);
+        rowCount = body.length;
+        tr = body.map((r) => `<tr>${tdOf(r, false)}</tr>`).join("");
+      }
       // Big tables get fixed layout. Content-based sizing means the browser measures every
       // row to decide column widths, and on the 1,172-row roster that pegged a CPU core and
       // made the pointer stutter — any restyle re-measured the whole table. Fixed layout takes
-      // the widths from the header row and stops caring how many rows follow.
-      const big = body.length > 60 ? " big" : "";
-      out.push(`<div class="tw${big}"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`);
+      // the widths from the header row and stops caring how many rows follow. Counted on the
+      // ROWS RENDERED, so a list dealt three-up drops below the threshold honestly.
+      const wrapCls = `tw${rowCount > 60 ? " big" : ""}${UP > 1 ? " multi" : ""}`;
+      out.push(`<div class="${wrapCls}"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`);
       continue;
     }
 
@@ -442,6 +482,12 @@ td{max-width:70ch}
 /* A table with hundreds of rows: fixed layout, so column widths come from the header row and
    the browser never walks the body to size them. Content-fit is only affordable when there is
    little content to fit. */
+/* A list dealt several items to a row takes the full width — that is the point of it — and the
+   groups are separated by a rule rather than a gap so the eye can tell one item's columns from
+   the next one's. */
+.tw.multi{width:100%}
+.tw.multi table{width:100%;table-layout:fixed}
+.tw.multi th.grp,.tw.multi td.grp{border-left:1px solid var(--line);padding-left:1.1rem}
 .tw.big{width:100%;contain:paint}
 .tw.big table{width:100%;table-layout:fixed}
 .tw.big td{max-width:none;overflow:hidden;text-overflow:ellipsis}
