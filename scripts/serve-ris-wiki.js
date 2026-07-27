@@ -116,14 +116,23 @@ function sectionise(html) {
   // the lede in the grid instead and it becomes a column of its own, so the map and the brief
   // sit side by side and the sections that follow fill the remaining columns.
   const lede = parts[0].trim();
-  const secs = parts.slice(1).map((s) => {
-    // A table with more than four columns does not fit half a screen, so give that section the
-    // whole row instead of forcing it to scroll sideways inside a narrow column.
+  // A table with more than four columns does not fit half a screen, so give that section the
+  // whole row instead of forcing it to scroll sideways inside a narrow column.
+  const secWrap = (s) => {
     const firstRow = /<thead><tr>(.*?)<\/tr>/.exec(s);
     const cols = firstRow ? (firstRow[1].match(/<th/g) || []).length : 0;
     return `<section class="sec${cols > 4 ? " wide" : ""}">${s.trim()}</section>`;
-  }).join("");
-  return `<div class="cols">${lede ? `<section class="sec lede">${lede}</section>` : ""}${secs}</div>`;
+  };
+  // Grid ROWS align, so a short item leaves its column empty until the tallest item in the
+  // same row ends — which is why a big gap sat under the map while the campaign brief ran on
+  // beside it. A float does not work that way: the first section flows AROUND the map and then
+  // reclaims the full width underneath it. So the lede and the first section share one normal
+  // -flow block, and only the sections after them go into the column grid.
+  const firstSec = parts[1] ? parts[1].trim() : "";
+  const restSecs = parts.slice(2).map((s) => secWrap(s)).join("");
+  return (lede ? `<div class="lede">${lede}</div>` : "")
+    + (firstSec ? `<div class="lede-flow">${firstSec}</div>` : "")
+    + (restSecs ? `<div class="cols">${restSecs}</div>` : "");
 }
 
 function renderMarkdown(md, toc) {
@@ -255,7 +264,17 @@ main{min-width:0;padding:1.6rem 2.2rem 5rem;width:100%}
   gap:0 2.8rem;align-items:start}
 .sec{min-width:0}
 .sec>h2:first-child{margin-top:1.2rem}
+/* The lede's image floats, so the section after it wraps alongside and then continues under
+   it. This is the one thing a grid cannot do: grid rows align, so a short map column sat empty
+   until the tall campaign brief beside it finished. */
 .lede{max-width:none}
+.lede img{float:left;margin:.2rem 1.8rem .8rem 0;max-width:min(42%,34rem);border-radius:8px}
+.lede em{display:block;clear:none;color:var(--dim);font-size:.85rem}
+.lede-flow{margin-bottom:1.5rem}
+.lede-flow>h2:first-child{margin-top:.2rem}
+/* Once the floated map ends, the next block reclaims the full width. */
+.cols{clear:both}
+@media(max-width:900px){.lede img{float:none;max-width:100%;margin-right:0}}
 /* Prose paragraphs stay readable without narrowing the page: the line length is limited on
    the paragraph, not on the container, so tables and images beside them still get the width. */
 .lede>p,.sec>p{max-width:104ch}
