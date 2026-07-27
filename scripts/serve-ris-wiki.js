@@ -97,7 +97,10 @@ function inline(s) {
 // Matches a bare open/close tag on its own line AND a complete one-line <summary>…</summary>,
 // which is how the faction pages write their fold labels. Without the second form the label
 // rendered as a literal "&lt;summary&gt;…" line above every collapsible table.
-const RAW_BLOCK = /^\s*(<\/?(?:details|summary|div|p|br|hr)\b[^>]*>|<summary[^>]*>.*<\/summary>)\s*$/i;
+// The third form is `<details><summary>…</summary>` all on ONE line. Without it that line is
+// not a block, so it goes through the paragraph path, gets escaped, and the reader sees the tags
+// as text — which is exactly what happened on 60 region pages before anyone noticed.
+const RAW_BLOCK = /^\s*(<\/?(?:details|summary|div|p|br|hr)\b[^>]*>|<summary[^>]*>.*<\/summary>|<details\b[^>]*><summary[^>]*>.*<\/summary>)\s*$/i;
 
 function slugId(s) {
   return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -131,12 +134,29 @@ function sectionise(html) {
   const lede = parts[0].trim();
   const secs = parts.slice(1).map((s) => s.trim()).filter(Boolean);
 
-  // A table with more than four columns does not fit half a screen, so that section takes the
-  // whole width rather than scrolling sideways inside a column.
-  const isWide = (s) => {
-    const firstRow = /<thead><tr>(.*?)<\/tr>/.exec(s);
-    return !!firstRow && (firstRow[1].match(/<th/g) || []).length > 4;
+  // Does this section's table need the whole width? COLUMN COUNT is the wrong test and was
+  // costing the faction pages half their screen: Starting settlements has five columns, but they
+  // are "large town", "3,500", "12 buildings" — the whole table is about 70 characters across and
+  // fits a half-width column with room to spare. Counting columns sent it full width, which made
+  // it a barrier, which left Starting characters alone in a group and stacked everything down the
+  // left of a 1,400px screen.
+  //
+  // Measured instead: the width of the widest ROW, as the sum of each column's longest cell. A
+  // long prose cell is capped, because it wraps rather than forcing the table wider. The
+  // threshold is in characters and deliberately generous — being wrong towards "it fits" costs a
+  // little horizontal scrolling inside one section, being wrong the other way costs half the page.
+  const COL_CAP = 40, WIDE_AT = 92;
+  const tableWidth = (s) => {
+    const rows = [...s.matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map((m) =>
+      [...m[1].matchAll(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/g)]
+        .map((c) => c[1].replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().length));
+    if (!rows.length) return 0;
+    const cols = Math.max(...rows.map((r) => r.length));
+    let w = 0;
+    for (let c = 0; c < cols; c++) w += Math.min(COL_CAP, Math.max(0, ...rows.map((r) => r[c] || 0)));
+    return w + cols * 3;    // cell padding, counted in character widths
   };
+  const isWide = (s) => tableWidth(s) > WIDE_AT;
   const secWrap = (s, wide) => `<section class="sec${wide ? " wide" : ""}">${s}</section>`;
   // Rendered height, in rough text lines. Table and list rows are one line each; prose is its
   // character count over a line length; an image stands in for the space it occupies. This is

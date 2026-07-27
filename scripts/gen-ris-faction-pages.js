@@ -1053,7 +1053,7 @@ faction on paper, which is why the combined figure flatters a small faction badl
 
 | Faction | Culture | Settlements | Characters | Faction units | Regional (AOR) |
 |---|---|---:|---:|---:|---:|
-${index.map((e) => `| [${e.display}](factions/${e.f}.md) | ${cultureName(e.culture) || "_not determined_"} | ${e.setts} | ${e.chars} | ${e.units - e.aor} | ${e.aor} |`).join("\n")}
+${index.map((e) => `| ${tile(e)} | ${cultureName(e.culture) || "_not determined_"} | ${e.setts} | ${e.chars} | ${e.units - e.aor} | ${e.aor} |`).join("\n")}
 `;
 fs.writeFileSync(path.join(OUT, "factions.md"), idx, "utf8");
 
