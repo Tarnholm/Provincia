@@ -834,11 +834,8 @@ ${list.slice(0, CAP).map((r) => `${settlementAndRegion(r)}`).join(" · ")}${list
 > scripted breakaways, and they are documented here only because their names appear on region
 > and unit pages — a name with nowhere to go reads as a broken link.
 
-descr_strat sorts factions into \`playable\` and \`nonplayable\` sections, but those section
-names cannot be used to answer this question: the file puts \`slave\` and \`dummies\` in
-\`playable\` — a slot the engine requires — while listing 164 factions this wiki does document
-under \`nonplayable\`. The nine below are excluded on what they are FOR, established from the
-mod's own text, its spawn scripts and what it gives them at the campaign start.
+The nine below are excluded on what they are FOR, established from the mod's own text, its
+spawn scripts and what it gives them at the campaign start.
 
 | Faction | Internal token | Culture | Holds at start | Named in recruitment |
 |---|---|---|---|---|
