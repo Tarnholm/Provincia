@@ -60,6 +60,25 @@
  * `recruit "aor arab levy spearmen"` -> export_descr_unit `dictionary` -> text/export_units.
  * All 1,135 recruit tokens in the mod resolve that way, so nothing is lost to a fallback.
  *
+ * THREE KEYWORDS WERE BEING SHOWN RAW — `dummy`, `agent`, `agent_limit_settlement`, 159 lines
+ * across the 82 chains — and are now English. What each means comes from the game's own
+ * documentation and the game's own strings, not from inference:
+ *   `dummy <string> [bonus] <n>`  Rome Remastered's EDB guide: "does nothing, but allows
+ *       specifying a string". Vanilla's only use carries the comment "Add trait and retinue
+ *       stuff as a dummy string with a positive effect". The string is a text key, so the line
+ *       IS its string and the number means nothing: {mine_from_gold_dga} in expanded_bi.txt is
+ *       "Mining income from gold: +360 per turn". The mines chain uses 106 of them to put the
+ *       income on the building card, because the `mine_resource` grants beside them are
+ *       conditioned in a way the card does not render — the mod says so in its own comment.
+ *   `agent <type> <n>`  "allows recruiting agents". What the number means is NOT documented;
+ *       every line in the mod and in vanilla writes 0, so only that form is translated.
+ *   `agent_limit_settlement <type> <n>`  "sets the amount of a given agent type that can be
+ *       recruited here (bonus does not work with this)". The `bonus` form is therefore left
+ *       raw. Vanilla writes it anyway in four places, so the guide and the files disagree; this
+ *       mod never uses that form, and nothing here guesses which of the two is right.
+ * Agent type names are the game's: text/shared.txt {ST_SPY} -> "Spy". A type with no such
+ * string keeps its line raw rather than showing an internal token.
+ *
  * CONDITIONS ARE NOT DROPPED. An effect whose `requires` clause says anything beyond
  * is_player / settlement size is listed apart, with its condition intact, instead of being
  * printed as though it always applies — `trade_level_bonus bonus -10 requires hidden_resource
@@ -188,18 +207,34 @@ function loadUnitNames() {
 }
 const UNIT_NAMES = loadUnitNames();
 
+// expanded_bi.txt is the strings file the mod extends: religion labels, the alias
+// `display_string` targets, and the strings named by `dummy` capability lines all live here.
+const BI_STRINGS = loadText("expanded_bi.txt");
+
 // `religious_belief aeolian 2` names a religion. Its label lives in expanded_bi.txt as
 // {AEOLIAN_LABEL}. 50 of the 51 religions used by buildings have one.
 function loadReligionNames() {
-  const t = loadText("expanded_bi.txt");
   const out = {};
-  for (const [k, v] of Object.entries(t)) {
+  for (const [k, v] of Object.entries(BI_STRINGS)) {
     const m = /^(.+)_label$/.exec(k);
     if (m && !isPlaceholder(v)) out[m[1]] = v;
   }
   return out;
 }
 const RELIGION_NAMES = loadReligionNames();
+
+// `agent spy 0` names an agent type. The game's own name for one is text/shared.txt {ST_SPY},
+// so the four types the files use (spy, assassin, diplomat, merchant) all resolve; a type with
+// no such string has no display name and its lines are left untranslated rather than guessed.
+const SHARED = loadText("shared.txt");
+const agentName = (type) => {
+  const v = SHARED[`st_${String(type).toLowerCase()}`];
+  return v && !isPlaceholder(v) ? v : null;
+};
+// Plural of the display name. Ordinary English rule; the game's own plurals confirm the three
+// that matter — {UI_FACTION_SELECT_NUM_SPIES} "SPIES", {..._ASSASSINS}, {..._DIPLOMATS}.
+const plural = (s) => (/[^aeiou]y$/i.test(s) ? s.slice(0, -1) + "ies"
+  : /(?:s|x|z|ch|sh)$/i.test(s) ? s + "es" : s + "s");
 
 // ── art ─────────────────────────────────────────────────────────────────────
 // gen-ris-building-icons.js writes both sizes and records, per level, which culture's and
@@ -308,10 +343,57 @@ function describeEffects(rawLines) {
   const beliefs = new Map();    // religion -> values[]
   const groups = new Map();     // `${name}|${scope}|${shape}` -> {…, values[]}
 
+  // One place decides whether a translated line is unconditional or conditional, so a
+  // condition cannot be lost by a new effect kind forgetting to check for one. Unconditional
+  // ones are held back and appended after the numbered effects: the money and public order a
+  // level gives are what a reader came for, and should not be pushed down the list by an
+  // agent limit just because the game files happen to state it first.
+  const spelled = [];
+  const place = (text, cond) => {
+    const c = String(cond || "").toLowerCase().trim();
+    if (!c) { spelled.push(text); return; }
+    const tokens = c.split(/[^a-z0-9_]+/).filter(Boolean);
+    if (tokens.some((x) => !TRIVIAL_COND.test(x))) { conditional.push(`${text} — only when \`${c}\``); return; }
+    const aiOnly = /not\s+is_player/.test(c);
+    spelled.push(text + (aiOnly ? " _(AI only — does not apply to you)_"
+      : /is_player/.test(c) ? " _(player only)_" : ""));
+  };
+
   for (const line of rawLines) {
     const t = line.trim();
 
-    let m = /^recruit\s+"([^"]+)"\s+(\d+)(?:\s+requires\s+(.+))?$/.exec(t);
+    // `dummy <string> [bonus] <n>` — the Rome Remastered EDB guide states dummy "does nothing,
+    // but allows specifying a string", and vanilla's own comment calls its one use "a dummy
+    // string with a positive effect". So the line IS its string, and the number carries no
+    // meaning. The mod uses it to put mining income on the building card, because the real
+    // `mine_resource` grants next to it are conditioned in a way the card does not render.
+    let m = /^dummy\s+([A-Za-z0-9_]+)\s+(?:bonus\s+)?(-?\d+)(?:\s+requires\s+(.+))?$/.exec(t);
+    if (m) {
+      const s = BI_STRINGS[m[1].toLowerCase()];
+      if (s && !isPlaceholder(s)) { place(s.trim(), m[3]); continue; }
+      raw.push(t.replace(/\s+/g, " "));
+      continue;
+    }
+
+    // `agent <type> <n>` — "allows recruiting agents". What the number means is not documented
+    // and every line in the mod writes 0, so only that form is translated; a non-zero one would
+    // be a guess and stays verbatim.
+    m = /^agent\s+([a-z_]+)\s+0(?:\s+requires\s+(.+))?$/.exec(t);
+    if (m && agentName(m[1])) { place(`allows recruiting ${plural(agentName(m[1]))}`, m[2]); continue; }
+
+    // `agent_limit_settlement <type> <n>` — "sets the amount of a given agent type that can be
+    // recruited here (bonus does not work with this)". The `bonus` form therefore is NOT
+    // translated: vanilla writes it in four places even so, and what the engine does with a
+    // form its own guide says does not work is not established here. The mod uses only the
+    // plain form.
+    m = /^agent_limit_settlement\s+([a-z_]+)\s+(\d+)(?:\s+requires\s+(.+))?$/.exec(t);
+    if (m && agentName(m[1])) {
+      const who = +m[2] === 1 ? agentName(m[1]) : plural(agentName(m[1]));
+      place(`up to ${m[2]} ${who} can be recruited in this settlement`, m[3]);
+      continue;
+    }
+
+    m = /^recruit\s+"([^"]+)"\s+(\d+)(?:\s+requires\s+(.+))?$/.exec(t);
     if (m) {
       const unit = UNIT_NAMES[m[1].toLowerCase()] || null;
       const key = unit || `not determined (game files call it "${m[1]}")`;
@@ -350,6 +432,7 @@ function describeEffects(rawLines) {
         (g.bySize ? ", scaling with settlement size" : "") + scopeNote);
     }
   }
+  out.push(...spelled);
   // AI-only effects last: they are the least relevant to a reader.
   out.sort((a, b) => (a.includes("AI only") ? 1 : 0) - (b.includes("AI only") ? 1 : 0));
 
@@ -364,7 +447,35 @@ function describeEffects(rawLines) {
       : `${rel} ${sgn(uniq[0])} to ${sgn(uniq[uniq.length - 1])}`;
   }).sort((a, b) => a.localeCompare(b));
 
-  return { effects: out, recruits: recruitList, beliefs: beliefList, conditional, raw };
+  const res = { effects: out, recruits: recruitList, beliefs: beliefList, conditional, raw };
+  assertConditionsKept(rawLines, res);
+  return res;
+}
+
+/**
+ * The worst thing these pages can do is print a qualified effect as though it always applied:
+ * a Rhodes-only penalty read as a universal one. So this checks the finished lists rather than
+ * trusting the code that filled them — every non-trivial `requires` clause in the level's own
+ * lines must still be quoted somewhere in the output.
+ *
+ * `recruit` and `religious_belief` are excluded because neither is rendered per-line: the page
+ * says in prose that recruitment depends on faction, government and region, and that belief
+ * spread depends on what the region already believes.
+ */
+function assertConditionsKept(rawLines, res) {
+  const shown = [...res.conditional, ...res.raw].join("\n").toLowerCase();
+  for (const line of rawLines) {
+    const t = line.trim();
+    if (/^(?:recruit|religious_belief)\b/.test(t)) continue;
+    const m = /\srequires\s+(.+)$/.exec(t);
+    if (!m) continue;
+    const cond = m[1].toLowerCase().trim();
+    const tokens = cond.split(/[^a-z0-9_]+/).filter(Boolean);
+    if (!tokens.some((x) => !TRIVIAL_COND.test(x))) continue;
+    if (!shown.includes(cond)) {
+      throw new Error(`condition dropped from the page: "${t}" — the clause "${cond}" is not quoted in any output line`);
+    }
+  }
 }
 
 // ── alias expansion ─────────────────────────────────────────────────────────
@@ -556,6 +667,10 @@ const list = ONLY.length ? chains.filter((c) => ONLY.includes(c.chain)) : chains
 fs.mkdirSync(path.join(OUT, "buildings"), { recursive: true });
 
 let withIcon = 0, withArt = 0, withEffects = 0, totalLevels = 0, totalExclusions = 0;
+// Untranslated effect lines, and the keywords they start with, so a run says out loud what is
+// still being shown raw instead of leaving it to be discovered on a page.
+let untranslated = 0;
+const untranslatedKeywords = new Map();
 let withDesc = 0, withoutDesc = 0, descVaries = 0, artSubstituted = 0;
 let recruitLevels = 0, recruitEntries = 0;
 const noDesc = [];
@@ -580,6 +695,11 @@ for (const c of list) {
     if (d.variants > 1) descVaries++;
     if (eff.recruits.length) { recruitLevels++; recruitEntries += eff.recruits.length; }
     totalExclusions += ex.length;
+    untranslated += eff.raw.length;
+    for (const r of eff.raw) {
+      const kw = r.split(/\s+/)[0];
+      untranslatedKeywords.set(kw, (untranslatedKeywords.get(kw) || 0) + 1);
+    }
     return { l, name, ic, art, d, eff, ex };
   });
 
@@ -747,3 +867,5 @@ console.log(`  levels with a picture: ${withArt.toLocaleString("en-US")} (${artS
 console.log(`  levels with effects:   ${withEffects.toLocaleString("en-US")}`);
 console.log(`  levels unlocking units: ${recruitLevels.toLocaleString("en-US")} (${recruitEntries.toLocaleString("en-US")} unit entries, named not tokenised)`);
 console.log(`  exclusion rules found: ${totalExclusions.toLocaleString("en-US")} (via ${Object.keys(ALIASES).length} aliases)`);
+console.log(`  effect lines still shown raw: ${untranslated.toLocaleString("en-US")}` +
+  (untranslated ? ` — ${[...untranslatedKeywords.entries()].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} (${n})`).join(", ")}` : ""));
