@@ -352,11 +352,36 @@ function loadMapResources() {
     let e = out.get(reg);
     if (!e) { e = new Map(); out.set(reg, e); }
     const type = m[1].toLowerCase();
-    e.set(type, (e.get(type) || 0) + 1);
+    // The AMOUNT is the line's second field, not the number of markers. Counting markers
+    // reported "1" for almost everything, because most regions carry one marker per good — the
+    // quantity on it is what varies, and it runs 1 to 5 across the file (3,220 / 1,732 / 468 /
+    // 106 / 21). RIS even keeps an `original_overrides/resource_quantity/` copy of this file,
+    // which is what the field is called.
+    const qty = parseInt(m[2], 10);
+    e.set(type, (e.get(type) || 0) + (Number.isFinite(qty) ? qty : 1));
   }
   return { out, placed, resolved, checked, agreed };
 }
 const MAP_RESOURCES = loadMapResources();
+
+// Every region carries one baseline `slaves` resource, so listing it says nothing about the
+// region — only a surplus above that baseline is worth showing. Verified rather than assumed:
+// the count below is printed each run, and if some region ever lacks the baseline it will show
+// up there instead of being silently adjusted.
+const SLAVE_BASELINE = 1;
+let slaveBaselineOnly = 0, slaveSurplus = 0, slaveMissing = 0;
+function goodsOf(region) {
+  const raw = MAP_RESOURCES.out.get(region) || new Map();
+  const out = [];
+  for (const [type, amount] of raw) {
+    if (type !== "slaves") { out.push([type, amount]); continue; }
+    const surplus = amount - SLAVE_BASELINE;
+    if (surplus > 0) { slaveSurplus++; out.push([type, surplus]); }
+    else slaveBaselineOnly++;
+  }
+  if (!raw.has("slaves")) slaveMissing++;
+  return out.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+}
 
 // ── readable tag names ───────────────────────────────────────────────────────
 // Every region tag was printed as a bare token: `rivertrade`, `rel_dorian_4`,
@@ -553,8 +578,7 @@ for (const r of list) {
   };
 
   // Trade goods actually placed inside this region's borders, commonest first.
-  const goods = [...(MAP_RESOURCES.out.get(r.region) || new Map())]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const goods = goodsOf(r.region);
   const goodsLabel = goods.map(([type, n]) =>
     `${resName(type) || humanise(type)}${n > 1 ? ` ×${n}` : ""}`);
   if (goods.length) withMapGoods++;
@@ -673,6 +697,7 @@ console.log(`  held by a faction at start: ${withOwner}`);
 console.log(`  with something built:       ${withBuildings}`);
 console.log(`  map resource placements: ${MAP_RESOURCES.placed.toLocaleString("en-US")} placed, ${MAP_RESOURCES.resolved.toLocaleString("en-US")} mapped to a region`);
 console.log(`  cross-check vs the file's own settlement comment: ${MAP_RESOURCES.agreed.toLocaleString("en-US")}/${MAP_RESOURCES.checked.toLocaleString("en-US")} agree (${MAP_RESOURCES.checked?Math.round(MAP_RESOURCES.agreed/MAP_RESOURCES.checked*100):0}%)`);
+console.log(`  slaves: ${slaveBaselineOnly.toLocaleString("en-US")} regions have the baseline only (hidden), ${slaveSurplus.toLocaleString("en-US")} have a surplus (shown), ${slaveMissing.toLocaleString("en-US")} have none at all`);
 console.log(`  regions with trade goods:  ${withMapGoods.toLocaleString("en-US")}`);
 console.log(`  with a trade resource:      ${withTrade}`);
 console.log(`  resource vocabulary read:   ${res.tradeable.size} tradeable, ${res.hidden.size} hidden`);
