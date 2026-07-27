@@ -248,6 +248,47 @@ function condLabel(tok) {
   return `\`${tok}\``;
 }
 
+// ── a requirement, as a sentence rather than a bag of words ──────────────────
+// The Requires column used to be built by splitting the whole expression on whitespace and
+// naming each word on its own, which produced "not, region has the resource, Arab, Egyptian,
+// `noisland`" — every word true, the sentence meaningless, and the reader left to reassemble
+// it. The clause is the unit of meaning: `not hidden_resource aor_arab` is one thing, and
+// naming `not`, `hidden_resource` and `aor_arab` separately says none of it.
+//
+// This is the same split and the same resolution order gen-ris-unit-pages.js uses on the same
+// lines, so a condition cannot read one way on a unit page and another way here.
+function clausesOf(expr) {
+  return expr
+    .replace(/(not\s+)?factions\s*\{[^}]*\}/gi, " ")
+    .replace(/\bnot\s+is_player\b/gi, " ").replace(/\bis_player\b/gi, " ")
+    .split(/\band\b/i).map((s) => s.trim()).filter(Boolean);
+}
+function clauseLabel(c) {
+  const neg = /^not\s+/i.test(c);
+  const body = c.replace(/^not\s+/i, "").trim();
+  return (neg ? "not " : "") + clauseBody(body);
+}
+function clauseBody(b) {
+  if (/\bor\b/i.test(b)) {
+    return b.split(/\bor\b/i).map((s) => clauseBody(s.trim())).filter(Boolean).join(" or ");
+  }
+  let m = /^hidden_resource\s+(\S+)$/i.exec(b);
+  if (m) {
+    const t = m[1].toLowerCase();
+    return /^aor_/.test(t) ? `${humaniseTok(t)} area of recruitment` : condLabel(t);
+  }
+  m = /^resource\s+(\S+)$/i.exec(b);
+  if (m) return DECLARED_RESOURCES.has(m[1].toLowerCase()) ? humaniseTok(m[1]) : `\`${m[1]}\``;
+  m = /^building_present_min_level\s+\S+\s+(\S+)$/i.exec(b); if (m) return bName(m[1]) || condLabel(m[1]);
+  m = /^building_present\s+(\S+)$/i.exec(b); if (m) return bName(m[1]) || condLabel(m[1]);
+  m = /^(?:major_event|event_counter)\s+"?([A-Za-z0-9_]+)"?/i.exec(b); if (m) return humaniseTok(m[1]);
+  return condLabel(b);
+}
+// A requirement may contain a pipe — the mod writes several of them that way ("Any Government
+// | Tier 2 Colony not built") — and an unescaped one splits a markdown table row into extra
+// columns, which is what these tables were doing.
+const cell = (s) => String(s).replace(/\|/g, "\\|");
+
 // Not real players: the rebel/slave pool, the Roman senate, the `dummies` test faction, and
 // the six rebel-style factions that hold breakaway territory rather than being chosen.
 //
@@ -372,18 +413,21 @@ function loadRecruitment() {
       const list = fm[2].split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
       (fm[1] ? neg : pos).push(...list);
     }
-    // Everything that is not a faction clause is the requirement a player must meet.
-    const conds = expr
-      .replace(/(not\s+)?factions\s*\{[^}]*\}/gi, "")
-      .replace(/\band\b/gi, " ")
-      .split(/\s+/).filter((t) => t && !/^(is_player|or)$/i.test(t));
+    // Everything that is not a faction clause is the requirement a player must meet, kept as
+    // whole `and`-clauses so each one can be named as the single condition it is.
+    const conds = clausesOf(expr);
     // Area-of-recruitment gate. RIS restricts regional units with a hidden_resource, which
     // is the engine's mechanism for "only in these provinces". Detected from the mechanism
     // rather than the name: 442 units carry both the `aor` naming convention and a
     // hidden_resource on every route, and the two signals disagree on only 5 of 1,135
     // units — 1 named unit with no gate, 4 gated units not named for it. The mechanism is
     // what the game enforces, so that is what is reported.
-    rows.push({ unit, pos, neg, hr: /hidden_resource/i.test(expr), conds: [...new Set(conds)] });
+    // Player and AI recruitment are SEPARATE lines and the AI's are far laxer — most require
+    // only `noisland`. A faction page must quote the player's, or it tells a reader that a unit
+    // needing a tier-2 military building needs no building at all. The line is tagged rather
+    // than dropped, so a unit the AI alone can raise still appears on the roster with the only
+    // requirement the mod states for it.
+    rows.push({ unit, pos, neg, player: !/\bnot\s+is_player\b/i.test(expr), hr: /hidden_resource/i.test(expr), conds: [...new Set(conds)] });
   }
   return rows;
 }
@@ -397,11 +441,13 @@ function recruitableBy(rows, faction) {
     const allowed = r.pos.includes("all") || r.pos.includes(faction);
     if (!allowed || r.neg.includes(faction)) continue;
     const prev = out.get(r.unit);
-    if (!prev) { out.set(r.unit, { conds: r.conds, aor: r.hr }); continue; }
+    if (!prev) { out.set(r.unit, { conds: r.conds, aor: r.hr, player: r.player }); continue; }
     // Several buildings may offer the same unit; keep the shortest requirement set, which
-    // is the easiest route to it. An ungated route anywhere makes the unit core.
+    // is the easiest route to it. An ungated route anywhere makes the unit core. A player
+    // route always beats an AI one, however long, because the AI's is not the reader's.
     if (!r.hr) prev.aor = false;
-    if (r.conds.length < prev.conds.length) prev.conds = r.conds;
+    if (r.player && !prev.player) { prev.conds = r.conds; prev.player = true; continue; }
+    if (r.player === prev.player && r.conds.length < prev.conds.length) prev.conds = r.conds;
   }
   const all = [...out.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   return {
@@ -694,14 +740,20 @@ const regionPages = (() => {
 // `Ager_Gallicus.md` but a reader should see "Ager Gallicus".
 const regionLink = (name) => (regionPages.has(name)
   ? `[${placeName(name)}](../regions/${encodeURIComponent(name)}.md)` : placeName(name));
-// The settlement, pointed at the region page that documents it. Both cells in a row therefore
-// lead to the same page, which is correct — that page is where both are described — and it
-// means a reader who clicks the town name rather than the province name still gets there.
+const settlementPages = (() => {
+  try { return new Set(fs.readdirSync(path.join(OUT, "settlements")).filter((f) => f.endsWith(".md")).map((f) => f.replace(/\.md$/, ""))); }
+  catch { return new Set(); }
+})();
+// The settlement, pointed at its OWN page. It used to point at the region page, because a
+// settlement had none; now the town — its size, population, what is built and what it can
+// raise — is documented in one place of its own and this is that place. The region cell beside
+// it still goes to the land.
 const settlementLink = (region) => {
   const s = SETTLEMENT_OF[region];
   if (!s) return "_not determined_";
-  return regionPages.has(region)
-    ? `[${placeName(s)}](../regions/${encodeURIComponent(region)}.md)` : placeName(s);
+  return settlementPages.has(s)
+    ? `[${placeName(s)}](../settlements/${encodeURIComponent(s)}.md)`
+    : regionPages.has(region) ? `[${placeName(s)}](../regions/${encodeURIComponent(region)}.md)` : placeName(s);
 };
 /** "Stratos (Akarnania)", or just the one name where the mod uses the same word for both. */
 const settlementAndRegion = (region) => {
@@ -837,7 +889,7 @@ ${units.total ? `${units.total} unit type${units.total === 1 ? "" : "s"} are ava
 
 ${units.core.length ? `| Unit | Requires |
 |---|---|
-${units.core.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map(condLabel).join(", ") : "_no further requirement_"} |`).join("\n")}` : `_${display} has no ungated units: every unit on its roster needs a regional resource._`}
+${units.core.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map((c) => cell(clauseLabel(c))).join(" · ") : "_no further requirement_"} |`).join("\n")}` : `_${display} has no ungated units: every unit on its roster needs a regional resource._`}
 
 ### Regional units (AOR)
 
@@ -846,7 +898,7 @@ ${units.aor.length ? `<details>
 
 | Unit | Requires |
 |---|---|
-${units.aor.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map(condLabel).join(", ") : "_no further requirement_"} |`).join("\n")}
+${units.aor.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map((c) => cell(clauseLabel(c))).join(" · ") : "_no further requirement_"} |`).join("\n")}
 
 </details>` : `_No area-of-recruitment units are open to ${display}._`}
 ` : "_No recruitable units resolved for this faction._"}
@@ -947,7 +999,7 @@ ${list.slice(0, CAP).map((r) => `${settlementAndRegion(r)}`).join(" · ")}${list
 
 </details>
 ` : `**Holds no territory at the campaign start.**
-`}${gateCount[f] ? `\n\`${f}\` is named in the recruitment gate of **${gateCount[f]} unit type${gateCount[f] === 1 ? "" : "s"}** in export_descr_buildings.txt, which is why its name turns up on unit pages.\n` : ""}`;
+`}${gateCount[f] ? `\n\`${f}\` is named in the recruitment gate of **${gateCount[f]} unit type${gateCount[f] === 1 ? "" : "s"}**, which is why its name turns up on unit pages.\n` : ""}`;
   }).join("\n");
 
   const npBody = `# Factions you cannot play
@@ -1008,7 +1060,11 @@ const cultureGroups = [...byCulture.entries()]
     list: list.slice().sort((a, b) => b.setts - a.setts || a.display.localeCompare(b.display)),
   }))
   .sort((a, b) => b.list.length - a.list.length || String(a.name || a.tok).localeCompare(String(b.name || b.tok)));
-const tile = (e) => `[${e.symbol ? `<img src="symbols/${e.f}.png" alt="" width="34" height="34" style="vertical-align:middle"> ` : ""}${e.display}](factions/${e.f}.md)`;
+// 24px, not 34. The emblem is the widest thing in the Faction column and the column is what
+// decides how many of these tables fit across the page: at 34 a group measures 447px and three
+// of them overrun a 1,380px content column by 15px, so they ran two to a row. At 24 the group
+// is 437 and three fit with room to spare. The emblem is still the thing you recognise first.
+const tile = (e) => `[${e.symbol ? `<img src="symbols/${e.f}.png" alt="" width="24" height="24" style="vertical-align:middle"> ` : ""}${e.display}](factions/${e.f}.md)`;
 // Each culture is its own H2, not an H3 inside one, so the viewer treats them as separate
 // sections and lays them two to a row instead of stacking 22 down one side of the screen. The
 // numbers that were in a single 230-row table live in these instead: a table of 44 rows or

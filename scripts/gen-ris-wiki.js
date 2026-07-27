@@ -244,6 +244,8 @@ no server:
 
 - [Factions overview](factions-overview.md) — who you can play, and how crowded the world is
 - [The map](map-and-regions.md) — regions, settlements, and what the density changes
+- [All regions](regions.md) — the land: terrain, fertility, trade goods, one page each
+- [All settlements](settlements.md) — the towns: size, population, what is built, one page each
 - [Units overview](units-overview.md) — how the roster compares with vanilla
 - [All units](units.md) — the full roster with stats and cards, and a page per unit
 - [All buildings](buildings.md) — a page per chain: what each level does, costs, upgrade path
@@ -288,9 +290,17 @@ averages **${per(r.settlements, r.factionsOwning)} settlements each**, against
 size — there are simply far more of them, and therefore far more neighbours.
 
 **More cultures means more distinct opponents.** Vanilla groups everyone into
-${n(v.cultures)} cultures (${code(v.cultureNames, ", ")}). RIS uses ${n(r.cultures)}:
+${n(v.cultures)} cultures — ${v.cultureNames.join(", ")}. RIS uses ${n(r.cultures)}.
+
+<details>
+<summary>The ${n(r.cultures)} cultures RIS divides the world into, as the mod names them</summary>
 
 ${r.cultureNames.map((c) => `- \`${c}\``).join("\n")}
+
+The [faction index](factions.md) groups every faction under these, using the name the game
+shows rather than the token.
+
+</details>
 
 Culture drives architecture, unit availability and how populations respond to you, so
 this is one of the changes you notice fastest — neighbouring regions look and fight

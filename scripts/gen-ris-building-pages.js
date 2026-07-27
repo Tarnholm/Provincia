@@ -767,8 +767,12 @@ Costs in denarii, build time in turns.
       parts.push("**What it does**", "");
       if (eff.effects.length) parts.push(...eff.effects.map((e) => `- ${e}`), "");
       if (eff.conditional.length) {
+        // Always folded, however few. Each line ends in the engine condition verbatim
+        // (`factions { … } and requires_gov and is_player`), which is the only honest way to
+        // state it and the last thing a reader wants beside "+3 public order". Below the
+        // old threshold of 6 those conditions were printed on the open page.
         parts.push(...fold(`${eff.conditional.length} effect${eff.conditional.length === 1 ? "" : "s"} that apply only in the circumstances shown`,
-          eff.conditional, 6));
+          eff.conditional, 0));
       }
     }
 
@@ -796,14 +800,20 @@ Costs in denarii, build time in turns.
   });
 
   const glossary = aliasesUsed(rows.flatMap((r) => [...r.eff.conditional, ...r.eff.raw]));
+  // Folded. It decodes the shorthands that appear inside the conditional-effect folds above,
+  // so it is only wanted by someone who has already opened one of those — and left open it put
+  // a table of engine tokens at the foot of every second building page.
   const glossarySection = glossary.length ? `
-## What the conditions mean
+<details>
+<summary>What the shorthands in those conditions stand for (${glossary.length})</summary>
 
-These are the mod's own shorthands, quoted from the game files unchanged.
+These are the mod's own, quoted from the game files unchanged.
 
 | Shorthand | Stands for |
 |---|---|
 ${glossary.map(([k, v]) => `| \`${k}\` | ${aliasBody(v)} |`).join("\n")}
+
+</details>
 ` : "";
 
   const body = [lede, glance, ...sections, glossarySection].filter(Boolean).join("\n") + "\n";

@@ -247,17 +247,21 @@ render();
   const raw = parseTable("regions.md", 5).filter((c) => /^\[/.test(c[0]));
   const rows = raw.map((c) => {
     const r = linkText(c[0]);
+    // The settlement cell was passed through as raw markdown, which was invisible while the
+    // column was plain text and printed "[Aigion](settlements/Aigion.md)" the moment it became
+    // a link. Every settlement now has a page of its own, and this is the sortable view of it.
+    const s = linkText(c[1]);
     const owner = linkText(c[2]);
     return [
       { text: r.text, href: r.href },
-      c[1],
+      s.href ? { text: s.text, href: s.href } : s.text,
       owner.href ? { text: owner.text, href: owner.href } : owner.text.replace(/^_|_$/g, ""),
       numOf(c[3]), numOf(c[4]),
     ];
   });
   const columns = [
     { label: "Region" }, { label: "Settlement" }, { label: "Held by" },
-    { label: "Trade resources", num: true }, { label: "Buildings", num: true },
+    { label: "Trade goods", num: true }, { label: "Buildings", num: true },
   ];
   fs.writeFileSync(path.join(OUT, "regions.html"),
     PAGE("Regions", "All RIS regions and who holds them at the campaign start. Click a column to sort, type to filter.",

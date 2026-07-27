@@ -289,6 +289,48 @@ const KEYWORD_TEXT = {
   queued: "queued for construction",
 };
 
+// ── unit attributes, in the game's own words ─────────────────────────────────
+// An EDU `attributes` line is a list of engine flags: `sea_faring, hide_forest, can_sap,
+// very_hardy`. Printed raw they are noise — `sea_faring` is on all 1,697 entries and
+// `hide_forest` on 1,673, so neither tells one unit from another — but several of them are
+// exactly what the game shows a player in the unit panel.
+//
+// The wording is NEVER written here. Each token is mapped to the text-file key that carries
+// the game's own sentence for it, and the sentence is looked up at run time, so the page says
+// what the mod says. A token is only in this table where the key's words ARE the token's
+// words: `can_sap`/UA_CAN_SAP, `power_charge`/UA_POWERFULL_CHARGE ("Powerful charge",
+// misspelled key), `frighten_foot`/UA_FRIGHTENS_ENEMY_FOOT, `can_run_amok`/
+// UA_ANIMALS_MAY_RUN_AMOK. Where no key matches on its words the token is left out and shown
+// raw in the fold: `sea_faring`, `hide_forest`, `extremely_hardy`, `frighten_mounted`,
+// `is_peasant`, `no_custom` and `mercenary_unit` have no wording anywhere in text/, and
+// guessing at one would be worse than showing the token. `hide_forest` is the sharpest case:
+// shared.txt has "Expert at hiding in woods" and "Can hide anywhere", but nothing in the files
+// says which of them this token drives, so it stays unresolved.
+const ATTRIBUTE_KEYS = {
+  can_sap: "ua_can_sap",
+  can_swim: "ua_can_swim",
+  can_horde: "ua_can_horde",
+  hardy: "ua_hardy",
+  very_hardy: "ua_very_hardy",
+  cantabrian_circle: "ua_cantabrian_circle",
+  warcry: "ua_warcry",
+  hide_long_grass: "ua_hide_long_grass",
+  power_charge: "ua_powerfull_charge",
+  frighten_foot: "ua_frightens_enemy_foot",
+  can_run_amok: "ua_animals_may_run_amok",
+  general_unit: "smt_unit_is_general",
+  command: "smt_unit_is_command",
+};
+const attrStats = { resolved: new Map(), unresolved: new Map(), missingKey: new Set() };
+/** The game's own sentence for an attribute token, or null if the files establish none. */
+function attributeText(tok) {
+  const k = ATTRIBUTE_KEYS[String(tok).toLowerCase()];
+  if (!k) return null;
+  const v = (TEXT_LUT[k] || "").replace(/^"(.*)"$/, "$1").trim();
+  if (!v) { attrStats.missingKey.add(`${tok} -> {${k.toUpperCase()}}`); return null; }
+  return v;
+}
+
 const humaniseTok = (t) => {
   const s = String(t).replace(/^(aor|homeland)_/, "").replace(/_/g, " ").trim();
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : String(t);
@@ -639,6 +681,34 @@ for (const u of list) {
   const stat = (label, v, suffix, key) => v == null ? "" :
     `| ${label} | ${v.toLocaleString("en-US")}${suffix || ""} | ${key ? bar(key, v) : ""} |\n`;
 
+  // What the unit does in a fight, said the way the game says it, with the flag list itself
+  // kept but folded. A reader wants "Can sap · Very good stamina", not four engine tokens
+  // three of which nearly every unit carries.
+  const attrNamed = [], attrRaw = [];
+  for (const a of u.attributes) {
+    const t = attributeText(a);
+    if (t) { attrNamed.push(t); attrStats.resolved.set(a, (attrStats.resolved.get(a) || 0) + 1); }
+    else attrStats.unresolved.set(a, (attrStats.unresolved.get(a) || 0) + 1);
+    attrRaw.push(a);
+  }
+  // The <details> opening tag and its <summary> MUST be on separate lines with a blank line
+  // after the summary — the viewer only treats it as a block that way, and a one-line
+  // `<details><summary>…</summary>` prints as literal text on the page.
+  const attrBlock = !attrRaw.length ? "" : "\n"
+    + (attrNamed.length ? `**In battle:** ${[...new Set(attrNamed)].join(" · ")}\n\n` : "")
+    + [
+      "<details>",
+      `<summary>The full attribute list, as the unit file writes it (${attrRaw.length})</summary>`,
+      "",
+      attrRaw.map((a) => `\`${a}\``).join(", "),
+      "",
+      "The names above are the game's own wording for these flags. A flag the mod's text never",
+      "puts into words is left as the file writes it rather than given a meaning it never states.",
+      "",
+      "</details>",
+      "",
+    ].join("\n");
+
   // Availability, unioned across every variant of this unit: an AOR variant and its parent
   // are one page here, so the page must answer for all of them.
   const avail = { core: new Set(), aor: new Set(), all: false, allCore: false };
@@ -676,15 +746,17 @@ for (const u of list) {
   else if (hasAnyLine) unitsAiRouteOnly++;
   const reqRows = [...routes.values()].map((r) =>
     `| ${cell(bName(r.level) || `\`${r.level}\``)} | ${r.reqs.length ? r.reqs.map((c) => cell(clauseLabel(c))).join(" · ") : "—"} |`);
-  const ROUTE_FOLD = 6;
   const reqTable = routes.size ? `| Building | Also requires |
 |---|---|
 ${reqRows.join("\n")}` : "";
+  // Always folded, however short. The prose above it already answers the question a player
+  // asks — who can raise this, and where — and the table answers a different one: the exact
+  // government-and-colony combination each recruit line tests, in the mod's own alias wording
+  // ("Any Government | Tier 2 Colony not built"). That is worth keeping and worth having to
+  // ask for.
   const reqBlock = !routes.size
-    ? (hasAnyLine ? `_The building files state no player recruitment route for this unit._` : "")
-    : reqRows.length > ROUTE_FOLD
-      ? `<details>\n<summary>${reqRows.length} recruitment routes</summary>\n\n${reqTable}\n\n</details>`
-      : reqTable;
+    ? (hasAnyLine ? `_The mod states no player recruitment route for this unit._` : "")
+    : `<details>\n<summary>Exactly what a settlement must have, route by route (${reqRows.length})</summary>\n\n${reqTable}\n\n</details>`;
 
   // The provinces behind a regional gate, named rather than described. A zone can cover 263 of
   // the 1,311 regions, so where the region-tag reference covers it the zone is linked there
@@ -703,7 +775,7 @@ ${reqRows.join("\n")}` : "";
       continue;
     }
     zonesListed++;
-    if (!regs.length) { zoneLists.push(`_No province in descr_regions carries **${zoneShort(t)}**._`); continue; }
+    if (!regs.length) { zoneLists.push(`_No province on the map carries **${zoneShort(t)}**._`); continue; }
     zoneLists.push(`<details>\n<summary><strong>${zoneShort(t)}</strong> — ${regs.length} province${regs.length === 1 ? "" : "s"}</summary>\n\n`
       + `${regs.map((r) => `[${regionName(r)}](../regions/${encodeURIComponent(r)}.md)`).join(" · ")}\n\n</details>`);
   }
@@ -741,13 +813,13 @@ ${hire.restrict.size && hire.openToAll ? `\nSome pools additionally restrict it 
 <details>
 <summary>The ${hire.regions.size} region${hire.regions.size === 1 ? "" : "s"} where this unit appears in a mercenary pool</summary>
 
-${hireRegions.slice(0, REGION_CAP).map((r) => `[${regionName(r)}](../regions/${encodeURIComponent(r)}.md)`).join(" · ")}${hireRegions.length > REGION_CAP ? `\n\n_…and ${hireRegions.length - REGION_CAP} more._` : ""}${hire.regions.size !== hireRegions.length ? `\n\n_${hire.regions.size - hireRegions.length} region name${hire.regions.size - hireRegions.length === 1 ? "" : "s"} in the pool file has no region page — listed in descr_mercenaries but not in descr_regions._` : ""}
+${hireRegions.slice(0, REGION_CAP).map((r) => `[${regionName(r)}](../regions/${encodeURIComponent(r)}.md)`).join(" · ")}${hireRegions.length > REGION_CAP ? `\n\n_…and ${hireRegions.length - REGION_CAP} more._` : ""}${hire.regions.size !== hireRegions.length ? `\n\n_${hire.regions.size - hireRegions.length} more region${hire.regions.size - hireRegions.length === 1 ? "" : "s"} the pool names ${hire.regions.size - hireRegions.length === 1 ? "is" : "are"} not on this map, so ${hire.regions.size - hireRegions.length === 1 ? "it has" : "they have"} no page here._` : ""}
 
 </details>
 
 > The **Recruitment cost** in the stats table above is the EDU figure the engine uses for
 > building-recruited units. What you actually pay for this unit is the pool price above.`
-  : `This unit is defined as a mercenary but **no mercenary pool in descr_mercenaries.txt offers
+  : `This unit is defined as a mercenary but **no mercenary pool anywhere on the map offers
 it**, so there is nowhere on the campaign map to hire it as the mod ships today.${coreList.length || avail.all ? " It is reachable only through the building route below." : ""}`}
 
 `;
@@ -775,7 +847,7 @@ ${cardMarkup(u)}${u.hasName ? "" : "> _This unit has no display name in the text
 | | | Rank in roster |
 |---|---:|---|
 ${stat("Attack", s.attack, "", "attack")}${stat("Charge bonus", s.charge, "", "charge")}${s.weapon ? `| Weapon | ${s.weapon} | |\n` : ""}${stat("Armour", s.armour, "", "armour")}${stat("Defence skill", s.defence, "", "defence")}${stat("Shield", s.shield, "", "shield")}${stat("Morale", s.morale, "", "morale")}${s.discipline ? `| Discipline | ${s.discipline} | |\n` : ""}${s.training ? `| Training | ${s.training} | |\n` : ""}${stat("Men per unit", s.men, "", "men")}${stat("Recruitment cost", s.cost, " dn", "cost")}${stat("Upkeep per turn", s.upkeep, " dn", "upkeep")}${stat("Turns to recruit", s.turns)}
-${u.attributes.length ? `\n**Attributes:** ${u.attributes.map((a) => `\`${a}\``).join(", ")}\n` : ""}${u.statsDiffer ? `\n> **The mod gives this unit more than one set of numbers.** The figures above are one of\n> them, so check in-game if the exact values matter.\n` : ""}
+${attrBlock}${u.statsDiffer ? `\n> **The mod gives this unit more than one set of numbers.** The figures above are one of\n> them, so check in-game if the exact values matter.\n` : ""}
 ${hireSection}${
   // A mercenary with no building route at all has nothing to say here, and printing "no
   // recruitment route was found" under a heading about recruitment reads as missing data
@@ -792,7 +864,7 @@ ${avail.allCore
     : avail.all || aorCount
       ? `No faction has this on its core roster: it can be raised only in the provinces below.`
       : `_No recruitment route for this unit was found in the building files._`}
-${avail.all && !avail.allCore ? `\nAny faction holding one of the provinces below can field it.\n` : aorCount ? `\nA further ${aorCount} faction${aorCount === 1 ? "" : "s"} can raise it in the provinces below.\n` : ""}${reqBlock ? `\n### Building and resource requirements\n\n${reqBlock}\n` : ""}${zoneBlocks.length ? `\n### Areas of recruitment\n\n${zoneBlocks.join("\n\n")}\n` : ""}
+${avail.all && !avail.allCore ? `\nAny faction holding one of the provinces below can field it.\n` : aorCount ? `\nA further ${aorCount} faction${aorCount === 1 ? "" : "s"} can raise it in the provinces below.\n` : ""}${reqBlock ? `\n${reqBlock}\n` : ""}${zoneBlocks.length ? `\n### Areas of recruitment\n\n${zoneBlocks.join("\n\n")}\n` : ""}
 `}${u.long || u.short
   ? `## Description\n\n${sectionise(u.long || u.short)}\n\n`
   : "> This unit has no written description in the mod yet.\n\n"}`;
@@ -815,15 +887,20 @@ ${placeholder ? `> **${placeholder.toLocaleString("en-US")} units still carry RI
 > placeholder, since text that looks like content but is not is worse than an honest gap.\n` : ""}
 ## Mercenaries
 
-**${mercUnits.toLocaleString("en-US")} of these units are mercenaries** — hired from a regional pool in
-descr_mercenaries.txt, not recruited from a building. Every one of them is named
+**${mercUnits.toLocaleString("en-US")} of these units are mercenaries** — hired from a regional pool on
+the map, not recruited from a building. Every one of them is named
 "Mercenary …" here so a roster cannot be misread, which groups them together in the table
 below. ${mercAlreadyNamed.toLocaleString("en-US")} were already named that way by the mod; the
 prefix was added to the other ${mercPrefixed.toLocaleString("en-US")}.
 
+<details>
+<summary>How this wiki tells a mercenary from a regional unit</summary>
+
 A mercenary is identified by its internal type beginning \`merc \`, not by the
 \`mercenary_unit\` attribute — that attribute is also on all 450 area-of-recruitment entries,
 so it labels 770 entries where only 320 are for hire.
+
+</details>
 ${mixedDicts.length ? `\n> **${mixedDicts.length} unit${mixedDicts.length === 1 ? " is" : "s are"} defined both ways** (some entries mercenary, some not) and\n> ${mixedDicts.length === 1 ? "is" : "are"} deliberately left unprefixed: ${mixedDicts.slice(0, 20).map((d) => `\`${d}\``).join(", ")}${mixedDicts.length > 20 ? `, and ${mixedDicts.length - 20} more` : ""}.\n` : ""}
 ## By class
 
@@ -873,3 +950,13 @@ console.log(`  with a display name:      ${named.toLocaleString("en-US")} of ${r
 console.log(`  with a real description:  ${described.toLocaleString("en-US")}`);
 console.log(`  still on placeholder text:${placeholder.toLocaleString("en-US")}`);
 console.log(`  distinct classes:         ${Object.keys(byClass).length}`);
+
+// Attributes: what the mod's own text could name, and what it could not. Reported as counts so
+// a token that quietly stops resolving — a renamed text key, a new attribute in a future
+// release — shows up here rather than silently vanishing from every unit page.
+{
+  const fmt = (m) => [...m.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v.toLocaleString("en-US")}`).join(", ") || "none";
+  console.log(`  attributes named from the mod's own text: ${attrStats.resolved.size} distinct — ${fmt(attrStats.resolved)}`);
+  console.log(`  attributes with no wording in text/, shown raw: ${attrStats.unresolved.size} distinct — ${fmt(attrStats.unresolved)}`);
+  if (attrStats.missingKey.size) console.log(`  MAPPED TO A TEXT KEY THAT NO LONGER EXISTS: ${[...attrStats.missingKey].join(", ")}`);
+}

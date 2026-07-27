@@ -352,7 +352,21 @@ function levelLink(chain, level) {
   return buildingPages.has(p) ? `[${label}](../buildings/${p}.md)` : label;
 }
 const levelName = (level) => BUILDING_NAMES[String(level).toLowerCase()] || String(level).replace(/_/g, " ");
-const regionLink = (r) => (regionPages.has(r) ? `[${r.replace(/_/g, " ")}](../regions/${r}.md)` : r.replace(/_/g, " "));
+// The region TOKEN is not its name. The mod localises all 1,311 of them in
+// text/imperial_campaign_regions_and_settlement_names.txt, and for three of them the answer is
+// not the token with its underscores knocked out: `Odrysia` is called "Basilike Brenaia",
+// `Lusonia_Septentrionalis` is "Lusonia Iberica", `Boreios_Labeataia` is "Boreia Labeataia".
+// The link target stays the token, because that is the file name.
+const REGION_NAMES = (() => {
+  const out = {};
+  try {
+    const t = fs.readFileSync(path.join(RIS, "text", "imperial_campaign_regions_and_settlement_names.txt"), "utf16le");
+    for (const m of t.matchAll(/\{([^}]+)\}(.*)/g)) out[m[1].trim()] = m[2].trim();
+  } catch { /* fall back to the token */ }
+  return out;
+})();
+const regionName = (r) => REGION_NAMES[r] || String(r).replace(/_/g, " ");
+const regionLink = (r) => (regionPages.has(r) ? `[${regionName(r)}](../regions/${encodeURIComponent(r)}.md)` : regionName(r));
 
 // Wording for every effect kind a `resource` clause is actually keyed to. Taken from the file
 // rather than written from memory — those fourteen are trade_base_income_bonus, farming_level,
@@ -435,12 +449,26 @@ const iconImg = (tok, up, size) => (iconFiles.has(tok)
   ? `<img src="${up}resource-icons/${tok}.png" alt="" width="${size || 24}">` : "");
 
 // ── prose the pages share ────────────────────────────────────────────────────
-const PROVENANCE = "What a good **does** is read off the clauses the mod conditions on it — " +
-  "`requires resource <good>` on a building level, on a numeric effect, or on a `recruit` " +
-  "line in export_descr_buildings.txt, including the ones reached through an `alias`. " +
-  "Negated clauses count: withholding something is an effect. Where nothing in the files " +
-  "conditions on a good, the page says **no effect established** rather than describing what " +
-  "the word suggests.";
+// Folded. This is the page's warranty rather than its content — how the "what it does" lines
+// were arrived at, and why a good with nothing behind it is reported as such instead of being
+// described from its name. Kept, because it is the reason the page can be trusted; folded,
+// because a reader looking up what Amber is worth should not have to read about clause parsing
+// to get there. `extra` is where a page adds a fact of the same kind, such as a good's internal
+// token, which is no use in play but is the identifier a modder needs.
+const provenance = (extra) => [
+  "<details>",
+  "<summary>Where these answers come from, and what an unestablished effect means</summary>",
+  "",
+  "What a good **does** is read off the clauses the mod conditions on it — a requirement on a " +
+  "building level, on a numeric effect, or on a recruitment line, including the ones reached " +
+  "through the building file's own aliases. Negated clauses count: withholding something is an " +
+  "effect. Where nothing in the mod conditions on a good, the page says **no effect " +
+  "established** rather than describing what the word suggests.",
+  ...(extra ? ["", extra] : []),
+  "",
+  "</details>",
+].join("\n");
+const PROVENANCE = provenance(null);
 
 const SUBTYPE_WORDS = {
   mineable: "**Mineable** — the mines chain can be built at the settlement that holds it.",
@@ -483,8 +511,8 @@ function otherConsumerHits(tok) {
   return out;
 }
 
-const NOTHING = "**No effect established in the mod files.** Nothing in " +
-  "export_descr_buildings.txt requires it, excludes it, or keys a number off it.";
+const NOTHING = "**No effect established in the mod files.** Nothing in the mod requires it, " +
+  "excludes it, or keys a number off it.";
 
 // ── one good's page ──────────────────────────────────────────────────────────
 fs.mkdirSync(path.join(OUT, "goods"), { recursive: true });
@@ -505,10 +533,9 @@ function goodPage(g) {
   const rows = [];
   rows.push(`| Subtype | ${SUBTYPE_WORDS[g.subtype] || (g.subtype ? `\`${g.subtype}\`` : "_not declared_")} |`);
   // Four goods comment their tier out, so the honest answer there is that it is not declared.
-  rows.push(`| Tier | ${g.tier == null ? "_not declared — the `tier` line is commented out in descr\\_sm\\_resources.txt_" : `**${g.tier}**`} |`);
+  rows.push(`| Tier | ${g.tier == null ? "_not declared — the mod comments its tier line out_" : `**${g.tier}**`} |`);
   rows.push(`| Trade value | ${g.tradeValue == null ? "_not declared_" : `**${g.tradeValue}**`} |`);
   rows.push(`| Groups | ${g.tags.length ? g.tags.map((t) => `[${t.replace(/_/g, " ")}](../trade-goods.md#${anchor(t.replace(/_/g, " "))})`).join(", ") : "_none declared_"} |`);
-  rows.push(`| Internal token | \`${g.tok}\` |`);
   if (g.depletable != null) rows.push(`| Depletable | ${g.depletable ? "yes" : "no"}${g.baseTurns != null ? `, exhausted after ${g.baseTurns} turns` : ""}${g.popImpact != null ? `, ${g.popImpact.toLocaleString("en-US")} population per unit` : ""} |`);
   if (g.mineTooltip) rows.push(`| When mined | ${g.mineTooltip} |`);
 
@@ -528,10 +555,10 @@ function goodPage(g) {
     const other = otherConsumerHits(g.tok);
     g.otherHits = other;
     const elsewhere = other.clause.length
-      ? ` A \`resource ${g.tok}\` clause does appear in ${other.clause.join(", ")}, so look there.`
+      ? ` It is required by name in ${other.clause.join(", ")}, so look there.`
       : other.plain.length
-        ? ` The name is mentioned in ${other.plain.join(", ")}, but not as a \`resource\` clause.`
-        : ` The ${OTHER_CONSUMERS.length} other files that could read a resource — the campaign script, the mercenary pools, the rebel-faction blocks and the spawn scripts — do not name it either.`;
+        ? ` The name is mentioned in ${other.plain.join(", ")}, but never as a requirement.`
+        : ` Nothing else that could read a resource — the campaign script, the mercenary pools, the rebel-faction blocks, the spawn scripts — names it either.`;
     // The slaves resource is the one case where "no mod rule" does not mean "no effect": its
     // subtype is engine behaviour, and the fields it declares are what govern it.
     const engine = g.subtype === "slaves"
@@ -548,13 +575,14 @@ function goodPage(g) {
       .map((x) => `| ${unitLink(x.type)} | ${uniq([...x.levels].map((s) => { const [c, l] = s.split("|"); return levelLink(c, l); })).join(", ")} |`);
     const table = `| Unit | Raised at |\n|---|---|\n${rowsU.join("\n")}`;
     unitsBody = `\n\n## What it lets you raise\n\n**${f.units.size}** ${f.units.size === 1 ? "unit is" : "units are"} gated on a region having ${g.name}.\n\n`
-      + (rowsU.length > 12 ? `<details><summary>${f.units.size} units</summary>\n\n${table}\n\n</details>` : table);
+      + (rowsU.length > 12 ? `<details>
+<summary>${f.units.size} units</summary>\n\n${table}\n\n</details>` : table);
   }
 
   // ── where it is found ──
   let whereBody;
   if (!g.markers) {
-    whereBody = `**Not placed anywhere on the map.** descr_strat.txt contains no \`resource ${g.tok}\` line, so no region has it as the campaign ships.`;
+    whereBody = `**Not placed anywhere on the map.** The campaign file puts no marker for it anywhere, so no region has it as the campaign ships.`;
   } else {
     const regionRows = [...g.byRegion.entries()]
       .sort((a, b) => b[1].quantity - a[1].quantity || a[0].localeCompare(b[0]))
@@ -585,9 +613,11 @@ function goodPage(g) {
       : "";
     whereBody = `**${g.markers.toLocaleString("en-US")}** ${g.markers === 1 ? "marker" : "markers"} on the map, `
       + `${g.quantity.toLocaleString("en-US")} in total quantity, across ${regionCount}.${everywhere}\n\n`
-      + `<details><summary>Who holds those regions at the campaign start (${byFaction.size} ${byFaction.size === 1 ? "faction" : "factions"})</summary>\n\n`
+      + `<details>
+<summary>Who holds those regions at the campaign start (${byFaction.size} ${byFaction.size === 1 ? "faction" : "factions"})</summary>\n\n`
       + `| Faction | Regions |\n|---|---:|\n${facRows.join("\n")}\n\n</details>\n\n`
-      + `<details><summary>Every region that has it (${regionRows.length})</summary>\n\n`
+      + `<details>
+<summary>Every region that has it (${regionRows.length})</summary>\n\n`
       + `| Region | Amount | Held at the campaign start by |\n|---|---:|---|\n${regionRows.join("\n")}\n\n</details>`;
   }
 
@@ -610,7 +640,7 @@ ${rows.join("\n")}
 
 ## What it does
 
-${PROVENANCE}
+${provenance(`The mod calls this good \`${g.tok}\` internally; that is the word the conditions on this page are written against.`)}
 
 ${doesBody}${unitsBody}
 
@@ -633,7 +663,10 @@ const indexRows = [...GOODS]
     const f = g.facts;
     const effects = f.effects.size + f.blockedEffects.size;
     const builds = f.levels.length + f.blockedLevels.length;
-    return `| ${iconImg(g.tok, "", 24)} | [${g.name}](goods/${g.tok}.md) | \`${g.subtype || "—"}\` | ${numOrDash(g.tier)} | ${numOrDash(g.tradeValue)} | ${g.regionsAgree ? g.byRegion.size.toLocaleString("en-US") : "_n/d_"} | ${g.quantity.toLocaleString("en-US")} | ${builds || "—"} | ${effects || "—"} | ${f.units.size || "—"} |`;
+    // The subtype token said nothing: `none` on 40 of the 46 rows. What a reader wants from
+    // this column is the one distinction it draws — whether the good comes out of a mine.
+    const kind = g.subtype === "mineable" ? "mined" : g.subtype === "slaves" ? "slaves" : "traded";
+    return `| ${iconImg(g.tok, "", 24)} | [${g.name}](goods/${g.tok}.md) | ${kind} | ${numOrDash(g.tier)} | ${numOrDash(g.tradeValue)} | ${g.regionsAgree ? g.byRegion.size.toLocaleString("en-US") : "_n/d_"} | ${g.quantity.toLocaleString("en-US")} | ${builds || "—"} | ${effects || "—"} | ${f.units.size || "—"} |`;
   });
 
 // The tag groups descr_sm_resources declares. Kept even though nothing conditions on them —
@@ -681,7 +714,7 @@ RIS declares **${GOODS.length}** of them. ${placedGoods} are placed on the map �
 in total, and between them they reach **every one of the ${regionsWithAnything.toLocaleString("en-US")} regions**, because
 one of them is on all of them.${GOODS.length - placedGoods ? ` The other ${GOODS.length - placedGoods} are declared but placed nowhere at all.` : ""}
 
-${noEffect.length} ${noEffect.length === 1 ? "has" : "have"} nothing in export_descr_buildings.txt conditioned on
+${noEffect.length} ${noEffect.length === 1 ? "has" : "have"} nothing in the mod conditioned on
 ${noEffect.length === 1 ? "it" : "them"}: ${noEffect.map((g) => `[${g.name}](goods/${g.tok}.md)`).join(", ")}. That is a finding, not a gap —
 each of those pages says which other files were searched before the claim was made.
 
@@ -693,17 +726,17 @@ commented out in the mod file and show **—**, which means not declared, not ze
 is how many regions have it; **quantity** is those markers' amounts added up, which is the
 number that varies, since a good is placed at most once per region${dupRegions.length ? ` (the single exception in the whole file is ${dupRegions.map((g) => g.name).join(", ")}, which has one region carrying two markers)` : ""}.
 
-| | Good | Subtype | Tier | Trade value | Regions | Quantity | Builds | Effects | Units |
+| | Good | Kind | Tier | Trade value | Regions | Quantity | Builds | Effects | Units |
 |:-:|---|---|---:|---:|---:|---:|---:|---:|---:|
 ${indexRows.join("\n")}
 
 ## Groups
 
-descr_sm_resources.txt puts some goods into **${FAMILIES.size}** named groups.
+The mod puts some goods into **${FAMILIES.size}** named groups.
 ${groupsUsedInEdb.length === 0
-    ? "None of those ${n} names appears anywhere in export_descr_buildings.txt — every condition in the mod names a single good — so a group is a classification the file declares rather than a mechanic."
+    ? "None of those ${n} names is used as a condition anywhere — every condition in the mod names a single good — so a group is a classification the mod declares rather than a mechanic."
       .replace("${n}", FAMILIES.size)
-    : `**${groupsUsedInEdb.length}** of them are named in export_descr_buildings.txt (${groupsUsedInEdb.join(", ")}), so those are worth following up; the rest are classification only.`}
+    : `**${groupsUsedInEdb.length}** of them are used as a condition somewhere (${groupsUsedInEdb.join(", ")}), so those are worth following up; the rest are classification only.`}
 **${untagged.length}** of the ${GOODS.length} goods are in no group at all.${(() => {
     const singles = [...FAMILIES.entries()].filter(([, l]) => l.length === 1);
     return singles.length ? ` ${singles.length} of the groups contain exactly one good (${singles.map(([t]) => t.replace(/_/g, " ")).join(", ")}), which is a group that groups nothing.` : "";
@@ -711,7 +744,8 @@ ${groupsUsedInEdb.length === 0
 
 ${familySections}
 
-## How each figure here was obtained
+<details>
+<summary>How each figure on this page was counted, and checked</summary>
 
 - **Goods** — the non-hidden blocks in descr_sm_resources.txt, found by brace depth with
   comments stripped. The block count was checked a second way against the flat pattern the
@@ -724,6 +758,8 @@ ${familySections}
 - **Builds, effects and units** — counted from export_descr_buildings.txt, alias indirection
   expanded, negated clauses included. The ${FAMILIES.size} group names were searched for in the
   same file before the Groups section claimed they gate nothing; ${groupsUsedInEdb.length} appear in it.
+
+</details>
 `;
 fs.writeFileSync(path.join(OUT, "trade-goods.md"), indexBody, "utf8");
 

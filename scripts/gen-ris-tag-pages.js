@@ -143,7 +143,21 @@ function levelLink(chain, level) {
 }
 const levelName = (level) => BUILDING_NAMES[String(level).toLowerCase()] || String(level).replace(/_/g, " ");
 const facName = (f) => FACTION_NAMES[String(f).toLowerCase()] || String(f).replace(/_/g, " ");
-const regionLink = (r) => (regionPages.has(r) ? `[${r.replace(/_/g, " ")}](../regions/${r}.md)` : r.replace(/_/g, " "));
+// The region TOKEN is not its name. The mod localises all 1,311 of them in
+// text/imperial_campaign_regions_and_settlement_names.txt, and for three of them the answer is
+// not the token with its underscores knocked out: `Odrysia` is called "Basilike Brenaia",
+// `Lusonia_Septentrionalis` is "Lusonia Iberica", `Boreios_Labeataia` is "Boreia Labeataia".
+// The link target stays the token, because that is the file name.
+const REGION_NAMES = (() => {
+  const out = {};
+  try {
+    const t = fs.readFileSync(path.join(RIS, "text", "imperial_campaign_regions_and_settlement_names.txt"), "utf16le");
+    for (const m of t.matchAll(/\{([^}]+)\}(.*)/g)) out[m[1].trim()] = m[2].trim();
+  } catch { /* fall back to the token */ }
+  return out;
+})();
+const regionName = (r) => REGION_NAMES[r] || String(r).replace(/_/g, " ");
+const regionLink = (r) => (regionPages.has(r) ? `[${regionName(r)}](../regions/${encodeURIComponent(r)}.md)` : regionName(r));
 
 // ── region tags ──────────────────────────────────────────────────────────────
 // Same block walk as gen-ris-region-pages.js: indexed off the RGB line, because it is the only
@@ -306,7 +320,9 @@ function effectRange(e) {
 
 // ── one entry's facts ────────────────────────────────────────────────────────
 const uniq = (arr) => [...new Set(arr)];
-const fold = (summary, lines) => `<details><summary>${summary}</summary>\n\n${lines.join("\n")}\n\n</details>`;
+// The opening tag and the <summary> go on SEPARATE lines. Written as one line the viewer does
+// not see a block and prints the contents as literal text on the page.
+const fold = (summary, lines) => `<details>\n<summary>${summary}</summary>\n\n${lines.join("\n")}\n\n</details>`;
 
 function factsFor(tok) {
   const u = USAGE.get(tok) || { levels: [], recruits: [], effects: [], aliases: [], blockedLevels: [], blockedRecruits: [], blockedEffects: [] };
@@ -346,8 +362,8 @@ function factsFor(tok) {
   return { tok, name: humanise(tok), regions, levels: lv, blockedLevels: bl, units, blockedUnits, effects: eff, blockedEffects: beff, aliases: u.aliases };
 }
 
-const NOTHING = "**No effect established in the mod files.** Nothing in " +
-  "export_descr_buildings.txt requires it, excludes it, or keys a number off it.";
+const NOTHING = "**No effect established in the mod files.** Nothing in the mod requires it, " +
+  "excludes it, or keys a number off it.";
 
 /** The body of one `## <name>` entry, as a bullet list of established facts. */
 function entryBody(f, opts) {
@@ -398,12 +414,23 @@ function regionsFold(f, what) {
 // ── page assembly ────────────────────────────────────────────────────────────
 const HEAD = (title) => `# ${title}\n\n[← reference tables](../tags.md) · [all regions](../regions.md) · [wiki index](../README.md)\n`;
 
-const PROVENANCE = "What each value **does** is read off the clauses the mod conditions on it — " +
-  "`requires hidden_resource <tag>` on a building level, on a `recruit` line, or on a numeric " +
-  "effect in export_descr_buildings.txt, including the ones reached through an `alias`. " +
-  "Negated clauses count: blocking something is an effect. Where nothing in the files " +
-  "conditions on a value, the entry says **no effect established** rather than describing what " +
-  "the word suggests.";
+// Folded. This is the page's warranty, not its content: it says how the "what it does" lines
+// were arrived at and why a value with nothing behind it is reported as such instead of being
+// described from its name. Worth keeping — it is the reason the page can be trusted — and worth
+// having to ask for, because a reader looking up what Mountains does should not have to read a
+// paragraph about clause parsing to get there.
+const PROVENANCE = [
+  "<details>",
+  "<summary>Where these answers come from, and what an unestablished effect means</summary>",
+  "",
+  "What each value **does** is read off the clauses the mod conditions on it — a requirement on " +
+  "a building level, on a recruitment line, or on a numeric effect, including the ones reached " +
+  "through the building file's own aliases. Negated clauses count: blocking something is an " +
+  "effect. Where nothing in the mod conditions on a value, the entry says **no effect " +
+  "established** rather than describing what the word suggests.",
+  "",
+  "</details>",
+].join("\n");
 
 function summaryTable(list, cols) {
   return [`| ${cols.map((c) => c[0]).join(" | ")} |`,
@@ -457,7 +484,7 @@ function recruitmentPage(title, file, tokens, lede) {
       parts.push(`\n${NOTHING} No region carries it either, so it is dead data in the mod.`);
     } else if (!f.units.size) {
       const other = otherConsumerHits(f.tok);
-      parts.push(`\n**No unit is gated on this zone.** ${f.regions.length} ${f.regions.length === 1 ? "region carries" : "regions carry"} it, but no \`recruit\` line in export_descr_buildings.txt conditions on it, ${other.length ? `and the only other files that name it are ${other.join(", ")}` : `and the ${OTHER_CONSUMERS.length} other files that could read a hidden resource — the campaign script, the mercenary pools, the rebel-faction blocks and the spawn scripts — do not mention it at all`}. So as the mod ships it unlocks nothing.`);
+      parts.push(`\n**No unit is gated on this zone.** ${f.regions.length} ${f.regions.length === 1 ? "region carries" : "regions carry"} it, but nothing in the mod conditions a recruitment line on it, ${other.length ? `and the only files that name it at all are ${other.join(", ")}` : `nothing else that could read it — the campaign script, the mercenary pools, the rebel-faction blocks, the spawn scripts — mentions it either`}. So as the mod ships it unlocks nothing.`);
     } else if (!f.regions.length) {
       parts.push(`\n**No region carries this zone**, so the ${f.units.size} ${f.units.size === 1 ? "unit" : "units"} below cannot be raised anywhere on the map as it ships.`);
       parts.push("\n" + unitTable(f));
@@ -545,7 +572,7 @@ ${list.map((f) => {
     const lines = [`## ${f.name}`, ""];
     lines.push(o
       ? `The homeland of **${o.factions.map(facName).join(", ")}**.`
-      : "**Not determined which faction this belongs to** — no condition in export_descr_buildings.txt pairs it with a faction.");
+      : "**Not determined which faction this belongs to** — no condition anywhere in the mod pairs it with a faction.");
     lines.push(f.regions.length
       ? `${f.regions.length === 1 ? "Region" : "Regions"}: ${[...f.regions].sort().map(regionLink).join(" · ")}`
       : "**No region carries this tag**, so it can never be satisfied as the mod ships.");

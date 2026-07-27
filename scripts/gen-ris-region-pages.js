@@ -213,6 +213,23 @@ function loadDisplayNames(file) {
   } catch { /* fall back to the raw token */ }
   return map;
 }
+// Region and settlement DISPLAY names. descr_regions names a region `Achaia_Phthiotis` and its
+// settlement `Thebai_Phthiotides`, and those tokens are keys, not names — the mod localises
+// every one of them in text/imperial_campaign_regions_and_settlement_names.txt, which is the
+// file the game itself reads to label the map. Replacing the underscore with a space happens to
+// give the same answer for most of them, but it is a guess dressed as a fact, and it is the
+// mod's file that decides. The link TARGET stays the token, because that is what the page is
+// called on disk; only the visible text changes. Counted below: 354 of the 1,311 region tokens
+// carry an underscore, so this is a third of the index.
+const PLACE_NAMES = loadDisplayNames("imperial_campaign_regions_and_settlement_names.txt");
+const placeNameVia = { declared: 0, fallback: new Set() };
+const placeName = (tok) => {
+  const hit = PLACE_NAMES[String(tok).toLowerCase()];
+  if (hit) { placeNameVia.declared++; return hit; }
+  placeNameVia.fallback.add(String(tok));
+  return String(tok).replace(/_/g, " ");
+};
+
 const BUILDING_NAMES = loadDisplayNames("export_buildings.txt");
 /** Display name for a building level, or the token itself when there is no entry. */
 const bName = (tok) => BUILDING_NAMES[String(tok).toLowerCase()] || null;
@@ -571,7 +588,23 @@ const NO_PAGE = new Set([
   "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
 ]);
 const hasPage = (f) => !NO_PAGE.has(String(f).toLowerCase());
-const facName = (f) => display[String(f).toLowerCase()] || String(f).replace(/_/g, " ");
+// `slave` holds 502 of the 1,311 regions at the campaign start, and campaign_descriptions has
+// no title for it — so `facName` fell back to the raw token and the commonest owner on the map
+// was printed as the word "slave", unlinked. The mod does name it: `{SLAVE}` in
+// text/expanded_bi.txt reads "Free Peoples", which is what the game shows. The other eight
+// non-playable factions are named the same way, and all nine are documented on one shared page,
+// which is where the link goes — they have no page each, by design.
+const npNameVia = { declared: new Set(), fallback: new Set() };
+const npName = (f) => {
+  const k = String(f).toLowerCase();
+  const hit = BI_NAMES[k];
+  if (hit) { npNameVia.declared.add(k); return hit; }
+  npNameVia.fallback.add(k);
+  return String(f).replace(/_/g, " ");
+};
+let npCells = 0;
+const nonPlayableRef = (f) => { npCells++; return `[${npName(f)}](../factions/non-playable.md)`; };
+const facName = (f) => display[String(f).toLowerCase()] || npName(f);
 
 // ── what can be recruited here, at the campaign start ────────────────────────
 // gen-ris-faction-pages.js deliberately does NOT evaluate recruitment, because "can this
@@ -781,8 +814,10 @@ const unitRows = (rows) => rows
   .sort((a, b) => unitName(a.unit).localeCompare(unitName(b.unit)))
   .map((e) => `| ${cardImg(e.unit)} | ${unitRef(e.unit)} | ${atCell(e.at)} | ${e.info.cost != null ? e.info.cost.toLocaleString("en-US") : "—"} | ${e.info.upkeep != null ? e.info.upkeep.toLocaleString("en-US") : "—"} |`);
 const unitTable = (rows) => `| | Unit | Raised at | Cost | Upkeep |\n|:-:|---|---|---:|---:|\n${unitRows(rows).join("\n")}`;
+// The opening tag and the <summary> go on SEPARATE lines. Written as one line the viewer does
+// not see a block and prints the tags as text, which is what happened to 60 region pages.
 const maybeFold = (summary, rows, table) => (rows.length > FOLD_AT
-  ? `<details><summary>${summary}</summary>\n\n${table}\n\n</details>`
+  ? `<details>\n<summary>${summary}</summary>\n\n${table}\n\n</details>`
   : table);
 
 function recruitSection(rec, held) {
@@ -805,13 +840,19 @@ function recruitSection(rec, held) {
     const inner = [...byWhy.entries()].sort((a, b) => b[1].length - a[1].length)
       .map(([w, rows]) => `**Waiting on ${w}** — ${rows.length} ${rows.length === 1 ? "unit" : "units"}\n\n${unitTable(rows)}`)
       .join("\n\n");
-    out.push(`<details><summary>${rec.later.length} more once a condition is met</summary>\n\n${inner}\n\n</details>`);
+    // Shown outright, not folded. This was a <details> whose opening tag and <summary> sat on
+    // ONE line, which the local viewer does not recognise as a block, so "<details><summary>1
+    // more once a condition is met</summary>" printed as literal text on 60 region pages. The
+    // content it was hiding is one or two rows with a bold line already naming the condition, so
+    // there was nothing worth folding in the first place.
+    out.push(inner);
   }
   return out.join("\n\n");
 }
 
 const list = ONLY.length ? regions.filter((r) => ONLY.includes(r.region)) : regions;
 fs.mkdirSync(path.join(OUT, "regions"), { recursive: true });
+fs.mkdirSync(path.join(OUT, "settlements"), { recursive: true });
 
 // Every declared trade good gets an icon, not only the ones a region page happens to show.
 // This used to be restricted to the goods placed on the map, on the reasoning that the folder
@@ -846,6 +887,11 @@ let withMapGoods = 0, withOwner = 0, withBuildings = 0, withTrade = 0;
 let withEthnicities = 0, withoutEthnicities = 0;
 const unparseableEth = [];
 const index = [];
+const settlementIndex = [];
+// A settlement page is named after its token, so two settlements sharing one would silently
+// overwrite each other. Checked here rather than assumed: as RIS ships, all 1,311 tokens and
+// all 1,311 display names are distinct, and the run fails loudly if that stops being true.
+const settlementTokens = new Map();
 
 for (const r of list) {
   const held = byRegion[r.region] || null;
@@ -859,13 +905,24 @@ for (const r of list) {
   // markdown renderer folds into a single run-on paragraph — the labels only looked like
   // separate lines in the source file. A table also puts the values in a column you can scan
   // down when comparing regions.
-  const rows = [];
+  //
+  // Two tables, not one. The first is the land: who lives here, how well it farms, what the
+  // ground and the weather are, whether there is a harbour — things a reader looks at and
+  // makes a decision about. The second is the gating tags: which areas of recruitment and
+  // cultural homelands this region counts as, and the geography flags the building file tests
+  // (`Asia minor, Has mine deposits, Qty coal 1`). Those decide real things, but only through
+  // a condition somewhere else, and read as a token dump beside "Terrain: Mountains". They are
+  // folded, with the count on the label, rather than dropped — every tag on the region is
+  // still on the page.
+  const rows = [], gated = [];
   const addRow = (label, arr, opts) => {
     if (!arr.length) return;
     const f = (opts && opts.link) ? tagRef : tagLabel;
-    rows.push(`| ${label} | ${arr.map(f).join(", ")} |`);
+    ((opts && opts.gated) ? gated : rows).push(`| ${label} | ${arr.map(f).join(", ")} |`);
   };
   const LINKED = { link: true };
+  const GATE = { link: true, gated: true };
+  const GATE_PLAIN = { gated: true };
 
   // Trade goods actually placed inside this region's borders, commonest first.
   const goods = goodsOf(r.region);
@@ -901,20 +958,30 @@ for (const r of list) {
       .join(", ")
     : null;
 
+  // The land, not the city. Size, population, what is built and what can be raised have moved
+  // to the settlement's own page: they are facts about a town, and a reader who searches for
+  // "Aigion" was finding nothing at all before that page existed.
+  const settleName = placeName(r.settlement);
+  const settleHref = `../settlements/${encodeURIComponent(r.settlement)}.md`;
   const glance = [
-    `**Settlement:** ${r.settlement}`,
-    held ? `**Size:** ${String(held.level || "").replace(/_/g, " ")}` : null,
-    held && held.pop != null ? `**Population:** ${held.pop.toLocaleString("en-US")}` : null,
     eth.length ? `**People:** ${eth.map((e) => `${ethName(e.name) || humanise(e.name)} ${e.pct}%`).join(", ")}` : null,
     goodsLabel.length ? `**Trade goods:** ${goodsLabel.join(", ")}` : null,
   ].filter(Boolean).join(" · ");
+  // The owner is named on both pages, and deliberately: it is the first thing asked of either,
+  // and both come from this one expression in this one generator, so there is nothing here that
+  // can drift out of step. Everything else about the town is stated on the town's page only.
+  const ownerPhrase = held
+    ? `${hasPage(held.faction) ? `[${facName(held.faction)}](../factions/${held.faction}.md)` : nonPlayableRef(held.faction)}${held.capital ? " — **their capital**" : ""}`
+    : null;
 
   if (peopleLine) rows.push(`| People | ${peopleLine} |`);
-  // No explanatory note. The tier reads as "4/4" and that is enough on a player-facing page;
-  // the mechanics of how RIS scales religious_belief are documented at RELIGION_NOTE above for
-  // anyone reading this generator, and do not belong on 1,311 region pages.
-  if (beliefLine) rows.push(`| Beliefs | ${beliefLine} |`);
-  addRow("Region resource tags", g.trade);
+  // No Beliefs row. It restated the People row: measured across the generated pages, the set of
+  // peoples and the set of beliefs are IDENTICAL on 1,180 of 1,311 regions, and on the 118 that
+  // differ the difference is a minority people carrying no belief entry of its own — "Paeonian
+  // 95%, Thracian 5%" against "Thracian 4/4". `beliefLine` is still computed, because the counts
+  // below report on it and a region whose rel_ tags stop parsing should still be visible in the
+  // run output rather than silently absent from a page nobody is looking at.
+  addRow("Region resource tags", g.trade, GATE_PLAIN);
   // Fertility is the Farm## tag on a 1-14 scale, NOT descr_regions field 7 — RIS leaves that
   // field at a constant 5 for every region as a placeholder, so reporting it would give the
   // same answer 1,311 times. Provincia's region panel reads the tag for the same reason.
@@ -936,20 +1003,21 @@ for (const r of list) {
   // here", next to the real percentages, with RELIGION_NOTE explaining the scale. Nothing is
   // dropped — every rel_ tag on the region appears there, including any that does not match
   // the `rel_<belief>_<tier>` shape.
-  addRow("Recruitment zones", g.recruitment, LINKED);
-  addRow("Specialty recruitment", g.specialty, LINKED);
-  addRow("Cultural homeland", g.culture, LINKED);
   addRow("Hazards and river trade", g.hazard, LINKED);
-  addRow("Geography and gating", g.geography);
-  addRow("Other tags", g.other);
+  addRow("Recruitment zones", g.recruitment, GATE);
+  addRow("Specialty recruitment", g.specialty, GATE);
+  addRow("Cultural homeland", g.culture, GATE);
+  addRow("Geography and gating", g.geography, GATE_PLAIN);
+  addRow("Other tags", g.other, GATE_PLAIN);
 
-  const body = `# ${r.region}
+  const body = `# ${placeName(r.region)}
 
 [← all regions](../regions.md) · [wiki index](../README.md)
 
-${glance}
+**Its settlement is [${settleName}](${settleHref})**${ownerPhrase ? `, held at the campaign start by ${ownerPhrase}` : ""}. That page has the town —
+its size, its population, what is built there and what it can raise. This one is the land.
 
-${held ? `Held at the campaign start by ${hasPage(held.faction) ? `[${facName(held.faction)}](../factions/${held.faction}.md)` : facName(held.faction)}${held.capital ? " — **their capital**" : ""}.` : `This region begins **independent**. If it revolts, the rebels are ${r.rebels}.`}
+${[glance, held ? null : `This region begins **independent**. If it revolts, the rebels are ${r.rebels}.`].filter(Boolean).join("\n\n")}
 
 ## Trade goods
 
@@ -962,37 +1030,129 @@ ${goods.length ? "See the [trade goods reference](../trade-goods.md) for what ea
 ## Resources and character
 
 ${rows.length ? `| | |\n|---|---|\n${rows.join("\n")}` : "_This region carries no tags._"}
+${gated.length ? `
+<details>
+<summary>Which recruitment zones and homelands this region counts as (${gated.length})</summary>
 
+These are the tags the building and recruitment files test on this region. Each one is a
+condition somewhere else — a unit that can only be raised in these provinces, a building level
+a homeland unlocks, a mineral the mines chain needs.
+
+| | |
+|---|---|
+${gated.join("\n")}
+
+</details>
+` : ""}
+`;
+
+  fs.writeFileSync(path.join(OUT, "regions", `${r.region}.md`), body, "utf8");
+
+  // ── the settlement's own page ──────────────────────────────────────────────
+  // One per settlement, 1:1 with a region, and NOT a copy of the region page: everything here
+  // is about the town and has been moved off the region page rather than duplicated. Written
+  // from here because this generator is the one that already holds descr_strat's settlement
+  // blocks and the region's recruitment evaluation; a second generator reading the same file
+  // would be a second thing to keep in step.
+  const builtTable = held && (held.buildings || []).length
+    ? `| | Building chain | Level |\n|:-:|---|---|\n${held.buildings.map((b) => `| ${(() => { const ic = iconFor(held.faction, b.level); return ic ? `<img src="../${ic}" alt="" width="32">` : ""; })()} | ${chainLink(b.chain)} | ${levelLink(b)} |`).join("\n")}`
+    : held ? "_Nothing is built here at the campaign start._"
+      : "_No faction holds this settlement at the campaign start, so the campaign file records nothing built in it._";
+  const townGlance = [
+    held ? `**Size:** ${String(held.level || "").replace(/_/g, " ")}` : null,
+    held && held.pop != null ? `**Population:** ${held.pop.toLocaleString("en-US")}` : null,
+    held && (held.buildings || []).length ? `**Buildings:** ${held.buildings.length}` : null,
+  ].filter(Boolean).join(" · ");
+  const townBody = `# ${settleName}
+
+[← all settlements](../settlements.md) · [all regions](../regions.md) · [wiki index](../README.md)
+
+The settlement of the region of **[${placeName(r.region)}](../regions/${encodeURIComponent(r.region)}.md)**${ownerPhrase ? `, held at the campaign start by ${ownerPhrase}` : ""}.
+${townGlance ? `\n${townGlance}\n` : ""}${held ? "" : `\nNo faction holds it at the campaign start. If the region revolts, the rebels are ${r.rebels}.\n`}
 ## What is already built
 
-${held && (held.buildings || []).length
-  ? `| | Building chain | Level |\n|:-:|---|---|\n${held.buildings.map((b) => `| ${(() => { const ic = iconFor(held.faction, b.level); return ic ? `<img src="../${ic}" alt="" width="32">` : ""; })()} | ${chainLink(b.chain)} | ${levelLink(b)} |`).join("\n")}`
-  : held ? "_Nothing is built here at the campaign start._" : "_Independent regions have no starting buildings recorded in the campaign file._"}
+${builtTable}
 
 ## What can be recruited here
 
 ${recruitSection(rec, held)}
-`;
 
-  fs.writeFileSync(path.join(OUT, "regions", `${r.region}.md`), body, "utf8");
-  index.push({ region: r.region, settlement: r.settlement, owner: held ? facName(held.faction) : null, ownerTok: held ? held.faction : null, trade: goods.length, builds: held ? (held.buildings || []).length : 0 });
+## The land around it
+
+Terrain, climate, fertility, water, port, the trade goods placed inside the borders, and the
+recruitment zones and homeland this ground counts as, are all on
+**[${placeName(r.region)}](../regions/${encodeURIComponent(r.region)}.md)** — stated there once, so the two pages
+cannot disagree.
+`;
+  if (settlementTokens.has(r.settlement)) {
+    console.error(`SETTLEMENT NAME COLLISION: "${r.settlement}" is the settlement of both ${settlementTokens.get(r.settlement)} and ${r.region} — one page would overwrite the other`);
+    process.exitCode = 2;
+  }
+  settlementTokens.set(r.settlement, r.region);
+  fs.writeFileSync(path.join(OUT, "settlements", `${r.settlement}.md`), townBody, "utf8");
+  settlementIndex.push({
+    settlement: r.settlement, name: settleName, region: r.region, regionName: placeName(r.region),
+    level: held ? String(held.level || "").replace(/_/g, " ") : null,
+    pop: held && held.pop != null ? held.pop : null,
+    owner: held ? facName(held.faction) : null, ownerTok: held ? held.faction : null,
+    capital: !!(held && held.capital), builds: held ? (held.buildings || []).length : 0,
+  });
+
+  index.push({ region: r.region, regionName: placeName(r.region), settlement: r.settlement, settlementName: settleName, owner: held ? facName(held.faction) : null, ownerTok: held ? held.faction : null, trade: goods.length, builds: held ? (held.buildings || []).length : 0 });
 }
 
-index.sort((a, b) => a.region.localeCompare(b.region));
+// Every cell in this table now links: the settlement column was dead text, which on the index
+// of 1,311 places is the column a reader is most likely to click. The two numeric headings are
+// short words on purpose — a numeric column is as wide as its heading, and "Trade goods" and
+// "Buildings" were spending 20 characters of a table that has to fit beside its neighbour
+// before the viewer will lay it two-up. Neither number is dropped: measured over the 1,311
+// rows, goods run 0–8 across 9 distinct values and buildings 0–17 across 18, so both vary,
+// unlike the faction index's regional-unit column that ran 424–443 and was a constant.
+index.sort((a, b) => a.regionName.localeCompare(b.regionName));
+const ownerCell = (e) => (e.owner
+  ? (hasPage(e.ownerTok) ? `[${e.owner}](factions/${e.ownerTok}.md)` : `[${npName(e.ownerTok)}](factions/non-playable.md)`)
+  : "_independent_");
 const idx = `# All regions
 
-[← wiki index](README.md)
+[← wiki index](README.md) · [all settlements](settlements.md)
 
-${index.length} regions. ${withOwner} are held by a faction at the campaign start; the rest
-begin independent.
+${index.length.toLocaleString("en-US")} regions, one settlement each. ${withOwner.toLocaleString("en-US")} are held by a faction at the campaign
+start; the rest begin independent. A region is the land — terrain, fertility, trade goods; its
+settlement is the town, on its own page.
 
-| Region | Settlement | Held by | Trade goods | Buildings |
+| Region | Settlement | Held by | Goods | Built |
 |---|---|---|---:|---:|
-${index.map((e) => `| [${e.region}](regions/${e.region}.md) | ${e.settlement} | ${e.owner ? (hasPage(e.ownerTok) ? `[${e.owner}](factions/${e.ownerTok}.md)` : e.owner) : "_independent_"} | ${e.trade} | ${e.builds} |`).join("\n")}
+${index.map((e) => `| [${e.regionName}](regions/${encodeURIComponent(e.region)}.md) | [${e.settlementName}](settlements/${encodeURIComponent(e.settlement)}.md) | ${ownerCell(e)} | ${e.trade} | ${e.builds} |`).join("\n")}
 `;
 fs.writeFileSync(path.join(OUT, "regions.md"), idx, "utf8");
 
+// ── the settlement index ─────────────────────────────────────────────────────
+settlementIndex.sort((a, b) => a.name.localeCompare(b.name));
+const capitals = settlementIndex.filter((s) => s.capital).length;
+const sIdx = `# All settlements
+
+[← wiki index](README.md) · [all regions](regions.md)
+
+${settlementIndex.length.toLocaleString("en-US")} settlements, one per region. ${capitals} of them are a faction's capital.
+Search finds a city by name here; the region it sits in is the land around it, with the terrain,
+fertility and trade goods.
+
+| Settlement | Region | Held by | Size | Population | Built |
+|---|---|---|---|---:|---:|
+${settlementIndex.map((s) => `| [${s.name}](settlements/${encodeURIComponent(s.settlement)}.md)${s.capital ? " ★" : ""} | [${s.regionName}](regions/${encodeURIComponent(s.region)}.md) | ${s.owner ? (hasPage(s.ownerTok) ? `[${s.owner}](factions/${s.ownerTok}.md)` : `[${npName(s.ownerTok)}](factions/non-playable.md)`) : "_independent_"} | ${s.level || "—"} | ${s.pop != null ? s.pop.toLocaleString("en-US") : "—"} | ${s.builds} |`).join("\n")}
+
+★ marks a faction capital.
+`;
+fs.writeFileSync(path.join(OUT, "settlements.md"), sIdx, "utf8");
+
 console.log(`${list.length} region pages written`);
+console.log(`  settlement pages written:   ${settlementIndex.length} (+ settlements.md) · distinct tokens ${settlementTokens.size}${settlementTokens.size === settlementIndex.length ? " — no collision" : " — COLLISION, a page was overwritten"}`);
+{
+  const names = new Set(settlementIndex.map((s) => s.name.toLowerCase()));
+  console.log(`  distinct settlement display names: ${names.size} of ${settlementIndex.length}${names.size === settlementIndex.length ? " — no two towns share a title" : " — TWO TOWNS SHARE A TITLE, search cannot tell them apart"}`);
+}
+console.log(`  place names from text/imperial_campaign_regions_and_settlement_names.txt: ${placeNameVia.declared.toLocaleString("en-US")} lookups resolved, ${placeNameVia.fallback.size} token${placeNameVia.fallback.size === 1 ? "" : "s"} with no entry${placeNameVia.fallback.size ? ` (${[...placeNameVia.fallback].slice(0, 10).join(", ")})` : ""}`);
+console.log(`  non-playable owners named and linked: ${npCells.toLocaleString("en-US")} cells · from text/expanded_bi.txt: ${[...npNameVia.declared].join(", ") || "none"}${npNameVia.fallback.size ? ` · NO DISPLAY NAME, token shown: ${[...npNameVia.fallback].join(", ")}` : ""}`);
 console.log(`  held by a faction at start: ${withOwner}`);
 console.log(`  with something built:       ${withBuildings}`);
 console.log(`  map resource placements: ${MAP_RESOURCES.placed.toLocaleString("en-US")} placed, ${MAP_RESOURCES.resolved.toLocaleString("en-US")} mapped to a region`);
