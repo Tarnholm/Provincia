@@ -77,11 +77,14 @@ input,select{background:var(--panel);color:var(--fg);border:1px solid var(--line
 input{min-width:18rem}
 input:focus,select:focus{outline:2px solid var(--acc-soft);border-color:var(--acc)}
 #count{color:var(--dim);font-size:.84rem;font-variant-numeric:tabular-nums}
-/* Sized to content, not stretched: a filtered roster showing three rows should not spread its
-   columns across the whole window. Wide tables still scroll inside the wrapper. */
+/* Sized to content, not stretched, but with FIXED layout: these tables run to over a thousand
+   rows, and content-based column sizing makes the browser measure every row — that pegged a
+   CPU core and made the pointer stutter on the unit roster. Fixed layout takes the widths from
+   the header row. Wide tables still scroll inside the wrapper. */
 .wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel);
- box-shadow:var(--shadow);width:fit-content;max-width:100%}
-table{border-collapse:collapse;width:auto;font-size:.89rem}
+ box-shadow:var(--shadow);max-width:100%}
+table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:.89rem}
+td{overflow:hidden;text-overflow:ellipsis}
 th,td{padding:.38rem .7rem;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
 th{position:sticky;top:0;background:var(--bg);cursor:pointer;user-select:none;
  font-size:.76rem;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);font-weight:600}
@@ -92,8 +95,13 @@ th.sorted::after{content:" \\25B2"}
 th.sorted.desc::after{content:" \\25BC"}
 tbody tr:hover{background:var(--acc-soft)}
 tbody tr:last-child td{border-bottom:none}
+/* Rows off-screen are skipped until scrolled to. With 1,172 rows and a hover rule, moving the
+   pointer restyled and repainted rows nobody was looking at, which made the cursor stutter.
+   contain-intrinsic-size keeps the scrollbar length honest for the skipped rows. */
+tbody tr{content-visibility:auto;contain-intrinsic-size:auto 2.05rem}
+.wrap{contain:paint}
 td.thumb{padding:.15rem .4rem;width:2.6rem}
-td.thumb img{display:block;width:2.2rem;height:auto;border-radius:4px;background:var(--bg)}
+td.thumb img{display:block;width:35px;height:48px;border-radius:4px;background:var(--bg)}
 .bars{display:inline-block;width:3.4rem;height:.4rem;border-radius:3px;background:var(--line);
  vertical-align:middle;margin-left:.45rem;overflow:hidden}
 .bars i{display:block;height:100%;background:var(--acc)}
@@ -136,7 +144,10 @@ function cell(v, col) {
   // A card thumbnail, lazily loaded: 1,172 of them would otherwise all be fetched at once.
   if (col && col.thumb) {
     if (!v) return "";
-    var i = '<img loading="lazy" src="' + v.img + '" alt="">';
+    // Explicit dimensions: without them every lazy image that arrives changes its row's
+    // height and reflows the table, so 1,132 loads meant 1,132 relayouts of a 1,172-row
+    // table. The cards are 164x224, so 35x48 keeps the aspect ratio.
+    var i = '<img loading="lazy" decoding="async" width="35" height="48" src="' + v.img + '" alt="">';
     return v.href ? '<a href="' + v.href + '">' + i + '</a>' : i;
   }
   // A number with a bar showing where it sits against the column's maximum, so a roster

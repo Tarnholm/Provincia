@@ -147,7 +147,12 @@ function renderMarkdown(md, toc) {
       const th = head.map((h, k) => `<th${align[k] ? ` class="${align[k]}"` : ""}>${inline(h)}</th>`).join("");
       const tr = body.map((r) => "<tr>" + r.map((c, k) =>
         `<td${align[k] ? ` class="${align[k]}"` : ""}>${inline(c)}</td>`).join("") + "</tr>").join("");
-      out.push(`<div class="tw"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`);
+      // Big tables get fixed layout. Content-based sizing means the browser measures every
+      // row to decide column widths, and on the 1,172-row roster that pegged a CPU core and
+      // made the pointer stutter — any restyle re-measured the whole table. Fixed layout takes
+      // the widths from the header row and stops caring how many rows follow.
+      const big = body.length > 60 ? " big" : "";
+      out.push(`<div class="tw${big}"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`);
       continue;
     }
 
@@ -277,6 +282,16 @@ blockquote p{margin:.25rem 0}
 table{border-collapse:collapse;width:auto;font-size:.9rem}
 /* Long prose in a cell would otherwise make a table as wide as its longest sentence. */
 td{max-width:70ch}
+/* A table with hundreds of rows: fixed layout, so column widths come from the header row and
+   the browser never walks the body to size them. Content-fit is only affordable when there is
+   little content to fit. */
+.tw.big{width:100%;contain:paint}
+.tw.big table{width:100%;table-layout:fixed}
+.tw.big td{max-width:none;overflow:hidden;text-overflow:ellipsis}
+/* Off-screen rows are skipped until scrolled to. Without this, moving the pointer over a
+   1,172-row table restyles and repaints rows nobody is looking at, which is what made the
+   cursor stutter. contain-intrinsic-size keeps the scrollbar honest for the skipped ones. */
+.tw.big tbody tr{content-visibility:auto;contain-intrinsic-size:auto 2.05rem}
 th,td{padding:.42rem .7rem;text-align:left;vertical-align:middle;border-bottom:1px solid var(--line)}
 th{background:var(--bg);position:sticky;top:0;font-weight:600;font-size:.82rem;
   text-transform:uppercase;letter-spacing:.04em;color:var(--dim);white-space:nowrap}
