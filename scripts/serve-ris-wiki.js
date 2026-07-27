@@ -418,12 +418,18 @@ const CSS = `
   --bg:#12141a; --panel:#181b22; --fg:#e9e6e0; --dim:#9a958c; --line:#2a2e37;
   --acc:#e8c15a; --acc-soft:rgba(232,193,90,.13); --shadow:0 1px 3px rgba(0,0,0,.4);
 }
+/* The light theme is parchment, not paper. White with grey rules is the look of a software
+   manual; this is a wiki about the ancient Mediterranean sitting under a purple-and-gold bar,
+   and #faf9f7 with #fff panels made the whole page read as blank. The surfaces are warm and
+   the page and the panels are separated by tone rather than by a border alone.
+   Contrast measured, not eyeballed: body text 13.4:1 on the page and 15.2:1 on a panel, muted
+   text 5.1:1, links 8.6:1 — all clear of AA, with the muted tone the tightest of them. */
 @media(prefers-color-scheme:light){
-  :root{--bg:#faf9f7; --panel:#fff; --fg:#1c1e22; --dim:#5f6672; --line:#e2ded7;
-        --acc:#7d0a49; --acc-soft:rgba(103,3,61,.08); --shadow:0 1px 3px rgba(0,0,0,.07)}
+  :root{--bg:#f0e9db; --panel:#fbf7ef; --fg:#23201b; --dim:#6a6152; --line:#ddd3c0;
+        --acc:#7d0a49; --acc-soft:rgba(103,3,61,.08); --shadow:0 1px 3px rgba(90,70,40,.10)}
 }
-:root[data-theme="light"]{--bg:#faf9f7;--panel:#fff;--fg:#1c1e22;--dim:#5f6672;--line:#e2ded7;
-  --acc:#7d0a49;--acc-soft:rgba(103,3,61,.08);--shadow:0 1px 3px rgba(0,0,0,.07)}
+:root[data-theme="light"]{--bg:#f0e9db;--panel:#fbf7ef;--fg:#23201b;--dim:#6a6152;--line:#ddd3c0;
+  --acc:#7d0a49;--acc-soft:rgba(103,3,61,.08);--shadow:0 1px 3px rgba(90,70,40,.10)}
 :root[data-theme="dark"]{--bg:#12141a;--panel:#181b22;--fg:#e9e6e0;--dim:#9a958c;--line:#2a2e37;
   --acc:#e8c15a;--acc-soft:rgba(232,193,90,.13);--shadow:0 1px 3px rgba(0,0,0,.4)}
 *{box-sizing:border-box}
