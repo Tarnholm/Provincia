@@ -191,7 +191,7 @@ function build(v, r) {
   // an asset of the mod and not something this script has any business producing.
   pages["README.md"] = `# RIS vs Vanilla — what is different
 
-<img src="art/ris-logo.png" alt="Rome: Total Realism — Imperium Surrectum" width="190">
+<img src="art/ris-logo.png" alt="Rome: Total Realism — Imperium Surrectum" width="128" style="float:none;margin:.2rem 0 1rem">
 
 A player's guide to how **Rome: Imperium Surrectum** differs from vanilla *Rome: Total
 War Remastered*. Every number here is counted from the game's own data files; anything
