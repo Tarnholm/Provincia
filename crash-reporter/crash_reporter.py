@@ -30,7 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 APP_NAME = "RIS Crash Reporter"
-APP_VERSION = "0.1.39"
+APP_VERSION = "0.1.40"
 CONFIG_FILENAME = "crash_reporter.ini"
 LOG_FILENAME = "crash_reporter.log"
 
@@ -2579,34 +2579,82 @@ def rank_asserts(counter, limit=5):
 #    5x  INT_DIVIDE_BY_ZERO @ ...+0x868C71
 #    5x  ACCESS_VIOLATION @ ...+0x91FCD0
 #
-# The dominant one spans six testers (Grimel, Neep, Vas, Balbor, eRa73, Vortal) and is
-# ENRICHED for specific asserts against crashes at any other address:
+# REMEASURED 2026-07-27 over 486 sessions, 54 of them with a parsed minidump. The shape
+# held, one claim did not, and two of the smaller addresses turned out to be a distinct
+# failure class rather than a thin tail:
 #
-#   !m_current_image || image == m_current_image      42% vs 23%
-#   unit_class != UCL_NUM_CLASSES || unit_category    17% vs  0%
-#   m_locomotive->tile_path.count()                   25% vs 12%
-#   m_class != UCL_NUM_CLASSES || m_category          13% vs  0%
+#   26x (48%)  +0x266FD3   7 testers   <- dominant, unchanged
+#    6x (11%)  +0x128D0    2 testers   <- carries NO asserts at all (see below)
+#    5x ( 9%)  +0x868C71   2 testers   <- likewise
+#    4x ( 7%)  +0x91FCD0   2 testers
 #
-# The unit-enum asserts appearing in 0% of other-address crashes is the specific part:
-# they are not general crash noise. They are also what a bad `unit_type` token in
-# descr_formations_ai.txt produces, which is statically detectable before the game runs.
+# +0x266FD3, against crashes at every other address:
 #
-# HONEST LIMITS: ~4 of the 24 carry the unit-enum assert, so the absolute count is
-# small; co-occurrence at one fault address is not proof of cause; and the strongest
-# enrichment is an IMAGE assert, which may be nearer the actual fault. The note says
-# "associated with", never "caused by".
+#   !m_current_image || image == m_current_image      50% vs 29%   1.8x
+#   m_locomotive->tile_path.count()                   35% vs 11%   3.2x
+#   unit_class != UCL_NUM_CLASSES || unit_category    27% vs 11%   2.5x
+#   m_class != UCL_NUM_CLASSES || m_category          23% vs 11%   2.2x
+#   siege battle before exit                          23% vs  7%   3.2x   <- new
+#   descr_formations_ai script error                  27% vs 14%   1.9x
+#   man_in_front_index                                 4% vs 11%   0.36x  <- DEPLETED
+#   naval battle before exit                           0% vs  7%
+#
+# CORRECTION. The earlier note said the unit-enum asserts appear in "0% of other-address
+# crashes", and built the argument on that exclusivity. With 54 dumps instead of 50 it is
+# 11%, not 0% — the enrichment is real (2.5x) but NOT exclusive, and the old wording
+# overstated it. The 0% was four extra dumps away from being wrong, which is what a
+# denominator of ~28 buys you.
+#
+# The unit-enum pair is still what a bad `unit_type` token in descr_formations_ai.txt
+# produces, and that defect is real and independently confirmed: 177 entries in 63 of the
+# 309 formation blocks use `heavy_/light_/spearmen_pilum_infantry`, where the file's own
+# header documents `pilum_infantry` as a standalone keyword. Sessions carrying the enum
+# assert crash 68% of the time against a 31% baseline (2.4x).
+#
+# HONEST LIMITS: co-occurrence at one fault address is not proof of cause; the strongest
+# enrichment is an IMAGE assert, which may be nearer the actual fault; and only ~7 of the 26
+# carry the enum assert, so the absolute count is small. The note says "associated with",
+# never "caused by".
 KNOWN_FAULT_SIGNATURES = [
     {
         "match": "+0x266FD3",
         "label": "the most common crash signature in RIS telemetry",
         "detail": (
-            "24 of 50 parsed minidumps land here, across six testers — roughly three times "
-            "the next-commonest address. Sessions hitting it are enriched for "
-            "!m_current_image (42% vs 23% elsewhere), unit_class/m_class != UCL_NUM_CLASSES "
-            "(17%/13% vs 0% at every other address) and m_locomotive->tile_path.count() "
-            "(25% vs 12%). The unit-enum pair is what an unrecognised unit_type token in "
-            "descr_formations_ai.txt produces, and it is statically detectable before the "
-            "game runs. Association, not proven cause."
+            "26 of 54 parsed minidumps land here (48%), across seven testers — roughly four "
+            "times the next-commonest address. Sessions hitting it are enriched for "
+            "m_locomotive->tile_path.count() (35% vs 11% elsewhere, 3.2x), a siege battle "
+            "before exit (23% vs 7%, 3.2x), unit_class/m_class != UCL_NUM_CLASSES (27%/23% "
+            "vs 11%, ~2.4x) and !m_current_image (50% vs 29%). man_in_front_index is "
+            "DEPLETED here (4% vs 11%), and no session at this address ended after a naval "
+            "battle. The unit-enum pair is what an unrecognised unit_type token in "
+            "descr_formations_ai.txt produces - 177 such entries exist in that file. "
+            "Association, not proven cause."
+        ),
+    },
+    {
+        # Two addresses share a property worth stating outright: sessions crashing there
+        # carry NONE of the assert families above - 0% for every one of them, against 20-44%
+        # among the other dump sessions. Triage that goes looking for an assert will find
+        # nothing and conclude the report is empty, when the absence IS the signature.
+        "match": "+0x128D0",
+        "label": "second-commonest crash address, and a different failure class",
+        "detail": (
+            "6 of 54 parsed minidumps (11%), two testers. Distinctive for what is absent: "
+            "0% carry !m_current_image, the unit-enum asserts, m_locomotive->tile_path, "
+            "uni_char_string or a descr_formations_ai script error, against 19-44% among "
+            "crashes at other addresses. This is not the formation-token family and looking "
+            "for asserts here is the wrong search. Small sample (n=6) - treat the absence as "
+            "a lead, not a conclusion."
+        ),
+    },
+    {
+        "match": "+0x868C71",
+        "label": "third-commonest crash address, also assert-free",
+        "detail": (
+            "5 of 54 parsed minidumps (9%), two testers, reported as INT_DIVIDE_BY_ZERO. "
+            "Like +0x128D0 it carries none of the assert families (0% for !m_current_image, "
+            "the unit-enum pair, uni_char_string), so it is a separate failure from the "
+            "dominant address. Small sample (n=5)."
         ),
     },
 ]
