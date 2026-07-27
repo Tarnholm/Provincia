@@ -202,28 +202,43 @@ const DECLARED_RESOURCES = (() => {
   return out;
 })();
 
+// descr_strat's role words are engine terms, not what the game calls these people. "named
+// character" is the file's way of saying a character with a name of his own — which in play is
+// a general. The rest already read correctly and are only capitalised.
+const ROLE_LABELS = { "named character": "General" };
+const roleLabel = (r) => {
+  const k = String(r).trim().toLowerCase();
+  if (ROLE_LABELS[k]) return ROLE_LABELS[k];
+  return k ? k.charAt(0).toUpperCase() + k.slice(1) : r;
+};
+
 const humaniseTok = (t) => {
   const s = String(t).replace(/^(aor|homeland)_/, "").replace(/_/g, " ").trim();
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : String(t);
 };
 
-/** A requirement token as "Readable name `raw_token`", linked when it names a chain. */
+/**
+ * A requirement token as the name a reader recognises.
+ *
+ * The name REPLACES the token rather than sitting beside it: "Tier 2 Military Industrial
+ * Complex mic_tier_2" says the same thing twice, and the token is the half nobody reading a
+ * wiki needs. The token is still printed when there is no name for it, because then it is the
+ * only identifier available — that is information, not clutter.
+ */
 function condLabel(tok) {
   const k = String(tok).toLowerCase();
-  const raw = `\`${tok}\``;
   const named = ALIAS_TEXT[k] || bName(k) || KEYWORD_TEXT[k] || null;
-  if (named) return `${named} ${raw}`;
+  if (named) return named;
   if (CHAIN_NAMES[k]) {
     const label = CHAIN_NAMES[k];
-    return buildingPages.has(k) ? `[${label}](../buildings/${k}.md) ${raw}` : `${label} ${raw}`;
+    return buildingPages.has(k) ? `[${label}](../buildings/${k}.md)` : label;
   }
-  // mic_tier_2 / aor_greek and friends: no display name exists in the mod for these.
-  if (/^(aor|mic|homeland)_/.test(k)) return `${humaniseTok(k)} ${raw}`;
+  if (/^(aor|mic|homeland)_/.test(k)) return humaniseTok(k);
   // Hidden resources without a naming convention — `noisland` alone accounts for 18,672 of
   // these. Membership is taken from descr_sm_resources rather than from the token's shape, so
   // a word is only humanised when the mod actually declares it as a resource.
-  if (DECLARED_RESOURCES.has(k)) return `${humaniseTok(k)} ${raw}`;
-  return raw;
+  if (DECLARED_RESOURCES.has(k)) return humaniseTok(k);
+  return `\`${tok}\``;
 }
 
 // Not real players: the rebel/slave pool, the Roman senate, the `dummies` test faction, and
@@ -277,7 +292,7 @@ function loadCharacters() {
     m = /^character\s+([^,]+),\s*([a-z ]+)/i.exec(l);
     if (m && cur) {
       const age = /\bage\s+(\d+)/i.exec(l);
-      per[cur].push({ name: m[1].trim().replace(/_/g, " "), role: m[2].trim(), age: age ? +age[1] : null });
+      per[cur].push({ name: m[1].trim().replace(/_/g, " "), role: roleLabel(m[2].trim()), age: age ? +age[1] : null });
     }
   }
   return per;

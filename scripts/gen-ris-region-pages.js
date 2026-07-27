@@ -185,10 +185,32 @@ const buildingPages = (() => {
   try { return new Set(fs.readdirSync(path.join(OUT, "buildings")).filter((f) => f.endsWith(".md")).map((f) => f.replace(/\.md$/, ""))); }
   catch { return new Set(); }
 })();
+// Chain page filenames are lowercased, so the lookup must be too. Four chains carry a capital
+// — governmentA..D — and they were the only ones that failed, which is why the government
+// levels ("Homeland", "Indirect Rule") were the ones showing up unlinked.
+const chainPage = (chain) => {
+  const c = String(chain || "").toLowerCase();
+  return buildingPages.has(c) ? c : null;
+};
 const chainLink = (chain) => {
-  const c = String(chain);
-  const label = c.replace(/_/g, " ");
-  return buildingPages.has(c) ? `[${label}](../buildings/${c}.md)` : label;
+  const label = String(chain).replace(/_/g, " ");
+  const p = chainPage(chain);
+  return p ? `[${label}](../buildings/${p}.md)` : label;
+};
+
+/**
+ * A built LEVEL, linked to the page describing it. The level name was plain text while only the
+ * chain beside it was a link, so "Homeland" and "Indirect Rule" looked like dead ends even
+ * though the chain page documents exactly what they do. Both cells now lead to the same page —
+ * the level is what a reader recognises and therefore what they click.
+ */
+const levelLink = (b) => {
+  const name = bName(b.level);
+  const p = chainPage(b.chain);
+  // No internal token: the wiki is for players, and the display name is the whole answer. The
+  // token is only shown when there is no name for the level, where it is the sole identifier.
+  const label = name ? `**${name}**` : `\`${b.level}\``;
+  return p ? `[${label}](../buildings/${p}.md)` : label;
 };
 
 const iconFor = (faction, level) => {
@@ -304,7 +326,10 @@ function humanise(tok) {
 function tagLabel(tok) {
   const nice = resName(tok) || humanise(tok);
   const raw = String(tok);
-  return nice.toLowerCase() === raw.toLowerCase() ? `\`${raw}\`` : `${nice} \`${raw}\``;
+  // The name REPLACES the token: "Dorian 4 rel_dorian_4" says it twice, and the token is the
+  // half a player does not need. Where humanising only changes capitalisation there is nothing
+  // to add, so the token stands on its own rather than being dressed up as a name.
+  return nice.toLowerCase() === raw.toLowerCase() ? `\`${raw}\`` : nice;
 }
 
 const FARM_NOTE = "Farm level sets the region's agricultural base. NOTE Provincia's own " +
@@ -419,7 +444,7 @@ ${rows.length ? `| | |\n|---|---|\n${rows.join("\n")}` : "_This region carries n
 ## What is already built
 
 ${held && (held.buildings || []).length
-  ? `| | Building chain | Level |\n|:-:|---|---|\n${held.buildings.map((b) => `| ${(() => { const ic = iconFor(held.faction, b.level); return ic ? `<img src="../${ic}" alt="" width="32">` : ""; })()} | ${chainLink(b.chain)} | ${bName(b.level) ? `**${bName(b.level)}** <br>\`${b.level}\`` : `\`${b.level}\``} |`).join("\n")}`
+  ? `| | Building chain | Level |\n|:-:|---|---|\n${held.buildings.map((b) => `| ${(() => { const ic = iconFor(held.faction, b.level); return ic ? `<img src="../${ic}" alt="" width="32">` : ""; })()} | ${chainLink(b.chain)} | ${levelLink(b)} |`).join("\n")}`
   : held ? "_Nothing is built here at the campaign start._" : "_Independent regions have no starting buildings recorded in the campaign file._"}
 `;
 
