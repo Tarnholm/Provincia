@@ -1086,7 +1086,11 @@ const cultureSection = cultureGroups.map((g) => {
   // that faction rather than a comparison.
   const rows = g.list.map((e) =>
     `| ${tile(e)} | ${e.setts} | ${e.chars} | ${e.units - e.aor} |`).join("\n");
-  return `${heading}\n\n${sub}\n\n| Faction | Settlements | Characters | Units |\n|---|---:|---:|---:|\n${rows}`;
+  // "Provinces", not "Settlements". The number is the count of settlements a faction holds,
+  // and since every region has exactly one settlement that is also the count of REGIONS it
+  // holds — which is what a reader comparing two factions is actually asking. It also stops
+  // the column reading as a link to the settlement pages, which it is not.
+  return `${heading}\n\n${sub}\n\n| Faction | Provinces | Characters | Units |\n|---|---:|---:|---:|\n${rows}`;
 }).join("\n\n");
 
 // A jump bar, so 22 cultures do not have to be scrolled past to reach the one you want. Ordered

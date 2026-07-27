@@ -293,7 +293,7 @@ render();
     rows.push([{ text: f.text, href: f.href }, culture, numOf(c[1]), numOf(c[2]), numOf(c[3])]);
   }
   const columns = [
-    { label: "Faction" }, { label: "Culture" }, { label: "Settlements", num: true },
+    { label: "Faction" }, { label: "Culture" }, { label: "Provinces", num: true },
     { label: "Characters", num: true }, { label: "Units", num: true },
   ];
   fs.writeFileSync(path.join(OUT, "factions.html"),
