@@ -91,9 +91,36 @@ const pages = [];
   }
 })(OUT);
 
+// Heading anchors, per page, so a link with a #fragment can be checked against the headings
+// the target file actually has. WHY THIS WAS ADDED: the region pages link every terrain,
+// climate, port, recruitment zone, homeland and fertility value into a per-category reference
+// page BY HEADING — around nine thousand fragment links. The checks below only ever asked
+// whether the FILE existed, so every one of those could have landed on a page with no matching
+// heading and nothing would have said so. The slug rule is the one both GitHub and
+// scripts/serve-ris-wiki.js use, which is the pair that has to agree.
+const slugId = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const headingsOf = (() => {
+  const cache = new Map();
+  return (file) => {
+    const key = path.resolve(file);
+    if (cache.has(key)) return cache.get(key);
+    const set = new Set();
+    try {
+      for (const m of fs.readFileSync(file, "utf8").matchAll(/^#{1,6}\s+(.+?)\s*$/gm)) {
+        // The heading text as rendered: strip the markdown emphasis and link syntax first,
+        // since `## **Name**` and `## [Name](x)` both slug from the visible words.
+        const text = m[1].replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[*_`]/g, "");
+        set.add(slugId(text));
+      }
+    } catch { /* unreadable target */ }
+    cache.set(key, set);
+    return set;
+  };
+})();
+
 // ── 2 + 3. links and images resolve ──────────────────────────────────────────
 const linkedTo = new Set();
-let links = 0, images = 0, badLinks = 0, badImages = 0;
+let links = 0, images = 0, badLinks = 0, badImages = 0, fragments = 0, badFragments = 0;
 for (const p of pages) {
   const body = fs.readFileSync(p, "utf8");
   const dir = path.dirname(p);
@@ -107,7 +134,17 @@ for (const p of pages) {
     links++;
     const resolved = path.resolve(dir, clean);
     if (!fs.existsSync(resolved)) { badLinks++; if (badLinks <= 8) fail(`BROKEN LINK in ${path.relative(OUT, p)}: ${target}`); }
-    else if (/\.md$/i.test(clean)) linkedTo.add(path.resolve(resolved));
+    else if (/\.md$/i.test(clean)) {
+      linkedTo.add(path.resolve(resolved));
+      const frag = target.split("#")[1];
+      if (frag) {
+        fragments++;
+        if (!headingsOf(resolved).has(frag.toLowerCase())) {
+          badFragments++;
+          if (badFragments <= 8) fail(`BROKEN ANCHOR in ${path.relative(OUT, p)}: ${target} — no heading on that page slugs to "${frag}"`);
+        }
+      }
+    }
   }
 
   // Raw HTML anchors. The unit pages wrap the roster card in <a href="…_info.png"> so a
@@ -139,6 +176,7 @@ for (const p of pages) {
   }
 }
 note(`links: ${links.toLocaleString("en-US")} checked, ${badLinks} broken`);
+note(`anchors: ${fragments.toLocaleString("en-US")} #fragment links checked against the target page's headings, ${badFragments} broken`);
 note(`images: ${images.toLocaleString("en-US")} checked, ${badImages} broken`);
 
 // ── 4. orphans ───────────────────────────────────────────────────────────────

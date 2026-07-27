@@ -176,7 +176,12 @@ function classify(tags, res) {
     else if (SPECIALTY_AOR.has(l)) g.specialty.push(t);
     else if (/^aor_/.test(l)) g.recruitment.push(t);
     else if (/^homeland_/.test(l)) g.culture.push(t);
-    else if (/^base_port_level_\d+$/.test(l) || /port|harbour|harbor/.test(l)) g.port.push(t);
+    // Only the declared port LEVELS, which is the test src/RegionInfo.js uses. The looser
+    // /port|harbour|harbor/ this used to carry matched exactly one other token in the whole
+    // mod — `merc_center_no_port`, a mercenary-centre flag — and put "Merc center no port" on
+    // the Port row of 15 regions, where it is neither a port nor a level. It falls through to
+    // geography and gating with the rest of the mercenary tags now.
+    else if (/^base_port_level_\d+$/.test(l)) g.port.push(t);
     else if (TERRAIN_TAGS.has(l)) g.terrain.push(t);
     else if (CLIMATE_TAGS.has(l)) g.climate.push(t);
     else if (IRRIGATION_TAGS.has(l)) g.irrigation.push(t);
@@ -485,6 +490,30 @@ function tagLabel(tok) {
   return nice.toLowerCase() === raw.toLowerCase() ? `\`${raw}\`` : nice;
 }
 
+// ── links into the tag reference pages ───────────────────────────────────────
+// Every value on the "Resources and character" table used to be a dead end: a page said
+// `Terrain — River valley` and there was nowhere to go to find out what that decides.
+// gen-ris-tag-pages.js writes one page per category and publishes tags/index.json mapping each
+// token to its page and heading anchor. Read rather than recomputed: this generator humanises
+// tokens with its own copy of the same rules, and a one-character disagreement would send every
+// link to a heading that is not there — which nothing would catch, because verify-ris-wiki.js
+// checks that the FILE exists, not the fragment.
+let TAG_ANCHORS = {};
+try { TAG_ANCHORS = JSON.parse(fs.readFileSync(path.join(OUT, "tags", "index.json"), "utf8")); }
+catch { /* run gen-ris-tag-pages.js first; until then the values are plain text as before */ }
+let tagLinked = 0, tagUnlinked = new Set();
+function tagRef(tok) {
+  const a = TAG_ANCHORS[String(tok).toLowerCase()];
+  if (!a) { if (Object.keys(TAG_ANCHORS).length) tagUnlinked.add(String(tok).toLowerCase()); return tagLabel(tok); }
+  tagLinked++;
+  // The label is the reference page's OWN heading, not this generator's humanising of the
+  // token. Two things follow from that. The link text always matches the heading it lands on.
+  // And a one-word tag stops printing as `forest` in backticks — tagLabel falls back to the
+  // raw token when humanising only changes the capitalisation, which put internal tokens on
+  // the Terrain and Climate rows of every page that had them.
+  return `[${a.name}](../tags/${a.page}#${a.anchor})`;
+}
+
 // State the mechanism and where to check it, not an opinion about it. The previous wording —
 // "Provincia's own measurements found RIS cancels farm fertility almost exactly" — read as a
 // complaint that something was inexact, when the cancellation is deliberate and exact: RIS's
@@ -544,6 +573,243 @@ const NO_PAGE = new Set([
 const hasPage = (f) => !NO_PAGE.has(String(f).toLowerCase());
 const facName = (f) => display[String(f).toLowerCase()] || String(f).replace(/_/g, " ");
 
+// ── what can be recruited here, at the campaign start ────────────────────────
+// gen-ris-faction-pages.js deliberately does NOT evaluate recruitment, because "can this
+// faction build this" needs a settlement and a turn. A REGION page at turn 0 has both, and
+// everything else the conditions ask about:
+//
+//   factions { … }                 the owner is in descr_strat
+//   hidden_resource <tag>          the region's tags are in descr_regions
+//   building_present[_min_level]   what is built is in descr_strat
+//   resource <good>                the goods placed inside the region, resolved through the
+//                                  region map above
+//   alias <name>                   expanded to the condition it stands for, never treated as
+//                                  an opaque token
+//
+// A RECRUIT LINE BELONGS TO THE LEVEL IT IS WRITTEN UNDER, and only that level's block
+// applies. Checked in the file rather than assumed: the military chain's four levels declare
+// 987 / 1,037 / 1,060 / 1,065 recruit lines and each set is a superset of the one below, so
+// every level restates what it keeps. If capabilities accumulated up the chain that
+// restatement would be pointless.
+//
+// TWO THINGS TURN 0 CANNOT DECIDE, and neither is guessed at:
+//   `is_player` — depends on who is playing. The region's owner is taken to be the player,
+//                 which is the only reading under which a region page means anything. It also
+//                 removes the `not is_player` lines, which are the AI's free garrison roster.
+//   `major_event "…"` — a reform. Each event's own trigger script is read and the event is
+//                 only ruled out when the script provably cannot fire at turn 0; where it
+//                 cannot be ruled out the units are listed separately with the reform named.
+const RC = require(path.join(__dirname, "lib", "edbRecruit.js"));
+const EDB_TXT = rd("export_descr_buildings.txt") || "";
+const EDB_ALIASES = RC.parseAliases(EDB_TXT);
+const EDB = RC.parseEdb(EDB_TXT);
+const CHAIN_TAGS = RC.chainTagsOf(EDB_TXT);
+const CHAIN_ORDER = new Map(EDB.chains.map((c) => [c.chain.toLowerCase(), c.order.map((x) => x.toLowerCase())]));
+const SETTLE = RC.settlementRanks(rd("descr_sm_settlements.txt") || "");
+const RECRUIT_AT = (() => {
+  const m = new Map();
+  for (const r of EDB.recruits) {
+    const k = `${r.chain.toLowerCase()}/${String(r.level).toLowerCase()}`;
+    if (!m.has(k)) m.set(k, []);
+    m.get(k).push(r);
+  }
+  return m;
+})();
+
+// Unit display names and page slugs: EDU `type` -> `dictionary` -> text/export_units.txt, the
+// same two hops gen-ris-unit-pages.js makes, so a link here lands on the page it names.
+const UNIT_TEXT = loadDisplayNames("export_units.txt");
+const UNIT_INFO = (() => {
+  const out = {};
+  let type = null, dict = null, cost = null, upkeep = null;
+  const flush = () => { if (type) out[type] = { dict, cost, upkeep }; type = dict = cost = upkeep = null; };
+  for (const raw of (rd("export_descr_unit.txt") || "").split(SPLIT_EOL)) {
+    const t = raw.replace(/;.*$/, "").trim();
+    let m = /^type\s+(.+)$/.exec(t);
+    if (m) { flush(); type = m[1].trim().toLowerCase(); continue; }
+    m = /^dictionary\s+(\S+)/.exec(t);
+    if (m) { dict = m[1].toLowerCase(); continue; }
+    // `stat_cost  <recruit turns>, <cost>, <upkeep>, …` — the second and third fields.
+    m = /^stat_cost\s+(.+)$/.exec(t);
+    if (m) { const f = m[1].split(",").map((s) => parseInt(s.trim(), 10)); cost = f[1]; upkeep = f[2]; continue; }
+  }
+  flush();
+  return out;
+})();
+const uSlug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+const unitPages = (() => {
+  try { return new Set(fs.readdirSync(path.join(OUT, "units")).filter((f) => f.endsWith(".md")).map((f) => f.replace(/\.md$/, ""))); }
+  catch { return new Set(); }
+})();
+const cardFiles = (() => {
+  try { return new Set(fs.readdirSync(path.join(OUT, "cards")).filter((f) => f.endsWith(".png")).map((f) => f.replace(/\.png$/, ""))); }
+  catch { return new Set(); }
+})();
+
+// Which reforms can be ruled out at turn 0, and what each is called. Only ever used to rule
+// one OUT — see majorEventInactiveAtTurn0 in the shared library, which refuses anything it
+// cannot prove.
+const MAJOR_EVENTS = RC.parseMajorEvents(rd("descr_sm_major_events.txt") || "");
+const EVENT_TEXT = loadDisplayNames("major_events.txt");
+const settlementsOf = (fac) => ((strat[String(fac).toLowerCase()] || {}).settlements || []).length;
+const EVENT_INACTIVE = new Map();
+for (const [name, e] of Object.entries(MAJOR_EVENTS)) {
+  let src = null;
+  try { src = fs.readFileSync(path.join(RIS, e.script), "latin1"); } catch { /* missing script */ }
+  EVENT_INACTIVE.set(name, src == null ? null : RC.majorEventInactiveAtTurn0(src, settlementsOf));
+}
+const eventName = (tok) => {
+  const e = MAJOR_EVENTS[String(tok).toLowerCase()];
+  const n = e && e.titleKey ? EVENT_TEXT[e.titleKey] : null;
+  return n || String(tok).replace(/_/g, " ");
+};
+
+// Every hidden resource anywhere in a faction's territory, for `… factionwide` conditions.
+const FACTION_TAGS = (() => {
+  const out = new Map();
+  const tagsByRegion = new Map(regions.map((r) => [r.region, r.tags.map((t) => t.toLowerCase())]));
+  for (const [fac, v] of Object.entries(strat)) {
+    const s = new Set();
+    for (const st of (v.settlements || [])) for (const t of (tagsByRegion.get(st.region) || [])) s.add(t);
+    out.set(fac, s);
+  }
+  return out;
+})();
+
+const recruitStats = {
+  evaluated: 0, noMilitary: 0, zeroNow: 0, now: 0, conditional: 0, ambiguous: 0,
+  undecided: new Map(),
+};
+/**
+ * @returns { now: [row], later: [row] } — `now` is every unit whose condition is true against
+ * turn-0 state; `later` is every unit whose condition could not be decided, each carrying the
+ * clause that decides it.
+ */
+function recruitableAt(r, held) {
+  if (!held) return null;
+  const built = new Map();
+  for (const b of (held.buildings || [])) built.set(String(b.chain).toLowerCase(), String(b.level).toLowerCase());
+  const ctx = {
+    faction: held.faction,
+    isPlayer: true,
+    tags: new Set(r.tags.map((t) => t.toLowerCase())),
+    factionTags: FACTION_TAGS.get(held.faction),
+    built,
+    goods: new Set((MAP_RESOURCES.out.get(r.region) || new Map()).keys()),
+    chainOrder: CHAIN_ORDER,
+    chainTags: CHAIN_TAGS,
+    settlementLevel: held.level,
+    settlementRank: SETTLE.rank,
+    // false only where the event's own trigger script provably cannot fire at turn 0; null
+    // (undecided) otherwise, which is what puts a unit in the conditional list by name.
+    majorEvent: (name) => (EVENT_INACTIVE.get(name) === "inactive" ? false : null),
+  };
+  const now = new Map(), later = new Map();
+  for (const [chain, level] of built) {
+    for (const line of (RECRUIT_AT.get(`${chain}/${level}`) || [])) {
+      const v = RC.evaluate(line.requires, ctx, EDB_ALIASES);
+      if (v.value === false) continue;
+      const info = UNIT_INFO[line.unit] || {};
+      const key = info.dict || `type:${line.unit}`;
+      const at = bName(line.level) || String(line.level).replace(/_/g, " ");
+      if (v.value === true) {
+        if (!now.has(key)) now.set(key, { unit: line.unit, info, at: new Set() });
+        now.get(key).at.add(`${line.chain}|${at}`);
+        continue;
+      }
+      if (v.ambiguous) recruitStats.ambiguous++;
+      for (const u of v.unknown) {
+        const k = u.replace(/"[^"]*"/, '"…"');
+        recruitStats.undecided.set(k, (recruitStats.undecided.get(k) || 0) + 1);
+      }
+      if (!later.has(key)) later.set(key, { unit: line.unit, info, at: new Set(), why: new Set(), ambiguous: v.ambiguous });
+      const e = later.get(key);
+      e.at.add(`${line.chain}|${at}`);
+      for (const u of v.unknown) e.why.add(u);
+      if (v.ambiguous) e.ambiguous = true;
+    }
+  }
+  for (const k of now.keys()) later.delete(k);
+  recruitStats.evaluated++;
+  if (![...built.keys()].some((c) => c === "military_industrial_complex" || c === "garrison")) recruitStats.noMilitary++;
+  if (!now.size) recruitStats.zeroNow++;
+  recruitStats.now += now.size;
+  recruitStats.conditional += later.size;
+  return { now: [...now.values()], later: [...later.values()] };
+}
+
+/** The condition a conditional unit is still waiting on, in words. */
+function whyText(e) {
+  const parts = [];
+  for (const w of e.why) {
+    const m = /^major_event\s+"([^"]+)"$/.exec(w);
+    if (m) { parts.push(`the ${eventName(m[1])}`); continue; }
+    parts.push(`\`${w}\``);
+  }
+  if (e.ambiguous) parts.push("a condition whose bracketing the mod does not state");
+  return [...new Set(parts)].join(", ");
+}
+
+const unitName = (u) => {
+  const d = (UNIT_INFO[u] || {}).dict;
+  return (d && UNIT_TEXT[d]) || String(u).replace(/\b\w/g, (c) => c.toUpperCase());
+};
+// Card at a quarter of the source art (164x224), with BOTH dimensions set: an <img> with no
+// height reflows the page as each one arrives, and 1,300 pages of that is a layout storm.
+const CARD_W = 41, CARD_H = 56;
+const cardImg = (u) => {
+  const d = (UNIT_INFO[u] || {}).dict;
+  const s = d ? uSlug(d) : null;
+  return s && cardFiles.has(s) ? `<img src="../cards/${s}.png" alt="" width="${CARD_W}" height="${CARD_H}">` : "";
+};
+const unitRef = (u) => {
+  const d = (UNIT_INFO[u] || {}).dict;
+  const s = d ? uSlug(d) : null;
+  const label = `**${unitName(u)}**`;
+  return s && unitPages.has(s) ? `[${label}](../units/${s}.md)` : label;
+};
+const atCell = (set) => [...new Set([...set].map((x) => {
+  const [chain, name] = x.split("|");
+  const p = chainPage(chain);
+  return p ? `[${name}](../buildings/${p}.md)` : name;
+}))].join(", ");
+
+// Same shape as the "What is already built" table on the same page — image, then the thing,
+// then where it comes from — so a reader does not have to learn two layouts on one page.
+const FOLD_AT = 12;
+const unitRows = (rows) => rows
+  .sort((a, b) => unitName(a.unit).localeCompare(unitName(b.unit)))
+  .map((e) => `| ${cardImg(e.unit)} | ${unitRef(e.unit)} | ${atCell(e.at)} | ${e.info.cost != null ? e.info.cost.toLocaleString("en-US") : "—"} | ${e.info.upkeep != null ? e.info.upkeep.toLocaleString("en-US") : "—"} |`);
+const unitTable = (rows) => `| | Unit | Raised at | Cost | Upkeep |\n|:-:|---|---|---:|---:|\n${unitRows(rows).join("\n")}`;
+const maybeFold = (summary, rows, table) => (rows.length > FOLD_AT
+  ? `<details><summary>${summary}</summary>\n\n${table}\n\n</details>`
+  : table);
+
+function recruitSection(rec, held) {
+  if (!held) return "_Independent regions have no owner, so there is nothing to evaluate._";
+  if (!rec) return "_Not determined._";
+  const out = [];
+  if (rec.now.length) {
+    out.push(maybeFold(`${rec.now.length} units, as its owner, at the campaign start`, rec.now, unitTable(rec.now)));
+  } else {
+    out.push("_Nothing can be raised here at the campaign start._");
+  }
+  if (rec.later.length) {
+    // Grouped by the clause they are waiting on, so the same reform is named once.
+    const byWhy = new Map();
+    for (const e of rec.later) {
+      const w = whyText(e) || "an undetermined condition";
+      if (!byWhy.has(w)) byWhy.set(w, []);
+      byWhy.get(w).push(e);
+    }
+    const inner = [...byWhy.entries()].sort((a, b) => b[1].length - a[1].length)
+      .map(([w, rows]) => `**Waiting on ${w}** — ${rows.length} ${rows.length === 1 ? "unit" : "units"}\n\n${unitTable(rows)}`)
+      .join("\n\n");
+    out.push(`<details><summary>${rec.later.length} more once a condition is met</summary>\n\n${inner}\n\n</details>`);
+  }
+  return out.join("\n\n");
+}
+
 const list = ONLY.length ? regions.filter((r) => ONLY.includes(r.region)) : regions;
 fs.mkdirSync(path.join(OUT, "regions"), { recursive: true });
 
@@ -561,6 +827,7 @@ const index = [];
 
 for (const r of list) {
   const held = byRegion[r.region] || null;
+  const rec = recruitableAt(r, held);
   if (held) withOwner++;
   if (held && (held.buildings || []).length) withBuildings++;
   const g = classify(r.tags, res);
@@ -571,11 +838,12 @@ for (const r of list) {
   // separate lines in the source file. A table also puts the values in a column you can scan
   // down when comparing regions.
   const rows = [];
-  const addRow = (label, arr, note) => {
+  const addRow = (label, arr, opts) => {
     if (!arr.length) return;
-    rows.push(`| ${label} | ${arr.map(tagLabel).join(", ")} |`);
-    if (note) rows.push(`| | _${note}_ |`);
+    const f = (opts && opts.link) ? tagRef : tagLabel;
+    rows.push(`| ${label} | ${arr.map(f).join(", ")} |`);
   };
+  const LINKED = { link: true };
 
   // Trade goods actually placed inside this region's borders, commonest first.
   const goods = goodsOf(r.region);
@@ -630,23 +898,26 @@ for (const r of list) {
   // same answer 1,311 times. Provincia's region panel reads the tag for the same reason.
   if (g.farm.length) {
     const v = parseInt(String(g.farm[0]).replace(/\D+/g, ""), 10);
-    rows.push(`| Fertility | **${v}** / 14 |`);
-    // No note. "7 / 14" is the answer; why RIS cancels fertility's growth effect is recorded
-    // at FARM_NOTE above for whoever maintains this, and does not belong on 1,311 pages.
+    // No note. "7 / 14" is the answer, and the link goes to the page that explains why RIS
+    // cancels fertility's growth effect (FARM_NOTE above), which does not belong on 1,311 pages.
+    const a = TAG_ANCHORS[String(g.farm[0]).toLowerCase()];
+    const val = `**${v}** / 14`;
+    if (a) tagLinked++;
+    rows.push(`| Fertility | ${a ? `[${val}](../tags/${a.page}#${a.anchor})` : val} |`);
   }
-  addRow("Terrain", g.terrain);
-  addRow("Climate", g.climate);
-  addRow("Irrigation", g.irrigation);
-  addRow("Port", g.port);
+  addRow("Terrain", g.terrain, LINKED);
+  addRow("Climate", g.climate, LINKED);
+  addRow("Irrigation", g.irrigation, LINKED);
+  addRow("Port", g.port, LINKED);
   // Religion is NOT a row here any more: humanised, `rel_egyptian_4` printed as "Egyptian 4",
   // which reads as a percentage and is a strength tier. It has its own column in "Who lives
   // here", next to the real percentages, with RELIGION_NOTE explaining the scale. Nothing is
   // dropped — every rel_ tag on the region appears there, including any that does not match
   // the `rel_<belief>_<tier>` shape.
-  addRow("Recruitment zones", g.recruitment);
-  addRow("Specialty recruitment", g.specialty);
-  addRow("Cultural homeland", g.culture);
-  addRow("Hazards and river trade", g.hazard);
+  addRow("Recruitment zones", g.recruitment, LINKED);
+  addRow("Specialty recruitment", g.specialty, LINKED);
+  addRow("Cultural homeland", g.culture, LINKED);
+  addRow("Hazards and river trade", g.hazard, LINKED);
   addRow("Geography and gating", g.geography);
   addRow("Other tags", g.other);
 
@@ -673,6 +944,10 @@ ${rows.length ? `| | |\n|---|---|\n${rows.join("\n")}` : "_This region carries n
 ${held && (held.buildings || []).length
   ? `| | Building chain | Level |\n|:-:|---|---|\n${held.buildings.map((b) => `| ${(() => { const ic = iconFor(held.faction, b.level); return ic ? `<img src="../${ic}" alt="" width="32">` : ""; })()} | ${chainLink(b.chain)} | ${levelLink(b)} |`).join("\n")}`
   : held ? "_Nothing is built here at the campaign start._" : "_Independent regions have no starting buildings recorded in the campaign file._"}
+
+## What can be recruited here
+
+${recruitSection(rec, held)}
 `;
 
   fs.writeFileSync(path.join(OUT, "regions", `${r.region}.md`), body, "utf8");
@@ -703,6 +978,17 @@ console.log(`  regions with trade goods:  ${withMapGoods.toLocaleString("en-US")
 console.log(`  with a trade resource:      ${withTrade}`);
 console.log(`  resource vocabulary read:   ${res.tradeable.size} tradeable, ${res.hidden.size} hidden`);
 console.log(`  resource names (distinct tokens): ${resNameVia.declared.size} via the key the resource declares, ${resNameVia.convention.size} via smt_resource_<token>, ${resNameVia.none.size} declared resources with no text entry${resNameVia.none.size ? ` (${[...resNameVia.none].join(", ")})` : ""}`);
+
+console.log(`\nrecruitment at the campaign start (export_descr_buildings, evaluated against turn-0 state):`);
+console.log(`  settlements evaluated:      ${recruitStats.evaluated.toLocaleString("en-US")}`);
+console.log(`  with no military building:  ${recruitStats.noMilitary.toLocaleString("en-US")} (no armoury and no garrison, so nothing to recruit from)`);
+console.log(`  with nothing available now: ${recruitStats.zeroNow.toLocaleString("en-US")}  <- should track the line above; a gap means the evaluator is wrong, not the mod`);
+console.log(`  unit rows available now:    ${recruitStats.now.toLocaleString("en-US")} (${(recruitStats.now / Math.max(1, recruitStats.evaluated)).toFixed(1)} per settlement)`);
+console.log(`  unit rows still conditional:${recruitStats.conditional.toLocaleString("en-US")}, of which ${recruitStats.ambiguous.toLocaleString("en-US")} evaluations hit an unbracketed and/or`);
+console.log(`  settlement ladder: ${SETTLE.order.join(" < ")} (${SETTLE.ladders} cultures declare one, ${SETTLE.disagree} disagree)`);
+console.log(`  reforms ruled out at turn 0: ${[...EVENT_INACTIVE.values()].filter((v) => v === "inactive").length}/${EVENT_INACTIVE.size}; the rest stay conditional and are named on the page`);
+console.log(`  undecided clause kinds: ${[...recruitStats.undecided].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => `${k} x${n.toLocaleString("en-US")}`).join(", ") || "none"}`);
+console.log(`  tag reference links: ${tagLinked.toLocaleString("en-US")} values linked${tagUnlinked.size ? `, ${tagUnlinked.size} tokens with no reference entry (${[...tagUnlinked].slice(0, 6).join(", ")})` : ""}`);
 
 console.log(`\nancestry (descr_regions field 7, "<people> <pct>" pairs):`);
 console.log(`  parsed:     ${withEthnicities.toLocaleString("en-US")} regions`);

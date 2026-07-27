@@ -242,6 +242,8 @@ no server:
 - [All units](units.md) — the full roster with stats and cards, and a page per unit
 - [All buildings](buildings.md) — a page per chain: what each level does, costs, upgrade path
 - [Buildings and economy](buildings-and-economy.md) — a wider, shallower tree
+- [Region tag reference](tags.md) — what a region's terrain, climate, water, port, recruitment
+  zone, homeland and fertility each decide, established from what the mod conditions on them
 
 ## About these pages
 
