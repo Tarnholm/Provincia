@@ -110,6 +110,11 @@ function slugId(s) {
 function sectionise(html) {
   const parts = html.split(/(?=<h2 )/);
   if (parts.length < 2) return html;
+  // The lede — the glance line and, on a faction page, the territory map — used to be a
+  // full-width block ABOVE the grid. That left the first section (the campaign brief, which is
+  // tall and narrow) alone in column one with the rest of a wide screen empty beside it. Put
+  // the lede in the grid instead and it becomes a column of its own, so the map and the brief
+  // sit side by side and the sections that follow fill the remaining columns.
   const lede = parts[0].trim();
   const secs = parts.slice(1).map((s) => {
     // A table with more than four columns does not fit half a screen, so give that section the
@@ -118,7 +123,7 @@ function sectionise(html) {
     const cols = firstRow ? (firstRow[1].match(/<th/g) || []).length : 0;
     return `<section class="sec${cols > 4 ? " wide" : ""}">${s.trim()}</section>`;
   }).join("");
-  return `${lede ? `<div class="lede">${lede}</div>` : ""}<div class="cols">${secs}</div>`;
+  return `<div class="cols">${lede ? `<section class="sec lede">${lede}</section>` : ""}${secs}</div>`;
 }
 
 function renderMarkdown(md, toc) {
