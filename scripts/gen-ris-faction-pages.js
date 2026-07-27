@@ -243,12 +243,63 @@ function condLabel(tok) {
 
 // Not real players: the rebel/slave pool, the Roman senate, the `dummies` test faction, and
 // the six rebel-style factions that hold breakaway territory rather than being chosen.
+//
+// They get no page each, but they are not dropped either: they own territory (`slave` alone
+// holds 502 of the 1,311 regions at the campaign start) and 74 unit types name one in a
+// recruitment gate, so their names appear all over the wiki. Printed as plain text they read
+// as broken links. They share ONE reference page, written at the foot of this file, and it is
+// never counted as playable.
+// MUST match the list in gen-ris-unit-pages.js, which links to that page.
 const NON_PLAYER = new Set([
   "slave", "roman_senate", "dummies",
   "roman_rebels_1", "roman_rebels_2", "hellenistic_rebels",
   "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
 ]);
+const NON_PLAYABLE_FILE = "non-playable.md";
 const title = (s) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+// ── settlements ──────────────────────────────────────────────────────────────
+// descr_strat only names the REGION a settlement sits in; the settlement's own name is in
+// descr_regions, on the line after the region name. They are almost never the same word —
+// 1,293 of 1,311 differ (region Akarnania, settlement Stratos; region Roma, settlement Rome)
+// — so a table that showed only the region hid the name the player actually sees on the map,
+// and left the settlement with nothing to click.
+//
+// Settlements get no page of their own: each region has exactly one settlement and the region
+// page already documents it (size, population, buildings, owner), so the settlement links
+// there. A stub page per settlement would be 1,311 files repeating the region page.
+function loadSettlementNames() {
+  const txt = rd("world", "maps", "base", "descr_regions.txt") || "";
+  const lines = txt.split(/\r?\n/);
+  const out = {};
+  for (let i = 0; i < lines.length; i++) {
+    if (!/^[A-Za-z][A-Za-z0-9_'\- ]*\s*$/.test(lines[i])) continue;
+    const region = lines[i].trim();
+    const s = (lines[i + 1] || "").trim();
+    if (!/^[A-Za-z][A-Za-z0-9_'\- ]*$/.test(s)) continue;
+    out[region] = s;
+  }
+  return out;
+}
+const SETTLEMENT_OF = loadSettlementNames();
+// Region AND settlement tokens both resolve here — `Ager_Gallicus` displays "Ager Gallicus",
+// `Sena_Gallica` displays "Sena Gallica". All 1,311 of each resolve, so nothing is humanised
+// by guesswork.
+const PLACE_NAMES = (() => {
+  const out = {};
+  try {
+    const t = fs.readFileSync(path.join(RIS, "text", "imperial_campaign_regions_and_settlement_names.txt"), "utf16le");
+    for (const m of t.matchAll(/\{([^}]+)\}(.*)/g)) out[m[1].trim()] = m[2].trim();
+  } catch { /* fall back to the token */ }
+  return out;
+})();
+let placesResolved = 0, placesRaw = 0;
+const placeName = (tok) => {
+  const v = PLACE_NAMES[tok];
+  if (v) { placesResolved++; return v; }
+  placesRaw++;
+  return String(tok).replace(/_/g, " ");
+};
 
 // ── intro text (UTF-16LE) ────────────────────────────────────────────────────
 function loadIntros() {
@@ -532,8 +583,26 @@ const regionPages = (() => {
   catch { return new Set(); }
 })();
 // Region files are named for the region itself, spaces and all, so the target needs encoding.
+// The LABEL is the game's name for the region, never the token: the file has to stay
+// `Ager_Gallicus.md` but a reader should see "Ager Gallicus".
 const regionLink = (name) => (regionPages.has(name)
-  ? `[${name}](../regions/${encodeURIComponent(name)}.md)` : name);
+  ? `[${placeName(name)}](../regions/${encodeURIComponent(name)}.md)` : placeName(name));
+// The settlement, pointed at the region page that documents it. Both cells in a row therefore
+// lead to the same page, which is correct — that page is where both are described — and it
+// means a reader who clicks the town name rather than the province name still gets there.
+const settlementLink = (region) => {
+  const s = SETTLEMENT_OF[region];
+  if (!s) return "_not determined_";
+  return regionPages.has(region)
+    ? `[${placeName(s)}](../regions/${encodeURIComponent(region)}.md)` : placeName(s);
+};
+/** "Stratos (Akarnania)", or just the one name where the mod uses the same word for both. */
+const settlementAndRegion = (region) => {
+  const s = SETTLEMENT_OF[region];
+  if (!s) return regionLink(region);
+  return placeName(s) === placeName(region)
+    ? settlementLink(region) : `${settlementLink(region)}, in ${regionLink(region)}`;
+};
 const unitLink = (type) => {
   const s = unitSlug.get(String(type).toLowerCase());
   if (!s || !unitPages.has(s)) return UNIT_NAMES[String(type).toLowerCase()] || type;
@@ -577,7 +646,8 @@ for (const f of factions) {
   const capital = setts.find((s) => s.capital);
   const glance = [
     `**${setts.length}** settlement${setts.length === 1 ? "" : "s"}`,
-    capital ? `capital **${capital.region}**` : null,
+    // The capital is a city, so name the city — "capital Stratos", not "capital Akarnania".
+    capital ? `capital **${SETTLEMENT_OF[capital.region] ? placeName(SETTLEMENT_OF[capital.region]) : placeName(capital.region)}**` : null,
     totalPop ? `**${totalPop.toLocaleString("en-US")}** people` : null,
     `**${cs.length}** character${cs.length === 1 ? "" : "s"}`,
     `**${units.core.length}** faction unit${units.core.length === 1 ? "" : "s"}`,
@@ -604,14 +674,17 @@ ${mapLine}${intro.descr ? `## The campaign brief\n\n> ${intro.descr.split("\n").
 
 ${setts.length ? `${display} begins with **${setts.length} settlement${setts.length === 1 ? "" : "s"}** and about **${totalPop.toLocaleString("en-US")}** people.
 
-| Settlement | Size | Population | Already built |
-|---|---|---:|---|
-${setts.map((s) => `| ${regionLink(s.region)}${s.capital ? " **(capital)**" : ""} | ${String(s.level || "").replace(/_/g, " ")} | ${s.pop != null ? s.pop.toLocaleString("en-US") : "?"} | ${(s.buildings || []).length} building${(s.buildings || []).length === 1 ? "" : "s"} |`).join("\n")}
+| Settlement | Region | Size | Population | Already built |
+|---|---|---|---:|---|
+${setts.map((s) => `| ${settlementLink(s.region)}${s.capital ? " **(capital)**" : ""} | ${regionLink(s.region)} | ${String(s.level || "").replace(/_/g, " ")} | ${s.pop != null ? s.pop.toLocaleString("en-US") : "?"} | ${(s.buildings || []).length} building${(s.buildings || []).length === 1 ? "" : "s"} |`).join("\n")}
+
+Each region holds exactly one settlement, and the region page is where both are documented —
+its size, population, trade goods, buildings and owner — so both columns lead there.
 
 <details>
 <summary>What is already built in each settlement</summary>
 
-${setts.map((s) => `**${regionLink(s.region)}** — ${(s.buildings || []).length ? (s.buildings || []).map((b) => buildingLink(b)).join(", ") : "_nothing built_"}`).join("\n\n")}
+${setts.map((s) => `**${settlementAndRegion(s.region)}** — ${(s.buildings || []).length ? (s.buildings || []).map((b) => buildingLink(b)).join(", ") : "_nothing built_"}`).join("\n\n")}
 
 </details>
 ` : "_This faction holds no settlements at the campaign start._"}
@@ -656,6 +729,135 @@ ${units.aor.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map(c
   index.push({ f, display, setts: setts.length, chars: cs.length, units: units.total, aor: units.aor.length, hasIntro: !!intro.descr });
 }
 
+// ── the nine that are not playable ───────────────────────────────────────────
+// One page for all of them. Everything on it is read from the mod: the display name the game
+// shows, the mod's OWN description verbatim where it wrote one, the culture from
+// descr_sm_factions, what it holds at the campaign start from descr_strat, and whether a
+// spawn script exists for it. Nothing about their purpose is inferred beyond what those files
+// say — where the mod is silent the page says so.
+{
+  const EXPANDED = loadDisplayNames("expanded_bi.txt");
+  // The faction-select blurb is "Name\nroster summary", the two joined by a literal \ and n.
+  const blurb = (f) => {
+    const v = EXPANDED[`${f}_descr`];
+    if (!v) return null;
+    const parts = v.replace(/\\n/g, "\n").split("\n").map((s) => s.trim()).filter(Boolean);
+    return parts.length > 1 ? parts.slice(1).join(" ") : parts[0] || null;
+  };
+  const npName = (f) => (intros[f] && intros[f].title) || EXPANDED[f] || title(f);
+
+  // Culture, from the file that assigns it.
+  const CULTURE = (() => {
+    const txt = rd("descr_sm_factions.txt") || "";
+    const out = {};
+    const marks = [...txt.matchAll(/^\t"([a-z0-9_]+)":/gm)];
+    for (let i = 0; i < marks.length; i++) {
+      const block = txt.slice(marks[i].index, i + 1 < marks.length ? marks[i + 1].index : txt.length);
+      const m = /"culture":\s*"([^"]+)"/.exec(block);
+      if (m) out[marks[i][1]] = m[1];
+    }
+    return out;
+  })();
+
+  // A spawn script is hard evidence that a faction is placed on the map by the campaign
+  // script rather than chosen — `seleucid_revolt1.txt` waits on a hidden resource and then
+  // funds seleucid_rebels. Read from the directory, not assumed from the name.
+  const SPAWN = (() => {
+    const dir = path.join(RIS, "world", "maps", "campaign", "imperial_campaign", "spawn_scripts");
+    const out = {};
+    let files = [];
+    try { files = fs.readdirSync(dir).filter((n) => /\.txt$/i.test(n)); } catch { return out; }
+    for (const n of files) {
+      let t = ""; try { t = fs.readFileSync(path.join(dir, n), "latin1"); } catch { continue; }
+      for (const f of NON_PLAYER) if (new RegExp(`\\b${f}\\b`).test(t)) (out[f] = out[f] || []).push(n);
+    }
+    return out;
+  })();
+
+  // How many UNIT TYPES name each of them in a recruitment gate — the reason their names leak
+  // onto unit pages in the first place. Counted as distinct units, not as `recruit` lines: one
+  // unit is offered by several building levels, so the line count is 5-10x higher and would
+  // read as far more of the roster than it is.
+  const gateUnits = {};
+  for (const r of recruitRows) for (const f of r.pos) if (NON_PLAYER.has(f)) (gateUnits[f] = gateUnits[f] || new Set()).add(r.unit.toLowerCase());
+  const gateCount = {};
+  for (const [f, s] of Object.entries(gateUnits)) gateCount[f] = s.size;
+
+  const nine = [...NON_PLAYER].sort((a, b) => npName(a).localeCompare(npName(b)));
+  // `seleucid_rebels` and `seleucid_rebels2` are both displayed "Seleucid Rebels", so the
+  // heading has to carry the token or the page has two sections with the same name.
+  const nameCount = {};
+  for (const f of nine) nameCount[npName(f)] = (nameCount[npName(f)] || 0) + 1;
+  const heading = (f) => (nameCount[npName(f)] > 1 ? `${npName(f)} (\`${f}\`)` : npName(f));
+  const heldBy = (f) => ((strat[f] && strat[f].settlements) || []);
+
+  const rowsMd = nine.map((f) => {
+    const held = heldBy(f);
+    return `| **${npName(f)}** | \`${f}\` | ${CULTURE[f] || "_not determined_"} | ${held.length ? `${held.length} region${held.length === 1 ? "" : "s"}` : "none" } | ${gateCount[f] ? `${gateCount[f]} unit type${gateCount[f] === 1 ? "" : "s"}` : "—"} |`;
+  }).join("\n");
+
+  const sections = nine.map((f) => {
+    const held = heldBy(f);
+    const own = intros[f] && intros[f].descr ? intros[f].descr : null;
+    const b = blurb(f);
+    const spawn = SPAWN[f];
+    // 502 links in one place is a lot; the region list is folded away and capped, with the
+    // remainder counted rather than dropped in silence.
+    const CAP = 60;
+    const list = held.map((s) => s.region);
+    return `### ${heading(f)}
+
+\`${f}\` · culture \`${CULTURE[f] || "not determined"}\`${b ? ` · ${b}` : ""}
+
+${own ? `The mod's own text for this faction, verbatim:\n\n> ${own.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n` : `_The mod ships no campaign description for this faction._\n`}
+${spawn ? `Placed on the map by the campaign script, not chosen: \`${spawn.join("`, `")}\` in \`spawn_scripts/\` names it.\n` : `_No spawn script in \`spawn_scripts/\` names it._\n`}
+${held.length ? `**Holds ${held.length} region${held.length === 1 ? "" : "s"} at the campaign start.**
+
+<details>
+<summary>Which regions</summary>
+
+${list.slice(0, CAP).map((r) => `${settlementAndRegion(r)}`).join(" · ")}${list.length > CAP ? `\n\n_…and ${list.length - CAP} more._` : ""}
+
+</details>
+` : `**Holds no territory at the campaign start.**
+`}${gateCount[f] ? `\n\`${f}\` is named in the recruitment gate of **${gateCount[f]} unit type${gateCount[f] === 1 ? "" : "s"}** in export_descr_buildings.txt, which is why its name turns up on unit pages.\n` : ""}`;
+  }).join("\n");
+
+  const npBody = `# Factions you cannot play
+
+[← all factions](../factions.md) · [wiki index](../README.md)
+
+> ## ⛔ None of these nine can be selected
+>
+> They are not in the ${index.length} playable factions and are not counted among them anywhere
+> in this wiki. They exist because the engine needs somewhere to put rebels, the senate and
+> scripted breakaways, and they are documented here only because their names appear on region
+> and unit pages — a name with nowhere to go reads as a broken link.
+
+descr_strat sorts factions into \`playable\` and \`nonplayable\` sections, but those section
+names cannot be used to answer this question: the file puts \`slave\` and \`dummies\` in
+\`playable\` — a slot the engine requires — while listing 164 factions this wiki does document
+under \`nonplayable\`. The nine below are excluded on what they are FOR, established from the
+mod's own text, its spawn scripts and what it gives them at the campaign start.
+
+| Faction | Internal token | Culture | Holds at start | Named in recruitment |
+|---|---|---|---|---|
+${rowsMd}
+
+## What each one is
+
+${sections}
+## What still is not established
+
+The reason \`roman_senate\`, \`roman_rebels_1\` and \`roman_rebels_2\` are kept in the mod at all
+is **not determined** from the data files. They hold nothing, no spawn script places them, and
+the campaign script touches them only a few times. Their campaign text is inherited Roman
+history that says nothing about their role.
+`;
+  fs.writeFileSync(path.join(OUT, "factions", NON_PLAYABLE_FILE), npBody, "utf8");
+  console.log(`  non-playable reference page: ${nine.length} factions, ${nine.filter((f) => heldBy(f).length).length} of them holding territory at the start`);
+}
+
 // index page
 index.sort((a, b) => b.setts - a.setts || a.display.localeCompare(b.display));
 const idx = `# All factions
@@ -664,6 +866,11 @@ const idx = `# All factions
 
 ${index.length} playable factions, each with its own page. Sorted by how much territory they
 start with.
+
+Nine further factions in the mod files are **not** playable and are not part of that ${index.length}
+— the rebel pool, the Roman senate, a test faction and the scripted breakaways. They hold
+territory and appear in recruitment gates, so they are documented together on
+[factions you cannot play](factions/${NON_PLAYABLE_FILE}).
 
 The two unit columns are worth reading separately. "Faction units" are what a faction can
 raise from its own buildings anywhere it holds a settlement — that is its actual roster.
@@ -682,4 +889,6 @@ console.log(`  with main-menu intro text: ${introsFound}`);
 console.log(`  maps rendered:             ${mapsWritten}`);
 console.log(`  no settlements:            ${index.filter((e) => !e.setts).length}`);
 console.log(`  character name tokens: ${namesResolved.toLocaleString("en-US")} resolved via names.txt, ${namesRaw.toLocaleString("en-US")} had no entry`);
+console.log(`  place name tokens:     ${placesResolved.toLocaleString("en-US")} resolved via the regions-and-settlements text, ${placesRaw.toLocaleString("en-US")} had no entry`);
+console.log(`  settlement names read from descr_regions: ${Object.keys(SETTLEMENT_OF).length.toLocaleString("en-US")}`);
 console.log(`  no units resolved:         ${index.filter((e) => !e.units).length}`);
