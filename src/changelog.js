@@ -13,6 +13,19 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1460",
+    date: "2026-07-27",
+    items: [
+      { type: "improvement", text: "**Crash-reporter 0.1.41: assert risk is now quoted against the baseline instead of as a bare count.** The warning used to read \"336 sessions: 136 crashes, 200 survivors\" — 40%, which is alarming or reassuring depending entirely on what you assume normal is. Measured over the 486 telemetry sessions that carry a Session line: the baseline is 31%, and sessions carrying the unit-enum asserts crash 68% of the time, 2.4x. The first attempt at this measurement concluded \"no signal\", because counting messages rather than sessions puts the baseline at 43% — the reporter splits large posts and the continuation parts repeat the status without a session line." },
+      { type: "improvement", text: "**The high-volume asserts are protective, and the report now says so rather than implying they are neutral.** `man_in_front_index` (538 occurrences across v7.12) sits at a 25% crash rate, 0.76x baseline; `smp_2 != STRATEGY_MAP_POSITION` at 0.73x. Also ruled out: a 12.78 GB peak working set looks like a leak worth chasing, but 205 of 486 sessions exceed 12 GB and they crash at the baseline rate (1.17x). Not a signal." },
+      { type: "improvement", text: "**Two new crash-address signatures, both defined by what is missing.** Remeasured across 54 parsed minidumps: `+0x266FD3` still dominates at 26 (48%, seven testers), newly enriched for a siege battle before exit (23% vs 7%). But `+0x128D0` (6) and `+0x868C71` (5) carry *none* of the assert families — 0% against 19–44% elsewhere. Triage that goes hunting for an assert there finds nothing and reads the report as empty, when the absence is the signature." },
+      { type: "fix", text: "**Corrected an overstated claim in the dominant signature.** It said the unit-enum asserts appear in \"0% of other-address crashes\" and rested its argument on that exclusivity. With 54 dumps instead of 50 it is 11%: the enrichment is real (2.5x) but not exclusive. A 0% resting on a denominator of ~28 was four samples away from being wrong." },
+      { type: "fix", text: "**The bundled reporter was six versions behind and no check could see it.** Provincia ships `crash-reporter/` verbatim and nothing copied the current reporter in, so the bundle sat at 0.1.33 while testers on the standalone installer ran 0.1.38 — every analyser improvement between them reached only half the users. Every existing packaging check passed throughout, because a stale file is still a complete file. Synced, plus a test comparing the two versions that was verified to actually fail." },
+      { type: "fix", text: "**Corrected my own `pilum_infantry` conclusion, which was backwards.** I reported that all 177 `heavy_`/`light_`/`spearmen_pilum_infantry` entries were invalid; acting on that would have broken 177 working formation entries. Two errors: I audited the `alternate_map` branch's copy of `descr_formations_ai.txt` (119 KB) when the engine loads the Steam Workshop copy (76 KB), and I trusted that file's header comment — which lists `pilum_infantry` among the standalone keywords — over the engine's own output. Line 80 of the shipped file is `unit_type pilum_infantry 1.0`, a BARE use and exactly the line the engine names. The prefixed forms are valid vanilla tokens. Provincia's lint had this right already." },
+    ],
+  },
+
+  {
     version: "0.9.1459",
     date: "2026-07-26",
     items: [

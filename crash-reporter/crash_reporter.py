@@ -30,7 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 APP_NAME = "RIS Crash Reporter"
-APP_VERSION = "0.1.40"
+APP_VERSION = "0.1.41"
 CONFIG_FILENAME = "crash_reporter.ini"
 LOG_FILENAME = "crash_reporter.log"
 
@@ -2606,10 +2606,21 @@ def rank_asserts(counter, limit=5):
 # denominator of ~28 buys you.
 #
 # The unit-enum pair is still what a bad `unit_type` token in descr_formations_ai.txt
-# produces, and that defect is real and independently confirmed: 177 entries in 63 of the
-# 309 formation blocks use `heavy_/light_/spearmen_pilum_infantry`, where the file's own
-# header documents `pilum_infantry` as a standalone keyword. Sessions carrying the enum
-# assert crash 68% of the time against a 31% baseline (2.4x).
+# produces, and sessions carrying the enum assert crash 68% of the time against a 31%
+# baseline (2.4x).
+#
+# WHICH TOKEN IS WRONG, since I got this backwards once: the defect is the BARE
+# `unit_type pilum_infantry`, of which the shipped Workshop copy has 7 — line 80 being
+# exactly the `descr_formations_ai.txt:80` the engine names. The class-prefixed forms
+# (`heavy_pilum_infantry`, `light_pilum_infantry`, `spearmen_pilum_infantry`) are VALID and
+# vanilla ships them, so they must not be "fixed".
+#
+# The trap: this file's header comment lists `pilum_infantry` among the standalone keywords,
+# which reads as though bare is the correct form and prefixed is the error. Remastered's
+# engine says otherwise, and the engine is the authority. Reading the header instead of the
+# engine's own output produces a 177-entry "fix list" that would break working formations.
+# Provincia's lint had this right first; the file to check is the Workshop copy the engine
+# loads, not another branch's copy of the same filename.
 #
 # HONEST LIMITS: co-occurrence at one fault address is not proof of cause; the strongest
 # enrichment is an IMAGE assert, which may be nearer the actual fault; and only ~7 of the 26
@@ -2627,8 +2638,9 @@ KNOWN_FAULT_SIGNATURES = [
             "vs 11%, ~2.4x) and !m_current_image (50% vs 29%). man_in_front_index is "
             "DEPLETED here (4% vs 11%), and no session at this address ended after a naval "
             "battle. The unit-enum pair is what an unrecognised unit_type token in "
-            "descr_formations_ai.txt produces - 177 such entries exist in that file. "
-            "Association, not proven cause."
+            "descr_formations_ai.txt produces: the BARE `unit_type pilum_infantry` (7 in the "
+            "shipped file, line 80 being the one the engine names). The class-prefixed forms "
+            "are valid vanilla tokens - do not change those. Association, not proven cause."
         ),
     },
     {
