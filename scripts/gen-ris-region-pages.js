@@ -630,8 +630,9 @@ for (const r of list) {
   // same answer 1,311 times. Provincia's region panel reads the tag for the same reason.
   if (g.farm.length) {
     const v = parseInt(String(g.farm[0]).replace(/\D+/g, ""), 10);
-    rows.push(`| Fertility | **${v}** / 14 \`${g.farm[0]}\` |`);
-    rows.push(`| | _${FARM_NOTE}_ |`);
+    rows.push(`| Fertility | **${v}** / 14 |`);
+    // No note. "7 / 14" is the answer; why RIS cancels fertility's growth effect is recorded
+    // at FARM_NOTE above for whoever maintains this, and does not belong on 1,311 pages.
   }
   addRow("Terrain", g.terrain);
   addRow("Climate", g.climate);
