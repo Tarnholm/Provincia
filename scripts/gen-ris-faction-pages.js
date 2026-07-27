@@ -1070,15 +1070,27 @@ const tile = (e) => `[${e.symbol ? `<img src="symbols/${e.f}.png" alt="" width="
 // numbers that were in a single 230-row table live in these instead: a table of 44 rows or
 // fewer sizes itself to its content, where a 230-row one is laid out fixed and full width and
 // spreads five short columns across the whole page.
-const cultureSection = cultureGroups.map((g) => {
-  const heading = g.name ? `## ${g.name}` : "## Culture not determined";
+// The heading carries its own counts, on one line, instead of spending a second line on a
+// sentence of two numbers. Twenty-two sections meant twenty-two wasted lines.
+//
+// Deliberately PLAIN TEXT, no bold. The anchor a heading gets is slugged from its text, and the
+// viewer, GitHub and verify-ris-wiki.js do not agree on what markdown emphasis inside a heading
+// slugs to — `**44**` is "-44-" to one and "44" to another. The jump bar below has to land on
+// these, so the heading is written with nothing in it that the three could read differently, and
+// the anchor is computed from the same string rather than rebuilt from the name.
+const headingSlug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const cultureHead = (g) => {
   const withLand = g.list.filter((e) => e.setts).length;
+  const n = g.list.length;
+  if (!g.tok) return `Culture not determined · ${n} faction${n === 1 ? "" : "s"} whose culture no line in descr_sm_factions states`;
+  return `${g.name} · ${n} faction${n === 1 ? "" : "s"} · ${withLand} hold${withLand === 1 ? "s" : ""} territory at the start`;
+};
+const cultureSection = cultureGroups.map((g) => {
+  const heading = `## ${cultureHead(g)}`;
+  const sub = null;
   // No token beside the heading, and no paragraph explaining that the shown name is not the
   // token. A player reading "Gallic" does not need to be told the file says `barbarian`; that
   // the two differ is the GENERATOR's problem and is reported in its run output instead.
-  const sub = g.tok
-    ? `**${g.list.length}** faction${g.list.length === 1 ? "" : "s"} · ${withLand} hold${withLand === 1 ? "s" : ""} territory at the start`
-    : `**${g.list.length}** faction${g.list.length === 1 ? "" : "s"} whose culture no line in descr_sm_factions states`;
   // No Regional column. Measured across all 230 factions it runs 424 to 443 — a 4.5% spread,
   // every single faction inside 5% of the median — so it is a constant wearing the costume of a
   // statistic. It cost a column's width on every table and told a reader nothing they could use
@@ -1090,14 +1102,16 @@ const cultureSection = cultureGroups.map((g) => {
   // and since every region has exactly one settlement that is also the count of REGIONS it
   // holds — which is what a reader comparing two factions is actually asking. It also stops
   // the column reading as a link to the settlement pages, which it is not.
-  return `${heading}\n\n${sub}\n\n| Faction | Provinces | Characters | Units |\n|---|---:|---:|---:|\n${rows}`;
+  return `${heading}\n${sub ? `\n${sub}\n` : ""}\n| Faction | Provinces | Characters | Units |\n|---|---:|---:|---:|\n${rows}`;
 }).join("\n\n");
 
 // A jump bar, so 22 cultures do not have to be scrolled past to reach the one you want. Ordered
 // as the sections are, with each one's size, because "Gallic 44" is also the answer to a
 // question someone might have come here with.
+// Slugged from the SAME string the heading is built from, not rebuilt from the culture name:
+// the heading now carries its counts, so a link derived from the name alone would miss it.
 const cultureJump = cultureGroups
-  .map((g) => `[${g.name || "Culture not determined"}](#${(g.name || "culture-not-determined").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}) ${g.list.length}`)
+  .map((g) => `[${g.name || "Culture not determined"}](#${headingSlug(cultureHead(g))}) ${g.list.length}`)
   .join(" · ");
 
 const idx = `# All factions
