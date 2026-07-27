@@ -719,7 +719,11 @@ for (const f of factions) {
       const w = SYMBOL_BOX, h = Math.max(1, Math.round((s.h / s.w) * SYMBOL_BOX));
       // & and " would break the viewer's un-escaping of embedded HTML.
       const alt = display.replace(/[&"<>]/g, "").trim();
-      symImg = `<img src="../symbols/${f}.png" alt="${alt}" width="${w}" height="${h}">`;
+      // vertical-align is for the renderers that do NOT float these — GitHub lays the symbol
+      // and the map out as two inline images, and inline images sit on the text baseline, so
+      // without this the symbol hangs off the BOTTOM edge of a 700px map. The viewer centres
+      // them itself (p.imgrow), where this attribute is simply inert.
+      symImg = `<img src="../symbols/${f}.png" alt="${alt}" width="${w}" height="${h}" style="vertical-align:middle">`;
     } else noSymbol.push(`${f} (TGA would not decode)`);
   } else noSymbol.push(`${f} (no symbol file)`);
 
@@ -747,7 +751,7 @@ ${glance}
 
 ${mapLine}${intro.descr ? `## The campaign brief\n\n> ${intro.descr.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n\n` : `> _The main-menu text for this faction was not found._\n\n`}## Starting settlements
 
-${setts.length ? `${display} begins with **${setts.length} settlement${setts.length === 1 ? "" : "s"}** and about **${totalPop.toLocaleString("en-US")}** people.
+${setts.length ? `${display} begins with **${setts.length} settlement${setts.length === 1 ? "" : "s"}** and **${totalPop.toLocaleString("en-US")}** people.
 
 | Settlement | Region | Size | Population | Already built |
 |---|---|---|---:|---|
