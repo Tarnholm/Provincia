@@ -185,7 +185,13 @@ const code = (arr, join) => (arr && arr.length ? arr.map((x) => `\`${x}\``).join
 function build(v, r) {
   const pages = {};
 
+  // The mod's own logo, so the front page is recognisably RIS rather than a documentation
+  // template. Taken from C:/RIS/_resources/logos and separators, which is where the project
+  // keeps its artwork; the file is copied into wiki/art by hand, not generated, because it is
+  // an asset of the mod and not something this script has any business producing.
   pages["README.md"] = `# RIS vs Vanilla — what is different
+
+<img src="art/ris-logo.png" alt="Rome: Total Realism — Imperium Surrectum" width="190">
 
 A player's guide to how **Rome: Imperium Surrectum** differs from vanilla *Rome: Total
 War Remastered*. Every number here is counted from the game's own data files; anything

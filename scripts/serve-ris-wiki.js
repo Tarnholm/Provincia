@@ -276,15 +276,50 @@ function renderMarkdown(md, toc) {
       // One table with the columns repeated, not three tables side by side, because then the
       // rows line up by construction and there is a single header, a single scroll box and no
       // flex to fall out of alignment when one group's cells wrap.
-      const colWidth = [];
-      for (let k = 0; k < head.length; k++) {
-        colWidth[k] = Math.min(40, Math.max(head[k].replace(/<[^>]*>/g, "").length,
-          ...body.map((r) => (r[k] || "").replace(/<[^>]*>/g, "").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").length)));
-      }
-      const oneWide = colWidth.reduce((a, b) => a + b, 0) + head.length * 3;
-      // 148 characters is about what the content column holds at a normal window width. The
-      // spare 6 is the gap between one copy of the table and the next.
-      const UP = body.length > 24 ? Math.max(1, Math.min(3, Math.floor(148 / (oneWide + 6)))) : 1;
+      // Estimated in PIXELS, not characters. Characters were close enough to decide "does this
+      // need the whole width", but not to decide "do three copies fit", where the answer for the
+      // faction tables came out at 2.98 — and a character count cannot tell you that the emblem
+      // in the first column is 34px whatever its filename is, nor that an uppercase header with
+      // letter-spacing is half again as wide per character as the body text under it.
+      //
+      // The constants are read off the stylesheet below: body cells 0.9rem, headers 0.82rem
+      // uppercase with .04em tracking and nowrap, .7rem of padding each side.
+      const BODY_PX = 7.0, HEAD_PX = 8.4, PAD_PX = 22.4, GROUP_GAP_PX = 18;
+      const CONTENT_PX = 1380;     // the content column at a typical wide window
+      const textPx = (cell) => {
+        let px = 0;
+        // An <img width="N"> occupies N pixels regardless of how long its markup is.
+        for (const im of String(cell).matchAll(/<img[^>]*\bwidth="(\d+)"/gi)) px += parseInt(im[1], 10) + 7;
+        const txt = String(cell).replace(/<[^>]*>/g, "")
+          .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")     // a link is as wide as its text
+          .replace(/[*_`]/g, "").trim();
+        // Capped at 14 characters. A long cell does NOT force the table wider — the browser
+        // wraps it — so the width a column NEEDS is set by its header, which cannot wrap, and by
+        // typical content rather than by its longest value. Without the cap one 17-character
+        // faction name in a culture of 37 dropped that whole table from three across to two,
+        // which is both denser than it needs to be and inconsistent with the table beside it.
+        return px + Math.min(14, txt.length) * BODY_PX;
+      };
+      const headPx = (h) => h.replace(/<[^>]*>/g, "").length * HEAD_PX;
+      const colPx = head.map((h, k) => PAD_PX + Math.max(headPx(h),
+        ...body.map((r) => textPx(r[k] || ""))));
+      const groupPx = colPx.reduce((a, b) => a + b, 0);
+      // The width below which the table CANNOT be squeezed: a header does not wrap (nowrap, so
+      // the whole heading is one unbreakable run) and body text wraps only between words. This
+      // is a different question from the one above and needs its own answer — the capped
+      // estimate says how much room the table would LIKE, this says what it must have.
+      const longestWordPx = (cell) => {
+        let px = 0;
+        for (const im of String(cell).matchAll(/<img[^>]*\bwidth="(\d+)"/gi)) px += parseInt(im[1], 10) + 7;
+        const txt = String(cell).replace(/<[^>]*>/g, "").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[*_`]/g, "");
+        return px + Math.max(0, ...txt.split(/\s+/).map((w) => w.length)) * BODY_PX;
+      };
+      const minPx = head.reduce((sum, h, k) => sum + PAD_PX
+        + Math.max(headPx(h), ...body.map((r) => longestWordPx(r[k] || ""))), 0);
+      // Being wrong high costs a horizontal scrollbar inside that one table, which `.tw` already
+      // provides; being wrong low wastes half the page, which is what this exists to stop.
+      const UP = body.length > 24
+        ? Math.max(1, Math.min(3, Math.floor(CONTENT_PX / (groupPx + GROUP_GAP_PX)))) : 1;
 
       const cls = (k, first) => {
         const c = `${align[k] || ""}${first && k === 0 ? " grp" : ""}`.trim();
@@ -310,7 +345,13 @@ function renderMarkdown(md, toc) {
       // made the pointer stutter — any restyle re-measured the whole table. Fixed layout takes
       // the widths from the header row and stops caring how many rows follow. Counted on the
       // ROWS RENDERED, so a list dealt three-up drops below the threshold honestly.
-      const wrapCls = `tw${rowCount > 60 ? " big" : ""}${UP > 1 ? " multi" : ""}`;
+      // Only a table that genuinely overruns the page gets a horizontal scrollbar. That is not
+      // cosmetic: `overflow-x:auto` makes the wrapper a scroll container on BOTH axes, and a
+      // sticky header inside one sticks to the top of that container rather than to the window
+      // — which is why the column headings used to scroll away on every long list. Tables that
+      // fit have no wrapper scroll, so their headings follow the page.
+      const cannotFit = minPx * UP + GROUP_GAP_PX * (UP - 1) > CONTENT_PX;
+      const wrapCls = `tw${rowCount > 60 ? " big" : ""}${UP > 1 ? " multi" : ""}${cannotFit ? " scroll" : ""}`;
       out.push(`<div class="${wrapCls}"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`);
       continue;
     }
@@ -361,18 +402,30 @@ function renderMarkdown(md, toc) {
 
 // ── shell ────────────────────────────────────────────────────────────────────
 const CSS = `
+/* ── the mod's own colours ────────────────────────────────────────────────────
+   Tyrian purple #67033d and gold #fad05d, both SAMPLED out of the RIS badge rather than
+   picked to taste: the badge is 59,475 pixels of #67033d with the monogram in #fad05d /
+   #edc558. Using anything else made this look like a generic documentation site that happened
+   to be about RIS.
+
+   The accent swaps by theme because the pair is not symmetric. Gold on the dark background is
+   about 9:1 contrast and reads well; gold on white is roughly 1.7:1 and is unreadable, so the
+   light theme takes the purple as its accent instead — that is about 11:1 on white. The purple
+   bar and the gold rule stay constant across both, so the identity does not change with the
+   theme, only the thing that has to be legible as text. */
 :root{
+  --tyrian:#67033d; --tyrian-deep:#4b0230; --gold:#e8c15a;
   --bg:#12141a; --panel:#181b22; --fg:#e9e6e0; --dim:#9a958c; --line:#2a2e37;
-  --acc:#d9744f; --acc-soft:rgba(217,116,79,.12); --shadow:0 1px 3px rgba(0,0,0,.4);
+  --acc:#e8c15a; --acc-soft:rgba(232,193,90,.13); --shadow:0 1px 3px rgba(0,0,0,.4);
 }
 @media(prefers-color-scheme:light){
   :root{--bg:#faf9f7; --panel:#fff; --fg:#1c1e22; --dim:#5f6672; --line:#e2ded7;
-        --acc:#b4502c; --acc-soft:rgba(180,80,44,.09); --shadow:0 1px 3px rgba(0,0,0,.07)}
+        --acc:#7d0a49; --acc-soft:rgba(103,3,61,.08); --shadow:0 1px 3px rgba(0,0,0,.07)}
 }
 :root[data-theme="light"]{--bg:#faf9f7;--panel:#fff;--fg:#1c1e22;--dim:#5f6672;--line:#e2ded7;
-  --acc:#b4502c;--acc-soft:rgba(180,80,44,.09);--shadow:0 1px 3px rgba(0,0,0,.07)}
+  --acc:#7d0a49;--acc-soft:rgba(103,3,61,.08);--shadow:0 1px 3px rgba(0,0,0,.07)}
 :root[data-theme="dark"]{--bg:#12141a;--panel:#181b22;--fg:#e9e6e0;--dim:#9a958c;--line:#2a2e37;
-  --acc:#d9744f;--acc-soft:rgba(217,116,79,.12);--shadow:0 1px 3px rgba(0,0,0,.4)}
+  --acc:#e8c15a;--acc-soft:rgba(232,193,90,.13);--shadow:0 1px 3px rgba(0,0,0,.4)}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--fg);
@@ -380,19 +433,26 @@ body{margin:0;background:var(--bg);color:var(--fg);
   -webkit-font-smoothing:antialiased}
 
 /* top bar */
-.top{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--line);
+/* The bar is the mod's purple in both themes, with its badge in it — that one strip is what
+   makes a page recognisable as RIS at a glance, before any of the words are read. */
+.top{position:sticky;top:0;z-index:20;background:var(--tyrian);border-bottom:1px solid var(--tyrian-deep);
   display:flex;gap:1rem;align-items:center;padding:.55rem 1rem;box-shadow:var(--shadow)}
-.brand{font-weight:650;letter-spacing:.01em;color:var(--fg);text-decoration:none;white-space:nowrap}
-.brand span{color:var(--acc)}
+.brand{font-weight:650;letter-spacing:.01em;color:#f4ead8;text-decoration:none;white-space:nowrap;
+  display:flex;align-items:center;gap:.55rem}
+.brand img{width:26px;height:26px;border-radius:5px;display:block}
+.brand span{color:var(--gold)}
 .top form{flex:1;display:flex;max-width:34rem}
 .top input{width:100%;background:var(--bg);color:var(--fg);border:1px solid var(--line);
   border-radius:8px;padding:.42rem .7rem;font:inherit;font-size:.9rem}
 .top input:focus{outline:2px solid var(--acc-soft);border-color:var(--acc)}
-.top .right{display:flex;gap:.9rem;align-items:center;font-size:.82rem;color:var(--dim)}
-.top .right a{color:var(--dim);text-decoration:none}
-.top .right a:hover{color:var(--acc)}
-#theme{background:none;border:1px solid var(--line);border-radius:6px;color:var(--dim);
-  cursor:pointer;font:inherit;font-size:.78rem;padding:.2rem .5rem}
+/* Fixed light tones rather than --dim: the bar is purple in BOTH themes, so a variable that
+   goes dark grey in the light theme would be unreadable on it half the time. */
+.top .right{display:flex;gap:.9rem;align-items:center;font-size:.82rem;color:rgba(244,234,216,.72)}
+.top .right a{color:rgba(244,234,216,.72);text-decoration:none}
+.top .right a:hover{color:var(--gold)}
+#theme{background:none;border:1px solid rgba(244,234,216,.3);border-radius:6px;
+  color:rgba(244,234,216,.8);cursor:pointer;font:inherit;font-size:.78rem;padding:.2rem .5rem}
+#theme:hover{border-color:var(--gold);color:var(--gold)}
 
 /* layout */
 .wrap{display:grid;grid-template-columns:15rem minmax(0,1fr);gap:0;align-items:start}
@@ -459,7 +519,12 @@ main{min-width:0;padding:1.6rem 2.2rem 5rem;width:100%}
 .crumb{font-size:.8rem;color:var(--dim);margin-bottom:.5rem}
 .crumb a{color:var(--dim);text-decoration:none}
 .crumb a:hover{color:var(--acc)}
-h1{font-size:1.85rem;line-height:1.25;margin:.1rem 0 .9rem;letter-spacing:-.01em}
+h1{font-size:1.85rem;line-height:1.25;margin:.1rem 0 .6rem;letter-spacing:-.01em}
+/* The mod's own divider under the page title. It is a wide, symmetric piece of art with a boss
+   at its centre, so it is anchored left and allowed to run to whatever width the column gives
+   it; scaled by height rather than stretched, so it never distorts. */
+h1::after{content:"";display:block;height:15px;margin:.55rem 0 1rem;
+  background:url(/art/ris-rule.png) left center/auto 100% no-repeat;opacity:.9}
 h2{font-size:1.28rem;margin:2.1rem 0 .6rem;padding-bottom:.3rem;border-bottom:1px solid var(--line)}
 h3{font-size:1.06rem;margin:1.5rem 0 .45rem;color:var(--fg)}
 a{color:var(--acc)}
@@ -474,8 +539,15 @@ blockquote p{margin:.25rem 0}
    more screen you had. fit-content on the wrapper keeps the border around the table rather
    than around the empty space beside it, and max-width caps a genuinely wide table, which
    then scrolls inside the wrapper as before. */
-.tw{overflow-x:auto;border:1px solid var(--line);border-radius:8px;margin:.9rem 0;
+.tw{border:1px solid var(--line);border-radius:8px;margin:.9rem 0;
   background:var(--panel);width:fit-content;max-width:100%}
+/* Scrolls only when the table really is wider than the page. See the note in the renderer: an
+   overflow container captures the sticky header, so giving one to every table cost the column
+   headings on every long list. */
+.tw.scroll{overflow:auto;max-height:calc(100vh - 5rem)}
+/* Inside a scroll container the header pins to the container, not the window, so the offset
+   that clears the site bar would push it a bar's height down its own box. */
+.tw.scroll th{top:0}
 table{border-collapse:collapse;width:auto;font-size:.9rem}
 /* Long prose in a cell would otherwise make a table as wide as its longest sentence. */
 td{max-width:70ch}
@@ -486,7 +558,10 @@ td{max-width:70ch}
    groups are separated by a rule rather than a gap so the eye can tell one item's columns from
    the next one's. */
 .tw.multi{width:100%}
-.tw.multi table{width:100%;table-layout:fixed}
+/* Auto layout, not fixed: the columns then size to their content and the browser wraps a long
+   cell to make the whole thing fit the container, which is what lets three groups sit across a
+   page that could not hold three copies of the widest row unwrapped. */
+.tw.multi table{width:100%}
 .tw.multi th.grp,.tw.multi td.grp{border-left:1px solid var(--line);padding-left:1.1rem}
 .tw.big{width:100%;contain:paint}
 .tw.big table{width:100%;table-layout:fixed}
@@ -496,7 +571,10 @@ td{max-width:70ch}
    cursor stutter. contain-intrinsic-size keeps the scrollbar honest for the skipped ones. */
 .tw.big tbody tr{content-visibility:auto;contain-intrinsic-size:auto 2.05rem}
 th,td{padding:.42rem .7rem;text-align:left;vertical-align:middle;border-bottom:1px solid var(--line)}
-th{background:var(--bg);position:sticky;top:0;font-weight:600;font-size:.82rem;
+/* 3.1rem, not 0: the site bar is sticky at the top of the window and is that tall, so a header
+   pinned at 0 slides underneath it and is never readable. The sidebar already uses the same
+   offset. z-index keeps the heading above the rows it is holding station over. */
+th{background:var(--bg);position:sticky;top:3.1rem;z-index:5;font-weight:600;font-size:.82rem;
   text-transform:uppercase;letter-spacing:.04em;color:var(--dim);white-space:nowrap}
 td.right,th.right{text-align:right;font-variant-numeric:tabular-nums}
 td.center,th.center{text-align:center}
@@ -578,7 +656,7 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
 <title>${esc(title)} — RIS wiki</title>
 <style>${CSS}</style></head><body>
 <div class="top">
-  <a class="brand" href="/README.md">RIS <span>wiki</span></a>
+  <a class="brand" href="/README.md"><img src="/art/ris-mark.png" alt="">Imperium <span>Surrectum</span></a>
   <form action="/search" method="get" role="search">
     <input name="q" type="search" placeholder="Search ${INDEX.length.toLocaleString("en-US")} pages — a faction, region or unit…" autocomplete="off">
   </form>
