@@ -1023,10 +1023,22 @@ const cultureSection = cultureGroups.map((g) => {
   const sub = g.tok
     ? `**${g.list.length}** faction${g.list.length === 1 ? "" : "s"} · ${withLand} hold${withLand === 1 ? "s" : ""} territory at the start`
     : `**${g.list.length}** faction${g.list.length === 1 ? "" : "s"} whose culture no line in descr_sm_factions states`;
+  // No Regional column. Measured across all 230 factions it runs 424 to 443 — a 4.5% spread,
+  // every single faction inside 5% of the median — so it is a constant wearing the costume of a
+  // statistic. It cost a column's width on every table and told a reader nothing they could use
+  // to tell two factions apart. The count is still on each faction's own page, where it is about
+  // that faction rather than a comparison.
   const rows = g.list.map((e) =>
-    `| ${tile(e)} | ${e.setts} | ${e.chars} | ${e.units - e.aor} | ${e.aor} |`).join("\n");
-  return `${heading}\n\n${sub}\n\n| Faction | Settlements | Characters | Faction units | Regional |\n|---|---:|---:|---:|---:|\n${rows}`;
+    `| ${tile(e)} | ${e.setts} | ${e.chars} | ${e.units - e.aor} |`).join("\n");
+  return `${heading}\n\n${sub}\n\n| Faction | Settlements | Characters | Units |\n|---|---:|---:|---:|\n${rows}`;
 }).join("\n\n");
+
+// A jump bar, so 22 cultures do not have to be scrolled past to reach the one you want. Ordered
+// as the sections are, with each one's size, because "Gallic 44" is also the answer to a
+// question someone might have come here with.
+const cultureJump = cultureGroups
+  .map((g) => `[${g.name || "Culture not determined"}](#${(g.name || "culture-not-determined").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}) ${g.list.length}`)
+  .join(" · ");
 
 const idx = `# All factions
 
@@ -1044,11 +1056,12 @@ settlement is drawn with, which government levels the faction can install, and m
 the roster looks like. Factions in the same culture play more like each other than two
 neighbours in different ones do. Largest first within each.
 
-The two unit columns are worth reading separately. "Faction units" are what a faction can
-raise from its own buildings anywhere it holds a settlement — that is its actual roster.
-"Regional" units are area-of-recruitment: gated on a hidden resource, so they need the
-right province before they can be fielded at all. Most regional units are open to every
-faction on paper, which is why the combined figure flatters a small faction badly.
+**Units** is the faction's own roster — what it can raise from its own buildings anywhere it
+holds a settlement. It does not count regional units, which are gated on holding the right
+province rather than on being anyone in particular: every faction has between 424 and 443 of
+those, so the number tells you nothing about the faction. Each faction's page lists its own.
+
+**Jump to:** ${cultureJump}
 
 ${cultureSection}
 `;

@@ -125,10 +125,25 @@ for (const p of pages) {
   const body = fs.readFileSync(p, "utf8");
   const dir = path.dirname(p);
 
-  // [text](target) — skip absolute URLs and pure anchors
+  // [text](target)
   for (const m of body.matchAll(/\[[^\]]*\]\(([^)\s]+)\)/g)) {
     const target = m[1];
-    if (/^(https?:|mailto:|#)/.test(target)) continue;
+    if (/^(https?:|mailto:)/.test(target)) continue;
+    // A link to this page's OWN heading was previously skipped along with the external URLs,
+    // and there are thousands of them: every summary table on a tag reference page links down
+    // to its entries, and the faction index has a jump bar over 22 culture sections. They fail
+    // exactly the way a cross-page fragment does — silently, landing the reader at the top of
+    // the page — so they are checked against this page's headings.
+    if (target.startsWith("#")) {
+      const frag = target.slice(1);
+      if (!frag) continue;
+      fragments++;
+      if (!headingsOf(p).has(frag.toLowerCase())) {
+        badFragments++;
+        if (badFragments <= 8) fail(`BROKEN ANCHOR in ${path.relative(OUT, p)}: ${target} — no heading on this page slugs to "${frag}"`);
+      }
+      continue;
+    }
     const clean = target.split("#")[0];
     if (!clean) continue;
     links++;
