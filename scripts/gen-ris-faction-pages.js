@@ -1009,8 +1009,13 @@ const cultureGroups = [...byCulture.entries()]
   }))
   .sort((a, b) => b.list.length - a.list.length || String(a.name || a.tok).localeCompare(String(b.name || b.tok)));
 const tile = (e) => `[${e.symbol ? `<img src="symbols/${e.f}.png" alt="" width="34" height="34" style="vertical-align:middle"> ` : ""}${e.display}](factions/${e.f}.md)`;
+// Each culture is its own H2, not an H3 inside one, so the viewer treats them as separate
+// sections and lays them two to a row instead of stacking 22 down one side of the screen. The
+// numbers that were in a single 230-row table live in these instead: a table of 44 rows or
+// fewer sizes itself to its content, where a 230-row one is laid out fixed and full width and
+// spreads five short columns across the whole page.
 const cultureSection = cultureGroups.map((g) => {
-  const heading = g.name ? `### ${g.name}` : "### Culture not determined";
+  const heading = g.name ? `## ${g.name}` : "## Culture not determined";
   const withLand = g.list.filter((e) => e.setts).length;
   // No token beside the heading, and no paragraph explaining that the shown name is not the
   // token. A player reading "Gallic" does not need to be told the file says `barbarian`; that
@@ -1018,7 +1023,9 @@ const cultureSection = cultureGroups.map((g) => {
   const sub = g.tok
     ? `**${g.list.length}** faction${g.list.length === 1 ? "" : "s"} · ${withLand} hold${withLand === 1 ? "s" : ""} territory at the start`
     : `**${g.list.length}** faction${g.list.length === 1 ? "" : "s"} whose culture no line in descr_sm_factions states`;
-  return `${heading}\n\n${sub}\n\n${g.list.map(tile).join(" · ")}`;
+  const rows = g.list.map((e) =>
+    `| ${tile(e)} | ${e.setts} | ${e.chars} | ${e.units - e.aor} | ${e.aor} |`).join("\n");
+  return `${heading}\n\n${sub}\n\n| Faction | Settlements | Characters | Faction units | Regional |\n|---|---:|---:|---:|---:|\n${rows}`;
 }).join("\n\n");
 
 const idx = `# All factions
@@ -1032,18 +1039,10 @@ Nine further factions in the mod files are **not** playable and are not part of 
 territory and appear in recruitment gates, so they are documented together on
 [factions you cannot play](factions/${NON_PLAYABLE_FILE}).
 
-## By culture
-
 Culture is the game's own grouping, and it is not cosmetic: it settles which architecture a
 settlement is drawn with, which government levels the faction can install, and much of what
 the roster looks like. Factions in the same culture play more like each other than two
-neighbours in different ones do.
-
-${cultureSection}
-
-## By size
-
-Every playable faction, largest first.
+neighbours in different ones do. Largest first within each.
 
 The two unit columns are worth reading separately. "Faction units" are what a faction can
 raise from its own buildings anywhere it holds a settlement — that is its actual roster.
@@ -1051,9 +1050,7 @@ raise from its own buildings anywhere it holds a settlement — that is its actu
 right province before they can be fielded at all. Most regional units are open to every
 faction on paper, which is why the combined figure flatters a small faction badly.
 
-| Faction | Culture | Settlements | Characters | Faction units | Regional (AOR) |
-|---|---|---:|---:|---:|---:|
-${index.map((e) => `| ${tile(e)} | ${cultureName(e.culture) || "_not determined_"} | ${e.setts} | ${e.chars} | ${e.units - e.aor} | ${e.aor} |`).join("\n")}
+${cultureSection}
 `;
 fs.writeFileSync(path.join(OUT, "factions.md"), idx, "utf8");
 
