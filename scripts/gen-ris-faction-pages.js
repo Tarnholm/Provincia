@@ -31,6 +31,9 @@ const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const RIS = valOf("--ris", "C:/RIS/RIS/data");
 const OUT = valOf("--out", "C:/RIS/RIS/wiki");
+// RIS ships only the files it changed, so art a mod inherits sits in the vanilla install and
+// nowhere else. Kept as a second root for that reason; see loadSymbolFiles for what it found.
+const VANILLA = valOf("--vanilla", "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data");
 const ONLY = (valOf("--only", "") || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 const NO_MAPS = argv.includes("--no-maps");
 
@@ -38,6 +41,10 @@ const gv = require(path.join(__dirname, "..", "src", "growthEval.js"));
 const tga = require(path.join(__dirname, "..", "src", "tgaCodec.js"));
 // For parseNamesTxt: names.txt maps a name TOKEN to the name the game displays.
 const dg = require(path.join(__dirname, "..", "src", "descrStratGeneral.js"));
+// The one TGA→PNG converter on this project. It handles 32bpp RLE and the alpha channel,
+// which every faction symbol is (type 10, 32bpp) — a second decoder shipped 1,132 colour
+// stripes here once already.
+const { convert: tgaToPng } = require(path.join(__dirname, "lib", "tgaPng.js"));
 
 const rd = (...f) => { try { return fs.readFileSync(path.join(RIS, ...f), "latin1"); } catch { return null; } };
 const STRAT = path.join(RIS, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
@@ -541,6 +548,48 @@ function renderFactionMap(mapRaw, regionColours, regions, scale) {
   return { buf: png(ow, oh, out), width: ow, height: oh, matched: want.size, painted, markers };
 }
 
+// ── faction symbols ──────────────────────────────────────────────────────────
+// The symbol beside each map is the faction's own emblem, the same art Provincia's
+// FactionIcon shows in the app (src/FactionIcon.js reads <iconsDir>/<faction>.tga out of
+// data/ui/faction_icons).
+//
+// The PATH IS READ FROM THE MOD, not assumed from the faction token: descr_sm_factions.txt
+// gives every faction a `"loading screen icon": "data/ui/faction_icons/carthage.tga"` line,
+// and that is the only place the mod itself states which file belongs to which faction. All
+// 239 faction blocks declare one.
+//
+// NO FALLBACK. FactionIcon falls back to slave.tga so the app always has something to draw;
+// a wiki page must not, because slave.tga is the rebel emblem and printing it under a
+// faction's name would be showing a symbol that is not theirs. A faction whose file is
+// missing gets no symbol and is named in the run output.
+const ICON_SCALE = 3;      // 360px source → 120px, exact; the four 512px files → 170px
+const SYMBOL_BOX = 120;    // displayed size, so one large source cannot dwarf the others
+function loadSymbolFiles() {
+  const txt = rd("descr_sm_factions.txt") || "";
+  const out = {};
+  let declared = 0, fromVanilla = 0;
+  const marks = [...txt.matchAll(/^\t"([a-z0-9_]+)":/gm)];
+  for (let i = 0; i < marks.length; i++) {
+    const block = txt.slice(marks[i].index, i + 1 < marks.length ? marks[i + 1].index : txt.length);
+    const m = /"loading screen icon":\s*"([^"]+)"/.exec(block);
+    if (!m) continue;
+    declared++;
+    // The declared path is relative to the install root and starts with `data/`; both roots
+    // ARE that data directory, so the prefix comes off.
+    const rel = m[1].replace(/^data[\\/]/, "").replace(/\\/g, "/");
+    for (const root of [RIS, VANILLA]) {
+      const p = path.join(root, rel);
+      if (!fs.existsSync(p)) continue;
+      out[marks[i][1].toLowerCase()] = p;
+      if (root === VANILLA) fromVanilla++;
+      break;
+    }
+  }
+  console.log(`faction symbols declared in descr_sm_factions: ${declared} · files found: ${Object.keys(out).length} (${fromVanilla} only in the vanilla install)`);
+  return out;
+}
+const SYMBOL_FILE = loadSymbolFiles();
+
 // ── build ────────────────────────────────────────────────────────────────────
 const strat = gv.parseStrat(STRAT);
 if (!strat) { console.error("could not parse descr_strat"); process.exit(2); }
@@ -628,9 +677,12 @@ const factions = Object.keys(strat)
 
 fs.mkdirSync(path.join(OUT, "factions"), { recursive: true });
 if (mapRaw) fs.mkdirSync(path.join(OUT, "maps"), { recursive: true });
+fs.mkdirSync(path.join(OUT, "symbols"), { recursive: true });
 
 const index = [];
 let mapsWritten = 0, introsFound = 0;
+let symbolsWritten = 0, symbolBytes = 0;
+const noSymbol = [];
 
 for (const f of factions) {
   const setts = (strat[f].settlements || []);
@@ -654,15 +706,38 @@ for (const f of factions) {
     units.aor.length ? `**${units.aor.length}** regional` : null,
   ].filter(Boolean).join(" · ");
 
+  // The symbol, converted from the mod's TGA. Width AND height are stated on the tag: an
+  // <img> without them has no size until the bytes arrive, and 230 of those relaying their
+  // dimensions mid-layout pegged a CPU on this wiki earlier. Both are written from the PNG
+  // that was actually produced, scaled to one box so a 512px source and a 360px one match.
+  let symImg = "";
+  if (SYMBOL_FILE[f]) {
+    const s = tgaToPng(dg, SYMBOL_FILE[f], ICON_SCALE);
+    if (s) {
+      fs.writeFileSync(path.join(OUT, "symbols", `${f}.png`), s.buf);
+      symbolsWritten++; symbolBytes += s.buf.length;
+      const w = SYMBOL_BOX, h = Math.max(1, Math.round((s.h / s.w) * SYMBOL_BOX));
+      // & and " would break the viewer's un-escaping of embedded HTML.
+      const alt = display.replace(/[&"<>]/g, "").trim();
+      symImg = `<img src="../symbols/${f}.png" alt="${alt}" width="${w}" height="${h}">`;
+    } else noSymbol.push(`${f} (TGA would not decode)`);
+  } else noSymbol.push(`${f} (no symbol file)`);
+
+  // Symbol and map are ONE paragraph, so the viewer floats them side by side out of the same
+  // lede block and the campaign brief wraps to the right of both. The map keeps the markdown
+  // form: it is 1020x700 and the viewer caps a floated image at 42% of the column, and an
+  // <img> whose width is capped while a height attribute holds it at 700 squashes on any
+  // renderer that does not also set height:auto. The symbol is 120px and never gets capped.
   let mapLine = "";
   if (mapRaw && setts.length) {
     const m = renderFactionMap(mapRaw, regionColours, setts, SCALE);
     if (m && m.painted > 0) {
       fs.writeFileSync(path.join(OUT, "maps", `${f}.png`), m.buf);
       mapsWritten++;
-      mapLine = `![Starting regions of ${display}](../maps/${f}.png)\n\n_Starting regions shown in red._\n\n`;
+      mapLine = `${symImg}${symImg ? " " : ""}![Starting regions of ${display}](../maps/${f}.png)\n\n_Starting regions shown in red._\n\n`;
     }
   }
+  if (!mapLine && symImg) mapLine = `${symImg}\n\n`;
 
   const body = `# ${display}
 
@@ -874,6 +949,8 @@ fs.writeFileSync(path.join(OUT, "factions.md"), idx, "utf8");
 console.log(`\n${index.length} faction pages written`);
 console.log(`  with main-menu intro text: ${introsFound}`);
 console.log(`  maps rendered:             ${mapsWritten}`);
+console.log(`  symbols written:           ${symbolsWritten} of ${index.length} (${(symbolBytes / 1048576).toFixed(1)} MB)`);
+if (noSymbol.length) console.log(`  WITHOUT a symbol:          ${noSymbol.length} — ${noSymbol.join(", ")}`);
 console.log(`  no settlements:            ${index.filter((e) => !e.setts).length}`);
 console.log(`  character name tokens: ${namesResolved.toLocaleString("en-US")} resolved via names.txt, ${namesRaw.toLocaleString("en-US")} had no entry`);
 console.log(`  place name tokens:     ${placesResolved.toLocaleString("en-US")} resolved via the regions-and-settlements text, ${placesRaw.toLocaleString("en-US")} had no entry`);
