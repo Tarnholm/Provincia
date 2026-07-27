@@ -1012,8 +1012,11 @@ const tile = (e) => `[${e.symbol ? `<img src="symbols/${e.f}.png" alt="" width="
 const cultureSection = cultureGroups.map((g) => {
   const heading = g.name ? `### ${g.name}` : "### Culture not determined";
   const withLand = g.list.filter((e) => e.setts).length;
+  // No token beside the heading, and no paragraph explaining that the shown name is not the
+  // token. A player reading "Gallic" does not need to be told the file says `barbarian`; that
+  // the two differ is the GENERATOR's problem and is reported in its run output instead.
   const sub = g.tok
-    ? `**${g.list.length}** faction${g.list.length === 1 ? "" : "s"} · \`${g.tok}\` · ${withLand} hold${withLand === 1 ? "s" : ""} territory at the start`
+    ? `**${g.list.length}** faction${g.list.length === 1 ? "" : "s"} · ${withLand} hold${withLand === 1 ? "s" : ""} territory at the start`
     : `**${g.list.length}** faction${g.list.length === 1 ? "" : "s"} whose culture no line in descr_sm_factions states`;
   return `${heading}\n\n${sub}\n\n${g.list.map(tile).join(" · ")}`;
 }).join("\n\n");
@@ -1035,12 +1038,6 @@ Culture is the game's own grouping, and it is not cosmetic: it settles which arc
 settlement is drawn with, which government levels the faction can install, and much of what
 the roster looks like. Factions in the same culture play more like each other than two
 neighbours in different ones do.
-
-The name here is the one the game shows, not the token in the files, and for three cultures
-those differ: \`barbarian\` is **${cultureName("barbarian") || "not determined"}**, \`eastern\` is
-**${cultureName("eastern") || "not determined"}** and \`carthaginian\` is
-**${cultureName("carthaginian") || "not determined"}**. The token is given beside each heading
-for anyone reading the files.
 
 ${cultureSection}
 
