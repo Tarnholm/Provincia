@@ -421,7 +421,7 @@ const CSS = `
    theme, only the thing that has to be legible as text. */
 :root{
   --tyrian:#67033d; --tyrian-deep:#4b0230; --gold:#e8c15a;
-  --bg:#12141a; --panel:#181b22; --side:#0e1015; --fg:#e9e6e0; --dim:#9a958c; --line:#2a2e37;
+  --bg:#12141a; --panel:#181b22; --raised:#1e222b; --side:#0e1015; --fg:#e9e6e0; --dim:#9a958c; --line:#2a2e37;
   --acc:#e8c15a; --acc-soft:rgba(232,193,90,.13); --shadow:0 1px 3px rgba(0,0,0,.4);
 }
 /* The light theme is parchment, not paper. White with grey rules is the look of a software
@@ -431,12 +431,12 @@ const CSS = `
    Contrast measured, not eyeballed: body text 13.4:1 on the page and 15.2:1 on a panel, muted
    text 5.1:1, links 8.6:1 — all clear of AA, with the muted tone the tightest of them. */
 @media(prefers-color-scheme:light){
-  :root{--bg:#ded0b4; --panel:#ebe0cb; --side:#d3c3a2; --fg:#2a2318; --dim:#574a38; --line:#c4b192;
+  :root{--bg:#ded0b4; --panel:#ebe0cb; --raised:#f4ecdd; --side:#d3c3a2; --fg:#2a2318; --dim:#574a38; --line:#c4b192;
         --acc:#7d0a49; --acc-soft:rgba(103,3,61,.10); --shadow:0 1px 3px rgba(80,60,30,.14)}
 }
-:root[data-theme="light"]{--bg:#ded0b4;--panel:#ebe0cb;--side:#d3c3a2;--fg:#2a2318;--dim:#574a38;
+:root[data-theme="light"]{--bg:#ded0b4;--panel:#ebe0cb;--raised:#f4ecdd;--side:#d3c3a2;--fg:#2a2318;--dim:#574a38;
   --line:#c4b192;--acc:#7d0a49;--acc-soft:rgba(103,3,61,.10);--shadow:0 1px 3px rgba(80,60,30,.14)}
-:root[data-theme="dark"]{--bg:#12141a;--panel:#181b22;--side:#0e1015;--fg:#e9e6e0;--dim:#9a958c;--line:#2a2e37;
+:root[data-theme="dark"]{--bg:#12141a;--panel:#181b22;--raised:#1e222b;--side:#0e1015;--fg:#e9e6e0;--dim:#9a958c;--line:#2a2e37;
   --acc:#e8c15a;--acc-soft:rgba(232,193,90,.13);--shadow:0 1px 3px rgba(0,0,0,.4)}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -492,7 +492,21 @@ main{min-width:0;padding:1.6rem 2.2rem 5rem;width:100%}
   align-items:start;clear:both}
 .pane{min-width:0}
 @media(max-width:80rem){.panes{grid-template-columns:1fr}}
-.sec{min-width:0}
+/* ── three surfaces, not one ──────────────────────────────────────────────────
+   Everything used to sit on the page background with a hairline under each heading, so a
+   reader had to work out where one section ended and the next began from the spacing alone.
+   There are now three tones — the page, a section card on it, and a table raised on the card —
+   which is what makes it possible to see at a glance what belongs to what.
+
+   Dark goes up in lightness, light goes up too: paper stacked on a desk, which is the reading
+   most people already have. Contrast measured on every layer rather than only the page, since
+   the raised surface is the one most text ends up on: dark 12.8:1 body / 5.4:1 muted / 9.3:1
+   links, light 13.2 / 7.3 / 8.9. */
+.sec{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:.1rem 1.15rem 1rem;margin:0 0 1.1rem}
+.sec>h2:first-child,.sec>h3:first-child{margin-top:1rem}
+/* The lede deliberately stays ON the page rather than in a card: it is the page's own
+   introduction, and boxing it would put a frame around the title's own sentence. */
 /* In a column, the unit card sits at the top of its own line rather than floating: at 164px
    inside a half-width pane a float leaves the stat table wrapped around it. */
 .pane .lede img{float:none;max-width:100%;margin:0 0 1rem}
@@ -552,7 +566,7 @@ blockquote p{margin:.25rem 0}
    than around the empty space beside it, and max-width caps a genuinely wide table, which
    then scrolls inside the wrapper as before. */
 .tw{border:1px solid var(--line);border-radius:8px;margin:.9rem 0;
-  background:var(--panel);width:fit-content;max-width:100%}
+  background:var(--raised);width:fit-content;max-width:100%}
 /* Scrolls only when the table really is wider than the page. See the note in the renderer: an
    overflow container captures the sticky header, so giving one to every table cost the column
    headings on every long list. */
@@ -586,7 +600,9 @@ th,td{padding:.42rem .7rem;text-align:left;vertical-align:middle;border-bottom:1
 /* 3.1rem, not 0: the site bar is sticky at the top of the window and is that tall, so a header
    pinned at 0 slides underneath it and is never readable. The sidebar already uses the same
    offset. z-index keeps the heading above the rows it is holding station over. */
-th{background:var(--bg);position:sticky;top:3.1rem;z-index:5;font-weight:600;font-size:.82rem;
+/* The heading band is the section's own tone, one step under the table it sits on, so it reads
+   as a band rather than as another row. It must be opaque: it is sticky, and rows slide behind. */
+th{background:var(--panel);position:sticky;top:3.1rem;z-index:5;font-weight:600;font-size:.82rem;
   text-transform:uppercase;letter-spacing:.04em;color:var(--dim);white-space:nowrap}
 td.right,th.right{text-align:right;font-variant-numeric:tabular-nums}
 td.center,th.center{text-align:center}
@@ -597,10 +613,20 @@ img[align="right"]{margin:0 0 1rem 1.4rem;border-radius:8px;box-shadow:var(--sha
 a:has(img){display:inline-block}
 ul{margin:.5rem 0 .5rem 1.3rem;padding:0}
 li{margin:.16rem 0}
-details{margin:.9rem 0;border:1px solid var(--line);border-radius:8px;background:var(--panel);
+/* A fold is a control, so it should look like one. It sits on the raised tone rather than the
+   section's own — background:var(--panel) made it the same colour as the card around it, so the
+   thing a reader is meant to click was distinguishable only by its border. The marker turns
+   when it opens, which is the affordance that says "there is more here". */
+details{margin:.9rem 0;border:1px solid var(--line);border-radius:8px;background:var(--raised);
   padding:.1rem .9rem}
 details[open]{padding-bottom:.6rem}
-summary{cursor:pointer;padding:.55rem 0;font-size:.92rem;color:var(--acc)}
+summary{cursor:pointer;padding:.55rem 0;font-size:.92rem;color:var(--acc);font-weight:600;
+  list-style:none;display:flex;align-items:center;gap:.5rem}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"";width:0;height:0;flex:0 0 auto;
+  border:.34rem solid transparent;border-left-color:currentColor;
+  transition:transform .12s ease;transform-origin:.17rem 50%}
+details[open]>summary::before{transform:rotate(90deg)}
 summary:hover{color:var(--fg)}
 details .tw{border:none;background:none}
 hr{border:none;border-top:1px solid var(--line);margin:2rem 0}
