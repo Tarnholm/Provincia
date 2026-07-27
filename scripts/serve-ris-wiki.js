@@ -318,8 +318,14 @@ function renderMarkdown(md, toc) {
         + Math.max(headPx(h), ...body.map((r) => longestWordPx(r[k] || ""))), 0);
       // Being wrong high costs a horizontal scrollbar inside that one table, which `.tw` already
       // provides; being wrong low wastes half the page, which is what this exists to stop.
+      // Two copies of a table that then has to scroll sideways is worse than one that does not:
+      // the wrapper gains a horizontal scrollbar AND, because it needs a height for its header
+      // to stick to, a vertical one as well — two bars around a list that would have sat still.
+      // So the dealing is capped by what FITS at the width the table cannot go below, not only
+      // by what it would like.
+      const fits = Math.max(1, Math.floor(CONTENT_PX / (minPx + GROUP_GAP_PX)));
       const UP = body.length > 24
-        ? Math.max(1, Math.min(3, Math.floor(CONTENT_PX / (groupPx + GROUP_GAP_PX)))) : 1;
+        ? Math.max(1, Math.min(3, fits, Math.floor(CONTENT_PX / (groupPx + GROUP_GAP_PX)))) : 1;
 
       const cls = (k, first) => {
         const c = `${align[k] || ""}${first && k === 0 ? " grp" : ""}`.trim();
