@@ -332,9 +332,18 @@ function tagLabel(tok) {
   return nice.toLowerCase() === raw.toLowerCase() ? `\`${raw}\`` : nice;
 }
 
-const FARM_NOTE = "Farm level sets the region's agricultural base. NOTE Provincia's own " +
-  "measurements found RIS cancels farm fertility almost exactly, so a higher number here " +
-  "does not translate into faster growth the way it does in vanilla.";
+// State the mechanism and where to check it, not an opinion about it. The previous wording —
+// "Provincia's own measurements found RIS cancels farm fertility almost exactly" — read as a
+// complaint that something was inexact, when the cancellation is deliberate and exact: RIS's
+// `hinterland_region` chain carries 14 lines under a `;BASE GROWTH` comment,
+// `population_growth_bonus bonus -N requires hidden_resource farmN` for farm1..farm14. That
+// bonus is in half-percent units, so -N is -0.5N% and cancels the engine's hardcoded
+// +0.5xfarmN exactly. Anyone can verify it in the file.
+const FARM_NOTE = "Fertility does not drive population growth in RIS. The engine adds " +
+  "+0.5% growth per fertility point, and the `hinterland_region` building subtracts the same " +
+  "amount back (`population_growth_bonus -N` for `farmN`, under BASE GROWTH in " +
+  "export_descr_buildings.txt), so the two cancel by design. Fertility still describes the " +
+  "land; it is growth specifically that it does not change.";
 
 // ── build ────────────────────────────────────────────────────────────────────
 const regions = loadRegions();
