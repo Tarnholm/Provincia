@@ -415,7 +415,7 @@ const CSS = `
    theme, only the thing that has to be legible as text. */
 :root{
   --tyrian:#67033d; --tyrian-deep:#4b0230; --gold:#e8c15a;
-  --bg:#12141a; --panel:#181b22; --fg:#e9e6e0; --dim:#9a958c; --line:#2a2e37;
+  --bg:#12141a; --panel:#181b22; --side:#0e1015; --fg:#e9e6e0; --dim:#9a958c; --line:#2a2e37;
   --acc:#e8c15a; --acc-soft:rgba(232,193,90,.13); --shadow:0 1px 3px rgba(0,0,0,.4);
 }
 /* The light theme is parchment, not paper. White with grey rules is the look of a software
@@ -425,12 +425,12 @@ const CSS = `
    Contrast measured, not eyeballed: body text 13.4:1 on the page and 15.2:1 on a panel, muted
    text 5.1:1, links 8.6:1 — all clear of AA, with the muted tone the tightest of them. */
 @media(prefers-color-scheme:light){
-  :root{--bg:#f0e9db; --panel:#fbf7ef; --fg:#23201b; --dim:#6a6152; --line:#ddd3c0;
-        --acc:#7d0a49; --acc-soft:rgba(103,3,61,.08); --shadow:0 1px 3px rgba(90,70,40,.10)}
+  :root{--bg:#ded0b4; --panel:#ebe0cb; --side:#d3c3a2; --fg:#2a2318; --dim:#574a38; --line:#c4b192;
+        --acc:#7d0a49; --acc-soft:rgba(103,3,61,.10); --shadow:0 1px 3px rgba(80,60,30,.14)}
 }
-:root[data-theme="light"]{--bg:#f0e9db;--panel:#fbf7ef;--fg:#23201b;--dim:#6a6152;--line:#ddd3c0;
-  --acc:#7d0a49;--acc-soft:rgba(103,3,61,.08);--shadow:0 1px 3px rgba(90,70,40,.10)}
-:root[data-theme="dark"]{--bg:#12141a;--panel:#181b22;--fg:#e9e6e0;--dim:#9a958c;--line:#2a2e37;
+:root[data-theme="light"]{--bg:#ded0b4;--panel:#ebe0cb;--side:#d3c3a2;--fg:#2a2318;--dim:#574a38;
+  --line:#c4b192;--acc:#7d0a49;--acc-soft:rgba(103,3,61,.10);--shadow:0 1px 3px rgba(80,60,30,.14)}
+:root[data-theme="dark"]{--bg:#12141a;--panel:#181b22;--side:#0e1015;--fg:#e9e6e0;--dim:#9a958c;--line:#2a2e37;
   --acc:#e8c15a;--acc-soft:rgba(232,193,90,.13);--shadow:0 1px 3px rgba(0,0,0,.4)}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -463,7 +463,7 @@ body{margin:0;background:var(--bg);color:var(--fg);
 /* layout */
 .wrap{display:grid;grid-template-columns:15rem minmax(0,1fr);gap:0;align-items:start}
 nav.side{position:sticky;top:3.1rem;height:calc(100vh - 3.1rem);overflow-y:auto;
-  border-right:1px solid var(--line);padding:1.1rem .9rem 3rem;font-size:.88rem;background:var(--bg)}
+  border-right:1px solid var(--line);padding:1.1rem .9rem 3rem;font-size:.88rem;background:var(--side)}
 nav.side h4{margin:1.1rem 0 .35rem;font-size:.7rem;text-transform:uppercase;
   letter-spacing:.09em;color:var(--dim);font-weight:600}
 nav.side h4:first-child{margin-top:0}
