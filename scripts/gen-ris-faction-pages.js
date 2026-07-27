@@ -63,6 +63,123 @@ const BUILDING_NAMES = loadDisplayNames("export_buildings.txt");
 /** Display name for a building level, or the token itself when there is no entry. */
 const bName = (tok) => BUILDING_NAMES[String(tok).toLowerCase()] || null;
 
+// ── recruitment requirements in the game's own words ─────────────────────────
+// The Requires column printed raw tokens: `requires_gov`, `building_present`, `academic`.
+// Every layer of that has a real name somewhere, and the mod supplies most of them:
+//
+//   1. EDB `alias` blocks carry a `display_string` naming the condition as the game shows it.
+//      510 aliases, 115 with a display_string, and all 115 resolve — `requires_gov` is
+//      "Government Building", `any_transport` is "Roads or Trading Port or River Port or
+//      above". This is the authoritative source and is tried first.
+//   2. A building LEVEL resolves through text/export_buildings.txt as everywhere else.
+//   3. A building CHAIN (`academic`) has no entry of its own; its name comes from the chain
+//      page already generated for it ("Small School (Civic)").
+//   4. Engine keywords are a short fixed glossary, kept deliberately literal.
+//   5. Hidden resources (`aor_*`, `mic_tier_*`) have no display name anywhere in the mod, so
+//      they are humanised from the token and nothing is invented for them.
+//
+// Anything still unrecognised stays a bare token rather than being guessed at, and the raw
+// token is always shown alongside the name for anyone reading the files.
+const ALIAS_TEXT = (() => {
+  const edb = rd("export_descr_buildings.txt") || "";
+  // Every text/*.txt is indexed once: display_string keys are spread across them
+  // (REQUIRES_GOVERNMENT lives in expanded_bi.txt, not export_buildings.txt).
+  const lut = {};
+  try {
+    const dir = path.join(RIS, "text");
+    for (const f of fs.readdirSync(dir).filter((n) => /\.txt$/i.test(n))) {
+      try {
+        const t = fs.readFileSync(path.join(dir, f), "utf16le");
+        for (const m of t.matchAll(/\{([^}]+)\}(.*)/g)) {
+          const k = m[1].trim().toLowerCase();
+          if (!(k in lut)) lut[k] = m[2].trim();
+        }
+      } catch { /* skip an unreadable text file */ }
+    }
+  } catch { /* no text dir */ }
+  // The alias line may carry a trailing `;` comment — `alias noisland ; currently serving as
+  // the core recruitment enabler` — so the name cannot be matched to end-of-line. Requiring
+  // that silently skipped those aliases, and `noisland` alone is 18,672 of the tokens on
+  // these pages.
+  const out = {};
+  let matched = 0;
+  for (const m of edb.matchAll(/^[ \t]*alias[ \t]+(\S+)[^\r\n]*\r?\n[ \t]*\{([\s\S]*?)\n[ \t]*\}/gm)) {
+    matched++;
+    const ds = /display_string\s+(\S+)/.exec(m[2]);
+    if (!ds) continue;
+    const v = lut[ds[1].trim().toLowerCase()];
+    if (v) out[m[1].toLowerCase()] = v;
+  }
+  // Reported so a regex that stops matching cannot pass for "the mod has no aliases".
+  console.log(`aliases parsed: ${matched} · with a resolvable display_string: ${Object.keys(out).length}`);
+  return out;
+})();
+
+// Chain display names, read back from the chain pages so the two always agree.
+const CHAIN_NAMES = (() => {
+  const out = {};
+  try {
+    const dir = path.join(OUT, "buildings");
+    for (const f of fs.readdirSync(dir).filter((n) => n.endsWith(".md"))) {
+      const head = fs.readFileSync(path.join(dir, f), "utf8").slice(0, 300);
+      const m = /^#\s+(.+?)(?:\s+chain)?\s*$/m.exec(head);
+      if (m) out[f.replace(/\.md$/, "").toLowerCase()] = m[1].trim();
+    }
+  } catch { /* chain pages not generated yet */ }
+  return out;
+})();
+
+// Engine condition keywords. Literal readings only — no interpretation of game effects.
+const KEYWORD_TEXT = {
+  building_present: "has the building",
+  building_present_min_level: "has the building at or above level",
+  hidden_resource: "region has the resource",
+  resource: "region has the resource",
+  is_player: "player-controlled only",
+  factions: "faction",
+  event_counter: "event counter",
+  major_event: "a major event has fired",
+  not: "not",
+  and: "and",
+  or: "or",
+};
+
+// Every resource name the mod declares, hidden or tradeable — used only to decide whether a
+// bare word is a resource at all, never to claim what it does.
+const DECLARED_RESOURCES = (() => {
+  const txt = rd("descr_sm_resources.txt") || "";
+  const out = new Set();
+  for (const m of txt.matchAll(/"([A-Za-z0-9_\-]+)"\s*:\s*\{/g)) {
+    const n = m[1].toLowerCase();
+    if (n !== "resources") out.add(n);
+  }
+  return out;
+})();
+
+const humaniseTok = (t) => {
+  const s = String(t).replace(/^(aor|homeland)_/, "").replace(/_/g, " ").trim();
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : String(t);
+};
+
+/** A requirement token as "Readable name `raw_token`", linked when it names a chain. */
+function condLabel(tok) {
+  const k = String(tok).toLowerCase();
+  const raw = `\`${tok}\``;
+  const named = ALIAS_TEXT[k] || bName(k) || KEYWORD_TEXT[k] || null;
+  if (named) return `${named} ${raw}`;
+  if (CHAIN_NAMES[k]) {
+    const label = CHAIN_NAMES[k];
+    return buildingPages.has(k) ? `[${label}](../buildings/${k}.md) ${raw}` : `${label} ${raw}`;
+  }
+  // mic_tier_2 / aor_greek and friends: no display name exists in the mod for these.
+  if (/^(aor|mic|homeland)_/.test(k)) return `${humaniseTok(k)} ${raw}`;
+  // Hidden resources without a naming convention — `noisland` alone accounts for 18,672 of
+  // these. Membership is taken from descr_sm_resources rather than from the token's shape, so
+  // a word is only humanised when the mod actually declares it as a resource.
+  if (DECLARED_RESOURCES.has(k)) return `${humaniseTok(k)} ${raw}`;
+  return raw;
+}
+
 // Not real players: the rebel/slave pool, the Roman senate, the `dummies` test faction, and
 // the six rebel-style factions that hold breakaway territory rather than being chosen.
 const NON_PLAYER = new Set([
@@ -451,7 +568,7 @@ ${units.core.length ? `These are the backbone of the roster — available wherev
 
 | Unit | Requires |
 |---|---|
-${units.core.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map((c) => `\`${c}\``).join(", ") : "_no further requirement_"} |`).join("\n")}` : `_${display} has no ungated units: every unit on its roster needs a regional resource._`}
+${units.core.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map(condLabel).join(", ") : "_no further requirement_"} |`).join("\n")}` : `_${display} has no ungated units: every unit on its roster needs a regional resource._`}
 
 ### Regional units (AOR)
 
@@ -462,7 +579,7 @@ ${units.aor.length ? `Area-of-recruitment units. Every route to these is gated o
 
 | Unit | Requires |
 |---|---|
-${units.aor.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map((c) => `\`${c}\``).join(", ") : "_no further requirement_"} |`).join("\n")}
+${units.aor.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map(condLabel).join(", ") : "_no further requirement_"} |`).join("\n")}
 
 </details>` : `_No area-of-recruitment units are open to ${display}._`}
 
