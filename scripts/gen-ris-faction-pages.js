@@ -678,9 +678,6 @@ ${setts.length ? `${display} begins with **${setts.length} settlement${setts.len
 |---|---|---|---:|---|
 ${setts.map((s) => `| ${settlementLink(s.region)}${s.capital ? " **(capital)**" : ""} | ${regionLink(s.region)} | ${String(s.level || "").replace(/_/g, " ")} | ${s.pop != null ? s.pop.toLocaleString("en-US") : "?"} | ${(s.buildings || []).length} building${(s.buildings || []).length === 1 ? "" : "s"} |`).join("\n")}
 
-Each region holds exactly one settlement, and the region page is where both are documented —
-its size, population, trade goods, buildings and owner — so both columns lead there.
-
 <details>
 <summary>What is already built in each settlement</summary>
 
@@ -701,17 +698,13 @@ ${units.total ? `${units.total} unit type${units.total === 1 ? "" : "s"} are ava
 
 ### Faction units
 
-${units.core.length ? `These are the backbone of the roster — available wherever ${display} holds a settlement with the right building.
-
-| Unit | Requires |
+${units.core.length ? `| Unit | Requires |
 |---|---|
 ${units.core.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map(condLabel).join(", ") : "_no further requirement_"} |`).join("\n")}` : `_${display} has no ungated units: every unit on its roster needs a regional resource._`}
 
 ### Regional units (AOR)
 
-${units.aor.length ? `Area-of-recruitment units. Every route to these is gated on a hidden resource, so they can only be raised in the provinces that carry it — taking the right ground is the only way to field them. Most are open to every faction on paper, which is why the list is long and folded away.
-
-<details>
+${units.aor.length ? `<details>
 <summary><strong>Show all ${units.aor.length} regional units</strong></summary>
 
 | Unit | Requires |
@@ -719,10 +712,7 @@ ${units.aor.length ? `Area-of-recruitment units. Every route to these is gated o
 ${units.aor.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map(condLabel).join(", ") : "_no further requirement_"} |`).join("\n")}
 
 </details>` : `_No area-of-recruitment units are open to ${display}._`}
-
-> Availability also depends on the settlement: many of these need a specific building
-> level, and some need a resource only certain regions have. This list is what is open to
-> the faction, not what any one town can raise today.` : "_No recruitable units resolved for this faction._"}
+` : "_No recruitable units resolved for this faction._"}
 `;
 
   fs.writeFileSync(path.join(OUT, "factions", `${f}.md`), body, "utf8");
