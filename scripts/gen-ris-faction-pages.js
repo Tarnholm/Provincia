@@ -36,6 +36,8 @@ const NO_MAPS = argv.includes("--no-maps");
 
 const gv = require(path.join(__dirname, "..", "src", "growthEval.js"));
 const tga = require(path.join(__dirname, "..", "src", "tgaCodec.js"));
+// For parseNamesTxt: names.txt maps a name TOKEN to the name the game displays.
+const dg = require(path.join(__dirname, "..", "src", "descrStratGeneral.js"));
 
 const rd = (...f) => { try { return fs.readFileSync(path.join(RIS, ...f), "latin1"); } catch { return null; } };
 const STRAT = path.join(RIS, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
@@ -112,6 +114,50 @@ const ALIAS_TEXT = (() => {
   }
   // Reported so a regex that stops matching cannot pass for "the mod has no aliases".
   console.log(`aliases parsed: ${matched} · with a resolvable display_string: ${Object.keys(out).length}`);
+  return out;
+})();
+
+// ── names as the game shows them, never the code name ────────────────────────
+// RTW's naming mechanic: names.txt maps a UNIQUE token to a DISPLAY name, and many tokens
+// share one display via a trailing-letter suffix — {AlexandrosB} and {AlexandrosC} are both
+// "Alexandros". descr_strat references characters by token, so printing the token verbatim
+// put `AbantidasA`, `AchaiosC`, `AdherbalA` on the pages. A character is `<first> <family>`,
+// and each part resolves separately.
+const NAME_TEXT = (() => {
+  try {
+    const t = fs.readFileSync(path.join(RIS, "text", "names.txt"), "utf16le");
+    return dg.parseNamesTxt(t).tokenToDisplay;
+  } catch { return new Map(); }
+})();
+let namesResolved = 0, namesRaw = 0;
+function displayName(raw) {
+  const parts = String(raw).trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return raw;
+  const out = parts.map((p) => {
+    const d = NAME_TEXT.get(p);
+    if (d) { namesResolved++; return d; }
+    namesRaw++;
+    // No entry: strip the trailing variant letter that the token convention adds, and turn
+    // an underscored family token into words. Better than the raw token, and it never
+    // invents a name that is not already in the token.
+    return p.replace(/([a-z])[A-Z]$/, "$1").replace(/_/g, " ");
+  });
+  return out.join(" ");
+}
+
+// Unit display names, read back from the unit pages, whose H1 is already the game's name for
+// the unit. The roster tables were printing the EDB `type` instead - `ballistas`,
+// `aspidophoroi3`, `akarnanian hoplites`. Reading the generated page keeps the roster and the
+// page it links to from ever disagreeing.
+const UNIT_NAMES = (() => {
+  const out = {};
+  try {
+    const dir = path.join(OUT, "units");
+    for (const f of fs.readdirSync(dir).filter((n) => n.endsWith(".md"))) {
+      const m = /^#\s+(.+?)\s*$/m.exec(fs.readFileSync(path.join(dir, f), "utf8").slice(0, 300));
+      if (m) out[f.replace(/\.md$/, "").toLowerCase()] = m[1].trim();
+    }
+  } catch { /* unit pages not generated yet */ }
   return out;
 })();
 
@@ -475,7 +521,10 @@ const regionLink = (name) => (regionPages.has(name)
   ? `[${name}](../regions/${encodeURIComponent(name)}.md)` : name);
 const unitLink = (type) => {
   const s = unitSlug.get(String(type).toLowerCase());
-  return s && unitPages.has(s) ? `[${type}](../units/${s}.md)` : type;
+  if (!s || !unitPages.has(s)) return UNIT_NAMES[String(type).toLowerCase()] || type;
+  // The game's name for the unit, with the EDB type kept for anyone reading the files.
+  const label = UNIT_NAMES[s] || type;
+  return `[${label}](../units/${s}.md)`;
 };
 // Building chain pages are named for the chain's internal token, so a built level links
 // through to the chain it belongs to — what it does, what it costs, what it upgrades into.
@@ -556,7 +605,7 @@ ${setts.map((s) => `**${regionLink(s.region)}** — ${(s.buildings || []).length
 
 ${cs.length ? `| Name | Role | Age |
 |---|---|---:|
-${cs.map((c) => `| ${c.name} | ${c.role} | ${c.age != null ? c.age : "?"} |`).join("\n")}` : "_No starting characters are defined for this faction._"}
+${cs.map((c) => `| ${displayName(c.name)} | ${c.role} | ${c.age != null ? c.age : "?"} |`).join("\n")}` : "_No starting characters are defined for this faction._"}
 
 ## Units you can recruit
 
@@ -617,4 +666,5 @@ console.log(`\n${index.length} faction pages written`);
 console.log(`  with main-menu intro text: ${introsFound}`);
 console.log(`  maps rendered:             ${mapsWritten}`);
 console.log(`  no settlements:            ${index.filter((e) => !e.setts).length}`);
+console.log(`  character name tokens: ${namesResolved.toLocaleString("en-US")} resolved via names.txt, ${namesRaw.toLocaleString("en-US")} had no entry`);
 console.log(`  no units resolved:         ${index.filter((e) => !e.units).length}`);
