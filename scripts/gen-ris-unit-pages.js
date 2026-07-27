@@ -108,17 +108,56 @@ function statsOf(b) {
   };
 }
 
+// ── the building file, parsed once ───────────────────────────────────────────
+const EDB = rd("export_descr_buildings.txt") || "";
+
+// A `recruit "<unit>" N requires <expr>` line sits inside a building LEVEL's capability block
+// and does not name that level itself, so the file has to be WALKED rather than scanned with
+// one regex. The enclosing level is the building the unit needs, which is exactly what a
+// reader on a unit page is asking for.
+//
+// PLAYER AND AI ROUTES ARE SEPARATE LINES and the wiki must report the player's. Measured on
+// the reference data: 29,894 recruit lines — 8,665 gated `is_player`, 21,201 `not is_player`,
+// 28 neither. The AI's lines carry a far simpler gate (most require only `noisland`), so
+// printing those as "what it takes" would have told the reader that a unit needing a tier-3
+// military building needs no building at all.
+function parseRecruitLines() {
+  const out = [];
+  let levels = [], level = null, orphan = 0;
+  for (const raw of EDB.split(/\r?\n/)) {
+    const t = raw.replace(/;.*$/, "").trim();
+    if (!t) continue;
+    if (/^building\s+\S/.test(t)) { levels = []; level = null; continue; }
+    let m = /^levels\s+(.+)$/.exec(t);
+    if (m) { levels = m[1].trim().split(/\s+/).filter(Boolean); continue; }
+    m = /^recruit\s+"([^"]+)"\s+\d+\s+requires\s+(.+)$/.exec(t);
+    if (m) {
+      if (level) out.push({ unit: m[1].trim().toLowerCase(), level, expr: m[2].trim() });
+      else orphan++;
+      continue;
+    }
+    // A level is `<name> requires <expr>` where <name> is on this chain's own `levels` line.
+    // Matching any `<word> requires` would also catch the recruit lines themselves.
+    m = /^(\S+)\s+requires\s+/.exec(t);
+    if (m && levels.includes(m[1])) level = m[1];
+  }
+  // Reported so a format change that stops the walk matching cannot pass for "this mod has no
+  // recruitment requirements".
+  console.log(`recruit lines parsed: ${out.length.toLocaleString("en-US")}${orphan ? ` · OUTSIDE ANY BUILDING LEVEL: ${orphan}` : " · every one inside a building level"}`);
+  return out;
+}
+const RECRUIT_LINES = parseRecruitLines();
+
 // ── who can actually recruit each unit ───────────────────────────────────────
 // The faction pages answer "what can this faction raise". This is the reverse, which is
 // the question a reader on a unit page has. Split the same way, on the hidden_resource gate
 // the engine enforces: the core list is short and meaningful, while regional availability
 // is usually "everyone, if they take the right province" and so is reported as a count.
 function loadAvailability() {
-  const edb = rd("export_descr_buildings.txt") || "";
   const byType = new Map();   // unit type -> { core:Set, aor:Set }
-  for (const m of edb.matchAll(/^\s*recruit\s+"([^"]+)"\s+(\d+)\s+requires\s+([^\r\n]+)/gm)) {
-    const type = m[1].trim().toLowerCase();
-    const expr = m[3];
+  for (const line of RECRUIT_LINES) {
+    const type = line.unit;
+    const expr = line.expr;
     const hr = /hidden_resource/i.test(expr);
     const pos = [], neg = [];
     for (const fm of expr.matchAll(/(not\s+)?factions\s*\{([^}]*)\}/gi)) {
@@ -134,6 +173,199 @@ function loadAvailability() {
   return byType;
 }
 const availability = loadAvailability();
+
+// ── recruitment routes open to the player ────────────────────────────────────
+const isPlayerLine = (e) => /\bis_player\b/i.test(e) && !/\bnot\s+is_player\b/i.test(e);
+const anyRecruitLine = new Set(RECRUIT_LINES.map((r) => r.unit));
+const playerRoutes = (() => {
+  const by = new Map();
+  for (const r of RECRUIT_LINES) {
+    if (!isPlayerLine(r.expr)) continue;
+    if (!by.has(r.unit)) by.set(r.unit, []);
+    by.get(r.unit).push(r);
+  }
+  return by;
+})();
+
+/**
+ * The clauses of a `requires` expression that a player has to satisfy.
+ *
+ * The faction gate is dropped — the page names those factions above — and so is `is_player`,
+ * which decides whose route this line is, not what the player must build. What is left is
+ * split on `and` only: there are no brackets anywhere in a recruit condition, so an `or`
+ * stays inside the clause it belongs to and is labelled as alternatives.
+ */
+function clausesOf(expr) {
+  return expr
+    .replace(/(not\s+)?factions\s*\{[^}]*\}/gi, " ")
+    .replace(/\bnot\s+is_player\b/gi, " ").replace(/\bis_player\b/gi, " ")
+    .split(/\band\b/i).map((s) => s.trim()).filter(Boolean);
+}
+
+/** Hidden resources a route REQUIRES (not the ones it excludes) — the areas of recruitment. */
+function zonesOf(expr) {
+  const out = [];
+  for (const c of clausesOf(expr)) {
+    if (/^not\s/i.test(c)) continue;
+    for (const m of c.matchAll(/(^|\bor\s+)hidden_resource\s+(\S+)/gi)) out.push(m[2].toLowerCase());
+  }
+  return out;
+}
+
+// ── requirements in the game's own words ─────────────────────────────────────
+// The same resolution order the faction pages use, so the two never give one condition two
+// different names:
+//   1. an EDB `alias` block's `display_string` — the mod's own player-facing wording for a
+//      condition (`requires_gov` is "Government Building"). Those keys are spread across
+//      text/*.txt, not just export_buildings.txt, so every text file is indexed. Files are
+//      read in sorted order and the first entry for a key wins, which picks `expanded_bi.txt`
+//      over its `expanded_bi_mac_*.txt` translations.
+//   2. a building LEVEL through text/export_buildings.txt.
+//   3. a short, deliberately literal glossary of the engine's own condition keywords.
+//   4. a resource the mod declares in descr_sm_resources.txt, humanised from its token.
+// Anything still unrecognised is printed as the bare token in code font — that is then the
+// only identifier it has, and a plausible-looking name for it would be worse than none.
+const TEXT_LUT = (() => {
+  const lut = {};
+  try {
+    const dir = path.join(RIS, "text");
+    for (const f of fs.readdirSync(dir).filter((n) => /\.txt$/i.test(n)).sort()) {
+      try {
+        const t = fs.readFileSync(path.join(dir, f), "utf16le");
+        for (const m of t.matchAll(/\{([^}]+)\}(.*)/g)) {
+          const k = m[1].trim().toLowerCase();
+          if (!(k in lut)) lut[k] = m[2].trim();
+        }
+      } catch { /* skip an unreadable text file */ }
+    }
+  } catch { /* no text dir */ }
+  return lut;
+})();
+
+const ALIAS_TEXT = (() => {
+  const out = {};
+  let matched = 0;
+  // The alias line may carry a trailing `;` comment, so the name cannot be matched to
+  // end-of-line.
+  for (const m of EDB.matchAll(/^[ \t]*alias[ \t]+(\S+)[^\r\n]*\r?\n[ \t]*\{([\s\S]*?)\n[ \t]*\}/gm)) {
+    matched++;
+    const ds = /display_string\s+(\S+)/.exec(m[2]);
+    if (!ds) continue;
+    // The text entries wrap their value in quotes: "Tier 2 Military Industrial Complex".
+    const v = (TEXT_LUT[ds[1].trim().toLowerCase()] || "").replace(/^"(.*)"$/, "$1").trim();
+    if (v) out[m[1].toLowerCase()] = v;
+  }
+  console.log(`aliases parsed: ${matched} · with a resolvable display_string: ${Object.keys(out).length}`);
+  return out;
+})();
+
+const BUILDING_LEVEL_NAMES = (() => {
+  const map = {};
+  try {
+    const t = fs.readFileSync(path.join(RIS, "text", "export_buildings.txt"), "utf16le");
+    for (const m of t.matchAll(/\{([^}]+)\}(.*)/g)) {
+      const k = m[1].trim().toLowerCase();
+      if (!(k in map)) map[k] = m[2].trim().replace(/^"(.*)"$/, "$1");
+    }
+  } catch { /* fall back to the token */ }
+  return map;
+})();
+const bName = (tok) => BUILDING_LEVEL_NAMES[String(tok).toLowerCase()] || null;
+
+const DECLARED_RESOURCES = (() => {
+  const txt = rd("descr_sm_resources.txt") || "";
+  const out = new Set();
+  for (const m of txt.matchAll(/"([A-Za-z0-9_\-]+)"\s*:\s*\{/g)) {
+    const n = m[1].toLowerCase();
+    if (n !== "resources") out.add(n);
+  }
+  return out;
+})();
+
+// Kept literal. These say what the engine checks, not what it means for play.
+const KEYWORD_TEXT = {
+  is_player: "player-controlled only",
+  factionwide: "anywhere in the faction",
+  queued: "queued for construction",
+};
+
+const humaniseTok = (t) => {
+  const s = String(t).replace(/^(aor|homeland)_/, "").replace(/_/g, " ").trim();
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : String(t);
+};
+// A hidden resource on a recruit line marks an area of recruitment (the mod's own `aor_`
+// prefix) or a faction homeland. Nothing in the mod gives these a display name, so the zone
+// is called after its token and the provinces carrying it are LISTED rather than described.
+const zoneShort = (t) => /^homeland_/.test(t) ? `${humaniseTok(t)} homeland`
+  : /^aor_/.test(t) ? humaniseTok(t)
+  : DECLARED_RESOURCES.has(t) ? humaniseTok(t) : `\`${t}\``;
+const zoneLabel = (t) => /^aor_/.test(t) ? `${humaniseTok(t)} area of recruitment` : zoneShort(t);
+
+/** One `and`-clause of a requirement, as a name a player recognises. */
+function clauseLabel(c) {
+  const neg = /^not\s+/i.test(c);
+  const body = c.replace(/^not\s+/i, "").trim();
+  return (neg ? "not " : "") + clauseBody(body);
+}
+function clauseBody(b) {
+  if (/\bor\b/i.test(b)) {
+    return b.split(/\bor\b/i).map((s) => clauseBody(s.trim())).filter(Boolean).join(" or ");
+  }
+  let m = /^hidden_resource\s+(\S+)$/i.exec(b); if (m) return zoneLabel(m[1].toLowerCase());
+  m = /^resource\s+(\S+)$/i.exec(b);
+  if (m) return DECLARED_RESOURCES.has(m[1].toLowerCase()) ? humaniseTok(m[1]) : `\`${m[1]}\``;
+  m = /^building_present_min_level\s+\S+\s+(\S+)$/i.exec(b); if (m) return bName(m[1]) || `\`${m[1]}\``;
+  m = /^building_present\s+(\S+)$/i.exec(b); if (m) return bName(m[1]) || `\`${m[1]}\``;
+  m = /^(?:major_event|event_counter)\s+"?([A-Za-z0-9_]+)"?/i.exec(b); if (m) return humaniseTok(m[1]);
+  const k = b.toLowerCase();
+  return ALIAS_TEXT[k] || bName(k) || KEYWORD_TEXT[k] || `\`${b}\``;
+}
+// A requirement string may contain a pipe — the mod writes several of them that way ("Any
+// Government | Tier 2 Colony not built") — and an unescaped one splits a markdown table row
+// into extra columns.
+const cell = (s) => String(s).replace(/\|/g, "\\|");
+
+// ── which provinces carry an area of recruitment ─────────────────────────────
+// descr_regions is a fixed block per region: name, settlement, owner, rebels, RGB colour,
+// then the tag list. The colour line is found structurally (three integers) rather than by
+// counting lines, so a block with an extra line cannot silently shift the tags.
+const REGIONS_BY_TAG = (() => {
+  const txt = rd("world", "maps", "base", "descr_regions.txt") || "";
+  const lines = txt.split(/\r?\n/);
+  const by = new Map();
+  let blocks = 0, tagged = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (!/^[A-Za-z][A-Za-z0-9_'\- ]*\s*$/.test(lines[i])) continue;   // region names start at column 0
+    const region = lines[i].trim();
+    blocks++;
+    let ci = -1;
+    for (let k = i + 1; k < Math.min(i + 8, lines.length); k++) {
+      if (/^\s*\d+\s+\d+\s+\d+\s*$/.test(lines[k])) { ci = k; break; }
+    }
+    if (ci < 0) continue;
+    const tags = (lines[ci + 1] || "").split(",").map((s) => s.trim()).filter(Boolean);
+    if (!tags.length) continue;
+    tagged++;
+    for (const t of tags) {
+      const k = t.toLowerCase();
+      if (!by.has(k)) by.set(k, []);
+      by.get(k).push(region);
+    }
+  }
+  console.log(`region blocks in descr_regions: ${blocks.toLocaleString("en-US")} · with a tag list: ${tagged.toLocaleString("en-US")} · distinct tags: ${by.size}`);
+  return by;
+})();
+
+// The region-tag reference pages document every zone once, with its units AND every region in
+// it, and publish tags/index.json mapping a tag to the page and anchor that covers it. Where a
+// zone is in there this page links to it rather than repeating a list that runs to 263
+// provinces; where it is not — the reference has not been generated yet, or does not cover the
+// tag — the provinces are listed here instead, so the answer is never missing.
+const TAG_INDEX = (() => {
+  try { return JSON.parse(fs.readFileSync(path.join(OUT, "tags", "index.json"), "utf8")); }
+  catch { return {}; }
+})();
+console.log(`region-tag reference: ${Object.keys(TAG_INDEX).length ? `${Object.keys(TAG_INDEX).length} tags indexed, zones will be linked` : "not present, zones will be listed in full here"}`);
 
 // ── where a mercenary is hired ────────────────────────────────────────────────
 // descr_mercenaries.txt is the file that decides this, and it has nothing to do with
@@ -355,6 +587,11 @@ let mercUnits = 0, mercAlreadyNamed = 0, mercPrefixed = 0, mixedDicts = [];
   }
 }
 
+// Counted rather than assumed: how much of the recruitment answer the files actually give.
+let unitsWithBuilding = 0, unitsWithNamedBuilding = 0, unitsAiRouteOnly = 0;
+const zonesSeen = new Set(), zonesWithNoRegion = new Set();
+let zonesLinked = 0, zonesListed = 0;
+
 const list = ONLY.length
   ? merged.filter((r) => ONLY.includes(r.type.toLowerCase()) || ONLY.includes(r.dict))
   : merged;
@@ -419,6 +656,62 @@ for (const u of list) {
   const coreList = [...avail.core].filter(known).sort((a, b) => factionName(a).localeCompare(factionName(b)));
   const aorCount = [...avail.aor].filter(known).length;
 
+  // What it takes to raise it: the building level hosting each of the player's recruit lines
+  // and the conditions on that line. Unioned across the unit's variants and deduplicated —
+  // several buildings offer the same unit on identical terms.
+  const routes = new Map();
+  const zonesNeeded = new Set();
+  let hasAnyLine = false;
+  for (const v of u.variants) {
+    const k = String(v).toLowerCase();
+    if (anyRecruitLine.has(k)) hasAnyLine = true;
+    for (const r of playerRoutes.get(k) || []) {
+      const reqs = clausesOf(r.expr);
+      for (const z of zonesOf(r.expr)) zonesNeeded.add(z);
+      const key = `${r.level}|${reqs.join("&")}`;
+      if (!routes.has(key)) routes.set(key, { level: r.level, reqs });
+    }
+  }
+  if (routes.size) { unitsWithBuilding++; if ([...routes.values()].every((r) => bName(r.level))) unitsWithNamedBuilding++; }
+  else if (hasAnyLine) unitsAiRouteOnly++;
+  const reqRows = [...routes.values()].map((r) =>
+    `| ${cell(bName(r.level) || `\`${r.level}\``)} | ${r.reqs.length ? r.reqs.map((c) => cell(clauseLabel(c))).join(" · ") : "—"} |`);
+  const ROUTE_FOLD = 6;
+  const reqTable = routes.size ? `| Building | Also requires |
+|---|---|
+${reqRows.join("\n")}` : "";
+  const reqBlock = !routes.size
+    ? (hasAnyLine ? `_The building files state no player recruitment route for this unit._` : "")
+    : reqRows.length > ROUTE_FOLD
+      ? `<details>\n<summary>${reqRows.length} recruitment routes</summary>\n\n${reqTable}\n\n</details>`
+      : reqTable;
+
+  // The provinces behind a regional gate, named rather than described. A zone can cover 263 of
+  // the 1,311 regions, so where the region-tag reference covers it the zone is linked there
+  // with its province count; otherwise the provinces are listed here, folded with the count
+  // showing.
+  const zoneRows = [], zoneLists = [];
+  for (const t of [...zonesNeeded].sort()) {
+    const regs = (REGIONS_BY_TAG.get(t) || []).filter((r) => regionPages.has(r))
+      .sort((a, b) => regionName(a).localeCompare(regionName(b)));
+    zonesSeen.add(t);
+    if (!regs.length) zonesWithNoRegion.add(t);
+    const ref = TAG_INDEX[t];
+    if (ref && ref.page && ref.anchor) {
+      zonesLinked++;
+      zoneRows.push(`| [${zoneShort(t)}](../tags/${ref.page}#${ref.anchor}) | ${regs.length} |`);
+      continue;
+    }
+    zonesListed++;
+    if (!regs.length) { zoneLists.push(`_No province in descr_regions carries **${zoneShort(t)}**._`); continue; }
+    zoneLists.push(`<details>\n<summary><strong>${zoneShort(t)}</strong> — ${regs.length} province${regs.length === 1 ? "" : "s"}</summary>\n\n`
+      + `${regs.map((r) => `[${regionName(r)}](../regions/${encodeURIComponent(r)}.md)`).join(" · ")}\n\n</details>`);
+  }
+  const zoneBlocks = [
+    ...(zoneRows.length ? [`| Zone | Provinces |\n|---|---:|\n${zoneRows.join("\n")}`] : []),
+    ...zoneLists,
+  ];
+
   // Mercenary pools, unioned across every variant of this unit, same as availability above.
   const hire = { pools: new Set(), regions: new Set(), restrict: new Set(), openToAll: false, cost: [], exp: [] };
   for (const v of u.variants) {
@@ -479,13 +772,10 @@ ${cardMarkup(u)}${u.hasName ? "" : "> _This unit has no display name in the text
 
 ## Stats
 
-The bar shows where this unit sits in the whole RIS roster, so a number can be read against
-its peers rather than against vanilla — RIS stats run much higher than the base game's.
-
 | | | Rank in roster |
 |---|---:|---|
 ${stat("Attack", s.attack, "", "attack")}${stat("Charge bonus", s.charge, "", "charge")}${s.weapon ? `| Weapon | ${s.weapon} | |\n` : ""}${stat("Armour", s.armour, "", "armour")}${stat("Defence skill", s.defence, "", "defence")}${stat("Shield", s.shield, "", "shield")}${stat("Morale", s.morale, "", "morale")}${s.discipline ? `| Discipline | ${s.discipline} | |\n` : ""}${s.training ? `| Training | ${s.training} | |\n` : ""}${stat("Men per unit", s.men, "", "men")}${stat("Recruitment cost", s.cost, " dn", "cost")}${stat("Upkeep per turn", s.upkeep, " dn", "upkeep")}${stat("Turns to recruit", s.turns)}
-${u.attributes.length ? `\n**Attributes:** ${u.attributes.map((a) => `\`${a}\``).join(", ")}\n` : ""}
+${u.attributes.length ? `\n**Attributes:** ${u.attributes.map((a) => `\`${a}\``).join(", ")}\n` : ""}${u.statsDiffer ? `\n> **The mod gives this unit more than one set of numbers.** The figures above are one of\n> them, so check in-game if the exact values matter.\n` : ""}
 ${hireSection}${
   // A mercenary with no building route at all has nothing to say here, and printing "no
   // recruitment route was found" under a heading about recruitment reads as missing data
@@ -494,29 +784,18 @@ ${hireSection}${
   u.merc === "all" && !avail.allCore && !avail.all && !coreList.length && !aorCount ? "" : `## Who can recruit it
 
 ${avail.allCore
-  ? `Every faction can raise this unit from its own buildings — it is open to \`factions { all }\` with no regional gate.`
+  ? `Every faction, from its own buildings, with no regional gate.`
   : coreList.length
     ? `${coreList.length === 1
         ? `A core roster unit for one faction, which can raise it anywhere it holds the right building:`
         : `A core roster unit for ${coreList.length} factions, each able to raise it anywhere they hold the right building:`}\n\n${coreList.slice(0, 40).map(factionLink).join(" · ")}${coreList.length > 40 ? `\n\n_…and ${coreList.length - 40} more._` : ""}`
     : avail.all || aorCount
-      ? `No faction has this as a core unit — it is area-of-recruitment only, so it can be raised solely in provinces carrying the required hidden resource.`
+      ? `No faction has this on its core roster: it can be raised only in the provinces below.`
       : `_No recruitment route for this unit was found in the building files._`}
-${avail.all && !avail.allCore ? `\nIt is offered to \`factions { all }\` behind a regional gate, so any faction holding the right province can field it.\n` : aorCount ? `\nA further ${aorCount} faction${aorCount === 1 ? "" : "s"} can raise it regionally, in provinces with the required resource.\n` : ""}
-> The exact building level and any resource requirement are listed on each faction's page.
-
+${avail.all && !avail.allCore ? `\nAny faction holding one of the provinces below can field it.\n` : aorCount ? `\nA further ${aorCount} faction${aorCount === 1 ? "" : "s"} can raise it in the provinces below.\n` : ""}${reqBlock ? `\n### Building and resource requirements\n\n${reqBlock}\n` : ""}${zoneBlocks.length ? `\n### Areas of recruitment\n\n${zoneBlocks.join("\n\n")}\n` : ""}
 `}${u.long || u.short
   ? `## Description\n\n${sectionise(u.long || u.short)}\n\n`
-  : "> This unit has no written description in the mod yet.\n\n"}
-${u.variants.length > 1 ? `## Recruitment variants
-
-This unit is defined ${u.variants.length} times in the mod — the same troops reached by
-different routes. \`aor …\` entries are area-of-recruitment versions, available in regions
-matching that AOR; \`horde …\` versions belong to horde factions.
-
-${u.variants.map((v) => `- \`${v}\``).join("\n")}
-${u.statsDiffer ? `\n> **The variants do NOT all share the same stats.** The figures above are taken from\n> \`${u.type}\`; at least one other variant differs, so check in-game if the exact numbers matter.\n` : "\n_All variants share the same stats._\n"}` : `_Internal name: \`${u.type}\`_`}
-`;
+  : "> This unit has no written description in the mod yet.\n\n"}`;
   fs.writeFileSync(path.join(OUT, "units", `${u.slug}.md`), body, "utf8");
 }
 
@@ -585,6 +864,11 @@ console.log(`  units whose variants disagree on stats: ${merged.filter((m) => m.
 console.log(`  mercenary units:          ${mercUnits.toLocaleString("en-US")} (from ${rows.filter((r) => r.isMercType).length} \`merc \` EDU entries; ${mercAlreadyNamed} already named "Mercenary…", ${mercPrefixed} prefixed here)`);
 console.log(`  mixed merc/non-merc dictionaries: ${mixedDicts.length}${mixedDicts.length ? ` — LEFT UNPREFIXED: ${mixedDicts.slice(0, 20).join(", ")}${mixedDicts.length > 20 ? `, +${mixedDicts.length - 20} more` : ""}` : " (none — the prefix is unambiguous)"}`);
 console.log(`  mercenary units with no pool offering them: ${merged.filter((u) => u.merc === "all" && !u.variants.some((v) => mercPools.has(String(v).toLowerCase()))).length}`);
+console.log(`  with a player recruitment route: ${unitsWithBuilding.toLocaleString("en-US")} of ${list.length.toLocaleString("en-US")} (every route's building level named: ${unitsWithNamedBuilding.toLocaleString("en-US")})`);
+console.log(`  with recruit lines but none for the player: ${unitsAiRouteOnly.toLocaleString("en-US")}`);
+console.log(`  with no recruit line at all: ${(list.length - unitsWithBuilding - unitsAiRouteOnly).toLocaleString("en-US")}`);
+console.log(`  areas of recruitment named: ${zonesSeen.size}${zonesWithNoRegion.size ? ` · WITH NO PROVINCE CARRYING THE TAG: ${zonesWithNoRegion.size} (${[...zonesWithNoRegion].join(", ")})` : " · every one has at least one province"}`);
+console.log(`  zone references: ${zonesLinked.toLocaleString("en-US")} linked to the region-tag reference · ${zonesListed.toLocaleString("en-US")} listed in full here`);
 console.log(`  with a display name:      ${named.toLocaleString("en-US")} of ${rows.length.toLocaleString("en-US")}`);
 console.log(`  with a real description:  ${described.toLocaleString("en-US")}`);
 console.log(`  still on placeholder text:${placeholder.toLocaleString("en-US")}`);

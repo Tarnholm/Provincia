@@ -87,6 +87,7 @@ function inline(s) {
   t = t.replace(/\[([^\]]*)\]\(([^)\s]+)\)/g, (_, txt, href) => `<a href="${href}">${txt}</a>`);
   t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   t = t.replace(/(^|\s)_([^_]+)_/g, "$1<em>$2</em>");
+  t = t.replace(/\\\|/g, "|");
   return t;
 }
 
@@ -102,47 +103,117 @@ function slugId(s) {
   return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-// Each `## ` section becomes its own grid item so that on a wide screen they sit side by side
-// instead of stacking down a 62rem column with the rest of the monitor empty. The number of
-// columns is decided by CSS from the viewport, so it adapts to whatever resolution and aspect
-// ratio the reader has rather than being fixed here. Everything before the first `## ` is the
-// lede and spans the full width.
+// ── two-column layout, done by distribution rather than by grid ───────────────
+// Sections sit side by side on a wide screen instead of stacking down one narrow column with
+// the rest of the monitor empty. HOW they are placed is the thing that took four attempts.
+//
+// A CSS grid was the obvious answer and is the wrong one. Grid ROWS align: a row cannot end
+// until its tallest item does, so a short section beside a tall one leaves its column empty
+// for the tall one's full height AND holds the next row back. Measured on the served pages,
+// section heights here are not merely unequal, they are unequal by two orders of magnitude —
+// a faction page carries a 7-row settlement table, an 8-row character table and a 449-row
+// roster in the same grid; a region page a 5-row trade table beside a 13-row attribute table.
+// That produced a screen-height empty band on faction, region and unit pages in turn, and
+// three separate "fixes" only moved the band somewhere else.
+//
+// So the columns are built here, as two independent normal-flow blocks, and each section is
+// assigned to one of them. Nothing row-aligns, so no section waits for a neighbour. The cost
+// is that the split is decided from an ESTIMATE of each section's height rather than the real
+// thing, and that the reading order becomes down-then-across.
+//
+// CSS multi-column (`column-width` + `break-inside:avoid`) would also avoid row coupling, but
+// `break-inside:avoid` is a hint: a section taller than the balanced column height gets split
+// across columns anyway, and the 449-row roster and the long unit descriptions are exactly
+// that case. Distribution has no such failure mode.
 function sectionise(html) {
   const parts = html.split(/(?=<h2 )/);
   if (parts.length < 2) return html;
-  // The lede — the glance line and, on a faction page, the territory map — used to be a
-  // full-width block ABOVE the grid. That left the first section (the campaign brief, which is
-  // tall and narrow) alone in column one with the rest of a wide screen empty beside it. Put
-  // the lede in the grid instead and it becomes a column of its own, so the map and the brief
-  // sit side by side and the sections that follow fill the remaining columns.
   const lede = parts[0].trim();
-  // A table with more than four columns does not fit half a screen, so give that section the
-  // whole row instead of forcing it to scroll sideways inside a narrow column.
-  const secWrap = (s) => {
+  const secs = parts.slice(1).map((s) => s.trim()).filter(Boolean);
+
+  // A table with more than four columns does not fit half a screen, so that section takes the
+  // whole width rather than scrolling sideways inside a column.
+  const isWide = (s) => {
     const firstRow = /<thead><tr>(.*?)<\/tr>/.exec(s);
-    const cols = firstRow ? (firstRow[1].match(/<th/g) || []).length : 0;
-    return `<section class="sec${cols > 4 ? " wide" : ""}">${s.trim()}</section>`;
+    return !!firstRow && (firstRow[1].match(/<th/g) || []).length > 4;
   };
-  // Grid ROWS align, so a short item leaves its column empty until the tallest item in the
-  // same row ends — which is why a big gap sat under the map while the campaign brief ran on
-  // beside it. A float does not work that way: the first section flows AROUND the map and then
-  // reclaims the full width underneath it. So the lede and the first section share one normal
-  // -flow block, and only the sections after them go into the column grid.
-  // The float trick only earns its keep when the lede HAS an image to wrap — a faction page's
-  // territory map. On a region page the lede is three lines of text, and holding the first
-  // section out of the grid to flow around a picture that is not there just pushed it down the
-  // page and left the gap it was meant to remove. So: image in the lede, float layout; no
-  // image, every section goes into the grid and fills the width.
-  const ledeHasImage = /<img\b/i.test(lede);
-  if (!ledeHasImage) {
-    return (lede ? `<div class="lede">${lede}</div>` : "")
-      + `<div class="cols">${parts.slice(1).map((s) => secWrap(s)).join("")}</div>`;
+  const secWrap = (s, wide) => `<section class="sec${wide ? " wide" : ""}">${s}</section>`;
+  // Rendered height, in rough text lines. Table and list rows are one line each; prose is its
+  // character count over a line length; an image stands in for the space it occupies. This is
+  // an estimate and only has to be good enough to tell a 5-line section from a 500-line one.
+  const weigh = (s) => (s.match(/<tr>/g) || []).length
+    + (s.match(/<li>/g) || []).length
+    + Math.ceil(s.replace(/<[^>]*>/g, " ").length / 90)
+    + (s.match(/<img\b/gi) || []).length * 8;
+
+  // A section that dwarfs everything beside it cannot be balanced against anything: put a
+  // 1,180-line roster in one pane and the other pane is empty for its whole length. Those take
+  // the full width, and they split the run either side of them so section order is preserved.
+  // The test is "at least twice everything else put together", with a floor of about a screen
+  // of text — below that the space left over is not worth giving up the second column for.
+  const DWARFS = 2 / 3, FLOOR = 40;
+  // Otherwise: two panes, longest section placed first into whichever pane is shorter. Placing
+  // in READING order instead is what put a 116-line section beside a 20-line one on the region
+  // pages — the big item arrived last, when the choice had already been made.
+  const paneGroup = (group) => {
+    if (!group.length) return "";
+    if (group.length === 1) return secWrap(group[0], isWide(group[0]));
+    const w = group.map(weigh);
+    const total = w.reduce((a, b) => a + b, 0) || 1;
+    const big = w.indexOf(Math.max(...w));
+    if (w[big] >= FLOOR && w[big] / total >= DWARFS) {
+      return paneGroup(group.slice(0, big)) + secWrap(group[big], isWide(group[big]))
+        + paneGroup(group.slice(big + 1));
+    }
+    const pick = [], h = [0, 0];
+    for (const i of group.map((_, i) => i).sort((a, b) => w[b] - w[a])) {
+      const k = h[0] <= h[1] ? 0 : 1;
+      pick[i] = k; h[k] += w[i];
+    }
+    const pane = [[], []];
+    group.forEach((s, i) => pane[pick[i]].push(secWrap(s, false)));   // reading order within a pane
+    return `<div class="panes">${pane.map((p) => `<div class="pane">${p.join("")}</div>`).join("")}</div>`;
+  };
+
+  // The unit pages are not distributed: the owner asked for the description in a column of its
+  // own, starting at the top beside the unit card, with everything short stacked on the left.
+  // Balancing would put the prose halfway down the page, which is the thing being fixed.
+  const descAt = secs.findIndex((s) => /^<h2[^>]*>Description</i.test(s));
+  if (descAt >= 0) {
+    // The title and the "all units" line head the page, not a column, so they stay full width
+    // above both panes — otherwise the description's first line sits level with the H1 and the
+    // card is pushed below it. The left column starts where the card does.
+    const cut = lede.search(/<p>[^\n]*<img/i);
+    const head = cut < 0 ? lede : lede.slice(0, cut).trim();
+    const paneLede = cut < 0 ? "" : lede.slice(cut).trim();
+    const others = secs.filter((_, i) => i !== descAt).map((s) => secWrap(s, false)).join("");
+    return (head ? `<div class="lede">${head}</div>` : "")
+      + `<div class="panes">`
+      + `<div class="pane">${paneLede ? `<div class="lede">${paneLede}</div>` : ""}${others}</div>`
+      + `<div class="pane">${secWrap(secs[descAt], false)}</div>`
+      + `</div>`;
   }
-  const firstSec = parts[1] ? parts[1].trim() : "";
-  const restSecs = parts.slice(2).map((s) => secWrap(s)).join("");
-  return `<div class="lede">${lede}</div>`
-    + (firstSec ? `<div class="lede-flow">${firstSec}</div>` : "")
-    + (restSecs ? `<div class="cols">${restSecs}</div>` : "");
+
+  const out = [];
+  let group = [];
+  const flush = () => { if (group.length) { out.push(paneGroup(group)); group = []; } };
+  // The lede's images float, so the section after them wraps alongside and continues
+  // underneath — the one thing a column layout cannot do. Only worth holding a section out of
+  // the layout when there IS an image to wrap: on a region page the lede is three lines of
+  // text, and doing it anyway just pushed the first section down the page.
+  let start = 0;
+  const ledeHasImage = /<img\b/i.test(lede);
+  if (lede) out.push(`<div class="lede">${lede}</div>`);
+  if (ledeHasImage && secs.length) { out.push(`<div class="lede-flow">${secs[0]}</div>`); start = 1; }
+
+  // A wide section is a barrier: it takes the whole width, so the runs either side of it are
+  // balanced separately and nothing is reordered across it.
+  for (let i = start; i < secs.length; i++) {
+    if (isWide(secs[i])) { flush(); out.push(secWrap(secs[i], true)); continue; }
+    group.push(secs[i]);
+  }
+  flush();
+  return out.join("");
 }
 
 function renderMarkdown(md, toc) {
@@ -161,7 +232,11 @@ function renderMarkdown(md, toc) {
 
     // Table: a header row followed by a separator row of dashes/colons.
     if (/^\|/.test(line) && i + 1 < lines.length && /^\|[\s:|-]+\|?\s*$/.test(lines[i + 1])) {
-      const cells = (r) => r.split("|").slice(1, -1).map((c) => c.trim());
+      // A cell may contain an escaped pipe. Several of the mod's own requirement strings do
+      // ("Any Government | Tier 2 Colony not built"), and splitting on every | tore those rows
+      // into extra columns. `\|` is how markdown writes a literal pipe in a cell; the escape is
+      // removed again in inline().
+      const cells = (r) => r.split(/(?<!\\)\|/).slice(1, -1).map((c) => c.trim());
       const head = cells(line);
       // Alignment from the separator row, so numeric columns stay right-aligned.
       const align = cells(lines[i + 1]).map((c) => (/^-+:$/.test(c) ? "right" : /^:-+:$/.test(c) ? "center" : ""));
@@ -210,7 +285,16 @@ function renderMarkdown(md, toc) {
            !/^#{1,6}\s/.test(lines[i]) && !/^\|/.test(lines[i]) &&
            !/^\s*>/.test(lines[i]) && !/^\s*[-*]\s/.test(lines[i]) &&
            !RAW_BLOCK.test(lines[i])) { buf.push(lines[i]); i++; }
-    if (buf.length) out.push(`<p>${inline(buf.join(" "))}</p>`);
+    if (buf.length) {
+      const html = inline(buf.join(" "));
+      // A paragraph that is NOTHING BUT images, two or more of them, is a row of pictures
+      // rather than prose — on a faction page that is the symbol beside the territory map.
+      // Floated individually they hang from a shared top edge, so a 120px symbol sits against
+      // the top quarter of a 700px map. Marked here and centred by CSS instead.
+      const onlyImages = (html.match(/<img\b/gi) || []).length >= 2 &&
+        !html.replace(/<img\b[^>]*>/gi, "").replace(/<\/?a\b[^>]*>/gi, "").trim();
+      out.push(`<p${onlyImages ? ' class="imgrow"' : ""}>${html}</p>`);
+    }
   }
   return out.join("\n");
 }
@@ -266,25 +350,44 @@ nav.side a.on{background:var(--acc-soft);color:var(--acc);font-weight:600}
    splitting content into columns below rather than by throwing the space away. */
 main{min-width:0;padding:1.6rem 2.2rem 5rem;width:100%}
 
-/* Sections flow into as many columns as the viewport can take at a readable width. The
-   browser decides the count from minmax(), so this responds to the reader's own resolution
-   and aspect ratio: one column on a laptop in portrait, two on 1080p, three or more on a
-   wide desktop. align-items:start keeps a short section from stretching to match a tall one. */
-.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(31rem,1fr));
-  gap:0 2.8rem;align-items:start}
+/* Two columns, each a normal-flow block holding whole sections. There is exactly ONE grid row
+   here — the two panes — so nothing inside either column can be held back by the height of
+   something in the other. Which sections go where is decided in sectionise(); see the note
+   there for why this is not a grid of sections.
+   Below ~80rem of viewport there is not room for two readable columns beside the sidebar, so
+   they stack. */
+.panes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 2.8rem;
+  align-items:start;clear:both}
+.pane{min-width:0}
+@media(max-width:80rem){.panes{grid-template-columns:1fr}}
 .sec{min-width:0}
+/* In a column, the unit card sits at the top of its own line rather than floating: at 164px
+   inside a half-width pane a float leaves the stat table wrapped around it. */
+.pane .lede img{float:none;max-width:100%;margin:0 0 1rem}
+.pane .lede p.imgrow{float:none;max-width:100%;margin:0 0 1rem}
 .sec>h2:first-child{margin-top:1.2rem}
+.pane>.sec:first-child>h2:first-child{margin-top:.2rem}
 /* The lede's image floats, so the section after it wraps alongside and then continues under
    it. This is the one thing a grid cannot do: grid rows align, so a short map column sat empty
    until the tall campaign brief beside it finished. */
 .lede{max-width:none}
 .lede img{float:left;margin:.2rem 1.8rem .8rem 0;max-width:min(42%,34rem);border-radius:8px}
+/* A row of pictures floats as ONE block, and the pictures centre against each other inside it.
+   Floating them separately hangs both from the same top edge, which on a faction page pins the
+   120px symbol level with the top quarter of the map. The map keeps the width it had; the
+   container is that plus the symbol and the gap, so nothing else on the page moves. */
+.lede p.imgrow{float:left;display:flex;align-items:center;gap:1.4rem;
+  margin:.2rem 1.8rem .8rem 0;max-width:min(56%,44rem)}
+.lede p.imgrow img{float:none;margin:0;height:auto}
+.lede p.imgrow img:first-child{flex:0 0 auto}
+.lede p.imgrow img:last-child{flex:0 1 auto;min-width:0;max-width:min(100%,34rem)}
 .lede em{display:block;clear:none;color:var(--dim);font-size:.85rem}
 .lede-flow{margin-bottom:1.5rem}
 .lede-flow>h2:first-child{margin-top:.2rem}
 /* Once the floated map ends, the next block reclaims the full width. */
-.cols{clear:both}
-@media(max-width:900px){.lede img{float:none;max-width:100%;margin-right:0}}
+.sec{clear:both}
+@media(max-width:900px){.lede img{float:none;max-width:100%;margin-right:0}
+  .lede p.imgrow{float:none;max-width:100%;margin-right:0}}
 /* Prose paragraphs stay readable without narrowing the page: the line length is limited on
    the paragraph, not on the container, so tables and images beside them still get the width. */
 .lede>p,.sec>p{max-width:104ch}
@@ -365,6 +468,13 @@ const NAV = [
     ["/regions.md", "All regions"], ["/units.md", "All units"], ["/buildings.md", "All buildings"]]],
   ["Overviews", [["/factions-overview.md", "Factions vs vanilla"], ["/map-and-regions.md", "The map"],
     ["/units-overview.md", "Roster vs vanilla"]]],
+  ["Region tags", [["/tags.md", "All reference tables"], ["/tags/terrain.md", "Terrain"],
+    ["/tags/climate.md", "Climate"], ["/tags/irrigation.md", "Irrigation"],
+    ["/tags/ports.md", "Ports"], ["/tags/recruitment-zones.md", "Recruitment zones"],
+    ["/tags/specialty-recruitment.md", "Specialty recruitment"],
+    ["/tags/cultural-homeland.md", "Cultural homelands"],
+    ["/tags/hazards-and-river-trade.md", "Hazards and river trade"],
+    ["/tags/fertility.md", "Fertility"]]],
   ["Sortable views", [["/units.html", "Unit roster"], ["/regions.html", "Regions"],
     ["/factions.html", "Factions"]]],
 ];
