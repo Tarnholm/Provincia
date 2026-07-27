@@ -590,6 +590,64 @@ function loadSymbolFiles() {
 }
 const SYMBOL_FILE = loadSymbolFiles();
 
+// Culture, from the same file, read the same way. This is the axis the game itself organises
+// factions on — culture picks the architecture a settlement is drawn with, the government
+// levels available, and much of what the roster looks like — so it is the useful way to group
+// 230 factions for someone deciding who to play. The non-playable section below parses this
+// again for its own nine; both go to descr_sm_factions and neither guesses from the token.
+const FACTION_CULTURE = (() => {
+  const txt = rd("descr_sm_factions.txt") || "";
+  const out = {};
+  const marks = [...txt.matchAll(/^\t"([a-z0-9_]+)":/gm)];
+  for (let i = 0; i < marks.length; i++) {
+    const block = txt.slice(marks[i].index, i + 1 < marks.length ? marks[i + 1].index : txt.length);
+    const m = /"culture":\s*"([^"]+)"/.exec(block);
+    if (m) out[marks[i][1].toLowerCase()] = m[1].toLowerCase();
+  }
+  return out;
+})();
+
+// What the GAME calls each culture, which is not what the files call it. Three of the twenty-two
+// carry a name the token would have got wrong: `barbarian` is **Gallic**, `eastern` is
+// **Caucasian**, `carthaginian` is **Phoenician**. Printing the token would have mislabelled
+// 44 + 9 + 5 factions.
+//
+// Two independent keys exist and neither covers everything on its own: a bare `{<culture>}`
+// entry (all 22) and a `{<culture>_label}` entry (13). They AGREE on every culture that has
+// both, which is what makes the bare key trustworthy where it stands alone; the disagreements
+// against menu_english's `{UI_<CULTURE>}` are exactly the three renames above, and the run
+// output names them so a future rename cannot slip past unnoticed.
+const CULTURE_NAMES = (() => {
+  const map = {};
+  let files = [];
+  try { files = fs.readdirSync(path.join(RIS, "text")).filter((n) => /\.txt$/i.test(n) && !/_mac_/.test(n)); } catch { /* none */ }
+  for (const f of files) {
+    let t = "";
+    try { t = fs.readFileSync(path.join(RIS, "text", f), "utf16le"); } catch { continue; }
+    for (const m of t.matchAll(/\{([A-Za-z0-9_]+)\}(.*)/g)) {
+      const k = m[1].trim().toLowerCase();
+      if (!(k in map)) map[k] = m[2].trim();
+    }
+  }
+  return map;
+})();
+const cultureNamed = { bare: 0, label: 0, ui: 0, none: [] };
+const cultureRenames = [];
+const titleCase = (s) => s.toLowerCase().replace(/(^|[\s-])([a-z])/g, (_, a, b) => a + b.toUpperCase());
+function cultureName(tok) {
+  if (!tok) return null;
+  const t = String(tok).toLowerCase();
+  const bare = CULTURE_NAMES[t], label = CULTURE_NAMES[`${t}_label`], ui = CULTURE_NAMES[`ui_${t}`];
+  if (bare && ui && bare.toLowerCase() !== ui.toLowerCase() && !cultureRenames.some((r) => r[0] === t)) {
+    cultureRenames.push([t, bare, ui]);
+  }
+  if (bare) { cultureNamed.bare++; return bare; }
+  if (label) { cultureNamed.label++; return label; }
+  if (ui) { cultureNamed.ui++; return titleCase(ui); }
+  if (!cultureNamed.none.includes(t)) cultureNamed.none.push(t);
+  return null;
+}
+
 // ── build ────────────────────────────────────────────────────────────────────
 const strat = gv.parseStrat(STRAT);
 if (!strat) { console.error("could not parse descr_strat"); process.exit(2); }
@@ -795,7 +853,7 @@ ${units.aor.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map(c
 `;
 
   fs.writeFileSync(path.join(OUT, "factions", `${f}.md`), body, "utf8");
-  index.push({ f, display, setts: setts.length, chars: cs.length, units: units.total, aor: units.aor.length, hasIntro: !!intro.descr });
+  index.push({ f, display, setts: setts.length, chars: cs.length, units: units.total, aor: units.aor.length, hasIntro: !!intro.descr, culture: FACTION_CULTURE[f] || null, symbol: !!symImg });
 }
 
 // ── the nine that are not playable ───────────────────────────────────────────
@@ -926,17 +984,69 @@ history that says nothing about their role.
 
 // index page
 index.sort((a, b) => b.setts - a.setts || a.display.localeCompare(b.display));
+
+// ── choose by culture ────────────────────────────────────────────────────────
+// A flat 230-row table sorted by size answers "who is biggest" and nothing else. The question
+// someone opening this page actually has is "who can I play, and who is like whom", and the
+// game's own answer to that is culture: it decides the architecture a settlement is drawn
+// with, which government levels can be installed, and much of the roster. So the cultures come
+// first, as rows of emblems, and the size table stays underneath for the other question.
+//
+// The emblem is the same art the faction's own page shows, at 34px. It is not decoration: 230
+// names in a list are unreadable, and the emblem is what a player recognises on the campaign
+// map. A faction with no emblem file still appears, by name — it is not dropped for lacking art.
+const byCulture = new Map();
+for (const e of index) {
+  const key = e.culture || "";
+  if (!byCulture.has(key)) byCulture.set(key, []);
+  byCulture.get(key).push(e);
+}
+const cultureGroups = [...byCulture.entries()]
+  .map(([tok, list]) => ({
+    tok,
+    name: cultureName(tok),
+    list: list.slice().sort((a, b) => b.setts - a.setts || a.display.localeCompare(b.display)),
+  }))
+  .sort((a, b) => b.list.length - a.list.length || String(a.name || a.tok).localeCompare(String(b.name || b.tok)));
+const tile = (e) => `[${e.symbol ? `<img src="symbols/${e.f}.png" alt="" width="34" height="34" style="vertical-align:middle"> ` : ""}${e.display}](factions/${e.f}.md)`;
+const cultureSection = cultureGroups.map((g) => {
+  const heading = g.name ? `### ${g.name}` : "### Culture not determined";
+  const withLand = g.list.filter((e) => e.setts).length;
+  const sub = g.tok
+    ? `**${g.list.length}** faction${g.list.length === 1 ? "" : "s"} · \`${g.tok}\` · ${withLand} hold${withLand === 1 ? "s" : ""} territory at the start`
+    : `**${g.list.length}** faction${g.list.length === 1 ? "" : "s"} whose culture no line in descr_sm_factions states`;
+  return `${heading}\n\n${sub}\n\n${g.list.map(tile).join(" · ")}`;
+}).join("\n\n");
+
 const idx = `# All factions
 
 [← wiki index](README.md) · [factions overview](factions-overview.md)
 
-${index.length} playable factions, each with its own page. Sorted by how much territory they
-start with.
+${index.length} playable factions, each with its own page, in ${cultureGroups.filter((g) => g.tok).length} cultures.
 
 Nine further factions in the mod files are **not** playable and are not part of that ${index.length}
 — the rebel pool, the Roman senate, a test faction and the scripted breakaways. They hold
 territory and appear in recruitment gates, so they are documented together on
 [factions you cannot play](factions/${NON_PLAYABLE_FILE}).
+
+## By culture
+
+Culture is the game's own grouping, and it is not cosmetic: it settles which architecture a
+settlement is drawn with, which government levels the faction can install, and much of what
+the roster looks like. Factions in the same culture play more like each other than two
+neighbours in different ones do.
+
+The name here is the one the game shows, not the token in the files, and for three cultures
+those differ: \`barbarian\` is **${cultureName("barbarian") || "not determined"}**, \`eastern\` is
+**${cultureName("eastern") || "not determined"}** and \`carthaginian\` is
+**${cultureName("carthaginian") || "not determined"}**. The token is given beside each heading
+for anyone reading the files.
+
+${cultureSection}
+
+## By size
+
+Every playable faction, largest first.
 
 The two unit columns are worth reading separately. "Faction units" are what a faction can
 raise from its own buildings anywhere it holds a settlement — that is its actual roster.
@@ -944,9 +1054,9 @@ raise from its own buildings anywhere it holds a settlement — that is its actu
 right province before they can be fielded at all. Most regional units are open to every
 faction on paper, which is why the combined figure flatters a small faction badly.
 
-| Faction | Settlements | Characters | Faction units | Regional (AOR) |
-|---|---:|---:|---:|---:|
-${index.map((e) => `| [${e.display}](factions/${e.f}.md) | ${e.setts} | ${e.chars} | ${e.units - e.aor} | ${e.aor} |`).join("\n")}
+| Faction | Culture | Settlements | Characters | Faction units | Regional (AOR) |
+|---|---|---:|---:|---:|---:|
+${index.map((e) => `| [${e.display}](factions/${e.f}.md) | ${cultureName(e.culture) || "_not determined_"} | ${e.setts} | ${e.chars} | ${e.units - e.aor} | ${e.aor} |`).join("\n")}
 `;
 fs.writeFileSync(path.join(OUT, "factions.md"), idx, "utf8");
 
@@ -960,3 +1070,6 @@ console.log(`  character name tokens: ${namesResolved.toLocaleString("en-US")} r
 console.log(`  place name tokens:     ${placesResolved.toLocaleString("en-US")} resolved via the regions-and-settlements text, ${placesRaw.toLocaleString("en-US")} had no entry`);
 console.log(`  settlement names read from descr_regions: ${Object.keys(SETTLEMENT_OF).length.toLocaleString("en-US")}`);
 console.log(`  no units resolved:         ${index.filter((e) => !e.units).length}`);
+console.log(`  cultures: ${cultureGroups.filter((g) => g.tok).length} named across ${index.length} factions, ${index.filter((e) => !e.culture).length} faction(s) with no culture line`);
+console.log(`    display names: ${cultureNamed.bare} via the bare {<culture>} entry, ${cultureNamed.label} via {<culture>_label}, ${cultureNamed.ui} via {UI_<CULTURE>}${cultureNamed.none.length ? `, ${cultureNamed.none.length} unresolved (${cultureNamed.none.join(", ")})` : ", 0 unresolved"}`);
+for (const [tok, bare, ui] of cultureRenames) console.log(`    the game renames \`${tok}\`: shown as "${bare}", menu string says "${ui}"`);
