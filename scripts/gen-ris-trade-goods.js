@@ -43,6 +43,15 @@
  * clauses count: withholding something is an effect. Where nothing in the files conditions on
  * a good the page says so, which is a real finding about five of the forty-six and not a gap
  * to hide.
+ *
+ * COUNT UNITS, NOT RECRUIT LINES. Three goods gate troops, and the two figures are nothing
+ * like each other: `resource horses` appears on 686 recruit lines but only 98 distinct units,
+ * `resource elephants` on 164 lines and 5 units, `resource camels` on 56 lines and 5. A unit
+ * is restated once per building level that can raise it, so the line count says how many
+ * places you can raise something, not how many things there are. The pages report the DISTINCT
+ * units, keyed on each unit's EDU `dictionary` so two entries for the same unit collapse — and
+ * the numbers above are here because reading 164 as "33 elephant units" is the mistake this
+ * paragraph exists to stop, one already made once in a commit message for this generator.
  */
 const fs = require("fs");
 const path = require("path");
