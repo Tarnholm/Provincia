@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1462",
+    date: "2026-07-28",
+    items: [
+      { type: "fix", text: "**Crash-reporter 0.1.45: the dev build is no longer flagged as an unapproved mod.** \"Imperium Surrectum\" joins the default mod allowlist — the dev version's display name (\"[OPEN BETA] RTR: Imperium Surrectum 0.7.0\") contains no literal \"RIS\", so every dev-version session was being marked 🚫 despite being the mod itself. An ini that explicitly sets `allowed_mod_substrings=RIS` overrides the new default and needs the line removed or extended." },
+      { type: "fix", text: "**Crash-reporter 0.1.44: a previous-session-only dump upload no longer announces a CTD.** Field-verified on the first 0.1.43 reports: the main report correctly labelled a stale XML \"(previous session)\" and kept the session UNSTABLE — but the dump-carrier companion message still said \"🔴 Feral crash dump (CTD)\", a red crash line over a session that exited cleanly. When every dump aboard is from a previous session it now reads \"🟠 Feral crash dump from a PREVIOUS session (late XML twin, no new crash)\"." },
+    ],
+  },
+
+  {
     version: "0.9.1461",
     date: "2026-07-28",
     items: [

@@ -30,7 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 APP_NAME = "RIS Crash Reporter"
-APP_VERSION = "0.1.44"
+APP_VERSION = "0.1.45"
 CONFIG_FILENAME = "crash_reporter.ini"
 LOG_FILENAME = "crash_reporter.log"
 
@@ -2279,8 +2279,11 @@ def main():
     # out loudly — a crash with a foreign mod loaded isn't evidence against
     # the beta, and telemetry already caught testers running e.g. "Swagger's
     # Blood Mod". A pure RIS+submod stack just gets a neutral load-order line.
+    # "Imperium Surrectum" covers the DEV build, whose display name
+    # ("[OPEN BETA] RTR: Imperium Surrectum 0.7.0") contains no literal "RIS" —
+    # it was being 🚫-flagged on Balbor's sessions despite being the mod itself.
     allowed_subs = [s.strip() for s in
-                    cfg.get("allowed_mod_substrings", "RIS").split(",") if s.strip()]
+                    cfg.get("allowed_mod_substrings", "RIS,Imperium Surrectum").split(",") if s.strip()]
     unapproved = find_unapproved_mods(active_mods, allowed_subs)
     if unapproved:
         summary.append(f"🚫 UNAPPROVED MOD(S) ACTIVE: {', '.join(unapproved)} — only the RIS "
