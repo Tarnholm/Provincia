@@ -821,11 +821,18 @@ server.on("error", (e) => {
   process.exit(1);
 });
 
-server.listen(PORT, "127.0.0.1", () => {
-  const url = `http://127.0.0.1:${server.address().port}/README.md`;
-  console.log(`RIS wiki preview: ${url}`);
-  console.log(`  serving ${ROOT}`);
-  console.log(`  ${INDEX.length.toLocaleString("en-US")} pages indexed for search`);
-  console.log(`  Ctrl+C to stop`);
-  openBrowser(url);
-});
+// Exported so a static exporter can render the SAME html this serves, rather than growing a
+// second renderer that drifts from it. Guarded on require.main so requiring this file does not
+// start a server — without the guard, importing the renderer would silently take a port.
+module.exports = { renderMarkdown, sectionise, SHELL, CSS, slugId, INDEX, ROOT };
+
+if (require.main === module) {
+  server.listen(PORT, "127.0.0.1", () => {
+    const url = `http://127.0.0.1:${server.address().port}/README.md`;
+    console.log(`RIS wiki preview: ${url}`);
+    console.log(`  serving ${ROOT}`);
+    console.log(`  ${INDEX.length.toLocaleString("en-US")} pages indexed for search`);
+    console.log(`  Ctrl+C to stop`);
+    openBrowser(url);
+  });
+}
