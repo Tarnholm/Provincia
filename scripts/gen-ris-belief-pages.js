@@ -422,13 +422,18 @@ function beliefPage(f, all) {
   const siblings = all.filter((o) => o.group && o.group === f.group && o.tok !== tok);
 
   // ── where it is ──
+  // The top of the scale is called MAJORITY rather than "tier 4" — the owner's term for it, and
+  // the one a player would use. The other three keep their numbers: naming those would mean
+  // inventing three more words the files do not supply, and the number is still printed beside
+  // the name so the tag on the region page and the row here are obviously the same thing.
+  const tierLabel = (t) => (t === 4 ? "Majority (4 of 4)" : `${t} of 4`);
   const tierRows = TIERS.slice().reverse().map((t) => {
     const list = f.byTier.get(t) || [];
-    return `| ${t} / 4 | ${list.length || "—"} | ${nRegions ? `${((list.length / nRegions) * 100).toFixed(0)}%` : "—"} |`;
+    return `| ${tierLabel(t)} | ${list.length || "—"} | ${nRegions ? `${((list.length / nRegions) * 100).toFixed(0)}%` : "—"} |`;
   });
   const regionFolds = TIERS.slice().reverse().filter((t) => (f.byTier.get(t) || []).length).map((t) => {
     const list = (f.byTier.get(t) || []).slice().sort((a, c) => regionName(a).localeCompare(regionName(c)));
-    return fold(`Tier ${t} of 4 — ${list.length} ${list.length === 1 ? "region" : "regions"}`, [list.map(regionLink).join(" · ")]);
+    return fold(`${tierLabel(t)} — ${list.length} ${list.length === 1 ? "region" : "regions"}`, [list.map(regionLink).join(" · ")]);
   });
 
   // ── the people ──
@@ -660,7 +665,11 @@ const groupSections = groups.map(({ g, list }) => {
     ? `### ${groupName(g)} group · ${list.length} belief${list.length === 1 ? "" : "s"} · ${list.reduce((a, f) => a + f.regions.size, 0)} regions`
     : `### Group not determined · ${list.length} belief${list.length === 1 ? "" : "s"}`;
   const rows = list.map((f) => `| ${pipRel(f.tok, "")}[${f.name}](religions/${f.tok}.md) | ${f.regions.size || "—"} | ${(f.byTier.get(4) || []).length || "—"} | ${f.people.length || "—"} | ${f.facs.length || "—"} |`).join("\n");
-  return `${head}\n\n| Belief | Regions | At tier 4 | Named as a people | Factions |\n|---|---:|---:|---:|---:|\n${rows}`;
+  // "Its people live in", not "Named as a people". The column counts regions whose ANCESTRY
+  // field names this token as one of the peoples living there — a different field from the
+  // belief tag, and one that answers a different question. The old heading named the mechanism
+  // and left a reader to work out what it was counting.
+  return `${head}\n\n| Belief | Regions | Majority | Its people live in | Factions |\n|---|---:|---:|---:|---:|\n${rows}`;
 }).join("\n\n");
 
 const indexBody = `# Beliefs
@@ -715,9 +724,15 @@ always agree, and both are shown.
 
 ## The ${BELIEF_ORDER.length} beliefs, by group
 
-**Regions** is how many carry the belief's tag at any tier; **at tier 4** is how many carry it
-at full strength. **Named as a people** is a different count from a different field — the
-ancestry shares — and the two do not line up region for region, which each page says.
+Three of these columns count regions, and they are not the same count.
+
+- **Regions** — how many carry the belief's tag at all, at any strength.
+- **Majority** — how many carry it at the top of the 1–4 scale, which is the strength a region's
+  dominant belief has.
+- **Its people live in** — how many name that people in their ancestry, which is a different
+  field entirely: who lives there, as shares that sum to 100. A region can be full of a people
+  whose belief it does not carry, and carry a belief none of its people are named for. The two
+  do not line up region for region, and each belief's page says by how much.
 
 A group has no name of its own in the mod: descr_beliefs.txt declares a token and no text file
 localises it. ${groupNamed.viaBelief.size} of the ${groupNamed.viaBelief.size + groupNamed.token.size} group tokens are also belief tokens and take that belief's own

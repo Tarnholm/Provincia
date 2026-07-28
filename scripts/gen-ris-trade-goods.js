@@ -622,7 +622,11 @@ function goodPage(g) {
   }
 
   const lede = [
-    iconImg(g.tok, "../", 48),
+    // 28, not 48. The published icon is 120px and the source TGA 360, so nothing here is
+    // literally upscaled — but the art is a small sprite with soft edges, and blown up to 48 at
+    // the head of a page it reads as a low-resolution picture rather than as an icon. Kept just
+    // above the 24 used inline, so a good's own page still leads with its mark.
+    iconImg(g.tok, "../", 28),
     g.tooltipAdds ? `**In game:** ${g.tooltip}` : null,
   ].filter(Boolean).join("\n\n");
 

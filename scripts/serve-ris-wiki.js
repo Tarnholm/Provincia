@@ -379,7 +379,13 @@ function renderMarkdown(md, toc) {
 
       let th, tr, rowCount;
       if (UP > 1) {
-        th = Array.from({ length: UP }, (_, g) => thOne(g > 0)).join("");
+        // A group with nothing in it gets blank heading cells, not a repeat of the headings. A
+        // one-row list dealt three across was printing "Belief · Regions · Majority · …" three
+        // times with rows under only the first, which reads as two sections that failed to load.
+        // The cells still have to be THERE, or the columns stop lining up — they are just empty.
+        // Group g holds a row only when g < body.length, since row r takes index r*UP+g.
+        th = Array.from({ length: UP }, (_, g) =>
+          (g < body.length ? thOne(g > 0) : head.map((_, k) => `<th${cls(k, g > 0 && k === 0)}></th>`).join(""))).join("");
         rowCount = Math.ceil(body.length / UP);
         tr = Array.from({ length: rowCount }, (_, r) => "<tr>"
           + Array.from({ length: UP }, (_, g) => tdOf(body[r * UP + g], g > 0)).join("") + "</tr>").join("");
