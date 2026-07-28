@@ -145,18 +145,36 @@ function sectionise(html) {
   // long prose cell is capped, because it wraps rather than forcing the table wider. The
   // threshold is in characters and deliberately generous — being wrong towards "it fits" costs a
   // little horizontal scrolling inside one section, being wrong the other way costs half the page.
-  const COL_CAP = 40, WIDE_AT = 92;
-  const tableWidth = (s) => {
+  // Measured in the SAME pixels the table renderer uses, and it has to be: this decides whether
+  // a section goes in a half-width pane, and the renderer decides whether the table inside gets
+  // a scroll box against the FULL width. Two different estimates meant a table could be judged
+  // narrow enough for a pane here and wide enough to fit there — so it went into the pane with
+  // no scroll box and was clipped by the card. The settlement-sizes page lost the last digit of
+  // every number in its Total column that way.
+  //
+  // A header cannot wrap and is uppercase with tracking, so it is the floor for its column; body
+  // text wraps at spaces, so the floor there is its longest single word. That is the width the
+  // table cannot go below, which is the only figure that answers "will this be clipped".
+  const BODY_PX = 7.0, HEAD_PX = 8.4, PAD_PX = 22.4;
+  const tableMinPx = (s) => {
     const rows = [...s.matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map((m) =>
-      [...m[1].matchAll(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/g)]
-        .map((c) => c[1].replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().length));
+      [...m[1].matchAll(/<(t[hd])[^>]*>([\s\S]*?)<\/t[hd]>/g)].map((c) => {
+        let px = 0;
+        for (const im of c[2].matchAll(/<img[^>]*\bwidth="(\d+)"/gi)) px += parseInt(im[1], 10) + 7;
+        const txt = c[2].replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+        return c[1] === "th"
+          ? px + txt.length * HEAD_PX                                        // nowrap: whole heading
+          : px + Math.max(0, ...txt.split(" ").map((w) => w.length)) * BODY_PX;   // wraps at spaces
+      }));
     if (!rows.length) return 0;
     const cols = Math.max(...rows.map((r) => r.length));
     let w = 0;
-    for (let c = 0; c < cols; c++) w += Math.min(COL_CAP, Math.max(0, ...rows.map((r) => r[c] || 0)));
-    return w + cols * 3;    // cell padding, counted in character widths
+    for (let c = 0; c < cols; c++) w += PAD_PX + Math.max(0, ...rows.map((r) => r[c] || 0));
+    return w;
   };
-  const isWide = (s) => tableWidth(s) > WIDE_AT;
+  // A pane is half the content column, less the gap and the two cards' padding.
+  const PANE_PX = 660;
+  const isWide = (s) => tableMinPx(s) > PANE_PX;
   const secWrap = (s, wide) => `<section class="sec${wide ? " wide" : ""}">${s}</section>`;
   // Rendered height, in rough text lines. Table and list rows are one line each; prose is its
   // character count over a line length; an image stands in for the space it occupies. This is

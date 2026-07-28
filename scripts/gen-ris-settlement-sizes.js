@@ -585,7 +585,7 @@ function sizePage(size, i) {
   const cumulativeLevels = LADDER.slice(0, i + 1).reduce((n, s) => n + (levelsByMin.get(s) || []).length, 0);
   const cumulativeUnits = LADDER.slice(0, i + 1).reduce((n, s) => n + (unitsByMin.get(s) || []).length, 0);
 
-  const ladderLine = LADDER.map((s, k) => (k === i ? `**${sizeName(s)}**` : `[${sizeName(s)}](${s}.md)`)).join(" &lt; ");
+  const ladderLine = LADDER.map((s, k) => (k === i ? `**${sizeName(s)}**` : `[${sizeName(s)}](${s}.md)`)).join(" < ");
 
   // What it takes to reach it, in one sentence, from the numbers rather than about them.
   const upVals = valuesFor(size, "upgrade");
@@ -759,11 +759,16 @@ const crossTab = (() => {
   const rows = [...m.entries()]
     .map(([c, counts]) => ({ c, counts, total: [...counts.values()].reduce((a, b) => a + b, 0) }))
     .sort((a, b) => b.total - a.total || a.c.localeCompare(b.c));
+  // A size with no settlement anywhere on the map gets no column. Village is one: the prose
+  // above already says no settlement starts at that rung, and a column of twenty-two dashes
+  // repeats it twenty-two times while making the table wide enough to be clipped. Computed,
+  // not hardcoded — if a release ever starts a settlement at village, the column comes back.
+  const used = LADDER.filter((s) => (startBySize.get(s) || []).length > 0);
   return [
-    `| Culture | ${LADDER.map((s) => sizeName(s)).join(" | ")} | Total |`,
-    `|---|${LADDER.map(() => "---:").join("|")}|---:|`,
-    ...rows.map((r) => `| ${r.c} | ${LADDER.map((s) => (r.counts.get(s) || 0) || "—").join(" | ")} | ${num(r.total)} |`),
-    `| **All** | ${LADDER.map((s) => num((startBySize.get(s) || []).length)).join(" | ")} | **${num(held.length)}** |`,
+    `| Culture | ${used.map((s) => sizeName(s)).join(" | ")} | Total |`,
+    `|---|${used.map(() => "---:").join("|")}|---:|`,
+    ...rows.map((r) => `| ${r.c} | ${used.map((s) => (r.counts.get(s) || 0) || "—").join(" | ")} | ${num(r.total)} |`),
+    `| **All** | ${used.map((s) => num((startBySize.get(s) || []).length)).join(" | ")} | **${num(held.length)}** |`,
   ].join("\n");
 })();
 
@@ -775,7 +780,7 @@ Every settlement in RIS sits on a ladder of **${LADDER.length}** sizes. The rung
 things: what it can build, what it can raise, and how large it is allowed to grow before
 overcrowding starts. These pages say what each rung does, one page per size.
 
-${LADDER.map((s) => `[${sizeName(s)}](sizes/${s}.md)`).join(" &lt; ")}
+${LADDER.map((s) => `[${sizeName(s)}](sizes/${s}.md)`).join(" < ")}
 
 <details>
 <summary>Where these answers come from</summary>
@@ -849,9 +854,9 @@ ${crossTab}
 <details>
 <summary>How each number on this page was counted, and checked</summary>
 
-- **The ladder** — \`settlementRanks()\` over descr_sm_settlements.txt gives ${LADDER_A.join(" &lt; ") || "nothing"}
+- **The ladder** — \`settlementRanks()\` over descr_sm_settlements.txt gives ${LADDER_A.join(" < ") || "nothing"}
   from ${SETTLE.ladders} culture blocks, ${SETTLE.disagree} of which disagree with the longest. The keys of the
-  \`settlement upgrade levels\` block in descr_cultures.txt give ${LADDER_B.join(" &lt; ") || "nothing"} across
+  \`settlement upgrade levels\` block in descr_cultures.txt give ${LADDER_B.join(" < ") || "nothing"} across
   ${CULTURES.length} cultures. ${LADDER_AGREE ? "The two agree." : "**The two do not agree, and the longer one is used** — that disagreement is why this line exists."}
 - **Population figures** — read per culture, then compared across all ${CULTURES.length} of them for each of the
   ${NUM_KEYS.length} fields at each of the ${LADDER.length} sizes, ${num(CULTURES.length * NUM_KEYS.length * LADDER.length)} values in all.
