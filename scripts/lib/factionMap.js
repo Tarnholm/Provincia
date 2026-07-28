@@ -74,12 +74,19 @@ const BRACKET = [255, 240, 205];
 // both the subject's red and the pale ring drawn round it — the brightest thing on the map
 // has to be the highlight, not a bystander. The ceiling scales the whole triple, so the hue
 // survives: Carthage becomes a very light grey, still the lightest faction on the map.
-const DESAT = 0.32;
-const LIGHT_CAP = 210;
+// DIMMED HARD, because tone is now the only thing separating the subject from its neighbours —
+// the corner brackets that used to do that job are gone. Every other faction keeps enough of
+// its own hue to be told apart from the one beside it, but none of them competes with the
+// subject: two thirds of the way to grey, then scaled toward a ceiling well below full
+// brightness. Before this, at a third of the way to grey and a ceiling of 210, a pale
+// neighbour was as loud as the faction the page was about.
+const DESAT = 0.66;
+const LIGHT_CAP = 150;
+const DARKEN = 0.82;
 function muted([r, g, b]) {
   const y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
   const mix = (c) => c + (y - c) * DESAT;
-  let [mr, mg, mb] = [mix(r), mix(g), mix(b)];
+  let [mr, mg, mb] = [mix(r) * DARKEN, mix(g) * DARKEN, mix(b) * DARKEN];
   const top = Math.max(mr, mg, mb);
   if (top > LIGHT_CAP) { const k = LIGHT_CAP / top; mr *= k; mg *= k; mb *= k; }
   return [Math.round(mr), Math.round(mg), Math.round(mb)];
@@ -292,26 +299,13 @@ function render(world, faction, regionNames) {
     for (const [x, y] of hits) { put(x, y, col); haloPx++; }
   }
 
-  // Pass 3 — corner brackets around the subject's territory. Applied to every map, not just
-  // small ones, so the rule is uniform: for Rome they sit at the edges of Italy, and for a
-  // one-province faction they form a small target box around a blob 3 px across. The box
-  // is never allowed below 44 px a side, or the brackets would close into a smudge.
-  const MINBOX = 44, PAD = 7, ARM = 9;   // PAD clears the two-pixel halo
-  let bx0 = win.terr.x0 - ox - PAD, bx1 = win.terr.x1 - ox + PAD;
-  let by0 = win.terr.y0 - oy - PAD, by1 = win.terr.y1 - oy + PAD;
-  if (bx1 - bx0 < MINBOX) { const c = (bx0 + bx1) / 2; bx0 = Math.round(c - MINBOX / 2); bx1 = Math.round(c + MINBOX / 2); }
-  if (by1 - by0 < MINBOX) { const c = (by0 + by1) / 2; by0 = Math.round(c - MINBOX / 2); by1 = Math.round(c + MINBOX / 2); }
-  let bracketPx = 0;
-  const arm = (x, y, dx, dy) => {
-    for (let i = 0; i < ARM; i++) {
-      const px = x + dx * i, py = y + dy * i;
-      if (px < 0 || py < 0 || px >= w || py >= h) continue;
-      put(px, py, BRACKET); bracketPx++;
-    }
-  };
-  for (const [cx, cy, sx, sy] of [[bx0, by0, 1, 1], [bx1, by0, -1, 1], [bx0, by1, 1, -1], [bx1, by1, -1, -1]]) {
-    arm(cx, cy, sx, 0); arm(cx, cy, 0, sy);
-  }
+  // No corner brackets. They were drawn on every map to make a one-province faction findable,
+  // and they did that — but a box floating over the Mediterranean is a diagram annotation, not
+  // part of the map, and on a large faction it fenced off territory for no reason. The subject
+  // is now separated from its surroundings by TONE instead: everything that is not the subject
+  // is pushed well down (see DESAT/LIGHT_CAP above), so the only saturated thing on the map is
+  // the faction the page is about, and its pale halo is the only bright edge.
+  const bracketPx = 0;
 
   // Pass 4 — a settlement dot in every region the window shows, from the region map's own
   // black pixels. FIVE PIXELS, a pale centre with four dark arms, and the same size for the
