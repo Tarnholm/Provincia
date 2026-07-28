@@ -70,8 +70,12 @@ function artStrip(dir, size) {
   let files = [];
   try { files = fs.readdirSync(path.join(OUT, dir)).filter((f) => /\.png$/i.test(f)).sort(); }
   catch { return ""; }
-  if (files.length < 4) return "";
-  const pick = [0, 1, 2, 3].map((i) => files[Math.floor((i + 0.5) * files.length / 4)]);
+  if (!files.length) return "";
+  // ONE, not four. Four read as a sample of the family and drew the eye into comparing them —
+  // and they are not a sample of anything, just the files that fell at those positions. One is
+  // a mark beside a name, which is all a row in an index needs. Taken from the middle of the
+  // sorted list so a rerun picks the same file.
+  const pick = [files[Math.floor(files.length / 2)]];
   // Sized by WIDTH, never height. The viewer's stylesheet carries `img{max-width:100%;height:auto}`
   // so that a picture scales with its column — and `height:auto` overrides a height attribute
   // outright, which left every one of these thumbnails rendering at its natural size. Width is
