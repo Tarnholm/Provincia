@@ -422,7 +422,12 @@ function renderMarkdown(md, toc) {
       // fit have no wrapper scroll, so their headings follow the page.
       const cannotFit = minPx * UP + GROUP_GAP_PX * (UP - 1) > CONTENT_PX;
       const wrapCls = `tw${rowCount > 60 ? " big" : ""}${UP > 1 ? " multi" : ""}${cannotFit ? " scroll" : ""}`;
-      out.push(`<div class="${wrapCls}"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`);
+      // data-cols and data-up let the browser re-deal this table to the window it is actually in.
+      // Everything above is an ESTIMATE of a width no server can know — it decides what a reader
+      // sees before the script runs, and on a narrower window than the estimate assumes it is
+      // simply wrong. The script un-deals from these two numbers and deals again by measurement.
+      out.push(`<div class="${wrapCls}" data-cols="${head.length}" data-up="${UP}">`
+        + `<table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`);
       continue;
     }
 
@@ -864,6 +869,110 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
       e.preventDefault(); document.querySelector('.top input').focus();
     }
   });
+
+  // ── deal the tables to the window that is actually open ────────────────────
+  // The server decides how many copies of a narrow table fit across the page from an ESTIMATE of
+  // a width it cannot know. On a window narrower than the estimate assumes, three lists that
+  // were meant to sit side by side do not, and the page is wrong for the person reading it. So
+  // the server's answer is only the starting position: here it is measured and redone, and
+  // redone again when the window changes.
+  //
+  // Reads in one pass and writes in one pass. There are pages here carrying 156 tables, and
+  // interleaving a measurement with a rebuild per table would force 156 reflows; setting them
+  // all flat, then reading all the widths, then rebuilding all, costs two.
+  (function deal(){
+    var tws = [].slice.call(document.querySelectorAll(".tw[data-cols]"));
+    if (!tws.length) return;
+
+    function capture(tw){
+      var t = tw.querySelector("table");
+      if (!t || !t.tHead || !t.tBodies[0]) return null;
+      var cols = +tw.getAttribute("data-cols"), up = +tw.getAttribute("data-up") || 1;
+      var hc = t.tHead.rows[0].cells, head = [], klass = [];
+      for (var k = 0; k < cols; k++) {
+        head.push(hc[k] ? hc[k].innerHTML : "");
+        // The alignment class lives on every cell of a column; take it from the heading, and
+        // drop "grp", which marks where a GROUP starts and is re-applied when dealing.
+        klass.push(hc[k] ? hc[k].className.replace(/\bgrp\b/, "").trim() : "");
+      }
+      var rows = [];
+      [].forEach.call(t.tBodies[0].rows, function(r){
+        for (var g = 0; g < up; g++) {
+          var cells = [], any = false;
+          for (var k = 0; k < cols; k++) {
+            var c = r.cells[g * cols + k];
+            cells.push(c ? c.innerHTML : "");
+            if (c && c.innerHTML.replace(/\s|&nbsp;/g, "")) any = true;
+          }
+          // Padding cells from the previous deal are dropped rather than kept as blank rows.
+          if (any) rows.push(cells);
+        }
+      });
+      return { t: t, cols: cols, head: head, klass: klass, rows: rows };
+    }
+
+    function render(d, up){
+      var cell = function(tag, html, k, first){
+        var c = (d.klass[k] + (first && k === 0 ? " grp" : "")).trim();
+        return "<" + tag + (c ? ' class="' + c + '"' : "") + ">" + html + "</" + tag + ">";
+      };
+      var th = "", g, k, r;
+      for (g = 0; g < up; g++) for (k = 0; k < d.cols; k++) {
+        // A group with no row in it gets blank headings — not a repeat of them over nothing.
+        th += cell("th", g < d.rows.length ? d.head[k] : "", k, g > 0);
+      }
+      var body = "", n = Math.ceil(d.rows.length / up);
+      for (r = 0; r < n; r++) {
+        body += "<tr>";
+        for (g = 0; g < up; g++) {
+          var row = d.rows[r * up + g];
+          for (k = 0; k < d.cols; k++) body += cell("td", row ? row[k] : "", k, g > 0);
+        }
+        body += "</tr>";
+      }
+      d.t.tHead.rows[0].innerHTML = th;
+      d.t.tBodies[0].innerHTML = body;
+    }
+
+    var state = [];
+    tws.forEach(function(tw){
+      var d = capture(tw);
+      if (d && d.rows.length) { state.push({ tw: tw, d: d, up: 0, one: 0 }); }
+    });
+    if (!state.length) return;
+
+    function layout(first){
+      if (first) {
+        state.forEach(function(s){ render(s.d, 1); s.tw.classList.remove("multi"); });
+        // One read pass, after one write pass.
+        state.forEach(function(s){
+          s.one = s.d.t.offsetWidth;
+          s.avail = (s.tw.parentNode && s.tw.parentNode.clientWidth) || s.one;
+        });
+      } else {
+        state.forEach(function(s){ s.avail = (s.tw.parentNode && s.tw.parentNode.clientWidth) || s.one; });
+      }
+      state.forEach(function(s){
+        // 7px is what a group costs beyond its own columns: its first cell takes 1.1rem of left
+        // padding where the others take .7rem.
+        var up = Math.max(1, Math.min(3, Math.floor(s.avail / (s.one + 7)) || 1));
+        if (up === s.up) return;              // nothing to rebuild at this width
+        s.up = up;
+        render(s.d, up);
+        s.tw.classList.toggle("multi", up > 1);
+        s.tw.classList.toggle("scroll", s.one > s.avail);
+      });
+    }
+
+    layout(true);
+    var timer = null, was = window.innerWidth;
+    window.addEventListener("resize", function(){
+      if (window.innerWidth === was) return;   // a vertical-only resize changes nothing here
+      was = window.innerWidth;
+      clearTimeout(timer);
+      timer = setTimeout(function(){ layout(false); }, 120);
+    });
+  })();
 
   // The jump strip marks where you are. On a page of 22 sections the strip otherwise tells you
   // where you could go and nothing about where you have got to, and the strip itself scrolls

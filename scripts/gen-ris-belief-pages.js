@@ -749,15 +749,17 @@ always agree, and both are shown.
 
 ## The ${BELIEF_ORDER.length} beliefs, by group
 
-Three of these columns count regions, and they are not the same count.
+Four columns, and three of them count regions without counting the same thing:
 
-- **Regions** — how many carry the belief's tag at all, at any strength.
-- **Majority** — how many carry it at the top of the 1–4 scale, which is the strength a region's
-  dominant belief has.
-- **People** — how many regions name that people in their ancestry, which is a different field
-  entirely: who lives there, as shares that sum to 100. A region can be full of a people whose
-  belief it does not carry, and carry a belief none of its people are named for. The two do not
-  line up region for region, and each belief's page says by how much.
+- **Regions** — regions where the belief is held at all, whether it is the largest there or not.
+- **Majority** — of those, the ones where it is the **largest** belief. The rest are the minority
+  ones, and each belief's page splits them out.
+- **People** — regions where its **people** live, which is a different field: who is descended
+  from whom, as shares of the population. A region can be full of a people whose belief it does
+  not hold, and hold a belief none of its people are descended from — so this number is neither
+  a subset nor a superset of the first, and each page says by how much the two miss each other.
+- **Factions** — how many factions have this as their state belief. Not a count of regions at
+  all: a faction with forty provinces counts once.
 
 A group has no name of its own in the mod: descr_beliefs.txt declares a token and no text file
 localises it. ${groupNamed.viaBelief.size} of the ${groupNamed.viaBelief.size + groupNamed.token.size} group tokens are also belief tokens and take that belief's own
