@@ -352,8 +352,15 @@ function renderMarkdown(md, toc) {
       // one — the faction index has twenty cultures under twenty-four factions, every one of
       // them a narrow column with two thirds of the width beside it empty. Below eight there is
       // little left to save and a three-across table of two rows reads as a mistake.
-      const UP = body.length > 8
-        ? Math.max(1, Math.min(3, fits, Math.floor(CONTENT_PX / (groupPx + GROUP_GAP_PX)))) : 1;
+      // Gate at more than one row, not eight. Eight left ten of the faction index's
+      // twenty-two cultures undealt, and an undealt table sizes to its content while a dealt one
+      // takes the full width — so the page was a run of identical lists at half a dozen
+      // different widths, which reads as a fault rather than as a size.
+      //
+      // Capped at the row count as well, so a two-row list is dealt two across and not three:
+      // a header with an empty third group under it looks like something failed to load.
+      const UP = body.length > 1
+        ? Math.max(1, Math.min(3, fits, body.length, Math.floor(CONTENT_PX / (groupPx + GROUP_GAP_PX)))) : 1;
 
       const cls = (k, first) => {
         const c = `${align[k] || ""}${first && k === 0 ? " grp" : ""}`.trim();
