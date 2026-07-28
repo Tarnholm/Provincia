@@ -72,7 +72,11 @@ function artStrip(dir, size) {
   catch { return ""; }
   if (files.length < 4) return "";
   const pick = [0, 1, 2, 3].map((i) => files[Math.floor((i + 0.5) * files.length / 4)]);
-  return pick.map((f) => `<img src="${dir}/${f}" alt="" height="${size}">`).join(" ");
+  // Sized by WIDTH, never height. The viewer's stylesheet carries `img{max-width:100%;height:auto}`
+  // so that a picture scales with its column — and `height:auto` overrides a height attribute
+  // outright, which left every one of these thumbnails rendering at its natural size. Width is
+  // the dimension that survives; height:auto then keeps the aspect ratio.
+  return pick.map((f) => `<img src="${dir}/${f}" alt="" width="${size}">`).join(" ");
 }
 
 const gv = require(path.join(__dirname, "..", "src", "growthEval.js"));
