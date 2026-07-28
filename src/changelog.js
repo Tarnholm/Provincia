@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1463",
+    date: "2026-07-28",
+    items: [
+      { type: "fix", text: "**Crash-reporter 0.1.46: an engine could-not-resolve-name claim is verified against the tester's actual on-disk file before the report calls it a data defect.** Steam updates workshop items in place — sometimes while the game is running — so a session can spend hours resolving names against a pre-update file that is already fixed on disk. Two v7.13 sessions did exactly that with the removed `pilum_infantry` token, and the old \"DATA defect, fixable\" wording sent the team re-chasing a shipped fix. The reporter now maps the engine's VFS path (workshop or My Mods) to the real file and re-checks the token as a standalone word with comments stripped: a live defect reads \"[verified in the on-disk file]\", a moved token names its new line, and a vanished one reads \"NOT in the on-disk file anymore — the game loaded an older copy; restart the game\". The selftest covers all four verdicts on a fixture mirroring the fixed formations file." },
+      { type: "fix", text: "**Crash-reporter 0.1.46: no more \"could NOT be assessed for crashes\" printed over a session with its own crash dump.** The stale-message-log warning used to be written before dump detection, so a marathon whose log went silent in its final minutes carried both a 🔴 crash verdict and a sentence claiming the session couldn't be assessed. The message is now worded after the dump scan: with a same-session dump it says the dump is the authority and the silent window is likely the hang itself; without one, the original logging-off warning stands unchanged." },
+    ],
+  },
+
+  {
     version: "0.9.1462",
     date: "2026-07-28",
     items: [

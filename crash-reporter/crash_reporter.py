@@ -30,7 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 APP_NAME = "RIS Crash Reporter"
-APP_VERSION = "0.1.45"
+APP_VERSION = "0.1.46"
 CONFIG_FILENAME = "crash_reporter.ini"
 LOG_FILENAME = "crash_reporter.log"
 
@@ -674,6 +674,106 @@ def find_unapproved_mods(active_mods: list[str], allowed_subs: list[str]) -> lis
     return [m for m in active_mods if not any(s in m for s in allowed_subs)]
 
 
+# ----------------- on-disk verification of engine file:line claims -----------------
+# v0.1.46. The engine's "could not resolve '<token>' at <file>:<line>" describes the
+# file the game LOADED AT LAUNCH — not necessarily what is on disk NOW. Steam updates
+# workshop items in place, sometimes while the game is running, so a fixed file can
+# still produce a full session of resolution failures from the pre-update copy (field
+# case: v7.13 removed the bare `unit_type pilum_infantry`, and two testers still
+# reported it at descr_formations_ai.txt:80 — the v7.12 layout — from stale copies).
+# Reporting that as "a DATA defect, fixable" sends the mod team chasing a fix that
+# already shipped. The reporter runs on the tester's machine, so it can settle the
+# question by reading the real file.
+
+_RTWR_APP_ID = "885970"
+
+
+def _steam_workshop_roots() -> list[Path]:
+    """All existing .../steamapps/workshop/content/885970 dirs across Steam libraries."""
+    roots: list[Path] = []
+    if sys.platform != "win32":
+        return roots
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam") as k:
+            steam = Path(winreg.QueryValueEx(k, "SteamPath")[0])
+    except OSError:
+        return roots
+    libs = [steam]
+    vdf = steam / "steamapps" / "libraryfolders.vdf"
+    try:
+        for m in re.finditer(r'"path"\s+"([^"]+)"', vdf.read_text(encoding="utf-8", errors="replace")):
+            libs.append(Path(m.group(1).replace("\\\\", "\\")))
+    except OSError:
+        pass
+    for lib in libs:
+        d = lib / "steamapps" / "workshop" / "content" / _RTWR_APP_ID
+        if d.is_dir() and d not in roots:
+            roots.append(d)
+    return roots
+
+
+def map_engine_path(engine_path: str, workshop_roots: list[Path] | None = None) -> Path | None:
+    """Map an engine VFS path (q:/feral/...) to the real file, or None.
+
+    Two shapes seen in the field:
+      q:/feral/steam/workshop/<id>/<rel>                   → <library>/steamapps/workshop/content/885970/<id>/<rel>
+      q:/feral/users/default/appdata/local/<rel>           → %LOCALAPPDATA%/Feral Interactive/Total War ROME REMASTERED/VFS/Local/<rel>
+        (same mapping the logs themselves use: .../local/rome/logs ↔ VFS/Local/Rome/logs;
+         covers "My Mods" dev copies at .../local/mods/my mods/<name>/...)
+    """
+    p = engine_path.replace("\\", "/")
+    low = p.lower()
+    m = re.search(r"/steam/workshop/(\d+)/(.+)$", low)
+    if m:
+        rel = p[m.start(2):]  # original casing of the tail (paths on disk are case-insensitive anyway)
+        for root in (workshop_roots if workshop_roots is not None else _steam_workshop_roots()):
+            cand = root / m.group(1) / rel
+            if cand.is_file():
+                return cand
+        return None
+    m = re.search(r"/users/default/appdata/local/(.+)$", low)
+    if m and sys.platform == "win32":
+        local = os.environ.get("LOCALAPPDATA")
+        if local:
+            cand = Path(local) / "Feral Interactive" / "Total War ROME REMASTERED" / "VFS" / "Local" / p[m.start(1):]
+            if cand.is_file():
+                return cand
+    return None
+
+
+def check_token_on_disk(token: str, engine_path: str, line_no: int,
+                        workshop_roots: list[Path] | None = None):
+    """Does the CURRENT on-disk file still contain <token> where the engine said?
+
+    Returns (verdict, detail):
+      ("confirmed", "")            token on the named line — live defect, location verified
+      ("elsewhere", "lines a,b")   token not on that line but standalone elsewhere in the file
+      ("stale", "")                token nowhere in the file → the game loaded an older copy
+      (None, reason)               file unmappable/unreadable — no claim either way
+
+    The token must appear as a standalone word: `pilum_infantry` must NOT match
+    inside the valid class-prefixed `heavy_pilum_infantry`. `;` comments are
+    stripped first so a commented-out remnant does not resurrect the defect.
+    """
+    real = map_engine_path(engine_path, workshop_roots)
+    if real is None:
+        return None, "file not found locally"
+    try:
+        lines = real.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError as exc:
+        return None, "unreadable (%s)" % exc.__class__.__name__
+    word = re.compile(r"(?<![A-Za-z0-9_])%s(?![A-Za-z0-9_])" % re.escape(token))
+    def has(ln: str) -> bool:
+        return bool(word.search(ln.split(";", 1)[0]))
+    if 1 <= line_no <= len(lines) and has(lines[line_no - 1]):
+        return "confirmed", ""
+    hits = [i + 1 for i, ln in enumerate(lines) if has(ln)]
+    if hits:
+        return "elsewhere", "line(s) %s" % ",".join(str(h) for h in hits[:3])
+    return "stale", ""
+
+
 def find_latest_save(log_dir: Path) -> Path | None:
     """Newest .sav in the campaign's saves folder (sibling of logs/)."""
     saves_dir = log_dir.parent / "saves"
@@ -1025,6 +1125,10 @@ class LogTail:
         # "descr_formations_ai.txt:80 / Provided: 'pilum_infantry'".
         self.resolution_failures: Counter = Counter()
         self.resolution_source: dict = {}
+        # v0.1.46: the FULL engine path + line for each resolution failure (the
+        # display string above keeps only basename:line). Needed to verify the
+        # token against the real on-disk file — see check_token_on_disk().
+        self.resolution_fullsrc: dict = {}
         # Optional live capture: lines matching any regex in capture_res are kept
         # (most-recent, capped) so the report can show e.g. the last battle setup
         # even when it scrolled far past any attachable tail.
@@ -1111,6 +1215,8 @@ class LogTail:
                             sm = SOURCE_REF_RE.search(prev.strip())
                             if sm:
                                 src = "%s:%s" % (sm.group(1).replace("\\", "/").split("/")[-1], sm.group(2))
+                                self.resolution_fullsrc[key] = (
+                                    sm.group(1).replace("\\", "/"), int(sm.group(2)))
                                 break
                         self.resolution_source[key] = src
                     self.resolution_failures[key] += 1
@@ -2008,12 +2114,12 @@ def main():
         _msg_mtime = 0.0
     log_stale = bool(_msg_mtime) and duration_min >= STALE_LOG_MIN_MINUTES \
         and (ended_at.timestamp() - _msg_mtime) > STALE_LOG_SECONDS
-    if log_stale:
-        stale_min = (ended_at.timestamp() - _msg_mtime) / 60.0
-        crash_signals.append(
-            f"message_log not updated for the last ~{stale_min:.0f} min of a {duration_min:.0f}-min "
-            f"session — game logging appears OFF/misconfigured, so this session could NOT be assessed "
-            f"for crashes (check RR in-game logging / verify message_log.txt grows while playing)")
+    stale_min = (ended_at.timestamp() - _msg_mtime) / 60.0 if log_stale else 0.0
+    # The stale-log message itself is appended AFTER crash-dump detection (v0.1.46):
+    # its old wording ("could NOT be assessed for crashes") printed even when a
+    # same-session Feral dump proved a crash — two contradictory verdicts in one
+    # report (Jonnet's 458-min marathon). log_stale still gates every message_log-
+    # derived inference below either way; only the human-facing text is deferred.
 
     # ---- Signal classification ----
     # HARD signals = the session terminated abnormally (a real CTD this run).
@@ -2041,19 +2147,48 @@ def main():
         # the one signal a modder can act on without any further investigation.
         _res = Counter()
         _src = {}
+        _full = {}
         for _t in (sys_tail, msg_tail):
             _res.update(getattr(_t, "resolution_failures", {}) or {})
             _src.update(getattr(_t, "resolution_source", {}) or {})
+            _full.update(getattr(_t, "resolution_fullsrc", {}) or {})
         if _res:
+            # v0.1.46: the engine describes the file it loaded AT LAUNCH; Steam may
+            # have updated it since (mid-session or pending a restart). Verify each
+            # token against the real on-disk file before calling it a data defect —
+            # two v7.13 sessions reported the already-removed pilum token from stale
+            # copies and the old wording sent the team chasing a shipped fix.
             _items = []
+            _verdicts = []
             for _k, _n in _res.most_common(5):
                 _where = _src.get(_k) or ""
-                _items.append("%s x%d%s" % (_k, _n, (" at %s" % _where) if _where else ""))
-            crash_signals.append(
-                "⚠ the engine could not resolve %d name(s) — this is a DATA defect with a "
-                "named location, fixable without reproducing the crash: %s"
-                % (len(_res), "; ".join(_items))
-            )
+                _note = ""
+                _v = None
+                _tm = re.search(r"'([^']+)'$", _k)
+                if _tm and _k in _full:
+                    _v, _detail = check_token_on_disk(_tm.group(1), _full[_k][0], _full[_k][1])
+                    if _v == "confirmed":
+                        _note = " [verified in the on-disk file]"
+                    elif _v == "elsewhere":
+                        _note = " [on disk the token moved to %s — file changed since launch]" % _detail
+                    elif _v == "stale":
+                        _note = " [NOT in the on-disk file anymore — the game loaded an older copy]"
+                _verdicts.append(_v)
+                _items.append("%s x%d%s%s" % (_k, _n, (" at %s" % _where) if _where else "", _note))
+            if _verdicts and all(_v == "stale" for _v in _verdicts):
+                crash_signals.append(
+                    "⚠ the engine could not resolve %d name(s), but NONE of them exist in the "
+                    "current on-disk file(s) — the game loaded a STALE copy (Steam updated the "
+                    "mod during/after launch). Not a live data defect; the tester should "
+                    "restart the game to pick up the updated files: %s"
+                    % (len(_res), "; ".join(_items))
+                )
+            else:
+                crash_signals.append(
+                    "⚠ the engine could not resolve %d name(s) — this is a DATA defect with a "
+                    "named location, fixable without reproducing the crash: %s"
+                    % (len(_res), "; ".join(_items))
+                )
         _high = [e for e in combined if assert_risk(e)[0] > 0]
         if _high:
             # A raw "136 crashes, 200 survivors" is not interpretable: 40% sounds alarming or
@@ -2228,6 +2363,24 @@ def main():
             _note = known_fault_note(summary)
             if _note:
                 crash_signals.append("  " + _note)
+
+    # Deferred stale-log message (v0.1.46) — worded to agree with the dump
+    # evidence. A same-session dump proves the crash; the silent log window is
+    # then most plausibly the hang/crash itself, not logging turned off, and the
+    # old "could NOT be assessed" claim contradicted the 🔴 verdict one line up.
+    if log_stale:
+        _fresh_dump = any(cd not in stale_dumps for cd in crash_dumps)
+        if _fresh_dump:
+            crash_signals.insert(0, (
+                f"message_log stopped updating ~{stale_min:.0f} min before the end of this "
+                f"{duration_min:.0f}-min session, but a crash dump from THIS session exists — "
+                f"the dump is the authority (the silent window is likely the hang/crash itself). "
+                f"Log-tail inference was still skipped for safety."))
+        else:
+            crash_signals.insert(0, (
+                f"message_log not updated for the last ~{stale_min:.0f} min of a {duration_min:.0f}-min "
+                f"session — game logging appears OFF/misconfigured, so this session could NOT be assessed "
+                f"for crashes (check RR in-game logging / verify message_log.txt grows while playing)"))
 
     # ---- Final status ----
     # Priority: a HARD signal → crash. Otherwise a confirmed clean shutdown is
@@ -2908,6 +3061,39 @@ def selftest() -> int:
             ok = False
     except Exception as _exc:
         print("  %-26s FAIL: %r" % ("dump crash-time dating", _exc))
+        ok = False
+
+    # On-disk verification (v0.1.46): a resolution failure must be re-checked against
+    # the REAL file before the report calls it a fixable data defect — two v7.13
+    # sessions reported the already-removed pilum token from stale Steam copies.
+    # Fixture mirrors the fixed v7.13 file: class-prefixed tokens are valid and a
+    # `;`-commented bare token must NOT resurrect the defect.
+    try:
+        import tempfile
+        with tempfile.TemporaryDirectory() as _td:
+            _root = Path(_td)
+            _modfile = _root / "3535851864" / "data" / "descr_formations_ai.txt"
+            _modfile.parent.mkdir(parents=True)
+            _modfile.write_text(
+                ";\t\t\t\t\t\tpilum_infantry\n"          # line 1: comment — must not count
+                "\tunit_type\theavy_pilum_infantry 2.0\n"  # line 2: prefixed — must not count
+                "\tunit_type\tbare_token_here 1.0\n",       # line 3: standalone token
+                encoding="utf-8")
+            _ep = "q:/feral/steam/workshop/3535851864/data/descr_formations_ai.txt"
+            _v_stale = check_token_on_disk("pilum_infantry", _ep, 2, workshop_roots=[_root])
+            _v_conf = check_token_on_disk("bare_token_here", _ep, 3, workshop_roots=[_root])
+            _v_elsew = check_token_on_disk("bare_token_here", _ep, 1, workshop_roots=[_root])
+            _v_nofile = check_token_on_disk("x", "q:/feral/steam/workshop/999/data/nope.txt", 1,
+                                            workshop_roots=[_root])
+            _ok = (_v_stale[0] == "stale" and _v_conf[0] == "confirmed"
+                   and _v_elsew[0] == "elsewhere" and _v_nofile[0] is None)
+            print("  %-26s %-5s %s" % ("on-disk token verify", str(_ok),
+                                       "ok" if _ok else "FAIL (got %s/%s/%s/%s)" % (
+                                           _v_stale[0], _v_conf[0], _v_elsew[0], _v_nofile[0])))
+            if not _ok:
+                ok = False
+    except Exception as _exc:
+        print("  %-26s FAIL: %r" % ("on-disk token verify", _exc))
         ok = False
 
     for mod in ("lzma", "zipfile", "ctypes", "urllib.request"):
