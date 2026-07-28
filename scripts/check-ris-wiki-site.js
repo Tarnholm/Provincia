@@ -27,7 +27,7 @@ const path = require("path");
 
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
-const SITE = path.resolve(valOf("--site", "C:/RIS/_build/ris-wiki-site"));
+const SITE = path.resolve(valOf("--site", "C:/dev/ris-wiki-site"));
 const QUIET = argv.includes("--quiet");
 const WITHOUT = new Set((valOf("--without", "") || "").split(",").map((s) => s.trim()).filter(Boolean));
 

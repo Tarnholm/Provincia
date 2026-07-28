@@ -23,7 +23,10 @@
     "changelog:check": "node scripts/trim-changelog.js --check",
     "ship": "node scripts/ship.js",
     "submit-fp": "node scripts/submit-false-positive.js",
-    "gen:ailog-patterns": "node scripts/gen-ailog-patterns.js"
+    "gen:ailog-patterns": "node scripts/gen-ailog-patterns.js",
+    "wiki:site": "node scripts/build-ris-wiki-site.js",
+    "wiki:check": "node scripts/check-ris-wiki-site.js",
+    "wiki:probe": "electron scripts/probe-ris-wiki-site.js"
   },
   "dependencies": {
     "electron-updater": "^6.8.3",

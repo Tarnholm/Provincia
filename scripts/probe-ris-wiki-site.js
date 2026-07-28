@@ -23,7 +23,7 @@ const { app, BrowserWindow } = require("electron");
 
 const argv = process.argv.slice(1);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
-const SITE = path.resolve(valOf("--site", "C:/RIS/_build/ris-wiki-site"));
+const SITE = path.resolve(valOf("--site", "C:/dev/ris-wiki-site"));
 const n = (x) => x.toLocaleString("en-US");
 
 const problems = [];

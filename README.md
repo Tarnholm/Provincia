@@ -58,6 +58,60 @@ and published as a GitHub release; the `build-mac.yml` GitHub Action then
 builds and attaches the mac DMG when the release is created. Auto-updates are
 served from GitHub Releases via `electron-updater`.
 
+## The RIS wiki
+
+The wiki markdown lives in the mod repo at `C:/RIS/RIS/wiki`; the tools that generate,
+serve and export it live here.
+
+```sh
+npm run wiki:site      # export the wiki as a standalone static site
+npm run wiki:check     # verify the export: links, fragments, images, orphans
+npm run wiki:probe     # open the export over file:// in a real browser and report
+```
+
+`wiki:site` writes to **`C:/dev/ris-wiki-site`** — beside this checkout, not inside it,
+and outside the mod repo entirely. That is deliberate: the export is derived output,
+rebuilt from the markdown in about two minutes and roughly the same size as the wiki it
+comes from, so committing it would nearly double a repo that already holds the original.
+Living outside both working trees is what makes that a fact rather than a good intention —
+no `git add -A` in either repo can reach it.
+
+**To send the wiki to someone:**
+
+```sh
+npm run wiki:site                 # → C:/dev/ris-wiki-site  (~215 MB, ~171 MB zipped)
+```
+
+Zip that folder and send it. They unzip it and double-click `index.html` — no Node, no
+install, no internet, nothing to trust. Search, the theme toggle, nav and breadcrumbs all
+work offline.
+
+At ~171 MB zipped it is past every mail provider's attachment limit, so use a file host
+(WeTransfer, Drive, Dropbox). If it has to be smaller:
+
+```sh
+npm run wiki:site -- --without cards      # → ~117 MB, ~73 MB zipped
+```
+
+That drops the 2,263 unit portrait cards — 98 MB of PNGs that do not compress — and
+nothing else. Every page, table, stat and link survives; the unit pages just show a
+missing image where the portrait was. Run `npm run wiki:check -- --without cards` to
+verify that build, which skips the card links rather than reporting 6,727 of them broken.
+
+The same folder is a GitHub Pages site as it stands — which is option (e) of
+[docs/wiki-lfs-pages-decision.md](docs/wiki-lfs-pages-decision.md), and better than that
+brief assumed: a static export has no LFS pointers to materialise, because the images are
+copied as real files.
+
+| Script | Does |
+|---|---|
+| `scripts/gen-ris-wiki*.js` | Generate the wiki markdown and the sortable HTML views |
+| `scripts/verify-ris-wiki.js` | Verify the **markdown**: collisions, links, anchors, orphans |
+| `scripts/serve-ris-wiki.js` | Local preview server; **owns the renderer**, which the exporter requires rather than reimplements |
+| `scripts/build-ris-wiki-site.js` | Export to a standalone static site |
+| `scripts/check-ris-wiki-site.js` | Verify the **export** the way `verify-ris-wiki.js` verifies the markdown |
+| `scripts/probe-ris-wiki-site.js` | Load the export over `file://` in Chromium and report what really rendered |
+
 ## Repository layout
 
 | Path | Purpose |

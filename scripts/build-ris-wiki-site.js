@@ -37,9 +37,12 @@
  * same bytes repeated, on a site whose whole problem is its size. They go to wiki.css and
  * wiki.js, linked at the right depth.
  *
- * OUTPUT GOES OUTSIDE THE MOD REPO by default. It is derived — every byte of it can be
- * rebuilt from the markdown — and it is about the same size as the wiki it is built from, so
- * committing it would roughly double the repo for no information gained.
+ * OUTPUT GOES OUTSIDE BOTH REPOSITORIES by default: C:/dev/ris-wiki-site, beside the
+ * Provincia checkout rather than inside it. It is derived — every byte of it can be rebuilt
+ * from the markdown in about two minutes — and it is about the same size as the wiki it is
+ * built from, so committing it would roughly double the mod repo to store a second copy of
+ * what is already in it. Being outside both trees is what makes that a fact rather than an
+ * intention: no `git add -A` in either repo can reach it.
  */
 const fs = require("fs");
 const path = require("path");
@@ -48,7 +51,7 @@ const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const QUIET = argv.includes("--quiet");
 const WIKI = path.resolve(valOf("--wiki", "C:/RIS/RIS/wiki"));
-const SITE = path.resolve(valOf("--site", "C:/RIS/_build/ris-wiki-site"));
+const SITE = path.resolve(valOf("--site", "C:/dev/ris-wiki-site"));
 // Top-level asset directories to leave out, for a build small enough to send. Named rather
 // than inferred: `--without cards` drops the 104 MB of unit cards and nothing else.
 const WITHOUT = new Set((valOf("--without", "") || "").split(",").map((s) => s.trim()).filter(Boolean));
