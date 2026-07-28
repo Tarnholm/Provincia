@@ -25,7 +25,6 @@
  */
 const fs = require("fs");
 const path = require("path");
-const zlib = require("zlib");
 
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
@@ -458,141 +457,11 @@ function recruitableBy(rows, faction) {
 }
 
 // ── map rendering ────────────────────────────────────────────────────────────
-function crc32(buf) {
-  let c, crc = 0xffffffff;
-  for (let i = 0; i < buf.length; i++) {
-    c = (crc ^ buf[i]) & 0xff;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    crc = (crc >>> 8) ^ c;
-  }
-  return (crc ^ 0xffffffff) >>> 0;
-}
-function png(width, height, rgb) {
-  const chunk = (type, data) => {
-    const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
-    const td = Buffer.concat([Buffer.from(type, "ascii"), data]);
-    const cr = Buffer.alloc(4); cr.writeUInt32BE(crc32(td));
-    return Buffer.concat([len, td, cr]);
-  };
-  const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(width, 0); ihdr.writeUInt32BE(height, 4);
-  ihdr[8] = 8; ihdr[9] = 2; // 8-bit RGB
-  const raw = Buffer.alloc((width * 3 + 1) * height);
-  for (let y = 0; y < height; y++) {
-    raw[y * (width * 3 + 1)] = 0;                       // filter: none
-    rgb.copy(raw, y * (width * 3 + 1) + 1, y * width * 3, (y + 1) * width * 3);
-  }
-  return Buffer.concat([
-    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    chunk("IHDR", ihdr), chunk("IDAT", zlib.deflateSync(raw, { level: 9 })), chunk("IEND", Buffer.alloc(0)),
-  ]);
-}
-
-/** region name -> "r,g,b" key, from descr_regions' own colour line. */
-function loadRegionColours() {
-  const txt = rd("world", "maps", "base", "descr_regions.txt") || "";
-  const lines = txt.split(/\r?\n/);
-  const byRegion = {};
-  for (let i = 0; i < lines.length; i++) {
-    if (!/^[A-Za-z][A-Za-z0-9_'\- ]*\s*$/.test(lines[i])) continue;
-    const region = lines[i].trim();
-    // block: settlement, owner, rebel, "R G B", tags, …
-    for (let k = i + 1; k < Math.min(i + 7, lines.length); k++) {
-      const m = /^\s*(\d{1,3})\s+(\d{1,3})\s+(\d{1,3})\s*$/.exec(lines[k]);
-      if (m) { byRegion[region] = `${+m[1]},${+m[2]},${+m[3]}`; break; }
-    }
-  }
-  return byRegion;
-}
-
-function loadMapPixels() {
-  // Read as BINARY. Going through a latin1 string mangles the pixel bytes and the decode
-  // silently returns nothing, which is how the first run reported "map unavailable".
-  try {
-    const dg = require(path.join(__dirname, "..", "src", "descrStratGeneral.js"));
-    const t = dg.tgaToRaw(fs.readFileSync(path.join(RIS, "world", "maps", "base", "map_regions.tga")));
-    if (!t || !t.W || !t.raw) return null;
-    return { width: t.W, height: t.H, raw: t.raw, bpp: t.raw.length / (t.W * t.H), desc: t.desc };
-  } catch { return null; }
-}
-
-function renderFactionMap(mapRaw, regionColours, regions, scale) {
-  const { width, height, raw, bpp, desc } = mapRaw;
-  const want = new Set(regions.map((r) => regionColours[r.region] || regionColours[r]).filter(Boolean));
-  const capitals = new Set(regions.filter((r) => r && r.capital).map((r) => regionColours[r.region]).filter(Boolean));
-  const bottomUp = !(desc & 0x20);
-
-  // Read the source pixel at (x, y) as an "r,g,b" key. Stored BGR, rows bottom-up
-  // unless bit 5 of the descriptor is set - both traps already cost a blank map once.
-  const keyAt = (x, y) => {
-    if (x < 0 || y < 0 || x >= width || y >= height) return null;
-    const sy = bottomUp ? height - 1 - y : y;
-    const si = (sy * width + x) * bpp;
-    return `${raw[si + 2]},${raw[si + 1]},${raw[si]}`;
-  };
-
-  const ow = Math.max(1, Math.floor(width / scale)), oh = Math.max(1, Math.floor(height / scale));
-  const out = Buffer.alloc(ow * oh * 3);
-  const put = (x, y, r, g, b) => {
-    if (x < 0 || y < 0 || x >= ow || y >= oh) return;
-    const o = (y * ow + x) * 3;
-    out[o] = r; out[o + 1] = g; out[o + 2] = b;
-  };
-
-  // Pass 1: land, sea, the faction's own regions, and REGION BOUNDARIES. A pixel whose
-  // right or lower neighbour belongs to a different region is an edge, which is what makes
-  // individual regions visible inside a faction's territory instead of one red blob.
-  let painted = 0;
-  const sumX = new Map(), sumY = new Map(), count = new Map();
-  for (let y = 0; y < oh; y++) {
-    for (let x = 0; x < ow; x++) {
-      const sx = Math.min(width - 1, x * scale), sy = Math.min(height - 1, y * scale);
-      const k = keyAt(sx, sy);
-      const isSea = k === "0,0,0";
-      const mine = want.has(k);
-      const edge = !isSea && (k !== keyAt(sx + scale, sy) || k !== keyAt(sx, sy + scale));
-
-      if (edge) put(x, y, 0x11, 0x11, 0x10);                       // region outline
-      else if (mine) { put(x, y, 0xc8, 0x3c, 0x30); painted++; }    // the faction
-      else if (isSea) put(x, y, 0x18, 0x25, 0x33);                  // water
-      else put(x, y, 0x44, 0x44, 0x3e);                             // other land
-
-      // Centroid accumulation, for settlement markers.
-      if (mine) {
-        sumX.set(k, (sumX.get(k) || 0) + x);
-        sumY.set(k, (sumY.get(k) || 0) + y);
-        count.set(k, (count.get(k) || 0) + 1);
-      }
-    }
-  }
-
-  // Pass 2: a MARKER at each owned region's centroid, computed from the region's own
-  // pixels so it always lands inside the territory - no coordinates needed from the
-  // campaign file. Capitals get a larger ringed marker.
-  let markers = 0;
-  for (const [k, n] of count) {
-    if (n < 4) continue;                                  // too small to mark legibly
-    const cx = Math.round(sumX.get(k) / n), cy = Math.round(sumY.get(k) / n);
-    const isCap = capitals.has(k);
-    const r = isCap ? 3 : 2;
-    for (let dy = -r; dy <= r; dy++) {
-      for (let dx = -r; dx <= r; dx++) {
-        if (dx * dx + dy * dy > r * r) continue;
-        put(cx + dx, cy + dy, 0xff, 0xf2, 0xd0);          // settlement dot
-      }
-    }
-    if (isCap) {
-      // A ring one pixel out, so the capital reads differently at a glance.
-      for (let a = 0; a < 360; a += 12) {
-        const rad = (a * Math.PI) / 180;
-        put(cx + Math.round(Math.cos(rad) * (r + 2)), cy + Math.round(Math.sin(rad) * (r + 2)), 0x20, 0x20, 0x1c);
-      }
-    }
-    markers++;
-  }
-
-  return { buf: png(ow, oh, out), width: ow, height: oh, matched: want.size, painted, markers };
-}
+// The whole renderer lives in scripts/lib/factionMap.js — region pixels, ownership,
+// faction colours, settlement positions and the fixed window are all established there,
+// together with the TGA traps (BGR order, bottom-up rows, binary read) that a second copy
+// of this code would have to re-learn.
+const fmap = require(path.join(__dirname, "lib", "factionMap.js"));
 
 // ── faction symbols ──────────────────────────────────────────────────────────
 // The symbol beside each map is the faction's own emblem, the same art Provincia's
@@ -748,11 +617,15 @@ if (!strat) { console.error("could not parse descr_strat"); process.exit(2); }
 const intros = loadIntros();
 const chars = loadCharacters();
 const recruitRows = loadRecruitment();
-const regionColours = loadRegionColours();
-const mapRaw = NO_MAPS ? null : loadMapPixels();
-const SCALE = 1;   // full 1020x700; boundaries and markers need the detail
+const parsers = require(path.join(__dirname, "..", "src", "parsers.js"));
+const world = NO_MAPS ? null : fmap.loadWorld({ risDir: RIS, dg, parsers, strat });
 
-console.log(`intro texts ${Object.keys(intros).length} · characters ${Object.values(chars).reduce((a, v) => a + v.length, 0)} · recruit lines ${recruitRows.length} · region colours ${Object.keys(regionColours).length} · map ${mapRaw ? mapRaw.width + "x" + mapRaw.height : "unavailable"}`);
+console.log(`intro texts ${Object.keys(intros).length} · characters ${Object.values(chars).reduce((a, v) => a + v.length, 0)} · recruit lines ${recruitRows.length}`);
+if (world) {
+  const s = world.stats;
+  console.log(`map ${world.W}x${world.H} · regions ${s.regions} · settlement pixels ${s.settlements} placed ${s.placed} · regions claimed ${s.claimed} (${s.doubleClaimed} claimed twice, first block wins; ${s.regions - s.claimed} unclaimed) · faction colours ${s.colours}/${world.factions.length}${world.noColour.length ? ` · NO COLOUR DECLARED: ${world.noColour.join(", ")}` : ""}`);
+  console.log(`window ${fmap.WIN_W}x${fmap.WIN_H} at 1:1, identical for every faction`);
+}
 
 // ── cross-links ──────────────────────────────────────────────────────────────
 // The tables listed settlement and unit names as plain text, which made the wiki a set of
@@ -834,13 +707,16 @@ const factions = Object.keys(strat)
   .sort();
 
 fs.mkdirSync(path.join(OUT, "factions"), { recursive: true });
-if (mapRaw) fs.mkdirSync(path.join(OUT, "maps"), { recursive: true });
+if (world) fs.mkdirSync(path.join(OUT, "maps"), { recursive: true });
 fs.mkdirSync(path.join(OUT, "symbols"), { recursive: true });
 
 const index = [];
 let mapsWritten = 0, introsFound = 0;
 let symbolsWritten = 0, symbolBytes = 0;
 const noSymbol = [];
+// Map bookkeeping, reported at the end: the window is fixed, so what varies per faction is
+// only whether it had to be clamped against the map edge and how much red ends up in it.
+const mapStat = { bytes: 0, clamped: [], overflowed: [], dims: new Map(), minSubject: null, maxSubject: null };
 
 for (const f of factions) {
   const setts = (strat[f].settlements || []);
@@ -898,16 +774,26 @@ for (const f of factions) {
 
   // Symbol and map are ONE paragraph, so the viewer floats them side by side out of the same
   // lede block and the campaign brief wraps to the right of both. The map keeps the markdown
-  // form: it is 1020x700 and the viewer caps a floated image at 42% of the column, and an
-  // <img> whose width is capped while a height attribute holds it at 700 squashes on any
-  // renderer that does not also set height:auto. The symbol is 120px and never gets capped.
+  // form: the viewer caps a floated image at 42% of the column, and an <img> whose width is
+  // capped while a height attribute holds it at its full height squashes on any renderer
+  // that does not also set height:auto. The symbol is 120px and never gets capped.
   let mapLine = "";
-  if (mapRaw && setts.length) {
-    const m = renderFactionMap(mapRaw, regionColours, setts, SCALE);
-    if (m && m.painted > 0) {
+  if (world && setts.length) {
+    const m = fmap.render(world, f, setts.map((s) => s.region));
+    if (m && m.counts.subjectPx > 0) {
       fs.writeFileSync(path.join(OUT, "maps", `${f}.png`), m.buf);
       mapsWritten++;
-      mapLine = `${symImg}${symImg ? " " : ""}![Starting regions of ${display}](../maps/${f}.png)\n\n_Starting regions shown in red._\n\n`;
+      mapStat.bytes += m.buf.length;
+      mapStat.dims.set(`${m.w}x${m.h}`, (mapStat.dims.get(`${m.w}x${m.h}`) || 0) + 1);
+      if (m.win.clamped) mapStat.clamped.push(f);
+      if (!m.win.fits) mapStat.overflowed.push(`${f} (${m.win.terr.w}x${m.win.terr.h})`);
+      const sp = m.counts.subjectPx;
+      if (!mapStat.minSubject || sp < mapStat.minSubject[1]) mapStat.minSubject = [f, sp];
+      if (!mapStat.maxSubject || sp > mapStat.maxSubject[1]) mapStat.maxSubject = [f, sp];
+      // The caption has to say what the reader is looking at, because the map now shows the
+      // neighbours too and the fixed zoom is the whole point: without it, "small" reads as a
+      // rendering accident rather than as the fact it is.
+      mapLine = `${symImg}${symImg ? " " : ""}![Starting territory of ${display}, with its neighbours](../maps/${f}.png)\n\n_${display} in red, picked out by a pale outline and corner marks. Every other faction is in the colour it flies. Thin dark lines are region boundaries; each dot is a settlement. **Every faction map on this wiki is drawn at the same scale and the same size**, centred on that faction — so a small faction looks small._\n\n`;
     }
   }
   if (!mapLine && symImg) mapLine = `${symImg}\n\n`;
@@ -1218,7 +1104,15 @@ fs.writeFileSync(path.join(OUT, "factions.md"), idx, "utf8");
 
 console.log(`\n${index.length} faction pages written`);
 console.log(`  with main-menu intro text: ${introsFound}`);
-console.log(`  maps rendered:             ${mapsWritten}`);
+console.log(`  maps rendered:             ${mapsWritten} (${(mapStat.bytes / 1048576).toFixed(1)} MB)`);
+if (mapsWritten) {
+  console.log(`  map sizes:                 ${[...mapStat.dims].map(([d, n]) => `${d} x${n}`).join(", ")}`);
+  console.log(`  windows clamped to edge:   ${mapStat.clamped.length}${mapStat.clamped.length ? ` — ${mapStat.clamped.join(", ")}` : ""}`);
+  // A faction whose territory is WIDER than the window would be cropped, which is the one
+  // thing the fixed window is not allowed to do. Named, never silently accepted.
+  console.log(`  territory bigger than window: ${mapStat.overflowed.length}${mapStat.overflowed.length ? ` — ${mapStat.overflowed.join(", ")}` : ""}`);
+  console.log(`  smallest subject:          ${mapStat.minSubject[0]} at ${mapStat.minSubject[1].toLocaleString("en-US")} px · largest ${mapStat.maxSubject[0]} at ${mapStat.maxSubject[1].toLocaleString("en-US")} px`);
+}
 console.log(`  symbols written:           ${symbolsWritten} of ${index.length} (${(symbolBytes / 1048576).toFixed(1)} MB)`);
 if (noSymbol.length) console.log(`  WITHOUT a symbol:          ${noSymbol.length} — ${noSymbol.join(", ")}`);
 console.log(`  no settlements:            ${index.filter((e) => !e.setts).length}`);
