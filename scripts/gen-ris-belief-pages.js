@@ -391,10 +391,10 @@ const PROVENANCE = [
   "</details>",
 ].join("\n");
 
-const TIER_NOTE = "What matters is whether it is the **largest** belief in the settlement or "
-  + "merely present alongside a larger one. The file records a finer number behind that, and it "
-  + "is not a percentage — the one place it shows is how much `religious_belief` a building "
-  + "generates, which is the table further down.";
+const TIER_NOTE = "What matters is whether it is the **majority** belief in the settlement or a "
+  + "**minority** one. The file records a finer number behind that, and it is not a percentage — "
+  + "the one place it shows is how much `religious_belief` a building generates, which is the "
+  + "table further down.";
 
 const FOLD_AT = 12;
 const maybeFold = (summary, n, table) => (n > FOLD_AT ? fold(summary, [table]) : table);
@@ -431,16 +431,23 @@ function beliefPage(f, all) {
   // The numbers are not discarded. They still key the grants further down the page, where they
   // decide how much a building level adds — that is the one place the finer value shows up, and
   // it is labelled there.
-  // Named apart from the ancestry `majority` further down — the two are different measurements
-  // of different fields, and sharing a name here was a syntax error that said so out loud.
+  // Majority and minority. Minority is derived by SUBTRACTION — every region carrying the tag,
+  // less the ones where it is the largest — rather than by summing the lower tiers. The two are
+  // the same today, but only subtraction guarantees they add up to the total: a tag with a digit
+  // outside 1-4 is dropped by the tier buckets and would go missing from both rows without
+  // anything failing.
+  //
+  // Named apart from the ancestry `majority` further down; the two are different measurements of
+  // different fields, and sharing a word here was a syntax error that said so out loud.
   const majorityIn = f.byTier.get(4) || [];
-  const presentIn = TIERS.filter((t) => t !== 4).flatMap((t) => f.byTier.get(t) || []);
+  const isMajority = new Set(majorityIn);
+  const minorityIn = [...f.regions.keys()].filter((r) => !isMajority.has(r));
   const pct = (n) => (nRegions ? `${((n / nRegions) * 100).toFixed(0)}%` : "—");
   const tierRows = [
-    `| The majority belief | ${majorityIn.length || "—"} | ${pct(majorityIn.length)} |`,
-    `| Present, not the largest | ${presentIn.length || "—"} | ${pct(presentIn.length)} |`,
+    `| Majority | ${majorityIn.length || "—"} | ${pct(majorityIn.length)} |`,
+    `| Minority | ${minorityIn.length || "—"} | ${pct(minorityIn.length)} |`,
   ];
-  const regionFolds = [["The majority belief", majorityIn], ["Present, not the largest", presentIn]]
+  const regionFolds = [["Majority", majorityIn], ["Minority", minorityIn]]
     .filter(([, list]) => list.length)
     .map(([label, list]) => fold(
       `${label} — ${list.length} ${list.length === 1 ? "region" : "regions"}`,
