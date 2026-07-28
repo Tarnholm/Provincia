@@ -48,6 +48,33 @@ function pageCount() {
   return n || 5;
 }
 
+// How many pages a family holds, counted off disk. The index says "1,311 pages" beside All
+// regions rather than leaving a reader to find out by clicking, and it cannot drift, because it
+// is the directory's own contents.
+function familyCount(dir) {
+  try { return fs.readdirSync(path.join(OUT, dir)).filter((f) => /\.md$/i.test(f)).length; }
+  catch { return 0; }
+}
+
+// A strip of real thumbnails from a family's own art, as a portal tile — four of them, spread
+// evenly through the sorted list so a rerun produces the same four. They are EXAMPLES of what is
+// inside and are captioned as nothing else: no claim is made that these four are representative
+// or important, which is why they are not labelled. Families with no art of their own get no
+// strip rather than a borrowed one.
+//
+// NOT used for regions or settlements, though both have pictures. A territory map is 1020x700,
+// so at thumbnail height it is 38px of unreadable smudge; and the only settlement art in the mod
+// folder is the four nomad cards, which as "examples of settlements" would say something untrue
+// about a map of 1,305. An image that carries nothing is worse than no image.
+function artStrip(dir, size) {
+  let files = [];
+  try { files = fs.readdirSync(path.join(OUT, dir)).filter((f) => /\.png$/i.test(f)).sort(); }
+  catch { return ""; }
+  if (files.length < 4) return "";
+  const pick = [0, 1, 2, 3].map((i) => files[Math.floor((i + 0.5) * files.length / 4)]);
+  return pick.map((f) => `<img src="${dir}/${f}" alt="" height="${size}">`).join(" ");
+}
+
 const gv = require(path.join(__dirname, "..", "src", "growthEval.js"));
 const P = require(path.join(__dirname, "..", "src", "parsers.js"));
 
@@ -240,26 +267,34 @@ no server:
 - [Regions](regions.html) — all 1,311, sortable and searchable
 - [Factions](factions.html) — sortable by what each starts with
 
-## Pages
+### The world
 
-- [Factions overview](factions-overview.md) — who you can play, and how crowded the world is
-- [The map](map-and-regions.md) — regions, settlements, and what the density changes
-- [All regions](regions.md) — the land: terrain, fertility, trade goods, one page each
-- [All settlements](settlements.md) — the towns: size, population, what is built, one page each
-- [Settlement sizes](sizes.md) — a page per rung of the ladder: the population it takes, what it
-  lets you build and raise, and how many settlements start on it
-- [Cultures](cultures.md) — a page per culture: who is in it, what its settlements are drawn
-  with, and which government levels, buildings and units the mod gates on being it
-- [Beliefs](religions.md) — a page per belief: where it is on the map and at what strength, who
-  its people are, which factions follow it, and what the mod does with it
-- [Units overview](units-overview.md) — how the roster compares with vanilla
-- [All units](units.md) — the full roster with stats and cards, and a page per unit
-- [All buildings](buildings.md) — a page per chain: what each level does, costs, upgrade path
-- [Buildings and economy](buildings-and-economy.md) — a wider, shallower tree
-- [Region tag reference](tags.md) — what a region's terrain, climate, water, port, recruitment
-  zone, homeland and fertility each decide, established from what the mod conditions on them
-- [Trade goods](trade-goods.md) — a page per good: what it is worth, where on the map it is,
-  who holds it at the start, and what it lets a settlement build or raise
+| | Pages | What is on them |
+|---|---:|---|
+| [**All regions**](regions.md) | ${familyCount("regions").toLocaleString("en-US")} | The land: terrain, climate, fertility, water, port, and the trade goods placed inside its borders |
+| [**All settlements**](settlements.md) | ${familyCount("settlements").toLocaleString("en-US")} | The cities: size, population, who holds them, what is built, what can be raised |
+| [**Settlement sizes**](sizes.md) | ${familyCount("sizes").toLocaleString("en-US")} | Each rung of the ladder: the population it takes, what it first lets you build, how many start there |
+| ${artStrip("resource-icons", 24)}<br>[**Trade goods**](trade-goods.md) | ${familyCount("goods").toLocaleString("en-US")} | What each good is worth, where on the map it is, who holds it, what it unlocks |
+| [**Region tag reference**](tags.md) | ${familyCount("tags").toLocaleString("en-US")} | What a region's terrain, climate, water, port, recruitment zone, homeland and fertility each decide |
+| [The map](map-and-regions.md) | — | How the density compares with vanilla |
+
+### Who plays it
+
+| | Pages | What is on them |
+|---|---:|---|
+| ${artStrip("symbols", 26)}<br>[**All factions**](factions.md) | ${familyCount("factions").toLocaleString("en-US")} | Grouped by culture: what each starts with, its roster, its characters, its territory |
+| [**Cultures**](cultures.md) | ${familyCount("cultures").toLocaleString("en-US")} | Who is in each, what its settlements are drawn with, and what the mod gates on being it |
+| ${artStrip("belief-icons", 22)}<br>[**Beliefs**](religions.md) | ${familyCount("religions").toLocaleString("en-US")} | Where each is on the map and at what strength, whose people it is, who follows it |
+| [Factions overview](factions-overview.md) | — | How crowded the world is beside vanilla |
+
+### What they build and field
+
+| | Pages | What is on them |
+|---|---:|---|
+| ${artStrip("cards", 34)}<br>[**All units**](units.md) | ${familyCount("units").toLocaleString("en-US")} | Stats, cards, who can recruit each one and what they need to build first |
+| ${artStrip("icons", 26)}<br>[**All buildings**](buildings.md) | ${familyCount("buildings").toLocaleString("en-US")} | Every chain: what each level does, what it costs, what it upgrades into |
+| [Units overview](units-overview.md) | — | How the roster compares with vanilla |
+| [Buildings and economy](buildings-and-economy.md) | — | A wider, shallower tree than vanilla's |
 
 ## About these pages
 
