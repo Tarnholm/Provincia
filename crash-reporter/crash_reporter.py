@@ -30,7 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 APP_NAME = "RIS Crash Reporter"
-APP_VERSION = "0.1.41"
+APP_VERSION = "0.1.43"
 CONFIG_FILENAME = "crash_reporter.ini"
 LOG_FILENAME = "crash_reporter.log"
 
@@ -722,8 +722,12 @@ def find_crash_dumps(log_dir: Path, since_ts: float) -> list[Path]:
     which is SEVERAL levels ABOVE the logs dir (a sibling of VFS) — earlier
     builds only scanned around the logs dir and so found nothing. We walk up to
     the "Crash Reports" folder and scan its subfolders, plus keep the old
-    logs-dir guesses. Only files newer than since_ts count, so a stale dump from
-    a previous crash never flags a clean run."""
+    logs-dir guesses. Only files newer than since_ts count — but mtime alone is
+    NOT proof the crash happened this session: Feral moves dumps between the
+    Crash Reports work subfolders (pending/processing/sent), refreshing mtime,
+    and writes the large XML twin AFTER the .dmp — sometimes not until the next
+    game launch. Callers must therefore also date each dump with
+    dump_crash_time() before treating it as this session's crash."""
     candidates = [log_dir, log_dir.parent, log_dir.parent.parent]
     for b in list(candidates):
         candidates += [b / "CrashDumps", b / "crashes"]
@@ -756,6 +760,39 @@ def find_crash_dumps(log_dir: Path, since_ts: float) -> list[Path]:
             except OSError:
                 pass
     return list(found.values())
+
+
+_DUMP_TS_RX = re.compile(r"(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})")
+_DUMP_ID_RX = re.compile(r"FeralCrashDump\s+([0-9a-f]+)", re.IGNORECASE)
+
+
+def dump_crash_time(path: Path, siblings=()) -> float | None:
+    """The moment the crash behind this dump actually happened, from the dump's
+    own filename — or None when it cannot say.
+
+    Feral names the XML "<YYYY-MM-DD_HH-MM-SS>_FeralCrashDump <hex>.xml" with the
+    crash time; the paired minidump is a bare "FeralCrashDump <hex>.dmp", so it
+    is dated through a timestamped sibling carrying the same hex id when one is
+    in view. Telemetry proved mtime is not a substitute: every XML landed in the
+    session AFTER its crash (back-to-back relaunches), and one day-old XML
+    resurfaced inside a later session's mtime window when Feral shuffled it
+    between work subfolders."""
+    m = _DUMP_TS_RX.search(path.name)
+    if m is None:
+        idm = _DUMP_ID_RX.search(path.name)
+        if idm:
+            for sib in siblings:
+                if sib is not path and idm.group(1) in sib.name:
+                    sm = _DUMP_TS_RX.search(sib.name)
+                    if sm:
+                        m = sm
+                        break
+    if m is None:
+        return None
+    try:
+        return datetime(*(int(g) for g in m.groups())).timestamp()
+    except ValueError:
+        return None
 
 
 def read_crash_dump_info(path: Path) -> str:
@@ -2141,22 +2178,51 @@ def main():
         if battle_ctx:
             crash_signals.append(f"last battle before exit: {battle_ctx}")
 
-    # Feral crash dump — the DEFINITIVE crash signal. HARD.
+    # Feral crash dump — the DEFINITIVE crash signal. HARD — but only when the
+    # dump's own crash time falls in THIS session. Telemetry showed the XML twin
+    # consistently arriving one report late (it is written after the .dmp,
+    # sometimes on the next launch) and Feral's folder-shuffling refreshing the
+    # mtime of a day-old dump, either of which used to flip a later session to
+    # SUSPECTED CRASH and pin the minidump analysis on the wrong session.
     crash_dumps = find_crash_dumps(log_dir, started_at.timestamp() - 300)
-    banner(f"Crash-dump scan: {len(crash_dumps)} found dated to this session.")
+    stale_dumps = {cd for cd in crash_dumps
+                   if (dump_crash_time(cd, crash_dumps) or started_at.timestamp())
+                   < started_at.timestamp() - 300}
+    banner(f"Crash-dump scan: {len(crash_dumps)} found in the session window"
+           + (f" ({len(stale_dumps)} from an earlier session)." if stale_dumps else "."))
+    seen_md_summaries = set()
     for cd in crash_dumps:
-        hard_crash = True
+        prev = cd in stale_dumps
+        if not prev:
+            hard_crash = True
         info = read_crash_dump_info(cd)
-        crash_signals.append(f"Feral crash dump: {cd.name}" + (f" ({info})" if info else ""))
-        # Parse the embedded Windows minidump for the exception + faulting module
-        # — ground-truth (game-code vs driver vs overlay), no symbols needed.
+        tag = ""
+        if prev:
+            ct = dump_crash_time(cd, crash_dumps)
+            tag = (" — written %s, BEFORE this session started: it belongs to the previous "
+                   "session's crash (usually the late XML twin of a .dmp already reported)"
+                   % datetime.fromtimestamp(ct).strftime("%Y-%m-%d %H:%M"))
+        crash_signals.append(
+            f"Feral crash dump{' (previous session)' if prev else ''}: {cd.name}"
+            + (f" ({info})" if info else "") + tag)
+        # Parse the Windows minidump for the exception + faulting module —
+        # ground-truth (game-code vs driver vs overlay), no symbols needed. The
+        # .dmp IS a raw minidump, parsed directly (before v0.1.42 only the XML's
+        # embedded copy was parsed, so the fault address always arrived one
+        # report late); the XML wraps the same bytes in base64/zlib.
         try:
-            md = extract_dump_minidump(cd)
+            md = None
+            if cd.suffix.lower() == ".dmp":
+                raw = cd.read_bytes()
+                md = raw if raw[:4] == b"MDMP" else None
+            if md is None:
+                md = extract_dump_minidump(cd)
             summary = parse_minidump_summary(md) if md else None
         except Exception:
             summary = None
-        if summary:
-            crash_signals.append(f"⮑ minidump: {summary}")
+        if summary and (prev, summary) not in seen_md_summaries:
+            seen_md_summaries.add((prev, summary))
+            crash_signals.append(f"⮑ minidump{' (previous session)' if prev else ''}: {summary}")
             # Recognise a fault address seen repeatedly across testers, so the report
             # arrives already triaged instead of looking like a one-off.
             _note = known_fault_note(summary)
@@ -2386,7 +2452,11 @@ def main():
     # battle_ai_log.txt are otherwise never captured; the dump's message_log is
     # the guaranteed-complete one (no truncation). Best-effort.
     if crash_dumps:
-        newest_dump = max(crash_dumps, key=lambda p: p.stat().st_mtime)
+        # Prefer a dump from THIS session — a stale XML from an earlier crash
+        # carries an earlier session's log snapshot, which would be mislabelled
+        # with this session's end time.
+        _fresh = [p for p in crash_dumps if p not in stale_dumps]
+        newest_dump = max(_fresh or crash_dumps, key=lambda p: p.stat().st_mtime)
         try:
             embedded = extract_dump_logs(
                 newest_dump, ("battle_ai_log.txt", "campaign_ai_log.txt", "message_log.txt"))
@@ -2610,10 +2680,15 @@ def rank_asserts(counter, limit=5):
 # baseline (2.4x).
 #
 # WHICH TOKEN IS WRONG, since I got this backwards once: the defect is the BARE
-# `unit_type pilum_infantry`, of which the shipped Workshop copy has 7 — line 80 being
+# `unit_type pilum_infantry`, of which the v7.12 Workshop copy has 7 — line 80 being
 # exactly the `descr_formations_ai.txt:80` the engine names. The class-prefixed forms
 # (`heavy_pilum_infantry`, `light_pilum_infantry`, `spearmen_pilum_infantry`) are VALID and
 # vanilla ships them, so they must not be "fixed".
+#
+# FIXED IN v7.13: the new beta's descr_formations_ai.txt carries 0 bare tokens (verified
+# 2026-07-28 against C:\RIS\RIS\data — 181 prefixed pilum tokens remain, all valid). The
+# enum-assert family should disappear from v7.13 sessions; if it does NOT, something else
+# is feeding the same assert and this note's v7.12 attribution must be re-examined.
 #
 # The trap: this file's header comment lists `pilum_infantry` among the standalone keywords,
 # which reads as though bare is the correct form and prefixed is the error. Remastered's
@@ -2638,9 +2713,12 @@ KNOWN_FAULT_SIGNATURES = [
             "vs 11%, ~2.4x) and !m_current_image (50% vs 29%). man_in_front_index is "
             "DEPLETED here (4% vs 11%), and no session at this address ended after a naval "
             "battle. The unit-enum pair is what an unrecognised unit_type token in "
-            "descr_formations_ai.txt produces: the BARE `unit_type pilum_infantry` (7 in the "
-            "shipped file, line 80 being the one the engine names). The class-prefixed forms "
-            "are valid vanilla tokens - do not change those. Association, not proven cause."
+            "descr_formations_ai.txt produces - in the v7.12-and-earlier betas that was the "
+            "BARE `unit_type pilum_infantry` (7 in the shipped file, line 80 the one the "
+            "engine named), REMOVED in v7.13. On a v7.13+ session, check whether this report "
+            "carries the unit-enum asserts at all before chasing formations; all stats here "
+            "were measured on v7.12-and-earlier sessions. The class-prefixed pilum forms are "
+            "valid vanilla tokens - do not change those. Association, not proven cause."
         ),
     },
     {
@@ -2793,6 +2871,31 @@ def selftest() -> int:
             ok = False
     except Exception as _exc:
         print("  %-26s FAIL: %r" % ("resolution failure", _exc))
+        ok = False
+
+    # Dump dating (v0.1.42): the XML twin of a crash arrives one session late and
+    # Feral's folder-shuffling refreshes mtime, so session membership is decided by
+    # the filename's crash time. Filenames here are real ones from telemetry.
+    try:
+        _xml = Path("2026-07-27_00-52-09_FeralCrashDump 5f3029a342217d7.xml")
+        _dmp = Path("FeralCrashDump 5f3029a342217d7.dmp")
+        _lone = Path("FeralCrashDump 9ba604701f2c33ec.dmp")
+        _t = dump_crash_time(_xml)
+        _want = datetime(2026, 7, 27, 0, 52, 9).timestamp()
+        _session_start = datetime(2026, 7, 27, 0, 54, 0).timestamp()
+        _ok = (_t == _want
+               and dump_crash_time(_dmp, [_xml, _dmp]) == _want   # dated via XML twin
+               and dump_crash_time(_lone, [_xml, _lone]) is None  # no twin -> undatable
+               and not (_t < _session_start - 300))               # 2 min before start = grace, not stale
+        # And the actual staleness rule: a crash from the previous evening must be stale.
+        _old = dump_crash_time(Path("2026-07-26_19-59-53_FeralCrashDump 71c1837e41dc4df8.xml"))
+        _ok = _ok and (_old < _session_start - 300)
+        print("  %-26s %-5s %s" % ("dump crash-time dating", str(_ok),
+                                   "ok" if _ok else "FAIL (dump would be pinned on the wrong session)"))
+        if not _ok:
+            ok = False
+    except Exception as _exc:
+        print("  %-26s FAIL: %r" % ("dump crash-time dating", _exc))
         ok = False
 
     for mod in ("lzma", "zipfile", "ctypes", "urllib.request"):
