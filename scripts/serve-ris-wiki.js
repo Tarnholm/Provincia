@@ -359,8 +359,15 @@ function renderMarkdown(md, toc) {
       //
       // Capped at the row count as well, so a two-row list is dealt two across and not three:
       // a header with an empty third group under it looks like something failed to load.
-      const UP = body.length > 1
-        ? Math.max(1, Math.min(3, fits, body.length, Math.floor(CONTENT_PX / (groupPx + GROUP_GAP_PX)))) : 1;
+      // No row-count gate and no row-count cap. Both were there to stop a short list being dealt
+      // into a header with empty groups under it, and both cost the thing that matters more:
+      // a dealt table takes the full width and an undealt one sizes to its content, so any list
+      // left out of the dealing came out a different width from the ones around it. On a page
+      // that is the same list repeated — the faction index — that reads as breakage.
+      //
+      // So a one-faction culture is dealt three across with two slots left empty, and looks like
+      // its neighbours. Empty slots, not stretched content: the columns keep their widths.
+      const UP = Math.max(1, Math.min(3, fits, Math.floor(CONTENT_PX / (groupPx + GROUP_GAP_PX))));
 
       const cls = (k, first) => {
         const c = `${align[k] || ""}${first && k === 0 ? " grp" : ""}`.trim();
@@ -400,7 +407,11 @@ function renderMarkdown(md, toc) {
     let m = /^(#{1,6})\s+(.*)$/.exec(line);
     if (m) {
       const level = m[1].length, text = inline(m[2]), id = slugId(m[2]);
-      if (level === 2 && toc) toc.push({ id, text });
+      // Both levels are collected, and the bar picks. A page's sections are its H2s — except
+      // where a page is one long list whose runs are H3s, deliberately, so the viewer does not
+      // card each of them; the faction index is exactly that. Recording only H2 gave that page
+      // an empty jump bar, which is the page that most needs one.
+      if ((level === 2 || level === 3) && toc) toc.push({ id, text, level });
       out.push(`<h${level} id="${id}">${text}</h${level}>`);
       i++; continue;
     }
@@ -482,8 +493,20 @@ body{margin:0;background:var(--bg);color:var(--fg);
 /* top bar */
 /* The bar is the mod's purple in both themes, with its badge in it — that one strip is what
    makes a page recognisable as RIS at a glance, before any of the words are read. */
+/* Everything that has to clear the bar reads this, so the bar can grow a second row without
+   the sidebar and every sticky table heading having to be told about it separately. */
+:root{--topbar:3.1rem}
+body.has-jump{--topbar:5.35rem}
 .top{position:sticky;top:0;z-index:20;background:var(--tyrian);border-bottom:1px solid var(--tyrian-deep);
-  display:flex;gap:1rem;align-items:center;padding:.55rem 1rem;box-shadow:var(--shadow)}
+  box-shadow:var(--shadow)}
+.top .bar{display:flex;gap:1rem;align-items:center;padding:.55rem 1rem}
+/* The page's sections, always in reach. It scrolls sideways rather than wrapping, because a bar
+   that grows a second line on some pages and not others moves every sticky offset under it. */
+.jump{display:flex;gap:.1rem;align-items:center;overflow-x:auto;padding:0 .7rem .4rem;
+  scrollbar-width:thin}
+.jump a{color:rgba(244,234,216,.78);text-decoration:none;white-space:nowrap;font-size:.8rem;
+  padding:.15rem .45rem;border-radius:5px}
+.jump a:hover{color:var(--tyrian);background:var(--gold)}
 .brand{font-weight:650;letter-spacing:.01em;color:#f4ead8;text-decoration:none;white-space:nowrap;
   display:flex;align-items:center;gap:.55rem}
 .brand img{width:26px;height:26px;border-radius:5px;display:block}
@@ -508,7 +531,7 @@ body{margin:0;background:var(--bg);color:var(--fg);
    river trade" is 23 characters, about 154px at .84rem, and the column holds 172 inside its
    padding. Anything longer wraps rather than being cut, which is the right failure. */
 .wrap{display:grid;grid-template-columns:12.5rem minmax(0,1fr);gap:0;align-items:start}
-nav.side{position:sticky;top:3.1rem;height:calc(100vh - 3.1rem);overflow-y:auto;
+nav.side{position:sticky;top:var(--topbar);height:calc(100vh - var(--topbar));overflow-y:auto;
   border-right:1px solid var(--line);padding:1.1rem .7rem 3rem;font-size:.84rem;background:var(--side)}
 nav.side h4{margin:1.1rem 0 .35rem;font-size:.7rem;text-transform:uppercase;
   letter-spacing:.09em;color:var(--dim);font-weight:600}
@@ -594,7 +617,10 @@ h1::after{content:"";display:block;height:15px;margin:.55rem 0 1rem;
 h2{font-size:1.28rem;margin:2.1rem 0 .6rem;padding-bottom:.3rem;border-bottom:1px solid var(--line)}
 /* An h3 divides a list into runs — the faction index uses one per culture — so it carries a
    rule and a gold tick to be findable when scrolling, without becoming a card of its own. */
-h3{font-size:1.06rem;margin:1rem 0 .3rem;color:var(--fg);
+/* The gap ABOVE a divider is what separates one run from the last, so it is the larger of the
+   two — but only just. It was 1rem over .3rem, which read as a paragraph break where a rule
+   already does the separating. */
+h3{font-size:1.06rem;margin:.5rem 0 .3rem;color:var(--fg);
   padding:0 0 .24rem .62rem;border-bottom:1px solid var(--line);border-left:3px solid var(--gold)}
 a{color:var(--acc)}
 p{margin:.7rem 0}
@@ -608,12 +634,12 @@ blockquote p{margin:.25rem 0}
    more screen you had. fit-content on the wrapper keeps the border around the table rather
    than around the empty space beside it, and max-width caps a genuinely wide table, which
    then scrolls inside the wrapper as before. */
-.tw{border:1px solid var(--line);border-radius:8px;margin:.5rem 0 .8rem;
+.tw{border:1px solid var(--line);border-radius:8px;margin:.3rem 0 .5rem;
   background:var(--raised);width:fit-content;max-width:100%}
 /* Scrolls only when the table really is wider than the page. See the note in the renderer: an
    overflow container captures the sticky header, so giving one to every table cost the column
    headings on every long list. */
-.tw.scroll{overflow:auto;max-height:calc(100vh - 5rem)}
+.tw.scroll{overflow:auto;max-height:calc(100vh - var(--topbar) - 2rem)}
 /* Inside a scroll container the header pins to the container, not the window, so the offset
    that clears the site bar would push it a bar's height down its own box. */
 .tw.scroll th{top:0}
@@ -645,7 +671,7 @@ th,td{padding:.42rem .7rem;text-align:left;vertical-align:middle;border-bottom:1
    offset. z-index keeps the heading above the rows it is holding station over. */
 /* The heading band is the section's own tone, one step under the table it sits on, so it reads
    as a band rather than as another row. It must be opaque: it is sticky, and rows slide behind. */
-th{background:var(--panel);position:sticky;top:3.1rem;z-index:5;font-weight:600;font-size:.82rem;
+th{background:var(--panel);position:sticky;top:var(--topbar);z-index:5;font-weight:600;font-size:.82rem;
   text-transform:uppercase;letter-spacing:.04em;color:var(--dim);white-space:nowrap}
 td.right,th.right{text-align:right;font-variant-numeric:tabular-nums}
 td.center,th.center{text-align:center}
@@ -739,12 +765,33 @@ function crumbs(rel) {
   return `<div class="crumb">${out.join(" › ")}</div>`;
 }
 
+// The page's own sections, as a strip in the bar. The bar is sticky, so they stay reachable
+// however far down you are — which is the point on a page of 22 sections where the alternative
+// is scrolling back to the top to reach the next one.
+//
+// The label is the text before the first "·". These headings carry their counts now — "Gallic ·
+// 44 factions · 43 hold territory at the start" — and a bar of those is unreadable and does not
+// fit. A heading with no "·" keeps all of its text, so this costs nothing on other pages.
+//
+// H2s if the page has any, H3s otherwise: a page whose runs are H3s (the faction index) is
+// exactly the page this is for, and mixing both levels would list a section and its subsections
+// side by side as equals.
+function jumpStrip(toc) {
+  if (!toc || !toc.length) return "";
+  const level = toc.some((t) => t.level === 2) ? 2 : 3;
+  const items = toc.filter((t) => t.level === level);
+  if (items.length < 2) return "";     // a strip pointing at one place is furniture, not a tool
+  const short = (s) => String(s).split("·")[0].replace(/<[^>]*>/g, "").trim() || s;
+  return `<div class="jump">${items.map((t) => `<a href="#${t.id}">${esc(short(t.text))}</a>`).join("")}</div>`;
+}
+
 const SHELL = (title, body, rel, toc) => `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)} — RIS wiki</title>
-<style>${CSS}</style></head><body>
+<style>${CSS}</style></head><body${jumpStrip(toc) ? ' class="has-jump"' : ""}>
 <div class="top">
+  <div class="bar">
   <a class="brand" href="/README.md"><img src="/art/ris-mark.png" alt="">Imperium <span>Surrectum</span></a>
   <form action="/search" method="get" role="search">
     <input name="q" type="search" placeholder="Search ${INDEX.length.toLocaleString("en-US")} pages — a faction, region or unit…" autocomplete="off">
@@ -753,6 +800,8 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
     <button id="theme" type="button" title="Switch theme">theme</button>
     <span>local preview</span>
   </div>
+  </div>
+  ${jumpStrip(toc)}
 </div>
 <div class="wrap">
   <nav class="side">${navHtml(rel)}</nav>
@@ -821,7 +870,11 @@ const server = http.createServer((req, res) => {
     const md = fs.readFileSync(file, "utf8");
     const title = (/^#\s+(.+)$/m.exec(md) || [, path.basename(file)])[1];
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(SHELL(title, sectionise(renderMarkdown(md, [])), rel));
+    // The toc has to be held, not passed inline: renderMarkdown fills the array it is given, and
+    // the array was being created in the argument list and dropped, so the bar had nothing to
+    // build a jump strip from.
+    const toc = [];
+    res.end(SHELL(title, sectionise(renderMarkdown(md, toc)), rel, toc));
     return;
   }
   res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
