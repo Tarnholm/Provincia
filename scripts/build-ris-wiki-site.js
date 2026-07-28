@@ -269,7 +269,11 @@ let rendered = 0;
 for (const rel of mdPages) {
   const md = fs.readFileSync(path.join(WIKI, rel), "utf8");
   const title = (/^#\s+(.+)$/m.exec(md) || [, path.basename(rel)])[1];
-  const html = SHELL(title, sectionise(renderMarkdown(md, [])), "/" + rel);
+  // The toc has to be kept and handed on, not created in the argument list: renderMarkdown fills
+  // the array it is given, and SHELL builds the bar's jump strip out of it. Passing a throwaway
+  // array built every page in the site without its section links — the server had the same bug.
+  const toc = [];
+  const html = SHELL(title, sectionise(renderMarkdown(md, toc)), "/" + rel, toc);
   writeOut(rel.replace(/\.md$/i, ".html"), finish(html, rel));
   rendered++;
 }
