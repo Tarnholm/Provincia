@@ -95,7 +95,14 @@ function parseEdb(edb) {
 
     m = /^levels\s+(.+)$/.exec(t);
     if (m) {
-      chain.order = m[1].split(/\s+/).filter((x) => /^[a-z0-9_+]+$/i.test(x));
+      // The `-` in the class is not decoration. `building grain_imports` declares
+      // `levels grain grain+1 grain+2 grain-1`, and without it `grain-1` was filtered out of
+      // the order, never became a level, and its own block's lines were attributed to the
+      // level above it — which is how `grain+2` came to report a settlement minimum of
+      // large_city when the file gives it city. One level in the whole mod is spelled this
+      // way; it was found by counting the `settlement_min` lines two ways and getting 272
+      // against 273.
+      chain.order = m[1].split(/\s+/).filter((x) => /^[a-z0-9_+\-]+$/i.test(x));
       for (const l of chain.order) chain.levels[l] = { level: l, chain: chain.chain, requires: "", line: 0 };
       continue;
     }
@@ -120,7 +127,16 @@ function parseEdb(edb) {
     m = /^([a-z_]+)\s+([a-z_]+)\s+(-?\d+)\s+requires\s+(.+)$/.exec(t);
     if (m && level) { effects.push({ chain: chain.chain, level: level.level, effect: m[1], subject: m[2], amount: +m[3], requires: m[4].trim(), line: i + 1 }); continue; }
 
-    m = /^([a-z0-9_+]+)\s+requires\s+(.+)$/i.exec(t);
+    // `settlement_min <size>` is NOT a condition. It is a FIELD of a level block, sitting
+    // beside `construction`, `cost` and `upgrades`, and it is the only place the mod states a
+    // settlement-size requirement: all 273 occurrences are this shape, none appears inside a
+    // `requires` expression, and there is no `settlement_max` of any kind. Captured on the
+    // level so a size reference can ask "what does this size unlock" and get an answer read off
+    // the file rather than inferred.
+    m = /^settlement_min\s+([a-z0-9_]+)$/i.exec(t);
+    if (m && level) { level.settlementMin = m[1].toLowerCase(); continue; }
+
+    m = /^([a-z0-9_+\-]+)\s+requires\s+(.+)$/i.exec(t);
     if (m && chain.levels[m[1]]) {
       level = chain.levels[m[1]];
       level.requires = m[2].trim();
@@ -308,7 +324,7 @@ function atomValue(atom, ctx) {
     return { value: ctx.goods.has(m[1].toLowerCase()) ? T : F, ...none };
   }
 
-  m = /^building_present_min_level\s+([a-z0-9_+]+)\s+([a-z0-9_+]+)$/i.exec(a);
+  m = /^building_present_min_level\s+([a-z0-9_+\-]+)\s+([a-z0-9_+\-]+)$/i.exec(a);
   if (m) {
     if (!ctx.built) return { value: U, unknown: [a], ambiguous: false };
     const chain = m[1].toLowerCase(), want = m[2].toLowerCase();
@@ -325,7 +341,7 @@ function atomValue(atom, ctx) {
 
   // `queued` = under construction. descr_strat records no construction at the campaign
   // start (checked: zero matches in the file), so at turn 0 nothing is queued.
-  m = /^building_present\s+([a-z0-9_+]+)(\s+queued)?$/i.exec(a);
+  m = /^building_present\s+([a-z0-9_+\-]+)(\s+queued)?$/i.exec(a);
   if (m) {
     if (m[2]) return { value: F, ...none };
     if (!ctx.built) return { value: U, unknown: [a], ambiguous: false };

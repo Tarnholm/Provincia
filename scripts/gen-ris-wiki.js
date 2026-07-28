@@ -246,6 +246,8 @@ no server:
 - [The map](map-and-regions.md) — regions, settlements, and what the density changes
 - [All regions](regions.md) — the land: terrain, fertility, trade goods, one page each
 - [All settlements](settlements.md) — the towns: size, population, what is built, one page each
+- [Settlement sizes](sizes.md) — a page per rung of the ladder: the population it takes, what it
+  lets you build and raise, and how many settlements start on it
 - [Units overview](units-overview.md) — how the roster compares with vanilla
 - [All units](units.md) — the full roster with stats and cards, and a page per unit
 - [All buildings](buildings.md) — a page per chain: what each level does, costs, upgrade path

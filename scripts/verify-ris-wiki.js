@@ -47,7 +47,17 @@ if (!fs.existsSync(OUT)) { console.error(`wiki not found: ${OUT}`); process.exit
 if (argv.includes("--collisions")) {
   const os = require("os");
   const { execFileSync } = require("child_process");
-  const gens = fs.readdirSync(SCRIPTS).filter((n) => /^gen-ris-.*\.js$/.test(n)).sort();
+  // gen-ris-wiki-html.js is excluded, and NOT because it is inconvenient. It is the one
+  // generator whose input is the wiki rather than the mod: it parses units.md, regions.md and
+  // factions.md back out of the output directory. Run into an empty directory it finds no rows
+  // and exits 1 by design — that guard is the thing standing between a shape change in a
+  // markdown table and three silently empty HTML views. So running it in isolation asks it a
+  // question it cannot answer, and the failure that came back said nothing about collisions.
+  // Its four outputs are `.html` files at the root, and no other generator writes an `.html`
+  // file at all, so nothing is lost from this check by leaving it out.
+  const READS_THE_WIKI = new Set(["gen-ris-wiki-html.js"]);
+  const gens = fs.readdirSync(SCRIPTS).filter((n) => /^gen-ris-.*\.js$/.test(n) && !READS_THE_WIKI.has(n)).sort();
+  note(`  skipped, reads the wiki rather than producing it: ${[...READS_THE_WIKI].join(", ")}`);
   const produced = new Map();   // relative path -> [generator, …]
   const base = fs.mkdtempSync(path.join(os.tmpdir(), "riswiki-"));
   for (const g of gens) {
@@ -218,9 +228,16 @@ note(`images: ${images.toLocaleString("en-US")} checked, ${badImages} broken`);
   // verification failure, but a generator that produced nothing still is.
   // settlements/ is one page per region — 1,311 as RIS ships, and the floor sits below that
   // so a smaller map is not a verification failure while a generator that wrote nothing is.
+  // sizes/ is one page per rung of the settlement ladder plus index.json — 7 entries as RIS
+  // ships, and the ladder is six rungs in vanilla too, so the floor sits at 5 pages: a shorter
+  // ladder is a mod change, a generator that wrote nothing is a bug.
+  // belief-icons/ is one pip per people descr_regions names (51 as RIS ships) and
+  // settlement-cards/ is the settlement art that is actually in the mod folder (4). Both floors
+  // sit low on purpose — these are art families whose size is the mod's business — but at zero
+  // the pages that reference them would break, and that is what these catch.
   const floors = {
     factions: 200, regions: 1000, settlements: 1000, units: 1000, cards: 900, maps: 150,
-    buildings: 60, icons: 200, goods: 40,
+    buildings: 60, icons: 200, goods: 40, sizes: 5, "belief-icons": 30, "settlement-cards": 1,
   };
   for (const [dir, min] of Object.entries(floors)) {
     const n = count(dir);

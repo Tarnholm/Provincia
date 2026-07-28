@@ -435,11 +435,52 @@ const resName = (tok) => {
 // (DELMATO-PANNONIAN_LABEL), hence the second attempt. All 51 tokens used by descr_regions
 // resolve; the counter below would say so if that ever stopped being true.
 const BI_NAMES = loadDisplayNames("expanded_bi.txt");
-const ethNameVia = { declared: new Set(), none: new Set() };
+
+/**
+ * descr_beliefs.txt — the file that DECLARES each of these peoples, and the only reason the
+ * People row can carry an icon at all.
+ *
+ * Each block gives the belief a `"religion icon"` path and a `"name"` key, exactly the way
+ * descr_sm_resources.txt gives a trade good an icon and a name key. So neither has to be
+ * guessed from the token, and the name lookup below now asks the file first and falls back to
+ * the `<TOKEN>_LABEL` convention only for anything the file does not declare.
+ *
+ * TWO TRAPS, both hit while writing this:
+ *
+ *   1. THE BLOCKS ARE NOT ALL AT THE SAME INDENT. Eleven Anatolian peoples — Mysian, Lydian,
+ *      Carian, Lycian, Pamphylian, Pisidian, Phrygian, Paphlagonian, Lycaonian, Isaurian,
+ *      Cilician, Cappadocian — are written one tab deeper than the rest, under `"anatolian"`.
+ *      A pattern anchored on a single tab finds 41 of the 53 and every one of those twelve is a
+ *      people descr_regions actually uses, so the icons would have been missing exactly where
+ *      the map needs them. The block is recognised by its CONTENT — the `"religion icon"` line
+ *      it carries — rather than by its indentation.
+ *
+ *   2. THE VOCABULARY IS NOT THE SAME AS descr_regions'. The map uses 51 people tokens and the
+ *      belief file declares 53. All 51 are declared; the two spare are `anatolian` and `greek`,
+ *      which are the umbrella entries the finer-grained peoples sit under. Counted on every run.
+ */
+const BELIEFS = (() => {
+  const out = {};
+  let cur = null;
+  for (const raw of (rd("descr_beliefs.txt") || "").split(SPLIT_EOL)) {
+    const line = raw.replace(/;;.*$/, "").replace(/\r$/, "");
+    let m = /^\s+"([a-z0-9_\-]+)"\s*:\s*$/.exec(line);
+    if (m) { cur = { tok: m[1].toLowerCase() }; continue; }
+    if (!cur) continue;
+    m = /"religion icon"\s*:\s*"([^"]+)"/.exec(line);
+    if (m) { cur.icon = m[1]; out[cur.tok] = cur; continue; }
+    m = /"name"\s*:\s*"([^"]+)"/.exec(line);
+    if (m && out[cur.tok] && !out[cur.tok].nameKey) out[cur.tok].nameKey = m[1].toLowerCase();
+  }
+  return out;
+})();
+const ethNameVia = { declared: new Set(), convention: new Set(), none: new Set() };
 const ethName = (tok) => {
   const t = String(tok).toLowerCase();
+  const key = BELIEFS[t] && BELIEFS[t].nameKey;
+  if (key && BI_NAMES[key]) { ethNameVia.declared.add(t); return BI_NAMES[key]; }
   const hit = BI_NAMES[`${t}_label`] || BI_NAMES[`${t.replace(/_/g, "-")}_label`];
-  if (hit) { ethNameVia.declared.add(t); return hit; }
+  if (hit) { ethNameVia.convention.add(t); return hit; }
   ethNameVia.none.add(t);
   return null;
 };
@@ -486,6 +527,40 @@ function writeResourceIcons(tokens) {
   return { map, written, bytes, noDeclaration, fileMissing, failed };
 }
 
+// ── belief icons ─────────────────────────────────────────────────────────────
+// The People row on a region page is a list of names and percentages and it is the row a reader
+// is most often scanning for. The mod has a pip for each of those peoples and declares the path
+// itself, so the icon goes in front of the name — the same trade this generator already makes
+// for a trade good. Written from here, not from a second generator, because one owner per output
+// directory is what keeps the collision check in verify-ris-wiki.js meaningful.
+//
+// Scale 1: the sources measure 90x90 and the whole set is 259 KB, so downscaling would save a
+// quarter of a megabyte across the wiki and cost the shape on a high-density display. The run
+// output prints the dimensions, so that trade-off stays a measured one.
+const BELIEF_ICON_SCALE = 1;
+function writeBeliefIcons(tokens) {
+  const dir = path.join(OUT, "belief-icons");
+  fs.mkdirSync(dir, { recursive: true });
+  const map = {};
+  const noDeclaration = [], fileMissing = [], failed = [];
+  let written = 0, bytes = 0, w = 0, h = 0;
+  for (const tok of [...tokens].sort()) {
+    const b = BELIEFS[tok];
+    if (!b || !b.icon) { noDeclaration.push(tok); continue; }
+    const rel = b.icon.replace(/\\/g, "/");
+    const file = /^data\//i.test(rel) ? path.join(RIS, rel.slice(5)) : path.join(RIS, "..", rel);
+    if (!fs.existsSync(file)) { fileMissing.push(`${tok} -> ${rel}`); continue; }
+    try {
+      const r = convertTga(dg, file, BELIEF_ICON_SCALE);
+      if (!r) { failed.push(tok); continue; }
+      fs.writeFileSync(path.join(dir, `${tok}.png`), r.buf);
+      map[tok] = `belief-icons/${tok}.png`;
+      written++; bytes += r.buf.length; w = r.w; h = r.h;
+    } catch { failed.push(tok); }
+  }
+  return { map, written, bytes, noDeclaration, fileMissing, failed, w, h };
+}
+
 const TAG_PREFIXES = [
   [/^aor_/, ""], [/^homeland_/, ""], [/^rel_/, ""], [/^base_port_level_/, "port level "],
   [/^Farm/i, "farm level "], [/^gov\d*/, ""],
@@ -518,6 +593,27 @@ function tagLabel(tok) {
 let TAG_ANCHORS = {};
 try { TAG_ANCHORS = JSON.parse(fs.readFileSync(path.join(OUT, "tags", "index.json"), "utf8")); }
 catch { /* run gen-ris-tag-pages.js first; until then the values are plain text as before */ }
+
+// Settlement sizes, the same arrangement one level up: gen-ris-settlement-sizes.js writes a page
+// per rung of the ladder and publishes sizes/index.json mapping each size token to its page and
+// the display name the page is headed with. Read rather than recomputed, and the display name
+// comes from there too — the size names are the mod's own (`{ST_LARGE_TOWN}` in
+// text/shared.txt reads "Large town"), and this generator was printing `large_town` with the
+// underscore knocked out, which is a guess that happens to look right.
+let SIZE_INDEX = {};
+try { SIZE_INDEX = JSON.parse(fs.readFileSync(path.join(OUT, "sizes", "index.json"), "utf8")); }
+catch { /* run gen-ris-settlement-sizes.js first; until then the size is plain text as before */ }
+let sizeLinked = 0;
+const sizeUnlinked = new Set();
+/** The settlement's size, linked to the page saying what that size decides. `rel` is the prefix. */
+function sizeRef(level, rel) {
+  const tok = String(level || "").toLowerCase().replace(/\s+/g, "_");
+  if (!tok) return null;
+  const e = SIZE_INDEX[tok];
+  if (!e) { if (Object.keys(SIZE_INDEX).length) sizeUnlinked.add(tok); return String(level).replace(/_/g, " "); }
+  sizeLinked++;
+  return `[${e.name}](${rel}sizes/${e.page})`;
+}
 let tagLinked = 0, tagUnlinked = new Set();
 function tagRef(tok) {
   const a = TAG_ANCHORS[String(tok).toLowerCase()];
@@ -864,6 +960,23 @@ fs.mkdirSync(path.join(OUT, "settlements"), { recursive: true });
 const NEEDED_GOODS = new Set(res.tradeable);
 for (const r of list) for (const tok of (MAP_RESOURCES.out.get(r.region) || new Map()).keys()) NEEDED_GOODS.add(tok);
 const RES_ICONS = writeResourceIcons(NEEDED_GOODS);
+
+// Every people any region names, from the ancestry field and from the `rel_<belief>_<tier>`
+// tags, so a belief that appears only as a tag still gets its icon. Union of the two, because
+// the two vocabularies are not identical: 1,180 of 1,311 regions name the same set both ways.
+const NEEDED_BELIEFS = new Set();
+for (const r of regions) {
+  for (const e of r.ethnicities) NEEDED_BELIEFS.add(e.name);
+  for (const t of r.tags) {
+    const m = /^rel_([a-z_]+)_(\d)$/i.exec(String(t));
+    if (m) NEEDED_BELIEFS.add(m[1].toLowerCase());
+  }
+}
+const BELIEF_ICONS = writeBeliefIcons(NEEDED_BELIEFS);
+const BELIEF_ICON_PX = 16;
+const beliefIcon = (tok) => (BELIEF_ICONS.map[tok]
+  ? `<img src="../${BELIEF_ICONS.map[tok]}" alt="" width="${BELIEF_ICON_PX}" height="${BELIEF_ICON_PX}" style="vertical-align:text-bottom"> `
+  : "");
 const goodIcon = (tok) => (RES_ICONS.map[tok] ? `<img src="../${RES_ICONS.map[tok]}" alt="" width="24">` : "");
 
 // Each trade good has its own reference page (gen-ris-trade-goods.js writes one per good,
@@ -950,7 +1063,7 @@ for (const r of list) {
   // page on two numbers — the shares are the answer and they fit on a line.
   const pName = (k) => ethName(k) || humanise(k);
   const peopleLine = eth.length
-    ? eth.map((e) => `${pName(e.name)} ${e.pct}%`).join(", ") : null;
+    ? eth.map((e) => `${beliefIcon(e.name)}${pName(e.name)} ${e.pct}%`).join(", ") : null;
   const beliefLine = Object.keys(relTier).length
     ? Object.entries(relTier)
       .sort((a, b) => (b[1].tier || 0) - (a[1].tier || 0) || a[0].localeCompare(b[0]))
@@ -1059,7 +1172,7 @@ ${gated.join("\n")}
     : held ? "_Nothing is built here at the campaign start._"
       : "_No faction holds this settlement at the campaign start, so the campaign file records nothing built in it._";
   const townGlance = [
-    held ? `**Size:** ${String(held.level || "").replace(/_/g, " ")}` : null,
+    held ? `**Size:** ${sizeRef(held.level, "../") || "_not determined_"}` : null,
     held && held.pop != null ? `**Population:** ${held.pop.toLocaleString("en-US")}` : null,
     held && (held.buildings || []).length ? `**Buildings:** ${held.buildings.length}` : null,
   ].filter(Boolean).join(" · ");
@@ -1092,7 +1205,7 @@ cannot disagree.
   fs.writeFileSync(path.join(OUT, "settlements", `${r.settlement}.md`), townBody, "utf8");
   settlementIndex.push({
     settlement: r.settlement, name: settleName, region: r.region, regionName: placeName(r.region),
-    level: held ? String(held.level || "").replace(/_/g, " ") : null,
+    level: held ? String(held.level || "").toLowerCase() : null,
     pop: held && held.pop != null ? held.pop : null,
     owner: held ? facName(held.faction) : null, ownerTok: held ? held.faction : null,
     capital: !!(held && held.capital), builds: held ? (held.buildings || []).length : 0,
@@ -1137,9 +1250,12 @@ ${settlementIndex.length.toLocaleString("en-US")} settlements, one per region. $
 Search finds a city by name here; the region it sits in is the land around it, with the terrain,
 fertility and trade goods.
 
+Size is a rung on a ladder of ${Object.keys(SIZE_INDEX).length || 6}, and it decides what a settlement can build and raise —
+each one links to [what that size does](sizes.md).
+
 | Settlement | Region | Held by | Size | Population | Built |
 |---|---|---|---|---:|---:|
-${settlementIndex.map((s) => `| [${s.name}](settlements/${encodeURIComponent(s.settlement)}.md)${s.capital ? " ★" : ""} | [${s.regionName}](regions/${encodeURIComponent(s.region)}.md) | ${s.owner ? (hasPage(s.ownerTok) ? `[${s.owner}](factions/${s.ownerTok}.md)` : `[${npName(s.ownerTok)}](factions/non-playable.md)`) : "_independent_"} | ${s.level || "—"} | ${s.pop != null ? s.pop.toLocaleString("en-US") : "—"} | ${s.builds} |`).join("\n")}
+${settlementIndex.map((s) => `| [${s.name}](settlements/${encodeURIComponent(s.settlement)}.md)${s.capital ? " ★" : ""} | [${s.regionName}](regions/${encodeURIComponent(s.region)}.md) | ${s.owner ? (hasPage(s.ownerTok) ? `[${s.owner}](factions/${s.ownerTok}.md)` : `[${npName(s.ownerTok)}](factions/non-playable.md)`) : "_independent_"} | ${sizeRef(s.level, "") || "—"} | ${s.pop != null ? s.pop.toLocaleString("en-US") : "—"} | ${s.builds} |`).join("\n")}
 
 ★ marks a faction capital.
 `;
@@ -1178,7 +1294,23 @@ console.log(`  trade good links: ${goodLinked.toLocaleString("en-US")} table cel
 console.log(`\nancestry (descr_regions field 7, "<people> <pct>" pairs):`);
 console.log(`  parsed:     ${withEthnicities.toLocaleString("en-US")} regions`);
 console.log(`  unparseable or absent: ${withoutEthnicities.toLocaleString("en-US")}${unparseableEth.length ? ` — e.g. ${unparseableEth.join("; ")}` : ""}`);
-console.log(`  people display names (distinct tokens): ${ethNameVia.declared.size} from text/expanded_bi.txt <TOKEN>_LABEL, ${ethNameVia.none.size} with no entry (token humanised)${ethNameVia.none.size ? ` — ${[...ethNameVia.none].join(", ")}` : ""}`);
+console.log(`  people display names (distinct tokens): ${ethNameVia.declared.size} via the key descr_beliefs.txt declares, ${ethNameVia.convention.size} via the <TOKEN>_LABEL convention, ${ethNameVia.none.size} with no entry (token humanised)${ethNameVia.none.size ? ` — ${[...ethNameVia.none].join(", ")}` : ""}`);
+
+console.log(`\nbelief icons -> ${path.join(OUT, "belief-icons")} (source pips at 1/${BELIEF_ICON_SCALE}, shown at ${BELIEF_ICON_PX}px):`);
+console.log(`  descr_beliefs.txt declares:  ${Object.keys(BELIEFS).length} beliefs, ${Object.values(BELIEFS).filter((b) => b.icon).length} with a religion icon, ${Object.values(BELIEFS).filter((b) => b.nameKey).length} with a name key`);
+console.log(`  peoples the map actually uses: ${NEEDED_BELIEFS.size} (union of the ancestry field and the rel_ tags)`);
+{
+  const undeclared = [...NEEDED_BELIEFS].filter((t) => !BELIEFS[t]);
+  const unused = Object.keys(BELIEFS).filter((t) => !NEEDED_BELIEFS.has(t));
+  console.log(`    used but not declared: ${undeclared.length}${undeclared.length ? ` (${undeclared.join(", ")})` : ""}  <- these are the ones that would show no icon`);
+  console.log(`    declared but on no region: ${unused.length}${unused.length ? ` (${unused.join(", ")})` : ""}`);
+}
+console.log(`  written:                     ${BELIEF_ICONS.written} (${(BELIEF_ICONS.bytes / 1024).toFixed(0)} KB, ${BELIEF_ICONS.w}x${BELIEF_ICONS.h} each)`);
+console.log(`  no "religion icon" declared: ${BELIEF_ICONS.noDeclaration.length}${BELIEF_ICONS.noDeclaration.length ? ` (${BELIEF_ICONS.noDeclaration.join(", ")})` : ""}`);
+console.log(`  declared file not on disk:   ${BELIEF_ICONS.fileMissing.length}${BELIEF_ICONS.fileMissing.length ? ` (${BELIEF_ICONS.fileMissing.join(", ")})` : ""}`);
+console.log(`  threw while decoding:        ${BELIEF_ICONS.failed.length}${BELIEF_ICONS.failed.length ? ` (${BELIEF_ICONS.failed.join(", ")})` : ""}  <- a zero here means nothing threw, not that the art is correct; open one and look`);
+
+console.log(`\nsettlement sizes: ${sizeLinked.toLocaleString("en-US")} Size values linked into sizes/ (${Object.keys(SIZE_INDEX).length} sizes in sizes/index.json)${sizeUnlinked.size ? `, ${sizeUnlinked.size} with no entry (${[...sizeUnlinked].join(", ")})` : ""}${Object.keys(SIZE_INDEX).length ? "" : "  <- run gen-ris-settlement-sizes.js, then this generator again"}`);
 
 console.log(`\ntrade-good icons -> ${path.join(OUT, "resource-icons")} (1/${ICON_SCALE} of the source art):`);
 console.log(`  goods referenced by a page: ${NEEDED_GOODS.size}`);

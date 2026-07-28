@@ -13,6 +13,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1461",
+    date: "2026-07-28",
+    items: [
+      { type: "fix", text: "**Crash-reporter 0.1.43: crash dumps are dated by their own crash time, because file mtime lies twice.** Cross-referencing dump hex ids across the telemetry channel proved every Feral XML lands one report LATE — Feral writes the .dmp at crash time but the XML twin later, sometimes not until the next launch — so the minidump fault-address analysis was systematically pinned on the session AFTER the crash. And Feral shuffles dumps between `Crash Reports/{pending,processing,sent}`, refreshing mtime: one tester's report attached an XML from a crash a full day earlier as if it were fresh. Either could flip a clean session to SUSPECTED CRASH. The filename's crash timestamp is now the authority (a bare .dmp is dated via its timestamped XML twin's hex id); a dump from before the session is attached but labelled \"previous session\" and never decides the status." },
+      { type: "improvement", text: "**Raw .dmp files are parsed as minidumps directly** — they ARE minidumps; only the XML's base64/zlib-wrapped copy was parsed before, which is exactly why the fault address always arrived one report late. The current session's crash now shows its own fault address in its own report. The selftest covers the dating logic on the real telemetry filenames that exposed the bug." },
+      { type: "change", text: "**The `+0x266FD3` triage note is dated to v7.12-and-earlier: beta v7.13 removes all seven bare `unit_type pilum_infantry` tokens** (verified against the RIS working copy — 0 bare, 181 valid prefixed remain). A v7.13 report should be checked for the unit-enum asserts before anyone chases formations; if the assert family still appears on 7.13, that itself is a finding, and the note says so. Also: the telemetry reader now counts SESSIONS, not messages — the reporter posts dump-carrier companion messages that repeat the status, and counting them read 254 suspected crashes where there are 154 real suspect sessions." },
+    ],
+  },
+
+  {
     version: "0.9.1460",
     date: "2026-07-27",
     items: [
