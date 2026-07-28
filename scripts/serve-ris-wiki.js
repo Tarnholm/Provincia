@@ -729,7 +729,8 @@ hr{border:none;border-top:1px solid var(--line);margin:2rem 0}
 const NAV = [
   ["Start here", [["/README.md", "Wiki index"], ["/factions.md", "All factions"],
     ["/regions.md", "All regions"], ["/settlements.md", "All settlements"],
-    ["/units.md", "All units"], ["/buildings.md", "All buildings"], ["/trade-goods.md", "Trade goods"]]],
+    ["/units.md", "All units"], ["/buildings.md", "All buildings"], ["/trade-goods.md", "Trade goods"],
+    ["/cultures.md", "Cultures"], ["/religions.md", "Beliefs"], ["/sizes.md", "Settlement sizes"]]],
   ["Overviews", [["/factions-overview.md", "Factions vs vanilla"], ["/map-and-regions.md", "The map"],
     ["/units-overview.md", "Roster vs vanilla"]]],
   ["Region tags", [["/tags.md", "All reference tables"], ["/tags/terrain.md", "Terrain"],
@@ -766,9 +767,13 @@ function crumbs(rel) {
     // but their index is trade-goods.md, so "<dir>.md" would have produced a crumb pointing at
     // a file that does not exist — which the existence check below turns into an unlinked word,
     // silently losing the way back up.
+    // Every page family gets an entry. A family missing from here does not break — the crumb
+    // falls back to unlinked text — which is exactly why three of them (sizes, cultures,
+    // religions) went unnoticed after being added: the way back up quietly stopped being a link.
     const INDEX_OF = {
       factions: "/factions.md", regions: "/regions.md", settlements: "/settlements.md",
       units: "/units.md", buildings: "/buildings.md", tags: "/tags.md", goods: "/trade-goods.md",
+      sizes: "/sizes.md", cultures: "/cultures.md", religions: "/religions.md",
     };
     const overview = INDEX_OF[section] || null;
     out.push(overview && fs.existsSync(path.join(ROOT, overview.slice(1)))
