@@ -790,10 +790,12 @@ for (const f of factions) {
       const sp = m.counts.subjectPx;
       if (!mapStat.minSubject || sp < mapStat.minSubject[1]) mapStat.minSubject = [f, sp];
       if (!mapStat.maxSubject || sp > mapStat.maxSubject[1]) mapStat.maxSubject = [f, sp];
-      // The caption has to say what the reader is looking at, because the map now shows the
-      // neighbours too and the fixed zoom is the whole point: without it, "small" reads as a
-      // rendering accident rather than as the fact it is.
-      mapLine = `${symImg}${symImg ? " " : ""}![Starting territory of ${display}, with its neighbours](../maps/${f}.png)\n\n_${display} in red, picked out by a pale outline and corner marks. Every other faction is in the colour it flies. Thin dark lines are region boundaries; each dot is a settlement. **Every faction map on this wiki is drawn at the same scale and the same size**, centred on that faction — so a small faction looks small._\n\n`;
+      // The map leads the page at its own size, with the emblem and the faction's numbers
+      // beside it rather than above it. The explanatory caption is gone: it said the same
+      // paragraph on 215 pages, and what a reader needs from it — that every faction map is
+      // drawn at one scale, so a small faction looks small — belongs on the index once, not
+      // under every picture.
+      mapLine = `<div class="fhead">\n\n![Starting territory of ${display}, with its neighbours](../maps/${f}.png)\n\n<div class="fmeta">\n\n${symImg ? `${symImg}\n\n` : ""}${glance}\n\n</div>\n\n</div>\n\n`;
     }
   }
   if (!mapLine && symImg) mapLine = `${symImg}\n\n`;
@@ -802,9 +804,7 @@ for (const f of factions) {
 
 [← all factions](../factions.md) · [wiki index](../README.md)
 
-${glance}
-
-${mapLine}${intro.descr ? `## The campaign brief\n\n> ${intro.descr.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n\n` : `> _The main-menu text for this faction was not found._\n\n`}## Starting settlements
+${mapLine || `${glance}\n\n`}${intro.descr ? `## The campaign brief\n\n> ${intro.descr.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n\n` : `> _The main-menu text for this faction was not found._\n\n`}## Starting settlements
 
 ${setts.length ? `${display} begins with **${setts.length} settlement${setts.length === 1 ? "" : "s"}** and **${totalPop.toLocaleString("en-US")}** people.
 

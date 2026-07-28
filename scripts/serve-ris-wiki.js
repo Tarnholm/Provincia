@@ -627,6 +627,14 @@ main{min-width:0;padding:1.6rem 1.6rem 5rem;width:100%}
 .lede p.imgrow img{float:none;margin:0;height:auto}
 .lede p.imgrow img:first-child{flex:0 0 auto}
 .lede p.imgrow img:last-child{flex:0 1 auto;min-width:0;max-width:min(100%,34rem)}
+/* A faction page leads with its map, and the emblem and the faction's numbers stand beside it
+   rather than above it. A flex row rather than a float: the two are peers here, and a float
+   would let the campaign brief climb up the side of the map and sit level with the emblem. */
+.fhead{display:flex;gap:1.5rem;align-items:flex-start;margin:.2rem 0 1.4rem;flex-wrap:wrap}
+.fhead > p{margin:0;flex:1 1 26rem;min-width:0}
+.fhead img{float:none;margin:0;max-width:100%;height:auto;border-radius:8px}
+.fmeta{flex:1 1 15rem;min-width:0;font-size:.95rem;line-height:1.75}
+.fmeta img{border-radius:6px;margin-bottom:.5rem}
 .lede em{display:block;clear:none;color:var(--dim);font-size:.85rem}
 .lede-flow{margin-bottom:1.5rem}
 .lede-flow>h2:first-child{margin-top:.2rem}
