@@ -234,7 +234,15 @@ var m={};try{Object.defineProperty(window,"localStorage",{value:{getItem:functio
 setItem:function(k,v){m[k]=String(v);},removeItem:function(k){delete m[k];}},configurable:true});}catch(e2){}}})();
 </script>`;
 
-fs.rmSync(SITE, { recursive: true, force: true });
+// Clear the site's CONTENTS, not the folder itself: the output dir is also the git clone that
+// publishes to GitHub Pages (Tarnholm/ris-wiki), and an rmSync of the root deleted .git once —
+// severing the published history. .git and .nojekyll survive a rebuild.
+const KEEP = new Set([".git", ".nojekyll"]);
+if (fs.existsSync(SITE)) {
+  for (const entry of fs.readdirSync(SITE)) {
+    if (!KEEP.has(entry)) fs.rmSync(path.join(SITE, entry), { recursive: true, force: true });
+  }
+}
 fs.mkdirSync(SITE, { recursive: true });
 // The stylesheet gets the same URL rewriting the pages do, and it is written AT THE SITE ROOT,
 // so its one url() is resolved from there. Writing the raw constant instead left
