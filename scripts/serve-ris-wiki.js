@@ -709,8 +709,13 @@ hr{border:none;border-top:1px solid var(--line);margin:2rem 0}
 
 /* search results */
 .res{list-style:none;margin:0;padding:0}
-.res li{border-bottom:1px solid var(--line);padding:.5rem .2rem}
-.res .sec{color:var(--dim);font-size:.78rem;text-transform:uppercase;letter-spacing:.05em}
+.res li{border-bottom:1px solid var(--line);padding:.42rem .2rem}
+.res li:last-child{border-bottom:none}
+/* Named "kind", not "sec". It was "sec", which later became the class for a section CARD — so
+   every result's little grey label was quietly given a panel background, a border and 1.15rem
+   of padding. A generic class name meeting a generic class name.
+   (No backticks in this stylesheet: it is a template literal, and one closes it.) */
+.res .kind{color:var(--dim);font-size:.78rem;text-transform:uppercase;letter-spacing:.05em}
 
 @media(max-width:900px){
   .wrap{grid-template-columns:1fr}
@@ -881,13 +886,35 @@ const server = http.createServer((req, res) => {
   if (rel === "/search") {
     const q = url.searchParams.get("q") || "";
     const hits = search(q);
+    // Grouped by what KIND of page each hit is. A flat list was fine when the wiki was factions
+    // and regions; there are now nine families, and "Rome" matches a region, a settlement, a
+    // faction and a fistful of units, which as one list of 200 is a pile to sift rather than an
+    // answer. The order is the order someone is most likely to have meant, and any family not
+    // named here still appears, after them — a new page family must not fall out of search
+    // because nobody added it to a list.
+    const ORDER = ["overview", "factions", "regions", "settlements", "units", "buildings",
+      "goods", "cultures", "religions", "sizes", "tags"];
+    const groups = new Map();
+    for (const h of hits) {
+      if (!groups.has(h.section)) groups.set(h.section, []);
+      groups.get(h.section).push(h);
+    }
+    const ordered = [...groups.entries()].sort((a, b) => {
+      const ia = ORDER.indexOf(a[0]), ib = ORDER.indexOf(b[0]);
+      return (ia < 0 ? ORDER.length : ia) - (ib < 0 ? ORDER.length : ib) || a[0].localeCompare(b[0]);
+    });
     const body = `<h1>Search</h1><p>${hits.length
-      ? `${hits.length}${hits.length === 200 ? "+" : ""} page${hits.length === 1 ? "" : "s"} matching <code>${esc(q)}</code>.`
-      : `Nothing matches <code>${esc(q)}</code>.`}</p>` +
-      (hits.length ? `<ul class="res">${hits.map((h) =>
-        `<li><a href="${h.rel}">${esc(h.title)}</a> <span class="sec">${esc(h.section)}</span></li>`).join("")}</ul>` : "");
+      ? `${hits.length}${hits.length === 200 ? "+" : ""} page${hits.length === 1 ? "" : "s"} matching <code>${esc(q)}</code>`
+        + `, in ${ordered.length} ${ordered.length === 1 ? "section" : "sections"}.`
+      : `Nothing matches <code>${esc(q)}</code>.`}</p>`
+      + ordered.map(([kind, list]) =>
+        // H3 rather than H2: these are runs of one list, and an H2 would box each of them.
+        `<h3 id="${slugId(kind)}">${esc(kind)} · ${list.length}</h3>`
+        + `<ul class="res">${list.map((h) =>
+          `<li><a href="${h.rel}">${esc(h.title)}</a></li>`).join("")}</ul>`).join("");
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(SHELL(`Search: ${q}`, body, "/search"));
+    const toc = ordered.map(([kind, list]) => ({ id: slugId(kind), text: `${kind} · ${list.length}`, level: 3 }));
+    res.end(SHELL(`Search: ${q}`, body, "/search", toc));
     return;
   }
 
