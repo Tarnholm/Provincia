@@ -656,7 +656,15 @@ h2{font-size:1.28rem;margin:2.1rem 0 .6rem;padding-bottom:.3rem;border-bottom:1p
    already does the separating. */
 h3{font-size:1.06rem;margin:.5rem 0 .3rem;color:var(--fg);
   padding:0 0 .24rem .62rem;border-bottom:1px solid var(--line);border-left:3px solid var(--gold)}
-a{color:var(--acc)}
+/* No underline at rest, one on hover. On a page that is mostly tables of links the underlines
+   are noise rather than affordance — and where a link wraps an emblem and a name, the rule runs
+   under the emblem too and reads as a stray mark in front of the word. The colour already says
+   it is a link; hover says it again for anyone checking. */
+a{color:var(--acc);text-decoration:none}
+a:hover{text-decoration:underline}
+/* An image inside a link never takes the rule, even on hover: the line sits under the picture
+   rather than under anything readable. */
+a:hover img{text-decoration:none}
 p{margin:.7rem 0}
 code{background:var(--acc-soft);color:var(--fg);padding:.08rem .32rem;border-radius:4px;
   font-size:.85em;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
