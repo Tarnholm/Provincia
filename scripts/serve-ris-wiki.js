@@ -779,7 +779,8 @@ const NAV = [
   ["Start here", [["/README.md", "Wiki index"], ["/factions.md", "All factions"],
     ["/regions.md", "All regions"], ["/settlements.md", "All settlements"],
     ["/units.md", "All units"], ["/buildings.md", "All buildings"], ["/trade-goods.md", "Trade goods"],
-    ["/cultures.md", "Cultures"], ["/religions.md", "Beliefs"], ["/sizes.md", "Settlement sizes"]]],
+    ["/cultures.md", "Cultures"], ["/religions.md", "Beliefs"], ["/traits.md", "Character traits"],
+    ["/sizes.md", "Settlement sizes"]]],
   ["Overviews", [["/factions-overview.md", "Factions vs vanilla"], ["/map-and-regions.md", "The map"],
     ["/units-overview.md", "Roster vs vanilla"]]],
   ["Region tags", [["/tags.md", "All reference tables"], ["/tags/terrain.md", "Terrain"],
@@ -823,6 +824,7 @@ function crumbs(rel) {
       factions: "/factions.md", regions: "/regions.md", settlements: "/settlements.md",
       units: "/units.md", buildings: "/buildings.md", tags: "/tags.md", goods: "/trade-goods.md",
       sizes: "/sizes.md", cultures: "/cultures.md", religions: "/religions.md",
+      traits: "/traits.md",
     };
     const overview = INDEX_OF[section] || null;
     out.push(overview && fs.existsSync(path.join(ROOT, overview.slice(1)))
@@ -1051,7 +1053,7 @@ const server = http.createServer((req, res) => {
     // named here still appears, after them — a new page family must not fall out of search
     // because nobody added it to a list.
     const ORDER = ["overview", "factions", "regions", "settlements", "units", "buildings",
-      "goods", "cultures", "religions", "sizes", "tags"];
+      "goods", "cultures", "religions", "traits", "sizes", "tags"];
     const groups = new Map();
     for (const h of hits) {
       if (!groups.has(h.section)) groups.set(h.section, []);

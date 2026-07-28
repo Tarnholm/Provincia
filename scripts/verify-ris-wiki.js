@@ -243,10 +243,14 @@ note(`images: ${images.toLocaleString("en-US")} checked, ${badImages} broken`);
   // belief floor in particular sits above the twelve-block gap the Anatolian indentation trap
   // opens up: a generator that fell back to a single-tab pattern would write 41 pages and pass
   // a floor of 20, so the floor is set high enough to catch exactly that.
+  // traits/ is five family pages plus a letter dictionary plus index.json — 31 entries as RIS
+  // ships. The floor sits at 20: a letter with no traits is a mod change, a generator that
+  // wrote only the index is a bug. check-ris-trait-pages.js holds the per-trait floor (3,000
+  // indexed rows), so this one only has to notice a family that vanished wholesale.
   const floors = {
     factions: 200, regions: 1000, settlements: 1000, units: 1000, cards: 900, maps: 150,
     buildings: 60, icons: 200, goods: 40, sizes: 5, "belief-icons": 30, "settlement-cards": 1,
-    cultures: 15, religions: 45,
+    cultures: 15, religions: 45, traits: 20,
   };
   for (const [dir, min] of Object.entries(floors)) {
     const n = count(dir);
