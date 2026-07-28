@@ -391,10 +391,10 @@ const PROVENANCE = [
   "</details>",
 ].join("\n");
 
-const TIER_NOTE = "The number on a `rel_…` tag is a **1-4 strength tier, not a percentage**. "
-  + "Any tier counts as the belief being present; what the tier changes is how much "
-  + "`religious_belief` a building generates, and the table below is that mapping read off "
-  + "export_descr_buildings.txt.";
+const TIER_NOTE = "What matters is whether it is the **largest** belief in the settlement or "
+  + "merely present alongside a larger one. The file records a finer number behind that, and it "
+  + "is not a percentage — the one place it shows is how much `religious_belief` a building "
+  + "generates, which is the table further down.";
 
 const FOLD_AT = 12;
 const maybeFold = (summary, n, table) => (n > FOLD_AT ? fold(summary, [table]) : table);
@@ -422,19 +422,29 @@ function beliefPage(f, all) {
   const siblings = all.filter((o) => o.group && o.group === f.group && o.tok !== tok);
 
   // ── where it is ──
-  // The top of the scale is called MAJORITY rather than "tier 4" — the owner's term for it, and
-  // the one a player would use. The other three keep their numbers: naming those would mean
-  // inventing three more words the files do not supply, and the number is still printed beside
-  // the name so the tag on the region page and the row here are obviously the same thing.
-  const tierLabel = (t) => (t === 4 ? "Majority (4 of 4)" : `${t} of 4`);
-  const tierRows = TIERS.slice().reverse().map((t) => {
-    const list = f.byTier.get(t) || [];
-    return `| ${tierLabel(t)} | ${list.length || "—"} | ${nRegions ? `${((list.length / nRegions) * 100).toFixed(0)}%` : "—"} |`;
-  });
-  const regionFolds = TIERS.slice().reverse().filter((t) => (f.byTier.get(t) || []).length).map((t) => {
-    const list = (f.byTier.get(t) || []).slice().sort((a, c) => regionName(a).localeCompare(regionName(c)));
-    return fold(`${tierLabel(t)} — ${list.length} ${list.length === 1 ? "region" : "regions"}`, [list.map(regionLink).join(" · ")]);
-  });
+  // TWO STATES, not four. The file records a 1-4 number, but what the game acts on is whether
+  // this is the largest belief in the settlement — so that is what the page says: the majority
+  // belief, or present alongside a larger one. Printing "3 of 4" invited a reader to weigh a
+  // difference that does not exist for them, and "4 of 4" made the one thing that does matter
+  // look like a coincidence of scale.
+  //
+  // The numbers are not discarded. They still key the grants further down the page, where they
+  // decide how much a building level adds — that is the one place the finer value shows up, and
+  // it is labelled there.
+  // Named apart from the ancestry `majority` further down — the two are different measurements
+  // of different fields, and sharing a name here was a syntax error that said so out loud.
+  const majorityIn = f.byTier.get(4) || [];
+  const presentIn = TIERS.filter((t) => t !== 4).flatMap((t) => f.byTier.get(t) || []);
+  const pct = (n) => (nRegions ? `${((n / nRegions) * 100).toFixed(0)}%` : "—");
+  const tierRows = [
+    `| The majority belief | ${majorityIn.length || "—"} | ${pct(majorityIn.length)} |`,
+    `| Present, not the largest | ${presentIn.length || "—"} | ${pct(presentIn.length)} |`,
+  ];
+  const regionFolds = [["The majority belief", majorityIn], ["Present, not the largest", presentIn]]
+    .filter(([, list]) => list.length)
+    .map(([label, list]) => fold(
+      `${label} — ${list.length} ${list.length === 1 ? "region" : "regions"}`,
+      [list.slice().sort((a, c) => regionName(a).localeCompare(regionName(c))).map(regionLink).join(" · ")]));
 
   // ── the people ──
   // The belief token is also a people token in the ancestry field, and the two vocabularies do
@@ -471,8 +481,11 @@ function beliefPage(f, all) {
       genByLevel.get(k).byTier.set(t, cur == null ? e.amount : Math.max(cur, e.amount));
     }
   }
+  // The one table where the finer number is the answer, so it is the one place it is printed —
+  // and the top of it is named rather than numbered, to match the rest of the page.
+  const grantCol = (t) => (t === 4 ? "majority" : String(t));
   const tierTable = genByLevel.size
-    ? [`| Where | ${TIERS.map((t) => `tier ${t}`).join(" | ")} |`,
+    ? [`| Where | ${TIERS.map((t) => grantCol(t)).join(" | ")} |`,
       `|---|${TIERS.map(() => "---:").join("|")}|`,
       ...[...genByLevel.values()].sort((a, c) => levelName(a.level).localeCompare(levelName(c.level)))
         .map((g) => `| ${levelLink(g.chain, g.level)} | ${TIERS.map((t) => (g.byTier.get(t) == null ? "—" : `+${g.byTier.get(t)}`)).join(" | ")} |`)].join("\n")
