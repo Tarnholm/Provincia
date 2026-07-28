@@ -53,14 +53,23 @@ const PAGE = (title, intro, columns, rows, backLink) => `<!doctype html>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)} — RIS wiki</title>
 <style>
-:root{--bg:#12141a;--panel:#181b22;--fg:#e9e6e0;--dim:#9a958c;--line:#2a2e37;
- --acc:#d9744f;--acc-soft:rgba(217,116,79,.12);--shadow:0 1px 3px rgba(0,0,0,.4)}
-@media(prefers-color-scheme:light){:root{--bg:#faf9f7;--panel:#fff;--fg:#1c1e22;--dim:#5f6672;
- --line:#e2ded7;--acc:#b4502c;--acc-soft:rgba(180,80,44,.09);--shadow:0 1px 3px rgba(0,0,0,.07)}}
-:root[data-theme="light"]{--bg:#faf9f7;--panel:#fff;--fg:#1c1e22;--dim:#5f6672;--line:#e2ded7;
- --acc:#b4502c;--acc-soft:rgba(180,80,44,.09);--shadow:0 1px 3px rgba(0,0,0,.07)}
-:root[data-theme="dark"]{--bg:#12141a;--panel:#181b22;--fg:#e9e6e0;--dim:#9a958c;--line:#2a2e37;
- --acc:#d9744f;--acc-soft:rgba(217,116,79,.12);--shadow:0 1px 3px rgba(0,0,0,.4)}
+/* The same palette serve-ris-wiki.js uses, sampled from the mod's badge: tyrian #67033d and
+   gold #fad05d. These three pages predate that and were left on the old terracotta, which is
+   how a reader clicking through from a wiki page to its sortable view found a differently
+   coloured site. Copied rather than shared because these pages are standalone by design — they
+   carry their own stylesheet so they work on GitHub Pages with nothing else present.
+   Contrast as measured there: gold is ~9:1 on the dark background and ~1.7:1 on white, so the
+   light theme takes the purple, ~8:1 on this parchment. */
+:root{--bg:#12141a;--panel:#181b22;--raised:#1e222b;--fg:#e9e6e0;--dim:#9a958c;--line:#2a2e37;
+ --acc:#e8c15a;--acc-soft:rgba(232,193,90,.13);--shadow:0 1px 3px rgba(0,0,0,.4)}
+@media(prefers-color-scheme:light){:root{--bg:#ded0b4;--panel:#ebe0cb;--raised:#f4ecdd;
+ --fg:#2a2318;--dim:#574a38;--line:#c4b192;--acc:#7d0a49;--acc-soft:rgba(103,3,61,.10);
+ --shadow:0 1px 3px rgba(80,60,30,.14)}}
+:root[data-theme="light"]{--bg:#ded0b4;--panel:#ebe0cb;--raised:#f4ecdd;--fg:#2a2318;
+ --dim:#574a38;--line:#c4b192;--acc:#7d0a49;--acc-soft:rgba(103,3,61,.10);
+ --shadow:0 1px 3px rgba(80,60,30,.14)}
+:root[data-theme="dark"]{--bg:#12141a;--panel:#181b22;--raised:#1e222b;--fg:#e9e6e0;--dim:#9a958c;
+ --line:#2a2e37;--acc:#e8c15a;--acc-soft:rgba(232,193,90,.13);--shadow:0 1px 3px rgba(0,0,0,.4)}
 *{box-sizing:border-box}
 body{margin:0;padding:1.5rem 1.6rem 4rem;background:var(--bg);color:var(--fg);
  font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
