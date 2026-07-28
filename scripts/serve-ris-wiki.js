@@ -164,7 +164,8 @@ function sectionise(html) {
         const txt = c[2].replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
         return c[1] === "th"
           ? px + txt.length * HEAD_PX                                        // nowrap: whole heading
-          : px + Math.max(0, ...txt.split(" ").map((w) => w.length)) * BODY_PX;   // wraps at spaces
+          // wraps at spaces AND hyphens, which is where a browser breaks it too
+          : px + Math.max(0, ...txt.split(/[\s\-–]+/).map((w) => w.length)) * BODY_PX;
       }));
     if (!rows.length) return 0;
     const cols = Math.max(...rows.map((r) => r.length));
@@ -302,7 +303,13 @@ function renderMarkdown(md, toc) {
       //
       // The constants are read off the stylesheet below: body cells 0.9rem, headers 0.82rem
       // uppercase with .04em tracking and nowrap, .7rem of padding each side.
-      const BODY_PX = 7.0, HEAD_PX = 8.4, PAD_PX = 22.4, GROUP_GAP_PX = 18;
+      // GROUP_GAP_PX is what a group costs BEYOND its own columns, and it is small: the cell
+      // that starts a group takes 1.1rem of left padding where every other takes .7rem, so the
+      // extra is about 7px, not the 18 first guessed at. Getting that wrong is not academic —
+      // four of the belief index's groups measured 463px against a budget that allowed 462, so
+      // they ran two across while the other eighteen ran three, and the whole difference was
+      // padding this line had invented.
+      const BODY_PX = 7.0, HEAD_PX = 8.4, PAD_PX = 22.4, GROUP_GAP_PX = 7;
       // The content column at a typical wide window. Raised from 1380 when the sidebar came
       // down from 15rem to 12.5 and main's side padding from 2.2rem to 1.6: 40px plus 19px
       // handed back. This constant and that layout have to move together — leave it behind and
@@ -315,12 +322,17 @@ function renderMarkdown(md, toc) {
         const txt = String(cell).replace(/<[^>]*>/g, "")
           .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")     // a link is as wide as its text
           .replace(/[*_`]/g, "").trim();
-        // Capped at 14 characters. A long cell does NOT force the table wider — the browser
+        // Capped at 12 characters. A long cell does NOT force the table wider — the browser
         // wraps it — so the width a column NEEDS is set by its header, which cannot wrap, and by
-        // typical content rather than by its longest value. Without the cap one 17-character
-        // faction name in a culture of 37 dropped that whole table from three across to two,
-        // which is both denser than it needs to be and inconsistent with the table beside it.
-        return px + Math.min(14, txt.length) * BODY_PX;
+        // typical content rather than by its longest value. Without a cap, one 17-character
+        // faction name in a culture of 37 dropped that whole table from three across to two.
+        //
+        // 12 rather than 14 because at 14 the answer still depended on the longest name in each
+        // list: eighteen of the belief index's twenty-two groups ran three across and four ran
+        // two, purely because those four happened to contain a longer word. A run of the same
+        // list at two different widths reads as a fault, so the cap sits below where that
+        // difference decides anything. What it costs is a wrapped name here and there.
+        return px + Math.min(12, txt.length) * BODY_PX;
       };
       const headPx = (h) => h.replace(/<[^>]*>/g, "").length * HEAD_PX;
       const colPx = head.map((h, k) => PAD_PX + Math.max(headPx(h),
@@ -334,7 +346,11 @@ function renderMarkdown(md, toc) {
         let px = 0;
         for (const im of String(cell).matchAll(/<img[^>]*\bwidth="(\d+)"/gi)) px += parseInt(im[1], 10) + 7;
         const txt = String(cell).replace(/<[^>]*>/g, "").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[*_`]/g, "");
-        return px + Math.max(0, ...txt.split(/\s+/).map((w) => w.length)) * BODY_PX;
+        // Split on hyphens as well as spaces: a browser breaks a line after a hyphen, so
+        // "Delmato-Pannonian" needs room for "Pannonian", not for all seventeen characters.
+        // Treating it as one unbreakable word is what held four of the belief index's groups to
+        // two across while the other eighteen ran three.
+        return px + Math.max(0, ...txt.split(/[\s\-–]+/).map((w) => w.length)) * BODY_PX;
       };
       const minPx = head.reduce((sum, h, k) => sum + PAD_PX
         + Math.max(headPx(h), ...body.map((r) => longestWordPx(r[k] || ""))), 0);
@@ -963,10 +979,13 @@ const server = http.createServer((req, res) => {
   fs.createReadStream(file).pipe(res);
 });
 
-// Open the default browser unless --no-open. This is what makes the launcher scripts a
-// one-click affair for someone who does not live in a terminal.
+// Opens the default browser ONLY when asked with --open, which the launcher scripts pass. It
+// used to open one every time unless told not to, and that is the wrong way round: the launcher
+// is one caller and knows it wants a window, while every other start — a check, a measurement,
+// a rebuild — got one too and threw a tab at whoever happened to be at the keyboard.
+// --no-open still works, so anything that passed it keeps behaving.
 function openBrowser(url) {
-  if (argv.includes("--no-open")) return;
+  if (!argv.includes("--open") || argv.includes("--no-open")) return;
   const { spawn } = require("child_process");
   const cmd = process.platform === "win32" ? ["cmd", ["/c", "start", "", url]]
     : process.platform === "darwin" ? ["open", [url]]

@@ -689,7 +689,12 @@ const groupSections = groups.map(({ g, list }) => {
   // field names this token as one of the peoples living there — a different field from the
   // belief tag, and one that answers a different question. The old heading named the mechanism
   // and left a reader to work out what it was counting.
-  return `${head}\n\n| Belief | Regions | Majority | Its people live in | Factions |\n|---|---:|---:|---:|---:|\n${rows}`;
+  // "People", not "Its people live in". A heading cannot wrap, so an 18-character one is 151px
+  // of column whatever is under it — and that alone was the difference between two of these
+  // tables fitting across the page and three. What the column counts is stated in full in the
+  // paragraph directly above the tables, which is where a reader who does not recognise it will
+  // look, and it is short enough there to be worth reading.
+  return `${head}\n\n| Belief | Regions | Majority | People | Factions |\n|---|---:|---:|---:|---:|\n${rows}`;
 }).join("\n\n");
 
 const indexBody = `# Beliefs
@@ -749,10 +754,10 @@ Three of these columns count regions, and they are not the same count.
 - **Regions** — how many carry the belief's tag at all, at any strength.
 - **Majority** — how many carry it at the top of the 1–4 scale, which is the strength a region's
   dominant belief has.
-- **Its people live in** — how many name that people in their ancestry, which is a different
-  field entirely: who lives there, as shares that sum to 100. A region can be full of a people
-  whose belief it does not carry, and carry a belief none of its people are named for. The two
-  do not line up region for region, and each belief's page says by how much.
+- **People** — how many regions name that people in their ancestry, which is a different field
+  entirely: who lives there, as shares that sum to 100. A region can be full of a people whose
+  belief it does not carry, and carry a belief none of its people are named for. The two do not
+  line up region for region, and each belief's page says by how much.
 
 A group has no name of its own in the mod: descr_beliefs.txt declares a token and no text file
 localises it. ${groupNamed.viaBelief.size} of the ${groupNamed.viaBelief.size + groupNamed.token.size} group tokens are also belief tokens and take that belief's own
