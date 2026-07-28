@@ -251,6 +251,11 @@ note(`images: ${images.toLocaleString("en-US")} checked, ${badImages} broken`);
     factions: 200, regions: 1000, settlements: 1000, units: 1000, cards: 900, maps: 150,
     buildings: 60, icons: 200, goods: 40, sizes: 5, "belief-icons": 30, "settlement-cards": 1,
     cultures: 15, religions: 45, traits: 20,
+    // ancillaries/ is the priesthood table plus a letter dictionary plus index.json — 28
+    // entries as RIS ships; ancillary-icons/ is one PNG per distinct portrait the entries
+    // reference (142 of 145 exist as art anywhere; three are missing from mod and base game
+    // alike). Floors sit below both so mod changes pass and an empty run fails.
+    ancillaries: 20, "ancillary-icons": 100,
   };
   for (const [dir, min] of Object.entries(floors)) {
     const n = count(dir);

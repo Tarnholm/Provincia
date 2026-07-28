@@ -294,6 +294,7 @@ no server:
 | [**Cultures**](cultures.md) | ${familyCount("cultures").toLocaleString("en-US")} | Who is in each, what its settlements are drawn with, and what the mod gates on being it |
 | ${artStrip("belief-icons", 22)}<br>[**Beliefs**](religions.md) | ${familyCount("religions").toLocaleString("en-US")} | Where each is on the map and at what strength, whose people it is, who follows it |
 | [**Character traits**](traits.md) | ${familyCount("traits").toLocaleString("en-US")} | Every visible trait: its levels, effects, how it is gained, and the traits that pull against it |
+| ${artStrip("ancillary-icons", 24)}<br>[**Retinue**](ancillaries.md) | ${familyCount("ancillaries").toLocaleString("en-US")} | The followers, keepsakes and offices a character gathers, and the traits that attract them |
 | [Factions overview](factions-overview.md) | — | How crowded the world is beside vanilla |
 
 ### What they build and field

@@ -234,6 +234,19 @@ const readIndex = (sub) => {
 };
 const CULTURE_INDEX = readIndex("cultures");
 const BELIEF_INDEX = readIndex("religions");
+// Written by gen-ris-ancillary-pages.js, which lists per ancillary the traits its
+// acquisition is conditioned on. Reversed here so a trait page can say what retinue the
+// trait attracts — consumed, never recomputed, so the two families cannot disagree. Absent
+// on a fresh tree; run the ancillary generator, then this one again.
+const ANCILLARY_INDEX = readIndex("ancillaries");
+const ANCS_FOR_TRAIT = new Map();
+for (const [tok, e] of Object.entries(ANCILLARY_INDEX)) {
+  for (const tr of e.traits || []) {
+    if (!ANCS_FOR_TRAIT.has(tr)) ANCS_FOR_TRAIT.set(tr, []);
+    ANCS_FOR_TRAIT.get(tr).push({ tok, name: e.name, page: e.page, anchor: e.anchor });
+  }
+}
+let ancLinksPrinted = 0;
 
 // The engine's effect attributes have no entry in any of the mod's text files — they are UI
 // strings inside the game itself. The token is split instead (TroopMorale -> Troop Morale),
@@ -474,6 +487,14 @@ function traitEntry(t) {
     lines.push("");
     lines.push(fold(`Cultures that never receive it (${t.excludeCultures.length})`, [t.excludeCultures.map(cultureRef).join(" · ")]));
   }
+  const attracts = (ANCS_FOR_TRAIT.get(t.name) || [])
+    .slice().sort((a, b) => a.name.localeCompare(b.name) || a.tok.localeCompare(b.tok));
+  if (attracts.length) {
+    ancLinksPrinted += attracts.length;
+    const shown = attracts.slice(0, 12);
+    lines.push("");
+    lines.push(`Retinue whose arrival is tied to this trait: ${shown.map((a) => `[${a.name}](../ancillaries/${a.page}#${a.anchor})`).join(", ")}${attracts.length > shown.length ? `, and ${attracts.length - shown.length} more` : ""}.`);
+  }
   lines.push("");
   lines.push(triggerFold(t));
   return lines.join("\n");
@@ -686,5 +707,6 @@ say(`  effect attributes: ${Object.keys(attrCounts).length} distinct · ${attrRe
 say(`  anti-trait references: ${antiLinked} linked to their page · ${antiHiddenOrMissing} name hidden or undeclared traits (unlinked)`);
 say(`  cultures linked: ${cultureLinked} (${Object.keys(CULTURE_INDEX).length} in cultures/index.json)${Object.keys(CULTURE_INDEX).length ? "" : "  <- run gen-ris-culture-pages.js first, then this again"}`);
 say(`  beliefs linked: ${Object.keys(BELIEF_INDEX).length ? "religions/index.json present" : "religions/index.json MISSING — belief tokens printed bare"}`);
+say(`  retinue links: ${ancLinksPrinted} printed from ancillaries/index.json (${Object.keys(ANCILLARY_INDEX).length} entries)${Object.keys(ANCILLARY_INDEX).length ? "" : "  <- run gen-ris-ancillary-pages.js, then this generator again"}`);
 say(`  pages written: ${written.size} under traits/, plus traits.md and traits/index.json`);
 say(`  NEXT: node scripts/check-ris-trait-pages.js && node scripts/verify-ris-wiki.js`);
