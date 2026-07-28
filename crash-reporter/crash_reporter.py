@@ -30,7 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 APP_NAME = "RIS Crash Reporter"
-APP_VERSION = "0.1.43"
+APP_VERSION = "0.1.44"
 CONFIG_FILENAME = "crash_reporter.ini"
 LOG_FILENAME = "crash_reporter.log"
 
@@ -2437,12 +2437,14 @@ def main():
     # save can't push the combined upload over Discord's limit and drop the
     # crash proof along with it.
     dump_attachments = []
+    any_fresh_dump_attached = False
     for cd in crash_dumps:
         zbytes = zip_file(cd)
         if zbytes is None:
             summary_text += f"\nCrash dump: {cd.name} (could not read)"
         elif len(zbytes) <= MAX_REPORT_BYTES:
             dump_attachments.append((f"{cd.stem}.zip", zbytes))
+            any_fresh_dump_attached = any_fresh_dump_attached or cd not in stale_dumps
             summary_text += f"\nCrash dump: {cd.name} ({cd.stat().st_size // 1024} KB, {len(zbytes) // 1024} KB zipped) — sent below"
         else:
             summary_text += f"\nCrash dump {cd.name} too large to attach ({len(zbytes) // (1024*1024)} MB zipped)"
@@ -2494,11 +2496,18 @@ def main():
         rc = 2
 
     # Crash dump(s) as their own message so they're never dropped with the save.
+    # When every dump aboard is from a PREVIOUS session (the late XML twin), the
+    # title must say so — a hardcoded "🔴 CTD" over a session that exited cleanly
+    # read as a crash in the channel (seen on a v0.1.43 UNSTABLE report).
     if dump_attachments:
+        if any_fresh_dump_attached:
+            dump_title, dump_status = f"🔴 Feral crash dump (CTD) — {tester} / {mod_name}", "crash"
+        else:
+            dump_title, dump_status = (f"🟠 Feral crash dump from a PREVIOUS session (late XML twin, "
+                                       f"no new crash) — {tester} / {mod_name}", "unclean")
         try:
             banner("Uploading crash dump...")
-            post_to_discord(webhook, f"🔴 Feral crash dump (CTD) — {tester} / {mod_name}",
-                            dump_attachments, status="crash")
+            post_to_discord(webhook, dump_title, dump_attachments, status=dump_status)
             banner("Crash dump uploaded.")
         except Exception as e:
             banner(f"[warn] Crash dump upload failed: {e}")
