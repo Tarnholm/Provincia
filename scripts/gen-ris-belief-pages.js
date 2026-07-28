@@ -684,17 +684,21 @@ const groupSections = groups.map(({ g, list }) => {
   const head = g
     ? `### ${groupName(g)} group · ${list.length} belief${list.length === 1 ? "" : "s"} · ${list.reduce((a, f) => a + f.regions.size, 0)} regions`
     : `### Group not determined · ${list.length} belief${list.length === 1 ? "" : "s"}`;
-  const rows = list.map((f) => `| ${pipRel(f.tok, "")}[${f.name}](religions/${f.tok}.md) | ${f.regions.size || "—"} | ${(f.byTier.get(4) || []).length || "—"} | ${f.people.length || "—"} | ${f.facs.length || "—"} |`).join("\n");
+  // Majority and minority provinces, and nothing else that counts provinces. "Regions" was the
+  // sum of these two and told a reader nothing the two do not; "People" counted a different
+  // field — where that people is descended from — which is a question about ancestry, not about
+  // where a belief holds. Minority is still derived by subtraction so the two account for every
+  // province carrying the belief.
+  const rows = list.map((f) => {
+    const maj = (f.byTier.get(4) || []).length;
+    const min = f.regions.size - maj;
+    return `| ${pipRel(f.tok, "")}[${f.name}](religions/${f.tok}.md) | ${maj || "—"} | ${min || "—"} | ${f.facs.length || "—"} |`;
+  }).join("\n");
   // "Its people live in", not "Named as a people". The column counts regions whose ANCESTRY
   // field names this token as one of the peoples living there — a different field from the
   // belief tag, and one that answers a different question. The old heading named the mechanism
   // and left a reader to work out what it was counting.
-  // "People", not "Its people live in". A heading cannot wrap, so an 18-character one is 151px
-  // of column whatever is under it — and that alone was the difference between two of these
-  // tables fitting across the page and three. What the column counts is stated in full in the
-  // paragraph directly above the tables, which is where a reader who does not recognise it will
-  // look, and it is short enough there to be worth reading.
-  return `${head}\n\n| Belief | Regions | Majority | People | Factions |\n|---|---:|---:|---:|---:|\n${rows}`;
+  return `${head}\n\n| Belief | Majority | Minority | Factions |\n|---|---:|---:|---:|\n${rows}`;
 }).join("\n\n");
 
 const indexBody = `# Beliefs
@@ -749,17 +753,10 @@ always agree, and both are shown.
 
 ## The ${BELIEF_ORDER.length} beliefs, by group
 
-Four columns, and three of them count regions without counting the same thing:
-
-- **Regions** — regions where the belief is held at all, whether it is the largest there or not.
-- **Majority** — of those, the ones where it is the **largest** belief. The rest are the minority
-  ones, and each belief's page splits them out.
-- **People** — regions where its **people** live, which is a different field: who is descended
-  from whom, as shares of the population. A region can be full of a people whose belief it does
-  not hold, and hold a belief none of its people are descended from — so this number is neither
-  a subset nor a superset of the first, and each page says by how much the two miss each other.
-- **Factions** — how many factions have this as their state belief. Not a count of regions at
-  all: a faction with forty provinces counts once.
+**Majority** and **Minority** are provinces: the ones where this is the largest belief, and the
+ones where it is held alongside a larger one. Together they are every province that holds it.
+**Factions** is not a count of provinces — it is how many factions have this as their state
+belief, so a faction with forty provinces counts once.
 
 A group has no name of its own in the mod: descr_beliefs.txt declares a token and no text file
 localises it. ${groupNamed.viaBelief.size} of the ${groupNamed.viaBelief.size + groupNamed.token.size} group tokens are also belief tokens and take that belief's own
