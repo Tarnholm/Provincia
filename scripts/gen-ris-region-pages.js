@@ -835,7 +835,7 @@ const FACTION_TAGS = (() => {
 })();
 
 const recruitStats = {
-  evaluated: 0, noMilitary: 0, zeroNow: 0, now: 0, conditional: 0, ambiguous: 0,
+  evaluated: 0, noMilitary: 0, zeroNow: 0, now: 0, conditional: 0, ambiguous: 0, build: 0,
   undecided: new Map(),
 };
 /**
@@ -887,13 +887,42 @@ function recruitableAt(r, held) {
       if (v.ambiguous) e.ambiguous = true;
     }
   }
-  for (const k of now.keys()) later.delete(k);
+  // ── what it could raise once something is BUILT ─────────────────────────────
+  // Everything above only ever looked at recruit lines hanging off levels this settlement
+  // already has, so "later" meant "a reform or an event we cannot decide" — 162 rows across
+  // 1,311 settlements. The question a player asks is the other one: what does this place raise
+  // once I put something up? So every OTHER level in the mod is tried with that level assumed
+  // present, and the line's own condition does the filtering — culture, faction, area of
+  // recruitment, trade goods, settlement size all still have to pass for this settlement.
+  //
+  // It says "once you have <level>", not "you can build <level>": whether the level is allowed
+  // here is a different question, decided by terrain and culture gating this does not evaluate,
+  // and claiming it would be inventing.
+  const build = new Map();
+  for (const [key, lines] of RECRUIT_AT) {
+    const [chain, level] = key.split("/");
+    if (built.get(chain) === level) continue;                 // already standing: handled above
+    const ctx2 = { ...ctx, built: new Map(built).set(chain, level) };
+    for (const line of lines) {
+      const info = UNIT_INFO[line.unit] || {};
+      const k = info.dict || `type:${line.unit}`;
+      if (now.has(k) || later.has(k)) continue;               // already promised by another route
+      const v = RC.evaluate(line.requires, ctx2, EDB_ALIASES);
+      if (v.value !== true) continue;                         // false, or undecided: not a promise
+      const at = bName(line.level) || String(line.level).replace(/_/g, " ");
+      if (!build.has(k)) build.set(k, { unit: line.unit, info, at: new Set() });
+      build.get(k).at.add(`${line.chain}|${at}`);
+    }
+  }
+  for (const k of now.keys()) { later.delete(k); build.delete(k); }
+  for (const k of later.keys()) build.delete(k);
+  recruitStats.build += build.size;
   recruitStats.evaluated++;
   if (![...built.keys()].some((c) => c === "military_industrial_complex" || c === "garrison")) recruitStats.noMilitary++;
   if (!now.size) recruitStats.zeroNow++;
   recruitStats.now += now.size;
   recruitStats.conditional += later.size;
-  return { now: [...now.values()], later: [...later.values()] };
+  return { now: [...now.values()], later: [...later.values()], build: [...build.values()] };
 }
 
 /** The condition a conditional unit is still waiting on, in words. */
@@ -935,10 +964,16 @@ const atCell = (set) => [...new Set([...set].map((x) => {
 // Same shape as the "What is already built" table on the same page — image, then the thing,
 // then where it comes from — so a reader does not have to learn two layouts on one page.
 const FOLD_AT = 12;
-const unitRows = (rows) => rows
+// A unit you cannot raise here YET is drawn greyed out, which is the difference a reader is
+// looking for and the fastest one to see — no reading required. Done with an inline style
+// rather than a class because these pages are rendered by three different things (the local
+// viewer, the static build, and GitHub), and only one of them would honour a stylesheet of ours.
+const DIMMED = ' style="filter:grayscale(1);opacity:.45"';
+const cardDim = (u) => cardImg(u).replace(/<img /, `<img${DIMMED} `);
+const unitRows = (rows, dim) => rows
   .sort((a, b) => unitName(a.unit).localeCompare(unitName(b.unit)))
-  .map((e) => `| ${cardImg(e.unit)} | ${unitRef(e.unit)} | ${atCell(e.at)} | ${e.info.cost != null ? e.info.cost.toLocaleString("en-US") : "—"} | ${e.info.upkeep != null ? e.info.upkeep.toLocaleString("en-US") : "—"} |`);
-const unitTable = (rows) => `| | Unit | Raised at | Cost | Upkeep |\n|:-:|---|---|---:|---:|\n${unitRows(rows).join("\n")}`;
+  .map((e) => `| ${dim ? cardDim(e.unit) : cardImg(e.unit)} | ${unitRef(e.unit)} | ${atCell(e.at)} | ${e.info.cost != null ? e.info.cost.toLocaleString("en-US") : "—"} | ${e.info.upkeep != null ? e.info.upkeep.toLocaleString("en-US") : "—"} |`);
+const unitTable = (rows, dim) => `| | Unit | ${dim ? "Once you have" : "Raised at"} | Cost | Upkeep |\n|:-:|---|---|---:|---:|\n${unitRows(rows, dim).join("\n")}`;
 // The opening tag and the <summary> go on SEPARATE lines. Written as one line the viewer does
 // not see a block and prints the tags as text, which is what happened to 60 region pages.
 const maybeFold = (summary, rows, table) => (rows.length > FOLD_AT
@@ -962,8 +997,10 @@ function recruitSection(rec, held) {
       if (!byWhy.has(w)) byWhy.set(w, []);
       byWhy.get(w).push(e);
     }
-    const inner = [...byWhy.entries()].sort((a, b) => b[1].length - a[1].length)
-      .map(([w, rows]) => `**Waiting on ${w}** — ${rows.length} ${rows.length === 1 ? "unit" : "units"}\n\n${unitTable(rows)}`)
+    const total = rec.later.length;
+    const inner = [`**${total} more ${total === 1 ? "unit is" : "units are"} raised here once something changes** — greyed out below, grouped by what each is waiting on.`]
+      .concat([...byWhy.entries()].sort((a, b) => b[1].length - a[1].length)
+        .map(([w, rows]) => `**Waiting on ${w}** — ${rows.length} ${rows.length === 1 ? "unit" : "units"}\n\n${unitTable(rows, true)}`))
       .join("\n\n");
     // Shown outright, not folded. This was a <details> whose opening tag and <summary> sat on
     // ONE line, which the local viewer does not recognise as a block, so "<details><summary>1
@@ -971,6 +1008,22 @@ function recruitSection(rec, held) {
     // content it was hiding is one or two rows with a bold line already naming the condition, so
     // there was nothing worth folding in the first place.
     out.push(inner);
+  }
+  if (rec.build && rec.build.length) {
+    // Grouped by the building that unlocks them, biggest group first — the reader's question is
+    // "what is worth putting up here", and the answer is the group with the most under it.
+    const byAt = new Map();
+    for (const e of rec.build) {
+      const k = [...e.at].sort().join(", ");
+      if (!byAt.has(k)) byAt.set(k, []);
+      byAt.get(k).push(e);
+    }
+    const n = rec.build.length;
+    const blocks = [...byAt.entries()].sort((a, b) => b[1].length - a[1].length)
+      .map(([, rows]) => unitTable(rows, true));
+    out.push(`**${n} more ${n === 1 ? "unit" : "units"} once the building is up** — greyed out, with what each needs.\n\n`
+      + maybeFold(`${n} ${n === 1 ? "unit" : "units"} this settlement raises once you build for them`,
+        rec.build, blocks.join("\n\n")));
   }
   return out.join("\n\n");
 }
