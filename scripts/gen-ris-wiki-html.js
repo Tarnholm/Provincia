@@ -293,7 +293,9 @@ render();
   const rows = [];
   let culture = null;
   for (const line of body.split(/\r?\n/)) {
-    const h = /^##\s+(.+?)\s*$/.exec(line);
+    // Two or three hashes: the culture headings are H3 so the viewer renders the page as one
+    // list rather than 22 separate cards, and this view must not care which level they are at.
+    const h = /^#{2,3}\s+(.+?)\s*$/.exec(line);
     if (h) { culture = h[1]; continue; }
     if (!/^\|/.test(line) || !culture) continue;
     const c = line.split("|").slice(1, -1).map((x) => x.trim());

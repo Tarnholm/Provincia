@@ -346,7 +346,13 @@ function renderMarkdown(md, toc) {
       // So the dealing is capped by what FITS at the width the table cannot go below, not only
       // by what it would like.
       const fits = Math.max(1, Math.floor(CONTENT_PX / (minPx + GROUP_GAP_PX)));
-      const UP = body.length > 24
+      // Eight rows, not the twenty-four this started at. That figure was picked for "this list
+      // is long enough to be worth dealing", but the point is saving vertical space, and a
+      // twelve-row table of four short columns wastes just as much of the page as a hundred-row
+      // one — the faction index has twenty cultures under twenty-four factions, every one of
+      // them a narrow column with two thirds of the width beside it empty. Below eight there is
+      // little left to save and a three-across table of two rows reads as a mistake.
+      const UP = body.length > 8
         ? Math.max(1, Math.min(3, fits, Math.floor(CONTENT_PX / (groupPx + GROUP_GAP_PX)))) : 1;
 
       const cls = (k, first) => {
@@ -579,7 +585,10 @@ h1{font-size:1.85rem;line-height:1.25;margin:.1rem 0 .6rem;letter-spacing:-.01em
 h1::after{content:"";display:block;height:15px;margin:.55rem 0 1rem;
   background:url(/art/ris-rule.png) left center/auto 100% no-repeat;opacity:.9}
 h2{font-size:1.28rem;margin:2.1rem 0 .6rem;padding-bottom:.3rem;border-bottom:1px solid var(--line)}
-h3{font-size:1.06rem;margin:1.5rem 0 .45rem;color:var(--fg)}
+/* An h3 divides a list into runs — the faction index uses one per culture — so it carries a
+   rule and a gold tick to be findable when scrolling, without becoming a card of its own. */
+h3{font-size:1.06rem;margin:1rem 0 .3rem;color:var(--fg);
+  padding:0 0 .24rem .62rem;border-bottom:1px solid var(--line);border-left:3px solid var(--gold)}
 a{color:var(--acc)}
 p{margin:.7rem 0}
 code{background:var(--acc-soft);color:var(--fg);padding:.08rem .32rem;border-radius:4px;
@@ -592,7 +601,7 @@ blockquote p{margin:.25rem 0}
    more screen you had. fit-content on the wrapper keeps the border around the table rather
    than around the empty space beside it, and max-width caps a genuinely wide table, which
    then scrolls inside the wrapper as before. */
-.tw{border:1px solid var(--line);border-radius:8px;margin:.9rem 0;
+.tw{border:1px solid var(--line);border-radius:8px;margin:.5rem 0 .8rem;
   background:var(--raised);width:fit-content;max-width:100%}
 /* Scrolls only when the table really is wider than the page. See the note in the renderer: an
    overflow container captures the sticky header, so giving one to every table cost the column

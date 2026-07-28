@@ -1086,7 +1086,15 @@ const cultureHead = (g) => {
   return `${g.name} · ${n} faction${n === 1 ? "" : "s"} · ${withLand} hold${withLand === 1 ? "s" : ""} territory at the start`;
 };
 const cultureSection = cultureGroups.map((g) => {
-  const heading = `## ${cultureHead(g)}`;
+  // ### and not ##, which is a layout decision made in the markdown for a reason worth writing
+  // down. The viewer builds a page out of its H2s: each one becomes a bordered card, and cards
+  // are right when a page's sections are different KINDS of thing — a settlement table beside a
+  // character table. Here all 22 sections are the same shape, one heading and one roster, and
+  // boxing each of them separately turned a single list into 22 windows stacked down the page.
+  // With no H2 on the page the viewer leaves the content alone, so this reads as one list with
+  // the culture name as a divider — which is what it is. The anchors are unaffected: a heading
+  // gets its id at any level.
+  const heading = `### ${cultureHead(g)}`;
   const sub = null;
   // No token beside the heading, and no paragraph explaining that the shown name is not the
   // token. A player reading "Gallic" does not need to be told the file says `barbarian`; that
