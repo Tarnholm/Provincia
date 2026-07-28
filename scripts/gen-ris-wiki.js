@@ -224,7 +224,7 @@ function build(v, r) {
 
 <img src="art/ris-logo.png" alt="Rome: Total Realism — Imperium Surrectum" width="128" style="float:none;margin:.2rem 0 1rem">
 
-A player's guide to how **Rome: Imperium Surrectum** differs from vanilla *Rome: Total
+A player's guide to how **RTR: Imperium Surrectum** differs from vanilla *Rome: Total
 War Remastered*. Every number here is counted from the game's own data files; anything
 that could not be established says **${NA}** rather than a guess.
 

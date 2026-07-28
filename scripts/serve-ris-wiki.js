@@ -541,10 +541,13 @@ body.has-jump{--topbar:5.35rem}
 /* Where you are, as against where you could go. Deliberately quieter than :hover — it marks a
    position, it is not offering an action. */
 .jump a.on{color:var(--gold);background:rgba(232,193,90,.16);font-weight:600}
-.brand{font-weight:650;letter-spacing:.01em;color:#f4ead8;text-decoration:none;white-space:nowrap;
+/* One colour, and it is the gold the mod letters its own logo in — the wordmark and the badge
+   beside it then read as one mark. It used to be two, a cream word and a gold one, which was a
+   leftover from when it said "RIS wiki" and the second word was the accented part of a phrase.
+   The name is the mod's: RTR: Imperium Surrectum. */
+.brand{font-weight:650;letter-spacing:.01em;color:var(--gold);text-decoration:none;white-space:nowrap;
   display:flex;align-items:center;gap:.55rem}
 .brand img{width:26px;height:26px;border-radius:5px;display:block}
-.brand span{color:var(--gold)}
 .top form{flex:1;display:flex;max-width:34rem}
 .top input{width:100%;background:var(--bg);color:var(--fg);border:1px solid var(--line);
   border-radius:8px;padding:.42rem .7rem;font:inherit;font-size:.9rem}
@@ -843,11 +846,11 @@ function jumpStrip(toc) {
 const SHELL = (title, body, rel, toc) => `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(title)} — RIS wiki</title>
+<title>${esc(title)} — RTR: Imperium Surrectum</title>
 <style>${CSS}</style></head><body${jumpStrip(toc) ? ' class="has-jump"' : ""}>
 <div class="top">
   <div class="bar">
-  <a class="brand" href="/README.md"><img src="/art/ris-mark.png" alt="">Imperium <span>Surrectum</span></a>
+  <a class="brand" href="/README.md"><img src="/art/ris-mark.png" alt="">RTR: Imperium Surrectum</a>
   <form action="/search" method="get" role="search">
     <input name="q" type="search" placeholder="Search ${INDEX.length.toLocaleString("en-US")} pages — a faction, region or unit…" autocomplete="off">
   </form>
