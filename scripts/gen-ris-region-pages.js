@@ -594,6 +594,35 @@ let TAG_ANCHORS = {};
 try { TAG_ANCHORS = JSON.parse(fs.readFileSync(path.join(OUT, "tags", "index.json"), "utf8")); }
 catch { /* run gen-ris-tag-pages.js first; until then the values are plain text as before */ }
 
+// Beliefs and cultures, the same arrangement again: gen-ris-belief-pages.js and
+// gen-ris-culture-pages.js each write a page per value and publish an index of the page name
+// and the heading it is titled with. Read rather than recomputed, for the reason written above:
+// this generator humanises the same tokens with its own copy of the rules, and a one-character
+// disagreement would send a link to a page that is not there.
+let BELIEF_INDEX = {};
+try { BELIEF_INDEX = JSON.parse(fs.readFileSync(path.join(OUT, "religions", "index.json"), "utf8")); }
+catch { /* run gen-ris-belief-pages.js first; until then the peoples are plain text as before */ }
+let CULTURE_INDEX = {};
+try { CULTURE_INDEX = JSON.parse(fs.readFileSync(path.join(OUT, "cultures", "index.json"), "utf8")); }
+catch { /* run gen-ris-culture-pages.js first; until then the culture is plain text as before */ }
+let beliefLinked = 0; const beliefUnlinked = new Set();
+let cultureLinked = 0; const cultureUnlinked = new Set();
+/** A people, named and linked to the belief page that says what it is. `rel` is the prefix. */
+function beliefRef(tok, label, rel) {
+  const e = BELIEF_INDEX[String(tok).toLowerCase()];
+  if (!e) { if (Object.keys(BELIEF_INDEX).length) beliefUnlinked.add(String(tok).toLowerCase()); return label; }
+  beliefLinked++;
+  return `[${label}](${rel}religions/${e.page})`;
+}
+/** The owning faction's culture, linked to the page that says what that culture decides. */
+function cultureRef(tok, rel) {
+  if (!tok) return null;
+  const e = CULTURE_INDEX[String(tok).toLowerCase()];
+  if (!e) { if (Object.keys(CULTURE_INDEX).length) cultureUnlinked.add(String(tok).toLowerCase()); return null; }
+  cultureLinked++;
+  return `[${e.name}](${rel}cultures/${e.page})`;
+}
+
 // Settlement sizes, the same arrangement one level up: gen-ris-settlement-sizes.js writes a page
 // per rung of the ladder and publishes sizes/index.json mapping each size token to its page and
 // the display name the page is headed with. Read rather than recomputed, and the display name
@@ -964,7 +993,14 @@ const RES_ICONS = writeResourceIcons(NEEDED_GOODS);
 // Every people any region names, from the ancestry field and from the `rel_<belief>_<tier>`
 // tags, so a belief that appears only as a tag still gets its icon. Union of the two, because
 // the two vocabularies are not identical: 1,180 of 1,311 regions name the same set both ways.
-const NEEDED_BELIEFS = new Set();
+//
+// Seeded with every belief descr_beliefs.txt DECLARES, not only the ones the map uses, for the
+// same reason NEEDED_GOODS above is seeded with every declared trade good: gen-ris-belief-pages.js
+// writes a page per declared belief and puts the pip on each, so the two the map never uses —
+// `anatolian` and `greek`, the umbrella entries the finer-grained peoples sit under — are
+// referenced too. They are still written from here, because one owner per output directory is
+// what keeps the collision check in verify-ris-wiki.js meaningful.
+const NEEDED_BELIEFS = new Set(Object.keys(BELIEFS));
 for (const r of regions) {
   for (const e of r.ethnicities) NEEDED_BELIEFS.add(e.name);
   for (const t of r.tags) {
@@ -1061,9 +1097,12 @@ for (const r of list) {
   // One row each, read as a sentence: "Indian 80%, Indo-Greek 20%". This was a three-column
   // table with a bar per people and a belief tier beside it, which spent a whole block of the
   // page on two numbers — the shares are the answer and they fit on a line.
+  // Each people links to its own belief page — where else on the map it is, at what strength,
+  // who follows it, and what the mod does with it. The label stays the display name the belief
+  // file declares, so the link text and the page it lands on cannot read differently.
   const pName = (k) => ethName(k) || humanise(k);
   const peopleLine = eth.length
-    ? eth.map((e) => `${beliefIcon(e.name)}${pName(e.name)} ${e.pct}%`).join(", ") : null;
+    ? eth.map((e) => `${beliefIcon(e.name)}${beliefRef(e.name, pName(e.name), "../")} ${e.pct}%`).join(", ") : null;
   const beliefLine = Object.keys(relTier).length
     ? Object.entries(relTier)
       .sort((a, b) => (b[1].tier || 0) - (a[1].tier || 0) || a[0].localeCompare(b[0]))
@@ -1077,14 +1116,20 @@ for (const r of list) {
   const settleName = placeName(r.settlement);
   const settleHref = `../settlements/${encodeURIComponent(r.settlement)}.md`;
   const glance = [
-    eth.length ? `**People:** ${eth.map((e) => `${ethName(e.name) || humanise(e.name)} ${e.pct}%`).join(", ")}` : null,
+    eth.length ? `**People:** ${eth.map((e) => `${beliefRef(e.name, ethName(e.name) || humanise(e.name), "../")} ${e.pct}%`).join(", ")}` : null,
     goodsLabel.length ? `**Trade goods:** ${goodsLabel.join(", ")}` : null,
   ].filter(Boolean).join(" · ");
   // The owner is named on both pages, and deliberately: it is the first thing asked of either,
   // and both come from this one expression in this one generator, so there is nothing here that
   // can drift out of step. Everything else about the town is stated on the town's page only.
+  //
+  // The culture comes with the owner rather than standing on its own, because a REGION has no
+  // culture of its own — descr_regions declares none. What it has is an owner, and
+  // descr_sm_factions gives that owner one. Saying it that way round is the difference between
+  // a fact and an invention.
+  const ownerCulture = held ? cultureRef(FACTION_CULTURE[String(held.faction).toLowerCase()], "../") : null;
   const ownerPhrase = held
-    ? `${hasPage(held.faction) ? `[${facName(held.faction)}](../factions/${held.faction}.md)` : nonPlayableRef(held.faction)}${held.capital ? " — **their capital**" : ""}`
+    ? `${hasPage(held.faction) ? `[${facName(held.faction)}](../factions/${held.faction}.md)` : nonPlayableRef(held.faction)}${ownerCulture ? ` (${ownerCulture})` : ""}${held.capital ? " — **their capital**" : ""}`
     : null;
 
   if (peopleLine) rows.push(`| People | ${peopleLine} |`);
@@ -1227,7 +1272,7 @@ const ownerCell = (e) => (e.owner
   : "_independent_");
 const idx = `# All regions
 
-[← wiki index](README.md) · [all settlements](settlements.md)
+[← wiki index](README.md) · [all settlements](settlements.md) · [region tag reference](tags.md) · [cultures](cultures.md) · [beliefs](religions.md)
 
 ${index.length.toLocaleString("en-US")} regions, one settlement each. ${withOwner.toLocaleString("en-US")} are held by a faction at the campaign
 start; the rest begin independent. A region is the land — terrain, fertility, trade goods; its
@@ -1244,7 +1289,7 @@ settlementIndex.sort((a, b) => a.name.localeCompare(b.name));
 const capitals = settlementIndex.filter((s) => s.capital).length;
 const sIdx = `# All settlements
 
-[← wiki index](README.md) · [all regions](regions.md)
+[← wiki index](README.md) · [all regions](regions.md) · [settlement sizes](sizes.md) · [cultures](cultures.md) · [beliefs](religions.md)
 
 ${settlementIndex.length.toLocaleString("en-US")} settlements, one per region. ${capitals} of them are a faction's capital.
 Search finds a city by name here; the region it sits in is the land around it, with the terrain,
@@ -1298,7 +1343,15 @@ console.log(`  people display names (distinct tokens): ${ethNameVia.declared.siz
 
 console.log(`\nbelief icons -> ${path.join(OUT, "belief-icons")} (source pips at 1/${BELIEF_ICON_SCALE}, shown at ${BELIEF_ICON_PX}px):`);
 console.log(`  descr_beliefs.txt declares:  ${Object.keys(BELIEFS).length} beliefs, ${Object.values(BELIEFS).filter((b) => b.icon).length} with a religion icon, ${Object.values(BELIEFS).filter((b) => b.nameKey).length} with a name key`);
-console.log(`  peoples the map actually uses: ${NEEDED_BELIEFS.size} (union of the ancestry field and the rel_ tags)`);
+{
+  const used = new Set();
+  for (const r of regions) {
+    for (const e of r.ethnicities) used.add(e.name);
+    for (const t of r.tags) { const m = /^rel_([a-z_]+)_(\d)$/i.exec(String(t)); if (m) used.add(m[1].toLowerCase()); }
+  }
+  console.log(`  pips written for: ${NEEDED_BELIEFS.size} (every declared belief, so the belief pages all have one)`);
+  console.log(`  of those, peoples the map actually uses: ${used.size} (union of the ancestry field and the rel_ tags)`);
+}
 {
   const undeclared = [...NEEDED_BELIEFS].filter((t) => !BELIEFS[t]);
   const unused = Object.keys(BELIEFS).filter((t) => !NEEDED_BELIEFS.has(t));
@@ -1309,6 +1362,10 @@ console.log(`  written:                     ${BELIEF_ICONS.written} (${(BELIEF_I
 console.log(`  no "religion icon" declared: ${BELIEF_ICONS.noDeclaration.length}${BELIEF_ICONS.noDeclaration.length ? ` (${BELIEF_ICONS.noDeclaration.join(", ")})` : ""}`);
 console.log(`  declared file not on disk:   ${BELIEF_ICONS.fileMissing.length}${BELIEF_ICONS.fileMissing.length ? ` (${BELIEF_ICONS.fileMissing.join(", ")})` : ""}`);
 console.log(`  threw while decoding:        ${BELIEF_ICONS.failed.length}${BELIEF_ICONS.failed.length ? ` (${BELIEF_ICONS.failed.join(", ")})` : ""}  <- a zero here means nothing threw, not that the art is correct; open one and look`);
+
+console.log(`\nbelief and culture pages:`);
+console.log(`  peoples linked into religions/: ${beliefLinked.toLocaleString("en-US")} cells (${Object.keys(BELIEF_INDEX).length} beliefs in religions/index.json)${beliefUnlinked.size ? `, ${beliefUnlinked.size} with no entry (${[...beliefUnlinked].join(", ")})` : ""}${Object.keys(BELIEF_INDEX).length ? "" : "  <- run gen-ris-belief-pages.js, then this generator again"}`);
+console.log(`  owners' cultures linked into cultures/: ${cultureLinked.toLocaleString("en-US")} cells (${Object.keys(CULTURE_INDEX).length} cultures in cultures/index.json)${cultureUnlinked.size ? `, ${cultureUnlinked.size} with no entry (${[...cultureUnlinked].join(", ")})` : ""}${Object.keys(CULTURE_INDEX).length ? "" : "  <- run gen-ris-culture-pages.js, then this generator again"}`);
 
 console.log(`\nsettlement sizes: ${sizeLinked.toLocaleString("en-US")} Size values linked into sizes/ (${Object.keys(SIZE_INDEX).length} sizes in sizes/index.json)${sizeUnlinked.size ? `, ${sizeUnlinked.size} with no entry (${[...sizeUnlinked].join(", ")})` : ""}${Object.keys(SIZE_INDEX).length ? "" : "  <- run gen-ris-settlement-sizes.js, then this generator again"}`);
 

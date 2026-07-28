@@ -248,6 +248,10 @@ no server:
 - [All settlements](settlements.md) — the towns: size, population, what is built, one page each
 - [Settlement sizes](sizes.md) — a page per rung of the ladder: the population it takes, what it
   lets you build and raise, and how many settlements start on it
+- [Cultures](cultures.md) — a page per culture: who is in it, what its settlements are drawn
+  with, and which government levels, buildings and units the mod gates on being it
+- [Beliefs](religions.md) — a page per belief: where it is on the map and at what strength, who
+  its people are, which factions follow it, and what the mod does with it
 - [Units overview](units-overview.md) — how the roster compares with vanilla
 - [All units](units.md) — the full roster with stats and cards, and a page per unit
 - [All buildings](buildings.md) — a page per chain: what each level does, costs, upgrade path

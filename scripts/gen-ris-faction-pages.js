@@ -653,6 +653,54 @@ const FACTION_CULTURE = (() => {
   return out;
 })();
 
+// The OTHER axis the same file declares for every faction, and which these pages showed
+// nowhere: `"default religion": "italic"`. It is not culture — the two are independent in RIS,
+// and several cultures spread their factions across half a dozen beliefs — and it is what the
+// temples and government levels in export_descr_buildings.txt actually test through their
+// `faction_religion_<belief>` aliases. All 239 faction blocks declare one; the count is in the
+// run output so a parser that stopped matching cannot pass for a file that stopped declaring.
+const FACTION_RELIGION = (() => {
+  const txt = rd("descr_sm_factions.txt") || "";
+  const out = {};
+  const marks = [...txt.matchAll(/^\t"([a-z0-9_]+)":/gm)];
+  for (let i = 0; i < marks.length; i++) {
+    const block = txt.slice(marks[i].index, i + 1 < marks.length ? marks[i + 1].index : txt.length);
+    const m = /"default religion":\s*"([^"]+)"/.exec(block);
+    if (m) out[marks[i][1].toLowerCase()] = m[1].toLowerCase();
+  }
+  return out;
+})();
+// A second, independent count of the same thing: a flat pattern over the whole file, no block
+// structure involved.
+const RAW_RELIGION_LINES = ((rd("descr_sm_factions.txt") || "").match(/"default religion"\s*:\s*"[a-z_]+"/g) || []).length;
+
+// The pages that say what a culture and a belief decide. Read rather than recomputed — the
+// index each generator publishes carries the page name AND the heading it is titled with, so
+// the link text here cannot drift from the page it lands on.
+let CULTURE_INDEX = {};
+try { CULTURE_INDEX = JSON.parse(fs.readFileSync(path.join(OUT, "cultures", "index.json"), "utf8")); }
+catch { /* run gen-ris-culture-pages.js first; until then the culture is plain text */ }
+let RELIGION_INDEX = {};
+try { RELIGION_INDEX = JSON.parse(fs.readFileSync(path.join(OUT, "religions", "index.json"), "utf8")); }
+catch { /* run gen-ris-belief-pages.js first; until then the belief is plain text */ }
+let cultureLinked = 0, religionLinked = 0;
+const cultureUnlinked = new Set(), religionUnlinked = new Set();
+function cultureRef(tok, rel) {
+  if (!tok) return null;
+  const e = CULTURE_INDEX[String(tok).toLowerCase()];
+  if (!e) { if (Object.keys(CULTURE_INDEX).length) cultureUnlinked.add(String(tok).toLowerCase()); return null; }
+  cultureLinked++;
+  return `[${e.name}](${rel}cultures/${e.page})`;
+}
+function religionRef(tok, rel) {
+  if (!tok) return null;
+  const e = RELIGION_INDEX[String(tok).toLowerCase()];
+  if (!e) { if (Object.keys(RELIGION_INDEX).length) religionUnlinked.add(String(tok).toLowerCase()); return null; }
+  religionLinked++;
+  const p = e.icon ? `<img src="${rel}${e.icon}" alt="" width="16" height="16" style="vertical-align:text-bottom"> ` : "";
+  return `${p}[${e.name}](${rel}religions/${e.page})`;
+}
+
 // What the GAME calls each culture, which is not what the files call it. Three of the twenty-two
 // carry a name the token would have got wrong: `barbarian` is **Gallic**, `eastern` is
 // **Caucasian**, `carthaginian` is **Phoenician**. Printing the token would have mislabelled
@@ -806,7 +854,18 @@ for (const f of factions) {
   // scrolling. 236 faction pages all opened with a map and then a wall of tables.
   const totalPop = setts.reduce((a, s) => a + (s.pop || 0), 0);
   const capital = setts.find((s) => s.capital);
+  // Culture and belief lead the line, because they are what the faction IS rather than what it
+  // happens to hold at turn 0, and because both were previously on the page nowhere at all —
+  // the belief in particular, which every one of the 239 faction blocks declares and which
+  // decides what its temples and governments generate. Where the reference page for one of them
+  // has not been generated, the value is still stated, in the mod's own words, unlinked.
+  const cultureTok = FACTION_CULTURE[f] || null;
+  const religionTok = FACTION_RELIGION[f] || null;
+  const cultureCell = cultureRef(cultureTok, "../") || (cultureTok ? `\`${cultureTok}\`` : null);
+  const religionCell = religionRef(religionTok, "../") || (religionTok ? `\`${religionTok}\`` : null);
   const glance = [
+    cultureCell ? `**${cultureCell}** culture` : "culture _not determined_",
+    religionCell ? `believes ${religionCell}` : "belief _not determined_",
     `**${setts.length}** settlement${setts.length === 1 ? "" : "s"}`,
     // The capital is a city, so name the city — "capital Stratos", not "capital Akarnania".
     capital ? `capital **${SETTLEMENT_OF[capital.region] ? placeName(SETTLEMENT_OF[capital.region]) : placeName(capital.region)}**` : null,
@@ -972,7 +1031,9 @@ ${units.aor.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map((
 
   const rowsMd = nine.map((f) => {
     const held = heldBy(f);
-    return `| **${npName(f)}** | \`${f}\` | ${CULTURE[f] || "_not determined_"} | ${held.length ? `${held.length} region${held.length === 1 ? "" : "s"}` : "none" } | ${gateCount[f] ? `${gateCount[f]} unit type${gateCount[f] === 1 ? "" : "s"}` : "—"} |`;
+    const cu = cultureRef(CULTURE[f], "../") || (CULTURE[f] ? `\`${CULTURE[f]}\`` : "_not determined_");
+    const re = religionRef(FACTION_RELIGION[f], "../") || (FACTION_RELIGION[f] ? `\`${FACTION_RELIGION[f]}\`` : "_not determined_");
+    return `| **${npName(f)}** | \`${f}\` | ${cu} | ${re} | ${held.length ? `${held.length} region${held.length === 1 ? "" : "s"}` : "none" } | ${gateCount[f] ? `${gateCount[f]} unit type${gateCount[f] === 1 ? "" : "s"}` : "—"} |`;
   }).join("\n");
 
   const sections = nine.map((f) => {
@@ -986,7 +1047,7 @@ ${units.aor.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map((
     const list = held.map((s) => s.region);
     return `### ${heading(f)}
 
-\`${f}\` · culture \`${CULTURE[f] || "not determined"}\`${b ? ` · ${b}` : ""}
+\`${f}\` · culture ${cultureRef(CULTURE[f], "../") || `\`${CULTURE[f] || "not determined"}\``} · believes ${religionRef(FACTION_RELIGION[f], "../") || `\`${FACTION_RELIGION[f] || "not determined"}\``}${b ? ` · ${b}` : ""}
 
 ${own ? `The mod's own text for this faction, verbatim:\n\n> ${own.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n` : `_The mod ships no campaign description for this faction._\n`}
 ${spawn ? `Placed on the map by the campaign script, not chosen: \`${spawn.join("`, `")}\` in \`spawn_scripts/\` names it.\n` : `_No spawn script in \`spawn_scripts/\` names it._\n`}
@@ -1016,8 +1077,8 @@ ${list.slice(0, CAP).map((r) => `${settlementAndRegion(r)}`).join(" · ")}${list
 The nine below are excluded on what they are FOR, established from the mod's own text, its
 spawn scripts and what it gives them at the campaign start.
 
-| Faction | Internal token | Culture | Holds at start | Named in recruitment |
-|---|---|---|---|---|
+| Faction | Internal token | Culture | Default belief | Holds at start | Named in recruitment |
+|---|---|---|---|---|---|
 ${rowsMd}
 
 ## What each one is
@@ -1095,7 +1156,13 @@ const cultureSection = cultureGroups.map((g) => {
   // the culture name as a divider — which is what it is. The anchors are unaffected: a heading
   // gets its id at any level.
   const heading = `### ${cultureHead(g)}`;
-  const sub = null;
+  // The link to the culture's own page goes UNDER the heading, not in it. A heading's anchor is
+  // slugged from its text, and the jump bar below has to land on these — GitHub, the local
+  // viewer and verify-ris-wiki.js do not agree on what markdown link syntax inside a heading
+  // slugs to, so nothing goes in one that the three could read differently.
+  const sub = g.tok && CULTURE_INDEX[g.tok]
+    ? `[What being ${CULTURE_INDEX[g.tok].name} decides](cultures/${CULTURE_INDEX[g.tok].page})`
+    : null;
   // No token beside the heading, and no paragraph explaining that the shown name is not the
   // token. A player reading "Gallic" does not need to be told the file says `barbarian`; that
   // the two differ is the GENERATOR's problem and is reported in its run output instead.
@@ -1124,7 +1191,7 @@ const cultureJump = cultureGroups
 
 const idx = `# All factions
 
-[← wiki index](README.md) · [factions overview](factions-overview.md)
+[← wiki index](README.md) · [factions overview](factions-overview.md) · [cultures](cultures.md) · [beliefs](religions.md)
 
 ${index.length} playable factions, each with its own page, in ${cultureGroups.filter((g) => g.tok).length} cultures.
 
@@ -1159,6 +1226,10 @@ console.log(`  character name tokens: ${namesResolved.toLocaleString("en-US")} r
 console.log(`  place name tokens:     ${placesResolved.toLocaleString("en-US")} resolved via the regions-and-settlements text, ${placesRaw.toLocaleString("en-US")} had no entry`);
 console.log(`  settlement names read from descr_regions: ${Object.keys(SETTLEMENT_OF).length.toLocaleString("en-US")}`);
 console.log(`  no units resolved:         ${index.filter((e) => !e.units).length}`);
+console.log(`  default religions: ${Object.keys(FACTION_RELIGION).length} faction blocks declare one, ${RAW_RELIGION_LINES} "default religion" lines by a flat pattern over the same file  <- must match`);
+console.log(`    ${Object.keys(FACTION_RELIGION).length === RAW_RELIGION_LINES ? "the two counts AGREE" : "THE TWO COUNTS DISAGREE — a faction block is being lost"} · distinct beliefs used: ${new Set(Object.values(FACTION_RELIGION)).size}`);
+console.log(`  culture links: ${cultureLinked.toLocaleString("en-US")} into cultures/ (${Object.keys(CULTURE_INDEX).length} in cultures/index.json)${cultureUnlinked.size ? `, ${cultureUnlinked.size} with no entry (${[...cultureUnlinked].join(", ")})` : ""}${Object.keys(CULTURE_INDEX).length ? "" : "  <- run gen-ris-culture-pages.js, then this generator again"}`);
+console.log(`  belief links:  ${religionLinked.toLocaleString("en-US")} into religions/ (${Object.keys(RELIGION_INDEX).length} in religions/index.json)${religionUnlinked.size ? `, ${religionUnlinked.size} with no entry (${[...religionUnlinked].join(", ")})` : ""}${Object.keys(RELIGION_INDEX).length ? "" : "  <- run gen-ris-belief-pages.js, then this generator again"}`);
 console.log(`  cultures: ${cultureGroups.filter((g) => g.tok).length} named across ${index.length} factions, ${index.filter((e) => !e.culture).length} faction(s) with no culture line`);
 console.log(`    display names: ${cultureNamed.bare} via the bare {<culture>} entry, ${cultureNamed.label} via {<culture>_label}, ${cultureNamed.ui} via {UI_<CULTURE>}${cultureNamed.none.length ? `, ${cultureNamed.none.length} unresolved (${cultureNamed.none.join(", ")})` : ", 0 unresolved"}`);
 for (const [tok, bare, ui] of cultureRenames) console.log(`    the game renames \`${tok}\`: shown as "${bare}", menu string says "${ui}"`);

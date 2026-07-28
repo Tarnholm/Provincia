@@ -235,9 +235,18 @@ note(`images: ${images.toLocaleString("en-US")} checked, ${badImages} broken`);
   // settlement-cards/ is the settlement art that is actually in the mod folder (4). Both floors
   // sit low on purpose — these are art families whose size is the mod's business — but at zero
   // the pages that reference them would break, and that is what these catch.
+  // cultures/ is one page per culture declared in descr_cultures.txt plus index.json — 23
+  // entries as RIS ships, against vanilla's six. religions/ is one page per belief declared in
+  // descr_beliefs.txt plus index.json — 54 as RIS ships. Both floors sit well below what the
+  // mod currently declares, so removing a culture or a belief is a mod change rather than a
+  // verification failure, while a generator that wrote almost nothing still fails here. The
+  // belief floor in particular sits above the twelve-block gap the Anatolian indentation trap
+  // opens up: a generator that fell back to a single-tab pattern would write 41 pages and pass
+  // a floor of 20, so the floor is set high enough to catch exactly that.
   const floors = {
     factions: 200, regions: 1000, settlements: 1000, units: 1000, cards: 900, maps: 150,
     buildings: 60, icons: 200, goods: 40, sizes: 5, "belief-icons": 30, "settlement-cards": 1,
+    cultures: 15, religions: 45,
   };
   for (const [dir, min] of Object.entries(floors)) {
     const n = count(dir);
