@@ -450,10 +450,19 @@ const settlementLink = (h) => {
 // the same culture and size — descr_sm_settlements points roman/village at
 // `graeco-roman_village.tga` and descr_cultures points it at `roman_village.tga` — and only one
 // of the two families is on disk at all. Which file a picture came from is stated on the page.
-const artPath = (p) => {
+// TWO ROOTS, the mod first and the base game second — the same rule the faction symbols use.
+// Looking only in the mod folder found four pictures, all of them the nomad set, so every size
+// page led with a steppe camp; the base game ships the other six cultures' cities as loose files
+// under ui/<culture>/cities/, roman among them, and all six rungs are there.
+const VANILLA = valOf("--vanilla",
+  "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data");
+const artRoots = (p) => {
   const rel = String(p).replace(/\\/g, "/");
-  return /^data\//i.test(rel) ? path.join(RIS, rel.slice(5)) : path.join(RIS, "..", rel);
+  return /^data\//i.test(rel)
+    ? [path.join(RIS, rel.slice(5)), path.join(VANILLA, rel.slice(5))]
+    : [path.join(RIS, "..", rel), path.join(VANILLA, "..", rel)];
 };
+const artPath = (p) => artRoots(p).find((f) => fs.existsSync(f)) || artRoots(p)[0];
 function declaredArt() {
   const rows = [];   // {source, culture, size, rel, exists}
   // descr_sm_settlements: `<culture> { <size> { … card <path> } }`
@@ -809,7 +818,13 @@ ${PAGES.map((p) => {
   // Only where the picture is this rung's OWN. Three of the six rungs are declared with a file
   // a lower rung already uses, and printing it again down the column reads as six pictures of
   // six sizes when it is four pictures of six sizes.
-  const art = (ART_OUT.bySize.get(p.size) || [])[0];
+  // Roman where there is a Roman one. A size page is about the rung, not about a culture, so
+  // the picture beside it is only ever an illustration of a rung — and with the base game's art
+  // now readable, six cultures offer one. Picking whichever happened to sort first gave a
+  // barbarian hillfort for four rungs and a steppe camp before that; Roman covers all six, so
+  // the column reads as one settlement growing rather than six unrelated places.
+  const rows = ART_OUT.bySize.get(p.size) || [];
+  const art = rows.find((r) => r.culture === "roman" && r.png) || rows[0];
   const ownArt = art && art.png && !LADDER.slice(0, LADDER.indexOf(p.size))
     .some((s) => (ART_OUT.bySize.get(s) || []).some((r) => r.png && r.png.name === art.png.name));
   return `| ${ownArt ? `<img src="settlement-cards/${art.png.name}" alt="" width="48">` : ""} | [${p.name}](sizes/${p.size}.md) | ${one(up)} | ${one(mx)} | ${p.levels || "—"} | ${p.units || "—"} | ${num(p.start)} |`;

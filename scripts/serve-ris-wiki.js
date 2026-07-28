@@ -383,7 +383,7 @@ function renderMarkdown(md, toc) {
       //
       // So a one-faction culture is dealt three across with two slots left empty, and looks like
       // its neighbours. Empty slots, not stretched content: the columns keep their widths.
-      const UP = Math.max(1, Math.min(3, fits, Math.floor(CONTENT_PX / (groupPx + GROUP_GAP_PX))));
+      const UP = Math.max(1, Math.min(4, fits, Math.floor(CONTENT_PX / (groupPx + GROUP_GAP_PX))));
 
       const cls = (k, first) => {
         const c = `${align[k] || ""}${first && k === 0 ? " grp" : ""}`.trim();
@@ -699,7 +699,10 @@ td{max-width:70ch}
    1,172-row table restyles and repaints rows nobody is looking at, which is what made the
    cursor stutter. contain-intrinsic-size keeps the scrollbar honest for the skipped ones. */
 .tw.big tbody tr{content-visibility:auto;contain-intrinsic-size:auto 2.05rem}
-th,td{padding:.42rem .7rem;text-align:left;vertical-align:middle;border-bottom:1px solid var(--line)}
+/* Tighter than it was (.42/.7). On a table dealt three or four across, cell padding is paid
+   for once per column per group — a dozen times over on one row — so a tenth of a rem here is
+   most of the reason a short list looked spread out across the page. */
+th,td{padding:.34rem .55rem;text-align:left;vertical-align:middle;border-bottom:1px solid var(--line)}
 /* 3.1rem, not 0: the site bar is sticky at the top of the window and is that tall, so a header
    pinned at 0 slides underneath it and is never readable. The sidebar already uses the same
    offset. z-index keeps the heading above the rows it is holding station over. */
@@ -955,7 +958,7 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
       state.forEach(function(s){
         // 7px is what a group costs beyond its own columns: its first cell takes 1.1rem of left
         // padding where the others take .7rem.
-        var up = Math.max(1, Math.min(3, Math.floor(s.avail / (s.one + 7)) || 1));
+        var up = Math.max(1, Math.min(4, Math.floor(s.avail / (s.one + 7)) || 1));
         if (up === s.up) return;              // nothing to rebuild at this width
         s.up = up;
         render(s.d, up);

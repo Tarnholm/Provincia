@@ -872,11 +872,14 @@ fs.writeFileSync(path.join(OUT, "cultures", "index.json"), JSON.stringify(INDEX,
 // reads as one list with the culture name as a divider, which is what it is.
 const sorted = FACTS.slice().sort((a, b) => b.facs.length - a.facs.length || String(a.name).localeCompare(String(b.name)));
 const summary = [
-  "| Culture | Token | Factions | Provinces | Builds | Units | Belief spread |",
-  "|---|---|---:|---:|---:|---:|---:|",
+  // No Token column. It is the word the files use for this culture, which a player has no use
+  // for — they see the name. Where the token still matters to someone reading the files, it is
+  // on the culture's own page.
+  "| Culture | Factions | Provinces | Builds | Units | Beliefs |",
+  "|---|---:|---:|---:|---:|---:|",
   ...sorted.map((f) => {
     const beliefs = uniq(f.facs.map((x) => (FACTIONS[x] || {}).religion).filter(Boolean)).length;
-    return `| [${f.name || f.tok}](cultures/${f.tok}.md) | \`${f.tok}\` | ${f.facs.length} | ${num(f.held)} | ${f.levels.length || "—"} | ${f.units.size || "—"} | ${beliefs || "—"} |`;
+    return `| [${f.name || f.tok}](cultures/${f.tok}.md) | ${f.facs.length} | ${num(f.held)} | ${f.levels.length || "—"} | ${f.units.size || "—"} | ${beliefs || "—"} |`;
   }),
 ].join("\n");
 
@@ -921,9 +924,10 @@ ${CULTURES_IN_LISTS.length} are exactly the culture tokens.
 ## The ${CULTURES.length} cultures
 
 **Provinces** is what the culture's factions hold at turn 0, out of the ${num(heldTotal)} settlements the
-campaign file places. **Builds** and **units** are what the mod gates on being of this culture.
-**Belief spread** is how many different \`default religion\` values its factions carry — culture
-and belief are separate axes, and this column is how separate.
+campaign file places. **Builds** and **units** are what the mod gates on being of this culture —
+what only its factions may put up, and only its factions may raise. **Beliefs** is how many
+different state beliefs its factions hold between them: a culture is not a religion here, and
+this is the column that shows how far the two come apart.
 
 ${summary}
 

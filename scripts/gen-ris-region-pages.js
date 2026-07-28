@@ -1278,7 +1278,7 @@ ${index.length.toLocaleString("en-US")} regions, one settlement each. ${withOwne
 start; the rest begin independent. A region is the land — terrain, fertility, trade goods; its
 settlement is the town, on its own page.
 
-| Region | Settlement | Held by | Goods | Built |
+| Region | Settlement | Held by | Goods | Buildings |
 |---|---|---|---:|---:|
 ${index.map((e) => `| [${e.regionName}](regions/${encodeURIComponent(e.region)}.md) | [${e.settlementName}](settlements/${encodeURIComponent(e.settlement)}.md) | ${ownerCell(e)} | ${e.trade} | ${e.builds} |`).join("\n")}
 `;
@@ -1298,7 +1298,7 @@ fertility and trade goods.
 Size is a rung on a ladder of ${Object.keys(SIZE_INDEX).length || 6}, and it decides what a settlement can build and raise —
 each one links to [what that size does](sizes.md).
 
-| Settlement | Region | Held by | Size | Population | Built |
+| Settlement | Region | Held by | Size | Population | Buildings |
 |---|---|---|---|---:|---:|
 ${settlementIndex.map((s) => `| [${s.name}](settlements/${encodeURIComponent(s.settlement)}.md)${s.capital ? " ★" : ""} | [${s.regionName}](regions/${encodeURIComponent(s.region)}.md) | ${s.owner ? (hasPage(s.ownerTok) ? `[${s.owner}](factions/${s.ownerTok}.md)` : `[${npName(s.ownerTok)}](factions/non-playable.md)`) : "_independent_"} | ${sizeRef(s.level, "") || "—"} | ${s.pop != null ? s.pop.toLocaleString("en-US") : "—"} | ${s.builds} |`).join("\n")}
 
