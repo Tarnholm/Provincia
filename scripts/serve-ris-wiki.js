@@ -486,6 +486,10 @@ const CSS = `
   --acc:#e8c15a;--acc-soft:rgba(232,193,90,.13);--shadow:0 1px 3px rgba(0,0,0,.4)}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
+/* A heading jumped to lands at the top of the window, which is underneath a sticky bar — so
+   every link in the jump strip put the section it named just out of sight, with the row of
+   factions below it looking like the top of the section. Costs nothing when nothing is sticky. */
+h1,h2,h3,h4,h5,h6{scroll-margin-top:calc(var(--topbar) + .7rem)}
 body{margin:0;background:var(--bg);color:var(--fg);
   font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   -webkit-font-smoothing:antialiased}
@@ -507,6 +511,9 @@ body.has-jump{--topbar:5.35rem}
 .jump a{color:rgba(244,234,216,.78);text-decoration:none;white-space:nowrap;font-size:.8rem;
   padding:.15rem .45rem;border-radius:5px}
 .jump a:hover{color:var(--tyrian);background:var(--gold)}
+/* Where you are, as against where you could go. Deliberately quieter than :hover — it marks a
+   position, it is not offering an action. */
+.jump a.on{color:var(--gold);background:rgba(232,193,90,.16);font-weight:600}
 .brand{font-weight:650;letter-spacing:.01em;color:#f4ead8;text-decoration:none;white-space:nowrap;
   display:flex;align-items:center;gap:.55rem}
 .brand img{width:26px;height:26px;border-radius:5px;display:block}
@@ -825,6 +832,43 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
       e.preventDefault(); document.querySelector('.top input').focus();
     }
   });
+
+  // The jump strip marks where you are. On a page of 22 sections the strip otherwise tells you
+  // where you could go and nothing about where you have got to, and the strip itself scrolls
+  // sideways — so the current entry is brought into view rather than left off the end of it.
+  //
+  // IntersectionObserver rather than a scroll handler: a scroll handler on a 4,000-row page
+  // fires on every frame and has to measure each heading, which is what made the pointer
+  // stutter on the big tables before. This does the work only when a heading crosses the line.
+  var strip = document.querySelector(".jump");
+  if (strip && window.IntersectionObserver) {
+    var links = {}, order = [], seen = {};
+    Array.prototype.forEach.call(strip.querySelectorAll("a"), function(a){
+      var id = decodeURIComponent(a.getAttribute("href").slice(1));
+      links[id] = a; order.push(id);
+    });
+    var mark = function(){
+      var active = null;
+      for (var i = 0; i < order.length; i++) if (seen[order[i]]) active = order[i];
+      Array.prototype.forEach.call(strip.querySelectorAll("a.on"), function(a){ a.classList.remove("on"); });
+      if (active && links[active]) {
+        links[active].classList.add("on");
+        var a = links[active], l = a.offsetLeft, r = l + a.offsetWidth;
+        if (l < strip.scrollLeft || r > strip.scrollLeft + strip.clientWidth) {
+          strip.scrollTo({ left: Math.max(0, l - strip.clientWidth / 3), behavior: "smooth" });
+        }
+      }
+    };
+    // The trigger line sits just under the bar. A heading counts as reached once its top passes
+    // it, and stops counting when it scrolls back below — so "active" is the last one crossed.
+    var top = parseFloat(getComputedStyle(document.body).getPropertyValue("--topbar")) || 3.1;
+    var px = top * parseFloat(getComputedStyle(document.documentElement).fontSize || 16);
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ seen[e.target.id] = e.boundingClientRect.top < px + 8; });
+      mark();
+    }, { rootMargin: (-Math.round(px) - 8) + "px 0px 0px 0px", threshold: 0 });
+    order.forEach(function(id){ var el = document.getElementById(id); if (el) io.observe(el); });
+  }
 })();
 </script>
 </body></html>
