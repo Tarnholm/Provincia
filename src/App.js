@@ -11962,6 +11962,28 @@ function App() {
   // reality for every faction except the one the tester actually plays).
   const [armyEcoMode, setArmyEcoMode] = useState(() => localStorage.getItem("armyEcoMode") || "human");
   useEffect(() => { try { localStorage.setItem("armyEcoMode", armyEcoMode); } catch { } }, [armyEcoMode]);
+  // SUBMOD-AWARE mod dir for the Army Setup (2026-07-30, RIS_Four_Romans): the active
+  // slot's campaign can come from a THIN SUBMOD whose data root differs from modDataDir
+  // (modDataDir is derived from the ICONS dir, which a submod never ships — so it always
+  // resolves to the BASE mod, and the Army Setup read the base descr_strat where the
+  // submod's extra Roman factions are 5-line stubs). Derive the campaign's own data root
+  // from the imported slot's source folder ("<root>/world/maps/campaign/<name>") and hand
+  // THAT to the army IPC handlers; the main process merges it over the base mod
+  // (src/modOverlay.js) so EDU/EDB/map reads still resolve. Same-root imports (base RIS
+  // itself) short-circuit to modDataDir — zero behaviour change for the normal case.
+  const armyModDataDir = useMemo(() => {
+    try {
+      const suffix = (CAMPAIGNS[mapCampaign] && CAMPAIGNS[mapCampaign].suffix) || mapCampaign;
+      const raw = localStorage.getItem("lastImport_" + suffix);
+      const folder = raw ? (JSON.parse(raw) || {}).folder : null;
+      if (!folder) return modDataDir;
+      const m = String(folder).replace(/\\/g, "/").match(/^(.*)\/world\/maps\/campaign\/[^/]+\/?$/i);
+      if (!m) return modDataDir;
+      const root = m[1];
+      if (!modDataDir || root.toLowerCase() === String(modDataDir).replace(/\\/g, "/").toLowerCase()) return modDataDir;
+      return root;
+    } catch { return modDataDir; }
+  }, [modDataDir, mapCampaign, campaignLabels]);
   // Tax plan computed from the mod files (live-verified exact; the save-based
   // two-save flow was removed 2026-06-10 — the no-save model IS the planner).
   const [armyStratPlan, setArmyStratPlan] = useState(null);
@@ -23290,7 +23312,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           corrCalibStored={corrCalibStored}
           factionDisplayNames={factionDisplayNames}
           garrDone={garrDone}
-          modDataDir={modDataDir}
+          modDataDir={armyModDataDir}
           pendingReload={pendingReload}
           pushToast={pushToast}
           setArmyBudgetFloor={setArmyBudgetFloor}

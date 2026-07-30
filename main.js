@@ -2429,7 +2429,8 @@ registerFileHandlers(ipcMain, { app, dialog, isConsentedPath, appRoot: __dirname
 // Save-analysis / economy / army / vision / trade IPC handlers — see src/saveAnalysisHandlers.js.
 const { registerSaveAnalysisHandlers } = require("./src/saveAnalysisHandlers.js");
 registerSaveAnalysisHandlers(ipcMain, { _writeLog: (s) => _writeLog(s), getLastSaveBuf: () => lastSaveBuf,
-  baselineDir: path.join(app.getPath("userData"), "garrison-baselines") });
+  baselineDir: path.join(app.getPath("userData"), "garrison-baselines"),
+  overlayDir: path.join(app.getPath("userData"), "mod-overlay") });
 
 // IPC: get app version
 // App/system info + log-folder picker IPC handlers — see src/systemHandlers.js.

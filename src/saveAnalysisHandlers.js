@@ -38,7 +38,12 @@ function _laneSrcMtimes(modDataDir, kind) {
   return files.map((f) => { try { return fs.statSync(f).mtimeMs; } catch { return 0; } });
 }
 
-function registerSaveAnalysisHandlers(ipcMain, { _writeLog, getLastSaveBuf, baselineDir }) {
+function registerSaveAnalysisHandlers(ipcMain, { _writeLog, getLastSaveBuf, baselineDir, overlayDir }) {
+  // SUBMOD OVERLAY (2026-07-30, RIS_Four_Romans): thin submods ship only the files
+  // they change; analysis reads must go through the merged submod-over-base view.
+  // READ handlers only — the Army Setup APPLY handlers keep writing the submod's
+  // real descr_strat via the original modDataDir (see src/modOverlay.js header).
+  const _effDir = (modDataDir) => require("./modOverlay.js").effectiveModDataDir(modDataDir, overlayDir, (m) => _writeLog(`[mod-overlay] ${m}`));
   // Run a heavy save crack in a worker thread so it never blocks the Electron
   // main thread (a ~5s synchronous crack froze all IPC/window events). The
   // worker reads the save file itself when given a savePath — keeping the 30-45
@@ -272,6 +277,7 @@ ipcMain.handle("get-optimal-taxes", async (_event, savePath, modDataDir, playerH
 ipcMain.handle("get-strat-tax-plan", async (_event, modDataDir, faction, savePath) => {
   try {
     if (!modDataDir) return { error: "modDataDir required" };
+    modDataDir = _effDir(modDataDir);
     const gm = require("./growthModel.js");
     // If a save is supplied, read the per-settlement marker−1528 development value
     // (settlementFields.growthDevValue) and feed it in → far more accurate save-aware
@@ -741,6 +747,7 @@ ipcMain.handle("get-mine-prospects", async (_event, modDataDir) => {
 ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath, asAI, taxH, corr, humanDifficulty) => {
   try {
     if (!modDataDir || !faction) return { error: "modDataDir + faction required" };
+    modDataDir = _effDir(modDataDir);
     const gm = require("./growthModel.js");
     const te = require("./traitEffects.js");
     const im = require("./incomeModel.js");
@@ -1240,6 +1247,7 @@ ipcMain.handle("apply-upgrade-fix", async (_event, modDataDir, faction, characte
 ipcMain.handle("get-army-setup", async (_event, faction, modDataDir, floor) => {
   try {
     if (!faction || !modDataDir) return { error: "faction + modDataDir required" };
+    modDataDir = _effDir(modDataDir);
     const as = require("./armySetup.js");
     const r = as.analyzeFaction(modDataDir, faction, null, typeof floor === "number" ? floor : -500);
     if (r && !r.error) _writeLog(`[army-setup] ${faction}: armyUpkeep=${r.armyUpkeep} units=${r.summary?.totalArmyUnits} pool=${(r.settlements||[]).map(s=>s.pool.length).join("/")} flags=[${(r.summary?.flags||[]).join("; ")}]`);

@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1465",
+    date: "2026-07-30",
+    items: [
+      { type: "feature", text: "**Thin submods work in the Army Setup: RIS_Four_Romans' Roman factions now analyse fully.** The bug had two halves. Provincia derives the mod data dir from the ICONS folder — which a thin submod never ships — so with the Four Romans slot active the army pipeline silently read BASE RIS's descr_strat, where roman_rebels_1/2 and roman_senate are five-line stubs: \"not working for the roman factions\" while every other faction (identical in both files) looked fine. And pointing the pipeline at the submod alone breaks ~60 file reads that expect EDU/EDB/map files a thin overlay doesn't carry (EDU parsed 0 units). The app now derives the campaign's own data root from the imported slot's source folder, and the main process materialises a merged submod-over-base view the way the game's own VFS does — the base mod is found automatically, directories the submod doesn't touch are junctioned so teammate edits still flow live, and the submod wins per file. Verified on the real submod: all four Roman factions produce full upkeep/income/PO/growth (julii 14,900 · rebels 18,702 / 21,253 · senate 10,581), and a plain full mod short-circuits through unchanged." },
+      { type: "fix", text: "**Army Setup applies keep writing the SUBMOD's real descr_strat, never the merged copy.** Only the read/analysis handlers route through the merged view; the Add/Recruit/Replace buttons target the original overlay file (which is the submod's whole point of existing), and the merged view refreshes itself on the next analysis." },
+    ],
+  },
+
+  {
     version: "0.9.1464",
     date: "2026-07-30",
     items: [
@@ -84,16 +93,6 @@ const CHANGELOG = [
     ],
   },
 
-  {
-    version: "0.9.1457",
-    date: "2026-07-26",
-    items: [
-      { type: "improvement", text: "**Telemetry turned the `pilum_infantry` lint finding from a warning into a priority.** Measured across 336 tester sessions — 136 suspected crashes and 200 that exited cleanly despite a high assert volume — the engine assert this token produces (`unit_class != UCL_NUM_CLASSES || unit_category != UC_NUM_CATEGORIES`) appears in **11% of crashed sessions against 1% of survivors**. That is the largest gap of any assert measured. The lint detail now says so, with the sample size and an explicit note that it is correlation over one mod's reports rather than proof of causation." },
-      { type: "fix", text: "**The loudest asserts turned out to be the harmless ones, which means ranking by volume was actively misleading.** `m_status == TEX_MANAGER_DISPLAY_OPEN` appears in **89% of sessions that survived and only 40% of crashes**; the string ref-count overflow, 87% against 43%. A session with 14,000 `length_squared` failures is likelier to exit cleanly than one with 14 unit-enum failures. The crash reporter (v0.1.36, shipped alongside) now orders crash signals by measured crash-association and labels the loud benign ones instead of leading with them." },
-      { type: "improvement", text: "**Memory was investigated as a crash cause and ruled out as a discriminator.** Every v7.12 session grows from ~0.3 GB to 12-13 GB with peak private reaching 22-24 GB, which looked like the obvious culprit. It is not: crashed sessions peak at a median 11.96 GB and sessions that survived at **12.17 GB** — indistinguishable. The growth is real and universal, but it does not separate the two groups, so no finding was built on it." },
-      { type: "improvement", text: "Both figures come from the same 336-session pass, and the negative result is recorded as deliberately as the positive one — a uniform signal that explains nothing is exactly the kind of thing that gets mistaken for a cause on a second look." },
-    ],
-  },
 
 
   ];

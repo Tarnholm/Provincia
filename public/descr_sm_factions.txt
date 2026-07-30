@@ -14294,7 +14294,7 @@
 			"defeat": "data/fmv/lose/paphlagonia.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "paphlagonian",
 		"default battle ai personality": "default_personality",
