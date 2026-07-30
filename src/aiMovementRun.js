@@ -459,7 +459,16 @@ async function runAiMovementAnalysis({ logPath, modDataDir, savePath }, onProgre
       // names a file and a line, so nothing has to be inferred. Detected by the
       // two line shapes that only this log produces.
       const isScriptLog = /^\s*Script Error in /m.test(headStr) ||
-        /^\s*\([^)]*\.txt::\d+\) Executing command /m.test(headStr);
+        /^\s*\([^)]*\.txt::\d+\) Executing command /m.test(headStr) ||
+        // THIRD SHAPE (2026-07-30): current-engine scripting logs open with token-
+        // creation chatter — "(file.txt) (SCOPE) Entering new scope…" /
+        // "(file.txt::2) (CREATE) Creating token…" — and the first "Executing
+        // command" sits thousands of lines in (7,420 in the live log), so the 4KB
+        // head no longer contains either shape above and the log fell through to
+        // the message_log analyser. (SCOPE|CREATE) is the log's REAL vocabulary
+        // (2,761 CREATE + 1,862 SCOPE, zero other tokens in 92,952 lines) and the
+        // shape appears in no other live log's head.
+        /^\s*\([^)]*\.txt(::\d+)?\) \((SCOPE|CREATE)\) /m.test(headStr);
       if (isScriptLog) {
         _prog("log", "streaming the scripting log");
         const readline = require("readline");

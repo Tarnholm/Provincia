@@ -2308,6 +2308,14 @@ ipcMain.handle("get-mod-file-mtimes", async (_event, modDataDir) => {
     "text/export_buildings.txt",
     "descr_sm_factions.txt",
     "world/maps/base/descr_regions.txt",
+    // Map files (2026-07-30, teammate-edits-map_regions.tga bug): without these the
+    // "Reload mod data" badge never flashed for a map repaint, so the app silently
+    // kept showing the old region map. The slot's displayed map is a copy frozen at
+    // import time — the badge + reload re-imports it (and the main-process topology
+    // caches re-derive via incomeModel's mod-file epoch).
+    "world/maps/base/map_regions.tga",
+    "world/maps/base/map_ground_types.tga",
+    "world/maps/base/map_heights.tga",
   ];
   const out = {};
   const tryFile = (full) => {
@@ -2420,7 +2428,8 @@ registerFileHandlers(ipcMain, { app, dialog, isConsentedPath, appRoot: __dirname
 // Returns { header, playerFaction, factions, settlements, characters, diplomacy, ownerByCity, _stats }.
 // Save-analysis / economy / army / vision / trade IPC handlers — see src/saveAnalysisHandlers.js.
 const { registerSaveAnalysisHandlers } = require("./src/saveAnalysisHandlers.js");
-registerSaveAnalysisHandlers(ipcMain, { _writeLog: (s) => _writeLog(s), getLastSaveBuf: () => lastSaveBuf });
+registerSaveAnalysisHandlers(ipcMain, { _writeLog: (s) => _writeLog(s), getLastSaveBuf: () => lastSaveBuf,
+  baselineDir: path.join(app.getPath("userData"), "garrison-baselines") });
 
 // IPC: get app version
 // App/system info + log-folder picker IPC handlers — see src/systemHandlers.js.

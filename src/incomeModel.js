@@ -1009,9 +1009,52 @@ const CALIB = {
   // IMPORT of Pisae→Cosa 41 (÷5 exact); every 'weak export' reading was a misread import)
 };
 
+// ---- MOD-FILE EPOCH: auto-invalidate every mod-derived cache on external edits ----
+// (2026-07-30, the teammate-edits-map_regions.tga bug): every module cache below is
+// keyed on modDataDir alone, so a disk edit — a teammate repainting map_regions.tga,
+// RTW rebuilding map.rwm on campaign load, Manipula writing EDB — survived every
+// in-app "Reload mod data" and the app served the old topology (adjacency, trade
+// lanes, sea bodies, settlement coords, mine deposits…) until a full restart.
+// _modEpochCheck stats the source files (throttled to one sweep per second per mod
+// dir) and WHOLESALE-CLEARS every registered cache when any mtime moves. Every
+// cached accessor calls it before its lookup; the clear is deliberately global —
+// these caches feed each other (seaLanes ← adjacency ← coords), so partial
+// invalidation would mix old and new topology.
+const _modEpochCaches = [];
+const _MOD_EPOCH_FILES = [
+  ["world", "maps", "base", "descr_regions.txt"],
+  ["world", "maps", "base", "map_regions.tga"],
+  ["world", "maps", "base", "map.rwm"],
+  ["world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"],
+  ["original_overrides", "resource_quantity", "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"],
+  ["export_descr_buildings.txt"],
+  ["descr_sm_resources.txt"],
+  ["descr_sm_factions.txt"],
+];
+const _modEpochSigs = new Map();    // modDataDir → last mtime signature
+const _modEpochChecked = new Map(); // modDataDir → last sweep wall-clock ms
+function _modEpochCheck(modDataDir) {
+  if (!modDataDir) return;
+  const now = Date.now();
+  if (now - (_modEpochChecked.get(modDataDir) || 0) < 1000) return;
+  _modEpochChecked.set(modDataDir, now);
+  let sig = "";
+  for (const parts of _MOD_EPOCH_FILES) {
+    let mt = 0;
+    try { mt = fs.statSync(path.join(modDataDir, ...parts)).mtimeMs; } catch { }
+    sig += mt + "|";
+  }
+  const prev = _modEpochSigs.get(modDataDir);
+  if (prev !== undefined && prev !== sig) {
+    for (const c of _modEpochCaches) for (const k of Object.keys(c)) delete c[k];
+  }
+  _modEpochSigs.set(modDataDir, sig);
+}
+
 // region → {x,y} coords (map_regions.tga black settlement pixels), cached per mod dir.
 const _coordCache = {};
 function regionCoords(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_coordCache[modDataDir]) return _coordCache[modDataDir];
   try {
     const dg = require("./descrStratGeneral.js");
@@ -1034,6 +1077,7 @@ const _frontierCache = {};
 // invalid-bridge detection (vanilla: bord≈1; RIS: the f10>150 cutoff its land calibration was tuned against).
 const _mapVerCache = {};
 function _mapVer(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_mapVerCache[modDataDir] != null) return _mapVerCache[modDataDir];
   let v = 0x7b;
   try { const fd = fs.openSync(path.join(modDataDir, "world", "maps", "base", "map.rwm"), "r"); const buf = Buffer.alloc(1); fs.readSync(fd, buf, 0, 1, 0); fs.closeSync(fd); v = buf[0]; } catch { /* no map → assume RIS */ }
@@ -1043,6 +1087,7 @@ function _mapVer(modDataDir) {
 function _fastSqrt(x){ const _b=new ArrayBuffer(4),_f=new Float32Array(_b),_i=new Int32Array(_b); _f[0]=x; _i[0]=(((_i[0]-0x3f800000)|0)>>1)+0x3f800000; return _f[0]; }
 function frontierGraph(modDataDir) {
   if (!modDataDir) return {};
+  _modEpochCheck(modDataDir);
   if (_frontierCache[modDataDir]) return _frontierCache[modDataDir];
   const graph = {};
   try {
@@ -1108,6 +1153,7 @@ function frontierGraph(modDataDir) {
 const _landingCache = {};
 function landingFrontierGraph(modDataDir) {
   if (!modDataDir) return {};
+  _modEpochCheck(modDataDir);
   if (_landingCache[modDataDir]) return _landingCache[modDataDir];
   const graph = {};
   try {
@@ -1166,6 +1212,7 @@ const BRACKET_MULT = { low: 0.8, normal: 1.0, high: 1.2, very_high: 1.5 };
 const _adjCache = {}, _adjLenCache = {};
 function regionBorderLen(modDataDir) { regionAdjacency(modDataDir); return _adjLenCache[modDataDir] || {}; }
 function regionAdjacency(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_adjCache[modDataDir]) return _adjCache[modDataDir];
   const adj = {}, blen = {}; _adjLenCache[modDataDir] = blen;
   try {
@@ -1200,6 +1247,7 @@ function regionAdjacency(modDataDir) {
 // = named sea zones; ports sharing a body are sea-trade partners) ----
 const _seaCache = {};
 function regionSeaBodies(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_seaCache[modDataDir]) return _seaCache[modDataDir];
   const out = {};
   try {
@@ -1234,6 +1282,7 @@ const _mineDepositCache = {};
 // Per-region MINEABLE deposit detail: { region: { qtyVal, minerals: [{name, qty, tradeValue}] } }.
 // qtyVal = Σ quantity × tradeValue — the exact multiplier in the cracked mining formula.
 function mineDepositsByRegion(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_mineDepositCache[modDataDir]) return _mineDepositCache[modDataDir];
   const out = {};
   try {
@@ -1277,6 +1326,7 @@ function mineDepositsByRegion(modDataDir) {
   return (_mineDepositCache[modDataDir] = out);
 }
 function mineQtyValByRegion(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_mineQtyCache[modDataDir]) return _mineQtyCache[modDataDir];
   const out = {};
   const dep = mineDepositsByRegion(modDataDir);
@@ -1297,6 +1347,7 @@ function mineQtyValByRegion(modDataDir) {
 // in descr_strat (0 when no mine is built).
 const _mineProspectCache = {};
 function mineProspects(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_mineProspectCache[modDataDir]) return _mineProspectCache[modDataDir];
   const out = {};
   try {
@@ -1383,6 +1434,7 @@ function mineProspects(modDataDir) {
 // pyramids+pharos+mausoleum and fits 1.000) — only gardens is modeled.
 const _wonderCache = {};
 function wonderOwners(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_wonderCache[modDataDir]) return _wonderCache[modDataDir];
   const out = {};
   try {
@@ -1424,6 +1476,7 @@ function wonderOwners(modDataDir) {
 // importing Rhodes' goods) silently dropped Rhodes' market bonus. Built once per mod dir (cached).
 const _tradePctAllCache = {};
 function tradePctByRegionAll(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_tradePctAllCache[modDataDir]) return _tradePctAllCache[modDataDir];
   const out = {};
   try {
@@ -1438,6 +1491,7 @@ function tradePctByRegionAll(modDataDir) {
 // ---- region ownership + starting allies (trade agreements) + all port towns ----
 const _tradeCtxCache = {};
 function tradePartnerCtx(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_tradeCtxCache[modDataDir]) return _tradeCtxCache[modDataDir];
   const ownerOfRegion = {}, allies = {}, wars = {}, portTowns = [], popOfRegion = {}, roadOfRegion = {};
   try {
@@ -1477,6 +1531,7 @@ function tradePartnerCtx(modDataDir) {
 // live scroll session 2026-06-11). Same coord→region attribution as the mine parser.
 const _tradeQtyCache = {};
 function tradeQtyValByRegion(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_tradeQtyCache[modDataDir]) return _tradeQtyCache[modDataDir];
   const out = {};
   try {
@@ -1530,6 +1585,7 @@ function tradeQtyValByRegion(modDataDir) {
 // the forced-deep Messana→Consentia lane flows at full f=1.0).
 const _tradeQtyMapsCache = {};
 function tradeQtyMapsByRegion(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_tradeQtyMapsCache[modDataDir]) return _tradeQtyMapsCache[modDataDir];
   const out = { qty: {}, values: {}, rawValues: {} };
   try {
@@ -1580,6 +1636,7 @@ function tradeQtyMapsByRegion(modDataDir) {
 // external probe scripts that consume it; the sea law now uses tradeQtyMapsByRegion.
 const _tradeGoodsCache = {};
 function tradeGoodsByRegion(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_tradeGoodsCache[modDataDir]) return _tradeGoodsCache[modDataDir];
   const { qty, values } = tradeQtyMapsByRegion(modDataDir);
   const eff = (q) => Math.min(q, 3) + 0.43 * Math.max(0, q - 3);
@@ -1599,6 +1656,7 @@ function tradeGoodsByRegion(modDataDir) {
 // cargo): strong = 20·e^(0.127·pct)·cargoOut + 7.2·cargoIn; weak = 2.4·e^(0.127·pct)·cargoOut.
 const _seaLaneCache = {};
 function seaLanesByRegion(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_seaLaneCache[modDataDir]) return _seaLaneCache[modDataDir];
   const out = {};
   try {
@@ -1823,6 +1881,7 @@ function seaLanesByRegion(modDataDir) {
 // fall back to the formation BFS distance for any still-unreachable lane.
 const _seaPortDistCache = {};
 function seaPortDistDepth(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_seaPortDistCache[modDataDir]) return _seaPortDistCache[modDataDir];
   const base = path.join(modDataDir, "world", "maps", "base");
   const _dgT = require("./descrStratGeneral.js");
@@ -1895,6 +1954,7 @@ const _seaLaneGoodsCache = {};
 // the flow model ships on each directed lane (goods X has that Y lacks), for the
 // map's trade-lane inspector. Populated as a side effect of seaFlowPtsByLane.
 function seaLaneGoods(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (!_seaLaneGoodsCache[modDataDir]) seaFlowPtsByLane(modDataDir);
   return _seaLaneGoodsCache[modDataDir] || {};
 }
@@ -1904,6 +1964,7 @@ function seaLaneGoods(modDataDir) {
 // separately earns ~0.2× via the /5 tariff). For the map's trade-lane inspector.
 const _seaLaneValueCache = {};
 function seaLaneValues(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_seaLaneValueCache[modDataDir]) return _seaLaneValueCache[modDataDir];
   const out = {};
   try {
@@ -1947,6 +2008,7 @@ function seaLaneValues(modDataDir) {
 // partners are the type-0 region-frontier edges. For the map's road inspector.
 const _landLaneCache = {};
 function landLaneData(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_landLaneCache[modDataDir]) return _landLaneCache[modDataDir];
   const goods = {}, values = {};
   try {
@@ -1984,6 +2046,7 @@ function landLaneData(modDataDir) {
   return (_landLaneCache[modDataDir] = { goods, values });
 }
 function seaFlowPtsByLane(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_seaFlowPtsCache[modDataDir]) return _seaFlowPtsCache[modDataDir];
   const lanesBy = seaLanesByRegion(modDataDir);
   const { qty: GQ, values: GV, rawValues: RAW } = tradeQtyMapsByRegion(modDataDir);
@@ -2072,6 +2135,7 @@ function seaFlowPtsByLane(modDataDir) {
 const TRIBUTE_RATE = 0.5;
 const _protCache = {};
 function parseProtectorates(modDataDir) {
+  _modEpochCheck(modDataDir);
   if (_protCache[modDataDir]) return _protCache[modDataDir];
   const clientsOf = {}, suzerainOf = {};
   try {
@@ -2947,4 +3011,10 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
   };
 }
 
-module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, bodyguardBlockByFaction, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, regionBorderLen, frontierGraph, landingFrontierGraph, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion, seaFlowPtsByLane, seaLaneGoods, seaLaneValues, landLaneData, seaPortDistDepth, mineDepositsByRegion, mineProspects };
+_modEpochCaches.push(_coordCache, _frontierCache, _mapVerCache, _landingCache, _adjCache, _seaCache, _mineQtyCache, _mineDepositCache, _mineProspectCache, _wonderCache, _tradePctAllCache, _tradeCtxCache, _tradeQtyCache, _tradeQtyMapsCache, _tradeGoodsCache, _seaLaneCache, _seaPortDistCache, _seaFlowPtsCache, _seaLaneGoodsCache, _seaLaneValueCache, _landLaneCache, _protCache, _adjLenCache);
+
+module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, bodyguardBlockByFaction, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, regionBorderLen, frontierGraph, landingFrontierGraph, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion, seaFlowPtsByLane, seaLaneGoods, seaLaneValues, landLaneData, seaPortDistDepth, mineDepositsByRegion, mineProspects,
+  // mod-file epoch (see the _modEpochCheck block): other modules with modDir-keyed
+  // caches over the SAME mod files (poModel) register them here so one epoch sweep
+  // clears everything consistently.
+  _modEpochCheck, _modEpochRegister: (...caches) => { _modEpochCaches.push(...caches); } };

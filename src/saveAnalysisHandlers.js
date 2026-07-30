@@ -38,7 +38,7 @@ function _laneSrcMtimes(modDataDir, kind) {
   return files.map((f) => { try { return fs.statSync(f).mtimeMs; } catch { return 0; } });
 }
 
-function registerSaveAnalysisHandlers(ipcMain, { _writeLog, getLastSaveBuf }) {
+function registerSaveAnalysisHandlers(ipcMain, { _writeLog, getLastSaveBuf, baselineDir }) {
   // Run a heavy save crack in a worker thread so it never blocks the Electron
   // main thread (a ~5s synchronous crack froze all IPC/window events). The
   // worker reads the save file itself when given a savePath — keeping the 30-45
@@ -884,7 +884,17 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
         const po = require("./poModel.js").computeStartingPO(modDataDir, faction,
           opts && opts.govEffectByCity ? { govEffectByCity: opts.govEffectByCity } : {});
         const POD = { low: 0, normal: -30, high: -50, very_high: -70 };
-        let flagged = 0, exactN = 0;
+        let flagged = 0, exactN = 0, garrAdjustedN = 0;
+        // GARRISON BASELINE for the save anchor (user 2026-07-30: "the save is the starting
+        // point, and all edits past that should be added on top"): the anchor's stored PO bakes
+        // in the campaign-start garrison, so Army Setup adds/removes after the save must carry
+        // their garrison-law delta on top. Baseline = descr_strat snapshot from this save's
+        // FIRST analysis (see garrisonBaseline.js for why the save's own unit records can't
+        // provide it).
+        const gb = require("./garrisonBaseline.js");
+        const garrBaseline = (savePath && poAnchorByCity && !humanDifficulty)
+          ? gb.loadOrCreateBaseline(savePath, modDataDir, baselineDir, (m) => _writeLog(`[turn1-budget] ${m}`))
+          : null;
         // Garrison-fix unit recommender: the cheapest GATED garrison-infantry unit (full RIS
         // recruitability via poolForSettlement — never bypass it) that covers a town's men-gap to
         // PO 85. men/unit = EDU soldiers ×4 (HUGE size, matching the garrison law). Shared cache so
@@ -1006,6 +1016,19 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
             s.poAtSet = a.po - POD[a.bracket] + POD[br];
             s.poAtLow = a.po - POD[a.bracket];
             s.poExact = true; exactN++;
+            // layer post-save garrison edits on top of the anchor: same garrison law,
+            // same accounting on BOTH sides (model men from descr_strat, baseline men
+            // from this save's first-analysis snapshot) — delta 0 when untouched.
+            const prow = garrBaseline && (po[s.settlement] || po[s.region]);
+            const menBase = garrBaseline && (garrBaseline.menByCity[s.settlement] != null
+              ? garrBaseline.menByCity[s.settlement] : garrBaseline.menByCity[s.region]);
+            if (prow && prow.rows && prow.rows.pop) {
+              const adjust = gb.garrisonAdjust(prow.rows.men, menBase, prow.rows.pop);
+              if (adjust) {
+                s.poAtSet += adjust; s.poAtLow += adjust;
+                s.poGarrisonAdjust = adjust; s.poExact = false; garrAdjustedN++;
+              }
+            }
           } else {
             const p = po[s.settlement] || po[s.region];
             if (!p) continue;
@@ -1036,6 +1059,7 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
         let replaceN = 0; for (const s of budget.settlements) if (s.garrisonReplace) replaceN++;
         if (replaceN) _writeLog(`[turn1-budget] ${faction}: ${replaceN} town(s) have non-recruitable starting garrisons → replace suggestions attached`);
         if (exactN) _writeLog(`[turn1-budget] ${faction}: PO anchored EXACT from calibration save for ${exactN} towns`);
+        if (garrAdjustedN) _writeLog(`[turn1-budget] ${faction}: ${garrAdjustedN} anchored town(s) carry a post-save garrison-edit PO delta`);
         if (flagged) _writeLog(`[turn1-budget] ${faction}: PO model flags ${flagged} revolt-risk towns (po<100 at set bracket)`);
       } catch (e) { _writeLog(`[turn1-budget] PO model failed (non-fatal): ${e && e.message}`); }
       // SAVE LEDGER (user 2026-07-02, the Rome +5054-vs-+2699 report): when a calibration

@@ -66,8 +66,13 @@ const GARRISON_CAP_PTS = 16;
 const SIZE_MULT = 4;                // HUGE unit size (user setting) — men = soldiers×4
 
 // ---- EDB happiness pass (cached per mod dir) ----
+// These three modDir-keyed caches are registered with incomeModel's mod-file
+// EPOCH (2026-07-30): an external edit to EDB / descr_sm_factions /
+// map_regions.tga clears them on the next sweep instead of surviving until an
+// app restart. (_garCache is mtime-keyed individually and needs no epoch.)
 const _edbCache = {};
 function parseEDBHappy(modDataDir) {
+  im._modEpochCheck(modDataDir);
   if (_edbCache[modDataDir]) return _edbCache[modDataDir];
   const lines = fs.readFileSync(path.join(modDataDir, "export_descr_buildings.txt"), "latin1").split(/\r?\n/);
   const capIndex = {}, chainLevels = {}, aliases = {};
@@ -92,6 +97,7 @@ function parseEDBHappy(modDataDir) {
 // ---- faction → default religion (descr_sm_factions, cached) ----
 const _relCache = {};
 function factionReligions(modDataDir) {
+  im._modEpochCheck(modDataDir);
   if (_relCache[modDataDir]) return _relCache[modDataDir];
   const out = {};
   try {
@@ -105,14 +111,23 @@ function factionReligions(modDataDir) {
   return (_relCache[modDataDir] = out);
 }
 
-// ---- garrison soldiers (EDU base men) per city tile from descr_strat (cached) ----
-const _garCache = {};
+// ---- garrison soldiers (EDU base men) per city tile from descr_strat ----
+// MTIME-KEYED (2026-07-30): was keyed on modDataDir alone and never invalidated —
+// the Army Setup garrison applies write descr_strat in the same main process, so
+// 🔄 Reload re-ran the PO model against the stale table and added troops never
+// moved the PO row until an app restart. Same pattern as incomeModel._stratLines
+// and recruitPool.parseUnitStats.
+const _garCache = new Map();
 function garrisonMenByTile(modDataDir) {
-  if (_garCache[modDataDir]) return _garCache[modDataDir];
+  const stratPath = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt");
+  let mt = 0;
+  try { mt = fs.statSync(stratPath).mtimeMs; } catch { }
+  const hit = _garCache.get(stratPath);
+  if (hit && hit.mt === mt) return hit.v;
   const out = {};
   try {
     const us = rp.parseUnitStats(modDataDir);
-    const DS = fs.readFileSync(path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"), "latin1").split(/\r?\n/);
+    const DS = fs.readFileSync(stratPath, "latin1").split(/\r?\n/);
     let pend = null;
     for (const raw of DS) {
       const t = raw.includes(";") ? raw.slice(0, raw.indexOf(";")).trim() : raw.trim();
@@ -127,11 +142,28 @@ function garrisonMenByTile(modDataDir) {
       }
     }
   } catch { /* no garrison data */ }
-  return (_garCache[modDataDir] = out);
+  _garCache.set(stratPath, { mt, v: out });
+  return out;
+}
+
+// Settlement-keyed view of garrisonMenByTile — the SAME accounting the PO model's
+// garrison row uses (EDU soldiers×4 at the settlement tile), keyed by settlement
+// name so callers can diff garrison states without touching tile coords.
+function garrisonMenByCity(modDataDir) {
+  const menByTile = garrisonMenByTile(modDataDir);
+  const { byRegion } = gv.parseRegions(modDataDir);
+  const coords = regionCoords(modDataDir);
+  const out = {};
+  for (const rn of Object.keys(byRegion)) {
+    const c = coords[rn]; if (!c) continue;
+    out[byRegion[rn].settlement] = menByTile[c.x + "," + c.y] || 0;
+  }
+  return out;
 }
 
 const _coordCache = {};
 function regionCoords(modDataDir) {
+  im._modEpochCheck(modDataDir);
   if (_coordCache[modDataDir]) return _coordCache[modDataDir];
   let coords = {};
   try {
@@ -267,4 +299,6 @@ function computeStartingPO(modDataDir, faction, opts = {}) {
   return out;
 }
 
-module.exports = { computeStartingPO, factionReligions, TAX_ORDER_DELTA, GARRISON_K, GARRISON_CAP_PTS };
+im._modEpochRegister(_edbCache, _relCache, _coordCache);
+
+module.exports = { computeStartingPO, factionReligions, garrisonMenByTile, garrisonMenByCity, TAX_ORDER_DELTA, GARRISON_K, GARRISON_CAP_PTS };

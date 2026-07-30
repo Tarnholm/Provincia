@@ -379,36 +379,39 @@ describe("scripting_log.txt — the engine's own mod-file errors", () => {
     expect(r.error).toBeUndefined();
     expect(r.logKind).toBe("scripting");
     expect(r.usable).toBe(true);
-    expect(r.lines).toBeGreaterThan(90000);        // 93,673
+    expect(r.lines).toBeGreaterThan(10000);
     expect(r.save).toBeUndefined();                // no save asked for, none claimed
 
-    // 13 real errors out of 93,673 lines — the log's 13,000+ ordinary [FAILED]
-    // condition checks must NOT be in here.
-    expect(r.findings.length).toBeGreaterThan(8);
+    // STRUCTURAL, not snapshot-pinned (2026-07-30): this test reads the LIVE
+    // scripting log, which the game rewrites and the modders fix against — the
+    // 2026-07-25 snapshot's "13 errors incl. descr_formations_ai + descr_senate"
+    // shrank to 2 descr_strat invalid-tile errors five days later and the pinned
+    // counts/filenames all went stale (and the head even lost the two detection
+    // shapes — see aiMovementRun's third scripting-log signature). Content
+    // specifics are locked by the FIXTURE-based aiScriptAudit tests; here we
+    // assert the pipeline's invariants on whatever the log currently holds.
+    // The <60 ceiling is the real guard: the log's 13,000+ ordinary [FAILED]
+    // condition checks must NOT be counted as errors.
     expect(r.findings.length).toBeLessThan(60);
-    for (const f of r.findings) expect(["script_error", "script_runtime_error"]).toContain(f.kind);
-
-    // the files the engine actually complained about
-    const files = new Set(r.findings.map((f) => f.file).filter(Boolean));
-    for (const want of ["descr_formations_ai.txt", "descr_senate.txt", "descr_strat.txt"]) {
-      expect([...files], `expected an error in ${want}`).toContain(want);
+    for (const f of r.findings) {
+      expect(["script_error", "script_runtime_error"]).toContain(f.kind);
+      // paths are reduced to basenames — never the modder's Q:\Feral build path
+      if (f.file) expect(f.file).not.toMatch(/[\\/]/);
     }
-    // paths are reduced to basenames — never the modder's Q:\Feral build path
-    for (const f of r.findings) if (f.file) expect(f.file).not.toMatch(/[\\/]/);
 
     // ── leads: every one must name a file, a key and a suggestion ──
-    expect(r.modLeads.length).toBeGreaterThan(5);
     expect(r.auditError).toBeUndefined();
+    expect(r.modLeads.length).toBeGreaterThan(0); // static audit leads exist even on a clean log
     for (const l of r.modLeads) {
       expect(l.file).toBeTruthy();
       expect(l.key).toBeTruthy();
       expect(l.suggestion).toBeTruthy();
       expect(l.evidence).toBeTruthy();
     }
-    // the senate rename is fully resolvable from the files, so it must be resolved
-    const aedile = r.modLeads.find((l) => l.key === "Aedile_tenure");
-    expect(aedile, "the dead Aedile_tenure reference should be reported").toBeTruthy();
-    expect(aedile.suggestion).toMatch(/PlebeianAedile_tenure|CuruleAedile_tenure/);
-    expect(aedile.evidence).toMatch(/offices that DO exist/);
+    // every log finding the audit could resolve must surface as a lead in the SAME file
+    for (const f of r.findings) {
+      if (!f.file) continue;
+      expect(r.modLeads.some((l) => l.file === f.file), `finding in ${f.file} has no lead`).toBe(true);
+    }
   }, 120000);
 });

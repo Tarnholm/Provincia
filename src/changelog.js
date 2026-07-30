@@ -13,6 +13,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1464",
+    date: "2026-07-30",
+    items: [
+      { type: "fix", text: "**Army Setup: PO now updates when you add or remove garrison units.** The PO model's garrison table was cached per mod dir with no invalidation, so every Apply wrote descr_strat correctly but 🔄 Reload recomputed public order against the pre-edit garrison until the app was restarted — the writes always worked; only the number on screen was stale. The cache is now keyed on descr_strat's mtime, the same pattern the EDU and strat-line caches already used." },
+      { type: "feature", text: "**Save-anchored PO treats the calibration save as the starting point and layers your edits on top.** The first analysis with a save snapshots the descr_strat garrison table as that save's baseline; every later run adds the exact garrison-law delta (5·ΔPts, men = EDU soldiers ×4) for units added or removed since, shown as a green ✎+N badge on the town's PO. The baseline deliberately does NOT come from the save's own unit records — verified unsound first: raw save attribution mis-buckets field armies as garrisons and its soldier counts include officers, mismatching 1,301 of 1,311 settlements against the garrison law." },
+      { type: "fix", text: "**External map edits now reach the app: a mod-file epoch invalidates every topology cache.** A teammate repainting map_regions.tga (or RTW rebuilding map.rwm, or Manipula writing EDB) changed nothing in a running Provincia — ~23 caches (region adjacency, sea bodies, trade lanes, settlement coords, mine deposits…) were keyed on the mod dir alone and survived every in-app reload. One throttled mtime sweep over the 8 source files now wholesale-clears them all the moment any file changes, and the three map TGAs joined the mtime watchlist so the \"Reload mod data\" badge actually flashes on a map repaint." },
+      { type: "fix", text: "**The AI Lab recognises the engine's current scripting_log again.** Newer logs open with thousands of lines of token-creation chatter — \"(file.txt::2) (CREATE) Creating token…\" — before the first \"Executing command\", so the 4KB head sniff missed both known signatures and the log fell through to the message-log analyser. A third detection shape covers it, built from the log's real vocabulary (2,761 CREATE + 1,862 SCOPE, nothing else in 92,952 lines) and verified absent from every other live log's head. The live-log integration test asserts pipeline structure instead of a July-25 content snapshot that had already drifted." },
+    ],
+  },
+
+  {
     version: "0.9.1463",
     date: "2026-07-28",
     items: [
@@ -84,16 +95,6 @@ const CHANGELOG = [
     ],
   },
 
-  {
-    version: "0.9.1456",
-    date: "2026-07-26",
-    items: [
-      { type: "fix", text: "**The provenance check was warning on every tester report, and the warning was wrong.** It anchored time by assuming the log opens at the campaign start — but the crash reporter ships a TAIL of the log (recent turn blocks only), so a tester extract never does. On the first full report analysed (Leo, Bithynia, v7.12) it could only answer \"unknown\", reported a save year **14 years wrong**, and put a spurious \"these describe different moments\" caveat above every finding. descr_strat states `start_date -270 summer` outright, so the guess was never necessary." },
-      { type: "improvement", text: "**Anchored on the campaign's declared start date, Leo's pairing reads correctly: log -256 to -254, save turn 69 = year -253, gap 0, confidence good.** The caveat disappears and the real outcome lead is back at the top. The anchor did not become a rubber stamp — a save genuinely outside a tail extract's window is still flagged, and so is one from before the window begins, both with tests." },
-      { type: "feature", text: "**First complete tester pipeline analysed end to end.** Leo's report carried a 573 KB AI extract *and* a 44 MB save, so the full save-correlated path ran on data from someone else's machine for the first time: **100% log coverage, 0 unaccounted lines, 0 unseen shapes**, 137 findings, 19 mod-file leads, 477 ungoverned settlements with the AI log independently corroborating at 94%." },
-      { type: "fix", text: "**A patch script wrote an invisible control character into a regex.** `parseCampaignStartYear` silently returned null because a stray **backspace (0x08)** sat between `(-?\d+)` and the closing delimiter, left by an escaping slip. It reads normally in an editor and in `grep`; only a byte dump revealed it. The fix asserts no 0x08 byte survives anywhere in the file, and the test that exercises it builds its fixture with `String.fromCharCode` so no future patch can turn an escape sequence into real whitespace." },
-    ],
-  },
 
   ];
 
