@@ -96,12 +96,21 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
     // RIS map), and mission targets must resolve THROUGH the settlement→region
     // map — keyed by region alone only 15 of 6,399 findings resolve.
     expect(r.terrainError).toBeUndefined();
-    expect(r.terrainWorld.regions).toBe(1311);
+    // NOT pinned to an exact count (was 1311): the mod dir is a live dev tree
+    // and teammates add regions — 1311 became 1312 on 2026-08-03 and the pin
+    // failed the ship for a change that was neither ours nor a bug. The guard's
+    // job is "the region map parsed completely", which a bounded range keeps.
+    expect(r.terrainWorld.regions).toBeGreaterThanOrEqual(1300);
+    expect(r.terrainWorld.regions).toBeLessThan(1400);
     expect(r.terrainWorld.scale).toBeCloseTo(2, 1);   // 2041×1401 vs 1020×700
     expect(r.terrainUnknownColours).toBeUndefined();  // 100% palette coverage
     expect(r.findings.filter((f) => f.terrain).length).toBeGreaterThan(1000);
     const terr = r.modLeads.filter((l) => l.file === "map_ground_types.tga");
-    expect(terr.length).toBeGreaterThan(5);
+    // NOT pinned to >5: these leads are computed against the LIVE map, which
+    // the modders fix using this very output — the count fell to 2 by
+    // 2026-08-03 and the pin failed the ship for the map getting healthier.
+    // The guard is that lead generation still runs and each lead is well-formed.
+    expect(terr.length).toBeGreaterThan(0);
     for (const l of terr) {
       expect(l.evidence).toMatch(/land px/);          // always show the sample size
       expect(l.faction).not.toBe("?");                // never a bare "?" bucket
@@ -327,16 +336,26 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
     for (const f of imp) expect(["recruitment", "income"]).toContain(f.blockedBy);
   }, 180000);
 
-  it.runIf(haveRefs)("reports the user's live warnings-only message_log as unusable, not as 'clean'", async () => {
+  it.runIf(haveRefs)("classifies the user's live message_log by its content — unusable when warnings-only, analysed when played", async () => {
     const live = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/logs/message_log.txt";
     if (!fs.existsSync(live)) return;
+    // The game rewrites this file: a launch-and-quit session leaves warnings
+    // only, a played campaign leaves MOVING_NORMAL traces. The original test
+    // pinned usable:false and failed the 2026-08-03 ship the day the log next
+    // held a real campaign. Derive the expectation from the file itself.
+    const hasMovement = /:(MOVING_NORMAL|FLEEING):/.test(fs.readFileSync(live, "latin1"));
     const msg = await runWorker({ mode: "aiMovement", logPath: live, modDataDir: MOD_DIR, savePath: REF_SAVE });
     expect(msg.ok).toBe(true);
     const r = msg.result;
-    expect(r.usable).toBe(false);
-    expect(r.emptyReason).toMatch(/no movement events/);
-    // and the save banner must be suppressed rather than showing zeroes
-    expect(r.save).toBeUndefined();
+    if (hasMovement) {
+      expect(r.usable).toBe(true);
+      expect(r.emptyReason == null).toBe(true);
+    } else {
+      expect(r.usable).toBe(false);
+      expect(r.emptyReason).toMatch(/no movement events/);
+      // and the save banner must be suppressed rather than showing zeroes
+      expect(r.save).toBeUndefined();
+    }
   }, 120000);
 });
 
@@ -378,7 +397,17 @@ describe("scripting_log.txt — the engine's own mod-file errors", () => {
     const r = msg.result;
     expect(r.error).toBeUndefined();
     expect(r.logKind).toBe("scripting");
-    expect(r.usable).toBe(true);
+    // usable follows the log's content, and the modders fix against this very
+    // log: 13 errors (07-25) → 2 (07-30) → 0 (08-03), at which point the old
+    // `usable: true` pin failed the ship for the mod getting HEALTHIER. A
+    // clean log must read as the analyser's good-news verdict, not a failure.
+    if (r.findings.length === 0) {
+      expect(r.usable).toBe(false);
+      expect(r.emptyReason).toMatch(/no script errors/);
+    } else {
+      expect(r.usable).toBe(true);
+      expect(r.emptyReason == null).toBe(true);
+    }
     expect(r.lines).toBeGreaterThan(10000);
     expect(r.save).toBeUndefined();                // no save asked for, none claimed
 

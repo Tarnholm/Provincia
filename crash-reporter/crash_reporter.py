@@ -30,7 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 APP_NAME = "RIS Crash Reporter"
-APP_VERSION = "0.1.46"
+APP_VERSION = "0.1.47"
 CONFIG_FILENAME = "crash_reporter.ini"
 LOG_FILENAME = "crash_reporter.log"
 
@@ -2225,6 +2225,22 @@ def main():
                 "⚠ matches the KNOWN engine string-refcount overflow (16-bit sharing_count "
                 "wraps on multi-hour sessions — engine limit, not a mod defect). "
                 "Mitigation: save & restart the game every ~2 hours.")
+        # v0.1.47: auto-tag the season/date-ordering assert as the known 4TPY
+        # artifact. RIS gets 4 turns/year by forcing `console_command season
+        # summer` on 2 of every 4 turns (ris_campaign_script.txt, section
+        # "99. 4-TURNS-PER-YEAR"); the engine's date model only knows
+        # summer-then-winter within a year, so dates stamped around a forced
+        # flip sort out of order and every later date comparison (ages, trait
+        # gains, event timers) trips this assert. Root-caused 2026-08-03 on
+        # the shipped script; telemetry shows it on v7.9 through v7.13 at
+        # 20-218 hits/session with empty context and no crash-family
+        # membership. Structural to 4TPY — not a defect.
+        if any(is_4tpy_season_assert(e) for e in combined):
+            crash_signals.append(
+                "⚠ the season/date-ordering assert here is a KNOWN 4TPY artifact — the "
+                "campaign script forces the season back to summer to get 4 turns per year, "
+                "so same-year dates sort out of order and date comparisons assert. "
+                "Structural to the 4TPY design, harmless, not a mod defect — ignore in triage.")
 
     # v0.1.20: pin the string-overflow source — which UI rendered when it blew up,
     # and any "Uknown settlement level" context.
@@ -2769,6 +2785,17 @@ ASSERT_RISK = [
 ]
 
 
+def is_4tpy_season_assert(expr):
+    """The season/date-ordering assert produced by RIS's 4-turns-per-year script.
+
+    The full expression is `(year > date.year) || ((year == date.year) &&
+    (!(season == SE_SUMMER && date.season == SE_WINTER))) Failed`. Requiring BOTH
+    tokens keeps the "not a defect, ignore in triage" annotation from firing on
+    any other season-ish assert the engine might emit.
+    """
+    return "SE_SUMMER" in expr and "date.season" in expr
+
+
 def assert_risk(expr):
     """Score an assert by its measured association with a crashed session.
 
@@ -3020,6 +3047,24 @@ def selftest() -> int:
             ok = False
     except Exception as _exc:
         print("  %-26s FAIL: %r" % ("known fault signature", _exc))
+        ok = False
+
+    # The 4TPY season/date assert must be recognised from its real telemetry text,
+    # and a merely season-ish assert must NOT be — the annotation says "not a
+    # defect, ignore in triage", so a too-broad matcher would talk testers out of
+    # reporting a genuine new season bug.
+    try:
+        _hit = is_4tpy_season_assert(
+            "(year > date.year) || ((year == date.year) && "
+            "(!(season == SE_SUMMER && date.season == SE_WINTER))) Failed")
+        _miss = is_4tpy_season_assert("season == SE_SUMMER Failed")
+        _ok = _hit and not _miss
+        print("  %-26s %-5s %s" % ("4TPY season assert", str(_ok),
+                                   "ok" if _ok else "FAIL (matcher too broad or not matching)"))
+        if not _ok:
+            ok = False
+    except Exception as _exc:
+        print("  %-26s FAIL: %r" % ("4TPY season assert", _exc))
         ok = False
 
     # Grimel's three consecutive crash reports each showed "Failed x14" as one of only
