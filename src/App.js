@@ -10916,6 +10916,55 @@ function App() {
     return p;
   }, [roadPaths, roadsPrecurved]);
 
+  // Combined Path2D for all sea lanes (v0.9.1470 perf): with the all-built
+  // what-if on, 600+ lanes were beginPath()+stroke()d INDIVIDUALLY (dashed —
+  // the most expensive stroke) on every repaint, which made pan/hover laggy.
+  // One combined path = one dashed stroke per frame, exactly the roadPath2D
+  // treatment; only the hovered/selected lane still strokes individually.
+  const seaLanePath2D = useMemo(() => {
+    if (!seaLanePaths || !effectiveTradeLanes || typeof Path2D === "undefined") return null;
+    const p = new Path2D();
+    const done = new Set();
+    for (const l of effectiveTradeLanes) {
+      const key = [l.from, l.to].sort().join(">");
+      if (done.has(key)) continue;
+      done.add(key);
+      const poly = seaLanePaths[key];
+      if (!poly || poly.length < 2) continue;
+      p.moveTo(poly[0].x, poly[0].y);
+      for (let k = 1; k < poly.length; k++) p.lineTo(poly[k].x, poly[k].y);
+    }
+    return p;
+  }, [seaLanePaths, effectiveTradeLanes]);
+
+  // Lane hover hit-index (v0.9.1470 perf): mousemove used to run distToSeg on
+  // EVERY segment of every sea lane + road polyline (hundreds of thousands of
+  // calls per move with all-built on). Precompute per-polyline bounding boxes
+  // + stride-3 decimated points; the move handler bbox-rejects almost all
+  // polylines and walks the few near the cursor. Decimation error is ≤ ~2 map
+  // px against a 7-screen-px pick radius.
+  const laneHitIndex = useMemo(() => {
+    const entries = [];
+    const build = (poly, key, kind) => {
+      if (!poly || poly.length < 2) return;
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const pt of poly) {
+        if (pt.x < minX) minX = pt.x; if (pt.x > maxX) maxX = pt.x;
+        if (pt.y < minY) minY = pt.y; if (pt.y > maxY) maxY = pt.y;
+      }
+      const pts = [];
+      for (let i = 0; i < poly.length; i += 3) pts.push(poly[i]);
+      if (pts[pts.length - 1] !== poly[poly.length - 1]) pts.push(poly[poly.length - 1]);
+      entries.push({ key, kind, minX, minY, maxX, maxY, pts });
+    };
+    for (const key in (seaLanePaths || {})) build(seaLanePaths[key], key, "sea");
+    for (const rkey in (roadPaths || {})) {
+      if (rkey.startsWith("port>") || rkey.indexOf(">") < 0) continue;
+      build(roadPaths[rkey], rkey.split("#")[0], "road");
+    }
+    return entries;
+  }, [seaLanePaths, roadPaths]);
+
   // Draw map
   useEffect(() => {
     if (showSplash || (assetError && !proceedAnyway)) return;
@@ -10984,10 +11033,6 @@ function App() {
     // Uniform width/opacity (no longer flow-scaled, 2026-07-19); the lane under
     // the cursor brightens and its goods manifest shows in a hover tooltip.
     if (colorMode === "tradelanes" && effectiveTradeLanes && effectiveTradeLanes.length && tradeLaneAnchors) {
-      // Anchors precomputed in tradeLaneAnchors (settlement/port tile with
-      // centroid fallback). Draw as a QUADRATIC ARC (control point offset
-      // perpendicular to the chord) so lanes curve like the game's sea routes.
-      const anchorByName = tradeLaneAnchors;
       const hoverKey = hoveredTradeLane && hoveredTradeLane.kind === "sea" ? hoveredTradeLane.key : null;
       const hoverRoadKey = hoveredTradeLane && hoveredTradeLane.kind === "road" ? hoveredTradeLane.key : null;
       ctx.save();
@@ -11025,29 +11070,33 @@ function App() {
       }
       // Uniform lines — thickness/opacity no longer encode trade volume (all
       // lanes read the same); only the hovered/selected lane brightens.
-      const drawnKeys = new Set();
-      for (const l of effectiveTradeLanes) {
-        const a = anchorByName[l.from], b = anchorByName[l.to];
-        if (!a || !b) continue;
-        const key = [l.from, l.to].sort().join(">");
-        if (drawnKeys.has(key)) continue; // one stroke per undirected lane
-        drawnKeys.add(key);
-        const hot = (hoverKey && hoverKey === key) || (selectedTradeLane && ((selectedTradeLane.from === l.from && selectedTradeLane.to === l.to) || (selectedTradeLane.from === l.to && selectedTradeLane.to === l.from)));
-        // in-game look: light DASHED lines over the water
-        ctx.strokeStyle = hot ? "rgba(120,230,255,0.98)" : "rgba(225,238,255,0.7)";
-        ctx.lineWidth = (hot ? 2.2 : 1.1) / totalScale;
-        ctx.setLineDash(hot ? [] : [7 / totalScale, 5 / totalScale]);
-        const poly = seaLanePaths && seaLanePaths[key];
-        // ONLY draw the real A* water route. No straight settlement-to-
-        // settlement fallback — that was the light line cutting across land
-        // for lanes still computing or with no water route (user 2026-07-18).
+      // v0.9.1470 perf: ALL lanes stroke as ONE combined Path2D (in-game look:
+      // light DASHED lines over the water — canvas restarts the dash pattern
+      // at each subpath, so the batched stroke is pixel-identical to the old
+      // per-lane loop). Only the real A* water routes are in the path — no
+      // straight fallback (user 2026-07-18).
+      if (seaLanePath2D) {
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = "rgba(225,238,255,0.7)";
+        ctx.lineWidth = 1.1 / totalScale;
+        ctx.setLineDash([7 / totalScale, 5 / totalScale]);
+        ctx.stroke(seaLanePath2D);
+        ctx.setLineDash([]);
+      }
+      // Hovered / selected lane: solid bright overlay on top of the batch.
+      const hotKeys = new Set();
+      if (hoverKey) hotKeys.add(hoverKey);
+      if (selectedTradeLane) hotKeys.add([selectedTradeLane.from, selectedTradeLane.to].sort().join(">"));
+      for (const hk of hotKeys) {
+        const poly = seaLanePaths && seaLanePaths[hk];
         if (!poly || poly.length < 2) continue;
+        ctx.strokeStyle = "rgba(120,230,255,0.98)";
+        ctx.lineWidth = 2.2 / totalScale;
         ctx.beginPath();
         ctx.moveTo(poly[0].x, poly[0].y);
         for (let k = 1; k < poly.length; k++) ctx.lineTo(poly[k].x, poly[k].y);
         ctx.stroke();
       }
-      ctx.setLineDash([]);
       ctx.restore();
     }
 
@@ -11627,6 +11676,7 @@ function App() {
     selectedTradeLane,
     hoveredTradeLane,
     seaLanePaths,
+    seaLanePath2D,
     roadPath2D,
     roadPaths,
     resourceImages,
@@ -12660,26 +12710,20 @@ function App() {
       if (colorMode === "tradelanes" && (seaLanePaths || roadPaths)) {
         const mxf = (mouseScreenX - baseOffsetX - offset.x) / totalScale;
         const myf = (mouseScreenY - baseOffsetY - offset.y) / totalScale;
-        const TH2 = (7 / totalScale) * (7 / totalScale); // ~7px screen pick radius
+        // v0.9.1470 perf: bbox-reject via the precomputed laneHitIndex instead
+        // of walking every segment of every lane/road per mousemove (with the
+        // all-built what-if that was hundreds of thousands of distToSeg calls
+        // per move). Sea entries come first in the index, preserving the old
+        // sea-beats-road tie behaviour at equal distance.
+        const rPick = 7 / totalScale; // ~7px screen pick radius
+        const TH2 = rPick * rPick;
         let bestKey = null, bestKind = null, bestD = TH2;
-        // sea lanes first
-        for (const key in (seaLanePaths || {})) {
-          const poly = seaLanePaths[key];
-          if (!poly || poly.length < 2) continue;
-          for (let k = 1; k < poly.length; k++) {
-            const d = distToSeg(mxf, myf, poly[k - 1].x, poly[k - 1].y, poly[k].x, poly[k].y);
-            if (d < bestD) { bestD = d; bestKey = key; bestKind = "sea"; }
-          }
-        }
-        // roads: keys are "regA>regB#seg" (inter-province) — skip "port>" connectors
-        for (const rkey in (roadPaths || {})) {
-          if (rkey.startsWith("port>") || rkey.indexOf(">") < 0) continue;
-          const poly = roadPaths[rkey];
-          if (!poly || poly.length < 2) continue;
-          const pairKey = rkey.split("#")[0];
-          for (let k = 1; k < poly.length; k++) {
-            const d = distToSeg(mxf, myf, poly[k - 1].x, poly[k - 1].y, poly[k].x, poly[k].y);
-            if (d < bestD) { bestD = d; bestKey = pairKey; bestKind = "road"; }
+        for (const en of laneHitIndex) {
+          if (mxf < en.minX - rPick || mxf > en.maxX + rPick || myf < en.minY - rPick || myf > en.maxY + rPick) continue;
+          const pts = en.pts;
+          for (let k = 1; k < pts.length; k++) {
+            const d = distToSeg(mxf, myf, pts[k - 1].x, pts[k - 1].y, pts[k].x, pts[k].y);
+            if (d < bestD) { bestD = d; bestKey = en.key; bestKind = en.kind; }
           }
         }
         if (bestKey) {

@@ -1880,7 +1880,11 @@ function seaLanesByRegion(modDataDir) {
 // landing-frontier partners, land neighbours skipped, war excluded, rights
 // gate — with only the BUILDINGS hypothetical: pool = every settled region
 // (no built-port requirement on either side), slots = `level` everywhere.
-// Diplomacy and populations stay campaign-start. Returns { lanes, noLane }:
+// v0.9.1470 (user request): the what-if ALSO simulates every faction holding
+// trade agreements with every other faction (except slaves) — the value gate
+// is 1.0 for all pairs instead of 0.5 for plain-foreign, so partner choice is
+// purely geography + economy. Wars still exclude (the engine kills trade at
+// war regardless of rights). Returns { lanes, noLane }:
 // undirected pairs for the map overlay, plus a COVERAGE report — every settled
 // region that would have NO sea lane even with all ports built, with the
 // reason (landlocked / rebel-owned / every sea partner excluded and why).
@@ -1890,14 +1894,12 @@ function devAllBuiltSeaLanes(modDataDir, level) {
   const out = [];
   const diag = {}; // region -> why it can pick no sea partner
   try {
-    const { ownerOfRegion, allies, wars, popOfRegion } = tradePartnerCtx(modDataDir);
+    const { ownerOfRegion, wars, popOfRegion } = tradePartnerCtx(modDataDir);
     const lfg = landingFrontierGraph(modDataDir);
     const fg = frontierGraph(modDataDir);
-    const prot = parseProtectorates(modDataDir);
     const { qty: GQ, rawValues: RV } = tradeQtyMapsByRegion(modDataDir);
     const fsq = (x) => { const b = new ArrayBuffer(4), f = new Float32Array(b), i = new Int32Array(b); f[0] = x; i[0] = (((i[0] + 0xc0800000) | 0) >> 1) + 0x3f800000; return f[0]; };
     const cargo = (X, Y) => { const a = GQ[X] || {}, b = GQ[Y] || {}; let c = 0; for (const r in a) if (!(r in b)) c += a[r] * (RV[r] || 0); return c; };
-    const rights = (fa, fb) => fa === fb || (/^romans?_/.test(fa) && /^romans?_/.test(fb)) || (allies[fa] && allies[fa].has(fb)) || prot.suzerainOf[fa] === fb || prot.suzerainOf[fb] === fa;
     const seen = new Set();
     for (const A of Object.keys(ownerOfRegion)) {
       const F = ownerOfRegion[A];
@@ -1915,8 +1917,8 @@ function devAllBuiltSeaLanes(modDataDir, level) {
         const o = ownerOfRegion[r];
         if (!o || o === "slave") { nBad++; continue; }
         if (o !== F && wars[F] && wars[F].has(o)) { nWar++; continue; }
-        const gate = rights(F, o) ? 1.0 : 0.5;
-        cands.push({ r, val: (0.1 * fsq((popOfRegion[A] || 1500) + (popOfRegion[r] || 1500)) + cargo(A, r) + 1) * gate / fr.dist });
+        // Universal trade agreements: gate 1.0 for every non-slave pair.
+        cands.push({ r, val: (0.1 * fsq((popOfRegion[A] || 1500) + (popOfRegion[r] || 1500)) + cargo(A, r) + 1) / fr.dist });
       }
       if (!cands.length) {
         // The FIXABLE class: a coastal, faction-owned province the engine
