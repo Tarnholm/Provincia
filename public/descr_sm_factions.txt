@@ -800,11 +800,11 @@
 				"horde parni cataphracts",
 			],
 
-			"min horde units": 20,
-			"max horde units": 40,
+			"min horde units": 100,
+			"max horde units": 100,
 
 			;;remove this amount of horde units from the max every time we re-horde
-			"horde unit reduction per horde": 5,
+			"horde unit reduction per horde": 100,
 
 			;;gain one random horde unit per this amount of population in this settlement, up to the cap
 			"population to horde units": 300,
@@ -813,11 +813,11 @@
 			"min named characters": 2,
 
 			;;maximum percentage of armies horde units can fill
-			"max horde unit army percent": 80,
+			"max horde unit army percent": 100,
 
 			;;the amount of horde units to disband every time we get a settlement
 			;;if amount of settlements exceeds the numbers in this array, 100% disband assumed
-			"horde unit disband per settlement": [ 33, 50, 100, ],
+			"horde unit disband per settlement": [ 5, 7, 10, 12, 15, 17, 20, 100, ],
 		},
 
 		"logos":

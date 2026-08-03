@@ -650,7 +650,15 @@ function prerenderBorderPaths(regions, offscreen, imgSize) {
     borderPaths[key] = path;
   }
 
-  return { borderPaths, coastalRegions };
+  // ONE combined path of every province edge (v0.9.1475 perf). Drawing borders
+  // used to stroke each region's path separately — ~1300 stroke() calls on every
+  // pan frame, which dominated drag latency. All of them share a single style in
+  // both border modes, so a combined path renders identically in one call. The
+  // per-region paths stay for selection/hover highlighting.
+  const allBordersPath = typeof Path2D === "undefined" ? null : new Path2D();
+  if (allBordersPath) for (const p of Object.values(borderPaths)) allBordersPath.addPath(p);
+
+  return { borderPaths, coastalRegions, allBordersPath };
 }
 
 // Build a single Path2D tracing every edge where culture changes (or hits sea/edge).
@@ -2029,6 +2037,7 @@ function App() {
   // list — draws a bright outline on the map so the user can locate it.
   const [hoveredVcKey, setHoveredVcKey] = useState(null);
   const [borderPaths, setBorderPaths] = useState({});
+  const [allBordersPath, setAllBordersPath] = useState(null); // every province edge in ONE Path2D (pan perf — see prerenderBorderPaths)
   const [coastalRegions, setCoastalRegions] = useState(new Set());
   const [cultureBorderPath, setCultureBorderPath] = useState(null);
   const [factionBorderPath, setFactionBorderPath] = useState(null);
@@ -10640,7 +10649,7 @@ function App() {
       const o = (f.y * W + f.x) * 4;
       return data[o] === f.rgb[0] && data[o + 1] === f.rgb[1] && data[o + 2] === f.rgb[2];
     });
-    const roadSig = `road|v50prov|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name + ":" + capMap.roads.length : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
+    const roadSig = `road|v51fill|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name + ":" + capMap.roads.length : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadsPrecurved(!!_laneMemCache[roadSig].precurved); setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
     let cancelled = false;
     (async () => {
@@ -10995,6 +11004,11 @@ function App() {
     const { totalScale, baseOffsetX, baseOffsetY } = computeTransform();
     ctx.setTransform(totalScale, 0, 0, totalScale, baseOffsetX + offset.x, baseOffsetY + offset.y);
     ctx.imageSmoothingEnabled = false;
+    // True while the user is actively dragging the map (v0.9.1475): heavy
+    // layers drop to their cheapest form so the pan stays smooth, and the
+    // full-quality frame is drawn again as soon as the drag ends (releasing
+    // sets `drag` to null, which re-runs this effect).
+    const panning = !!(drag && drag.moved);
     const src = coloredOffscreen || offscreen;
     // Diagnostic (2026-07-15): trace first map paints to catch the "top part
     // only" symptom — logs canvas size, scale, and whether the colored overlay
@@ -11029,11 +11043,13 @@ function App() {
       if (borderMode === "region") {
         ctx.strokeStyle = "rgba(0,0,0,0.9)";
         ctx.lineWidth = 2 / totalScale;
-        for (const path of Object.values(borderPaths)) ctx.stroke(path);
+        if (allBordersPath) ctx.stroke(allBordersPath);
+        else for (const path of Object.values(borderPaths)) ctx.stroke(path);
       } else {
         ctx.strokeStyle = "rgba(0,0,0,0.25)";
         ctx.lineWidth = 0.6 / totalScale;
-        for (const path of Object.values(borderPaths)) ctx.stroke(path);
+        if (allBordersPath) ctx.stroke(allBordersPath);
+        else for (const path of Object.values(borderPaths)) ctx.stroke(path);
         const groupPath = colorMode === "culture" ? cultureBorderPath : factionBorderPath;
         if (groupPath) {
           ctx.strokeStyle = "rgba(0,0,0,0.9)";
@@ -11064,12 +11080,16 @@ function App() {
         // LOD by zoom: below ~2 screen-px per map-px the quarter path is
         // visually identical and a quarter of the work; the casing is also
         // dropped there because at that scale it sits under the fill stroke.
-        const lod = totalScale >= 5 ? roadPath2DLods.full
-          : totalScale >= 2 ? roadPath2DLods.half
-            : roadPath2DLods.quarter;
+        // WHILE DRAGGING we always take the cheapest path — the map is moving
+        // under the cursor, nobody can resolve road filigree mid-pan, and the
+        // full-detail frame is redrawn the moment the drag ends.
+        const lod = panning ? roadPath2DLods.quarter
+          : totalScale >= 5 ? roadPath2DLods.full
+            : totalScale >= 2 ? roadPath2DLods.half
+              : roadPath2DLods.quarter;
         // subtle darker casing underneath, then the tan road on top — reads as
         // a real road and makes the curve legible at any zoom.
-        if (totalScale >= 2) {
+        if (totalScale >= 2 && !panning) {
           ctx.strokeStyle = "rgba(84,58,34,0.55)";
           ctx.lineWidth = 2.2 / totalScale;
           ctx.stroke(lod);
@@ -11131,7 +11151,8 @@ function App() {
       ctx.lineJoin = "round";
       ctx.strokeStyle = "rgba(0,0,0,0.25)";
       ctx.lineWidth = 0.6 / totalScale;
-      for (const path of Object.values(borderPaths)) ctx.stroke(path);
+      if (allBordersPath) ctx.stroke(allBordersPath);
+      else for (const path of Object.values(borderPaths)) ctx.stroke(path);
       if (devBorderPath) {
         ctx.strokeStyle = "rgba(0,0,0,0.9)";
         ctx.lineWidth = 2 / totalScale;
@@ -11667,6 +11688,8 @@ function App() {
     selectedProvinces,
     hoveredVcKey,
     borderPaths,
+    allBordersPath,
+    drag,
     showSplash,
     assetError,
     proceedAnyway,
@@ -12227,6 +12250,7 @@ function App() {
     schedule(() => {
       const result = prerenderBorderPaths(regions, offscreen, imgSize);
       setBorderPaths(result.borderPaths);
+      setAllBordersPath(result.allBordersPath || null);
       setCoastalRegions(result.coastalRegions);
     });
     schedule(() => {

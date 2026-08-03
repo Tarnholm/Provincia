@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1475",
+    date: "2026-08-03",
+    items: [
+      { type: "feature", text: "**The road network is now the game's complete network — every single waypoint.** The bake reproduced 62,388 of the engine's 62,939 road waypoints (99.12%); the missing 551 sat in 230 short runs that the mask pass clipped away at junctions and chain ends. Those runs are now emitted as extra chains built from the engine's own waypoints and its own road spline (tangent from the neighbouring nodes, cubic Bézier with 0.33 control arms, 5 subdivisions), each overlapping the existing network by one waypoint on both sides so nothing dangles, and each region-tagged so per-province clipping treats them like the rest. **Coverage is now 62,939 of 62,939 — 100.00%.** New points that the curve bowed into water are clamped back to land." },
+      { type: "fix", text: "**Dragging the map is much smoother.** Two things dominated pan frames. Province borders were stroked one path per province — about 1,300 separate stroke calls every frame — and they all share a single style, so they are now pre-combined into one path and drawn in a single call. And while a drag is actually in progress the map now draws roads at their cheapest level of detail and skips the road casing entirely; full detail is restored the instant you release. Nothing about the still image changes." },
+    ],
+  },
+
+  {
     version: "0.9.1474",
     date: "2026-08-03",
     items: [
