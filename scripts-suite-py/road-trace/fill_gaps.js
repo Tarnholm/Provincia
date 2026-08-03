@@ -63,7 +63,7 @@ for (const rd of bake) {
     a.push([p[2 * t], p[2 * t + 1]]);
   }
 }
-const covered = (x, y, r = 1.6) => {
+const covered = (x, y, r = 1.6) => { // r=1.6 for waypoints, 0.9 for segment midpoints
   const xi = x | 0, yi = y | 0;
   for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
     const a = grid.get(gkey(xi + dx, yi + dy)); if (!a) continue;
@@ -76,20 +76,38 @@ const mgr = JSON.parse(fs.readFileSync(MGR, "utf8"));
 const roads = mgr.roads || mgr;
 const toDisp = (q) => [q[0] + 0.5, (H - 1 - q[1]) + 0.5];
 
-// ── find uncovered runs ───────────────────────────────────────────────────────
-let total = 0, cov = 0;
+// ── find gaps ─────────────────────────────────────────────────────────────────
+// TWO kinds, and the second is the one that produces the "random lines" the user
+// sees: (1) a WAYPOINT with no baked point near it, and (2) a SEGMENT whose
+// midpoint has none — the two waypoints are present but the stroke between them
+// is missing, so a continuous road renders as dashes and short spurs look like
+// stubs floating in a province. Waypoint coverage alone cannot see (2): the bake
+// hit 100% of waypoints while still breaking 570 segments.
+let total = 0, cov = 0, mids = 0, midCov = 0;
 const runs = [];
 for (let ri = 0; ri < roads.length; ri++) {
   const w = roads[ri].w || [];
-  let run = null;
+  const bad = new Array(w.length).fill(false);
   for (let i = 0; i < w.length; i++) {
     const [x, y] = toDisp(w[i]); total++;
-    if (covered(x, y)) { cov++; if (run) { runs.push(run); run = null; } }
-    else { if (!run) run = { road: ri, from: i, to: i }; else run.to = i; }
+    if (covered(x, y)) cov++; else { bad[i] = true; }
+  }
+  for (let i = 0; i + 1 < w.length; i++) {
+    const [ax, ay] = toDisp(w[i]), [bx, by] = toDisp(w[i + 1]);
+    mids++;
+    if (covered((ax + bx) / 2, (ay + by) / 2, 0.9)) midCov++;
+    else { bad[i] = true; bad[i + 1] = true; } // the STROKE is missing -> re-emit both ends
+  }
+  let run = null;
+  for (let i = 0; i < w.length; i++) {
+    if (bad[i]) { if (!run) run = { road: ri, from: i, to: i }; else run.to = i; }
+    else if (run) { runs.push(run); run = null; }
   }
   if (run) runs.push(run);
 }
-console.log(`manager waypoints ${total}, covered ${cov} (${(cov / total * 100).toFixed(2)}%), uncovered ${total - cov} in ${runs.length} runs`);
+console.log(`manager waypoints ${total}, covered ${cov} (${(cov / total * 100).toFixed(2)}%)`);
+console.log(`segment midpoints ${mids}, covered ${midCov} (${(midCov / mids * 100).toFixed(2)}%) — uncovered midpoints are the visible breaks`);
+console.log(`-> ${runs.length} runs to re-emit`);
 
 // ── emit a chain per uncovered run ────────────────────────────────────────────
 // Engine spline: tangent_i = normalize(p[i+1] - p[i-1]); section i->i+1 is a
@@ -124,8 +142,13 @@ function spline(pts) {
 
 // USER RULE: a road may never sit on a sea pixel. The Bezier can bow a coastal
 // corner into the water, so clamp any such point to the nearest land pixel.
+// PIXEL CONTAINMENT MUST USE floor(), NEVER round(): baked points sit at pixel
+// CENTRES (x.5), so round() pushes a coastal point onto the NEIGHBOURING pixel
+// and reports open water for a road that is correctly on land. With round() the
+// shipped bake "had" 2543 sea points; with floor() it has 0. Getting this wrong
+// both invents a defect and drags real geometry off the engine's own waypoints.
 const isSeaDisp = (dx, dy) => {
-  const x = Math.round(dx), y = H - 1 - Math.round(dy);
+  const x = Math.floor(dx), y = H - 1 - Math.floor(dy);
   if (x < 0 || y < 0 || x >= W || y >= H) return false;
   const o = (y * W + x) * 3;
   return raw[o + 2] === 41 && raw[o + 1] === 140; // exact sea colour (a RANGE test matches region colours)

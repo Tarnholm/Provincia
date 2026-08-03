@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1476",
+    date: "2026-08-03",
+    items: [
+      { type: "fix", text: "**The stray road fragments — a road drawn as dashes, a spur floating on its own in a province — are gone.** They were real game roads all along, but the connecting strokes between waypoints were missing, so a continuous road rendered as a broken line. Yesterday's coverage check couldn't see it: it asked whether each of the engine's 62,939 waypoints had geometry near it (100%), never whether the stretch BETWEEN two waypoints was drawn. Measuring that found 570 broken segments — 2.4% of the network. Those stretches are now rebuilt from the engine's own path, and the release is verified on both metrics: **every waypoint present (100%) and every segment between them drawn (100%)**, with no road point on a sea pixel." },
+      { type: "fix", text: "**Corrected a bad sea-pixel test that had been nudging road points off the engine's own geometry.** Checking which pixel a point sits in must floor its coordinate, not round it — baked points sit at pixel centres, so rounding reports the neighbouring pixel and calls a correctly-placed coastal road \"in the water\". Under the wrong test the network appeared to have 2,543 points at sea; it has none, and never did. The clamp that acted on those false readings had displaced 29 points by up to 1.4px, which is now reverted." },
+    ],
+  },
+
+  {
     version: "0.9.1475",
     date: "2026-08-03",
     items: [
