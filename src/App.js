@@ -1971,6 +1971,8 @@ function App() {
   // the colorize effect that lists it as a dep, to avoid a render-phase TDZ.
   const [battleLedgerSnap, setBattleLedgerSnap] = useState(null);
   const [tradeLanes, setTradeLanes] = useState(null); // [{from,to,flow}] sea lanes for the Trade Lanes mode (early — colorize deps)
+  const [devAllBuiltLevel, setDevAllBuiltLevel] = useState(0); // DEV what-if (Trade Lanes): 0=off, 1-3 = every settlement treated as having roads + a port chain at this level (1 port / 2 shipwright / 3 dockyard — level = sea-lane export slots)
+  const [devAllLanes, setDevAllLanes] = useState(null); // [{from,to,flow}] the what-if sea-lane set for devAllBuiltLevel (get-trade-lanes-dev)
   const [roadRegions, setRoadRegions] = useState(null); // Set of region names whose settlement has roads (land trade only draws between these)
   const [portRegions, setPortRegions] = useState(null); // Set of region names whose settlement has a PORT building (gets a settlement→port road even with no roads built)
   const [selectedTradeLane, setSelectedTradeLane] = useState(null); // {from,to} highlighted lane from the sidebar inspector
@@ -10320,7 +10322,25 @@ function App() {
   // seaPartners) — matching the game's routes, including ones the campaign-
   // start (turn-1) top-N model doesn't select. No save → the turn-1 model.
   // (user 2026-07-18: fresh-campaign routes missing + "allow for live save".)
+  // DEV "All built" (2026-08-03): fetch the what-if sea-lane set — every
+  // settlement holding a port at devAllBuiltLevel (level = export slots, so
+  // higher levels grow the network). Cleared when the toggle or dev mode turns
+  // off so the real lanes take back over.
+  useEffect(() => {
+    if (!devMode || !devAllBuiltLevel || !modDataDir) { setDevAllLanes(null); return; }
+    let gone = false;
+    window.electronAPI?.getTradeLanesDev?.(modDataDir, devAllBuiltLevel).then((r) => {
+      if (!gone && r && r.lanes) {
+        console.log(`[sea-lanes] DEV all-built (port lvl ${devAllBuiltLevel}): ${r.lanes.length} what-if sea links`);
+        setDevAllLanes(r.lanes);
+      }
+    }).catch(() => {});
+    return () => { gone = true; };
+  }, [devMode, devAllBuiltLevel, modDataDir]);
+
   const effectiveTradeLanes = useMemo(() => {
+    // DEV "All built" overrides both the live-save network and the turn-1 model.
+    if (devMode && devAllBuiltLevel > 0 && devAllLanes && devAllLanes.length) return devAllLanes;
     const net = tradeNetwork && tradeNetwork.trade && tradeNetwork.trade.settlements;
     if (net) {
       const regionOf = {};
@@ -10337,7 +10357,7 @@ function App() {
       if (lanes.length) { console.log(`[sea-lanes] using LIVE-SAVE trade network: ${lanes.length} sea links`); return lanes; }
     }
     return tradeLanes;
-  }, [tradeNetwork, tradeLanes]);
+  }, [tradeNetwork, tradeLanes, devMode, devAllBuiltLevel, devAllLanes]);
 
   // Sorted lane key "a>b" → both directed legs with their goods manifest, for the
   // map hover inspector. effectiveTradeLanes carries each direction separately.
@@ -10571,12 +10591,22 @@ function App() {
     // Effective road/port sets = campaign-start buildings ∪ buildings built
     // during play (from the loaded save). Hash the contents into the signature
     // so the cache refreshes when the save's picture changes, not just its size.
-    const roadRegionsEff = roadRegionsLive
+    let roadRegionsEff = roadRegionsLive
       ? new Set([...(roadRegions || []), ...roadRegionsLive.roads])
       : roadRegions;
-    const portRegionsEff = roadRegionsLive
+    let portRegionsEff = roadRegionsLive
       ? new Set([...(portRegions || []), ...roadRegionsLive.ports])
       : portRegions;
+    // DEV "All built" (2026-08-03): every region is treated as having roads
+    // and a port — the whole captured network draws unclipped and every
+    // harbour road appears. roadSig hashes the set contents, so this gets its
+    // own cache entry and reverts cleanly when toggled off.
+    if (devMode && devAllBuiltLevel > 0) {
+      const all = new Set();
+      for (const rd of Object.values(regions || {})) if (rd && rd.region) all.add(String(rd.region).toLowerCase());
+      roadRegionsEff = all;
+      portRegionsEff = all;
+    }
     // EXACT ROADS (2026-07-21): if the loaded map matches a captured network
     // (src/risRoads.js CAPTURED_MAPS — the game engine's own road geometry read
     // from memory), draw that pixel-exact geometry, no pathfinding. Each entry is
@@ -10819,7 +10849,7 @@ function App() {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, portPixels, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, roadRegions, portRegions, roadRegionsLive, modDataDir]);
+  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, portPixels, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, roadRegions, portRegions, roadRegionsLive, modDataDir, devMode, devAllBuiltLevel]);
 
   // Combined Path2D for all roads (uniform style) → one stroke per frame, so
   // thousands of road segments don't tank the pan framerate.
@@ -14890,6 +14920,22 @@ function App() {
             })()}
             style={{ ...btnStyle(false), minWidth: 0, position: "relative", fontSize: "0.65rem", padding: "1px 6px" }}>
             <MapBtnBadge k="view.calibrate" />🎯 Calibrate{statsCacheCharCount > 0 ? ` (${statsCacheCharCount})` : ""}
+          </button>
+          )}
+          {/* DEV "All built" (2026-08-03): Trade Lanes what-if — every settlement
+              treated as having roads + a port built. Click cycles the port
+              level: off → 3 (dockyard) → 2 (shipwright) → 1 (port) → off.
+              Port level = sea-lane export slots, so lvl 3 shows the densest
+              network. Roads/harbour roads draw unclipped everywhere. */}
+          {devMode && (
+          <button
+            className="map-mode-btn"
+            onClick={() => setDevAllBuiltLevel((l) => (l === 0 ? 3 : l - 1))}
+            title={devAllBuiltLevel > 0
+              ? `All built ON at port level ${devAllBuiltLevel} (${["", "port — 1 sea lane each", "shipwright — 2 sea lanes each", "dockyard — 3 sea lanes each"][devAllBuiltLevel]}). Click for ${devAllBuiltLevel > 1 ? "level " + (devAllBuiltLevel - 1) : "off"}.`
+              : "Trade Lanes what-if: treat every settlement as having roads + a port built. Click cycles port level 3 (dockyard) → 2 → 1 → off; higher level = more sea lanes per port."}
+            style={{ ...btnStyle(devAllBuiltLevel > 0), minWidth: 0, position: "relative", fontSize: "0.65rem", padding: "1px 6px", color: devAllBuiltLevel > 0 ? "#4f8" : undefined }}>
+            🏗 All built{devAllBuiltLevel > 0 ? ` (lvl ${devAllBuiltLevel})` : ""}
           </button>
           )}
           {liveLogActive && (

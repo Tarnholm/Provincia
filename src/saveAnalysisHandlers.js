@@ -671,6 +671,21 @@ ipcMain.handle("get-trade-lanes", async (_event, modDataDir) => {
   }
 });
 
+// IPC: DEV what-if sea lanes (2026-08-03) — the Trade Lanes "All built" dev
+// toggle. Every settlement is treated as having a port chain built at
+// `portLevel` (1 port / 2 shipwright / 3 dockyard = that many export slots),
+// so higher levels grow the network. Selection stays the engine's greedy rule;
+// see incomeModel.devAllBuiltSeaLanes.
+ipcMain.handle("get-trade-lanes-dev", async (_event, modDataDir, portLevel) => {
+  try {
+    if (!modDataDir) return { error: "modDataDir required" };
+    const lanes = require("./incomeModel.js").devAllBuiltSeaLanes(modDataDir, portLevel);
+    return { lanes, portLevel: Math.max(1, Math.min(3, +portLevel || 3)) };
+  } catch (e) {
+    return { error: e && e.message ? e.message : "dev trade lanes failed" };
+  }
+});
+
 // IPC: read cached trade-lane geometry. Returns the stored geometry only if the
 // renderer's signature matches AND no source file has changed since it was cached.
 ipcMain.handle("lane-cache-get", async (_event, modDataDir, kind, sig) => {

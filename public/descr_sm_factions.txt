@@ -1805,7 +1805,7 @@
 
 		"available in custom battles": false,
 		"prefer naval invasions": false,
-		"default religion": "armenian",
+		"default religion": "caucasian",
 		"default battle ai personality": "default_personality",
 
 		;;allow this faction to have a functioning family tree
@@ -6647,7 +6647,7 @@
 
 		"available in custom battles": false,
 		"prefer naval invasions": false,
-		"default religion": "armenian",
+		"default religion": "caucasian",
 		"default battle ai personality": "default_personality",
 
 		;;allow this faction to have a functioning family tree
@@ -8256,17 +8256,17 @@
 		"description": "FRISII_DESCR",
 
 		;;culture and (default?) character ethnicity
-		"culture":   "barbarian",
-		"ethnicity": "caucasiandark",
+		"culture":   "germanic",
+		"ethnicity": "caucasian",
 
 		;;tags for faction groups
-		"tags": [ "fgroup_barbarian", "fgroup_celtic", ],
+		"tags": [ "fgroup_barbarian", ],
 
 		;;namelists
 		"namelists":
 		{
-			"men":      "arverni_men",
-			"women":    "celtic_women",
+			"men":      "suebi_men",
+			"women":    "suebi_women",
 			"surnames": "blank_surnames",
 		},
 
@@ -8284,8 +8284,8 @@
 			"rebel logo index": 47,
 
 			;;flag models to be used on the strat map when a settlement is unoccupied
-			"strat symbol model":       "data/models_strat/symbol_gallic_rebel.CAS",
-			"strat rebel symbol model": "data/models_strat/symbol_gallic_rebel.CAS",
+			"strat symbol model":       "data/models_strat/symbol_germanic_rebel.CAS",
+			"strat rebel symbol model": "data/models_strat/symbol_germanic_rebel.CAS",
 		},
 
 		;;faction colours (some base game factions may have hardcoded overrides)
@@ -8311,12 +8311,12 @@
 
 			;;movie to play when this faction wins or is defeated, respectively
 			"victory": "data/fmv/victory/barbarian_outro.wmv",
-			"defeat": "data/fmv/lose/aedui.wmv",
+			"defeat": "data/fmv/lose/cimbri.wmv",
 		},
 
 		"available in custom battles": false,
 		"prefer naval invasions": true,
-		"default religion": "celtic",
+		"default religion": "germanic",
 		"default battle ai personality": "default_personality",
 
 		;;allow this faction to have a functioning family tree
@@ -9359,7 +9359,7 @@
 
 		"available in custom battles": false,
 		"prefer naval invasions": false,
-		"default religion": "armenian",
+		"default religion": "caucasian",
 		"default battle ai personality": "default_personality",
 
 		;;allow this faction to have a functioning family tree
@@ -10057,7 +10057,7 @@
 
 		"available in custom battles": false,
 		"prefer naval invasions": false,
-		"default religion": "armenian",
+		"default religion": "caucasian",
 		"default battle ai personality": "default_personality",
 
 		;;allow this faction to have a functioning family tree
@@ -13189,7 +13189,7 @@
 
 		"available in custom battles": false,
 		"prefer naval invasions": false,
-		"default religion": "armenian",
+		"default religion": "caucasian",
 		"default battle ai personality": "default_personality",
 
 		;;allow this faction to have a functioning family tree
@@ -15202,10 +15202,11 @@
 		{
 			"horde units":
 			[
-				"horde sarmatian archers",
-				"horde scythian medium cavalry",
-				"horde sarmatian horse archers",
-				"horde scythian noble archers",
+				"horde scythian archers",
+				"horde scythian royal infantry",
+				"horde scythian horse archers",
+				"horde scythian royal cavalry",
+				"horde scythian heavy cavalry",
 			],
 
 			"min horde units": 20,
@@ -15272,7 +15273,7 @@
 			"defeat": "data/fmv/lose/siraces.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "scythian",
 		"default battle ai personality": "default_personality",
@@ -16706,7 +16707,7 @@
 		;;allow this faction to have a functioning family tree
 		"allow reproduction": true,
 	},
-	"suebi": ;Suebi
+	"suebi": ;Semnones
 	{
 		;;name and description
 		"string":      "SUEBI",

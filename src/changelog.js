@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1467",
+    date: "2026-08-03",
+    items: [
+      { type: "feature", text: "**Dev mode: 🏗 All built — see the whole trade world at once.** A new dev-only button in the map-mode bar treats every settlement as having roads and a port built: the full road network draws unclipped (no per-province masking), every harbour road appears, and the sea-lane map regrows as the what-if network those ports would trade on. Clicking cycles the assumed port level — dockyard → shipwright → port → off — and the level is the number of sea lanes each port gets (3/2/1), exactly the game's own export-slot rule, so you can watch the network densify as ports upgrade. On RIS that's 243 lanes at level 1 growing to 612 at level 3. Selection stays the engine's real greedy rule (value-ranked sea-reachable partners, land neighbours skipped, wars excluded) — only the buildings are hypothetical, so the what-if map stays honest about geography and diplomacy." },
+    ],
+  },
+
+  {
     version: "0.9.1466",
     date: "2026-08-03",
     items: [

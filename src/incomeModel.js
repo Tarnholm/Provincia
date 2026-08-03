@@ -1873,6 +1873,52 @@ function seaLanesByRegion(modDataDir) {
   return (_seaLaneCache[modDataDir] = out);
 }
 
+// DEV WHAT-IF (2026-08-03, Trade Lanes "All built" toggle): the sea-lane set
+// the greedy engine rule would pick if EVERY settlement had a port chain built
+// at `level` (1 port / 2 shipwright / 3 dockyard → that many export slots).
+// Same selection rule as the RIS branch of seaLanesByRegion — value-ranked
+// landing-frontier partners, land neighbours skipped, war excluded, rights
+// gate — with only the BUILDINGS hypothetical: pool = every settled region
+// (no built-port requirement on either side), slots = `level` everywhere.
+// Diplomacy and populations stay campaign-start. Returns undirected pairs
+// for the map overlay; not cached here — every input above is cached.
+function devAllBuiltSeaLanes(modDataDir, level) {
+  const lvl = Math.max(1, Math.min(3, +level || 3));
+  const out = [];
+  try {
+    const { ownerOfRegion, allies, wars, popOfRegion } = tradePartnerCtx(modDataDir);
+    const lfg = landingFrontierGraph(modDataDir);
+    const fg = frontierGraph(modDataDir);
+    const prot = parseProtectorates(modDataDir);
+    const { qty: GQ, rawValues: RV } = tradeQtyMapsByRegion(modDataDir);
+    const fsq = (x) => { const b = new ArrayBuffer(4), f = new Float32Array(b), i = new Int32Array(b); f[0] = x; i[0] = (((i[0] + 0xc0800000) | 0) >> 1) + 0x3f800000; return f[0]; };
+    const cargo = (X, Y) => { const a = GQ[X] || {}, b = GQ[Y] || {}; let c = 0; for (const r in a) if (!(r in b)) c += a[r] * (RV[r] || 0); return c; };
+    const rights = (fa, fb) => fa === fb || (/^romans?_/.test(fa) && /^romans?_/.test(fb)) || (allies[fa] && allies[fa].has(fb)) || prot.suzerainOf[fa] === fb || prot.suzerainOf[fb] === fa;
+    const seen = new Set();
+    for (const A of Object.keys(ownerOfRegion)) {
+      const F = ownerOfRegion[A];
+      if (!F || F === "slave") continue;
+      const skip = new Set(); for (const e of (fg[A] || [])) skip.add(e.region);
+      const cands = [];
+      for (const fr of (lfg[A] || [])) {
+        const r = fr.region;
+        if (r === A || !(fr.dist > 0) || skip.has(r)) continue;
+        const o = ownerOfRegion[r];
+        if (!o || o === "slave") continue;
+        if (o !== F && wars[F] && wars[F].has(o)) continue;
+        const gate = rights(F, o) ? 1.0 : 0.5;
+        cands.push({ r, val: (0.1 * fsq((popOfRegion[A] || 1500) + (popOfRegion[r] || 1500)) + cargo(A, r) + 1) * gate / fr.dist });
+      }
+      cands.sort((x, y) => y.val - x.val);
+      for (const c of cands.slice(0, lvl)) {
+        const k = [A, c.r].sort().join(">");
+        if (!seen.has(k)) { seen.add(k); out.push({ from: A, to: c.r, flow: 10, goods: [], value: 0 }); }
+      }
+    }
+  } catch { /* dev what-if is best-effort */ }
+  return out;
+}
+
 // ★ DEPTH-WEIGHTED WHITE-PORT SEA DISTANCE (live-cracked 2026-06-18 forced-corridor experiment).
 // Trade route distance = PORT(white pixel in map_regions) → PORT(white pixel), path cost summed over
 // map_ground_types depth: shallow R196 ×1 / medium R128 ×2 (½-range) / deep R64 BLOCKED. Sea value
@@ -3013,7 +3059,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
 
 _modEpochCaches.push(_coordCache, _frontierCache, _mapVerCache, _landingCache, _adjCache, _seaCache, _mineQtyCache, _mineDepositCache, _mineProspectCache, _wonderCache, _tradePctAllCache, _tradeCtxCache, _tradeQtyCache, _tradeQtyMapsCache, _tradeGoodsCache, _seaLaneCache, _seaPortDistCache, _seaFlowPtsCache, _seaLaneGoodsCache, _seaLaneValueCache, _landLaneCache, _protCache, _adjLenCache);
 
-module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, bodyguardBlockByFaction, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, regionBorderLen, frontierGraph, landingFrontierGraph, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion, seaFlowPtsByLane, seaLaneGoods, seaLaneValues, landLaneData, seaPortDistDepth, mineDepositsByRegion, mineProspects,
+module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, bodyguardBlockByFaction, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, regionBorderLen, frontierGraph, landingFrontierGraph, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion, devAllBuiltSeaLanes, seaFlowPtsByLane, seaLaneGoods, seaLaneValues, landLaneData, seaPortDistDepth, mineDepositsByRegion, mineProspects,
   // mod-file epoch (see the _modEpochCheck block): other modules with modDir-keyed
   // caches over the SAME mod files (poModel) register them here so one epoch sweep
   // clears everything consistently.
