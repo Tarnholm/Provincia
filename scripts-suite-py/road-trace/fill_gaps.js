@@ -63,9 +63,31 @@ for (const rd of bake) {
     a.push([p[2 * t], p[2 * t + 1]]);
   }
 }
-const covered = (x, y, r = 1.6) => { // r=1.6 for waypoints, 0.9 for segment midpoints
-  const xi = x | 0, yi = y | 0;
-  for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+// THRESHOLDS — measured, not guessed. The distance from a game segment midpoint
+// to the nearest baked point has median 0.13px: the bake normally sits right on
+// the engine's line. The mask bake follows the game's AERIAL curve, which drifts
+// up to ~1.5px from the manager centreline, so anything under ~2px is the SAME
+// road drawn slightly differently, NOT a gap — "filling" those lays a second
+// line beside the first, which is exactly the duplicated roads the user saw
+// (2.36% of midpoints exceed 0.9px, but only 0.21% exceed 3px).
+//   GAP_R  = a break only counts when nothing is within this radius
+//   EMIT_R = never emit a point this close to existing geometry
+// MEASURED in the reported area (Igyllionia): the largest distance from any game
+// segment there to the baked road is 2.67px and NOTHING exceeds 3px — i.e. there
+// were no holes at all, only the aerial curve sitting a couple of pixels off the
+// manager centreline. Filling at 2.5px therefore drew a second line beside the
+// first. A real hole is one where no road exists within 4px; below that the road
+// IS drawn, just along the game's own aerial path (which is the look that was
+// approved). Map-wide only 69 midpoints exceed 4px.
+const GAP_R = 4.0;
+const EMIT_R = 3.0;
+// The grid cells are 1px, so the neighbourhood scanned MUST grow with r — a
+// fixed 3x3 scan can only see ~1.4px and silently reports "not covered" for
+// geometry that is merely 2-4px away. That made every raised threshold a no-op
+// and kept emitting fills next to roads that were already there.
+const covered = (x, y, r = 1.6) => { // r=1.6 for waypoints, GAP_R for midpoints
+  const xi = x | 0, yi = y | 0, R = Math.ceil(r) + 1;
+  for (let dx = -R; dx <= R; dx++) for (let dy = -R; dy <= R; dy++) {
     const a = grid.get(gkey(xi + dx, yi + dy)); if (!a) continue;
     for (const [px, py] of a) { const ex = px - x, ey = py - y; if (ex * ex + ey * ey <= r * r) return true; }
   }
@@ -90,12 +112,12 @@ for (let ri = 0; ri < roads.length; ri++) {
   const bad = new Array(w.length).fill(false);
   for (let i = 0; i < w.length; i++) {
     const [x, y] = toDisp(w[i]); total++;
-    if (covered(x, y)) cov++; else { bad[i] = true; }
+    if (covered(x, y, GAP_R)) cov++; else { bad[i] = true; }
   }
   for (let i = 0; i + 1 < w.length; i++) {
     const [ax, ay] = toDisp(w[i]), [bx, by] = toDisp(w[i + 1]);
     mids++;
-    if (covered((ax + bx) / 2, (ay + by) / 2, 0.9)) midCov++;
+    if (covered((ax + bx) / 2, (ay + by) / 2, GAP_R)) midCov++;
     else { bad[i] = true; bad[i + 1] = true; } // the STROKE is missing -> re-emit both ends
   }
   // A gap SPAN is the waypoint range that actually needs new geometry. Emitting
@@ -193,20 +215,19 @@ for (const ri of affected) {
   const w = roads[ri].w || [];
   if (w.length < 2) continue;
   const curve = spline(w.map(toDisp)).map(toLand);
-  const isCov = curve.map(([x, y]) => covered(x, y, 0.9));
+  const isCov = curve.map(([x, y]) => covered(x, y, EMIT_R));
   let i = 0;
   while (i < curve.length) {
     if (isCov[i]) { i++; continue; }
     let j = i; while (j + 1 < curve.length && !isCov[j + 1]) j++;
     // the missing stretch is curve[i..j]; snap both ends onto the network so it
     // joins without overlapping it
-    const seg = curve.slice(i, j + 1);
-    const a = nearestBaked(seg[0][0], seg[0][1]);
-    const b = nearestBaked(seg[seg.length - 1][0], seg[seg.length - 1][1]);
-    const pts2 = [];
-    if (a) pts2.push(a);
-    pts2.push(...seg);
-    if (b) pts2.push(b);
+    // Extend by ONE curve point on each side rather than snapping to the
+    // nearest baked point: the curve is dense (sub-pixel spacing), so the join
+    // is seamless, whereas snapping could grab a DIFFERENT road running nearby
+    // and kink the fill sideways into a visible spike.
+    const lo2 = Math.max(0, i - 1), hi2 = Math.min(curve.length - 1, j + 1);
+    const pts2 = curve.slice(lo2, hi2 + 1);
     i = j + 1;
     if (pts2.length < 2) continue;
     emitChain(pts2);
