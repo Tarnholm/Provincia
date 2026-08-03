@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1473",
+    date: "2026-08-03",
+    items: [
+      { type: "improvement", text: "**Regression tests pin the dashboard's \"hide clean validators\" behaviour.** The feature shipped in 0.9.1472 but was reported as not working — it was simply not in the installed build yet. Two tests now assert it directly: sections with 0 issues don't render, sections with findings do, and unticking \"Hide clean\" brings the empty ones back. Verified against the real symptom (a 0-count \"Dangling chain references\" section sitting in the list)." },
+    ],
+  },
+
+  {
     version: "0.9.1472",
     date: "2026-08-03",
     items: [

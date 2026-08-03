@@ -267,6 +267,30 @@ describe("panels render smoke-test", () => {
     expect(c.textContent).not.toContain("undefined");
   });
 
+  // v0.9.1472: clean validators (count 0) are hidden by default so the list is
+  // scrollable; the "Hide clean" checkbox brings them back. Regression-guarded
+  // because the first attempt shipped without the user seeing any effect.
+  it("DashboardModal hides zero-count sections by default and shows non-zero ones", async () => {
+    const result = { summary: { danglingChains: 0, danglingLevels: 0, stratErrors: 0, missingLocale: 273 }, missingLocale: [{ chain: "hinterland_region", level: "region_base" }] };
+    const c = await mount(<DashboardModal {...dashProps} dashLoading={false} dashResult={result} />);
+    expect(c.textContent).toContain("Missing localization keys");   // 273 → shown
+    expect(c.textContent).not.toContain("Dangling chain references"); // 0 → hidden
+    expect(c.textContent).not.toContain("descr_strat settlement errors");
+    expect(c.textContent).toContain("Hide clean");                   // the toggle exists
+  });
+
+  it("DashboardModal shows zero-count sections once Hide clean is unticked", async () => {
+    const result = { summary: { danglingChains: 0, missingLocale: 273 }, missingLocale: [] };
+    const c = await mount(<DashboardModal {...dashProps} dashLoading={false} dashResult={result} />);
+    const { flushSync } = await import("react-dom");
+    const box = c.querySelector('input[type="checkbox"]');
+    expect(box).toBeTruthy();
+    expect(box.checked).toBe(true);
+    expect(c.textContent).not.toContain("Dangling chain references");
+    flushSync(() => { box.click(); }); // real click toggles checked AND fires React's onChange
+    expect(c.textContent).toContain("Dangling chain references"); // now visible
+  });
+
   it("ArmySetupModal renders with empty data (no throw; search props are strings)", async () => {
     const noop = () => {};
     const props = {
