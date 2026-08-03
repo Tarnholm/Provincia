@@ -18,7 +18,19 @@ export default function DashboardModal(props) {
   } = props;
         const r = dashResult;
         const jumpTo = (file, snippet, line) => window.electronAPI?.scriptsJumpTo?.(file, snippet || null, line || null);
-        const Section = DashSection; // stable module-scope identity — see hoist note above App()
+        // Hide clean sections (2026-08-03, user request): a validator with 0
+        // issues isn't actionable and just makes the list long to scroll. ON by
+        // default, with a toggle so the clean ones can still be confirmed.
+        // Tiles already filter to >0, so tile→section jumps never target a
+        // hidden section. Memoised so Section keeps a stable identity (a fresh
+        // function each render would remount every <details> and lose open state).
+        const [hideClean, setHideClean] = React.useState(true);
+        const Section = React.useMemo(
+          () => (hideClean
+            ? (p) => ((p.count || 0) > 0 ? <DashSection {...p} /> : null)
+            : DashSection),
+          [hideClean, DashSection]
+        );
         // Tile → Section bridge. Each tile carries the prefix of its target
         // Section's title; click forces it open and scrolls it into view.
         // Substring match keeps tiles working when a section gets a suffix
@@ -50,6 +62,14 @@ export default function DashboardModal(props) {
             }}>
               <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
                 <h3 style={{ margin: 0, flex: 1, fontSize: "1.05rem" }}>Mod-validation dashboard</h3>
+                <label
+                  title={hideClean
+                    ? "Clean validators (0 issues) are hidden. Tick to show them and confirm they ran."
+                    : "Showing every validator, including the clean ones."}
+                  style={{ display: "flex", alignItems: "center", gap: 5, marginRight: 10, fontSize: "0.74rem", color: "#9ca3af", cursor: "pointer", userSelect: "none" }}>
+                  <input type="checkbox" checked={hideClean} onChange={(e) => setHideClean(e.target.checked)} style={{ cursor: "pointer" }} />
+                  Hide clean
+                </label>
                 <button onClick={() => setShowDashboard(false)} style={{
                   background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)",
                   color: "#ccc", padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontSize: "0.78rem",

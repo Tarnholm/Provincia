@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1472",
+    date: "2026-08-03",
+    items: [
+      { type: "fix", text: "**The building-localization audit was reading UTF-16 text files as UTF-8, so it reported all 637 keys missing when every one of them was present.** The engine's text/*.txt files are UTF-16 LE with a BOM; decoded as UTF-8, every character comes back followed by a NUL, so a search for {region_base} could never match even though the string sits right there in export_buildings.txt. All mod-file reads now sniff the BOM (UTF-16 LE/BE, UTF-8, or plain 8-bit) and decode accordingly, which also covers the rule files that genuinely are 8-bit. On RIS: 273 declared building levels, 273 falsely reported missing, now 0." },
+      { type: "improvement", text: "**The dashboard hides validators with no issues.** Clean sections aren't actionable and made the list long to scroll, so they're collapsed away by default; a \"Hide clean\" checkbox in the header brings them back when you want to confirm a validator actually ran. The summary tiles already skipped zeros, so tile-to-section jumps are unaffected." },
+    ],
+  },
+
+  {
     version: "0.9.1471",
     date: "2026-08-03",
     items: [

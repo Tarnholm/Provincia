@@ -255,6 +255,29 @@ ipcMain.handle('sps:xref-find', async (_, name) => {
 //   5. Orphaned chains           — `building <X>` blocks with zero external
 //                                   refs AND zero descr_strat prebuilts
 //                                   (candidates for removal).
+// Encoding-aware mod-file reader (2026-08-03, user report). The engine's
+// text/*.txt localisation files are UTF-16 LE **with BOM**, while the rule
+// files (EDB, descr_strat, …) are 8-bit. Reading a UTF-16 file as UTF-8 yields
+// a string where every character is followed by NUL, so `text.includes('{key}')`
+// is false for EVERY key — that made the building-localisation audit report all
+// 637 keys missing when they were present. Sniff the BOM and decode properly.
+function readModText(p) {
+  const buf = fs.readFileSync(p);
+  if (buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xfe) return buf.toString('utf16le').replace(/^﻿/, '');
+  if (buf.length >= 2 && buf[0] === 0xfe && buf[1] === 0xff) { // UTF-16 BE: swap to LE, then decode
+    const sw = Buffer.allocUnsafe(buf.length);
+    for (let i = 0; i + 1 < buf.length; i += 2) { sw[i] = buf[i + 1]; sw[i + 1] = buf[i]; }
+    return sw.toString('utf16le').replace(/^﻿/, '');
+  }
+  if (buf.length >= 3 && buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf) return buf.slice(3).toString('utf8');
+  // No BOM: a UTF-16 LE file still shows NUL in every other byte of ASCII text.
+  const probe = buf.slice(0, 512);
+  let nulOdd = 0;
+  for (let i = 1; i < probe.length; i += 2) if (probe[i] === 0) nulOdd++;
+  if (probe.length > 8 && nulOdd > probe.length / 4) return buf.toString('utf16le');
+  return buf.toString('utf8');
+}
+
 ipcMain.handle('sps:validate-mod', async (_evt, modDataDir) => {
   // Two sources for the validator's input files:
   //   (1) configDir: where the script suite's Scripts panel stages files.
@@ -267,7 +290,7 @@ ipcMain.handle('sps:validate-mod', async (_evt, modDataDir) => {
   const configDir = path.join(PROJECT_ROOT, 'config');
   const read = (n) => {
     const cp = path.join(configDir, n);
-    if (fs.existsSync(cp)) return fs.readFileSync(cp, 'utf-8');
+    if (fs.existsSync(cp)) return readModText(cp);
     if (modDataDir) {
       // Most files live at modDataDir/<name>; descr_strat / win_conditions
       // live under world/maps/campaign/imperial_campaign/.
@@ -276,7 +299,7 @@ ipcMain.handle('sps:validate-mod', async (_evt, modDataDir) => {
         path.join(modDataDir, 'world', 'maps', 'campaign', 'imperial_campaign', n),
         path.join(modDataDir, 'text', n),
       ];
-      for (const p of candidates) if (fs.existsSync(p)) return fs.readFileSync(p, 'utf-8');
+      for (const p of candidates) if (fs.existsSync(p)) return readModText(p);
     }
     return null;
   };
@@ -1203,7 +1226,7 @@ ipcMain.handle('sps:validate-unit-localization', async (_, dataDir) => {
     }
     out.summary.totalUnits = entries.length;
     // export_units.txt is UTF-16 LE. Extract every {token} into a Set.
-    const locText = fs.readFileSync(locPath, 'utf16le').replace(/^﻿/, '');
+    const locText = readModText(locPath); // UTF-16 LE w/ BOM in practice; sniffed
     const locTokens = new Set();
     for (const m of locText.matchAll(/\{([^}]+)\}/g)) locTokens.add(m[1]);
     // Group the types that share each dictionary key.
@@ -3198,7 +3221,7 @@ ipcMain.handle('sps:migrate-preview', async (_, mig) => {
     // text/export_buildings.txt (the tool never fabricates these).
     const textPath = path.join(configDir, 'export_buildings.txt');
     if (fs.existsSync(textPath) && edb) {
-      const text = fs.readFileSync(textPath, 'utf-8');
+      const text = readModText(textPath); // export_buildings.txt is UTF-16 LE
       const buildings = parseEDB(edb);
       const newSet = new Set(mig.new_chains || []);
       const newLevels = [];
