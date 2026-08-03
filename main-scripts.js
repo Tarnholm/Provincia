@@ -1172,12 +1172,17 @@ ipcMain.handle('sps:autofix-building-images', async (_, dataDir) => {
   return out;
 });
 
-// Mercenary / unit type localization coverage. Each `type X` in EDU should
-// have `{X}`, `{X_descr}`, `{X_descr_short}` entries in text/export_units.txt.
-// Missing entries show the raw ID in-game (e.g. "merc_roman_velite_remastered"
-// instead of "Roman Velite"). Cosmetic but noisy.
+// Unit localization coverage. CORRECTED 2026-08-03 (user report): the lookup
+// key is the EDU entry's `dictionary` line, NOT its `type` line. `type` is the
+// internal unit id (spaces, referenced by descr_strat/EDB); `dictionary` names
+// the text/export_units.txt entry supplying {key}, {key_descr}, {key_descr_short}
+// — i.e. the unit's name, description and unit card. Auditing by `type` flagged
+// every unit on this mod (1691 false positives on RIS, 3 real) because no type
+// with spaces can match a token. Several types legitimately SHARE one dictionary
+// (e.g. "roman leves" and "aor roman leves" both use roman_leves), so findings
+// are grouped by dictionary key with the types listed, not repeated per type.
 ipcMain.handle('sps:validate-unit-localization', async (_, dataDir) => {
-  const out = { missing: [], summary: { totalUnits: 0, missingNames: 0, missingDescr: 0, missingDescrShort: 0 }, error: null };
+  const out = { missing: [], summary: { totalUnits: 0, totalKeys: 0, missingNames: 0, missingDescr: 0, missingDescrShort: 0, noDictionary: 0 }, error: null };
   if (!dataDir) { out.error = 'no dataDir provided'; return out; }
   try {
     const eduPath = path.join(dataDir, 'export_descr_unit.txt');
@@ -1185,22 +1190,66 @@ ipcMain.handle('sps:validate-unit-localization', async (_, dataDir) => {
     if (!fs.existsSync(eduPath)) { out.error = 'export_descr_unit.txt not found'; return out; }
     if (!fs.existsSync(locPath)) { out.error = 'text/export_units.txt not found'; return out; }
     const eduText = fs.readFileSync(eduPath, 'utf8');
-    const units = [];
+    // Walk entries: `type <id>` opens one, the FIRST following `dictionary <key>`
+    // belongs to it. Comments after the key (`dictionary roman_leves ; Leves`)
+    // are excluded by matching a non-space run.
+    const entries = [];
+    let cur = null;
     for (const ln of eduText.split(/\r?\n/)) {
-      const m = ln.match(/^type\s+(.+?)\s*$/);
-      if (m) units.push(m[1].trim());
+      let m = ln.match(/^type\s+(.+?)\s*$/);
+      if (m) { cur = { type: m[1].trim(), dict: null }; entries.push(cur); continue; }
+      m = ln.match(/^dictionary\s+(\S+)/);
+      if (m && cur && !cur.dict) cur.dict = m[1].trim();
     }
-    out.summary.totalUnits = units.length;
+    out.summary.totalUnits = entries.length;
     // export_units.txt is UTF-16 LE. Extract every {token} into a Set.
     const locText = fs.readFileSync(locPath, 'utf16le').replace(/^﻿/, '');
     const locTokens = new Set();
     for (const m of locText.matchAll(/\{([^}]+)\}/g)) locTokens.add(m[1]);
-    for (const u of units) {
+    // Group the types that share each dictionary key.
+    const byKey = new Map();
+    for (const e of entries) {
+      if (!e.dict) { out.summary.noDictionary++; continue; } // no dictionary line = nothing to resolve
+      const g = byKey.get(e.dict) || (byKey.set(e.dict, []), byKey.get(e.dict));
+      g.push(e.type);
+    }
+    out.summary.totalKeys = byKey.size;
+    // Near-miss suggestion: a missing key is usually a TYPO on one side rather
+    // than an absent string (RIS: EDU wants legio_vii_paterna_macedonica_early,
+    // the text file spells it ...macedonia_early). Offer the closest existing
+    // base token so the fix is obvious. Only computed for the few missing keys.
+    const baseTokens = [...locTokens].filter((t) => !/_descr(_short)?$/.test(t));
+    const editDist = (a, b, cap) => {
+      if (Math.abs(a.length - b.length) > cap) return cap + 1;
+      let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+      for (let i = 1; i <= a.length; i++) {
+        const row = [i]; let best = i;
+        for (let j = 1; j <= b.length; j++) {
+          const v = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+          row.push(v); if (v < best) best = v;
+        }
+        if (best > cap) return cap + 1;
+        prev = row;
+      }
+      return prev[b.length];
+    };
+    for (const [key, types] of byKey) {
       const missingParts = [];
-      if (!locTokens.has(u)) { missingParts.push('name'); out.summary.missingNames++; }
-      if (!locTokens.has(u + '_descr')) { missingParts.push('descr'); out.summary.missingDescr++; }
-      if (!locTokens.has(u + '_descr_short')) { missingParts.push('descr_short'); out.summary.missingDescrShort++; }
-      if (missingParts.length > 0) out.missing.push({ unit: u, missing: missingParts });
+      if (!locTokens.has(key)) { missingParts.push('name'); out.summary.missingNames++; }
+      if (!locTokens.has(key + '_descr')) { missingParts.push('descr'); out.summary.missingDescr++; }
+      if (!locTokens.has(key + '_descr_short')) { missingParts.push('descr_short'); out.summary.missingDescrShort++; }
+      if (missingParts.length === 0) continue;
+      let suggest = null;
+      if (!locTokens.has(key)) {
+        const CAP = Math.max(2, Math.min(4, Math.floor(key.length / 6)));
+        let bestD = CAP + 1;
+        for (const t of baseTokens) {
+          const d = editDist(key, t, CAP);
+          if (d < bestD) { bestD = d; suggest = t; if (d === 1) break; }
+        }
+        if (bestD > CAP) suggest = null;
+      }
+      out.missing.push({ unit: key, key, types, missing: missingParts, suggest });
     }
   } catch (e) { out.error = e.message; }
   return out;

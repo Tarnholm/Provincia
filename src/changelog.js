@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1471",
+    date: "2026-08-03",
+    items: [
+      { type: "fix", text: "**The unit-strings audit was reading the wrong field, and reported 1,691 problems that didn't exist — it now finds the 3 that do.** A unit's name, description and unit card come from the export_units.txt entry named by its EDU **dictionary** line, not by its `type` line; the check was looking up `type`, which contains spaces and therefore can never match a text token, so on RIS it flagged all 1,691 units. It now resolves via `dictionary` and groups the types that share one entry (\"roman leves\" and \"aor roman leves\" both use roman_leves), turning 1,691 findings into 3 real ones on RIS." },
+      { type: "improvement", text: "**Missing unit strings now suggest the near match, which is usually the actual typo.** Two of the three real RIS findings are one letter apart: the EDU asks for legio_vii_paterna_macedon**ica**_early while the text file spells it macedon**ia**_early. The audit prints \"→ did you mean {…}?\" next to any missing key with a close existing token, so the fix is visible without grepping." },
+    ],
+  },
+
+  {
     version: "0.9.1470",
     date: "2026-08-03",
     items: [

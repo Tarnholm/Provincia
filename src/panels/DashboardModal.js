@@ -507,13 +507,17 @@ export default function DashboardModal(props) {
                     )}
                     {unitLocAudit && !unitLocAudit.error && (
                       <Section
-                        title={`Unit type strings missing in text/export_units.txt (shows raw ID in-game)`}
+                        title={`Unit dictionary strings missing in text/export_units.txt (shows raw ID in-game)`}
                         count={(unitLocAudit.missing || []).length}
                         color="#9ca3af"
                       >
                         {(unitLocAudit.missing || []).slice(0, 100).map((d, i) => (
                           <Row key={i}
-                            label={`${d.unit} — missing: ${d.missing.join(', ')}`}
+                            label={`${d.key || d.unit} — missing: ${d.missing.join(', ')}${
+                              d.suggest ? `  → did you mean {${d.suggest}}?` : ''
+                            }${
+                              d.types && d.types.length ? `  (EDU type${d.types.length > 1 ? 's' : ''}: ${d.types.slice(0, 3).join(', ')}${d.types.length > 3 ? ` +${d.types.length - 3}` : ''})` : ''
+                            }`}
                             file="text/export_units.txt"
                           />
                         ))}
