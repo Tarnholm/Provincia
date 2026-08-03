@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1468",
+    date: "2026-08-03",
+    items: [
+      { type: "change", text: "**Dev mode: the All-built what-if now lives on the Trade Lanes button itself — the separate 🏗 button is gone.** With Trade Lanes active in dev mode, clicking the mode button again cycles the assumed port level: dockyard → shipwright → port → off, shown as a small ALL·3/2/1 chip on the button. Same what-if underneath (every settlement's roads and port treated as built, level = sea lanes per port); one less button in the bar." },
+    ],
+  },
+
+  {
     version: "0.9.1467",
     date: "2026-08-03",
     items: [

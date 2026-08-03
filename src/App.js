@@ -14724,6 +14724,28 @@ function App() {
       // 0.9.827: Hidden Res. and AOR are now SEPARATE single-select modes
       // (previously one tri-state button). They go through the generic path.
       const active = colorMode === m.key;
+      // DEV "All built" (v0.9.1468, user request: no separate button): in dev
+      // mode the ACTIVE Trade Lanes button stays clickable and cycles the
+      // what-if port level off → 3 (dockyard) → 2 → 1 → off. Level = sea-lane
+      // export slots per port; all roads/harbour roads draw unclipped while on.
+      if (m.key === "tradelanes" && devMode) {
+        const lvl = devAllBuiltLevel;
+        return (
+          <button key={m.key}
+            onClick={() => active ? setDevAllBuiltLevel((l) => (l === 0 ? 3 : l - 1)) : setColorMode(m.key)}
+            className={"map-mode-btn" + (active ? " map-mode-btn--active" : "")}
+            title={!active
+              ? "Trade Lanes. Once active, click again (dev): what-if with every settlement's roads + port built — cycles port level 3 (dockyard) → 2 → 1 → off; level = sea lanes per port."
+              : lvl > 0
+                ? `All built ON at port level ${lvl} (${["", "port — 1 sea lane each", "shipwright — 2 sea lanes each", "dockyard — 3 sea lanes each"][lvl]}). Click for ${lvl > 1 ? "level " + (lvl - 1) : "off"}.`
+                : "Click (dev): what-if with every settlement's roads + port built — cycles port level 3 (dockyard) → 2 → 1 → off."}
+            style={{ ...btnStyle(active), minWidth: 0, position: "relative" }}>
+            <MapBtnBadge k={m.badge} />{m.label}{active && lvl > 0 && (
+              <span style={{ marginLeft: 4, fontWeight: 700, color: "#1a1400", background: "linear-gradient(180deg, #6de08a 0%, #3fae62 100%)", borderRadius: 4, padding: "0 5px" }}>ALL·{lvl}</span>
+            )}
+          </button>
+        );
+      }
       return (
         <button key={m.key} onClick={() => setColorMode(m.key)}
           className={"map-mode-btn" + (active ? " map-mode-btn--active" : "")}
@@ -14922,22 +14944,9 @@ function App() {
             <MapBtnBadge k="view.calibrate" />🎯 Calibrate{statsCacheCharCount > 0 ? ` (${statsCacheCharCount})` : ""}
           </button>
           )}
-          {/* DEV "All built" (2026-08-03): Trade Lanes what-if — every settlement
-              treated as having roads + a port built. Click cycles the port
-              level: off → 3 (dockyard) → 2 (shipwright) → 1 (port) → off.
-              Port level = sea-lane export slots, so lvl 3 shows the densest
-              network. Roads/harbour roads draw unclipped everywhere. */}
-          {devMode && (
-          <button
-            className="map-mode-btn"
-            onClick={() => setDevAllBuiltLevel((l) => (l === 0 ? 3 : l - 1))}
-            title={devAllBuiltLevel > 0
-              ? `All built ON at port level ${devAllBuiltLevel} (${["", "port — 1 sea lane each", "shipwright — 2 sea lanes each", "dockyard — 3 sea lanes each"][devAllBuiltLevel]}). Click for ${devAllBuiltLevel > 1 ? "level " + (devAllBuiltLevel - 1) : "off"}.`
-              : "Trade Lanes what-if: treat every settlement as having roads + a port built. Click cycles port level 3 (dockyard) → 2 → 1 → off; higher level = more sea lanes per port."}
-            style={{ ...btnStyle(devAllBuiltLevel > 0), minWidth: 0, position: "relative", fontSize: "0.65rem", padding: "1px 6px", color: devAllBuiltLevel > 0 ? "#4f8" : undefined }}>
-            🏗 All built{devAllBuiltLevel > 0 ? ` (lvl ${devAllBuiltLevel})` : ""}
-          </button>
-          )}
+          {/* DEV "All built" (v0.9.1468): lives ON the Trade Lanes map-mode
+              button itself now (renderModeMember special case) — clicking the
+              active Trade Lanes mode in dev cycles the what-if port level. */}
           {liveLogActive && (
             <button className="map-mode-btn" onClick={() => setShowStatsPanel(prev => !prev)}
               title={saveLuaCounters && saveLuaCounters.count
