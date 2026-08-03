@@ -10901,19 +10901,36 @@ function App() {
 
   // Combined Path2D for all roads (uniform style) → one stroke per frame, so
   // thousands of road segments don't tank the pan framerate.
-  const roadPath2D = useMemo(() => {
+  // Road geometry as THREE level-of-detail paths (v0.9.1474 perf). The full
+  // network is ~171k points with the all-built what-if on, and it is stroked
+  // TWICE per frame (casing + fill) on every pan, zoom and lane-hover redraw.
+  // Zoomed out, most of that detail is far below a pixel, so we pre-build
+  // decimated copies and stroke the cheapest one the zoom can justify. Chain
+  // endpoints are always kept so junctions still meet.
+  const roadPath2DLods = useMemo(() => {
     if (!roadPaths || typeof Path2D === "undefined") return null;
-    const p = new Path2D();
     // Captured roads are already the game's exact drawn curve (Bézier spline
     // reproduced from the engine) — draw them raw. Computed roads are an A*
     // tile staircase, so corner-round them.
+    const smoothed = [];
     for (const pts of Object.values(roadPaths)) {
       if (!pts || pts.length < 2) continue;
-      const s = roadsPrecurved ? pts : chaikinRoad(pts);
-      p.moveTo(s[0].x, s[0].y);
-      for (let k = 1; k < s.length; k++) p.lineTo(s[k].x, s[k].y);
+      smoothed.push(roadsPrecurved ? pts : chaikinRoad(pts));
     }
-    return p;
+    const build = (stride) => {
+      const p = new Path2D();
+      for (const s of smoothed) {
+        p.moveTo(s[0].x, s[0].y);
+        if (stride === 1 || s.length <= 4) {
+          for (let k = 1; k < s.length; k++) p.lineTo(s[k].x, s[k].y);
+        } else {
+          for (let k = stride; k < s.length - 1; k += stride) p.lineTo(s[k].x, s[k].y);
+          p.lineTo(s[s.length - 1].x, s[s.length - 1].y); // keep the endpoint
+        }
+      }
+      return p;
+    };
+    return { full: build(1), half: build(2), quarter: build(4) };
   }, [roadPaths, roadsPrecurved]);
 
   // Combined Path2D for all sea lanes (v0.9.1470 perf): with the all-built
@@ -11041,17 +11058,25 @@ function App() {
       // broke the gentle curve into straight ticks and read as straight; the
       // game's roads are unbroken, so the meander only shows as a solid line).
       // Round join/cap keep the curve smooth. Sea lanes stay dashed, on top.
-      if (roadPath2D) {
+      if (roadPath2DLods) {
         ctx.lineJoin = "round";
         ctx.setLineDash([]);
+        // LOD by zoom: below ~2 screen-px per map-px the quarter path is
+        // visually identical and a quarter of the work; the casing is also
+        // dropped there because at that scale it sits under the fill stroke.
+        const lod = totalScale >= 5 ? roadPath2DLods.full
+          : totalScale >= 2 ? roadPath2DLods.half
+            : roadPath2DLods.quarter;
         // subtle darker casing underneath, then the tan road on top — reads as
         // a real road and makes the curve legible at any zoom.
-        ctx.strokeStyle = "rgba(84,58,34,0.55)";
-        ctx.lineWidth = 2.2 / totalScale;
-        ctx.stroke(roadPath2D);
+        if (totalScale >= 2) {
+          ctx.strokeStyle = "rgba(84,58,34,0.55)";
+          ctx.lineWidth = 2.2 / totalScale;
+          ctx.stroke(lod);
+        }
         ctx.strokeStyle = "rgba(202,170,120,0.95)";
         ctx.lineWidth = 1.2 / totalScale;
-        ctx.stroke(roadPath2D);
+        ctx.stroke(lod);
       }
       // Highlight the hovered road pair's segments over the combined stroke.
       if (hoverRoadKey && roadPaths) {
@@ -11677,7 +11702,7 @@ function App() {
     hoveredTradeLane,
     seaLanePaths,
     seaLanePath2D,
-    roadPath2D,
+    roadPath2DLods,
     roadPaths,
     resourceImages,
     resourcesData,
