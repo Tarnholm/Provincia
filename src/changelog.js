@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1477",
+    date: "2026-08-03",
+    items: [
+      { type: "improvement", text: "**Crash-reporter 0.1.48: the intentional trait-display warnings no longer pollute crash reports.** The RIS team confirmed the engine's repeated \"Current Trait: X mismatch between attribute list and listed effects\" lines are by design — several traits deliberately carry zero-effect levels as part of their level scaling, and the warning cannot be silenced in-game. The reporter now keeps those lines out of the report's last-line headline (one crash report led with the Autumn trait warning and buried the actual crash-dump signal) and out of every assert/settlement/asset context window, counts them, and states once that they were ignored. The raw lines still ship in the attached log tails, so nothing is silently dropped, and the selftest proves the matcher hits the real telemetry lines and nothing else." },
+    ],
+  },
+
+  {
     version: "0.9.1476",
     date: "2026-08-03",
     items: [

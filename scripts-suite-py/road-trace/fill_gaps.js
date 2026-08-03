@@ -98,6 +98,11 @@ for (let ri = 0; ri < roads.length; ri++) {
     if (covered((ax + bx) / 2, (ay + by) / 2, 0.9)) midCov++;
     else { bad[i] = true; bad[i + 1] = true; } // the STROKE is missing -> re-emit both ends
   }
+  // A gap SPAN is the waypoint range that actually needs new geometry. Emitting
+  // more than that draws a second line alongside the one already there — the
+  // "duplicated roads" the user saw. So a span covers only bad waypoints plus
+  // the two waypoints bracketing a bad segment, and its ENDS are later snapped
+  // onto existing baked points rather than re-drawing whole covered stretches.
   let run = null;
   for (let i = 0; i < w.length; i++) {
     if (bad[i]) { if (!run) run = { road: ri, from: i, to: i }; else run.to = i; }
@@ -165,14 +170,49 @@ const toLand = ([dx, dy]) => {
   return [dx, dy];
 };
 
+// Nearest EXISTING baked point, so a gap-fill starts and ends exactly on the
+// network instead of running beside it.
+const nearestBaked = (x, y, r = 2.5) => {
+  const xi = x | 0, yi = y | 0; let best = null, bd = r * r;
+  for (let dx = -3; dx <= 3; dx++) for (let dy = -3; dy <= 3; dy++) {
+    const a = grid.get(gkey(xi + dx, yi + dy)); if (!a) continue;
+    for (const [px, py] of a) { const ex = px - x, ey = py - y; const d = ex * ex + ey * ey; if (d < bd) { bd = d; best = [px, py]; } }
+  }
+  return best;
+};
+
+// Emit ONLY what is actually missing. Build the engine's own curve for each
+// affected road, then keep the contiguous stretches of it that no baked point
+// covers. Re-emitting whole waypoint runs (the first attempt) redrew stretches
+// that already existed, laying a second line beside the first — 27.8% of the
+// emitted points were duplicates. Working on the CURVE and filtering by
+// coverage takes that to ~0 by construction.
+const affected = new Set(runs.map((r) => r.road));
 const added = [];
-for (const run of runs) {
-  const w = roads[run.road].w || [];
-  const lo = Math.max(0, run.from - 1), hi = Math.min(w.length - 1, run.to + 1);
-  const pts = [];
-  for (let i = lo; i <= hi; i++) pts.push(toDisp(w[i]));
-  if (pts.length < 2) continue;
-  const curve = spline(pts).map(toLand);
+for (const ri of affected) {
+  const w = roads[ri].w || [];
+  if (w.length < 2) continue;
+  const curve = spline(w.map(toDisp)).map(toLand);
+  const isCov = curve.map(([x, y]) => covered(x, y, 0.9));
+  let i = 0;
+  while (i < curve.length) {
+    if (isCov[i]) { i++; continue; }
+    let j = i; while (j + 1 < curve.length && !isCov[j + 1]) j++;
+    // the missing stretch is curve[i..j]; snap both ends onto the network so it
+    // joins without overlapping it
+    const seg = curve.slice(i, j + 1);
+    const a = nearestBaked(seg[0][0], seg[0][1]);
+    const b = nearestBaked(seg[seg.length - 1][0], seg[seg.length - 1][1]);
+    const pts2 = [];
+    if (a) pts2.push(a);
+    pts2.push(...seg);
+    if (b) pts2.push(b);
+    i = j + 1;
+    if (pts2.length < 2) continue;
+    emitChain(pts2);
+  }
+}
+function emitChain(curve) {
   // region tags per point -> merged `s` runs
   const cols = curve.map(([x, y]) => colAtDisplay(x, y));
   const s = [];
@@ -190,6 +230,21 @@ for (const run of runs) {
   });
 }
 console.log(`emitting ${added.length} gap-fill chains, ${added.reduce((n, e) => n + e.p.length / 2, 0)} points`);
+
+// DUPLICATION GUARD: a gap-fill point that lands on top of geometry that already
+// exists means we are drawing a second line over the first — exactly the
+// artifact this pass is meant to avoid. Only the two snapped END points of each
+// chain are allowed to coincide with the network.
+let dup = 0, emitted = 0;
+for (const e of added) {
+  const n = e.p.length / 2;
+  for (let t = 0; t < n; t++) {
+    emitted++;
+    if (t < 2 || t > n - 3) continue; // the joins are meant to touch
+    if (covered(e.p[2 * t], e.p[2 * t + 1], 0.75)) dup++;
+  }
+}
+console.log(`duplication check: ${dup} of ${emitted} new points land on existing road (${(dup / emitted * 100).toFixed(2)}%) — interior points only, joins excluded`);
 
 if (!process.argv.includes("--write")) { console.log("(dry run — pass --write to patch src/risRoads.js)"); process.exit(0); }
 

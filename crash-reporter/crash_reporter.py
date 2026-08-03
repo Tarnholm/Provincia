@@ -30,7 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 APP_NAME = "RIS Crash Reporter"
-APP_VERSION = "0.1.47"
+APP_VERSION = "0.1.48"
 CONFIG_FILENAME = "crash_reporter.ini"
 LOG_FILENAME = "crash_reporter.log"
 
@@ -1102,6 +1102,23 @@ def sample_game_memory(allowed_names: set[str]) -> tuple[int, int, int] | None:
 
 # ----------------------------- log tailing -----------------------------
 
+# v0.1.48: "Current Trait: <name> mismatch between attribute list and listed
+# effects" is CONFIRMED-INTENTIONAL noise (RIS team, 2026-08-03): several traits
+# deliberately carry zero-effect levels as part of their level scaling, and the
+# engine warning cannot be silenced in-game. The lines land exactly where a
+# human reads first — the "last line:" headline of a shutdown verdict (Grimel's
+# 08-01 crash report led with one, burying the real dump signal) and the
+# first-seen context under each assert. They are filtered from those spots,
+# counted, and reported once as ignored — never dropped silently.
+TRAIT_NOISE_RE = re.compile(
+    r"^Current Trait: .{0,120}mismatch between attribute list and listed effects\s*$")
+
+
+def is_known_noise_line(line: str) -> bool:
+    """True for log lines the RIS team has ruled intentional and unfixable."""
+    return bool(TRAIT_NOISE_RE.match(line.strip()))
+
+
 class LogTail:
     """Append-only follower. Re-opens the file if it shrinks (truncation /
     log rotation between sessions). All reads are utf-8 with replacement so a
@@ -1157,6 +1174,9 @@ class LogTail:
         # message_log) — cheap progress context for the report ("crashed ~turn
         # N of the session", distinguishes a 3-hour marathon from a 3-hour idle).
         self.turn_count = 0
+        # v0.1.48: confirmed-intentional noise lines seen (trait-display
+        # mismatch warnings). Counted so the report can say they were ignored.
+        self.noise_count = 0
 
     @property
     def assert_count(self) -> int:
@@ -1185,6 +1205,13 @@ class LogTail:
         text = chunk.decode("utf-8", errors="replace")
         lines = text.splitlines()
         for ln in lines:
+            # Confirmed-intentional noise: count it and keep it OUT of the
+            # context buffer, so assert first-seen context, settlement-level
+            # context and asset-fail context all stay readable. The raw line
+            # still ships in the attached log tails — nothing is lost.
+            if is_known_noise_line(ln):
+                self.noise_count += 1
+                continue
             self.buffer.append(ln)
             # RR's log files open with banners like
             #   ==== error log start, build date: Jan 17 2022 ===
@@ -1409,6 +1436,10 @@ def classify_shutdown(message_log: Path, duration_min: float) -> tuple[str, str 
     # Read a wide window so a hang's pre-loop trigger line is still in view even
     # after a long spam; the clean-marker scan is restricted to the last lines.
     tail = last_nonblank_lines(message_log, 120)
+    # Confirmed-intentional noise must never become the "last line:" headline —
+    # a crash verdict that leads with a trait-display warning reads like a trait
+    # bug and buries the real signal (it did, on Grimel's 08-01 report).
+    tail = [l for l in tail if not is_known_noise_line(l)]
     if not tail:
         return "clean", None
     last = tail[-1]
@@ -2253,6 +2284,19 @@ def main():
     if level_ctx:
         crash_signals.append(f"'Uknown settlement level' context: {level_ctx[0][:240]}")
 
+    # v0.1.48: confirmed-intentional noise is EXCLUDED from headlines and
+    # contexts above, and accounted for here so the exclusion is visible —
+    # a filter that hides lines without saying so would be indistinguishable
+    # from a filter that lost them.
+    _noise = getattr(sys_tail, "noise_count", 0) + getattr(msg_tail, "noise_count", 0)
+    if _noise:
+        crash_signals.append(
+            "trait-display noise ×%d ('Current Trait: … mismatch between attribute list "
+            "and listed effects') — confirmed intentional by the RIS team (zero-effect "
+            "trait levels are deliberate level scaling; the engine warning cannot be "
+            "silenced in-game). Ignored for triage; the raw lines remain in the attached "
+            "log tails." % _noise)
+
     # Asset/model load failures — names the missing model behind a battle-load CTD.
     asset_fails = Counter(); asset_fails.update(sys_tail.asset_fails); asset_fails.update(msg_tail.asset_fails)
     asset_fail_ctx = {**sys_tail.asset_fail_ctx, **msg_tail.asset_fail_ctx}
@@ -3065,6 +3109,25 @@ def selftest() -> int:
             ok = False
     except Exception as _exc:
         print("  %-26s FAIL: %r" % ("4TPY season assert", _exc))
+        ok = False
+
+    # The trait-display noise filter must match the real telemetry line and must
+    # NOT match anything else "Current Trait"-shaped — it removes lines from
+    # headlines and contexts, so a too-broad matcher would hide real signal.
+    try:
+        _hit = is_known_noise_line(
+            "Current Trait: Autumn mismatch between attribute list and listed effects")
+        _hit2 = is_known_noise_line(
+            "  Current Trait:  In Shape mismatch between attribute list and listed effects ")
+        _miss = is_known_noise_line("Current Trait: Autumn gained by Marcus")
+        _miss2 = is_known_noise_line("some other mismatch between attribute list and listed effects")
+        _ok = _hit and _hit2 and not _miss and not _miss2
+        print("  %-26s %-5s %s" % ("trait-noise filter", str(_ok),
+                                   "ok" if _ok else "FAIL (matcher too broad or not matching)"))
+        if not _ok:
+            ok = False
+    except Exception as _exc:
+        print("  %-26s FAIL: %r" % ("trait-noise filter", _exc))
         ok = False
 
     # Grimel's three consecutive crash reports each showed "Failed x14" as one of only
