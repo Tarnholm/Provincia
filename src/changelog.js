@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1469",
+    date: "2026-08-03",
+    items: [
+      { type: "feature", text: "**Dev All-built what-if: a roads-only stage, and a coverage validator that names the provinces trade can't reach.** The cycle on the active Trade Lanes button is now ROADS (every province's roads built, ports stay real) → all ports level 3 → 2 → 1 → off, so the road network can be tested on its own. Each stage prints an [all-built] coverage report to the console: provinces with no road piece even in the all-roads world, and — the interesting list — provinces that are coastal and faction-owned yet get no sea lane even with every port built, each with the exact reason (all their landing frontiers are land neighbours, or point at rebel regions). On RIS that fixable list is 12 provinces (Cantabria, Caledonia, Adramitia…); the expected exclusions (landlocked, rebel-owned) collapse to summary counts so they don't bury the signal." },
+    ],
+  },
+
+  {
     version: "0.9.1468",
     date: "2026-08-03",
     items: [

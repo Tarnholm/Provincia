@@ -21,7 +21,7 @@ export default function DevToolsHelp({ open, onToggle }) {
             <li><b>Right-click</b> a character → info + edit name / age / rank / traits / ancillaries</li>
             <li>Right-click a building card → edit; <b>+ Add building</b> to place chains</li>
             <li><b>Ctrl+Z</b> → undo the last staged edit</li>
-            <li><b>Click the active Trade Lanes mode</b> → what-if: all roads + ports built; cycles port level 3→2→1→off (level = sea lanes per port)</li>
+            <li><b>Click the active Trade Lanes mode</b> → what-if cycle: ROADS (all roads built) → +ports lvl 3→2→1 → off (level = sea lanes per port); console logs an [all-built] coverage report naming provinces with no roads / no sea lane and why</li>
             <li><b>Double-click</b> the version label → watch + auto-install updates</li>
             <li>Edits stage in <b>Pending changes</b>; <b>Restore last backup</b> rolls back a Save</li>
           </ul>

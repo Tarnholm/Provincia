@@ -679,8 +679,8 @@ ipcMain.handle("get-trade-lanes", async (_event, modDataDir) => {
 ipcMain.handle("get-trade-lanes-dev", async (_event, modDataDir, portLevel) => {
   try {
     if (!modDataDir) return { error: "modDataDir required" };
-    const lanes = require("./incomeModel.js").devAllBuiltSeaLanes(modDataDir, portLevel);
-    return { lanes, portLevel: Math.max(1, Math.min(3, +portLevel || 3)) };
+    const r = require("./incomeModel.js").devAllBuiltSeaLanes(modDataDir, portLevel);
+    return { lanes: r.lanes, noLane: r.noLane, portLevel: Math.max(1, Math.min(3, +portLevel || 3)) };
   } catch (e) {
     return { error: e && e.message ? e.message : "dev trade lanes failed" };
   }

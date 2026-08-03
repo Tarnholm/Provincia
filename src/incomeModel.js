@@ -1880,11 +1880,15 @@ function seaLanesByRegion(modDataDir) {
 // landing-frontier partners, land neighbours skipped, war excluded, rights
 // gate — with only the BUILDINGS hypothetical: pool = every settled region
 // (no built-port requirement on either side), slots = `level` everywhere.
-// Diplomacy and populations stay campaign-start. Returns undirected pairs
-// for the map overlay; not cached here — every input above is cached.
+// Diplomacy and populations stay campaign-start. Returns { lanes, noLane }:
+// undirected pairs for the map overlay, plus a COVERAGE report — every settled
+// region that would have NO sea lane even with all ports built, with the
+// reason (landlocked / rebel-owned / every sea partner excluded and why).
+// Not cached here — every input above is cached.
 function devAllBuiltSeaLanes(modDataDir, level) {
   const lvl = Math.max(1, Math.min(3, +level || 3));
   const out = [];
+  const diag = {}; // region -> why it can pick no sea partner
   try {
     const { ownerOfRegion, allies, wars, popOfRegion } = tradePartnerCtx(modDataDir);
     const lfg = landingFrontierGraph(modDataDir);
@@ -1897,17 +1901,29 @@ function devAllBuiltSeaLanes(modDataDir, level) {
     const seen = new Set();
     for (const A of Object.keys(ownerOfRegion)) {
       const F = ownerOfRegion[A];
-      if (!F || F === "slave") continue;
+      if (!F) continue;
+      if (F === "slave") { diag[A] = { reason: "rebel-owned — the slave faction cannot sea-trade", expected: true }; continue; }
+      const frs = lfg[A] || [];
+      if (!frs.length) { diag[A] = { reason: "no landing frontiers in map.rwm — landlocked (no sea lane possible)", expected: true }; continue; }
       const skip = new Set(); for (const e of (fg[A] || [])) skip.add(e.region);
+      let nLand = 0, nWar = 0, nBad = 0;
       const cands = [];
-      for (const fr of (lfg[A] || [])) {
+      for (const fr of frs) {
         const r = fr.region;
-        if (r === A || !(fr.dist > 0) || skip.has(r)) continue;
+        if (r === A || !(fr.dist > 0)) { nBad++; continue; }
+        if (skip.has(r)) { nLand++; continue; }
         const o = ownerOfRegion[r];
-        if (!o || o === "slave") continue;
-        if (o !== F && wars[F] && wars[F].has(o)) continue;
+        if (!o || o === "slave") { nBad++; continue; }
+        if (o !== F && wars[F] && wars[F].has(o)) { nWar++; continue; }
         const gate = rights(F, o) ? 1.0 : 0.5;
         cands.push({ r, val: (0.1 * fsq((popOfRegion[A] || 1500) + (popOfRegion[r] || 1500)) + cargo(A, r) + 1) * gate / fr.dist });
+      }
+      if (!cands.length) {
+        // The FIXABLE class: a coastal, faction-owned province the engine
+        // still can't sea-trade from — usually every landing frontier is a
+        // land neighbour (map.rwm topology) or points at rebel regions.
+        diag[A] = { reason: `all ${frs.length} sea partners excluded — ${nLand} land-adjacent (engine skips land neighbours), ${nWar} at war, ${nBad} rebel/invalid`, expected: false };
+        continue;
       }
       cands.sort((x, y) => y.val - x.val);
       for (const c of cands.slice(0, lvl)) {
@@ -1915,8 +1931,13 @@ function devAllBuiltSeaLanes(modDataDir, level) {
         if (!seen.has(k)) { seen.add(k); out.push({ from: A, to: c.r, flow: 10, goods: [], value: 0 }); }
       }
     }
+    // A region diagnosed above can still RECEIVE a lane (a partner picked it);
+    // only report regions no lane touches at all.
+    const covered = new Set(); for (const l of out) { covered.add(l.from); covered.add(l.to); }
+    var noLane = Object.keys(diag).filter((r) => !covered.has(r)).sort()
+      .map((r) => ({ region: r, reason: diag[r].reason, expected: diag[r].expected }));
   } catch { /* dev what-if is best-effort */ }
-  return out;
+  return { lanes: out, noLane: noLane || [] };
 }
 
 // ★ DEPTH-WEIGHTED WHITE-PORT SEA DISTANCE (live-cracked 2026-06-18 forced-corridor experiment).

@@ -1971,7 +1971,8 @@ function App() {
   // the colorize effect that lists it as a dep, to avoid a render-phase TDZ.
   const [battleLedgerSnap, setBattleLedgerSnap] = useState(null);
   const [tradeLanes, setTradeLanes] = useState(null); // [{from,to,flow}] sea lanes for the Trade Lanes mode (early — colorize deps)
-  const [devAllBuiltLevel, setDevAllBuiltLevel] = useState(0); // DEV what-if (Trade Lanes): 0=off, 1-3 = every settlement treated as having roads + a port chain at this level (1 port / 2 shipwright / 3 dockyard — level = sea-lane export slots)
+  const [devAllRoads, setDevAllRoads] = useState(false); // DEV what-if stage 1 (Trade Lanes): every province's roads treated as built (ports stay campaign-start unless devAllBuiltLevel > 0)
+  const [devAllBuiltLevel, setDevAllBuiltLevel] = useState(0); // DEV what-if stage 2 (Trade Lanes): 0=off, 1-3 = every settlement ALSO gets a port chain at this level (1 port / 2 shipwright / 3 dockyard — level = sea-lane export slots)
   const [devAllLanes, setDevAllLanes] = useState(null); // [{from,to,flow}] the what-if sea-lane set for devAllBuiltLevel (get-trade-lanes-dev)
   const [roadRegions, setRoadRegions] = useState(null); // Set of region names whose settlement has roads (land trade only draws between these)
   const [portRegions, setPortRegions] = useState(null); // Set of region names whose settlement has a PORT building (gets a settlement→port road even with no roads built)
@@ -10332,6 +10333,25 @@ function App() {
     window.electronAPI?.getTradeLanesDev?.(modDataDir, devAllBuiltLevel).then((r) => {
       if (!gone && r && r.lanes) {
         console.log(`[sea-lanes] DEV all-built (port lvl ${devAllBuiltLevel}): ${r.lanes.length} what-if sea links`);
+        // COVERAGE VALIDATOR (v0.9.1469, user request): under maximal port
+        // buildings, any settled province with NO sea lane at all is a real
+        // data/topology gap — name each one with the reason so it can be fixed
+        // in the mod (or accepted, e.g. genuinely landlocked provinces).
+        // Fixable gaps (coastal + faction-owned yet no lane possible) get named
+        // individually; expected exclusions (landlocked, rebel-owned) are the
+        // vast majority and collapse to counts so the signal isn't buried.
+        const fixable = (r.noLane || []).filter((d) => !d.expected);
+        const expected = (r.noLane || []).filter((d) => d.expected);
+        if (fixable.length) {
+          console.log(`[all-built] SEA COVERAGE: ${fixable.length} provinces are coastal + faction-owned yet get NO sea lane even with every port built — likely map.rwm landing-frontier gaps:`);
+          for (const d of fixable) console.log(`  ✗ ${d.region}: ${d.reason}`);
+        } else {
+          console.log("[all-built] SEA COVERAGE: every coastal faction-owned province is touched by at least one sea lane");
+        }
+        if (expected.length) {
+          const nLandlocked = expected.filter((d) => /landlocked/.test(d.reason)).length;
+          console.log(`[all-built] SEA COVERAGE (expected, no action): ${nLandlocked} landlocked + ${expected.length - nLandlocked} rebel-owned provinces without lanes`);
+        }
         setDevAllLanes(r.lanes);
       }
     }).catch(() => {});
@@ -10597,15 +10617,17 @@ function App() {
     let portRegionsEff = roadRegionsLive
       ? new Set([...(portRegions || []), ...roadRegionsLive.ports])
       : portRegions;
-    // DEV "All built" (2026-08-03): every region is treated as having roads
-    // and a port — the whole captured network draws unclipped and every
-    // harbour road appears. roadSig hashes the set contents, so this gets its
-    // own cache entry and reverts cleanly when toggled off.
-    if (devMode && devAllBuiltLevel > 0) {
+    // DEV "All built" (2026-08-03; v0.9.1469 two-stage): stage 1 (devAllRoads)
+    // treats every province's ROADS as built — whole captured network draws
+    // unclipped, ports stay campaign-start so the road what-if is isolated.
+    // Stage 2 (devAllBuiltLevel > 0) also treats every port as built. roadSig
+    // hashes the set contents, so each stage gets its own cache entry and
+    // reverts cleanly when toggled off.
+    if (devMode && devAllRoads) {
       const all = new Set();
       for (const rd of Object.values(regions || {})) if (rd && rd.region) all.add(String(rd.region).toLowerCase());
       roadRegionsEff = all;
-      portRegionsEff = all;
+      if (devAllBuiltLevel > 0) portRegionsEff = all;
     }
     // EXACT ROADS (2026-07-21): if the loaded map matches a captured network
     // (src/risRoads.js CAPTURED_MAPS — the game engine's own road geometry read
@@ -10677,6 +10699,32 @@ function App() {
         emit(seg);
       });
       console.log(`[roads] exact captured network "${capMap.name}": ${Object.keys(out).length} roads`);
+      // COVERAGE VALIDATOR (v0.9.1469, user request): with the All-built
+      // what-if on, every province SHOULD show road pieces — any province with
+      // none has no captured road in the game's own all-roads-built network
+      // (genuinely roadless there: isolated island/desert, or a capture gap).
+      if (devMode && devAllRoads) {
+        const present = new Set();
+        const addCol = (c) => { const rd2 = c && regions[c]; if (rd2 && rd2.region) present.add(String(rd2.region).toLowerCase()); };
+        for (const rd of all) {
+          addCol(rd.a); addCol(rd.b);
+          for (const run of (rd.s || [])) addCol(run[1]);
+        }
+        const missing = [];
+        const seenNm = new Set();
+        for (const rd2 of Object.values(regions || {})) {
+          if (!rd2 || !rd2.region) continue;
+          const nm = String(rd2.region).toLowerCase();
+          if (seenNm.has(nm)) continue; seenNm.add(nm);
+          if (!present.has(nm)) missing.push(rd2.region);
+        }
+        if (missing.length) {
+          console.log(`[all-built] ROAD COVERAGE: ${missing.length}/${seenNm.size} provinces have NO road piece even with all roads built (no captured road in the game's own network — isolated/roadless or a capture gap):`);
+          for (const nm of missing.sort()) console.log(`  ✗ ${nm}`);
+        } else {
+          console.log(`[all-built] ROAD COVERAGE: all ${seenNm.size} provinces contain road pieces`);
+        }
+      }
       _laneMemCache[roadSig] = { roadPaths: out, precurved: true };
       setRoadsPrecurved(true);
       setRoadPaths(out);
@@ -10849,7 +10897,7 @@ function App() {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, portPixels, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, roadRegions, portRegions, roadRegionsLive, modDataDir, devMode, devAllBuiltLevel]);
+  }, [colorMode, regionAdjacency, tradeLaneAnchors, portByRegion, portPixels, offscreen, regions, imgSize, groundTypesPixels, groundTypesSize, roadRegions, portRegions, roadRegionsLive, modDataDir, devMode, devAllRoads, devAllBuiltLevel]);
 
   // Combined Path2D for all roads (uniform style) → one stroke per frame, so
   // thousands of road segments don't tank the pan framerate.
@@ -14724,24 +14772,33 @@ function App() {
       // 0.9.827: Hidden Res. and AOR are now SEPARATE single-select modes
       // (previously one tri-state button). They go through the generic path.
       const active = colorMode === m.key;
-      // DEV "All built" (v0.9.1468, user request: no separate button): in dev
-      // mode the ACTIVE Trade Lanes button stays clickable and cycles the
-      // what-if port level off → 3 (dockyard) → 2 → 1 → off. Level = sea-lane
-      // export slots per port; all roads/harbour roads draw unclipped while on.
+      // DEV "All built" (v0.9.1468, user request: no separate button; v0.9.1469
+      // two-stage): in dev mode the ACTIVE Trade Lanes button stays clickable
+      // and cycles the what-if — off → ROADS (all roads built, real ports) →
+      // ALL·3 → ALL·2 → ALL·1 → off. Port level = sea-lane export slots per
+      // port. Each stage logs an [all-built] coverage report to the console
+      // naming provinces with no road piece / no possible sea lane, with why.
       if (m.key === "tradelanes" && devMode) {
         const lvl = devAllBuiltLevel;
+        const cycle = () => {
+          if (!devAllRoads) { setDevAllRoads(true); setDevAllBuiltLevel(0); }
+          else if (devAllBuiltLevel === 0) setDevAllBuiltLevel(3);
+          else if (devAllBuiltLevel > 1) setDevAllBuiltLevel(devAllBuiltLevel - 1);
+          else { setDevAllRoads(false); setDevAllBuiltLevel(0); }
+        };
+        const stageTip = !devAllRoads
+          ? "Click (dev): what-if cycle — ROADS (all roads built, real ports) → ports lvl 3 → 2 → 1 → off. Coverage report in console ([all-built])."
+          : lvl === 0
+            ? "All ROADS built (ports campaign-start). Click to also build every port at level 3 (dockyard — 3 sea lanes each)."
+            : `All roads + ports built at level ${lvl} (${["", "port — 1 sea lane each", "shipwright — 2 sea lanes each", "dockyard — 3 sea lanes each"][lvl]}). Click for ${lvl > 1 ? "port level " + (lvl - 1) : "off"}.`;
         return (
           <button key={m.key}
-            onClick={() => active ? setDevAllBuiltLevel((l) => (l === 0 ? 3 : l - 1)) : setColorMode(m.key)}
+            onClick={() => active ? cycle() : setColorMode(m.key)}
             className={"map-mode-btn" + (active ? " map-mode-btn--active" : "")}
-            title={!active
-              ? "Trade Lanes. Once active, click again (dev): what-if with every settlement's roads + port built — cycles port level 3 (dockyard) → 2 → 1 → off; level = sea lanes per port."
-              : lvl > 0
-                ? `All built ON at port level ${lvl} (${["", "port — 1 sea lane each", "shipwright — 2 sea lanes each", "dockyard — 3 sea lanes each"][lvl]}). Click for ${lvl > 1 ? "level " + (lvl - 1) : "off"}.`
-                : "Click (dev): what-if with every settlement's roads + port built — cycles port level 3 (dockyard) → 2 → 1 → off."}
+            title={!active ? "Trade Lanes. Once active, click again (dev): all-built what-if — ROADS → ports 3 → 2 → 1 → off." : stageTip}
             style={{ ...btnStyle(active), minWidth: 0, position: "relative" }}>
-            <MapBtnBadge k={m.badge} />{m.label}{active && lvl > 0 && (
-              <span style={{ marginLeft: 4, fontWeight: 700, color: "#1a1400", background: "linear-gradient(180deg, #6de08a 0%, #3fae62 100%)", borderRadius: 4, padding: "0 5px" }}>ALL·{lvl}</span>
+            <MapBtnBadge k={m.badge} />{m.label}{active && devAllRoads && (
+              <span style={{ marginLeft: 4, fontWeight: 700, color: "#1a1400", background: "linear-gradient(180deg, #6de08a 0%, #3fae62 100%)", borderRadius: 4, padding: "0 5px" }}>{lvl > 0 ? `ALL·${lvl}` : "ROADS"}</span>
             )}
           </button>
         );
