@@ -871,7 +871,7 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
     // distance isn't file-recoverable, but corruption is deterministic per files).
     const nCorr = corr && typeof corr === "object" ? Object.keys(corr).length : 0;
     if (nCorr) _writeLog(`[turn1-budget] ${faction}: corruption calibration applied for ${nCorr} towns`);
-    const budget = im.computeTurn1Budget(modDataDir, faction, bracketByCity,
+    const budgetOpts =
       { ...(opts && opts.govEffectByCity ? { govEffectByCity: opts.govEffectByCity } : {}),
         ...(opts && opts.popByCity ? { popByCity: opts.popByCity } : {}),
         // FIX 2026-07-08: forward the save's real bodyguard sizes so army upkeep is save-aware
@@ -881,8 +881,28 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
         ...(opts && opts.cultPenByCity ? { cultPenByCity: opts.cultPenByCity } : {}),
         ...(nTaxH ? { taxHByCity: taxH } : {}),
         ...(nCorr ? { corrByCity: corr } : {}),
-        ...(asAI ? { asAI: true, isPlayer: false } : (humanDifficulty ? { humanDifficulty } : {})) });
+        ...(asAI ? { asAI: true, isPlayer: false } : (humanDifficulty ? { humanDifficulty } : {})) };
+    const budget = im.computeTurn1Budget(modDataDir, faction, bracketByCity, budgetOpts);
     if (budget && !budget.error) budget.asAI = !!asAI;
+    // FIRST-LOOK pass (2026-08-04, mod-team request): when the campaign opens the
+    // empire_sizeN events (script-fired from settlement count: 1 / 2-4 / 5-8 / 9-15 /
+    // 16-29 / 30-50 / 51-100 / 101-200 / 201-400 / 401+) have not fired yet, so the
+    // player's FIRST finance numbers have no sizeN EDB line active. Second model pass
+    // with the size atoms off; tribute skipped (it starts turn 2 anyway). Additive —
+    // a failure here never fails the main budget.
+    if (budget && !budget.error && budget.totals) {
+      try {
+        const fl = im.computeTurn1Budget(modDataDir, faction, bracketByCity, { ...budgetOpts, noSizeEvents: true, _noTribute: true });
+        if (fl && !fl.error && fl.totals) {
+          budget.totals.incomeFirstLook = fl.totals.income;
+          budget.totals.taxesFirstLook = fl.totals.taxes;
+          budget.totals.tradeFirstLook = fl.totals.trade;
+          budget.totals.corruptionFirstLook = fl.totals.corruption;
+          budget.totals.armyBudgetFirstLook = fl.totals.armyBudget;
+          budget.totals.netFirstLook = fl.totals.net;
+        }
+      } catch (e) { _writeLog(`[turn1-budget] ${faction}: first-look (no-size-events) pass failed: ${e && e.message}`); }
+    }
     if (budget && !budget.error) {
       for (const s of budget.settlements) {
         const g = growthBySettlement[s.settlement] || growthBySettlement[s.region];

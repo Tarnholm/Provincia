@@ -162,7 +162,11 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
       capital: s.capital, faction: want, factionTokens,
       homeland: [...(region.hidden || [])].some(h => h.startsWith("homeland")),
       sizeTier: 1, resources: resourcesByRegion[s.region] || new Set(),
-      isPlayer, empireTier: tier,
+      // noSizeEvents (2026-08-04): model the FIRST-LOOK state — the empire_sizeN major
+      // events are script-fired and have NOT happened when the campaign first opens, so
+      // no sizeN EDB atom is true yet (empireTier 0 matches none; `not sizeN` all pass).
+      // F.tier stays the real settlement-count tier — only the event atoms turn off.
+      isPlayer, empireTier: (opts && opts.noSizeEvents) ? 0 : tier,
     };
     // Split each % sum into BASE / SIZE-gated / WINTER-gated components so the crack
     // driver can test inclusion variants (the growth crack proved disabling_in_winter
@@ -2233,7 +2237,11 @@ function parseProtectorates(modDataDir) {
 // income, wages, corruption, armyBudget } } — armyBudget = income − wages − corruption
 // = the sustainable per-turn upkeep budget for armies (the Army Setup unit budget).
 function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
-  const F = computeIncomeFeatures(modDataDir, faction, { isPlayer: !(opts && opts.isPlayer === false) });
+  // opts.noSizeEvents → first-look economy (empire_sizeN events not fired yet; see
+  // computeIncomeFeatures). Partner-side trade rates (tradePctByRegionAll) stay at
+  // steady-state — each partner's own size events fire on its own schedule, and the
+  // cross-faction cache is one map for all callers; own-side tax+trade carry the flag.
+  const F = computeIncomeFeatures(modDataDir, faction, { isPlayer: !(opts && opts.isPlayer === false), noSizeEvents: !!(opts && opts.noSizeEvents) });
   if (F.error) return F;
   const coords = regionCoords(modDataDir);
   const br = bracketByCity || {};

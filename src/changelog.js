@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1479",
+    date: "2026-08-04",
+    items: [
+      { type: "feature", text: "**The Balance overview now shows each faction's economy in both of its real states: the first look, and after the empire-size tax lands.** When a campaign opens, the empire-size events (Empire Tax Level 1–10, fired by the campaign script from settlement count: 0–1 / 2–4 / 5–8 / 9–15 / 16–29 / 30–50 / 51–100 / 101–200 / 201–400 / 401+) have not fired yet — so the finance scroll you see before clicking anything is a different number from the one you govern with a turn later. The overview table now carries a **Size** column (the faction's tax level, with the brackets in the tooltip) and two income columns: **Income 1st look** and **@ size tax**, with the per-faction difference marked ▼/▲ — Carthage, for instance, opens at 55,831 and settles at 50,445 once its Size-6 penalties land. Everything downstream (wages, corruption, net, verdicts) budgets with the after-tax state, which is the economy the faction actually lives on. The single-faction budget header and the ⧉ copy report carry both numbers too." },
+      { type: "fix", text: "**The Greens, the Blues and the Senate are finally selectable — all four Roman factions are in the Army Setup picker.** v0.9.1465 taught the analysis pipeline to read them through the RIS_Four_Romans submod overlay, but the picker itself was still filtering roman_rebels_1, roman_rebels_2 and roman_senate out alongside the rebel pseudo-factions, so the fix was unreachable from the UI. With the submod active they now analyze like any other faction; on base RIS (where they are dead-until-resurrected civil-war stubs with no settlements) their overview rows read **emergent** instead of pretending a zero economy is a balance verdict." },
+    ],
+  },
+
+  {
     version: "0.9.1478",
     date: "2026-08-03",
     items: [

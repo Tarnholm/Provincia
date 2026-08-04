@@ -52,8 +52,11 @@ export default function ArmySetupModal({
         const MULT = (d && d.taxBrackets) || { low: 0.80, normal: 1.00, high: 1.20, very_high: 1.50 };
         const close = () => setShowArmySetup(false);
         // Faction list for the picker = the CURRENT campaign's roster (descr_strat
-        // faction lines), minus rebel/slave pseudo-factions.
-        const SKIP_FAC = new Set(["slave", "rebels", "roman_rebels_1", "roman_rebels_2", "roman_senate"]);
+        // faction lines), minus rebel/slave pseudo-factions. The Greens/Blues/Senate
+        // (roman_rebels_1/2, roman_senate) are dead_until_resurrected civil-war factions
+        // with zero start settlements — shown per the mod team (2026-08-04), their rows
+        // read as "emergent" instead of a broken zero economy.
+        const SKIP_FAC = new Set(["slave", "rebels"]);
         const facQ = armyFacSearch.trim().toLowerCase();
         const facList = (armySetupFactions || []).filter(x => x && !SKIP_FAC.has(x))
           .filter(x => !facQ || x.replace(/_/g, " ").toLowerCase().includes(facQ) || ((factionDisplayNames && factionDisplayNames[x]) || "").toLowerCase().includes(facQ));
@@ -151,7 +154,7 @@ export default function ArmySetupModal({
               if (perSave.length) {
                 const keys = new Set(); perSave.forEach(t => Object.keys(t.totals).forEach(k => { if (typeof t.totals[k] === "number") keys.add(k); }));
                 const detTotals = {}; for (const k of keys) { const dv = detOf(perSave.map(t => t.totals[k])); if (dv !== undefined) detTotals[k] = dv; }
-                const row = { fac: ff, ...detTotals, towns: perSave[0].settlements?.length || 0, nSaves: perSave.length };
+                const row = { fac: ff, ...detTotals, towns: perSave[0].settlements?.length || 0, tier: perSave[0].tier, nSaves: perSave.length };
                 done.push(row);
                 setArmyOverview(prev => ({ ...(prev || {}), busy: true, rows: [...((prev && prev.rows) || []), row] }));
               }
@@ -211,14 +214,15 @@ export default function ArmySetupModal({
                         const name = f2 => ((factionDisplayNames && factionDisplayNames[f2]) || f2).replace(/_/g, " ");
                         const md = [
                           "# RIS balance overview — turn-1 economy @ optimal taxes vs starting army",
-                          "_" + new Date().toISOString().slice(0, 10) + " · Provincia mod-file model (no save). Net = army budget − starting-army upkeep ± protectorate tribute (50% of client profit, from turn 2). ♛ suzerain · ⚑ protectorate._",
+                          "_" + new Date().toISOString().slice(0, 10) + " · Provincia mod-file model (no save). Income 1st look = finance scroll before the empire_sizeN event fires; @ size tax = after (Size = tax level from settlement count: 0-1 / 2-4 / 5-8 / 9-15 / 16-29 / 30-50 / 51-100 / 101-200 / 201-400 / 401+). Net = army budget − starting-army upkeep ± protectorate tribute (50% of client profit, from turn 2). ♛ suzerain · ⚑ protectorate._",
                           "",
-                          "| Faction | Towns | Income | Wages | Corruption | Army budget | Army upkeep | Net/turn | Verdict |",
-                          "|---|---|---|---|---|---|---|---|---|",
+                          "| Faction | Towns | Size | Income 1st look | @ size tax | Wages | Corruption | Army budget | Army upkeep | Net/turn | Verdict |",
+                          "|---|---|---|---|---|---|---|---|---|---|---|",
                           ...rows.map(r => {
                             const eff = r.netAfterTribute ?? r.net;
                             const marks = (r.nClients > 0 ? " ♛" : "") + (r.suzerain ? " ⚑" : "");
-                            return `| ${name(r.fac)}${marks} | ${r.towns} | ${r.income} | ${r.wages} | ${r.corruption} | ${r.armyBudget} | ${r.armyUpkeep ?? "—"} | ${eff ?? "—"} | ${eff == null ? "—" : eff >= 0 ? "OK (+" + eff + ")" : "**OVER by " + (-eff) + "**"} |`;
+                            const verdict = r.towns === 0 ? "_emergent (dead at start)_" : eff == null ? "—" : eff >= 0 ? "OK (+" + eff + ")" : "**OVER by " + (-eff) + "**";
+                            return `| ${name(r.fac)}${marks} | ${r.towns} | ${r.tier ?? "—"} | ${r.incomeFirstLook ?? "—"} | ${r.income} | ${r.wages} | ${r.corruption} | ${r.armyBudget} | ${r.armyUpkeep ?? "—"} | ${eff ?? "—"} | ${verdict} |`;
                           }),
                         ].join("\n");
                         navigator.clipboard?.writeText(md).then(() => pushToast("Balance report copied as markdown — paste into Discord/docs", "info", 4000)).catch(() => {});
@@ -260,7 +264,7 @@ export default function ArmySetupModal({
                     {armyOverview.error && <div style={{ color: "#e8a090", fontSize: "0.74rem", marginBottom: 4 }}>⚠ {String(armyOverview.error)}</div>}
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.74rem" }}>
                       <thead><tr style={{ color: "#8aa", textAlign: "left" }}>
-                        <th style={{ padding: "0 6px" }}>Faction</th><th>Towns</th><th>Income</th><th>Wages</th><th>Corr.</th><th>Army budget</th><th>Army upkeep</th><th>Net/turn</th><th title={armyOverview.prevAt ? `Change vs the previous overview run (${armyOverview.prevAt.slice(0, 16).replace("T", " ")}) — run, edit mod files, run again to see exactly which factions your changes moved.` : "Run the overview again after editing mod files to see per-faction changes here."}>Δ prev</th><th>Verdict</th>
+                        <th style={{ padding: "0 6px" }}>Faction</th><th>Towns</th><th title="Empire-size tax level from settlement count: 1 = 0-1 · 2 = 2-4 · 3 = 5-8 · 4 = 9-15 · 5 = 16-29 · 6 = 30-50 · 7 = 51-100 · 8 = 101-200 · 9 = 201-400 · 10 = 401+. The sizeN EDB lines (taxable_income_bonus / trade penalties) key on this.">Size</th><th title="Income at FIRST LOOK — the number on the finance scroll the moment the campaign opens, before the script fires the empire_sizeN event (no sizeN EDB line active yet).">Income 1st look</th><th title="Income after the empire-size tax event fires (the steady-state number the rest of this table budgets with).">@ size tax</th><th>Wages</th><th>Corr.</th><th>Army budget</th><th>Army upkeep</th><th>Net/turn</th><th title={armyOverview.prevAt ? `Change vs the previous overview run (${armyOverview.prevAt.slice(0, 16).replace("T", " ")}) — run, edit mod files, run again to see exactly which factions your changes moved.` : "Run the overview again after editing mod files to see per-faction changes here."}>Δ prev</th><th>Verdict</th>
                       </tr></thead>
                       <tbody>
                         {armyOverview.rows.slice().sort((a, b) => ((a.netAfterTribute ?? a.net) ?? 0) - ((b.netAfterTribute ?? b.net) ?? 0)).map((r, i) => {
@@ -272,12 +276,14 @@ export default function ArmySetupModal({
                               {r.suzerain && <span title={`Protectorate of ${r.suzerain}: pays half its profit as tribute every turn from turn 2 (≈${r.tributeOut} at the modeled profit${r.tributeOut === 0 ? " — currently modeled at no profit, so 0" : ""}). Net shown after tribute.`} style={{ color: "#d3a7e8", marginLeft: 4, cursor: "help" }}>⚑</span>}
                             </td>
                             <td style={{ color: "#9aa" }}>{r.towns}</td>
-                            <td style={{ color: "#9aa" }}>{r.income}</td>
+                            <td style={{ color: "#c9b8e8" }} title={`Empire Tax Level ${r.tier ?? "?"} from ${r.towns} settlement${r.towns === 1 ? "" : "s"} (brackets: 0-1 / 2-4 / 5-8 / 9-15 / 16-29 / 30-50 / 51-100 / 101-200 / 201-400 / 401+).`}>{r.tier ?? "—"}</td>
+                            <td style={{ color: "#9ab8c9" }} title="Finance scroll at the moment the campaign opens — empire_sizeN event not fired yet.">{r.incomeFirstLook ?? "—"}</td>
+                            <td style={{ color: "#9aa" }} title={typeof r.incomeFirstLook === "number" && typeof r.income === "number" ? `Empire-size tax effect: ${r.income - r.incomeFirstLook >= 0 ? "+" : ""}${r.income - r.incomeFirstLook}/turn vs first look.` : undefined}>{r.income}{typeof r.incomeFirstLook === "number" && typeof r.income === "number" && r.income !== r.incomeFirstLook ? <span style={{ color: r.income < r.incomeFirstLook ? "#e8806a" : "#7fd17f", fontSize: "0.85em", marginLeft: 3 }}>{r.income < r.incomeFirstLook ? "▼" : "▲"}{Math.abs(r.income - r.incomeFirstLook)}</span> : null}</td>
                             <td style={{ color: "#9aa" }}>{r.wages}</td>
                             <td style={{ color: "#9aa" }}>{r.corruption}</td>
                             <td style={{ color: "#b8d38f" }}>{r.armyBudget}</td>
                             <td style={{ color: "#cba" }}>{r.armyUpkeep ?? "—"}</td>
-                            <td style={{ color: eff == null ? "#778" : eff >= 0 ? "#7fd17f" : "#e8806a", fontWeight: 600 }}>{eff ?? "—"}</td>
+                            <td style={{ color: eff == null ? "#778" : eff >= 0 ? "#7fd17f" : "#e8806a", fontWeight: 600 }} title={typeof r.netFirstLook === "number" ? `Net at first look (before the empire-size event): ${r.netFirstLook}.` : undefined}>{eff ?? "—"}</td>
                             <td>{(() => {
                               const pv = armyOverview.prevByFac && armyOverview.prevByFac[r.fac];
                               const prevEff = pv ? (pv.netAfterTribute ?? pv.net) : null;
@@ -286,14 +292,16 @@ export default function ArmySetupModal({
                               if (d === 0) return <span style={{ color: "#667" }}>=</span>;
                               return <span style={{ color: d > 0 ? "#7fd17f" : "#e8806a", fontWeight: 600 }} title={`Previous run: ${prevEff} → now ${eff}`}>{d > 0 ? "+" : ""}{d}</span>;
                             })()}</td>
-                            <td>{eff == null ? <span style={{ color: "#778" }}>—</span> : eff >= 0
+                            <td>{r.towns === 0
+                              ? <span style={{ color: "#a9a", fontStyle: "italic" }} title="Dead at campaign start (dead_until_resurrected) — emerges later (civil war); no starting economy to balance.">emergent</span>
+                              : eff == null ? <span style={{ color: "#778" }}>—</span> : eff >= 0
                               ? <span style={{ color: "#7fd17f" }}>OK · room +{eff}</span>
                               : <span style={{ color: "#e8806a", fontWeight: 700 }}>OVER by {-eff}</span>}</td>
                           </tr>
                         );})}
                       </tbody>
                     </table>
-                    <div style={{ marginTop: 4, fontSize: "0.66rem", color: "#8aa" }}>Income = mod-file model @ each faction's optimal tax plan. Army upkeep = EDU estimate of the seeded descr_strat army (engine charge can deviate ±15%). ♛ receives protectorate tribute · ⚑ pays tribute (50% of profit, from turn 2) — net is after tribute. Click a row for the faction's full plan + trim suggestions.</div>
+                    <div style={{ marginTop: 4, fontSize: "0.66rem", color: "#8aa" }}>Income = mod-file model @ each faction's optimal tax plan, in two states: <b>1st look</b> (campaign just opened, empire_sizeN event not fired) → <b>@ size tax</b> (event fired; Size column = tax level from settlement count). Wages/corruption/net budget with the @-size-tax state. Army upkeep = EDU estimate of the seeded descr_strat army (engine charge can deviate ±15%). ♛ receives protectorate tribute · ⚑ pays tribute (50% of profit, from turn 2) — net is after tribute. Click a row for the faction's full plan + trim suggestions.</div>
                   </div>
                 )}
                 {armySetupBusy && <div style={{ color: "#9aa", fontStyle: "italic" }}>Analyzing…</div>}
@@ -357,7 +365,7 @@ export default function ArmySetupModal({
                       <div style={{ marginBottom: 10, padding: "8px 10px", borderRadius: 6, background: "rgba(143,180,110,0.10)", border: "1px solid rgba(143,180,110,0.4)" }}>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
                           <strong style={{ color: "#b8d38f" }}>💰 Turn-1 budget @ optimal taxes</strong>
-                          <span style={{ fontSize: "0.7rem", color: "#8aa" }}>{armyT1Budget.saveAware ? "calibration save applied (save governor traits + pops) + mod-file income model" : "computed from the mod files alone (no save)"} · empire size {armyT1Budget.tier} · {armyT1Budget.settlements.length} settlements</span>
+                          <span style={{ fontSize: "0.7rem", color: "#8aa" }}>{armyT1Budget.saveAware ? "calibration save applied (save governor traits + pops) + mod-file income model" : "computed from the mod files alone (no save)"} · empire size {armyT1Budget.tier} · {armyT1Budget.settlements.length} settlements{typeof t.incomeFirstLook === "number" && t.incomeFirstLook !== t.income ? <span title={`First look = the finance scroll the moment the campaign opens, before the script fires the empire_size${armyT1Budget.tier} event; the size-tax state is what this panel budgets with.`} style={{ color: "#9ab8c9" }}> · income 1st look {t.incomeFirstLook} → @ size tax {t.income}</span> : null}</span>
                           {armyT1Budget.saveWarning && <span style={{ fontSize: "0.7rem", color: "#e0a050" }} title="A calibration save is attached but could not be used — the numbers below are the no-save model.">⚠ {armyT1Budget.saveWarning}</span>}
                           {(() => {
                             // MODEL-vs-LEDGER DIVERGENCE (user 2026-07-02: the Rome +5054-vs-+2699 report;
