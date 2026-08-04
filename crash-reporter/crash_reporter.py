@@ -30,7 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 APP_NAME = "RIS Crash Reporter"
-APP_VERSION = "0.1.48"
+APP_VERSION = "0.1.49"
 CONFIG_FILENAME = "crash_reporter.ini"
 LOG_FILENAME = "crash_reporter.log"
 
@@ -664,6 +664,26 @@ def detect_mod_name(log_dir: Path) -> str | None:
     Thin wrapper over detect_active_mods for the single-name report header."""
     mods = detect_active_mods(log_dir)
     return mods[0] if mods else None
+
+
+def header_mod_name(cfg_name: str, active_mods: list[str]) -> str:
+    """The mod identity shown in every report header.
+
+    v0.1.49: a submod session used to identify itself by the submod alone
+    ("Neep / 4 Romans RIS") — the MAIN mod's version, the first thing every
+    beta question needs, only appeared in the Mods-active line further down and
+    not at all in the one-line channel listing. Under a submod the base mod
+    loads LAST, so append the highest-load-order mod whenever it differs from
+    the primary. An explicit mod_name in the ini still wins, and a stack that
+    lists the same mod twice (seen in real telemetry) stays a single name.
+    """
+    if cfg_name:
+        return cfg_name
+    if not active_mods:
+        return "(unspecified mod)"
+    if len(active_mods) > 1 and active_mods[-1] != active_mods[0]:
+        return f"{active_mods[0]} on {active_mods[-1]}"
+    return active_mods[0]
 
 
 def find_unapproved_mods(active_mods: list[str], allowed_subs: list[str]) -> list[str]:
@@ -2465,7 +2485,7 @@ def main():
     # session's launch). active_mods lists EVERY enabled mod by load order so
     # the report flags stacked/conflicting setups, not just the primary mod.
     active_mods = detect_active_mods(log_dir)
-    mod_name = mod_name_cfg or (active_mods[0] if active_mods else None) or "(unspecified mod)"
+    mod_name = header_mod_name(mod_name_cfg, active_mods)
     # End-turns advanced this session — separates "crashed 5 turns in" from a
     # long idle sit, and lets telemetry correlate crash classes with turn churn.
     turns_note = f", {msg_tail.turn_count} end-turns" if msg_tail.turn_count else ""
@@ -3128,6 +3148,25 @@ def selftest() -> int:
             ok = False
     except Exception as _exc:
         print("  %-26s FAIL: %r" % ("trait-noise filter", _exc))
+        ok = False
+
+    # The header mod identity must carry the BASE mod's version under a submod
+    # stack (real stacks from telemetry), keep single-mod and ini-override
+    # behaviour unchanged, and not stutter on a duplicated stack entry.
+    try:
+        _ok = (header_mod_name("", ["4 Romans RIS", "[PublicBETA] RIS 0.7.0 v7.14"])
+               == "4 Romans RIS on [PublicBETA] RIS 0.7.0 v7.14"
+               and header_mod_name("", ["[PublicBETA] RIS 0.7.0 v7.14"]) == "[PublicBETA] RIS 0.7.0 v7.14"
+               and header_mod_name("", ["[PublicBETA] RIS 0.7.0 v7.13", "[PublicBETA] RIS 0.7.0 v7.13"])
+               == "[PublicBETA] RIS 0.7.0 v7.13"
+               and header_mod_name("My Custom Name", ["4 Romans RIS", "base"]) == "My Custom Name"
+               and header_mod_name("", []) == "(unspecified mod)")
+        print("  %-26s %-5s %s" % ("header mod identity", str(_ok),
+                                   "ok" if _ok else "FAIL (submod header lost the base mod version)"))
+        if not _ok:
+            ok = False
+    except Exception as _exc:
+        print("  %-26s FAIL: %r" % ("header mod identity", _exc))
         ok = False
 
     # Grimel's three consecutive crash reports each showed "Failed x14" as one of only

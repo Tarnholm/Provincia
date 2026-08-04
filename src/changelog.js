@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1480",
+    date: "2026-08-04",
+    items: [
+      { type: "improvement", text: "**Crash-reporter 0.1.49: report headers now name the base mod and its version under a submod stack.** A submod session used to identify itself by the submod alone (\"Neep / 4 Romans RIS\") — the main mod's version, the first thing every beta question needs, only appeared in the Mods-active line further down and never in the one-line channel listing. Headers now read \"4 Romans RIS on [PublicBETA] RIS 0.7.0 v7.14\": the base mod loads last under a submod, so the highest-load-order entry is appended whenever it differs from the primary. An explicit mod_name in the ini still wins, single-mod sessions are unchanged, and a stack that lists the same mod twice stays a single name." },
+    ],
+  },
+
+  {
     version: "0.9.1479",
     date: "2026-08-04",
     items: [
