@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1484",
+    date: "2026-08-06",
+    items: [
+      { type: "fix", text: "**Starting Populations no longer freezes the app when you toggle a filter.** The table was rendering all ~1,300 settlement rows — a controlled input each, roughly ten thousand DOM nodes — so clicking \"level≠pop only\" re-laid the whole thing out and pinned a core while the mouse went unresponsive; every keystroke in a population box paid the same cost. The table now renders only the rows actually in view (~40, with spacers keeping the scrollbar honest), so opening the panel, toggling filters, and typing are all instant — measured at roughly 10× faster to open and 10× faster per toggle even before browser layout costs, which is where the real freeze lived. The header now stays pinned while you scroll, and a regression test fails if the table ever goes back to rendering everything." },
+      { type: "improvement", text: "**The city-level ladder is now clickable — filter to just Villages, Towns, or any mix.** Each level chip (Village 0 · Town 1,500 · …) shows how many settlements are declared at that level and toggles a filter; click several to combine, ✕ clears. The \"level≠pop only\" checkbox now shows its live count too, so you can see at a glance how many settlements sit outside their declared band before diving in." },
+    ],
+  },
+
+  {
     version: "0.9.1483",
     date: "2026-08-06",
     items: [

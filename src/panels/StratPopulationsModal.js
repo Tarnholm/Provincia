@@ -5,7 +5,7 @@
 // .provincia-bak backup; a submod slot edits the submod's own descr_strat.
 // Presentational + self-contained state; styling matches ArmySetupModal's dark
 // inline-style aesthetic (no external CSS).
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 const fmt = (n) => (typeof n === "number" && isFinite(n) ? Math.round(n).toLocaleString() : "—");
@@ -20,7 +20,20 @@ export default function StratPopulationsModal({ modDataDir, factionDisplayNames,
   const [facFilter, setFacFilter] = useState("");
   const [sort, setSort] = useState(null);     // { key: 'settlement'|'level'|'pop', dir: 1|-1 } | null = file order
   const [mismatchOnly, setMismatchOnly] = useState(false);
+  const [levelFilter, setLevelFilter] = useState(() => new Set()); // clicked ladder chips → only these declared levels
   const [pct, setPct] = useState("");
+  // WINDOWED RENDERING (v0.9.1484, the "checkbox freezes the mouse" fix): ~1,300
+  // rows × a controlled input each is ~10k DOM nodes — every filter toggle and
+  // every keystroke re-laid-out the whole table for seconds. Only the rows in
+  // view (+overscan) hit the DOM; spacer rows keep the scrollbar honest.
+  const ROW_H = 27;
+  const scrollRef = useRef(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [viewH, setViewH] = useState(640);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) setViewH(el.clientHeight || 640);
+  }, [busy, data]);
 
   const load = async () => {
     if (!modDataDir) { setData({ error: "No mod loaded." }); return; }
@@ -56,6 +69,7 @@ export default function StratPopulationsModal({ modDataDir, factionDisplayNames,
   const filtered = useMemo(() => {
     let out = rows.filter((r) =>
       (!facFilter || r.faction === facFilter) &&
+      (!levelFilter.size || levelFilter.has(r.level)) &&
       (!q || r.settlement.toLowerCase().includes(q) || r.region.toLowerCase().includes(q) || r.faction.toLowerCase().includes(q) || facName(r.faction).toLowerCase().includes(q)));
     if (mismatchOnly) out = out.filter((r) => { const il = impliedLevel(effPop(r)); return il && il !== r.level; });
     if (sort) {
@@ -70,7 +84,19 @@ export default function StratPopulationsModal({ modDataDir, factionDisplayNames,
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, q, facFilter, sort, mismatchOnly, edits, factionDisplayNames]);
+  }, [rows, q, facFilter, levelFilter, sort, mismatchOnly, edits, factionDisplayNames]);
+  // per-declared-level counts for the ladder chips + the mismatch tally for the checkbox
+  const levelCounts = useMemo(() => {
+    const c = {};
+    for (const r of rows) c[r.level] = (c[r.level] || 0) + 1;
+    return c;
+  }, [rows]);
+  const nMismatch = useMemo(() => {
+    let n = 0;
+    for (const r of rows) { const il = impliedLevel(effPop(r)); if (il && il !== r.level) n++; }
+    return n;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, edits, tiers]);
 
   const changes = useMemo(() => {
     const c = {};
@@ -110,8 +136,11 @@ export default function StratPopulationsModal({ modDataDir, factionDisplayNames,
     setEdits(next);
   };
 
+  // sticky against the scroll container (which is exactly what we want here —
+  // the window rows scroll under the header)
+  const TH_STICKY = { position: "sticky", top: 0, background: "rgb(30,26,20)", zIndex: 1 };
   const th = (label, key, title) => (
-    <th style={{ padding: "2px 6px", cursor: key ? "pointer" : "default", userSelect: "none", whiteSpace: "nowrap" }} title={title}
+    <th style={{ ...TH_STICKY, padding: "2px 6px", cursor: key ? "pointer" : "default", userSelect: "none", whiteSpace: "nowrap" }} title={title}
       onClick={key ? () => setSort((s) => (s && s.key === key ? (s.dir === 1 ? { key, dir: -1 } : null) : { key, dir: 1 })) : undefined}>
       {label}{sort && sort.key === key ? (sort.dir === 1 ? " ▲" : " ▼") : ""}
     </th>
@@ -135,7 +164,7 @@ export default function StratPopulationsModal({ modDataDir, factionDisplayNames,
             </select>
             <label style={{ fontSize: "0.72rem", color: "#9ab", display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}
               title="Show only settlements whose population sits in a DIFFERENT level band than the level declared in descr_strat (per the descr_cultures thresholds).">
-              <input type="checkbox" checked={mismatchOnly} onChange={(e) => setMismatchOnly(e.target.checked)} /> level≠pop only
+              <input type="checkbox" checked={mismatchOnly} onChange={(e) => setMismatchOnly(e.target.checked)} /> level≠pop only{nMismatch ? ` (${nMismatch.toLocaleString()})` : ""}
             </label>
             <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
               <input value={pct} onChange={(e) => setPct(e.target.value)} placeholder="±%" type="number"
@@ -147,41 +176,61 @@ export default function StratPopulationsModal({ modDataDir, factionDisplayNames,
               </button>
             </span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", fontSize: "0.7rem", color: "#8aa" }}>
-            {tiers && tiers.upgradeAt && (
-              <span title={`City-level thresholds from descr_cultures ("settlement upgrade levels"). A settlement's population decides which band it sits in.${tiers.uniformAcrossCultures ? " All cultures in this mod share this ladder." : " ⚠ This mod's cultures have DIFFERENT ladders — the first culture's is shown."}`}>
-                🏛 {tierOrder.map((t) => `${levelLabel(t)} ${fmt(tiers.upgradeAt[t])}`).join(" · ")}{tiers.uniformAcrossCultures ? "" : " ⚠ per-culture ladders differ"}
-              </span>
-            )}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: "0.7rem", color: "#8aa" }}>
+            {tiers && tiers.upgradeAt && (<>
+              <span title={`City-level thresholds from descr_cultures ("settlement upgrade levels"). A settlement's population decides which band it sits in.${tiers.uniformAcrossCultures ? " All cultures in this mod share this ladder." : " ⚠ This mod's cultures have DIFFERENT ladders — the first culture's is shown."}`}>🏛</span>
+              {tierOrder.map((t) => {
+                const on = levelFilter.has(t);
+                return (
+                  <button key={t}
+                    onClick={() => setLevelFilter((prev) => { const n = new Set(prev); if (n.has(t)) n.delete(t); else n.add(t); return n; })}
+                    title={`${levelLabel(t)} — threshold ${fmt(tiers.upgradeAt[t])}, ${(levelCounts[t] || 0).toLocaleString()} settlement${levelCounts[t] === 1 ? "" : "s"} declared at this level. Click to show only clicked levels; click again to clear.`}
+                    style={{ background: on ? "rgba(232,200,115,0.18)" : "rgba(255,255,255,0.04)", color: on ? "#f2e3b8" : "#9ab", border: "1px solid " + (on ? "#a08a4a" : "rgba(255,255,255,0.14)"), borderRadius: 10, padding: "1px 8px", cursor: "pointer", fontSize: "0.7rem" }}>
+                    {levelLabel(t)} {fmt(tiers.upgradeAt[t])}<span style={{ color: on ? "#cdbfa0" : "#667" }}> ({(levelCounts[t] || 0).toLocaleString()})</span>
+                  </button>
+                );
+              })}
+              {levelFilter.size > 0 && <button onClick={() => setLevelFilter(new Set())} style={{ background: "none", border: "none", color: "#889", cursor: "pointer", fontSize: "0.7rem" }} title="Clear the level filter.">✕ clear</button>}
+              {!tiers.uniformAcrossCultures && <span style={{ color: "#e8b85a" }}>⚠ per-culture ladders differ</span>}
+            </>)}
             <span>min pop {fmt(minPop)}</span>
             {data && data.path && <span style={{ color: "#667" }} title={data.path}>{String(data.path).split(/[\\/]/).slice(-2).join("/")}</span>}
           </div>
         </div>
-        <div style={{ overflow: "auto", padding: "4px 16px", flex: 1 }}>
+        <div ref={scrollRef} onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)} style={{ overflow: "auto", padding: "4px 16px", flex: 1 }}>
           {busy && <div style={{ color: "#9aa", fontStyle: "italic", padding: 8 }}>Reading descr_strat…</div>}
           {data && data.error && <div style={{ color: "#e89060", padding: 8 }}>{data.error}</div>}
           {!busy && data && !data.error && rows.length === 0 && <div style={{ color: "#9aa", fontStyle: "italic", padding: 8 }}>No settlements found in descr_strat.</div>}
-          {!busy && rows.length > 0 && (
+          {!busy && rows.length > 0 && (() => {
+            // window: only the visible slice reaches the DOM (see ROW_H note above)
+            const count = Math.ceil(viewH / ROW_H) + 16;
+            const first = Math.min(Math.max(0, Math.floor(scrollTop / ROW_H) - 8), Math.max(0, filtered.length - count));
+            const visible = filtered.slice(first, first + count);
+            const topPad = first * ROW_H;
+            const botPad = Math.max(0, (filtered.length - first - visible.length) * ROW_H);
+            const spacer = (h, k) => h > 0 ? <tr key={k} style={{ height: h }}><td colSpan={6} style={{ padding: 0, border: 0 }} /></tr> : null;
+            return (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem" }}>
               <thead><tr style={{ color: "#8aa", textAlign: "left" }}>
                 {th("Faction", "faction")}
                 {th("Settlement", "settlement")}
                 {th("Level (file)", "level", "The settlement level declared in descr_strat.")}
                 {th("Population", "pop", "Starting population — edit the box to stage a change.")}
-                <th style={{ padding: "2px 6px" }} title="The level band the (edited) population falls in, per the descr_cultures thresholds. Orange = differs from the declared level.">→ band @ pop</th>
-                <th style={{ padding: "2px 6px" }}>Δ</th>
+                <th style={{ ...TH_STICKY, padding: "2px 6px" }} title="The level band the (edited) population falls in, per the descr_cultures thresholds. Orange = differs from the declared level.">→ band @ pop</th>
+                <th style={{ ...TH_STICKY, padding: "2px 6px" }}>Δ</th>
               </tr></thead>
               <tbody>
-                {filtered.map((r) => {
+                {spacer(topPad, "top")}
+                {visible.map((r) => {
                   const pop = effPop(r);
                   const il = impliedLevel(pop);
                   const mismatch = il && il !== r.level;
                   const dirty = isDirty(r);
                   const belowMin = pop < minPop;
                   return (
-                    <tr key={r.region} style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: dirty ? "rgba(232,200,115,0.06)" : "transparent" }}>
-                      <td style={{ padding: "1px 6px", color: "#9ab", textTransform: "capitalize", whiteSpace: "nowrap" }}>{facName(r.faction)}</td>
-                      <td style={{ padding: "1px 6px", color: "#dde" }} title={`region ${r.region}`}>{r.settlement.replace(/_/g, " ")}{r.capital ? " ★" : ""}</td>
+                    <tr key={r.region} style={{ height: ROW_H, borderTop: "1px solid rgba(255,255,255,0.05)", background: dirty ? "rgba(232,200,115,0.06)" : "transparent" }}>
+                      <td style={{ padding: "1px 6px", color: "#9ab", textTransform: "capitalize", whiteSpace: "nowrap", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis" }}>{facName(r.faction)}</td>
+                      <td style={{ padding: "1px 6px", color: "#dde", whiteSpace: "nowrap", maxWidth: 170, overflow: "hidden", textOverflow: "ellipsis" }} title={`region ${r.region}`}>{r.settlement.replace(/_/g, " ")}{r.capital ? " ★" : ""}</td>
                       <td style={{ color: "#9aa", whiteSpace: "nowrap" }}>{levelLabel(r.level)}</td>
                       <td>
                         <input type="number" min={1} step={100}
@@ -205,9 +254,11 @@ export default function StratPopulationsModal({ modDataDir, factionDisplayNames,
                     </tr>
                   );
                 })}
+                {spacer(botPad, "bot")}
               </tbody>
             </table>
-          )}
+            );
+          })()}
         </div>
         <div style={{ padding: "8px 16px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <span style={{ fontSize: "0.74rem", color: "#8aa" }}>
