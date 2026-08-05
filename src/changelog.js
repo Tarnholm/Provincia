@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1483",
+    date: "2026-08-06",
+    items: [
+      { type: "fix", text: "**Fixed: v0.9.1481 could re-import a full mod's campaign with VANILLA map files — RIS slots suddenly showed the vanilla map (103 regions).** The new base-mod inheritance had a hole: when a slot imports the campaign folder directly (…/world/maps/campaign/imperial_campaign), the folder scan never sees the mod's own world/maps/base — and for a full mod the fallback skipped the sibling-mod search and went straight to the vanilla install, silently overwriting the slot's descr_regions, map TGAs and descr_sm_factions with vanilla's. The campaign's own mod root is now always the FIRST inheritance source, sibling base mods second, vanilla strictly last — verified on the real RIS and Four Romans folders (zero vanilla paths resolve). If your RIS slot went vanilla: just update and reopen — the next auto-reimport pulls the correct RIS files back." },
+    ],
+  },
+
+  {
     version: "0.9.1482",
     date: "2026-08-06",
     items: [

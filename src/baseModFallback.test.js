@@ -82,7 +82,7 @@ describe("fillCampaignFilesFromBase", () => {
     expect(camp.inheritedFrom).toBeUndefined();
   });
 
-  it("a FULL mod (data root has export_descr_unit.txt) never inherits from sibling mods", () => {
+  it("a FULL mod fills from its OWN world/maps/base — never from sibling mods", () => {
     const fullCampDir = path.join(BASE, "world", "maps", "campaign", "imperial_campaign");
     const camp = { name: "imperial_campaign", dir: fullCampDir, found: {} };
     const other = path.join("C:", "mods", "other", "data");
@@ -90,9 +90,40 @@ describe("fillCampaignFilesFromBase", () => {
       fs: fakeFs([...baseTree, path.join(other, "world", "maps", "base", "map_regions.tga")]),
       findRelatedModDirs: () => { throw new Error("must not be called for a full mod"); },
     });
-    // fills from its OWN tree via the world/maps/base path is not this helper's
-    // job (the scan already found in-tree files) — nothing foreign appears:
-    expect(camp.found["map_regions.tga"]).toBeUndefined();
+    // when the user selected the campaign folder directly, the scan never saw
+    // the mod's own base dir — the helper must resolve it from the data root
+    expect(camp.found["map_regions.tga"]).toBe(path.join(BASE, "world", "maps", "base", "map_regions.tga"));
+    expect(camp.found["descr_sm_factions.txt"]).toBe(path.join(BASE, "descr_sm_factions.txt"));
+  });
+
+  it("REGRESSION (v0.9.1483, the '103 regions' bug): a full mod's own base beats vanilla", () => {
+    // The exact broken shape: user's slot imports the RIS campaign folder
+    // DIRECTLY, so the scan found only descr_strat + win conditions. v1481
+    // filled the other 5 files from VANILLA and the RIS slot rendered the
+    // vanilla map. The mod's own files must win; vanilla only fills what the
+    // mod itself lacks.
+    const campDir = path.join(BASE, "world", "maps", "campaign", "imperial_campaign");
+    const camp = { name: "imperial_campaign", dir: campDir, found: {
+      "descr_strat.txt": path.join(campDir, "descr_strat.txt"),
+      "descr_win_conditions.txt": path.join(campDir, "descr_win_conditions.txt"),
+    } };
+    const tree = [...baseTree,
+      path.join(VAN, "world", "maps", "base", "descr_regions.txt"),
+      path.join(VAN, "world", "maps", "base", "map_regions.tga"),
+      path.join(VAN, "world", "maps", "base", "map_ground_types.tga"),
+      path.join(VAN, "world", "maps", "base", "map_heights.tga"),
+      path.join(VAN, "descr_sm_factions.txt"),
+    ];
+    fillCampaignFilesFromBase([camp], CAMPAIGN_FILES, SHARED_FILES, {
+      fs: fakeFs(tree),
+      findRelatedModDirs: () => { throw new Error("must not be called for a full mod"); },
+      getVanillaDataDir: () => VAN,
+    });
+    for (const f of ["descr_regions.txt", "map_regions.tga", "map_ground_types.tga", "map_heights.tga"]) {
+      expect(camp.found[f]).toBe(path.join(BASE, "world", "maps", "base", f));
+    }
+    expect(camp.found["descr_sm_factions.txt"]).toBe(path.join(BASE, "descr_sm_factions.txt"));
+    expect(Object.values(camp.found).some((p) => p.startsWith(VAN))).toBe(false);
   });
 
   it("falls back to the vanilla install when no base mod is found", () => {

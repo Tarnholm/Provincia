@@ -56,7 +56,13 @@ function fillCampaignFilesFromBase(campaigns, campaignFiles, sharedFiles, opts) 
     // The campaign dir sits at <dataRoot>/world/maps/campaign/<name>.
     const dataRoot = path.resolve(camp.dir, "..", "..", "..", "..");
     if (!fs.existsSync(path.join(dataRoot, "world"))) continue; // nonstandard layout — don't guess
-    const sources = [];
+    // Source order matters (v0.9.1483 regression fix): the campaign's OWN mod
+    // root comes FIRST. When the user selected the campaign folder directly,
+    // the scan never saw the mod's own world/maps/base — v1481 jumped straight
+    // to vanilla for a full mod and re-imported the RIS slot with VANILLA
+    // descr_regions/map files (the "103 regions" bug). The mod's own base
+    // must win before any sibling mod, and vanilla is strictly last.
+    const sources = [dataRoot];
     if (!fs.existsSync(path.join(dataRoot, "export_descr_unit.txt"))) {
       for (const b of (findRelated(dataRoot, "export_descr_unit.txt") || [])) {
         if (path.resolve(b) !== path.resolve(dataRoot)) sources.push(b);
