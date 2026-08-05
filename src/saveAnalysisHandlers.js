@@ -1168,6 +1168,79 @@ ipcMain.handle("get-campaign-factions", async (_event, modDataDir) => {
   } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
 });
 
+// IPC: every settlement's starting population from descr_strat — feeds the
+// editable Populations table (2026-08-06). Reads the campaign's OWN descr_strat
+// (a submod slot passes the submod root; its strat IS the campaign), while
+// settlement display names resolve through the merged view (descr_regions
+// lives in the BASE mod for thin submods).
+ipcMain.handle("get-strat-populations", async (_event, modDataDir) => {
+  try {
+    if (!modDataDir) return { error: "modDataDir required" };
+    const as = require("./armySetup.js");
+    const p = as.findDescrStrat(modDataDir);
+    if (!p || !fs.existsSync(p)) return { error: "descr_strat.txt not found" };
+    const gv = require("./growthEval.js");
+    const strat = gv.parseStrat(p);
+    let regionToCity = {};
+    try {
+      const dg = require("./descrStratGeneral.js");
+      regionToCity = (dg.parseDescrRegions(fs.readFileSync(path.join(_effDir(modDataDir), "world", "maps", "base", "descr_regions.txt"), "latin1")) || {}).regionToCity || {};
+    } catch { }
+    const rows = [];
+    for (const [fac, f] of Object.entries(strat || {})) {
+      for (const s of (f.settlements || [])) {
+        rows.push({ faction: fac, region: s.region, settlement: regionToCity[s.region] || s.region, level: s.level, pop: s.pop, capital: !!s.capital });
+      }
+    }
+    // City-level thresholds from descr_cultures "settlement upgrade levels"
+    // (user 2026-08-06): the table shows each pop against the ladder and flags
+    // level/pop mismatches. RIS measured: ALL 22 cultures share ONE ladder
+    // (0/1500/4000/9000/17000/27000, min pop 400 everywhere), so a single
+    // table is exact — read through the merged view (base mod for submods),
+    // popProjection's verified fallback if the file is absent/unparseable.
+    let tiers = null;
+    try {
+      const pp = require("./popProjection.js");
+      const cultText = fs.readFileSync(path.join(_effDir(modDataDir), "descr_cultures.txt"), "latin1");
+      const t = pp.parseTierTable(cultText) || pp.TIER_FALLBACK;
+      const minPops = [...cultText.matchAll(/"min pop"\s*:\s*(\d+)/g)].map((m) => +m[1]);
+      const distinctLadders = new Set();
+      for (const b of cultText.split(/^\t"[a-z_]+":/m).slice(1)) {
+        const ups = [...b.matchAll(/"upgrade"\s*:\s*(\d+)/g)].map((m) => +m[1]).slice(0, 6);
+        if (ups.length === 6) distinctLadders.add(ups.join(","));
+      }
+      tiers = {
+        upgradeAt: t.upgradeAt, tierOrder: pp.TIER_ORDER,
+        minPop: minPops.length ? Math.min(...minPops) : 400,
+        uniformAcrossCultures: distinctLadders.size <= 1,
+      };
+    } catch { try { const pp = require("./popProjection.js"); tiers = { upgradeAt: pp.TIER_FALLBACK.upgradeAt, tierOrder: pp.TIER_ORDER, minPop: 400, uniformAcrossCultures: true }; } catch { } }
+    return { path: p, rows, tiers };
+  } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+});
+
+// IPC: write edited starting populations back to descr_strat. Surgical per-line
+// rewrites keyed by region (src/stratPopulations.js — brace-depth walk, only the
+// matched population lines change, CRLF/indentation preserved), rolling
+// .provincia-bak backup first — the apply-army-swap contract. Writes the
+// ORIGINAL campaign file (a submod slot edits the submod's own descr_strat).
+ipcMain.handle("apply-strat-populations", async (_event, modDataDir, changes) => {
+  try {
+    if (!modDataDir || !changes || typeof changes !== "object" || !Object.keys(changes).length) return { error: "modDataDir + changes required" };
+    const as = require("./armySetup.js");
+    const p = as.findDescrStrat(modDataDir);
+    if (!p || !fs.existsSync(p)) return { error: "descr_strat.txt not found" };
+    const text = fs.readFileSync(p, "latin1");
+    const { applyPopulations } = require("./stratPopulations.js");
+    const r = applyPopulations(text, changes);
+    if (!r.applied.length) return { error: "no population line changed" + (r.missing.length ? ` — regions not found: ${r.missing.slice(0, 5).join(", ")}` : "") + (r.noPopLine.length ? ` — no population line in: ${r.noPopLine.slice(0, 5).join(", ")}` : ""), missing: r.missing, noPopLine: r.noPopLine };
+    try { fs.copyFileSync(p, p + ".provincia-bak"); } catch (e) { _writeLog(`[strat-pops] backup failed: ${e && e.message}`); }
+    fs.writeFileSync(p, r.text, "latin1");
+    _writeLog(`[strat-pops] wrote ${r.applied.length} population change(s) to ${p}: ${r.applied.slice(0, 6).map((a) => `${a.region} ${a.from}→${a.to}`).join(", ")}${r.applied.length > 6 ? ` …+${r.applied.length - 6}` : ""}`);
+    return { ok: true, path: p, applied: r.applied, missing: r.missing, noPopLine: r.noPopLine };
+  } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+});
+
 // IPC: apply ONE unit swap to descr_strat (army-setup). Surgical single-line swap,
 // CRLF preserved, with a timestamped backup of the file first.
 ipcMain.handle("apply-army-swap", async (_event, modDataDir, faction, character, oldUnit, newUnit) => {

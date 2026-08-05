@@ -126,6 +126,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // characters, settlements, summary } or { error }.
   getArmySetup: (faction, modDataDir, floor) => ipcRenderer.invoke("get-army-setup", faction, modDataDir, floor),
   getCampaignFactions: (modDataDir) => ipcRenderer.invoke("get-campaign-factions", modDataDir),
+  getStratPopulations: (modDataDir) => ipcRenderer.invoke("get-strat-populations", modDataDir),
+  applyStratPopulations: (modDataDir, changes) => ipcRenderer.invoke("apply-strat-populations", modDataDir, changes),
   getSavePlayerBudget: (savePath) => ipcRenderer.invoke("get-save-player-budget", savePath),
   getAllFactionBudgets: (savePath, modDataDir, playerHint) => ipcRenderer.invoke("get-all-faction-budgets", savePath, modDataDir, playerHint),
   getOptimalTaxes: (savePath, modDataDir, playerHint, economyPath) => ipcRenderer.invoke("get-optimal-taxes", savePath, modDataDir, playerHint, economyPath),

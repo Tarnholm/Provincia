@@ -22,6 +22,7 @@ import CommandPalette from "./CommandPalette.js";
 import WealthPanel from "./WealthPanel.js";
 import ArmySetupModal from "./ArmySetupModal.js";
 import DashboardModal from "./DashboardModal.js";
+import StratPopulationsModal from "./StratPopulationsModal.js";
 
 // Stand-ins for the DashSection/DashRow module components that App.js passes in.
 const StubSection = ({ title, children }) => <div><span>{title}</span>{children}</div>;
@@ -307,6 +308,33 @@ describe("panels render smoke-test", () => {
     const c = await mount(<ArmySetupModal {...props} />);
     // Portals into document.body.
     expect(document.body.textContent).toMatch(/Army Setup|Budget|Tax/);
+    void c;
+  });
+
+  it("StratPopulationsModal renders the no-mod empty state and the loaded table", async () => {
+    // No mod dir → immediate empty state, no API call.
+    let c = await mount(<StratPopulationsModal modDataDir={null} factionDisplayNames={{}} pushToast={() => {}} onClose={() => {}} />);
+    expect(document.body.textContent).toContain("Starting Populations");
+    await new Promise((r) => setTimeout(r, 0)); // the load effect lands async
+    expect(document.body.textContent).toContain("No mod loaded.");
+    if (root) { root.unmount(); root = null; }
+    if (container?.parentNode) container.parentNode.removeChild(container);
+    // With a mod dir + stubbed IPC → rows render with the tier ladder and an editable input.
+    window.electronAPI.getStratPopulations = () => Promise.resolve({
+      path: "C:/x/descr_strat.txt",
+      rows: [
+        { faction: "romans_julii", region: "Roma", settlement: "Rome", level: "large_city", pop: 9000, capital: true },
+        { faction: "carthage", region: "Qart-Khadasht", settlement: "Carthage", level: "huge_city", pop: 12000, capital: true },
+      ],
+      tiers: { upgradeAt: { village: 0, town: 1500, large_town: 4000, city: 9000, large_city: 17000, huge_city: 27000 }, tierOrder: ["village", "town", "large_town", "city", "large_city", "huge_city"], minPop: 400, uniformAcrossCultures: true },
+    });
+    c = await mount(<StratPopulationsModal modDataDir="C:/x" factionDisplayNames={{}} pushToast={() => {}} onClose={() => {}} />);
+    await new Promise((r) => setTimeout(r, 0)); // let the async load land
+    expect(document.body.textContent).toContain("Rome");
+    expect(document.body.textContent).toContain("Carthage");
+    // 12,000 sits in the city band (9,000–17,000) but the file declares huge_city → mismatch flag
+    expect(document.body.textContent).toContain("⚠");
+    expect(document.body.querySelectorAll('input[type="number"]').length).toBeGreaterThanOrEqual(2);
     void c;
   });
 });

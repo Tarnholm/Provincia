@@ -65,6 +65,7 @@ import WealthPanel from "./panels/WealthPanel";
 import DashboardModal from "./panels/DashboardModal";
 import ArmySetupModal from "./panels/ArmySetupModal";
 import SubmodDriftPanel from "./panels/SubmodDriftPanel";
+import StratPopulationsModal from "./panels/StratPopulationsModal";
 import EconBaselinePanel from "./panels/EconBaselinePanel";
 import ReportExportPanel from "./panels/ReportExportPanel";
 import SaveComparePanel from "./panels/SaveComparePanel";
@@ -12070,13 +12071,14 @@ function App() {
   // ⚑ Bundled crash reporter (2026-07-25) — Provincia now ships and runs it, so
   // a tester no longer has to start a second program before launching the game.
   const [showCrashReporter, setShowCrashReporter] = useState(false);
+  const [showStratPops, setShowStratPops] = useState(false); // 👥 starting-population editor (2026-08-06)
   // Crash fallback for the tool-panel boundary: close every tool panel.
   const closeAllToolPanels = () => {
     setShowSubmodDrift(false); setShowEconBaseline(false);
     setShowReportExport(false); setShowSaveCompare(false); setShowModLint(false);
     setShowUnitCompare(false); setShowRecruitPlanner(false);
     setShowDiploHeatmap(false); setShowDefLocator(false);
-    setShowWhatIf(false); setShowAiMovement(false);
+    setShowWhatIf(false); setShowAiMovement(false); setShowStratPops(false);
   };
   // Battle ledger (2026-07-17): accumulates battle events from the raw live
   // log feed. The ledger instance lives on a ref (survives renders); snapshots
@@ -15389,6 +15391,7 @@ function App() {
                       { icon: "⚰", label: "Campaign Autopsy", color: "#cf8f6a", desc: "Post-mortem over a scanned saves timeline — each faction's settlement/treasury/army arc, when they peaked, declined or were wiped, and who won.", open: () => setShowCampaignAutopsy(true) },
                       { icon: "🔨", label: "Build-Order Optimizer", color: "#d8c088", desc: "For the selected settlement: rank its buildable structures by payback time (cost ÷ extra income per turn).", open: () => { if (lockedRegionInfo || regionInfo) setShowBuildOrder(true); else pushToast("Select a region first — the optimizer works on the selected settlement.", "info", 5000); } },
                       { icon: "⌖", label: "Find Definition", color: "#c8c8e8", desc: "Where is this unit/building/region defined? File + line across all mod files, click to open in editor.", open: () => setShowDefLocator(true) },
+                      { icon: "👥", label: "Starting Populations", color: "#d8c8a8", desc: "Editable table of every settlement's descr_strat starting population, with the descr_cultures city-level ladder — bulk % adjust, level/pop mismatch flags, surgical write-back with backup.", open: () => setShowStratPops(true) },
                       { icon: "🧪", label: "What-If Sandbox", color: "#b8d8e8", desc: "Apply a hypothetical EDB/EDU tweak in a shadow copy and diff every faction's economy — the mod itself is never touched.", open: () => setShowWhatIf(true) },
                       { icon: "⚔", label: "AI Movement Lab", color: "#8fc9d8", desc: "Analyze a campaign log for AI pathing problems — stuck armies, ping-pong loops, orders that never arrive, flee loops. Works on any message_log.txt incl. Discord telemetry downloads.", open: () => setShowAiMovement(true) },
                       { icon: "⚑", label: "Crash Reporter", color: "#8fd18f", desc: "Watch this session and send a report if the game crashes — logs, save, and an extract of the AI decision log for the Movement Lab. Bundled, so you no longer run a separate reporter program.", open: () => setShowCrashReporter(true) },
@@ -23415,6 +23418,9 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
       {showUnitCompare && <UnitComparePanel modDataDir={modDataDir} unitOwnership={unitOwnership} factionDisplayNames={factionDisplayNames} onClose={() => setShowUnitCompare(false)} />}
       {showDefLocator && <DefinitionLocatorPanel modDataDir={modDataDir} initialQuery="" onClose={() => setShowDefLocator(false)} />}
       {showWhatIf && <WhatIfPanel modDataDir={modDataDir} onClose={() => setShowWhatIf(false)} />}
+      {/* 👥 Starting Populations (2026-08-06) — uses the SUBMOD-AWARE dir so a
+          Four_Romans-style slot edits the submod's own descr_strat. */}
+      {showStratPops && <StratPopulationsModal modDataDir={armyModDataDir} factionDisplayNames={factionDisplayNames} pushToast={pushToast} onClose={() => setShowStratPops(false)} />}
       {showCrashReporter && (
         <CrashReporterPanel onClose={() => setShowCrashReporter(false)} />
       )}
