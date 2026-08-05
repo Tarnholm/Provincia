@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1481",
+    date: "2026-08-06",
+    items: [
+      { type: "fix", text: "**A submod campaign now inherits its map from the base mod — and your base-folder edits actually reach it.** A thin submod like RIS Four Romans ships only the files it changes (descr_strat, campaign script, text), so importing its folder found no map files at all: the slot kept whatever map copies it had from an earlier import, and no amount of re-importing could refresh them — edits to the base mod's map_regions/ground_types/heights or descr_regions were invisible on that slot forever. The folder scan now fills whatever the selected tree is missing the way the game's own file system does: from the submod's base mod first (its campaign folder of the same name, then its world/maps/base, found with the same resolver the analysis pipeline already uses), and from the vanilla install as a last resort when no base mod exists. Re-importing the Four Romans folder now pulls the base's live map files every time." },
+      { type: "fix", text: "**The \"Reload mod data\" badge now notices base-mod edits under a submod.** The mtime watcher only looked inside the selected mod folder — a submod dir lacks the map files entirely, so repainting the base map never lit the badge. Files missing from the selected folder are now watched through the base mod instead, so the edit-→-badge-→-reload loop works the same whether the slot is a full mod or a submod." },
+    ],
+  },
+
+  {
     version: "0.9.1480",
     date: "2026-08-04",
     items: [

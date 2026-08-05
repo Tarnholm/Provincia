@@ -1998,6 +1998,21 @@ async function scanFolderForCampaigns(dir) {
       if (!camp.found[k]) camp.found[k] = v;
     }
   }
+  // Submod trees ship only the files they change (2026-08-06): inherit what is
+  // STILL missing from the submod's base mod (same resolver as the analysis
+  // overlay), vanilla install last — so a submod slot re-imports the base's map
+  // files and the user's base-folder edits reach it on reload. Every source
+  // root used becomes a consented read root, or read-file would refuse it.
+  try {
+    const { fillCampaignFilesFromBase } = require("./src/baseModFallback.js");
+    fillCampaignFilesFromBase(campaigns, campaignFiles, sharedFiles, {
+      getVanillaDataDir, onRootUsed: addConsentedRoot,
+      log: (m) => console.log("[scan-folder]", m),
+    });
+    for (const camp of campaigns) {
+      for (const sf of sharedFiles) if (camp.found[sf] && !sharedFound[sf]) sharedFound[sf] = camp.found[sf];
+    }
+  } catch (e) { console.warn("[scan-folder] base-mod inheritance failed:", e && e.message); }
   return { dir, campaigns, sharedFound };
 }
 
@@ -2300,6 +2315,7 @@ ipcMain.handle("factory-reset", async () => {
 // polls this periodically; if any mtime is newer than what it last
 // saw, a "reload mod data" badge flashes so the modder knows their
 // edit is unseen by Provincia until they reload.
+const _mtimeBaseDirCache = new Map(); // modDataDir → base mod dir | null (per session)
 ipcMain.handle("get-mod-file-mtimes", async (_event, modDataDir) => {
   const files = [
     "export_descr_buildings.txt",
@@ -2321,10 +2337,33 @@ ipcMain.handle("get-mod-file-mtimes", async (_event, modDataDir) => {
   const tryFile = (full) => {
     try { return fs.statSync(full).mtimeMs; } catch { return null; }
   };
+  // SUBMOD FALLBACK (2026-08-06): a thin submod dir lacks most watched files, so
+  // an edit to the BASE mod's map files never moved any mtime here and the
+  // "Reload mod data" badge stayed dark. Files missing in modDataDir now read
+  // through the submod's base mod (resolved once per dir, cached — the base's
+  // location doesn't move within a session).
+  let baseDir; // undefined until first needed, then dir | null
+  const baseFor = (dir) => {
+    if (baseDir !== undefined) return baseDir;
+    if (_mtimeBaseDirCache.has(dir)) return (baseDir = _mtimeBaseDirCache.get(dir));
+    baseDir = null;
+    try {
+      if (!fs.existsSync(path.join(dir, "export_descr_unit.txt"))) {
+        baseDir = (findRelatedModDirs(dir, "export_descr_unit.txt") || [])
+          .filter((d) => path.resolve(d) !== path.resolve(dir))[0] || null;
+      }
+    } catch { }
+    _mtimeBaseDirCache.set(dir, baseDir);
+    return baseDir;
+  };
   for (const rel of files) {
     let mtime = null;
     if (modDataDir) {
-      const t = tryFile(path.join(modDataDir, rel));
+      let t = tryFile(path.join(modDataDir, rel));
+      if (t == null) {
+        const b = baseFor(modDataDir);
+        if (b) t = tryFile(path.join(b, rel));
+      }
       if (t != null) mtime = t;
     }
     out[rel] = mtime;

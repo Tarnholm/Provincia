@@ -122,6 +122,21 @@ function registerFolderImportHandlers(ipcMain, deps) {
       }
     }
 
+    // Submod trees ship only the files they change (2026-08-06): inherit what is
+    // STILL missing from the submod's base mod, vanilla install last resort — so
+    // picking a submod folder imports the base's map files (and re-import sees
+    // the user's base-folder edits). Source roots become consented read roots.
+    try {
+      const { fillCampaignFilesFromBase } = require("./baseModFallback.js");
+      fillCampaignFilesFromBase(dedupedCampaigns, campaignFiles, sharedFiles, {
+        getVanillaDataDir, onRootUsed: addConsentedRoot,
+        log: (m) => console.log("[select-folder]", m),
+      });
+      for (const c of dedupedCampaigns) {
+        for (const sf of sharedFiles) if (c.found[sf] && !sharedFound[sf]) sharedFound[sf] = c.found[sf];
+      }
+    } catch (e) { console.warn("[select-folder] base-mod inheritance failed:", e && e.message); }
+
     return { dir, campaigns: dedupedCampaigns, baseFound, sharedFound };
   });
 
