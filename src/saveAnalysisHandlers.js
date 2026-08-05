@@ -1204,6 +1204,10 @@ ipcMain.handle("get-strat-populations", async (_event, modDataDir) => {
       const cultText = fs.readFileSync(path.join(_effDir(modDataDir), "descr_cultures.txt"), "latin1");
       const t = pp.parseTierTable(cultText) || pp.TIER_FALLBACK;
       const minPops = [...cultText.matchAll(/"min pop"\s*:\s*(\d+)/g)].map((m) => +m[1]);
+      // per-level "max pop" (overcrowding ceiling) — first culture's table, same
+      // convention as parseTierTable; RIS measured uniform across all 22 cultures
+      // (5800/9000/16000/22000/30000/60000)
+      const maxPops = [...cultText.matchAll(/"max pop"\s*:\s*(\d+)/g)].map((m) => +m[1]).slice(0, 6);
       const distinctLadders = new Set();
       for (const b of cultText.split(/^\t"[a-z_]+":/m).slice(1)) {
         const ups = [...b.matchAll(/"upgrade"\s*:\s*(\d+)/g)].map((m) => +m[1]).slice(0, 6);
@@ -1211,10 +1215,11 @@ ipcMain.handle("get-strat-populations", async (_event, modDataDir) => {
       }
       tiers = {
         upgradeAt: t.upgradeAt, tierOrder: pp.TIER_ORDER,
+        maxPopAt: maxPops.length === 6 ? Object.fromEntries(pp.TIER_ORDER.map((lv, i) => [lv, maxPops[i]])) : null,
         minPop: minPops.length ? Math.min(...minPops) : 400,
         uniformAcrossCultures: distinctLadders.size <= 1,
       };
-    } catch { try { const pp = require("./popProjection.js"); tiers = { upgradeAt: pp.TIER_FALLBACK.upgradeAt, tierOrder: pp.TIER_ORDER, minPop: 400, uniformAcrossCultures: true }; } catch { } }
+    } catch { try { const pp = require("./popProjection.js"); tiers = { upgradeAt: pp.TIER_FALLBACK.upgradeAt, tierOrder: pp.TIER_ORDER, maxPopAt: null, minPop: 400, uniformAcrossCultures: true }; } catch { } }
     return { path: p, rows, tiers };
   } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
 });

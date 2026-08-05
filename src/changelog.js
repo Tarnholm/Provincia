@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1485",
+    date: "2026-08-06",
+    items: [
+      { type: "improvement", text: "**Starting Populations: every settlement now shows a progress bar toward its next city level.** The new \"→ next\" column draws how far the (edited) population has climbed from its current band's threshold toward the next level's upgrade threshold — a city at 13,000 reads 50%, halfway from 9,000 to the 17,000 large-city mark — with the exact numbers, including how many more people the upgrade needs, in the tooltip. Huge cities (no next level) show % of their max population instead. The bar turns red with a ⚠ when the population exceeds the band's **max pop** — descr_cultures' overcrowding ceiling (in RIS: 5,800 / 9,000 / 16,000 / 22,000 / 30,000 / 60,000, one ladder for all 22 cultures, measured). The bar updates live as you type a new population, so you can dial a settlement to exactly the growth headroom you want." },
+    ],
+  },
+
+  {
     version: "0.9.1484",
     date: "2026-08-06",
     items: [

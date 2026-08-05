@@ -17,7 +17,11 @@ for (let i = 0; i < 1306; i++) {
     level: LEVELS[i % 6], pop: 400 + (i * 37) % 30000, capital: i % 40 === 0,
   });
 }
-const tiers = { upgradeAt: { village: 0, town: 1500, large_town: 4000, city: 9000, large_city: 17000, huge_city: 27000 }, tierOrder: LEVELS, minPop: 400, uniformAcrossCultures: true };
+const tiers = {
+  upgradeAt: { village: 0, town: 1500, large_town: 4000, city: 9000, large_city: 17000, huge_city: 27000 },
+  maxPopAt: { village: 5800, town: 9000, large_town: 16000, city: 22000, large_city: 30000, huge_city: 60000 },
+  tierOrder: LEVELS, minPop: 400, uniformAcrossCultures: true,
+};
 
 let container, root;
 afterEach(() => {
@@ -45,6 +49,8 @@ describe("StratPopulationsModal windowed table", () => {
     expect(domRows).toBeGreaterThan(10);
     expect(domRows).toBeLessThan(120);
     expect(document.body.textContent).toMatch(ALL_SHOWN);
+    // every visible row carries an upgrade-progress bar (v0.9.1485)
+    expect(document.body.querySelectorAll("[data-popbar]").length).toBeGreaterThan(10);
 
     // the mismatch checkbox narrows the count without exploding the DOM
     const box = document.body.querySelector('input[type="checkbox"]');
