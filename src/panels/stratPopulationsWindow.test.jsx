@@ -49,8 +49,14 @@ describe("StratPopulationsModal windowed table", () => {
     expect(domRows).toBeGreaterThan(10);
     expect(domRows).toBeLessThan(120);
     expect(document.body.textContent).toMatch(ALL_SHOWN);
-    // every visible row carries an upgrade-progress bar (v0.9.1485)
+    // every visible row carries an upgrade-progress bar (v0.9.1485), and all
+    // three states render: in-band, under (too little for the declared level),
+    // and over (too much — past the next level's threshold) (v0.9.1486)
     expect(document.body.querySelectorAll("[data-popbar]").length).toBeGreaterThan(10);
+    const kinds = new Set([...document.body.querySelectorAll("[data-popkind]")].map((el) => el.getAttribute("data-popkind")));
+    expect(kinds.has("ok")).toBe(true);
+    expect(kinds.has("under")).toBe(true);
+    expect(kinds.has("over")).toBe(true);
 
     // the mismatch checkbox narrows the count without exploding the DOM
     const box = document.body.querySelector('input[type="checkbox"]');

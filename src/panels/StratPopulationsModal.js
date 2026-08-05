@@ -55,29 +55,46 @@ export default function StratPopulationsModal({ modDataDir, factionDisplayNames,
     for (const t of tierOrder) { if (pop >= tiers.upgradeAt[t]) lv = t; }
     return lv;
   };
-  // progress within the pop's band: % of the way from this band's threshold to
-  // the NEXT level's upgrade threshold (top band: % of its max pop instead);
-  // over = above the band's "max pop" (overcrowding ceiling from descr_cultures)
-  const bandProgress = (pop) => {
-    const band = impliedLevel(pop);
-    if (!band) return null;
-    const i = tierOrder.indexOf(band);
-    const cur = tiers.upgradeAt[band];
+  // Population measured against the DECLARED level's own thresholds (v0.9.1486,
+  // user: "it only shows too little" — the old bar used the band the pop
+  // IMPLIES, so an over-populated town still drew a calm in-band bar):
+  //   under — below the level's own upgrade threshold (amber ▼, % of it reached)
+  //   ok    — inside the band (green, % of the way to the next level)
+  //   over  — at/past the NEXT level's threshold (red ▲, too much for the level)
+  //   overMax — above the level's "max pop" overcrowding ceiling (⚠ on any kind)
+  const bandProgress = (pop, declaredLevel) => {
+    if (!tiers || !tiers.upgradeAt || !isFinite(pop)) return null;
+    const i = tierOrder.indexOf(declaredLevel);
+    if (i < 0) return null;
+    const cur = tiers.upgradeAt[declaredLevel];
     const nextLv = i + 1 < tierOrder.length ? tierOrder[i + 1] : null;
-    const maxP = (tiers.maxPopAt && tiers.maxPopAt[band]) || null;
-    const over = maxP != null && pop > maxP;
-    if (nextLv != null) {
-      const next = tiers.upgradeAt[nextLv];
+    const next = nextLv != null ? tiers.upgradeAt[nextLv] : null;
+    const maxP = (tiers.maxPopAt && tiers.maxPopAt[declaredLevel]) || null;
+    const overMax = maxP != null && pop > maxP;
+    if (cur > 0 && pop < cur) {
+      const pct = Math.max(0, Math.min(1, pop / cur));
+      return {
+        kind: "under", pct, overMax, label: `▼${Math.round(pct * 100)}%`,
+        title: `${fmt(pop)} pop is UNDER the ${levelLabel(declaredLevel)} threshold (${fmt(cur)}) — too little for its declared level, ${fmt(cur - pop)} short. (The band it actually sits in is in the previous column.)`,
+      };
+    }
+    if (next != null && pop >= next) {
+      return {
+        kind: "over", pct: 1, overMax, label: "▲over",
+        title: `${fmt(pop)} pop is PAST the next level's threshold (${levelLabel(nextLv)} at ${fmt(next)}) — too much for its declared ${levelLabel(declaredLevel)}, ${fmt(pop - next)} above.${maxP != null ? `\n${levelLabel(declaredLevel)} max pop ${fmt(maxP)}${overMax ? " — ⚠ OVER it (overcrowding)" : ""}` : ""}`,
+      };
+    }
+    if (next != null) {
       const pct = Math.max(0, Math.min(1, (pop - cur) / Math.max(1, next - cur)));
       return {
-        pct, over, label: `${Math.round(pct * 100)}%`,
-        title: `${fmt(pop)} pop — ${Math.round(pct * 100)}% of the way from ${levelLabel(band)} (${fmt(cur)}) to ${levelLabel(nextLv)} (${fmt(next)}); ${fmt(next - pop)} more to upgrade.${maxP != null ? `\n${levelLabel(band)} max pop ${fmt(maxP)}${over ? " — ⚠ OVER it (overcrowding)" : ""}` : ""}`,
+        kind: "ok", pct, overMax, label: `${Math.round(pct * 100)}%`,
+        title: `${fmt(pop)} pop — ${Math.round(pct * 100)}% of the way from ${levelLabel(declaredLevel)} (${fmt(cur)}) to ${levelLabel(nextLv)} (${fmt(next)}); ${fmt(next - pop)} more to upgrade.${maxP != null ? `\n${levelLabel(declaredLevel)} max pop ${fmt(maxP)}${overMax ? " — ⚠ OVER it (overcrowding)" : ""}` : ""}`,
       };
     }
     const pct = maxP ? Math.max(0, Math.min(1, pop / maxP)) : 1;
     return {
-      pct, over, label: maxP ? `${Math.round(pct * 100)}%` : "top",
-      title: `${fmt(pop)} pop — top level${maxP ? `, ${Math.round(pct * 100)}% of its max pop ${fmt(maxP)}${over ? " — ⚠ OVER it (overcrowding)" : ""}` : ""}.`,
+      kind: overMax ? "over" : "ok", pct, overMax, label: maxP ? `${Math.round(pct * 100)}%` : "top",
+      title: `${fmt(pop)} pop — top level${maxP ? `, ${Math.round(pct * 100)}% of its max pop ${fmt(maxP)}${overMax ? " — ⚠ OVER it (overcrowding)" : ""}` : ""}.`,
     };
   };
   const facName = (f) => ((factionDisplayNames && factionDisplayNames[f]) || f).replace(/_/g, " ");
@@ -242,7 +259,7 @@ export default function StratPopulationsModal({ modDataDir, factionDisplayNames,
                 {th("Level (file)", "level", "The settlement level declared in descr_strat.")}
                 {th("Population", "pop", "Starting population — edit the box to stage a change.")}
                 <th style={{ ...TH_STICKY, padding: "2px 6px" }} title="The level band the (edited) population falls in, per the descr_cultures thresholds. Orange = differs from the declared level.">→ band @ pop</th>
-                <th style={{ ...TH_STICKY, padding: "2px 6px" }} title="Progress from this band's threshold toward the NEXT level's upgrade threshold (top level: % of its max pop). Red = above the band's max population — overcrowding.">→ next</th>
+                <th style={{ ...TH_STICKY, padding: "2px 6px" }} title="Population vs the DECLARED level's thresholds: green = inside its band, % of the way to the next level · amber ▼ = below the level's own threshold (too little) · red ▲ = past the next level's threshold (too much) · ⚠ = above the level's max pop (overcrowding). Top level shows % of max pop.">vs level</th>
                 <th style={{ ...TH_STICKY, padding: "2px 6px" }}>Δ</th>
               </tr></thead>
               <tbody>
@@ -270,14 +287,15 @@ export default function StratPopulationsModal({ modDataDir, factionDisplayNames,
                         {il ? levelLabel(il) : "—"}{mismatch ? " ⚠" : ""}
                       </td>
                       <td style={{ whiteSpace: "nowrap" }}>{(() => {
-                        const bp = bandProgress(pop);
+                        const bp = bandProgress(pop, r.level);
                         if (!bp) return <span style={{ color: "#556" }}>—</span>;
+                        const fill = bp.kind === "over" || bp.overMax ? "#e8806a" : bp.kind === "under" ? "#e8b85a" : "#8fb46a";
                         return (
-                          <span data-popbar title={bp.title} style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "help" }}>
+                          <span data-popbar data-popkind={bp.kind} title={bp.title} style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "help" }}>
                             <span style={{ display: "inline-block", width: 62, height: 7, borderRadius: 4, background: "rgba(255,255,255,0.09)", overflow: "hidden" }}>
-                              <span style={{ display: "block", width: `${Math.max(2, Math.round(bp.pct * 100))}%`, height: "100%", borderRadius: 4, background: bp.over ? "#e8806a" : "#8fb46a" }} />
+                              <span style={{ display: "block", width: `${Math.max(2, Math.round(bp.pct * 100))}%`, height: "100%", borderRadius: 4, background: fill }} />
                             </span>
-                            <span style={{ fontSize: "0.66rem", color: bp.over ? "#e8806a" : "#8a9", minWidth: 28 }}>{bp.over ? "⚠" : ""}{bp.label}</span>
+                            <span style={{ fontSize: "0.66rem", color: fill, minWidth: 32 }}>{bp.overMax ? "⚠" : ""}{bp.label}</span>
                           </span>
                         );
                       })()}</td>
