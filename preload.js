@@ -145,6 +145,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.on("ai-movement-progress", fn);
     return () => ipcRenderer.removeListener("ai-movement-progress", fn);
   },
+  chronicleCampaignLog: (logPath, displayNames) => ipcRenderer.invoke("chronicle-campaign-log", logPath, displayNames),
+  chronicleReadMessageLog: (logDir) => ipcRenderer.invoke("chronicle-read-message-log", logDir),
+  onChronicleProgress: (handler) => {
+    const fn = (_e, prog) => handler(prog);
+    ipcRenderer.on("chronicle-progress", fn);
+    return () => ipcRenderer.removeListener("chronicle-progress", fn);
+  },
   // Bundled crash reporter — Provincia runs it so a tester no longer has to
   // start a second program before launching the game.
   crashReporterStatus: () => ipcRenderer.invoke("crash-reporter-status"),

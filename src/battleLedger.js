@@ -67,7 +67,12 @@ const CONFLICT_TO_TYPE = {
   SallyBesieger: "sally",
 };
 
-export function createLedger() {
+// opts.maxEvents — event-feed cap (default 500, the live war-map ticker's
+// budget). The Faction Chronicle passes a much higher cap: it narrates a whole
+// campaign after the fact, and 500 is exceeded within ~16 turns of a real RIS
+// session, which would silently drop every early-game battle.
+export function createLedger(opts = {}) {
+  const maxEvents = opts.maxEvents || MAX_EVENTS;
   // ── per-faction aggregates ──
   const byFaction = Object.create(null);
   function fac(name) {
@@ -93,7 +98,7 @@ export function createLedger() {
     ev.seq = ++seq;
     ev.turn = turn;
     events.push(ev);
-    if (events.length > MAX_EVENTS) events.splice(0, events.length - MAX_EVENTS);
+    if (events.length > maxEvents) events.splice(0, events.length - maxEvents);
     return true;
   }
 

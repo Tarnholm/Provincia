@@ -74,6 +74,7 @@ import UnitComparePanel from "./panels/UnitComparePanel";
 import RecruitPlannerPanel from "./panels/RecruitPlannerPanel";
 import DiploHeatmapPanel from "./panels/DiploHeatmapPanel";
 import AiMovementPanel from "./panels/AiMovementPanel";
+import FactionChroniclePanel from "./panels/FactionChroniclePanel";
 import CrashReporterPanel from "./panels/CrashReporterPanel";
 import TraitExplorerPanel from "./panels/TraitExplorerPanel";
 import CampaignAutopsyPanel from "./panels/CampaignAutopsyPanel";
@@ -12068,6 +12069,7 @@ function App() {
   const [showDefLocator, setShowDefLocator] = useState(false); // ⌖ "where is this defined?" (2026-07-17)
   const [showWhatIf, setShowWhatIf] = useState(false); // 🧪 in-shadow EDB/EDU tweak → economy diff (2026-07-17)
   const [showAiMovement, setShowAiMovement] = useState(false); // ⚔ AI movement pathology analyzer (2026-07-24)
+  const [showFactionChronicle, setShowFactionChronicle] = useState(false); // 📜 per-faction campaign-log narrative (2026-08-06)
   // ⚑ Bundled crash reporter (2026-07-25) — Provincia now ships and runs it, so
   // a tester no longer has to start a second program before launching the game.
   const [showCrashReporter, setShowCrashReporter] = useState(false);
@@ -12079,6 +12081,7 @@ function App() {
     setShowUnitCompare(false); setShowRecruitPlanner(false);
     setShowDiploHeatmap(false); setShowDefLocator(false);
     setShowWhatIf(false); setShowAiMovement(false); setShowStratPops(false);
+    setShowFactionChronicle(false);
   };
   // Battle ledger (2026-07-17): accumulates battle events from the raw live
   // log feed. The ledger instance lives on a ref (survives renders); snapshots
@@ -15394,6 +15397,7 @@ function App() {
                       { icon: "👥", label: "Starting Populations", color: "#d8c8a8", desc: "Editable table of every settlement's descr_strat starting population, with the descr_cultures city-level ladder — bulk % adjust, level/pop mismatch flags, surgical write-back with backup.", open: () => setShowStratPops(true) },
                       { icon: "🧪", label: "What-If Sandbox", color: "#b8d8e8", desc: "Apply a hypothetical EDB/EDU tweak in a shadow copy and diff every faction's economy — the mod itself is never touched.", open: () => setShowWhatIf(true) },
                       { icon: "⚔", label: "AI Movement Lab", color: "#8fc9d8", desc: "Analyze a campaign log for AI pathing problems — stuck armies, ping-pong loops, orders that never arrive, flee loops. Works on any message_log.txt incl. Discord telemetry downloads.", open: () => setShowAiMovement(true) },
+                      { icon: "📜", label: "Faction Chronicle", color: "#d8c8a0", desc: "Follow one faction through a campaign_ai_log, translated to plain English — invasion decisions with the AI's own reasons, finances, builds, recruitment, diplomats, plus battles and captures from message_log.", open: () => setShowFactionChronicle(true) },
                       { icon: "⚑", label: "Crash Reporter", color: "#8fd18f", desc: "Watch this session and send a report if the game crashes — logs, save, and an extract of the AI decision log for the Movement Lab. Bundled, so you no longer run a separate reporter program.", open: () => setShowCrashReporter(true) },
                     ].map((t) => (
                       <button
@@ -23439,6 +23443,13 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
             else setSelectedProvinces([hit[0]]);
           }}
           onClose={() => setShowAiMovement(false)}
+        />
+      )}
+      {showFactionChronicle && (
+        <FactionChroniclePanel
+          defaultLogDir={liveLogDir}
+          factionDisplayNames={factionDisplayNames}
+          onClose={() => setShowFactionChronicle(false)}
         />
       )}
       {showDiploHeatmap && (

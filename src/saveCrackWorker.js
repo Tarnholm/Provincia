@@ -40,7 +40,7 @@ parentPort.on("message", async (payload) => {
     // too would duplicate a 44MB read, and would make a save MANDATORY, which
     // is wrong for scripting_log.txt: those are static data-file errors that
     // need no save at all.
-    const needsSave = mode !== "aiMovement";
+    const needsSave = mode !== "aiMovement" && mode !== "chronicle";
     let buf;
     if (needsSave) {
       if (savePath && fs.existsSync(savePath)) {
@@ -76,6 +76,14 @@ parentPort.on("message", async (payload) => {
       // `ok` field, so the parent's once("message") handler ignores them.
       result = await runAiMovementAnalysis(payload, (p2) => {
         try { parentPort.postMessage({ progress: p2 }); } catch { /* progress is advisory */ }
+      });
+    } else if (mode === "chronicle") {
+      // Faction Chronicle — stream a campaign_ai_log into a per-faction,
+      // per-turn English narrative. Pure line streaming (no save, no slurp),
+      // but a 300MB+ telemetry log still deserves to stay off the main thread.
+      const { chronicleLogFile } = require("./factionChronicle.js");
+      result = await chronicleLogFile(payload.logPath, { displayNames: payload.displayNames || {} }, (p2) => {
+        try { parentPort.postMessage({ progress: p2 }); } catch { /* advisory */ }
       });
     } else {
       throw new Error("unknown save-worker mode: " + mode);

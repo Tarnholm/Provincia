@@ -387,7 +387,13 @@ describe("progress reporting", () => {
 // detection regression shows up here rather than silently reporting "clean".
 describe("scripting_log.txt — the engine's own mod-file errors", () => {
   const LIVE_SCRIPT = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/logs/scripting_log.txt";
-  const haveScript = fs.existsSync(LIVE_SCRIPT) && fs.existsSync(MOD_DIR);
+  // MATURE log only: launching the game wipes and rewrites the live logs, so a
+  // freshly-started session legitimately has a few thousand lines — which
+  // failed this test's >10000-line floor mid-ship on 2026-08-06 while an AI
+  // test was booting. A log under a few MB is a session that just started,
+  // not a signal about the analyser.
+  const haveScript = fs.existsSync(LIVE_SCRIPT) && fs.existsSync(MOD_DIR) &&
+    fs.statSync(LIVE_SCRIPT).size > 5 * 1024 * 1024;
 
   it.runIf(haveScript)("analyses it WITHOUT a save and resolves each error against the mod files", async () => {
     // deliberately no savePath: these are static data-file bugs. The worker used

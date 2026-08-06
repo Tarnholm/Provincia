@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1488",
+    date: "2026-08-06",
+    items: [
+      { type: "feature", text: "**Faction Chronicle (📜, new tool): follow one faction through a whole AI test run, translated to plain English.** Point it at a campaign_ai_log (one click for the live log folder) and pick a faction: every turn becomes a readable entry — invasion decisions with the engine's own stated reasons (\"Started planning an invasion of Corsi — not at war, good production against strongest neighbour\"), treasury state, taxes, what it built and recruited, diplomats dispatched, garrisons thinned — with battles, sieges and settlement captures merged in from the same folder's message_log. Repetitive engine-speak is grouped, not dumped: the rebel faction's 60 identical \"opportunistic invade\" lines become one sentence, 18 zero-strength campaign aborts become one line, and the engine's double-logged garrison splits are deduped. Turn counting is block-based, immune to the summer/winter-only labels that undercount 4TPY campaigns 2x. Filter chips per topic, newest-first toggle, and Copy as text for pasting a run summary straight into Discord. Parsing reuses the proven AI-log pattern manifest and battle ledger — verified against the live RIS session log (218 factions, 659k lines, ~4s) and the 346MB reference log." },
+      { type: "fix", text: "Battle ledger event feed cap is now configurable: the default 500 events is a live-ticker budget that a real session exceeds within ~16 turns — the Chronicle raises it so early-game battles aren't silently dropped from post-run reading." },
+    ],
+  },
+
+  {
     version: "0.9.1487",
     date: "2026-08-06",
     items: [

@@ -577,6 +577,50 @@ ipcMain.handle("analyze-ai-movement", async (_event, logPath, modDataDir, savePa
   } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
 });
 
+// IPC: Faction Chronicle (2026-08-06) — stream a campaign_ai_log.txt into a
+// per-faction, per-turn plain-English narrative (src/factionChronicle.js).
+// Same dialog/dir conventions as analyze-ai-movement: null path → picker,
+// directory → the live log folder's campaign_ai_log.txt. Runs in the crack
+// worker so a 300MB telemetry log never touches the main thread.
+ipcMain.handle("chronicle-campaign-log", async (_event, logPath, displayNames) => {
+  try {
+    const { dialog } = require("electron");
+    let p = logPath;
+    if (!p) {
+      const r = await dialog.showOpenDialog({
+        title: "Pick a campaign_ai_log.txt to chronicle",
+        filters: [{ name: "RTW logs", extensions: ["txt", "log"] }],
+        properties: ["openFile"],
+      });
+      if (r.canceled || !r.filePaths.length) return { canceled: true };
+      p = r.filePaths[0];
+    }
+    if (fs.statSync(p).isDirectory()) p = path.join(p, "campaign_ai_log.txt");
+    if (!fs.existsSync(p)) return { error: "log not found: " + p };
+    const { BrowserWindow } = require("electron");
+    const win = BrowserWindow.getAllWindows()[0];
+    const result = await runCrackWorker(
+      "chronicle",
+      { logPath: p, displayNames: displayNames || {} },
+      (prog) => { try { if (win && !win.isDestroyed()) win.webContents.send("chronicle-progress", prog); } catch { /* advisory */ } }
+    );
+    _writeLog(`[chronicle] ${path.basename(p)}: ${result && result.factions ? result.factions.length : 0} factions, ${result ? result.lines : 0} lines`);
+    return result;
+  } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+});
+
+// IPC: read a message_log.txt for the chronicle's battle merge WITHOUT the
+// side effect log-read-full has (it re-anchors the live watcher's offsets to
+// EOF, which would make the app's live battle ledger skip unforwarded lines).
+ipcMain.handle("chronicle-read-message-log", async (_event, logDir) => {
+  try {
+    if (!logDir) return { text: null };
+    const p = path.join(logDir, "message_log.txt");
+    if (!fs.existsSync(p)) return { text: null };
+    return { text: fs.readFileSync(p, "latin1") };
+  } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+});
+
 // IPC: per-faction "default religion" map (descr_sm_factions) for the Cultural
 // Conversion map mode. A province's dominant religion (highest rel_X_N level =
 // the plurality) is "converted" when it matches its owner's default religion —

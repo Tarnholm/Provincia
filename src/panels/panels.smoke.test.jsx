@@ -23,6 +23,7 @@ import WealthPanel from "./WealthPanel.js";
 import ArmySetupModal from "./ArmySetupModal.js";
 import DashboardModal from "./DashboardModal.js";
 import StratPopulationsModal from "./StratPopulationsModal.js";
+import FactionChroniclePanel from "./FactionChroniclePanel.js";
 
 // Stand-ins for the DashSection/DashRow module components that App.js passes in.
 const StubSection = ({ title, children }) => <div><span>{title}</span>{children}</div>;
@@ -335,6 +336,43 @@ describe("panels render smoke-test", () => {
     // 12,000 sits in the city band (9,000–17,000) but the file declares huge_city → mismatch flag
     expect(document.body.textContent).toContain("⚠");
     expect(document.body.querySelectorAll('input[type="number"]').length).toBeGreaterThanOrEqual(2);
+    void c;
+  });
+
+  it("FactionChroniclePanel renders the empty state, then a chronicled turn after a scan", async () => {
+    // Empty state (no scan yet) — no IPC calls on mount beyond the optional
+    // progress subscription.
+    let c = await mount(<FactionChroniclePanel defaultLogDir={null} factionDisplayNames={{}} onClose={() => {}} />);
+    expect(document.body.textContent).toContain("Faction Chronicle");
+    expect(document.body.textContent).toContain("campaign_ai_log.txt");
+    if (root) { root.unmount(); root = null; }
+    if (container?.parentNode) container.parentNode.removeChild(container);
+
+    // Stubbed scan → the chronicle body renders narrated lines. The shape here
+    // mirrors src/factionChronicle.js finish() exactly (turn/g/year/season/lines).
+    window.electronAPI.chronicleCampaignLog = () => Promise.resolve({
+      logPath: "C:/logs/campaign_ai_log.txt",
+      factions: [{ tag: "carthage", display: "Carthage", turns: 1, invades: 1, builds: 1, recruits: 0 }],
+      turnsByFaction: {
+        carthage: [{ turn: 1, g: 1, year: -270, season: "summer", lines: [
+          { k: "invade", t: "Started planning an invasion of Corsi — not at war, good production against strongest neighbour" },
+          { k: "build", t: "Started building garrison at Sexi" },
+        ] }],
+      },
+      lines: 100, matched: 10,
+    });
+    window.electronAPI.chronicleReadMessageLog = () => Promise.resolve({ text: null });
+    c = await mount(<FactionChroniclePanel defaultLogDir={"C:/logs"} factionDisplayNames={{ carthage: "Carthage" }} onClose={() => {}} />);
+    const readBtn = [...document.body.querySelectorAll("button")].find((b) => b.textContent === "Read live log");
+    expect(readBtn).toBeTruthy();
+    readBtn.click();
+    // The scan is a two-await chain (chronicle IPC, then the message-log
+    // read) — give the event loop a few ticks, not just one.
+    await new Promise((r) => setTimeout(r, 25));
+    expect(document.body.textContent).toContain("Turn 1");
+    expect(document.body.textContent).toContain("summer 270 BC");
+    expect(document.body.textContent).toContain("Started planning an invasion of Corsi");
+    expect(document.body.textContent).toContain("no message_log found (battles omitted)");
     void c;
   });
 });
