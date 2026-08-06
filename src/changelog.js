@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1487",
+    date: "2026-08-06",
+    items: [
+      { type: "feature", text: "**Crash-reporter 0.1.50: reports now name the broken characters behind one of the two engine crash families.** When a family member comes of age, the engine only tries the faction leader's tile and the eight tiles around each of that faction's settlements; if every one is water, impassable or occupied it gives up and creates the character anyway at map position (0,0) with null trait and ancillary strings. Rendering that character's card copies a null string and the game dies instantly (ACCESS_VIOLATION +0x190C65F — five reproducible crashes from one tester). The reporter now counts both populations separately, because they need different answers: placement failures mean the save is manufacturing landmines right now (and names the faction whose family tree is stuck), while characters already sitting at (0,0) mean the save is permanently mined — a map fix cannot repair those. Verified against real telemetry before shipping: one session yields nine failures for Barzapharnes of the Parni, another shows Gotzon and Shabataka already broken." },
+    ],
+  },
+
+  {
     version: "0.9.1486",
     date: "2026-08-06",
     items: [

@@ -30,7 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 APP_NAME = "RIS Crash Reporter"
-APP_VERSION = "0.1.49"
+APP_VERSION = "0.1.50"
 CONFIG_FILENAME = "crash_reporter.ini"
 LOG_FILENAME = "crash_reporter.log"
 
@@ -1133,6 +1133,23 @@ def sample_game_memory(allowed_names: set[str]) -> tuple[int, int, int] | None:
 TRAIT_NOISE_RE = re.compile(
     r"^Current Trait: .{0,120}mismatch between attribute list and listed effects\s*$")
 
+# v0.1.50: the (0,0)-character defect, root-caused 2026-08-06 from Ghidra +
+# telemetry. The engine places a coming-of-age family member by trying the
+# faction leader's tile and the 8 tiles around each of the faction's
+# settlements; if every candidate is water/occupied/impassable it logs
+#   "Could not find a suitable place for coming of age character X(faction)"
+# and returns NULL — the character is still created, at (0,0), with null
+# trait/ancillary strings. Rendering that character's card copies a null
+# UNI_STRING and access-violates (+0x190C65F, 5 reproducible CTDs from one
+# tester). The character persists in the save, so a save that has one is
+# permanently mined. On the NEXT load the engine reveals them with
+#   "character X (named character at (0,0)) has no religion, assigning ..."
+# Both populations are worth counting: failures = this save is manufacturing
+# landmines now; (0,0) sightings = it already carries them.
+COA_FAIL_RE = re.compile(
+    r"Could not find a suitable place for coming of age character\s+(\S.*?)\s*$")
+ZERO_POS_RE = re.compile(r"character\s+(\S.*?)\s+\([^()]*at \(0,0\)\)")
+
 
 def is_known_noise_line(line: str) -> bool:
     """True for log lines the RIS team has ruled intentional and unfixable."""
@@ -1197,6 +1214,13 @@ class LogTail:
         # v0.1.48: confirmed-intentional noise lines seen (trait-display
         # mismatch warnings). Counted so the report can say they were ignored.
         self.noise_count = 0
+        # v0.1.50: the (0,0)-character defect (see COA_FAIL_RE / ZERO_POS_RE).
+        # Two separate populations: placement failures happening NOW (this save
+        # is manufacturing landmines) and characters already sitting at (0,0)
+        # (this save already carries them). Keyed by name so the report can
+        # name the faction whose family tree is stuck.
+        self.coa_failures: Counter = Counter()
+        self.zero_pos_chars: Counter = Counter()
 
     @property
     def assert_count(self) -> int:
@@ -1285,6 +1309,22 @@ class LogTail:
                         suf = re.sub(r"\d+", "#", suf).strip()[:60]
                         if suf:
                             self.overflow_suffixes[suf] += 1
+            # v0.1.50: (0,0)-character defect. Cheap substring guards first —
+            # these run on every line of a multi-hundred-MB log.
+            if "coming of age" in ln:
+                _m = COA_FAIL_RE.search(ln)
+                if _m:
+                    _k = _m.group(1)[:60]
+                    # Bound the number of DISTINCT names (a runaway save could
+                    # name thousands); already-seen names always keep counting.
+                    if _k in self.coa_failures or len(self.coa_failures) < 60:
+                        self.coa_failures[_k] += 1
+            if "at (0,0)" in ln:
+                _m = ZERO_POS_RE.search(ln)
+                if _m:
+                    _k = _m.group(1)[:60]
+                    if _k in self.zero_pos_chars or len(self.zero_pos_chars) < 60:
+                        self.zero_pos_chars[_k] += 1
             if ("Uknown settlement level" in ln or "Unknown settlement level" in ln) and len(self.level_ctx) < 3:
                 self.level_ctx.append(" | ".join(s.strip()[:80] for s in self.buffer[-8:]))
             # Asset/model load failure — the direct battle-load CTD cause. Record
@@ -2304,6 +2344,32 @@ def main():
     if level_ctx:
         crash_signals.append(f"'Uknown settlement level' context: {level_ctx[0][:240]}")
 
+    # v0.1.50: the (0,0)-character defect. Reported OUTSIDE the assert block —
+    # these are plain log lines, present even in sessions with zero asserts,
+    # and they are the one signal that says "this save is (or will be) mined".
+    _coa = Counter(); _zero = Counter()
+    for _t in (sys_tail, msg_tail):
+        _coa.update(getattr(_t, "coa_failures", {}) or {})
+        _zero.update(getattr(_t, "zero_pos_chars", {}) or {})
+    if _coa:
+        _who = ", ".join("%s ×%d" % (k, n) for k, n in _coa.most_common(6))
+        crash_signals.append(
+            "⚠ (0,0)-CHARACTER FACTORY: %d coming-of-age placement failure(s), %d distinct "
+            "character(s) — %s. The engine could not find a free tile beside any of that "
+            "faction's settlements, so each character was created AT (0,0) with null "
+            "trait/ancillary strings; rendering one's card copies a null string and CTDs "
+            "(ACCESS_VIOLATION +0x190C65F). They persist in the save. Root cause is map-side: "
+            "the faction's settlements have no free adjacent land tile (the sealed holding-pen "
+            "settlements do this by construction)."
+            % (sum(_coa.values()), len(_coa), _who))
+    if _zero:
+        _who = ", ".join("%s ×%d" % (k, n) for k, n in _zero.most_common(6))
+        crash_signals.append(
+            "⚠ SAVE ALREADY CARRIES %d BROKEN (0,0) CHARACTER(S) — %s. Selecting one, or any "
+            "UI that renders its card, is a known instant CTD (+0x190C65F). A map fix cannot "
+            "repair a save that already has them: this campaign stays mined."
+            % (len(_zero), _who))
+
     # v0.1.48: confirmed-intentional noise is EXCLUDED from headlines and
     # contexts above, and accounted for here so the exclusion is visible —
     # a filter that hides lines without saying so would be indistinguishable
@@ -3167,6 +3233,31 @@ def selftest() -> int:
             ok = False
     except Exception as _exc:
         print("  %-26s FAIL: %r" % ("header mod identity", _exc))
+        ok = False
+
+    # The (0,0)-character detectors, against the exact lines seen in telemetry
+    # (freehands' placement failures, Robotrober's load-time (0,0) sightings).
+    # Near-misses matter: a successful coming-of-age line and an ordinary
+    # character line must NOT be counted, or every session would look mined.
+    try:
+        _c1 = COA_FAIL_RE.search(
+            "Could not find a suitable place for coming of age character Barzapharnes(parni)")
+        _c2 = COA_FAIL_RE.search("character Barzapharnes(parni) has come of age")
+        _z1 = ZERO_POS_RE.search(
+            "character Artabanos (named character at (0,0)) has no religion, assigning them "
+            "the same religion as their faction leader (caucasian)")
+        _z2 = ZERO_POS_RE.search(
+            "character Gaius Julius (named character at (145,233)) has no religion, assigning them")
+        _ok = (_c1 is not None and _c1.group(1) == "Barzapharnes(parni)"
+               and _c2 is None
+               and _z1 is not None and _z1.group(1) == "Artabanos"
+               and _z2 is None)
+        print("  %-26s %-5s %s" % ("(0,0)-character detect", str(_ok),
+                                   "ok" if _ok else "FAIL (missed a real line or matched a healthy one)"))
+        if not _ok:
+            ok = False
+    except Exception as _exc:
+        print("  %-26s FAIL: %r" % ("(0,0)-character detect", _exc))
         ok = False
 
     # Grimel's three consecutive crash reports each showed "Failed x14" as one of only
