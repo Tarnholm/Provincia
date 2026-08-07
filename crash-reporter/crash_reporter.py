@@ -30,7 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 APP_NAME = "RIS Crash Reporter"
-APP_VERSION = "0.1.50"
+APP_VERSION = "0.1.51"
 CONFIG_FILENAME = "crash_reporter.ini"
 LOG_FILENAME = "crash_reporter.log"
 
@@ -1221,6 +1221,13 @@ class LogTail:
         # name the faction whose family tree is stuck.
         self.coa_failures: Counter = Counter()
         self.zero_pos_chars: Counter = Counter()
+        # The name maps are capped at 60 DISTINCT names to bound memory, but the
+        # totals must never be: field data showed 9 of 15 affected saves pinned
+        # at exactly 60, which read as "60 broken characters" when the true
+        # number was unknown and larger. Counted separately so the report can
+        # say "at least N distinct" honestly.
+        self.coa_total = 0
+        self.zero_pos_total = 0
 
     @property
     def assert_count(self) -> int:
@@ -1317,12 +1324,14 @@ class LogTail:
                     _k = _m.group(1)[:60]
                     # Bound the number of DISTINCT names (a runaway save could
                     # name thousands); already-seen names always keep counting.
+                    self.coa_total += 1
                     if _k in self.coa_failures or len(self.coa_failures) < 60:
                         self.coa_failures[_k] += 1
             if "at (0,0)" in ln:
                 _m = ZERO_POS_RE.search(ln)
                 if _m:
                     _k = _m.group(1)[:60]
+                    self.zero_pos_total += 1
                     if _k in self.zero_pos_chars or len(self.zero_pos_chars) < 60:
                         self.zero_pos_chars[_k] += 1
             if ("Uknown settlement level" in ln or "Unknown settlement level" in ln) and len(self.level_ctx) < 3:
@@ -2347,28 +2356,32 @@ def main():
     # v0.1.50: the (0,0)-character defect. Reported OUTSIDE the assert block —
     # these are plain log lines, present even in sessions with zero asserts,
     # and they are the one signal that says "this save is (or will be) mined".
-    _coa = Counter(); _zero = Counter()
+    _coa = Counter(); _zero = Counter(); _coa_tot = 0; _zero_tot = 0
     for _t in (sys_tail, msg_tail):
         _coa.update(getattr(_t, "coa_failures", {}) or {})
         _zero.update(getattr(_t, "zero_pos_chars", {}) or {})
+        _coa_tot += getattr(_t, "coa_total", 0)
+        _zero_tot += getattr(_t, "zero_pos_total", 0)
+    _coa_capped = len(_coa) >= 60
+    _zero_capped = len(_zero) >= 60
     if _coa:
         _who = ", ".join("%s ×%d" % (k, n) for k, n in _coa.most_common(6))
         crash_signals.append(
-            "⚠ (0,0)-CHARACTER FACTORY: %d coming-of-age placement failure(s), %d distinct "
+            "⚠ (0,0)-CHARACTER FACTORY: %d coming-of-age placement failure(s), %s%d distinct "
             "character(s) — %s. The engine could not find a free tile beside any of that "
             "faction's settlements, so each character was created AT (0,0) with null "
             "trait/ancillary strings; rendering one's card copies a null string and CTDs "
             "(ACCESS_VIOLATION +0x190C65F). They persist in the save. Root cause is map-side: "
             "the faction's settlements have no free adjacent land tile (the sealed holding-pen "
             "settlements do this by construction)."
-            % (sum(_coa.values()), len(_coa), _who))
+            % (_coa_tot, "at least " if _coa_capped else "", len(_coa), _who))
     if _zero:
         _who = ", ".join("%s ×%d" % (k, n) for k, n in _zero.most_common(6))
         crash_signals.append(
-            "⚠ SAVE ALREADY CARRIES %d BROKEN (0,0) CHARACTER(S) — %s. Selecting one, or any "
+            "⚠ SAVE ALREADY CARRIES %s%d BROKEN (0,0) CHARACTER(S) (%d sighting(s)) — %s. Selecting one, or any "
             "UI that renders its card, is a known instant CTD (+0x190C65F). A map fix cannot "
             "repair a save that already has them: this campaign stays mined."
-            % (len(_zero), _who))
+            % ("AT LEAST " if _zero_capped else "", len(_zero), _zero_tot, _who))
 
     # v0.1.48: confirmed-intentional noise is EXCLUDED from headlines and
     # contexts above, and accounted for here so the exclusion is visible —

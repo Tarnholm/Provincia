@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1489",
+    date: "2026-08-08",
+    items: [
+      { type: "fix", text: "**Crash-reporter 0.1.51: the (0,0)-character count is no longer silently capped.** The reporter tracks up to 60 distinct broken-character names to bound memory, but it printed that capped length as though it were the measurement. The field data made the flaw plain: 9 of 15 affected v7.14.b saves reported exactly 60 broken characters — the cap, not a count. Totals are now tallied independently of the cap, so a report reads \"AT LEAST 60 broken characters (150 sightings)\" instead of a confident and wrong 60. Matters because this is the signal we are using to size the coming-of-age placement defect: 15 of 35 v7.14.b sessions carry these characters, and each one is an instant CTD if its card renders." },
+    ],
+  },
+
+  {
     version: "0.9.1488",
     date: "2026-08-06",
     items: [
