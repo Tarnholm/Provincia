@@ -3390,7 +3390,7 @@ async function loadMonaco() {
   return new Promise((resolve, reject) => {
     const container = document.getElementById('monaco-container');
     container.innerHTML = `
-      <div style="padding:20px;display:flex;align-items:center;gap:10px;color:var(--text-tertiary,#8e8e93);font-size:11.5px">
+      <div style="padding:20px;display:flex;align-items:center;gap:10px;color:#a09880;font-size:11.5px">
         <div style="width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:master-spin 0.8s linear infinite"></div>
         Loading editor...
       </div>`;
@@ -3417,40 +3417,41 @@ async function loadMonaco() {
       require(['vs/editor/editor.main'], () => {
         // Clear the "loading from CDN" placeholder so monaco can mount cleanly.
         container.innerHTML = '';
-        // macOS-native dark theme
-        monaco.editor.defineTheme('macos-dark', {
+        // Provincia wax-tablet theme — the dark writing surface matches the
+        // suite's console tablets (warm near-black, amber cursor, bronze UI).
+        monaco.editor.defineTheme('provincia-tablet', {
           base: 'vs-dark',
           inherit: true,
           rules: [
-            { token: 'comment', foreground: '6a737d', fontStyle: 'italic' },
-            { token: 'keyword', foreground: 'ff7b72' },
-            { token: 'string', foreground: 'a5d6ff' },
-            { token: 'number', foreground: '79c0ff' },
-            { token: 'type', foreground: 'ffa657' },
+            { token: 'comment', foreground: '8a7c60', fontStyle: 'italic' },
+            { token: 'keyword', foreground: 'e8965a' },
+            { token: 'string', foreground: 'd8c98a' },
+            { token: 'number', foreground: 'e8c873' },
+            { token: 'type', foreground: 'dca64a' },
           ],
           colors: {
-            'editor.background': '#1e1e1e',
-            'editor.foreground': '#e6e6e6',
-            'editor.lineHighlightBackground': '#2a2a2a',
-            'editor.selectionBackground': '#264f78',
-            'editorLineNumber.foreground': '#555555',
-            'editorLineNumber.activeForeground': '#999999',
-            'editorCursor.foreground': '#0a84ff',
-            'editor.inactiveSelectionBackground': '#3a3d41',
-            'editorIndentGuide.background': '#333333',
-            'editorWidget.background': '#252526',
-            'editorWidget.border': '#454545',
+            'editor.background': '#262019',
+            'editor.foreground': '#e2dac6',
+            'editor.lineHighlightBackground': '#2e2720',
+            'editor.selectionBackground': '#5a4520',
+            'editorLineNumber.foreground': '#6a5e48',
+            'editorLineNumber.activeForeground': '#a8935f',
+            'editorCursor.foreground': '#dca64a',
+            'editor.inactiveSelectionBackground': '#3a3226',
+            'editorIndentGuide.background': '#3a3226',
+            'editorWidget.background': '#2b241c',
+            'editorWidget.border': '#5a4a30',
             'scrollbar.shadow': '#00000000',
-            'scrollbarSlider.background': '#ffffff15',
-            'scrollbarSlider.hoverBackground': '#ffffff25',
-            'scrollbarSlider.activeBackground': '#ffffff35',
+            'scrollbarSlider.background': '#dca64a30',
+            'scrollbarSlider.hoverBackground': '#dca64a48',
+            'scrollbarSlider.activeBackground': '#dca64a60',
           }
         });
 
         monacoEditor = monaco.editor.create(document.getElementById('monaco-container'), {
           value: '; Select a config file from the sidebar to begin editing.',
           language: 'plaintext',
-          theme: 'macos-dark',
+          theme: 'provincia-tablet',
           fontFamily: "'SF Mono', 'Cascadia Code', 'Fira Code', 'Menlo', 'Consolas', monospace",
           fontSize: 12,
           lineHeight: 19,

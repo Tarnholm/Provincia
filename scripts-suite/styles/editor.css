@@ -183,9 +183,23 @@
   font-size: 11px;
 }
 
+/* Monaco lives on a wax tablet like the consoles: warm-dark surface set
+   into the marble with a bronze frame. */
 #monaco-container {
   flex: 1;
   overflow: hidden;
+  margin: 12px 14px 14px;
+  background: var(--tablet);
+  border: 1px solid var(--tablet-edge);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 2px 10px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+#monaco-container .monaco-editor,
+#monaco-container .monaco-editor .overflow-guard {
+  border-radius: 9px;
 }
 
 /* ══════════════════════════════════════
@@ -226,9 +240,11 @@
 }
 
 .se-section-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #7a5220;
   flex-shrink: 0;
 }
 
@@ -246,7 +262,7 @@
 }
 
 .se-field + .se-field {
-  border-top: 1px solid rgba(255,255,255,0.03);
+  border-top: 1px solid rgba(90, 69, 48, 0.10);
 }
 
 .se-label {
@@ -281,7 +297,7 @@
 
 .se-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.25);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 .se-input.wide {
@@ -321,7 +337,7 @@
 }
 
 .se-dict-table tr + tr td {
-  border-top: 1px solid rgba(255,255,255,0.03);
+  border-top: 1px solid rgba(90, 69, 48, 0.10);
 }
 
 .se-dict-key {
@@ -345,7 +361,7 @@
 
 .se-dict-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.25);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 /* List editor */
@@ -378,7 +394,7 @@
 
 .se-dict-select {
   padding: 3px 24px 3px 8px;
-  background-color: rgba(30, 30, 30, 0.95);
+  background-color: var(--bg-input);
   border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
@@ -388,7 +404,7 @@
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a5f33' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 6px center;
   min-width: 140px;
@@ -396,12 +412,12 @@
 
 .se-dict-select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.25);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 .se-dict-select option {
-  background: #2a2a2c;
-  color: rgba(255, 255, 255, 0.88);
+  background: #faf5e8;
+  color: #221f1a;
 }
 
 .se-list-item {
@@ -490,11 +506,11 @@
 }
 
 .se-terrain-chain + .se-terrain-chain {
-  border-top: 1px solid rgba(255,255,255,0.04);
+  border-top: 1px solid rgba(90, 69, 48, 0.12);
 }
 
 .se-terrain-chain.fallback {
-  background: rgba(255,255,255,0.02);
+  background: rgba(90, 69, 48, 0.05);
 }
 
 .se-terrain-chain-num {
@@ -560,7 +576,7 @@
 
 .se-terrain-select {
   padding: 3px 24px 3px 8px;
-  background-color: rgba(30, 30, 30, 0.95);
+  background-color: var(--bg-input);
   border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
@@ -571,19 +587,19 @@
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a5f33' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 6px center;
 }
 
 .se-terrain-select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.25);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 .se-terrain-select option {
-  background: #2a2a2c;
-  color: rgba(255, 255, 255, 0.88);
+  background: #faf5e8;
+  color: #221f1a;
 }
 
 /* ── Factions list inside terrain ── */
@@ -620,7 +636,7 @@
 
 .se-cond-type {
   padding: 3px 24px 3px 8px;
-  background-color: rgba(30, 30, 30, 0.95);
+  background-color: var(--bg-input);
   border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
   color: var(--accent);
@@ -631,7 +647,7 @@
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a5f33' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 6px center;
   min-width: 170px;
@@ -639,12 +655,12 @@
 
 .se-cond-type:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.25);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 .se-cond-type option {
-  background: #2a2a2c;
-  color: rgba(255, 255, 255, 0.88);
+  background: #faf5e8;
+  color: #221f1a;
 }
 
 .se-cond-values {
@@ -661,12 +677,12 @@
 
 .se-cond-values:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.25);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 .se-cond-single-value {
   padding: 3px 24px 3px 8px;
-  background-color: rgba(30, 30, 30, 0.95);
+  background-color: var(--bg-input);
   border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
@@ -676,20 +692,20 @@
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a5f33' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 6px center;
 }
 
 .se-cond-single-value:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.25);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 .se-cond-single-value option,
 .se-cond-type option {
-  background: #2a2a2c;
-  color: rgba(255, 255, 255, 0.88);
+  background: #faf5e8;
+  color: #221f1a;
 }
 
 /* Tag selector (multi-value with drag-drop) */
@@ -748,7 +764,7 @@
 
 .se-tag-add {
   padding: 2px 20px 2px 6px;
-  background-color: rgba(30, 30, 30, 0.95);
+  background-color: var(--bg-input);
   border: 1px dashed var(--border-subtle);
   border-radius: var(--radius-sm);
   color: var(--text-tertiary);
@@ -758,7 +774,7 @@
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a5f33' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 4px center;
   flex-shrink: 0;
@@ -770,8 +786,8 @@
 }
 
 .se-tag-add option {
-  background: #2a2a2c;
-  color: rgba(255, 255, 255, 0.88);
+  background: #faf5e8;
+  color: #221f1a;
 }
 
 .se-tag-input {
@@ -789,7 +805,7 @@
 .se-tag-input:focus {
   border-color: var(--accent);
   border-style: solid;
-  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.25);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 .se-tag-input::placeholder {
@@ -857,7 +873,7 @@
 .se-terrain-delete-rule:hover {
   color: var(--red);
   border-color: var(--red);
-  background: rgba(255, 69, 58, 0.1);
+  background: rgba(179, 54, 42, 0.10);
 }
 
 /* Add rule button */
@@ -882,7 +898,7 @@
 
 .se-terrain-add-btn:hover {
   border-color: var(--accent);
-  background: rgba(10, 132, 255, 0.08);
+  background: rgba(220, 166, 74, 0.16);
 }
 
 /* ── Building Requirements (heavy industry) ── */

@@ -19,8 +19,11 @@
 }
 
 .compare-header h3 {
-  font-size: 14px;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #4a3413;
   margin-bottom: 2px;
 }
 
@@ -96,8 +99,8 @@
 }
 
 .chip.checked {
-  background: rgba(10, 132, 255, 0.18);
-  border-color: rgba(10, 132, 255, 0.35);
+  background: rgba(220, 166, 74, 0.25);
+  border-color: rgba(182, 126, 40, 0.5);
   color: var(--text-accent);
 }
 
@@ -222,12 +225,12 @@
 }
 
 .diff-step-badge.identical {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(90, 69, 48, 0.10);
   color: var(--text-tertiary);
 }
 
 .diff-step-badge.different {
-  background: rgba(255, 159, 10, 0.15);
+  background: rgba(168, 93, 16, 0.16);
   color: var(--orange);
 }
 
@@ -278,16 +281,16 @@
 }
 
 .diff-line-added {
-  background: rgba(50, 215, 75, 0.08);
+  background: rgba(46, 125, 63, 0.10);
   color: var(--green);
 }
 
 .diff-line-removed {
-  background: rgba(255, 69, 58, 0.08);
+  background: rgba(179, 54, 42, 0.09);
   color: var(--red);
 }
 
 .diff-line-changed {
-  background: rgba(255, 159, 10, 0.06);
+  background: rgba(168, 93, 16, 0.09);
   color: var(--orange);
 }

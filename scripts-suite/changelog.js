@@ -7,6 +7,13 @@ window.SPS_TYPE_COLOURS = { feature: "#4a9", fix: "#c66", improvement: "#6ac", c
 
 window.SPS_CHANGELOG = [
   {
+    version: "0.16.18",
+    date: "2026-08-08",
+    items: [
+      { type: "change", text: "**The Suite now looks like Provincia.** The window trades the generic gray dark theme for the main app's identity: the RTW-R cream-marble slab as the ground, parchment panels, bronze inscription headers, and Provincia amber everywhere the old blue was. Consoles and the code editor sit on dark **wax tablets** framed in bronze, with warm log colors. Pipeline and Master steps are numbered with **Roman numerals** in true execution order." },
+    ],
+  },
+  {
     version: "0.16.17",
     date: "2026-08-08",
     items: [

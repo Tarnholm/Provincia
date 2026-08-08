@@ -1,41 +1,60 @@
-/* ══════════════════════════════════════
-   macOS Design System
-   ══════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════
+   Provincia Design System — marble, parchment, bronze and amber.
+   The Suite window wears the main app's identity: the RTW-R cream-marble
+   slab as the ground, translucent parchment panels over it, Roman-bronze
+   inscription headers, and dark "wax tablet" surfaces wherever code or
+   console output is written. Accent is Provincia amber (#dca64a), never
+   blue. Var NAMES are kept from the old macOS system so the per-tab
+   stylesheets keep working; only their VALUES changed.
+   ══════════════════════════════════════════════════════════════════════ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* macOS Dark palette */
-  --bg-window: rgba(30, 30, 30, 0.92);
-  --bg-sidebar: rgba(38, 38, 40, 0.85);
-  --bg-content: #1e1e1e;
-  --bg-elevated: rgba(50, 50, 52, 0.95);
-  --bg-hover: rgba(255, 255, 255, 0.06);
-  --bg-active: rgba(255, 255, 255, 0.1);
-  --bg-selected: rgba(0, 122, 255, 0.25);
-  --bg-input: rgba(0, 0, 0, 0.25);
-  --bg-inset: rgba(0, 0, 0, 0.18);
+  /* Ground + panels (light marble world) */
+  --bg-window: #ece2c8;
+  --bg-sidebar: rgba(240, 231, 209, 0.82);
+  --bg-content: rgba(246, 240, 226, 0.55);
+  --bg-elevated: rgba(251, 246, 234, 0.88);
+  --bg-hover: rgba(90, 69, 48, 0.08);
+  --bg-active: rgba(90, 69, 48, 0.14);
+  --bg-selected: rgba(220, 166, 74, 0.30);
+  --bg-input: rgba(255, 252, 244, 0.85);
+  --bg-inset: rgba(90, 69, 48, 0.09);
 
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-medium: rgba(255, 255, 255, 0.12);
-  --border-control: rgba(255, 255, 255, 0.15);
+  --border-subtle: rgba(90, 69, 48, 0.22);
+  --border-medium: rgba(90, 69, 48, 0.34);
+  --border-control: rgba(90, 69, 48, 0.40);
 
-  --text-primary: rgba(255, 255, 255, 0.88);
-  --text-secondary: rgba(255, 255, 255, 0.55);
-  --text-tertiary: rgba(255, 255, 255, 0.35);
-  --text-accent: #64a0ff;
+  --text-primary: #221f1a;
+  --text-secondary: rgba(34, 31, 26, 0.66);
+  --text-tertiary: rgba(34, 31, 26, 0.45);
+  --text-accent: #8a5d18;
 
-  --accent: #0a84ff;
-  --accent-hover: #409cff;
-  --green: #32d74b;
-  --red: #ff453a;
-  --orange: #ff9f0a;
-  --yellow: #ffd60a;
-  --purple: #bf5af2;
-  --pink: #ff375f;
-  --teal: #64d2ff;
+  /* Provincia amber + bronze */
+  --accent: #b67e28;          /* readable amber-bronze on parchment */
+  --accent-bright: #dca64a;   /* the app's signature amber (fills)  */
+  --accent-hover: #c98f33;
+  --focus-ring: rgba(220, 166, 74, 0.35);
+
+  /* Semantics tuned for light parchment surfaces */
+  --green: #2e7d3f;
+  --red: #b3362a;
+  --orange: #a85d10;
+  --yellow: #8f6b00;
+  --purple: #7a4a9e;
+  --pink: #a83a5e;
+  --teal: #1f6e7e;
+
+  /* Wax tablet (dark writing surfaces: consoles, Monaco, raw output) */
+  --tablet: #262019;
+  --tablet-edge: rgba(138, 100, 41, 0.55);
+  --tablet-text: #d9d2c0;
+  --tablet-text-bright: #f0e9d8;
+  --tablet-faint: rgba(217, 210, 192, 0.5);
 
   --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Times New Roman', serif;
   --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Menlo', 'Consolas', monospace;
 
   --radius-sm: 5px;
@@ -51,23 +70,50 @@ html, body {
   font-family: var(--font-system);
   font-size: 13px;
   color: var(--text-primary);
-  background: var(--bg-window);
+  background: var(--bg-window) url('../assets/marble.png');
+  background-size: 640px auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Scrollbar (macOS-thin style) ── */
-::-webkit-scrollbar { width: 7px; height: 7px; }
+/* ── Inscription — the shared header voice (Roman capitalis) ── */
+.sidebar-title,
+.dialog-section-label,
+.compare-selector label,
+.mg-section-name,
+.master-summary-label,
+.diff-stat .stat-label,
+.diff-pane-header,
+.se-dict-table th,
+.master-result-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7a5f33;
+}
+
+/* ── Scrollbar — the Feral gold rail, thin ── */
+::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: linear-gradient(#dca64a, #b67e28);
   border-radius: 10px;
+  border: 2px solid rgba(236, 226, 200, 0.9);
+  background-clip: padding-box;
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+::-webkit-scrollbar-thumb:hover { background: linear-gradient(#e8b65a, #c98f33); border-width: 2px; }
 ::-webkit-scrollbar-corner { background: transparent; }
 
+/* Dark tablet surfaces get a rail that matches their ground */
+.console-panel::-webkit-scrollbar-thumb,
+#master-pane-output::-webkit-scrollbar-thumb,
+.diff-pane::-webkit-scrollbar-thumb {
+  border-color: rgba(38, 32, 25, 0.9);
+}
+
 /* ══════════════════════════════════════
-   Titlebar
+   Titlebar — polished marble lintel
    ══════════════════════════════════════ */
 
 #titlebar {
@@ -76,8 +122,9 @@ html, body {
   height: var(--titlebar-height);
   padding: 0 16px;
   padding-right: 140px; /* space for Windows close/min/max overlay buttons */
-  background: var(--bg-sidebar);
-  border-bottom: 1px solid var(--border-subtle);
+  background: linear-gradient(rgba(252, 248, 238, 0.85), rgba(240, 231, 209, 0.78));
+  border-bottom: 1px solid rgba(90, 69, 48, 0.30);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset;
   -webkit-app-region: drag;
   user-select: none;
   position: relative;
@@ -85,8 +132,27 @@ html, body {
 }
 
 .titlebar-drag {
-  width: 12px; /* small left margin */
   flex-shrink: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.titlebar-brand {
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #6b5327;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.titlebar-brand .brand-numeral {
+  color: rgba(107, 83, 39, 0.55);
+  letter-spacing: 0.1em;
 }
 
 .titlebar-center {
@@ -116,17 +182,18 @@ html, body {
 }
 
 /* ══════════════════════════════════════
-   Segmented Control (macOS style)
+   Segmented Control — carved into the lintel
    ══════════════════════════════════════ */
 
 .segmented-control {
   display: inline-flex;
-  background: var(--bg-inset);
+  background: rgba(90, 69, 48, 0.12);
   border-radius: var(--radius);
   padding: 2px;
   gap: 1px;
   -webkit-app-region: no-drag;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid rgba(90, 69, 48, 0.25);
+  box-shadow: inset 0 1px 2px rgba(58, 42, 8, 0.12);
 }
 
 .segmented-control.small {
@@ -140,10 +207,10 @@ html, body {
   padding: 5px 14px;
   border: none;
   background: transparent;
-  color: var(--text-secondary);
+  color: rgba(58, 44, 20, 0.62);
   font-family: var(--font-system);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   border-radius: 6px;
   transition: all 0.15s ease;
@@ -162,9 +229,9 @@ html, body {
 }
 
 .segment.active {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  background: linear-gradient(#e9c887, #dca64a);
+  color: #2a1f0a;
+  box-shadow: 0 1px 2px rgba(58, 42, 8, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .segment svg {
@@ -193,22 +260,22 @@ html, body {
 .tab-panel.active { display: flex; }
 
 /* ══════════════════════════════════════
-   macOS Sidebar
+   Sidebar — parchment wash over the marble
    ══════════════════════════════════════ */
 
 .mac-sidebar {
   width: 240px;
   min-width: 240px;
   background: var(--bg-sidebar);
-  border-right: 1px solid var(--border-subtle);
+  border-right: 1px solid rgba(90, 69, 48, 0.28);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(10px);
 }
 
 .sidebar-header {
-  padding: 12px 16px 4px;
+  padding: 14px 16px 4px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -228,26 +295,29 @@ html, body {
   color: var(--text-tertiary);
   cursor: pointer;
   transition: all 0.12s ease;
+  font-family: var(--font-system);
 }
 
 .sidebar-link-btn:hover {
-  color: var(--accent);
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-accent);
+  background: var(--bg-hover);
 }
 
 .sidebar-title {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 10.5px;
+}
+
+/* A short bronze rule under each sidebar section title */
+.sidebar-header::after {
+  content: '';
+  display: none;
 }
 
 .sidebar-section {
-  padding: 4px 8px 8px;
+  padding: 4px 8px 10px;
 }
 
-/* ── Source List (macOS sidebar list) ── */
+/* ── Source List ── */
 
 .source-list {
   display: flex;
@@ -276,6 +346,7 @@ html, body {
 .source-list-item.active {
   background: var(--bg-selected);
   color: var(--text-primary);
+  box-shadow: inset 2px 0 0 var(--accent-bright);
 }
 
 .source-list-item .item-icon {
@@ -305,16 +376,16 @@ html, body {
 }
 
 /* ══════════════════════════════════════
-   macOS Toolbar
+   Toolbar — parchment shelf
    ══════════════════════════════════════ */
 
 .mac-toolbar {
   display: flex;
   align-items: center;
   padding: 6px 12px;
-  min-height: 36px;
-  background: var(--bg-elevated);
-  border-bottom: 1px solid var(--border-subtle);
+  min-height: 38px;
+  background: linear-gradient(rgba(251, 246, 234, 0.92), rgba(243, 235, 216, 0.88));
+  border-bottom: 1px solid rgba(90, 69, 48, 0.26);
   gap: 8px;
 }
 
@@ -335,7 +406,7 @@ html, body {
   padding: 5px 12px;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
-  background: var(--bg-elevated);
+  background: linear-gradient(rgba(255, 253, 247, 0.95), rgba(243, 235, 216, 0.95));
   color: var(--text-primary);
   font-family: var(--font-system);
   font-size: 12px;
@@ -344,7 +415,7 @@ html, body {
   transition: all 0.12s ease;
   white-space: nowrap;
   line-height: 1;
-  box-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 1px rgba(58, 42, 8, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .toolbar-btn.small {
@@ -353,8 +424,8 @@ html, body {
 }
 
 .toolbar-btn:hover:not(:disabled) {
-  background: var(--bg-hover);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(90, 69, 48, 0.55);
+  filter: brightness(1.02);
 }
 
 .toolbar-btn:active:not(:disabled) {
@@ -363,19 +434,21 @@ html, body {
 }
 
 .toolbar-btn:disabled {
-  opacity: 0.35;
+  opacity: 0.4;
   cursor: default;
 }
 
 .toolbar-btn.primary {
-  background: var(--accent);
-  border-color: rgba(0, 0, 0, 0.15);
-  color: white;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  background: linear-gradient(#e9c887, #dca64a);
+  border-color: rgba(122, 87, 24, 0.6);
+  color: #2a1f0a;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(58, 42, 8, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 .toolbar-btn.primary:hover:not(:disabled) {
-  background: var(--accent-hover);
+  background: linear-gradient(#f0d194, #e3ae54);
+  filter: none;
 }
 
 .toolbar-btn.ghost {
@@ -390,7 +463,7 @@ html, body {
   color: var(--text-primary);
 }
 
-/* ── Search Field (macOS rounded) ── */
+/* ── Search Field ── */
 
 .search-field-wrap {
   position: relative;
@@ -409,7 +482,7 @@ html, body {
 .search-field {
   width: 100%;
   padding: 5px 8px 5px 24px;
-  background: var(--bg-inset);
+  background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
@@ -417,11 +490,12 @@ html, body {
   font-size: 12px;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
+  box-shadow: inset 0 1px 2px rgba(58, 42, 8, 0.08);
 }
 
 .search-field:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.25);
+  border-color: var(--accent-bright);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 .search-field::placeholder {
@@ -433,12 +507,12 @@ html, body {
   padding-left: 8px;
 }
 
-/* ── macOS Select ── */
+/* ── Select ── */
 
 .mac-select {
   width: 100%;
   padding: 6px 10px;
-  background-color: rgba(30, 30, 30, 0.95);
+  background-color: var(--bg-input);
   border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
@@ -448,35 +522,30 @@ html, body {
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a5f33' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 8px center;
   padding-right: 24px;
 }
 
 .mac-select:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.25);
+  border-color: var(--accent-bright);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 .mac-select option {
-  background: #2a2a2c;
-  color: rgba(255, 255, 255, 0.88);
+  background: #faf5e8;
+  color: #221f1a;
   padding: 4px 8px;
 }
 
-.mac-select option:checked,
-.mac-select option:hover {
-  background: #3a3a3c;
-}
-
-/* ── Selection + Focus ring ── */
+/* ── Selection ── */
 ::selection {
-  background: rgba(10, 132, 255, 0.4);
+  background: rgba(220, 166, 74, 0.45);
 }
 
 /* ══════════════════════════════════════
-   Dialog Overlay (macOS sheet style)
+   Dialogs — parchment sheets
    ══════════════════════════════════════ */
 
 .dialog-overlay {
@@ -487,8 +556,8 @@ html, body {
   align-items: flex-start;
   justify-content: center;
   padding-top: 80px;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(4px);
+  background: rgba(38, 32, 25, 0.45);
+  backdrop-filter: blur(3px);
 }
 
 .dialog-overlay.visible {
@@ -498,10 +567,12 @@ html, body {
 .dialog-panel {
   width: 480px;
   max-width: 90vw;
-  background: #2a2a2c;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #f6efdd url('../assets/marble.png');
+  background-size: 640px auto;
+  background-blend-mode: multiply;
+  border: 1px solid rgba(90, 69, 48, 0.5);
   border-radius: var(--radius-lg);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(255, 255, 255, 0.05);
+  box-shadow: 0 20px 60px rgba(20, 14, 4, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.5);
   overflow: hidden;
   animation: dialog-in 0.2s ease-out;
 }
@@ -516,9 +587,12 @@ html, body {
 }
 
 .dialog-header h3 {
-  font-size: 15px;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   margin-bottom: 4px;
+  color: #4a3413;
 }
 
 .dialog-header p {
@@ -532,11 +606,7 @@ html, body {
 }
 
 .dialog-section-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
+  font-size: 10px;
   margin-bottom: 6px;
 }
 
@@ -545,8 +615,8 @@ html, body {
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 20px;
-  background: rgba(0, 0, 0, 0.15);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(90, 69, 48, 0.08);
+  border-top: 1px solid rgba(90, 69, 48, 0.2);
 }
 
 /* ── Submod-specific ── */
@@ -568,12 +638,12 @@ html, body {
 
 .submod-file-item.missing {
   color: var(--red);
-  background: rgba(255, 69, 58, 0.08);
+  background: rgba(179, 54, 42, 0.09);
 }
 
 .submod-file-item.filled {
   color: var(--green);
-  background: rgba(50, 215, 75, 0.08);
+  background: rgba(46, 125, 63, 0.10);
 }
 
 .submod-parent-row {

@@ -146,10 +146,10 @@ function openScriptsWindow() {
     minWidth: 1000,
     minHeight: 700,
     title: 'Settlement Processor — Provincia',
-    backgroundColor: '#1e1e1e',
+    backgroundColor: '#ece2c8',
     autoHideMenuBar: true,
     titleBarStyle: 'hidden',
-    titleBarOverlay: { color: '#26262800', symbolColor: '#999999', height: 40 },
+    titleBarOverlay: { color: '#26262800', symbolColor: '#6b5327', height: 40 },
     webPreferences: {
       preload: path.join(__dirname, 'preload-scripts.js'),
       contextIsolation: true,

@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════
-   Pipeline Tab — macOS style
+   Pipeline Tab — Provincia marble & tablet
    ══════════════════════════════════════ */
 
 .pipeline-layout {
@@ -25,7 +25,7 @@
   gap: 7px;
   width: 100%;
   padding: 6px 8px;
-  background: var(--bg-inset);
+  background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
@@ -37,7 +37,6 @@
 }
 
 .mod-source-btn:hover {
-  background: var(--bg-hover);
   border-color: var(--border-medium);
   color: var(--text-primary);
 }
@@ -48,7 +47,7 @@
 }
 
 .mod-source-btn.loaded {
-  border-color: rgba(50, 215, 75, 0.3);
+  border-color: rgba(46, 125, 63, 0.45);
   color: var(--text-primary);
 }
 
@@ -88,17 +87,35 @@
 .import-status.error { color: var(--red); }
 .import-status.info { color: var(--text-secondary); }
 
-/* ── Step Cards ── */
+/* ── Step Cards — the pipeline as a numbered Roman itinerary ── */
+
+#pipeline-steps {
+  counter-reset: via-step;
+}
 
 .step-card {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
+  padding: 6px 8px 6px 6px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.12s ease;
   user-select: none;
+  counter-increment: via-step;
+}
+
+/* Roman numeral milestone — the step's true position in the march order */
+.step-card::before {
+  content: counter(via-step, upper-roman);
+  font-family: var(--font-display);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(122, 95, 51, 0.75);
+  min-width: 26px;
+  text-align: right;
+  flex-shrink: 0;
 }
 
 .step-card:hover {
@@ -110,21 +127,21 @@
 }
 
 .step-card.running {
-  background: rgba(10, 132, 255, 0.12);
+  background: rgba(220, 166, 74, 0.18);
 }
 
 .step-card.done {
-  background: rgba(50, 215, 75, 0.08);
+  background: rgba(46, 125, 63, 0.10);
 }
 
 .step-card.error {
-  background: rgba(255, 69, 58, 0.1);
+  background: rgba(179, 54, 42, 0.10);
 }
 
 .step-checkbox {
   width: 14px;
   height: 14px;
-  accent-color: var(--accent);
+  accent-color: var(--accent-bright);
   cursor: pointer;
   flex-shrink: 0;
   border-radius: 3px;
@@ -136,6 +153,7 @@
   border-radius: 50%;
   flex-shrink: 0;
   opacity: 0.7;
+  box-shadow: inset 0 0 0 1px rgba(58, 42, 8, 0.2);
 }
 
 .step-card.done .step-dot,
@@ -169,9 +187,9 @@
 .step-import-btn {
   font-size: 9px;
   padding: 2px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--border-medium);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--bg-input);
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.12s ease;
@@ -179,9 +197,9 @@
 }
 
 .step-import-btn:hover {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  background: var(--accent-bright);
+  border-color: var(--accent-bright);
+  color: #2a1f0a;
 }
 
 .step-import-status {
@@ -191,7 +209,7 @@
 }
 
 .step-import-status.imported {
-  color: rgba(74, 222, 128, 0.7);
+  color: var(--green);
 }
 
 .step-status {
@@ -222,14 +240,26 @@
   background: var(--bg-content);
 }
 
-/* ── Console ── */
+/* ── Console — a wax tablet set into the marble ──
+   Dark warm writing surface, bronze frame, floating with a margin so the
+   marble shows around it. Log colors are tablet-scoped brights: the global
+   semantic vars are tuned for parchment and would go muddy here. */
 
 .console-panel {
   display: none;
   flex: 1;
   overflow: auto;
-  padding: 12px 16px;
-  background: var(--bg-content);
+  padding: 14px 18px;
+  margin: 12px 14px 14px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.06)),
+    var(--tablet);
+  border: 1px solid var(--tablet-edge);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 2px 10px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.35);
+  min-height: 0;
 }
 
 .console-panel.active { display: block; }
@@ -238,56 +268,56 @@
   font-family: var(--font-mono);
   font-size: 11.5px;
   line-height: 1.65;
-  color: var(--text-secondary);
+  color: var(--tablet-text);
   white-space: pre-wrap;
   word-break: break-all;
 }
 
-.console-panel .log-stdout { color: var(--text-primary); }
-.console-panel .log-stderr { color: var(--red); }
-.console-panel .log-info { color: var(--teal); }
-.console-panel .log-success { color: var(--green); }
-.console-panel .log-removed { color: var(--red); }
-.console-panel .log-added { color: var(--green); }
-.console-panel .log-warning { color: var(--yellow, #facc15); }
+.console-panel .log-stdout { color: var(--tablet-text-bright); }
+.console-panel .log-stderr { color: #ff8075; }
+.console-panel .log-info { color: #e8c873; }
+.console-panel .log-success { color: #8fdc9a; }
+.console-panel .log-removed { color: #ff8075; }
+.console-panel .log-added { color: #8fdc9a; }
+.console-panel .log-warning { color: #ffd60a; }
 
-/* ── Migrate Building Chain picker ─────────────────────────────────────── */
+/* ── Migrate Building Chain picker (parchment sheet) ─────────────────── */
 .migrate-list { display: flex; flex-direction: column; gap: 4px; }
 .migrate-row {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding: 5px 8px; border: 1px solid rgba(255,255,255,0.10);
-  border-radius: var(--radius-sm); background: rgba(255,255,255,0.04);
+  padding: 5px 8px; border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm); background: var(--bg-elevated);
   font-size: 12px;
 }
 .migrate-row-main { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .migrate-del {
   flex-shrink: 0; width: 20px; height: 20px; line-height: 1; border: none;
-  border-radius: 50%; background: rgba(255,255,255,0.08); color: var(--text-secondary);
+  border-radius: 50%; background: var(--bg-inset); color: var(--text-secondary);
   cursor: pointer; font-size: 14px;
 }
-.migrate-del:hover { background: var(--red, #f87171); color: #fff; }
-.migrate-dim { color: var(--text-secondary); opacity: 0.75; }
+.migrate-del:hover { background: var(--red); color: #fff; }
+.migrate-dim { color: var(--text-secondary); opacity: 0.85; }
 
 .migrate-form { display: flex; flex-direction: column; gap: 10px; }
 .migrate-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
 .migrate-field > span { color: var(--text-secondary); }
 .migrate-field > span em { font-style: normal; opacity: 0.7; }
 .migrate-field select, .migrate-filter {
-  background: #1e1e1e; color: var(--text-primary);
-  border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius-sm);
+  background: var(--bg-input); color: var(--text-primary);
+  border: 1px solid var(--border-control); border-radius: var(--radius-sm);
   padding: 5px 8px; font-size: 12px; width: 100%;
 }
 .migrate-checklist {
   max-height: 160px; overflow-y: auto; display: flex; flex-direction: column;
-  border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-sm);
-  background: rgba(0,0,0,0.18); padding: 4px;
+  border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);
+  background: var(--bg-inset); padding: 4px;
 }
 .migrate-check {
   display: flex; align-items: center; gap: 7px; padding: 3px 5px;
   font-size: 12px; cursor: pointer; border-radius: 3px;
 }
-.migrate-check:hover { background: rgba(255,255,255,0.06); }
-.migrate-err { color: var(--red, #f87171); font-size: 11px; min-height: 13px; }
+.migrate-check:hover { background: var(--bg-hover); }
+.migrate-err { color: var(--red); font-size: 11px; min-height: 13px; }
 
 .migrate-steps {
   margin: 8px 0 0; padding-left: 18px; font-size: 11.5px;
@@ -298,7 +328,7 @@
 
 .migrate-preview {
   font-size: 11px; line-height: 1.5; color: var(--text-primary);
-  background: rgba(110,180,255,0.06); border: 1px solid rgba(110,180,255,0.18);
+  background: rgba(220, 166, 74, 0.10); border: 1px solid rgba(182, 126, 40, 0.35);
   border-radius: var(--radius-sm); padding: 6px 10px; min-height: 0;
 }
 .migrate-preview:empty { padding: 0; border: none; background: transparent; }

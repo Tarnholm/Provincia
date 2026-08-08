@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1491",
+    date: "2026-08-09",
+    items: [
+      { type: "change", text: "**The Settlement Processor Suite now looks like part of Provincia.** The Scripts window trades its generic gray theme for the app's own identity: the RTW-R cream-marble slab as the ground, translucent parchment panels, bronze inscription headers set in Palatino small caps, and Provincia amber everywhere the old blue was — tabs, buttons, checkboxes, focus rings, even Feral-gold scrollbars. Consoles and the code editor sit on dark **wax tablets** framed in bronze, with a matching warm Monaco theme (amber cursor, bronze line numbers). Pipeline and Master steps carry **Roman numerals** in true execution order, and dialogs became parchment sheets. Suite 0.16.18." },
+    ],
+  },
+
+  {
     version: "0.9.1490",
     date: "2026-08-08",
     items: [
