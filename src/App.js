@@ -15089,9 +15089,10 @@ function App() {
       border: `1px solid rgba(${scheme.border},${open ? "0.85" : sectionActive ? "0.6" : "0.32"})`,
       background: `linear-gradient(180deg, ${open ? scheme.open : scheme.dim})`,
       color: scheme.text,
+      fontFamily: "var(--font-display)",
       fontWeight: 700,
-      fontSize: "0.58rem",
-      letterSpacing: "0.02em",
+      fontSize: "0.62rem",
+      letterSpacing: "0.05em",
       textTransform: "uppercase",
       cursor: "pointer",
       position: "relative",
@@ -19022,9 +19023,11 @@ Click for unit card`}
           <span
             style={{
               WebkitAppRegion: "no-drag",
-              fontSize: "0.74rem",
+              fontFamily: "var(--font-display)",
+              fontSize: "0.82rem",
               fontWeight: 700,
-              letterSpacing: 0.3,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
               color: "#cfd6e0",
               textShadow: "0 1px 2px rgba(0,0,0,0.6)",
             }}
@@ -19071,8 +19074,9 @@ Click for unit card`}
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
-                    fontSize: "0.7rem",
-                    fontWeight: 600,
+                    fontFamily: "var(--font-display)",
+                    fontSize: "0.74rem",
+                    fontWeight: 700,
                     border: active
                       ? "1px solid rgba(220,166,74,0.7)"
                       : "1px solid rgba(255,255,255,0.14)",

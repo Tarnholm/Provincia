@@ -23,6 +23,13 @@ h1, h2, h3, h4 {
   font-family: var(--font-display);
   letter-spacing: 0.015em;
 }
+/* Region-info label prefixes ("Settlement:", "Faction:", "Fertility:" …) —
+   all <strong> tags inside the region panel share the display voice. */
+.region-info strong {
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+  font-size: 1.02em;
+}
 #root { height: 100vh; width: 100vw; }
 
 button {
@@ -222,6 +229,9 @@ body.dark-mode .zoom-controls .zoom-btn {
 .map-mode-btn {
   transition: all 0.15s ease !important;
   position: relative;
+  /* Palatino voice for the map-mode row (matches the category tabs). */
+  font-family: var(--font-display);
+  font-weight: 600;
 }
 .map-mode-btn:hover:not(:disabled) {
   filter: brightness(1.12);

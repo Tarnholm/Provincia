@@ -1501,7 +1501,8 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                 navigator.clipboard?.writeText(region);
               } catch {}
             }}
-            style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", cursor: "copy" }}
+            className="panel-heading"
+            style={{ fontWeight: 700, fontSize: "0.9rem", marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", cursor: "copy" }}
           >
             {region}
           </div>
@@ -1986,7 +1987,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             <>
               {visible.map(({ cat, label }) => (
                 <div key={cat} style={{ marginTop: 4 }}>
-                  <div style={{ fontWeight: 700, fontSize: "0.75rem", marginBottom: 2, color: "#cfc6b0" }}>{label}:</div>
+                  <div className="panel-heading" style={{ fontWeight: 700, fontSize: "0.78rem", marginBottom: 2, color: "#cfc6b0" }}>{label}:</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 4px" }}>
                     {orderedKeys[cat].map((type) => {
                       const amount = buckets[cat][type];
@@ -2057,7 +2058,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           const orderedCats = CATEGORY_ORDER.filter((c) => groups[c]);
           return (
             <div style={{ marginTop: 4 }}>
-              <div style={{ fontWeight: 700, fontSize: "0.75rem", marginBottom: 2, color: "#cfc6b0" }}>Tags:</div>
+              <div className="panel-heading" style={{ fontWeight: 700, fontSize: "0.78rem", marginBottom: 2, color: "#cfc6b0" }}>Tags:</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 {orderedCats.map((cat) => (
                   <div key={cat} style={{ display: "flex", alignItems: "flex-start", gap: 4 }}>
@@ -2110,7 +2111,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
         defaultPct={{ x: 0.5720, y: 0.5640, w: 0.2090, h: 0.1720 }}>
       <div className={panelInnerClass} style={addGenOpen ? { ...panelInner, background: "#181b21" } : panelInner}>
         <div style={widgetHeader}>
-          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fd8", display: "flex", alignItems: "center", gap: 6 }}>
+          <div className="panel-heading" style={{ fontWeight: 700, fontSize: "0.9rem", color: "#fd8", display: "flex", alignItems: "center", gap: 6 }}>
             <span>Characters:</span>
             {onShowFamilyTree && hasFamilyTreeData && (
               <button
@@ -2348,7 +2349,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           document.body
         )}
         <div style={widgetHeader}>
-          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fd8", display: "flex", alignItems: "center", gap: 6 }}>
+          <div className="panel-heading" style={{ fontWeight: 700, fontSize: "0.9rem", color: "#fd8", display: "flex", alignItems: "center", gap: 6 }}>
             <span>Diplomacy &amp; Treasury{liveOwner ? <span style={{ fontSize: "0.65rem", color: "#a98", fontWeight: 400, marginLeft: 6 }}>{factionLabel(ownerFactionId) || liveOwner}</span> : null}</span>
             {/* 0.9.819: Faction Wealth panel toggle lives here now (it's
                 treasury data), moved out of the map-control button row. */}
@@ -2634,7 +2635,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       <div className={panelInnerClass} style={panelInner}>
         <div style={widgetHeader}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-            <div style={{ fontWeight: 700, fontSize: "0.85rem" }}>Buildings:{devMode ? " — dev edit" : ""}</div>
+            <div className="panel-heading" style={{ fontWeight: 700, fontSize: "0.9rem" }}>Buildings:{devMode ? " — dev edit" : ""}</div>
             {savingMsg && (
               <span style={{ color: "#dca64a", fontSize: "0.66rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{savingMsg}</span>
             )}
@@ -3006,7 +3007,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             });
             return (
               <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#dca64a" }}>AOR Units:</div>
+                <div className="panel-heading" style={{ fontWeight: 700, fontSize: "0.9rem", color: "#dca64a" }}>AOR Units:</div>
                 <div style={{ display: "flex", gap: 2 }}>
                   {[["regional", "Regional"], ["specialty", "Specialty"]].map(([val, label]) => (
                     <button key={val} onClick={() => { setAorZoneView(val); setAorFactionPick("all"); }} title={`Show ${label.toLowerCase()} AORs`} style={seg(aorZoneView === val)}>{label}</button>
@@ -3020,7 +3021,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               </div>
             );
           })() : (
-            <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#9fc78a" }}>Recruitable:</div>
+            <div className="panel-heading" style={{ fontWeight: 700, fontSize: "0.9rem", color: "#9fc78a" }}>Recruitable:</div>
           )}
         </div>
         <div style={widgetBody}>
@@ -3241,7 +3242,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
               nowrap/ellipsis + a stable minHeight keep the header height
               constant so toggling the readout never reflows the grid below.
               The commander name moved DOWN to a line directly above the grid. */}
-          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#8cf", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minHeight: "1.15rem", lineHeight: 1.15 }}>
+          <div className="panel-heading" style={{ fontWeight: 700, fontSize: "0.9rem", color: "#8cf", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minHeight: "1.15rem", lineHeight: 1.15 }}>
             <span>Garrison:</span>
             {hoveredUnit ? <span style={{ fontWeight: 400, fontSize: "0.68rem", color: "#dca64a", marginLeft: 6 }}>{hoverReadout(hoveredUnit)}</span> : null}
           </div>
@@ -3628,7 +3629,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           {/* 0.9.769: title + INLINE hover readout on one FIXED single line.
               nowrap/ellipsis + a stable minHeight keep the header height
               constant so toggling the readout never reflows the list below. */}
-          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#fc6", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minHeight: "1.15rem", lineHeight: 1.15 }}>
+          <div className="panel-heading" style={{ fontWeight: 700, fontSize: "0.9rem", color: "#fc6", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minHeight: "1.15rem", lineHeight: 1.15 }}>
             <span>Field armies:</span>
             {hoveredFieldUnit ? <span style={{ fontWeight: 400, fontSize: "0.68rem", color: "#dca64a", marginLeft: 6 }}>{hoverReadout(hoveredFieldUnit)}</span> : null}
           </div>

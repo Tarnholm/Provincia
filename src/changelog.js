@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1494",
+    date: "2026-08-09",
+    items: [
+      { type: "improvement", text: "**The Palatino voice reaches the whole chrome.** The map-mode category tabs (POLITICAL, GOVERNMENT, …) and mode buttons, the Live/Stats chips, the titlebar **Provincia** wordmark (now letterspaced small caps) and the campaign slot toggles all use the display face." },
+      { type: "improvement", text: "**Region panel headers too**: the region name, Settlement/Faction/Rebels/Fertility/Homeland/Religion label prefixes, Resources/Slaves/Ambience/Tags section labels, and the Characters, Diplomacy & Treasury, Buildings, Recruitable, AOR Units, Garrison and Field armies widget titles — with small optical size bumps so nothing reads smaller than before." },
+    ],
+  },
+
+  {
     version: "0.9.1493",
     date: "2026-08-09",
     items: [
@@ -48,39 +57,6 @@ const CHANGELOG = [
       { type: "fix", text: "**Suite: the full pipeline run was crashing at the temples step** — a processor class rename (v0.9.667) was never applied to the pipeline callers, so a master run had never completed past step 9. Fixed; a full 14-step run now completes. Bonus: the pipeline's heavy-industry step had silently kept a stale pre-0.9.667 copy of the rules (old max-scoring, blind to editor tweaks) — it now runs heavy_industry.py directly." },
       { type: "improvement", text: "**Touch support on the campaign map:** single-finger pan, two-finger pinch zoom anchored at the finger midpoint, tap to select — mouse behaviour unchanged. The 🧰 tools menu now closes on tap/click outside (it was undismissable on touchscreens) and on Esc." },
       { type: "improvement", text: "**Scroll feedback without scrollbars:** a thin amber pulse appears along a list's edge while it scrolls and fades out after — every scrollable panel gets position feedback again without bringing back visible rails." },
-    ],
-  },
-
-  {
-    version: "0.9.1489",
-    date: "2026-08-08",
-    items: [
-      { type: "fix", text: "**Crash-reporter 0.1.51: the (0,0)-character count is no longer silently capped.** The reporter tracks up to 60 distinct broken-character names to bound memory, but it printed that capped length as though it were the measurement. The field data made the flaw plain: 9 of 15 affected v7.14.b saves reported exactly 60 broken characters — the cap, not a count. Totals are now tallied independently of the cap, so a report reads \"AT LEAST 60 broken characters (150 sightings)\" instead of a confident and wrong 60. Matters because this is the signal we are using to size the coming-of-age placement defect: 15 of 35 v7.14.b sessions carry these characters, and each one is an instant CTD if its card renders." },
-    ],
-  },
-
-  {
-    version: "0.9.1488",
-    date: "2026-08-06",
-    items: [
-      { type: "feature", text: "**Faction Chronicle (📜, new tool): follow one faction through a whole AI test run, translated to plain English.** Point it at a campaign_ai_log (one click for the live log folder) and pick a faction: every turn becomes a readable entry — invasion decisions with the engine's own stated reasons (\"Started planning an invasion of Corsi — not at war, good production against strongest neighbour\"), treasury state, taxes, what it built and recruited, diplomats dispatched, garrisons thinned — with battles, sieges and settlement captures merged in from the same folder's message_log. Repetitive engine-speak is grouped, not dumped: the rebel faction's 60 identical \"opportunistic invade\" lines become one sentence, 18 zero-strength campaign aborts become one line, and the engine's double-logged garrison splits are deduped. Turn counting is block-based, immune to the summer/winter-only labels that undercount 4TPY campaigns 2x. Filter chips per topic, newest-first toggle, and Copy as text for pasting a run summary straight into Discord. Parsing reuses the proven AI-log pattern manifest and battle ledger — verified against the live RIS session log (218 factions, 659k lines, ~4s) and the 346MB reference log." },
-      { type: "fix", text: "Battle ledger event feed cap is now configurable: the default 500 events is a live-ticker budget that a real session exceeds within ~16 turns — the Chronicle raises it so early-game battles aren't silently dropped from post-run reading." },
-    ],
-  },
-
-  {
-    version: "0.9.1487",
-    date: "2026-08-06",
-    items: [
-      { type: "feature", text: "**Crash-reporter 0.1.50: reports now name the broken characters behind one of the two engine crash families.** When a family member comes of age, the engine only tries the faction leader's tile and the eight tiles around each of that faction's settlements; if every one is water, impassable or occupied it gives up and creates the character anyway at map position (0,0) with null trait and ancillary strings. Rendering that character's card copies a null string and the game dies instantly (ACCESS_VIOLATION +0x190C65F — five reproducible crashes from one tester). The reporter now counts both populations separately, because they need different answers: placement failures mean the save is manufacturing landmines right now (and names the faction whose family tree is stuck), while characters already sitting at (0,0) mean the save is permanently mined — a map fix cannot repair those. Verified against real telemetry before shipping: one session yields nine failures for Barzapharnes of the Parni, another shows Gotzon and Shabataka already broken." },
-    ],
-  },
-
-  {
-    version: "0.9.1486",
-    date: "2026-08-06",
-    items: [
-      { type: "improvement", text: "**Starting Populations: the progress bar now shows too MUCH population, not just too little.** The bar previously measured against the band the population implies — so a town holding city-sized numbers still drew a calm green bar. It now measures against the settlement's DECLARED level: green with a % when the population sits inside its level's band, amber **▼** when it is below the level's own threshold (too little, with how far short in the tooltip), and red **▲over** when it has blown past the next level's upgrade threshold (too much — the tooltip says by how many). The ⚠ overcrowding warning (above the level's max pop) stacks on any of the three. The column is renamed \"vs level\" to say what it measures." },
     ],
   },
 
