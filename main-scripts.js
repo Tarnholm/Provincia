@@ -4,7 +4,7 @@
 // at the bottom) so it never collides with Provincia's own channels. The Suite's
 // own updater + app lifecycle are removed — Provincia owns those. Python is the
 // bundled runtime (resolvePython), and the working dir lives under userData.
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme } = require('electron');
 const path = require('path');
 const { spawn, execFileSync } = require('child_process');
 const fs = require('fs');
@@ -146,10 +146,18 @@ function openScriptsWindow() {
     minWidth: 1000,
     minHeight: 700,
     title: 'Settlement Processor — Provincia',
-    backgroundColor: '#ece2c8',
+    // Match the renderer's light/dark theme (it follows prefers-color-scheme)
+    // so there's no flash of the wrong ground on load, and the native
+    // min/max/close glyphs stay readable in both modes. Dark uses the main
+    // window's slate (#181a1b ground, #cfd6e0 glyphs — same as main.js).
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#181a1b' : '#ece2c8',
     autoHideMenuBar: true,
     titleBarStyle: 'hidden',
-    titleBarOverlay: { color: '#26262800', symbolColor: '#6b5327', height: 40 },
+    titleBarOverlay: {
+      color: '#26262800',
+      symbolColor: nativeTheme.shouldUseDarkColors ? '#cfd6e0' : '#6b5327',
+      height: 40,
+    },
     webPreferences: {
       preload: path.join(__dirname, 'preload-scripts.js'),
       contextIsolation: true,
@@ -159,6 +167,20 @@ function openScriptsWindow() {
     },
   });
   scriptsWin.setMenuBarVisibility(false);
+  // Live-update the native overlay glyph colour when the OS theme flips
+  // while the window is open (the renderer restyles itself via media query).
+  const onThemeFlip = () => {
+    if (!scriptsWin || scriptsWin.isDestroyed()) return;
+    try {
+      scriptsWin.setTitleBarOverlay({
+        color: '#26262800',
+        symbolColor: nativeTheme.shouldUseDarkColors ? '#cfd6e0' : '#6b5327',
+        height: 40,
+      });
+    } catch (e) { /* not supported on this platform — renderer theme still applies */ }
+  };
+  nativeTheme.on('updated', onThemeFlip);
+  scriptsWin.on('closed', () => nativeTheme.removeListener('updated', onThemeFlip));
   // Defense-in-depth: the Scripts window never opens child windows or
   // navigates away from its bundled document.
   scriptsWin.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));

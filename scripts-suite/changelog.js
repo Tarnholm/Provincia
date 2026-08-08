@@ -7,6 +7,13 @@ window.SPS_TYPE_COLOURS = { feature: "#4a9", fix: "#c66", improvement: "#6ac", c
 
 window.SPS_CHANGELOG = [
   {
+    version: "0.16.19",
+    date: "2026-08-09",
+    items: [
+      { type: "feature", text: "**Light and dark mode.** The Suite follows the OS theme, exactly like the main app: light is the marble-and-parchment look; dark is the main window's neutral dark glass — the same slate ground and amber accents, marble gone. The wax tablets carry through both, and the native window buttons re-tint live when the OS theme flips." },
+    ],
+  },
+  {
     version: "0.16.18",
     date: "2026-08-08",
     items: [

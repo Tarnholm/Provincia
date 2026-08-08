@@ -29,6 +29,17 @@ const VALID_TERRAIN = [
   'base_port_level_0', 'base_port_level_1', 'base_port_level_2', 'base_port_level_3',
 ];
 
+// ── Theme ──
+// Follow the OS light/dark preference, exactly like Provincia's main window
+// (App.js useSystemDarkMode). Both windows track the same media query, so
+// they stay in sync without any IPC.
+(() => {
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  const apply = () => document.body.classList.toggle('dark-mode', mq.matches);
+  apply();
+  mq.addEventListener('change', apply);
+})();
+
 // ── Init ──
 document.addEventListener('DOMContentLoaded', async () => {
   pipelineSteps = await window.api.getPipelineSteps();

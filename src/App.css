@@ -4,6 +4,18 @@ body {
   background: #222; /* background drawn by canvas in App */
   color: #f6f6f6;
 }
+
+/* ── Display face — the Roman inscription voice, shared with the Scripts
+   Suite. Palatino carries the app's real headings (region titles, modal
+   and panel headers, Welcome cards); controls and body copy stay on the
+   system sans so the UI keeps its utility. ── */
+:root {
+  --font-display: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Times New Roman', serif;
+}
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  letter-spacing: 0.015em;
+}
 #root { height: 100vh; width: 100vw; }
 
 button {
@@ -46,7 +58,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* Region Info text */
 .region-info { font-size: 0.93rem; line-height: 1.1; letter-spacing: 0; }
-.region-info h2, .region-info .region-title { font-size: 1.1rem; font-weight: 700; margin: 0 0 8px 0; padding: 0; line-height: 1.2; }
+.region-info h2, .region-info .region-title { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; margin: 0 0 8px 0; padding: 0; line-height: 1.2; }
 .region-info > div, .region-info p, .region-info span, .region-info li { margin-bottom: 0 !important; }
 .region-info .region-detail-row { display: block; margin-bottom: 0 !important; padding-bottom: 0 !important; }
 .region-info .region-tags, .region-info .region-last { margin-bottom: 6px !important; }

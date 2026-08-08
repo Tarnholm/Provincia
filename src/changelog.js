@@ -13,6 +13,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1492",
+    date: "2026-08-09",
+    items: [
+      { type: "feature", text: "**Scripts Suite: light and dark mode.** The Suite window now follows the OS theme exactly like the main app — light is the marble-and-parchment look; dark is the main window's neutral dark glass, same slate ground and amber accents, no marble. The wax tablets carry through both, and the native window buttons re-tint live when the OS theme flips. Suite 0.16.19." },
+      { type: "improvement", text: "**The Palatino display face now carries the whole app's headings** — region titles, panel and dialog headers, the Welcome cards and changelog version numbers — the same Roman inscription voice as the Suite's titlebar. Controls and body copy stay on the system sans." },
+      { type: "improvement", text: "**Suite chrome retuned to the main window's sandy gray** — the titlebar, toolbar and sidebar now sit in the same muted parchment family as the app's panels instead of bright cream." },
+    ],
+  },
+
+  {
     version: "0.9.1491",
     date: "2026-08-09",
     items: [

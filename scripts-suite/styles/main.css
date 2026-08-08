@@ -13,9 +13,9 @@
 :root {
   /* Ground + panels (light marble world) */
   --bg-window: #ece2c8;
-  --bg-sidebar: rgba(240, 231, 209, 0.82);
+  --bg-sidebar: rgba(228, 219, 198, 0.84);
   --bg-content: rgba(246, 240, 226, 0.55);
-  --bg-elevated: rgba(251, 246, 234, 0.88);
+  --bg-elevated: rgba(244, 238, 223, 0.88);
   --bg-hover: rgba(90, 69, 48, 0.08);
   --bg-active: rgba(90, 69, 48, 0.14);
   --bg-selected: rgba(220, 166, 74, 0.30);
@@ -53,6 +53,24 @@
   --tablet-text-bright: #f0e9d8;
   --tablet-faint: rgba(217, 210, 192, 0.5);
 
+  /* Themed chrome pieces (overridden wholesale by body.dark-mode below) */
+  --ground: #ece2c8;                 /* blended under the marble texture   */
+  --ground-blend: normal;
+  --sheet: #f6efdd;                  /* dialog parchment, multiplied      */
+  --inscription: #7a5f33;            /* small-caps section headers        */
+  --heading: #4a3413;                /* dialog/compare/section headings   */
+  --brand: #6b5327;                  /* titlebar wordmark                 */
+  --numeral: rgba(122, 95, 51, 0.75);/* Roman step numerals               */
+  --chrome-grad: linear-gradient(#d0c5a9, #c0b293);
+  --shelf-grad: linear-gradient(rgba(227, 218, 196, 0.94), rgba(212, 201, 175, 0.92));
+  --btn-grad: linear-gradient(rgba(250, 246, 236, 0.95), rgba(234, 226, 205, 0.95));
+  --btn-shadow: 0 1px 1px rgba(58, 42, 8, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --scroll-border: rgba(236, 226, 200, 0.9);
+  --option-bg: #faf5e8;
+  --option-tx: #221f1a;
+  --engrave: 0 1px 0 rgba(255, 255, 255, 0.55);
+  --tablet-lift: rgba(255, 255, 255, 0.35);
+
   --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
   --font-display: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Times New Roman', serif;
   --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Menlo', 'Consolas', monospace;
@@ -64,14 +82,81 @@
   --titlebar-height: 40px;
 }
 
+/* ── Dark mode — matches the MAIN APP's dark mode: neutral dark glass
+   (#181a1b ground, #1c1d1f cards, the #15181e titlebar slate) with amber
+   accents and amber-tinted borders, exactly like the Family Tree dark
+   tokens in App.css. NOT warm/brown — the marble disappears in the dark,
+   same as the main window. The wax tablets keep their own surface; they
+   are the one deliberately warm artifact, framed in bronze. Follows the
+   OS preference via prefers-color-scheme, like the main app. ── */
+body.dark-mode {
+  --bg-window: #181a1b;
+  --bg-sidebar: rgba(28, 30, 32, 0.88);
+  --bg-content: rgba(22, 24, 25, 0.4);
+  --bg-elevated: rgba(40, 42, 44, 0.9);
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-active: rgba(255, 255, 255, 0.1);
+  --bg-selected: rgba(220, 166, 74, 0.25);
+  --bg-input: rgba(0, 0, 0, 0.3);
+  --bg-inset: rgba(255, 255, 255, 0.05);
+
+  --border-subtle: rgba(220, 166, 74, 0.18);
+  --border-medium: rgba(220, 166, 74, 0.28);
+  --border-control: rgba(220, 166, 74, 0.35);
+
+  --text-primary: #e6e6e6;
+  --text-secondary: rgba(230, 230, 230, 0.6);
+  --text-tertiary: rgba(230, 230, 230, 0.4);
+  --text-accent: #dca64a;
+
+  --accent: #dca64a;
+  --accent-hover: #e8b65a;
+
+  --green: #30d158;
+  --red: #ff453a;
+  --orange: #ff9f0a;
+  --yellow: #ffd60a;
+  --purple: #bf5af2;
+  --pink: #ff375f;
+  --teal: #64d2ff;
+
+  --ground: #181a1b;
+  --ground-blend: normal;
+  --sheet: #1c1d1f;
+  --inscription: #b8a276;
+  --heading: #e8c873;
+  --brand: #cfd6e0;
+  --numeral: rgba(220, 166, 74, 0.5);
+  --chrome-grad: linear-gradient(#181b21, #15181e);
+  --shelf-grad: linear-gradient(rgba(33, 35, 38, 0.95), rgba(26, 28, 30, 0.92));
+  --btn-grad: linear-gradient(rgba(50, 52, 55, 0.95), rgba(38, 40, 42, 0.95));
+  --btn-shadow: 0 1px 1px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --scroll-border: rgba(24, 26, 27, 0.9);
+  --option-bg: #2a2a2c;
+  --option-tx: #e6e6e6;
+  --engrave: 0 1px 0 rgba(0, 0, 0, 0.4);
+  --tablet-lift: rgba(255, 255, 255, 0.05);
+  --focus-ring: rgba(220, 166, 74, 0.3);
+}
+
+/* Dark mode drops the marble texture entirely — the main app's dark mode is
+   a flat dark canvas, not dark stone. */
+body.dark-mode {
+  background: var(--bg-window);
+}
+body.dark-mode .dialog-panel {
+  background: var(--sheet);
+}
+
 html, body {
   height: 100%;
   overflow: hidden;
   font-family: var(--font-system);
   font-size: 13px;
   color: var(--text-primary);
-  background: var(--bg-window) url('../assets/marble.png');
+  background: var(--ground) url('../assets/marble.png');
   background-size: 640px auto;
+  background-blend-mode: var(--ground-blend);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -90,7 +175,7 @@ html, body {
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #7a5f33;
+  color: var(--inscription);
 }
 
 /* ── Scrollbar — the Feral gold rail, thin ── */
@@ -99,7 +184,7 @@ html, body {
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(#dca64a, #b67e28);
   border-radius: 10px;
-  border: 2px solid rgba(236, 226, 200, 0.9);
+  border: 2px solid var(--scroll-border);
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover { background: linear-gradient(#e8b65a, #c98f33); border-width: 2px; }
@@ -122,9 +207,9 @@ html, body {
   height: var(--titlebar-height);
   padding: 0 16px;
   padding-right: 140px; /* space for Windows close/min/max overlay buttons */
-  background: linear-gradient(rgba(252, 248, 238, 0.85), rgba(240, 231, 209, 0.78));
-  border-bottom: 1px solid rgba(90, 69, 48, 0.30);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset;
+  background: var(--chrome-grad);
+  border-bottom: 1px solid var(--border-medium);
+  box-shadow: var(--engrave) inset;
   -webkit-app-region: drag;
   user-select: none;
   position: relative;
@@ -145,13 +230,13 @@ html, body {
   font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: #6b5327;
+  color: var(--brand);
   white-space: nowrap;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+  text-shadow: var(--engrave);
 }
 
 .titlebar-brand .brand-numeral {
-  color: rgba(107, 83, 39, 0.55);
+  color: var(--numeral);
   letter-spacing: 0.1em;
 }
 
@@ -187,12 +272,12 @@ html, body {
 
 .segmented-control {
   display: inline-flex;
-  background: rgba(90, 69, 48, 0.12);
+  background: var(--bg-inset);
   border-radius: var(--radius);
   padding: 2px;
   gap: 1px;
   -webkit-app-region: no-drag;
-  border: 1px solid rgba(90, 69, 48, 0.25);
+  border: 1px solid var(--border-subtle);
   box-shadow: inset 0 1px 2px rgba(58, 42, 8, 0.12);
 }
 
@@ -207,7 +292,7 @@ html, body {
   padding: 5px 14px;
   border: none;
   background: transparent;
-  color: rgba(58, 44, 20, 0.62);
+  color: var(--text-secondary);
   font-family: var(--font-system);
   font-size: 12px;
   font-weight: 600;
@@ -267,7 +352,7 @@ html, body {
   width: 240px;
   min-width: 240px;
   background: var(--bg-sidebar);
-  border-right: 1px solid rgba(90, 69, 48, 0.28);
+  border-right: 1px solid var(--border-medium);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -384,8 +469,8 @@ html, body {
   align-items: center;
   padding: 6px 12px;
   min-height: 38px;
-  background: linear-gradient(rgba(251, 246, 234, 0.92), rgba(243, 235, 216, 0.88));
-  border-bottom: 1px solid rgba(90, 69, 48, 0.26);
+  background: var(--shelf-grad);
+  border-bottom: 1px solid var(--border-medium);
   gap: 8px;
 }
 
@@ -406,7 +491,7 @@ html, body {
   padding: 5px 12px;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
-  background: linear-gradient(rgba(255, 253, 247, 0.95), rgba(243, 235, 216, 0.95));
+  background: var(--btn-grad);
   color: var(--text-primary);
   font-family: var(--font-system);
   font-size: 12px;
@@ -415,7 +500,7 @@ html, body {
   transition: all 0.12s ease;
   white-space: nowrap;
   line-height: 1;
-  box-shadow: 0 1px 1px rgba(58, 42, 8, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  box-shadow: var(--btn-shadow);
 }
 
 .toolbar-btn.small {
@@ -534,8 +619,8 @@ html, body {
 }
 
 .mac-select option {
-  background: #faf5e8;
-  color: #221f1a;
+  background: var(--option-bg);
+  color: var(--option-tx);
   padding: 4px 8px;
 }
 
@@ -567,10 +652,10 @@ html, body {
 .dialog-panel {
   width: 480px;
   max-width: 90vw;
-  background: #f6efdd url('../assets/marble.png');
+  background: var(--sheet) url('../assets/marble.png');
   background-size: 640px auto;
   background-blend-mode: multiply;
-  border: 1px solid rgba(90, 69, 48, 0.5);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-lg);
   box-shadow: 0 20px 60px rgba(20, 14, 4, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.5);
   overflow: hidden;
@@ -592,7 +677,7 @@ html, body {
   font-weight: 700;
   letter-spacing: 0.02em;
   margin-bottom: 4px;
-  color: #4a3413;
+  color: var(--heading);
 }
 
 .dialog-header p {
@@ -615,8 +700,8 @@ html, body {
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 20px;
-  background: rgba(90, 69, 48, 0.08);
-  border-top: 1px solid rgba(90, 69, 48, 0.2);
+  background: var(--bg-inset);
+  border-top: 1px solid var(--border-subtle);
 }
 
 /* ── Submod-specific ── */

@@ -66,9 +66,10 @@ body.dark-mode .ws-card {
 
 .ws-title {
   margin: 0 0 8px;
-  font-size: 1.35rem;
+  font-family: var(--font-display, Georgia, serif);
+  font-size: 1.4rem;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.01em;
 }
 
 .ws-subtitle {
@@ -193,8 +194,9 @@ body.dark-mode .ws-btn--secondary { background: rgba(255, 255, 255, 0.1); }
 }
 
 .ws-entry-version {
+  font-family: var(--font-display, Georgia, serif);
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 
 .ws-entry-date {
