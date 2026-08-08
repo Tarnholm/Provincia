@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1493",
+    date: "2026-08-09",
+    items: [
+      { type: "improvement", text: "**Panel headers join the Palatino voice.** \"Selected Provinces:\", the Factions header, 📜 Campaign Stats, 📊 Save insights, the Diplomacy editor title, info-popup titles, campaign slot labels and the empty-slot / asset-error overlays now use the same display face as the app's other headings — with a small optical size bump so nothing reads smaller. Tiny section captions stay sans on purpose: the serif-title/sans-label contrast is what keeps it looking deliberate." },
+    ],
+  },
+
+  {
     version: "0.9.1492",
     date: "2026-08-09",
     items: [

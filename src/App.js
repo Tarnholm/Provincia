@@ -13695,7 +13695,7 @@ function App() {
             gap: 8,
           }}
         >
-          <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "inherit", letterSpacing: "0.3px", display: "inline-flex", alignItems: "baseline", gap: 6 }}>
+          <span className="panel-heading" style={{ fontWeight: 700, fontSize: "0.95rem", color: "inherit", letterSpacing: "0.3px", display: "inline-flex", alignItems: "baseline", gap: 6 }}>
             {isVictoryMode ? "Victory: choose faction" : "Factions"}
             {liveLogActive && (saveCurrentTurn != null || saveCurrentYear != null) && (
               <span
@@ -19371,7 +19371,7 @@ Click for unit card`}
             borderRadius: 10, padding: 16, maxWidth: "80vw", maxHeight: "80vh",
             overflowY: "auto", color: "#eee", boxShadow: "0 6px 30px rgba(0,0,0,0.6)",
           }}>
-            <div style={{ fontWeight: 700, fontSize: "1rem", marginBottom: 4 }}>
+            <div className="panel-heading" style={{ fontWeight: 700, fontSize: "1.05rem", marginBottom: 4 }}>
               Select your faction
             </div>
             <div style={{ fontSize: "0.8rem", color: "#aaa", marginBottom: 12 }}>
@@ -19475,7 +19475,7 @@ Click for unit card`}
             <div style={overlayBase}>
               <div className="panel" style={{ maxWidth: 520, margin: 16, padding: "22px 26px", textAlign: "center" }}>
                 <div style={{ fontSize: "2rem", marginBottom: 6 }}>🗺️</div>
-                <div style={{ fontWeight: 700, fontSize: "1.25rem", marginBottom: 8 }}>This slot is empty</div>
+                <div className="panel-heading" style={{ fontWeight: 700, fontSize: "1.3rem", marginBottom: 8 }}>This slot is empty</div>
                 <div style={{ marginBottom: 18, opacity: 0.85, lineHeight: 1.5 }}>
                   Import a mod's <b>data</b> folder to load it here — Provincia auto-detects the files it needs. {otherLabel ? <>Or explore <b>{otherLabel}</b> while you decide.</> : null}
                 </div>
@@ -19497,7 +19497,7 @@ Click for unit card`}
         {assetError && !proceedAnyway && regions && Object.keys(regions).length > 0 && (
           <div style={overlayBase}>
             <div className="panel" style={{ maxWidth: 700, margin: 16, padding: 16, textAlign: "left" }}>
-              <div style={{ fontWeight: 700, fontSize: "1.2rem", marginBottom: 8 }}>Asset load error</div>
+              <div className="panel-heading" style={{ fontWeight: 700, fontSize: "1.25rem", marginBottom: 8 }}>Asset load error</div>
               <div style={{ marginBottom: 12, whiteSpace: "pre-wrap" }}>{assetError}</div>
               <ul style={{ marginTop: 0 }}>
                 <li>Open public/regions.json in an editor and fix the JSON at the indicated line/column.</li>
@@ -20569,7 +20569,7 @@ Click for unit card`}
                   </div>
                 )}
                 <div style={{ marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexShrink: 0 }}>
-                  <span style={{ fontWeight: 700, fontSize: "0.95rem" }}>
+                  <span className="panel-heading" style={{ fontWeight: 700, fontSize: "1rem" }}>
                     {isVictoryMode ? "Victory target regions:" : "Selected Provinces:"}
                   </span>
                   {/* Controls kept together on the right so Copy List sits directly beside Deselect All. */}
@@ -22596,7 +22596,7 @@ Click for unit card`}
                   <div key={camp.key} style={sectionStyle(isTarget)}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                       <div>
-                        <span style={{ fontWeight: 700, fontSize: "1rem", color: (isTarget || isActive) ? "#e8a030" : "#888" }}>
+                        <span className="panel-heading" style={{ fontWeight: 700, fontSize: "1.05rem", color: (isTarget || isActive) ? "#e8a030" : "#888" }}>
                           {camp.label}
                         </span>
                         {isActive && <span style={{ fontSize: "0.75rem", color: "#888", marginLeft: 8 }}>(active)</span>}
@@ -23768,7 +23768,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                 display: "flex", justifyContent: "space-between", alignItems: "baseline",
                 padding: "0 16px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)",
               }}>
-                <span style={{ fontWeight: 700, fontSize: "1rem", color: "#dca64a" }}>
+                <span className="panel-heading" style={{ fontWeight: 700, fontSize: "1.05rem", color: "#dca64a" }}>
                   📜 Campaign Stats
                 </span>
                 <button onClick={() => setShowStatsPanel(false)}

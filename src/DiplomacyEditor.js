@@ -234,7 +234,7 @@ export default function DiplomacyEditor({ ownerFactionId, factionLabel, factionD
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", zIndex: 2147483000, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: "#15171c", border: "1px solid #3a3f4a", borderRadius: 8, padding: 14, width: "min(760px, 95vw)", maxHeight: "86vh", display: "flex", flexDirection: "column", color: "#ddd", boxShadow: "0 8px 30px rgba(0,0,0,0.6)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-          <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "#fd8" }}>
+          <div className="panel-heading" style={{ fontWeight: 700, fontSize: "1rem", color: "#fd8" }}>
             Diplomacy — {reverse ? <>others → {lab(fid)} <span style={{ fontSize: "0.62rem", color: "#d6a93c", fontWeight: 600 }}>(how they see you)</span></> : <>{lab(fid)} → others</>}
           </div>
           <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#aaa", fontSize: "1rem", cursor: "pointer" }}>✕</button>

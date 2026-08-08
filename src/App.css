@@ -16,6 +16,13 @@ h1, h2, h3, h4 {
   font-family: var(--font-display);
   letter-spacing: 0.015em;
 }
+/* Inline-styled panel headers ("Selected Provinces:", "Factions", stats
+   titles …) opt into the same voice with this class — they're spans/divs,
+   so the h1-h4 rule can't reach them. */
+.panel-heading {
+  font-family: var(--font-display);
+  letter-spacing: 0.015em;
+}
 #root { height: 100vh; width: 100vw; }
 
 button {

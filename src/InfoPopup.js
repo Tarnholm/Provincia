@@ -1070,7 +1070,7 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
         boxShadow: "0 10px 40px rgba(0,0,0,0.7)",
       }}>
         {!isUnit && (
-          <div style={{ fontSize: "1.05rem", fontWeight: 700, textTransform: "capitalize" }}>{title}</div>
+          <div className="panel-heading" style={{ fontSize: "1.1rem", fontWeight: 700, textTransform: "capitalize" }}>{title}</div>
         )}
         {!isUnit && subtitle && <div style={{ fontSize: "0.72rem", color: "#bba", marginBottom: 8, textTransform: "capitalize" }}>{subtitle}</div>}
         {payload.type !== "character" && !isUnit && (

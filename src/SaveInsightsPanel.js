@@ -359,7 +359,7 @@ export default function SaveInsightsPanel({
           display: "flex", justifyContent: "space-between", alignItems: "baseline",
           padding: "10px 16px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)",
         }}>
-          <span style={{ fontWeight: 700, fontSize: "1rem", color: "#dca64a" }}>📊 Save insights</span>
+          <span className="panel-heading" style={{ fontWeight: 700, fontSize: "1.05rem", color: "#dca64a" }}>📊 Save insights</span>
           <button onClick={onClose}
             style={{ background: "transparent", border: "none", color: "#aaa", fontSize: "1.1rem", cursor: "pointer", padding: 0 }}
             title="Close (Esc)">×</button>
