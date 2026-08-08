@@ -1000,8 +1000,12 @@ const SCRIPT_CONFIGS = {
 The <b>bump rule</b> adds extra tier requirements to higher-level buildings.` },
     { section: 'Bump Rule', desc: 'How many extra tiers a settlement needs above the building\'s minimum. Example: bump of 1 means a building requiring "town" actually needs "large_town". Set to 0 to disable.',
       variable: 'BUMP_AMOUNT', type: 'number', label: 'Extra tiers required' },
-    { section: 'Bump Exception — Fertility', desc: 'If a region\'s fertility is at least this value, the bump rule is skipped and normal settlement requirements apply. High-fertility regions get farm buildings more easily.',
+    { section: 'Bump Exception — Fertility (Global)', desc: 'If a region\'s fertility is at least this value, the bump rule is skipped and normal settlement requirements apply. High-fertility regions get farm buildings more easily. Applies to ALL farm chains.',
       variable: 'FERTILITY_SKIP_BUMP', type: 'number', label: 'Skip bump when fertility >=' },
+    { section: 'Bump Exceptions — Per Chain', desc: 'Chain-specific exceptions to the bump rule. Each rule skips the bump for ONE farm chain when the region meets a fertility or resource-quantity condition. Rules are OR\'d — any match skips. The global fertility exception above still applies to every chain.',
+      variable: 'BUMP_EXCEPTIONS', type: 'bump_exceptions',
+      chainsListVariable: 'FARM_CHAINS', excludeChains: ['farms', 'herds'],
+      chainLabel: 'Farm chain', kinds: ['resource', 'fertility'] },
     { section: 'Farm Building Chains', desc: 'All building chains that this script manages.',
       variable: 'FARM_CHAINS', type: 'list', label: 'Farm chains' },
     { section: 'Terrain → Farm Rules', desc: 'Which farm building gets assigned for each terrain type. Rules are checked top to bottom — first match wins. Use the dropdowns to change assignments.',
@@ -1014,7 +1018,7 @@ The <b>bump rule</b> adds extra tier requirements to higher-level buildings.` },
 <b>Step 2:</b> Calculate a score: <b>resource amount × resource score</b><br>
 <b>Step 3:</b> The building with the highest score wins — if it meets the minimum score threshold<br>
 <b>Step 4:</b> If multiple buildings tie, the tie-breaker priority list decides<br><br>
-The <b>bump rule</b> means heavy industry buildings need a settlement one level bigger than normal.` },
+The <b>bump rule</b> means heavy industry buildings need a settlement one level bigger than normal — unless the region has a rich enabling resource (see Bump Exception below).` },
     { section: 'Minimum Score Threshold', desc: 'A building must score at least this much to be assigned. Score = resource amount × resource score. Raise this to be stricter, lower it to assign buildings more easily.',
       variable: null, type: 'inline_num', label: 'Minimum score to qualify',
       pattern: /val\s*>=\s*(\d+)/,
@@ -1031,6 +1035,15 @@ The <b>bump rule</b> means heavy industry buildings need a settlement one level 
       variable: null, type: 'inline_num', label: 'Extra levels required',
       pattern: /SETTLEMENT_LEVEL_ORDER\[min\(idx\s*\+\s*(\d+)/,
       replacePattern: /(SETTLEMENT_LEVEL_ORDER\[min\(idx\s*\+\s*)\d+/ },
+    { section: 'Bump Exception — Resource Amount (Global)', desc: 'If the region has at least this much of one of the building\'s enabling resources, the bump rule is skipped for that building and normal settlement requirements apply. Rich deposits get their industry sooner. Applies to ALL heavy industry buildings; set very high to effectively disable it.',
+      variable: 'BUMP_SKIP_RESOURCE_AMOUNT', type: 'number', label: 'Skip bump when enabling resource >=' },
+    { section: 'Bump Exceptions — Per Building', desc: 'Building-specific exceptions to the bump rule. Each rule skips the bump for ONE building when the region has at least the given amount of a specific resource. OR\'d with the global threshold above — any match skips.',
+      variable: 'BUMP_EXCEPTIONS', type: 'bump_exceptions',
+      chainsDictVariable: 'BUILDING_RESOURCE_WEIGHTS', excludeChains: [],
+      chainLabel: 'Building', kinds: ['resource'],
+      resources: ['iron', 'copper', 'coal', 'gold', 'silver', 'lead', 'tin', 'gemstones', 'marble',
+        'stone', 'sulphur', 'pitch', 'salt', 'purple_dye', 'glass', 'amber', 'elephants',
+        'slave_trade', 'timber', 'flax', 'livestock', 'fish', 'grain', 'hemp'] },
   ],
   'sanitation_healers.py': [
     { section: 'How Health Buildings Work', desc: '', variable: null, type: 'info',
@@ -1134,6 +1147,14 @@ For each building chain, it finds the <b>highest level</b> the settlement qualif
       variable: null, type: 'settlement_rules' },
     { section: 'No Defenses Regions', desc: 'These regions get no defenses building assigned. Add regions that should be unfortified.',
       variable: 'NO_DEFENSES_REGIONS', type: 'set', label: 'Regions without defenses' },
+    { section: 'No Roads — Terrains', desc: 'Regions with ANY of these hidden resources (terrain tags from descr_regions, e.g. mountains, desert, wetlands) get NO roads at all — existing roads are removed. Takes precedence over the always-highway exception.',
+      variable: 'NO_ROADS_TERRAINS', type: 'set', label: 'Hidden resources that block roads' },
+    { section: 'No Roads — Factions', desc: 'Settlements owned by these factions get NO roads at all. Use faction ids as written in descr_strat (e.g. seleucid, romans_julii, aedui).',
+      variable: 'NO_ROADS_FACTIONS', type: 'set', label: 'Factions that get no roads' },
+    { section: 'Capital Treasury — Empire Size Thresholds', desc: 'Each faction\'s starting capital (first settlement in its descr_strat block) gets a capital_treasury. The level is the highest whose empire-size threshold (settlement count) the faction meets, capped by what the settlement\'s own size allows (treasury=town, large=large_town, great=city, imperial=large_city).',
+      variable: 'TREASURY_EMPIRE_THRESHOLDS', type: 'dict_num', label: 'Treasury level → Min empire size' },
+    { section: 'Capital Treasury — Ignored Factions', desc: 'These factions never get a capital treasury.',
+      variable: 'TREASURY_IGNORED_FACTIONS', type: 'set', label: 'Factions without a treasury' },
     { section: 'Managed Building Chains', desc: 'The building chains this script manages. It assigns the highest allowed level of each chain to every settlement.',
       variable: 'MANAGED_CHAINS', type: 'set', label: 'Building chains managed', readonly: true },
     { section: 'Bump Rule', desc: 'Settlements must be this many tiers above the building\'s minimum to qualify. Example: bump of 1 means a building requiring "town" actually needs "large_town". Set to 0 to disable.',
@@ -1260,6 +1281,8 @@ function renderSimpleEditor(content) {
       </table>`;
     } else if (field.type === 'terrain_rules') {
       html += renderTerrainRulesTable(parsed.value);
+    } else if (field.type === 'bump_exceptions') {
+      html += renderBumpExceptions(parsed.value, field);
     } else if (field.type === 'health_rules') {
       html += renderHealthRules(parsed.value);
     } else if (field.type === 'settlement_rules') {
@@ -1271,8 +1294,11 @@ function renderSimpleEditor(content) {
     } else if (field.type === 'building_reqs') {
       html += renderBuildingReqsTable(parsed.value, parsed.scores);
     } else if (field.type === 'dict_num') {
+      const numHeaderParts = (field.label || '').split('→').map(s => s.trim());
+      const numHeaderLeft = numHeaderParts.length === 2 ? numHeaderParts[0] : 'Resource';
+      const numHeaderRight = numHeaderParts.length === 2 ? numHeaderParts[1] : 'Score';
       html += `<table class="se-dict-table">
-        <thead><tr><th>Resource</th><th>Score</th></tr></thead>
+        <thead><tr><th>${numHeaderLeft}</th><th>${numHeaderRight}</th></tr></thead>
         <tbody>`;
       for (const [key, val] of Object.entries(parsed.value)) {
         html += `<tr>
@@ -1403,6 +1429,10 @@ function parseField(content, field) {
 
   if (field.type === 'terrain_rules') {
     return parseTerrainRules(content);
+  }
+
+  if (field.type === 'bump_exceptions') {
+    return parseBumpExceptions(content, field);
   }
 
   if (field.type === 'building_reqs') {
@@ -1757,7 +1787,7 @@ function renderSettlementRules() {
         <div class="se-terrain-chain-body">
           <div class="se-terrain-chain-assign">
             <span class="se-terrain-assign-label" style="min-width:130px">Capital Treasury</span>
-            <span style="font-size:12px;color:var(--text-secondary)">Economic buildings — scaled to settlement tier</span>
+            <span style="font-size:12px;color:var(--text-secondary)">Faction capitals only — level scales with empire size, capped by settlement size</span>
           </div>
         </div>
       </div>
@@ -2876,6 +2906,211 @@ function addConditionCheck(tidx, ridx) {
   markSimpleModified();
 }
 
+// ── Per-chain bump exceptions (farms.py) ──
+
+const BUMP_EXC_RESOURCES = ['grain', 'livestock', 'sheep', 'horses', 'camels', 'salt', 'elephants',
+  'wild_animals', 'sulphur', 'cotton', 'wine', 'olive_oil', 'dates', 'fruits', 'slave_trade', 'flax', 'timber'];
+
+function parseBumpExceptions(content, field = {}) {
+  // Extract the BUMP_EXCEPTIONS = { ... } literal (balanced braces)
+  const m = content.match(/BUMP_EXCEPTIONS\s*=\s*\{/);
+  if (!m) return null;
+  const startIdx = m.index;
+  const open = content.indexOf('{', startIdx);
+  let depth = 0, end = -1;
+  for (let i = open; i < content.length; i++) {
+    if (content[i] === '{') depth++;
+    else if (content[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
+  }
+  if (end === -1) return null;
+  const dictStr = content.slice(open, end + 1);
+
+  // Parse per-chain rule lists
+  const chains = {};
+  const chainRe = /["'](\w+)["']\s*:\s*\[([^\]]*)\]/g;
+  let cm;
+  while ((cm = chainRe.exec(dictStr)) !== null) {
+    const rules = [];
+    const ruleRe = /\{[^}]*\}/g;
+    let rm;
+    while ((rm = ruleRe.exec(cm[2])) !== null) {
+      const r = rm[0];
+      const res = r.match(/["']resource["']\s*:\s*["']([\w-]+)["']/);
+      const fert = r.match(/["']fertility["']\s*:\s*([\d.]+)/);
+      if (res) {
+        const min = r.match(/["']min["']\s*:\s*([\d.]+)/);
+        rules.push({ kind: 'resource', resource: res[1], min: min ? parseFloat(min[1]) : 1 });
+      } else if (fert) {
+        rules.push({ kind: 'fertility', min: parseFloat(fert[1]) });
+      }
+    }
+    if (rules.length) chains[cm[1]] = rules;
+  }
+
+  // The chains/buildings this section offers, from either a list variable
+  // (farms: FARM_CHAINS, minus the defunct detect-only entries) or the
+  // top-level keys of a dict variable (heavy industry: BUILDING_RESOURCE_WEIGHTS).
+  const exclude = new Set(field.excludeChains || ['farms', 'herds']);
+  const farmChains = [];
+  if (field.chainsDictVariable) {
+    const dm = content.match(new RegExp(escapeRegex(field.chainsDictVariable) + '\\s*=\\s*\\{'));
+    if (dm) {
+      const dOpen = content.indexOf('{', dm.index);
+      let dDepth = 0, dEnd = -1;
+      for (let i = dOpen; i < content.length; i++) {
+        if (content[i] === '{') dDepth++;
+        else if (content[i] === '}') { dDepth--; if (dDepth === 0) { dEnd = i; break; } }
+      }
+      if (dEnd !== -1) {
+        // line-anchored: only the top-level keys start a line
+        const keyRe = /^\s*["'](\w+)["']\s*:/gm;
+        let km;
+        const body = content.slice(dOpen, dEnd + 1);
+        while ((km = keyRe.exec(body)) !== null) {
+          if (!exclude.has(km[1])) farmChains.push(km[1]);
+        }
+      }
+    }
+  } else {
+    const listVar = field.chainsListVariable || 'FARM_CHAINS';
+    const fcMatch = content.match(new RegExp(escapeRegex(listVar) + '\\s*=\\s*\\[([\\s\\S]*?)\\]'));
+    if (fcMatch) {
+      const nameRe = /["'](\w+)["']/g;
+      let nm;
+      while ((nm = nameRe.exec(fcMatch[1])) !== null) {
+        if (!exclude.has(nm[1])) farmChains.push(nm[1]);
+      }
+    }
+  }
+
+  return { value: { chains, farmChains }, raw: dictStr, startIdx };
+}
+
+function bumpExcRuleChipHtml(rule) {
+  const label = rule.kind === 'fertility'
+    ? `fertility &ge; ${rule.min}`
+    : `${rule.resource} &ge; ${rule.min}`;
+  const dataAttrs = rule.kind === 'fertility'
+    ? `data-kind="fertility" data-min="${rule.min}"`
+    : `data-kind="resource" data-resource="${rule.resource}" data-min="${rule.min}"`;
+  return `<span class="se-tag bump-exc-rule" ${dataAttrs}>${label}<span class="se-tag-remove">&times;</span></span>`;
+}
+
+function renderBumpExceptions(parsed, field = {}) {
+  const { chains, farmChains } = parsed;
+  const kinds = field.kinds || ['resource', 'fertility'];
+  const chainLabel = field.chainLabel || 'Chain';
+  const resources = field.resources || BUMP_EXC_RESOURCES;
+  const chainOptions = farmChains.map(c => `<option value="${c}">${c}</option>`).join('');
+  const resOptions = resources.map(r => `<option value="${r}"></option>`).join('');
+  const kindOptions = kinds.map(k => `<option value="${k}">${k} &ge;</option>`).join('');
+
+  let rows = '';
+  for (const chain of farmChains) {
+    const rules = chains[chain];
+    if (!rules || !rules.length) continue;
+    rows += `<tr data-chain="${chain}">
+      <td class="se-dict-key">${chain}</td>
+      <td><div class="se-tag-list">${rules.map(bumpExcRuleChipHtml).join('')}</div></td>
+    </tr>`;
+  }
+
+  const emptyNote = rows ? '' : `<tr class="bump-exc-empty"><td colspan="2" class="bump-exc-none">No exceptions defined &mdash; the global bump settings above apply unchanged.</td></tr>`;
+
+  const html = `<div id="bump-exceptions-container">
+    <table class="se-dict-table se-dict-table-left bump-exc-table">
+      <thead><tr><th>${chainLabel}</th><th>Skip bump when&hellip;</th></tr></thead>
+      <tbody id="bump-exc-rows">${rows}${emptyNote}</tbody>
+    </table>
+    <div class="se-cond-row bump-exc-add">
+      <select class="se-cond-type" id="bump-exc-chain">${chainOptions}</select>
+      <select class="se-cond-type" id="bump-exc-kind" ${kinds.length === 1 ? 'style="pointer-events:none;opacity:0.8"' : ''}>${kindOptions}</select>
+      <input type="text" class="se-dict-input bump-exc-resource" id="bump-exc-resource" list="bump-exc-res-list" placeholder="resource">
+      <datalist id="bump-exc-res-list">${resOptions}</datalist>
+      <input type="number" class="se-dict-input" id="bump-exc-min" value="3" step="any" min="0" title="Threshold">
+      <button class="se-terrain-add-btn" id="bump-exc-add-btn">+ Add Exception</button>
+    </div>
+  </div>`;
+
+  setTimeout(() => initBumpExceptionEvents(), 0);
+  return html;
+}
+
+function initBumpExceptionEvents() {
+  const container = document.getElementById('bump-exceptions-container');
+  if (!container) return;
+
+  const kindSel = container.querySelector('#bump-exc-kind');
+  const resInput = container.querySelector('#bump-exc-resource');
+  kindSel.addEventListener('change', () => {
+    resInput.style.display = kindSel.value === 'resource' ? '' : 'none';
+  });
+
+  const wireRemove = (chip) => {
+    chip.querySelector('.se-tag-remove').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const row = chip.closest('tr');
+      chip.remove();
+      if (row && !row.querySelector('.bump-exc-rule')) row.remove();
+      markSimpleModified();
+    });
+  };
+  container.querySelectorAll('.bump-exc-rule').forEach(wireRemove);
+
+  container.querySelector('#bump-exc-add-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const chain = container.querySelector('#bump-exc-chain').value;
+    const kind = kindSel.value;
+    const min = parseFloat(container.querySelector('#bump-exc-min').value);
+    if (!chain || isNaN(min)) return;
+    const rule = { kind, min };
+    if (kind === 'resource') {
+      const res = resInput.value.trim().toLowerCase().replace(/\s+/g, '_');
+      if (!res) { resInput.focus(); return; }
+      rule.resource = res;
+    }
+
+    const tbody = container.querySelector('#bump-exc-rows');
+    const emptyRow = tbody.querySelector('.bump-exc-empty');
+    if (emptyRow) emptyRow.remove();
+
+    let row = tbody.querySelector(`tr[data-chain="${chain}"]`);
+    if (!row) {
+      row = document.createElement('tr');
+      row.dataset.chain = chain;
+      row.innerHTML = `<td class="se-dict-key">${chain}</td><td><div class="se-tag-list"></div></td>`;
+      tbody.appendChild(row);
+    }
+
+    // Same condition on the same chain replaces the old threshold
+    const existing = Array.from(row.querySelectorAll('.bump-exc-rule')).find(c =>
+      c.dataset.kind === rule.kind && (rule.kind === 'fertility' || c.dataset.resource === rule.resource));
+    if (existing) existing.remove();
+
+    const tmp = document.createElement('div');
+    tmp.innerHTML = bumpExcRuleChipHtml(rule);
+    const chip = tmp.firstElementChild;
+    row.querySelector('.se-tag-list').appendChild(chip);
+    wireRemove(chip);
+    markSimpleModified();
+  });
+}
+
+function replaceBumpExceptionsLiteral(content, newLiteral) {
+  const m = content.match(/BUMP_EXCEPTIONS\s*=\s*\{/);
+  if (!m) return content;
+  const open = content.indexOf('{', m.index);
+  let depth = 0;
+  for (let i = open; i < content.length; i++) {
+    if (content[i] === '{') depth++;
+    else if (content[i] === '}') {
+      depth--;
+      if (depth === 0) return content.slice(0, open) + newLiteral + content.slice(i + 1);
+    }
+  }
+  return content;
+}
+
 function applySimpleEdits(content) {
   const simpleEl = document.getElementById('simple-editor');
 
@@ -2915,6 +3150,21 @@ function applySimpleEdits(content) {
         const re = new RegExp(`(${escapeRegex(key)}["']\\s*:\\s*["'])[^"']+`);
         content = content.replace(re, `$1${newVal}`);
       });
+    } else if (field.type === 'bump_exceptions') {
+      const tbody = simpleEl.querySelector('#bump-exc-rows');
+      if (tbody) {
+        const eol = content.includes('\r\n') ? '\r\n' : '\n';
+        const entries = [];
+        tbody.querySelectorAll('tr[data-chain]').forEach(row => {
+          const rules = Array.from(row.querySelectorAll('.bump-exc-rule')).map(chip => {
+            if (chip.dataset.kind === 'fertility') return `{"fertility": ${chip.dataset.min}}`;
+            return `{"resource": "${chip.dataset.resource}", "min": ${chip.dataset.min}}`;
+          });
+          if (rules.length) entries.push(`    "${row.dataset.chain}": [${rules.join(', ')}],`);
+        });
+        const newLiteral = entries.length ? `{${eol}${entries.join(eol)}${eol}}` : `{${eol}}`;
+        content = replaceBumpExceptionsLiteral(content, newLiteral);
+      }
     } else if (field.type === 'set' && field.variable && !field.readonly) {
       const selector = simpleEl.querySelector(`.se-tag-selector[data-var="${field.variable}"]`);
       if (selector) {

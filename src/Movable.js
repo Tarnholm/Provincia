@@ -598,14 +598,16 @@ export function Movable({
       setPos(result.pos);
     }
     function onUp() {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
       clearGuides();
       setIsDragging(false);
       logCurrentLayout("drag");
     }
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
   };
 
   const startResize = (corner) => (e) => {
@@ -647,14 +649,16 @@ export function Movable({
       setPos(result.pos);
     }
     function onUp() {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
       clearGuides();
       setIsDragging(false);
       logCurrentLayout("resize");
     }
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
   };
 
   return (
@@ -687,7 +691,7 @@ export function Movable({
               The widget content underneath is fully visible while you
               move things around. */}
           <div
-            onMouseDown={(e) => {
+            onPointerDown={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
               const lx = e.clientX - rect.left;
               const ly = e.clientY - rect.top;
@@ -725,6 +729,7 @@ export function Movable({
               background: "transparent",
               cursor: "move",
               zIndex: 100,
+              touchAction: "none",
             }}
           />
           {/* Tiny widget-id chip — top-right corner, transparent, just so

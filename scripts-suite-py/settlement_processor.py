@@ -29,14 +29,28 @@ ROAD_HIGHWAY_MIN_TOTAL = 12
 # Regions (lowercased; matched on region or capital name) that always get highways.
 ROADS_ALWAYS_HIGHWAY = {"roma"}
 ROAD_TIER_BY_LEVEL = {"roads": 1, "paved_roads": 2, "highways": 3}
+# Regions with ANY of these hidden resources get NO roads at all (existing
+# hinterland_roads are removed). Takes precedence over ROADS_ALWAYS_HIGHWAY.
+NO_ROADS_TERRAINS = set()
+# Settlements owned by these factions (lowercased descr_strat faction ids) get
+# NO roads at all. Takes precedence over ROADS_ALWAYS_HIGHWAY.
+NO_ROADS_FACTIONS = set()
 
 # ── Defenses (walls): tier -> level, assigned directly (no size bump) ─────
 DEFENSE_LEVELS = {1: "wooden_pallisade", 2: "wooden_wall", 3: "stone_wall",
                   4: "large_stone_wall", 5: "epic_stone_wall"}
 
-# ── Treasury: tier -> level, capped at MAX_TREASURY_TIER (assigned directly) ─
+# ── Treasury: each faction's starting capital (the FIRST settlement in its
+# descr_strat faction block — the RTW starting-capital convention) gets a
+# capital_treasury. The level scales with empire size (how many settlements the
+# faction starts with) and is capped by what the settlement's own size allows
+# (EDB settlement_min: treasury=town, large_treasury=large_town,
+# great_treasury=city, imperial_treasury=large_city — i.e. tier 1-4 below).
 TREASURY_LEVELS = {1: "treasury", 2: "large_treasury", 3: "great_treasury", 4: "imperial_treasury"}
-MAX_TREASURY_TIER = 2
+# Level -> minimum empire size (settlement count) required for that level.
+TREASURY_EMPIRE_THRESHOLDS = {"treasury": 1, "large_treasury": 4, "great_treasury": 9, "imperial_treasury": 16}
+# Factions that never get a capital treasury.
+TREASURY_IGNORED_FACTIONS = {"slave"}
 
 TRADER_OVERRIDE_QTY = 4  # Minimum resource quantity to trigger trader override in towns
 TRADER_OVERRIDE_RESOURCES = set()  # Leave empty = ALL resources count. Add names to restrict.
@@ -131,6 +145,29 @@ def parse_region_owners(p: Path) -> Dict[str, str]:
                 j += 1
             if r and cur:
                 out[r] = cur
+        i += 1
+    return out
+
+def parse_faction_capitals(p: Path) -> Dict[str, str]:
+    """Faction -> region of its FIRST settlement block. RTW takes the first
+    settlement listed in a faction's descr_strat block as its starting capital."""
+    out, cur = {}, None
+    with open(p, encoding="utf-8", errors="ignore") as f:
+        lines = f.readlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        if (m := re.match(r"^faction\s+([a-zA-Z0-9_]+)", line)):
+            cur = m.group(1).lower()
+        if line.startswith("settlement") and cur and cur not in out:
+            j = i + 1
+            while j < len(lines) and not lines[j].strip().startswith(("settlement", "faction ")):
+                if (rm := re.match(r"region\s+([\w_&-]+)", lines[j].strip())):
+                    out[cur] = rm.group(1)
+                    break
+                if lines[j].strip() == "}":
+                    break
+                j += 1
         i += 1
     return out
 
@@ -320,6 +357,11 @@ class SettlementProcessor:
             sys.exit(1)
 
         self.region_owners = parse_region_owners(self.descr_strat_fp)
+        self.faction_capitals = parse_faction_capitals(self.descr_strat_fp)
+        self.empire_sizes: Dict[str, int] = {}
+        for fac in self.region_owners.values():
+            self.empire_sizes[fac] = self.empire_sizes.get(fac, 0) + 1
+        logger.info(f"[CAPITALS] Faction capitals parsed: {len(self.faction_capitals)}")
         self.max_qty_by_region, self.resource_details_by_region = parse_region_resource_quantities(self.descr_strat_fp)
         logger.info(f"[RESOURCES] Regions with parsed resources: {len(self.resource_details_by_region)}")
         logger.info("--- Data Loading Complete ---")
@@ -472,28 +514,36 @@ class SettlementProcessor:
             else:
                 debug_log.append(f"    - Defenses: tier {tier} too small after bump -> none")
 
-        # Roads — keep the size-based bump as the BASE level, then modify it:
+        # Roads — blocked terrains/factions get NO road at all (any existing
+        # hinterland_roads is removed). Otherwise keep the size-based bump as
+        # the BASE level, then modify it:
         #   Roma always -> highways; listed terrains cap at tier 1 (roads);
         #   highways (tier 3) ALSO requires the region's total resource amount to
         #   exceed ROAD_HIGHWAY_MIN_TOTAL (settlement size still gates it via the
         #   bump), else it drops to paved_roads.
-        self._assign_chain(building_map, assigned_chains, "hinterland_roads", tier, debug_log)
-        base_road = building_map.get("hinterland_roads")
-        base_rt = ROAD_TIER_BY_LEVEL.get(base_road, 0)
-        road_total = sum(q for (_r, q) in region_resources)
-        if region_key in ROADS_ALWAYS_HIGHWAY or name.strip().lower() in ROADS_ALWAYS_HIGHWAY:
-            building_map["hinterland_roads"] = ROAD_LEVELS[3]; assigned_chains.add("hinterland_roads")
-            debug_log.append(f"    - Roads: {region} exception -> highways")
-        elif base_rt == 0:
-            debug_log.append("    - Roads: settlement too small for a road (bump)")
-        elif (hidden_resources & ROAD_TERRAIN_CAP) and base_rt > 1:
-            building_map["hinterland_roads"] = ROAD_LEVELS[1]
-            debug_log.append(f"    - Roads: terrain {hidden_resources & ROAD_TERRAIN_CAP} caps {base_road} -> roads")
-        elif base_rt >= 3 and road_total <= ROAD_HIGHWAY_MIN_TOTAL:
-            building_map["hinterland_roads"] = ROAD_LEVELS[2]
-            debug_log.append(f"    - Roads: highways needs resource_total>{ROAD_HIGHWAY_MIN_TOTAL} (have {road_total:g}) -> paved_roads")
+        no_road_terrains = hidden_resources & NO_ROADS_TERRAINS
+        if no_road_terrains:
+            debug_log.append(f"    - Roads: NO ROADS — blocked by terrain {no_road_terrains}")
+        elif owner_faction.strip().lower() in NO_ROADS_FACTIONS:
+            debug_log.append(f"    - Roads: NO ROADS — blocked for faction '{owner_faction}'")
         else:
-            debug_log.append(f"    - Roads: {base_road} (bump; resource_total={road_total:g})")
+            self._assign_chain(building_map, assigned_chains, "hinterland_roads", tier, debug_log)
+            base_road = building_map.get("hinterland_roads")
+            base_rt = ROAD_TIER_BY_LEVEL.get(base_road, 0)
+            road_total = sum(q for (_r, q) in region_resources)
+            if region_key in ROADS_ALWAYS_HIGHWAY or name.strip().lower() in ROADS_ALWAYS_HIGHWAY:
+                building_map["hinterland_roads"] = ROAD_LEVELS[3]; assigned_chains.add("hinterland_roads")
+                debug_log.append(f"    - Roads: {region} exception -> highways")
+            elif base_rt == 0:
+                debug_log.append("    - Roads: settlement too small for a road (bump)")
+            elif (hidden_resources & ROAD_TERRAIN_CAP) and base_rt > 1:
+                building_map["hinterland_roads"] = ROAD_LEVELS[1]
+                debug_log.append(f"    - Roads: terrain {hidden_resources & ROAD_TERRAIN_CAP} caps {base_road} -> roads")
+            elif base_rt >= 3 and road_total <= ROAD_HIGHWAY_MIN_TOTAL:
+                building_map["hinterland_roads"] = ROAD_LEVELS[2]
+                debug_log.append(f"    - Roads: highways needs resource_total>{ROAD_HIGHWAY_MIN_TOTAL} (have {road_total:g}) -> paved_roads")
+            else:
+                debug_log.append(f"    - Roads: {base_road} (bump; resource_total={road_total:g})")
 
         self._assign_chain(building_map, assigned_chains, "market", tier, debug_log)
 
@@ -531,16 +581,26 @@ class SettlementProcessor:
         else:
             debug_log.append("    - No existing temple found")
 
-        if "capital_treasury" in [b.split()[0] for b in orig_buildings if b]:
-            # Assigned directly (no bump) and capped at MAX_TREASURY_TIER so it's
-            # actually built rather than dropped by the bump rule.
-            t_tier = min(tier, MAX_TREASURY_TIER)
+        # Treasury — each faction's starting capital gets one. The level scales
+        # with empire size (settlement count) via TREASURY_EMPIRE_THRESHOLDS and
+        # is capped by what the settlement's own size allows (tier 1-4).
+        owner_key = owner_faction.strip().lower()
+        if owner_key and owner_key not in TREASURY_IGNORED_FACTIONS \
+                and self.faction_capitals.get(owner_key) == region:
+            empire_size = self.empire_sizes.get(owner_key, 0)
+            size_tier = 0
+            for t in sorted(TREASURY_LEVELS):
+                if empire_size >= TREASURY_EMPIRE_THRESHOLDS.get(TREASURY_LEVELS[t], 10**9):
+                    size_tier = t
+            t_tier = min(size_tier, tier)
             if t_tier >= 1:
                 building_map["capital_treasury"] = TREASURY_LEVELS[t_tier]
                 assigned_chains.add("capital_treasury")
-                debug_log.append(f"    - Treasury: tier {t_tier} -> {TREASURY_LEVELS[t_tier]} (cap {MAX_TREASURY_TIER})")
+                debug_log.append(f"    - Treasury: capital of {owner_key} (empire size {empire_size}) -> {TREASURY_LEVELS[t_tier]} (empire tier {size_tier}, settlement cap {tier})")
+            else:
+                debug_log.append(f"    - Treasury: capital of {owner_key}, but settlement too small (tier {tier})")
         else:
-            debug_log.append("    - No existing capital_treasury found")
+            debug_log.append("    - Treasury: not a faction capital")
 
         debug_log.append("\n  Final Managed Building Assignments:")
         for chain, level_name in building_map.items():

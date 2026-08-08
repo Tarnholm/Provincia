@@ -1497,6 +1497,7 @@ def _step_urban_exploits(run_strat, run_out):
 
 import hidden_resources
 import farms
+import heavy_industry
 import mics
 import homelands
 import port_authority
@@ -1511,7 +1512,10 @@ import urban_exploits
 
 PIPELINE = [
     ("01_farms",               lambda strat, out: farms.FarmExploitProcessor().run(run_strat=strat, run_out=out)),
-    ("02_heavy_industry",      _step_heavy_industry),         # inlined ✓
+    # standalone (single source) — the old inlined copy above went stale (kept
+    # pre-v0.9.667 max() scoring, no bump exception); the .py is authoritative
+    # and is what the rule editor edits.
+    ("02_heavy_industry",      lambda strat, out: heavy_industry.HeavyIndustryProcessor().run(run_strat=strat, run_out=out)),
     ("03_sanitation_healers",  _step_sanitation_healers),     # inlined ✓
     ("04_mics",                lambda strat, out: mics.MilitaryBuildingProcessor().run(run_strat=strat, run_out=out)),
     ("05_homelands",           lambda strat, out: homelands.main(run_strat=strat, run_out=out)),
@@ -1519,7 +1523,7 @@ PIPELINE = [
     ("07_urban_exploits",      lambda strat, out: urban_exploits.main(run_strat=strat, run_out=out)),   # standalone (single source)
     ("08_port_authority",      lambda strat, out: port_authority.main(run_strat=strat, run_out=out)),
     ("09_settlement_processor",lambda strat, out: settlement_processor.SettlementProcessor(run_out=out).process_file(str(strat))),
-    ("10_temples",             lambda strat, out: temples.TempleBuildingProcessor().run(run_strat=strat, run_out=out)),
+    ("10_temples",             lambda strat, out: temples.StandardTempleProcessor().run(run_strat=strat, run_out=out)),
     ("11_slave_placer",        _step_slave_placer),           # inlined ✓
     ("12_civic",               lambda strat, out: civic.CivicBuildingProcessor().run(run_strat=strat, run_out=out)),
     ("13_grain_exports",       lambda strat, out: grain_exports.GrainExportProcessor().run(run_strat=strat, run_out=out)),

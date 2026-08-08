@@ -108,6 +108,7 @@ import { createLedger } from "./battleLedger";
 import { planRecruitUpgrades } from "./recruitPlanner";
 import { computeVictoryProgress } from "./victoryProgress";
 import Toasts from "./Toasts";
+import ScrollPulse from "./ScrollPulse";
 import VolumeControl from "./VolumeControl";
 import { AnimationLayoutProvider, useEnterExit } from "./AnimationLayout";
 import "./animations.css";
@@ -8759,6 +8760,7 @@ function App() {
       }
       if (e.key === "Escape") {
         // Esc cascade — close whatever overlay is open, then clear selection.
+        setShowToolsMenu((cur) => (cur ? false : cur));
         setOpenFanSection((cur) => (cur ? null : cur));
         setShowInsightsPanel((cur) => (cur ? false : cur));
         setInfoPopup((cur) => { if (cur) return null; return cur; });
@@ -12060,6 +12062,19 @@ function App() {
   const [showSaveCompare, setShowSaveCompare] = useState(false); // ⇄ save-to-save diff (2026-07-17)
   const [showModLint, setShowModLint] = useState(false); // 📏 mod consistency lint (2026-07-17)
   const [showToolsMenu, setShowToolsMenu] = useState(false); // 🧰 popup listing the tool panels
+  const toolsMenuRef = useRef(null);
+  // Close the 🧰 menu on tap/click anywhere outside it. Replaces the old
+  // onMouseLeave close, which closed on accidental mouse overshoot and
+  // could never be dismissed on a touchscreen (fingers don't "leave").
+  // Escape also closes it via the global Esc cascade.
+  useEffect(() => {
+    if (!showToolsMenu) return;
+    const onDown = (e) => {
+      if (toolsMenuRef.current && !toolsMenuRef.current.contains(e.target)) setShowToolsMenu(false);
+    };
+    document.addEventListener("pointerdown", onDown, true);
+    return () => document.removeEventListener("pointerdown", onDown, true);
+  }, [showToolsMenu]);
   const [showUnitCompare, setShowUnitCompare] = useState(false); // ⚖ side-by-side EDU unit stats (2026-07-17)
   const [showRecruitPlanner, setShowRecruitPlanner] = useState(false); // 🏗 what each building upgrade unlocks (2026-07-17)
   const [showDiploHeatmap, setShowDiploHeatmap] = useState(false); // 🕊 NxN diplomacy heatmap (2026-07-17)
@@ -12519,6 +12534,80 @@ function App() {
     return () => ro.disconnect();
   }, []);
 
+  // ── Pointer-event wrappers: the canvas listens to pointer events so
+  // touchscreens work — single-finger pan, two-finger pinch zoom (anchored
+  // at the finger midpoint, same world-point math as the wheel handler),
+  // tap select. Mouse input flows through to the original handlers
+  // unchanged; touch never drives the hover-only UI (tile inspect, hover
+  // region info) because a finger has no hover state. touch-action:none
+  // on the canvas stops the browser from hijacking the gestures.
+  const activePointersRef = useRef(new Map());
+  const pinchRef = useRef(null);
+  function pinchMidDist() {
+    const pts = [...activePointersRef.current.values()];
+    const dx = pts[0].x - pts[1].x, dy = pts[0].y - pts[1].y;
+    return { mid: { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }, dist: Math.hypot(dx, dy) || 1 };
+  }
+  function handlePointerDown(e) {
+    if (e.pointerType !== "mouse") {
+      activePointersRef.current.set(e.pointerId, { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY });
+      if (activePointersRef.current.size === 2) {
+        const { mid, dist } = pinchMidDist();
+        const { scale } = computeTransform();
+        const baseX = (canvasSize.width - imgSize.width * scale * zoom) / 2;
+        const baseY = (canvasSize.height - imgSize.height * scale * zoom) / 2;
+        pinchRef.current = {
+          startDist: dist, startZoom: zoom,
+          wx: (mid.x - baseX - offset.x) / (scale * zoom),
+          wy: (mid.y - baseY - offset.y) / (scale * zoom),
+        };
+        setDrag(null); // second finger down cancels the pan-in-progress
+        return;
+      }
+    }
+    handleMouseDown(e);
+  }
+  function handlePointerMove(e) {
+    if (e.pointerType !== "mouse") {
+      if (activePointersRef.current.has(e.pointerId)) {
+        activePointersRef.current.set(e.pointerId, { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY });
+      }
+      if (pinchRef.current && activePointersRef.current.size >= 2) {
+        const { mid, dist } = pinchMidDist();
+        const p = pinchRef.current;
+        const newZoom = Math.max(minZoom, Math.min(maxZoom, p.startZoom * (dist / p.startDist)));
+        const { scale } = computeTransform();
+        const baseX = (canvasSize.width - imgSize.width * scale * newZoom) / 2;
+        const baseY = (canvasSize.height - imgSize.height * scale * newZoom) / 2;
+        setZoom(Number(newZoom.toFixed(4)));
+        setOffset(clampOffset({ x: mid.x - baseX - p.wx * scale * newZoom, y: mid.y - baseY - p.wy * scale * newZoom }));
+        return;
+      }
+      // Touch forwards only live drags — never the hover branch.
+      if (drag || devDragGarrison || devDragChar || devDragGen || devDragResource) handleMouseMove(e);
+      return;
+    }
+    handleMouseMove(e);
+  }
+  function handlePointerUp(e) {
+    if (e.pointerType !== "mouse") {
+      activePointersRef.current.delete(e.pointerId);
+      if (pinchRef.current || panJustEndedRef.current) {
+        if (activePointersRef.current.size < 2) pinchRef.current = null;
+        // Swallow the click the browser synthesizes after a pinch ends.
+        panJustEndedRef.current = true;
+        setTimeout(() => { panJustEndedRef.current = false; }, 300);
+        setDrag(null);
+        return;
+      }
+    }
+    handleMouseUp(e);
+  }
+  function handlePointerCancel(e) {
+    activePointersRef.current.delete(e.pointerId);
+    if (activePointersRef.current.size < 2) pinchRef.current = null;
+    handleMouseUp(); // no event → clears drag/dev-drags without committing a drop
+  }
   function handleMouseDown(e) {
     // Dev mode: check if grabbing a staged general's map marker to reposition it.
     if (devMode && pendingGenerals.size > 0 && e.button === 0) {
@@ -15364,7 +15453,7 @@ function App() {
               {/* 🧰 Tools (2026-07-17): the analysis/modding panels live in one
                   popup so the toolbar doesn't grow a button per panel. Add new
                   panels HERE, not as toolbar buttons. */}
-              <span style={{ position: "relative" }} onMouseLeave={() => setShowToolsMenu(false)}>
+              <span ref={toolsMenuRef} style={{ position: "relative" }}>
                 <button
                   className="dev-btn"
                   onClick={() => setShowToolsMenu((v) => !v)}
@@ -19185,6 +19274,7 @@ Click for unit card`}
         topOffset={TITLEBAR_H}
         onDismiss={(id) => setToasts(prev => prev.filter(x => x.id !== id))}
       />
+      <ScrollPulse />
       {/* Family Tree modal — opened from the Characters widget header in RegionInfo */}
       {familyTreeOpen && (
         <FamilyTree
@@ -19772,10 +19862,11 @@ Click for unit card`}
                   ref={canvasRef}
                   onClick={handleClick}
                   onContextMenu={handleContextMenu}
-                  onMouseMove={handleMouseMove}
-                  onMouseDown={handleMouseDown}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={() => { handleMouseUp(); setHoveredResource(null); setHoveredArmy(null); setHoveredCity(null); lastInspectKeyRef.current = ""; setTileInspect(null); setHoverPos(null); }}
+                  onPointerMove={handlePointerMove}
+                  onPointerDown={handlePointerDown}
+                  onPointerUp={handlePointerUp}
+                  onPointerCancel={handlePointerCancel}
+                  onPointerLeave={(e) => { activePointersRef.current.delete(e.pointerId); if (activePointersRef.current.size < 2) pinchRef.current = null; handleMouseUp(); setHoveredResource(null); setHoveredArmy(null); setHoveredCity(null); lastInspectKeyRef.current = ""; setTileInspect(null); setHoverPos(null); }}
                   onDoubleClick={handleDoubleClick}
                   tabIndex={0}
                   width={canvasSize.width}
@@ -19790,6 +19881,7 @@ Click for unit card`}
                     height: canvasSize.height,
                     minWidth: 100,
                     minHeight: 100,
+                    touchAction: "none",
                   }}
                   aria-label={`Interactive map (${variantLabel})`}
                 />
@@ -20282,9 +20374,13 @@ Click for unit card`}
                   opacity: 0.9,
                   boxShadow: "0 2px 12px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,0,0,0.3)",
                   cursor: "pointer",
+                  touchAction: "none",
                 }}
-                  onMouseDown={(e) => {
+                  onPointerDown={(e) => {
                     minimapDragging.current = true;
+                    // Capture so the drag keeps steering even when the pointer
+                    // (especially a finger) overshoots the small minimap.
+                    e.currentTarget.setPointerCapture?.(e.pointerId);
                     const mm = minimapRef.current;
                     if (!mm) return;
                     const rect = mm.getBoundingClientRect();
@@ -20297,7 +20393,7 @@ Click for unit card`}
                     const by = (canvasSize.height - imgSize.height * ts) / 2;
                     setOffset(clampOffset({ x: canvasSize.width / 2 - mapX * ts - bx, y: canvasSize.height / 2 - mapY * ts - by }));
                   }}
-                  onMouseMove={(e) => {
+                  onPointerMove={(e) => {
                     if (!minimapDragging.current) return;
                     const mm = minimapRef.current;
                     if (!mm) return;
@@ -20311,8 +20407,8 @@ Click for unit card`}
                     const by = (canvasSize.height - imgSize.height * ts) / 2;
                     setOffset(clampOffset({ x: canvasSize.width / 2 - mapX * ts - bx, y: canvasSize.height / 2 - mapY * ts - by }));
                   }}
-                  onMouseUp={() => { minimapDragging.current = false; }}
-                  onMouseLeave={() => { minimapDragging.current = false; }}
+                  onPointerUp={() => { minimapDragging.current = false; }}
+                  onPointerCancel={() => { minimapDragging.current = false; }}
                 >
                   <canvas ref={minimapRef} style={{ display: "block" }} />
                 </div>

@@ -7,6 +7,17 @@ window.SPS_TYPE_COLOURS = { feature: "#4a9", fix: "#c66", improvement: "#6ac", c
 
 window.SPS_CHANGELOG = [
   {
+    version: "0.16.17",
+    date: "2026-08-08",
+    items: [
+      { type: "feature", text: "**Farms: per-chain bump exceptions.** Each farm chain can now have its own bump-rule exceptions — skip the bump when the region has enough of a **specific resource** or meets a **fertility** threshold. Editable per chain in the Farms simple editor (the global fertility exception still applies to all chains)." },
+      { type: "feature", text: "**Heavy industry: bump exceptions.** Global rule: the bump is skipped when the region has **≥ 5** of one of the building's enabling resources (threshold editable). Plus **per-building rules** — skip the bump for one building on a specific resource amount (e.g. mines when gold ≥ 2), editable like the farms exceptions. Also: the master pipeline now runs `heavy_industry.py` directly, so it picks up the **sum-scoring fix** and your rule edits (the old inlined copy had gone stale)." },
+      { type: "feature", text: "**Roads: block by terrain or faction.** New editable lists — regions with chosen hidden resources (e.g. `mountains`, `desert`) or settlements owned by chosen factions get **no roads at all**." },
+      { type: "fix", text: "**Capital treasuries are actually placed now.** The old rule only kept treasuries that already existed in descr_strat — there were none, so none were ever built. Each faction's starting capital (first settlement in its faction block) now gets a `capital_treasury`, levelled by **empire size** (1+/4+/9+/16+ settlements, thresholds editable) and capped by what the settlement's size allows." },
+      { type: "fix", text: "**Temples step crash fixed** in the full pipeline run (`TempleBuildingProcessor` → `StandardTempleProcessor` rename was never applied to the pipeline)." },
+    ],
+  },
+  {
     version: "0.16.16",
     date: "2026-05-25",
     items: [

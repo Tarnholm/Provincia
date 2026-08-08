@@ -456,6 +456,17 @@ body.dark-mode .zoom-controls .zoom-btn {
   50% { opacity: 0.4; }
 }
 
+/* ── Touch ergonomics ─────────────────────────────────────────────────
+   Applies only when the PRIMARY input is a finger (touchscreen, iPad).
+   Mouse/trackpad setups render exactly as before. Grows the smallest
+   hit targets toward the ~44px platform minimum without redesigning
+   the toolbar row. !important is required to beat the inline styles. */
+@media (pointer: coarse) {
+  .map-mode-btn { padding: 7px 10px !important; font-size: 0.76rem !important; }
+  .dev-btn { padding: 7px 10px !important; min-height: 36px; }
+  .zoom-controls .zoom-btn { width: 46px !important; height: 46px !important; font-size: 24px !important; }
+}
+
 /* Respect users who've asked the OS to reduce motion. */
 @media (prefers-reduced-motion: reduce) {
   .faction-tile,

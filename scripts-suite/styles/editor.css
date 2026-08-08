@@ -946,3 +946,29 @@
   padding: 8px 0 0;
   font-style: italic;
 }
+
+/* Per-chain bump exceptions (farms.py) */
+.bump-exc-table .se-tag-list {
+  min-height: 22px;
+}
+
+.bump-exc-none {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-style: italic;
+  padding: 8px;
+}
+
+.bump-exc-add {
+  margin-top: 10px;
+}
+
+.bump-exc-add .se-dict-input {
+  width: 110px;
+  text-align: left;
+}
+
+.bump-exc-add #bump-exc-min {
+  width: 60px;
+  text-align: right;
+}

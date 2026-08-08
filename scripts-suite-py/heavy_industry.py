@@ -58,6 +58,18 @@ ENABLING_RESOURCES = {
     "salt_production":      {"salt"},
 }
 
+# Bump exception: skip the one-level bump for a building when the region has at
+# least this much of one of its ENABLING resources. Rich deposits get their
+# industry sooner. Set to None to disable the exception (bump always applies).
+BUMP_SKIP_RESOURCE_AMOUNT = 5
+
+# Per-building bump exceptions, OR'd with the global threshold above. Each
+# building can list rules that skip the bump when the region has >= the given
+# amount of a SPECIFIC resource:
+#   {"resource": "gold", "min": 2}   -> skip when region has >= 2 gold
+BUMP_EXCEPTIONS = {
+}
+
 # Luxury rule: a settlement with glass/amber/elephants builds jewelry instead of
 # raw mining (gold/silver otherwise make `mines` win the tie).
 LUXURY_RESOURCES = ("glass", "amber", "elephants")
@@ -122,7 +134,9 @@ class HeavyIndustryProcessor:
                 if not edb_min: break
                 last_min = edb_min
                 s_min = self.bump_settlement_level(edb_min) if b_name in HEAVY_IND_BUILDINGS else edb_min
-                levels_info.append({'level': l_name, 'settlement_min': s_min})
+                # Keep both minimums: the bumped one (default) and the raw EDB one
+                # (used when the bump exception applies for a settlement).
+                levels_info.append({'level': l_name, 'settlement_min': s_min, 'settlement_min_nobump': edb_min})
             if levels_info: chains[b_name] = levels_info
         return chains
 
@@ -147,13 +161,29 @@ class HeavyIndustryProcessor:
             if reg not in self.resources_by_region: self.resources_by_region[reg] = {}
             self.resources_by_region[reg][res.lower()] = self.resources_by_region[reg].get(res.lower(), 0) + float(amt)
 
+    def min_key_for(self, b, res_dict):
+        """Which settlement_min applies for this settlement: the bumped one by
+        default, the raw EDB one when a bump exception fires — either the global
+        rule (region has >= BUMP_SKIP_RESOURCE_AMOUNT of one of the building's
+        enabling resources) or a per-building rule from BUMP_EXCEPTIONS."""
+        if b in HEAVY_IND_BUILDINGS:
+            if BUMP_SKIP_RESOURCE_AMOUNT is not None:
+                best = max((res_dict.get(r, 0) for r in ENABLING_RESOURCES.get(b, ())), default=0)
+                if best >= BUMP_SKIP_RESOURCE_AMOUNT:
+                    return 'settlement_min_nobump'
+            for rule in BUMP_EXCEPTIONS.get(b, []):
+                if "resource" in rule and res_dict.get(rule["resource"], 0) >= rule.get("min", 1):
+                    return 'settlement_min_nobump'
+        return 'settlement_min'
+
     def select_building(self, res_dict, tier, chains):
         scores = {}
         for b, weights in BUILDING_RESOURCE_WEIGHTS.items():
             if not any(res_dict.get(r, 0) > 0 for r in ENABLING_RESOURCES.get(b, ())):
                 continue  # no enabling resource -> building can't be built
             lvls = chains.get(b, [])
-            if not lvls or tier < min(LEVEL_TO_TIER.get(l['settlement_min'], 99) for l in lvls): continue
+            mk = self.min_key_for(b, res_dict)
+            if not lvls or tier < min(LEVEL_TO_TIER.get(l.get(mk, l['settlement_min']), 99) for l in lvls): continue
             # Sum across resources so a settlement with multiple matching
             # resources for one building (e.g. silver+lead+iron for `mines`)
             # outscores a single-resource building (marble). Previously this
@@ -170,9 +200,11 @@ class HeavyIndustryProcessor:
         if (best_b in JEWELRY_OVER_MINING and any(res_dict.get(r, 0) > 0 for r in LUXURY_RESOURCES)
                 and any(res_dict.get(r, 0) > 0 for r in ENABLING_RESOURCES["jewelry"])):
             jl = chains.get("jewelry", [])
-            if jl and tier >= min(LEVEL_TO_TIER.get(l['settlement_min'], 99) for l in jl):
+            jk = self.min_key_for("jewelry", res_dict)
+            if jl and tier >= min(LEVEL_TO_TIER.get(l.get(jk, l['settlement_min']), 99) for l in jl):
                 best_b = "jewelry"
-        allowed = [l['level'] for l in chains[best_b] if tier >= LEVEL_TO_TIER.get(l['settlement_min'], 99)]
+        bk = self.min_key_for(best_b, res_dict)
+        allowed = [l['level'] for l in chains[best_b] if tier >= LEVEL_TO_TIER.get(l.get(bk, l['settlement_min']), 99)]
         # Never select a '...supply' level — drop to the highest non-supply level.
         non_supply = [lv for lv in allowed if 'supply' not in lv.lower()]
         chosen = non_supply[-1] if non_supply else None

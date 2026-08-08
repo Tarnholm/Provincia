@@ -13,6 +13,19 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1490",
+    date: "2026-08-08",
+    items: [
+      { type: "feature", text: "**Settlement Processor Suite 0.16.17: bump-rule exceptions you can actually aim.** Farms gain **per-chain exceptions** — skip the bump for one farm chain when the region has enough of a specific resource or meets a fertility threshold (editable chips per chain in the simple editor; the global fertility exception still applies everywhere). Heavy industry gains the same: a **global enabling-resource threshold** (≥ 5 skips the bump — rich deposits get their industry sooner) plus **per-building rules** (e.g. mines when gold ≥ 2)." },
+      { type: "feature", text: "**Suite: roads can now be blocked by terrain or faction.** Two new editable lists in Core Buildings — regions carrying chosen hidden resources (mountains, desert, …) or settlements owned by chosen factions get no hinterland roads at all, existing ones removed." },
+      { type: "fix", text: "**Suite: capital treasuries are finally placed.** The old rule only re-levelled treasuries already present in descr_strat — there were none, so in every run ever, zero were built. Each faction's starting capital now gets a capital_treasury levelled by empire size (1/4/9/16 settlements, editable) and capped by what the settlement's size allows. On current RIS data: 214 capitals — 176 treasury, 33 large, 2 great, 3 imperial (Roma, Qart-Khadasht, Mesopotamia)." },
+      { type: "fix", text: "**Suite: the full pipeline run was crashing at the temples step** — a processor class rename (v0.9.667) was never applied to the pipeline callers, so a master run had never completed past step 9. Fixed; a full 14-step run now completes. Bonus: the pipeline's heavy-industry step had silently kept a stale pre-0.9.667 copy of the rules (old max-scoring, blind to editor tweaks) — it now runs heavy_industry.py directly." },
+      { type: "improvement", text: "**Touch support on the campaign map:** single-finger pan, two-finger pinch zoom anchored at the finger midpoint, tap to select — mouse behaviour unchanged. The 🧰 tools menu now closes on tap/click outside (it was undismissable on touchscreens) and on Esc." },
+      { type: "improvement", text: "**Scroll feedback without scrollbars:** a thin amber pulse appears along a list's edge while it scrolls and fades out after — every scrollable panel gets position feedback again without bringing back visible rails." },
+    ],
+  },
+
+  {
     version: "0.9.1489",
     date: "2026-08-08",
     items: [
@@ -42,39 +55,6 @@ const CHANGELOG = [
     date: "2026-08-06",
     items: [
       { type: "improvement", text: "**Starting Populations: the progress bar now shows too MUCH population, not just too little.** The bar previously measured against the band the population implies — so a town holding city-sized numbers still drew a calm green bar. It now measures against the settlement's DECLARED level: green with a % when the population sits inside its level's band, amber **▼** when it is below the level's own threshold (too little, with how far short in the tooltip), and red **▲over** when it has blown past the next level's upgrade threshold (too much — the tooltip says by how many). The ⚠ overcrowding warning (above the level's max pop) stacks on any of the three. The column is renamed \"vs level\" to say what it measures." },
-    ],
-  },
-
-  {
-    version: "0.9.1485",
-    date: "2026-08-06",
-    items: [
-      { type: "improvement", text: "**Starting Populations: every settlement now shows a progress bar toward its next city level.** The new \"→ next\" column draws how far the (edited) population has climbed from its current band's threshold toward the next level's upgrade threshold — a city at 13,000 reads 50%, halfway from 9,000 to the 17,000 large-city mark — with the exact numbers, including how many more people the upgrade needs, in the tooltip. Huge cities (no next level) show % of their max population instead. The bar turns red with a ⚠ when the population exceeds the band's **max pop** — descr_cultures' overcrowding ceiling (in RIS: 5,800 / 9,000 / 16,000 / 22,000 / 30,000 / 60,000, one ladder for all 22 cultures, measured). The bar updates live as you type a new population, so you can dial a settlement to exactly the growth headroom you want." },
-    ],
-  },
-
-  {
-    version: "0.9.1484",
-    date: "2026-08-06",
-    items: [
-      { type: "fix", text: "**Starting Populations no longer freezes the app when you toggle a filter.** The table was rendering all ~1,300 settlement rows — a controlled input each, roughly ten thousand DOM nodes — so clicking \"level≠pop only\" re-laid the whole thing out and pinned a core while the mouse went unresponsive; every keystroke in a population box paid the same cost. The table now renders only the rows actually in view (~40, with spacers keeping the scrollbar honest), so opening the panel, toggling filters, and typing are all instant — measured at roughly 10× faster to open and 10× faster per toggle even before browser layout costs, which is where the real freeze lived. The header now stays pinned while you scroll, and a regression test fails if the table ever goes back to rendering everything." },
-      { type: "improvement", text: "**The city-level ladder is now clickable — filter to just Villages, Towns, or any mix.** Each level chip (Village 0 · Town 1,500 · …) shows how many settlements are declared at that level and toggles a filter; click several to combine, ✕ clears. The \"level≠pop only\" checkbox now shows its live count too, so you can see at a glance how many settlements sit outside their declared band before diving in." },
-    ],
-  },
-
-  {
-    version: "0.9.1483",
-    date: "2026-08-06",
-    items: [
-      { type: "fix", text: "**Fixed: v0.9.1481 could re-import a full mod's campaign with VANILLA map files — RIS slots suddenly showed the vanilla map (103 regions).** The new base-mod inheritance had a hole: when a slot imports the campaign folder directly (…/world/maps/campaign/imperial_campaign), the folder scan never sees the mod's own world/maps/base — and for a full mod the fallback skipped the sibling-mod search and went straight to the vanilla install, silently overwriting the slot's descr_regions, map TGAs and descr_sm_factions with vanilla's. The campaign's own mod root is now always the FIRST inheritance source, sibling base mods second, vanilla strictly last — verified on the real RIS and Four Romans folders (zero vanilla paths resolve). If your RIS slot went vanilla: just update and reopen — the next auto-reimport pulls the correct RIS files back." },
-    ],
-  },
-
-  {
-    version: "0.9.1482",
-    date: "2026-08-06",
-    items: [
-      { type: "feature", text: "**🧰 Tools → 👥 Starting Populations: an editable table of every settlement's starting population, written straight back into descr_strat.** All ~1,300 settlements in one grid — faction, settlement, declared level, and an editable population box — with search, a faction filter, sortable columns, and a bulk **±% adjust** for whatever is filtered. Beside each population the table shows which city-level band it falls in, using the thresholds read from descr_cultures' \"settlement upgrade levels\" (in RIS all 22 cultures share one ladder: village 0 · town 1,500 · large town 4,000 · city 9,000 · large city 17,000 · huge city 27,000, minimum 400 — measured, and the panel warns if a mod's cultures ever differ). A ⚠ flags every settlement whose population sits in a different band than the level descr_strat declares — there's a \"level≠pop only\" filter to sweep exactly those. Apply rewrites ONLY the changed population lines (brace-depth parsing, indentation and line endings preserved — proven byte-for-byte on the real RIS file), takes a .provincia-bak backup first, and reports what changed. Submod slots edit the submod's own descr_strat, exactly like the Army Setup applies." },
     ],
   },
 

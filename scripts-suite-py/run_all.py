@@ -201,7 +201,7 @@ def run_all():
         ("07_urban_exploits",     lambda strat, out: urban_exploits.main(run_strat=strat, run_out=out)),
         ("08_port_authority",     lambda strat, out: port_authority.main(run_strat=strat, run_out=out)),
         ("09_settlement_processor", lambda strat, out: settlement_processor.SettlementProcessor(run_out=out).process_file(str(strat))),
-        ("10_temples",             lambda strat, out: temples.TempleBuildingProcessor().run(run_strat=strat, run_out=out)),
+        ("10_temples",             lambda strat, out: temples.StandardTempleProcessor().run(run_strat=strat, run_out=out)),
         ("11_slave_placer",        lambda strat, out: slave_placer.run(run_strat=strat, run_out=out)),
         ("12_civic",               lambda strat, out: civic.CivicBuildingProcessor().run(run_strat=strat, run_out=out)),
         ("13_grain_exports",       lambda strat, out: grain_exports.GrainExportProcessor().run(run_strat=strat, run_out=out)),
