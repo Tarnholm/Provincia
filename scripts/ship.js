@@ -141,7 +141,7 @@ run("Publish", "npx", ["electron-builder", "--win", "nsis", "--publish", "always
     } catch { /* network hiccup — retry */ }
     if (served === version) {
       console.log(`\nSHIPPED AND VERIFIED: update feed serves ${version}.`);
-      console.log("(build-mac.yml attaches the mac DMG to the release automatically.)");
+      console.log("(mac build is manual-only: run build-mac.yml from the Actions tab if a DMG is wanted.)");
       return;
     }
     console.log(`  attempt ${i}/${ATTEMPTS}: feed serves ${served ?? "unreachable"} — waiting ${DELAY_S}s...`);
