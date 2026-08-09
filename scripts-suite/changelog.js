@@ -7,6 +7,14 @@ window.SPS_TYPE_COLOURS = { feature: "#4a9", fix: "#c66", improvement: "#6ac", c
 
 window.SPS_CHANGELOG = [
   {
+    version: "0.16.24",
+    date: "2026-08-10",
+    items: [
+      { type: "feature", text: "**Rural Exploits: limit the rich-resource exception by settlement level** — the same **Full-Tier Levels** list Urban Exploits got in 0.16.23. Remove a level (e.g. `town`) and settlements of that size always use the lower band, no matter how much of the resource the region has. Default lists every level, so nothing changes until you prune it." },
+      { type: "feature", text: "**Reset to default.** The editor toolbar has a new button that replaces the open pipeline script with the pristine copy shipped with the app — the instant fix when hand edits (or an AI's) leave a script that won't parse. No restart needed; saved rule profiles are untouched. (A Provincia restart also restores all scripts — they re-seed from the app at every launch.)" },
+    ],
+  },
+  {
     version: "0.16.23",
     date: "2026-08-09",
     items: [

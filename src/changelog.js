@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1499",
+    date: "2026-08-10",
+    items: [
+      { type: "feature", text: "**Scripts Suite: Rural Exploits can also limit the rich-resource exception by settlement level** — same Full-Tier Levels list Urban Exploits got yesterday. Remove a level and settlements of that size always use the lower building band. Suite 0.16.24." },
+      { type: "feature", text: "**Scripts Suite: Reset to default.** New editor toolbar button replaces the open pipeline script with the pristine copy shipped with the app — the instant fix for a script that hand edits left unparseable, no restart needed." },
+    ],
+  },
+
+  {
     version: "0.9.1498",
     date: "2026-08-09",
     items: [

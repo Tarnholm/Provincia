@@ -34,6 +34,7 @@ contextBridge.exposeInMainWorld("api", {
   loadProfile: (name) => invoke("load-profile", name),
   exportProfile: (name) => invoke("export-profile", name),
   importProfile: () => invoke("import-profile"),
+  resetScript: (name) => invoke("reset-script", name),
   listScripts: () => invoke("list-scripts"),
 
   // Comparison

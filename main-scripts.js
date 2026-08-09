@@ -2510,6 +2510,21 @@ ipcMain.handle('sps:load-profile', async (_, profileName) => {
   }
 });
 
+// Replace one pipeline script with the pristine bundled copy (the same file
+// the launch-time seed writes). Scripts only — config files are user data.
+ipcMain.handle('sps:reset-script', async (_, scriptName) => {
+  if (!SCRIPT_FILES.includes(scriptName)) return { success: false, error: 'not a pipeline script' };
+  try {
+    const src = path.join(SCRIPTS_DIR, scriptName);
+    if (!fs.existsSync(src)) return { success: false, error: 'bundled copy not found' };
+    const dest = path.join(PROJECT_ROOT, scriptName);
+    fs.copyFileSync(src, dest);
+    return { success: true, content: fs.readFileSync(dest, 'utf-8') };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
 // Export a rule profile to a single portable JSON file the user picks.
 ipcMain.handle('sps:export-profile', async (_, profileName) => {
   const safe = safeProfileSegment(profileName);

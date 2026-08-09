@@ -1109,6 +1109,8 @@ The <b>bump rule</b> adds extra tier requirements unless the region has a large 
       variable: 'QUALIFY_MIN_AMOUNT', type: 'number', label: 'Region qualifies when resource amount >=' },
     { section: 'Full-Tier Amount', desc: 'With at least this much of the resource, the building level uses the settlement\'s full tier; below it, one tier lower.',
       variable: 'FULL_TIER_AMOUNT', type: 'number', label: 'Full tier when resource amount >=' },
+    { section: 'Full-Tier Levels', desc: 'Settlement levels the rich-resource exception may apply to. Remove a level (e.g. town) and settlements of that size always use the lower band, no matter how much of the resource the region has.',
+      variable: 'FULL_TIER_LEVELS', type: 'set', label: 'Levels eligible for the full tier' },
   ],
   'urban_exploits.py': [
     { section: 'How Urban Exploits Work', desc: '', variable: null, type: 'info',
@@ -1211,6 +1213,7 @@ async function initEditor() {
   document.getElementById('btn-save-file').addEventListener('click', saveCurrentFile);
   document.getElementById('btn-save-as').addEventListener('click', saveFileAs);
   document.getElementById('btn-revert').addEventListener('click', revertFile);
+  document.getElementById('btn-reset-default').addEventListener('click', resetScriptToDefault);
   document.getElementById('btn-save-profile').addEventListener('click', saveProfile);
   document.getElementById('btn-import-profile').addEventListener('click', importProfile);
   document.getElementById('building-search').addEventListener('input', filterBuildings);
@@ -3552,6 +3555,9 @@ async function openFile(filePath, fileName) {
   document.getElementById('btn-save-file').disabled = true;
   document.getElementById('btn-save-as').disabled = false;
   document.getElementById('btn-revert').disabled = true;
+  // Reset-to-default only applies to pipeline scripts (the bundle reseeds
+  // those); config files are user data with no bundled "default" to restore.
+  document.getElementById('btn-reset-default').disabled = !fileName.endsWith('.py');
 
   // Highlight active file across both lists
   document.querySelectorAll('#script-file-list .source-list-item, #config-file-list .source-list-item').forEach(item => {
@@ -3795,6 +3801,23 @@ async function saveProfile() {
   if (result.success) {
     document.getElementById('profile-name-input').value = '';
     await loadProfiles();
+  }
+}
+
+async function resetScriptToDefault() {
+  if (!currentFilePath || !currentFilePath.endsWith('.py')) return;
+  const fileName = currentFilePath.replace(/\\/g, '/').split('/').pop();
+  if (!confirm(`Reset "${fileName}" to the pristine copy shipped with the app? Your edits to this script will be lost (saved rule profiles are not touched).`)) return;
+  const result = await window.api.resetScript(fileName);
+  if (result.success) {
+    originalContent = result.content;
+    monacoEditor.setValue(result.content);
+    if (editorMode === 'simple') renderSimpleEditor(result.content);
+    document.getElementById('editor-filename').classList.remove('modified');
+    document.getElementById('btn-save-file').disabled = true;
+    document.getElementById('btn-revert').disabled = true;
+  } else {
+    alert(`Reset failed: ${result.error}`);
   }
 }
 
