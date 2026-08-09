@@ -55,6 +55,11 @@ TREASURY_IGNORED_FACTIONS = {"slave"}
 TRADER_OVERRIDE_QTY = 4  # Minimum resource quantity to trigger trader override in towns
 TRADER_OVERRIDE_RESOURCES = set()  # Leave empty = ALL resources count. Add names to restrict.
 
+# Building levels that skip the bump rule: the settlement only needs the level's
+# own EDB settlement_min. Default lets a large_town take the tier-2 market
+# (higher market levels still bump). Level names, not chain names.
+NO_BUMP_LEVELS = {"market"}
+
 LEVEL_TO_TIER = {
     "village": 0, "town": 1, "large_town": 2, "minor_city": 3,
     "city": 3, "large_city": 4, "huge_city": 5
@@ -138,7 +143,7 @@ def parse_region_owners(p: Path) -> Dict[str, str]:
         if line.startswith("settlement"):
             r, j = None, i + 1
             while j < len(lines) and not lines[j].strip().startswith(("settlement", "faction ")):
-                if (rm := re.match(r"region\s+([a-zA-Z0-9_]+)", lines[j].strip())):
+                if (rm := re.match(r"region\s+([\w&-]+)", lines[j].strip())):
                     r = rm.group(1)
                 if lines[j].strip() == "}":
                     break
@@ -413,7 +418,13 @@ class SettlementProcessor:
             if min_size is None:
                 continue
             min_tier = LEVEL_TO_TIER.get(min_size, 1)
-            if settlement_tier >= (min_tier + 1):
+            if lvl['level'] in NO_BUMP_LEVELS:
+                if settlement_tier >= min_tier:
+                    allowed.append(lvl['level'])
+                    debug_log.append(f"      - Level '{lvl['level']}' (min: {min_size}, tier {min_tier}) ALLOWED for tier {settlement_tier} (no-bump exception)")
+                else:
+                    debug_log.append(f"      - Level '{lvl['level']}' (min: {min_size}, tier {min_tier}) BLOCKED for tier {settlement_tier} (below its own minimum)")
+            elif settlement_tier >= (min_tier + 1):
                 allowed.append(lvl['level'])
                 debug_log.append(f"      - Level '{lvl['level']}' (min: {min_size}, tier {min_tier}) ALLOWED for tier {settlement_tier} (bump)")
             else:

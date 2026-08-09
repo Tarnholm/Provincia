@@ -1172,6 +1172,8 @@ For each building chain, it finds the <b>highest level</b> the settlement qualif
       variable: null, type: 'inline_num', label: 'Extra tiers required',
       pattern: /settlement_tier\s*>=\s*\(min_tier\s*\+\s*(\d+)\)/,
       replacePattern: /(settlement_tier\s*>=\s*\(min_tier\s*\+\s*)\d+/ },
+    { section: 'Bump Rule — Level Exceptions', desc: 'Building levels that skip the bump rule: a settlement only needs the level\'s own minimum from the EDB. Default lets a large_town take the tier-2 market (higher market levels still bump). Use level names, not chain names.',
+      variable: 'NO_BUMP_LEVELS', type: 'set', label: 'Levels that skip the bump' },
     { section: 'Town Trader Override', desc: 'Towns that have a resource with high enough quantity automatically get the market forced to "trader" level.',
       variable: 'TRADER_OVERRIDE_QTY', type: 'number', label: 'Minimum resource quantity needed' },
     { section: 'Trader Override — Allowed Resources', desc: 'Only these resources count for the trader override. Leave empty = ALL resources count.',

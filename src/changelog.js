@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1495",
+    date: "2026-08-09",
+    items: [
+      { type: "fix", text: "**Scripts Suite: Carthage gets its capital treasury.** The Core Buildings owner parser cut region names at the first hyphen, so hyphenated regions (`Qart-Khadasht` and ~130 others) had no known owner — carthage, arados, samnites and veneti_gallia never received capital treasuries, and empire sizes were undercounted for factions owning hyphenated regions. Suite 0.16.20." },
+      { type: "feature", text: "**Scripts Suite: large towns can take the tier-2 market.** New editable bump-exception list in Core Buildings — levels on it skip the bump rule and only need their own EDB minimum. Ships with `market`, so a large_town builds the tier-2 market instead of stopping at trader; forum and above still bump." },
+    ],
+  },
+
+  {
     version: "0.9.1494",
     date: "2026-08-09",
     items: [

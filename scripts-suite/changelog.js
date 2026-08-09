@@ -7,6 +7,14 @@ window.SPS_TYPE_COLOURS = { feature: "#4a9", fix: "#c66", improvement: "#6ac", c
 
 window.SPS_CHANGELOG = [
   {
+    version: "0.16.20",
+    date: "2026-08-09",
+    items: [
+      { type: "fix", text: "**Carthage gets its capital treasury.** The Core Buildings owner parser cut region names at the first hyphen, so every hyphenated region (`Qart-Khadasht` and ~130 others) had no known owner — **carthage, arados, samnites and veneti_gallia** never received their capital treasuries, and empire sizes were undercounted wherever a faction owned hyphenated regions. Region names now parse whole, matching every other script in the Suite." },
+      { type: "feature", text: "**Bump exception: large towns can take the tier-2 market.** New editable **level exception list** in Core Buildings — levels on it skip the bump rule and only need their own EDB minimum. Ships with `market` on it, so a large_town builds the tier-2 market instead of stopping at trader; forum and above still bump (higher markets would be excessive)." },
+    ],
+  },
+  {
     version: "0.16.19",
     date: "2026-08-09",
     items: [
