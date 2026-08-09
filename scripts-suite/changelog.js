@@ -7,6 +7,13 @@ window.SPS_TYPE_COLOURS = { feature: "#4a9", fix: "#c66", improvement: "#6ac", c
 
 window.SPS_CHANGELOG = [
   {
+    version: "0.16.22",
+    date: "2026-08-09",
+    items: [
+      { type: "change", text: "**868 lines of dead code removed from the master pipeline.** `master_processor.py` still carried full inlined copies of the old Rural and Urban Exploits steps from before the pipeline went single-source — never executed, but exactly the stale-copy trap that once let a fix silently miss the master run for months. The pipeline now contains only what it runs; verified end to end." },
+    ],
+  },
+  {
     version: "0.16.21",
     date: "2026-08-09",
     items: [

@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1497",
+    date: "2026-08-09",
+    items: [
+      { type: "change", text: "**Scripts Suite: 868 lines of dead code removed from the master pipeline.** master_processor.py carried never-executed inlined copies of the old Rural and Urban Exploits steps — the stale-copy trap that once let a fix silently miss master runs for months. The pipeline now contains only what it runs; full run verified. Suite 0.16.22." },
+    ],
+  },
+
+  {
     version: "0.9.1496",
     date: "2026-08-09",
     items: [
