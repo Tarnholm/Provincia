@@ -7,6 +7,14 @@ window.SPS_TYPE_COLOURS = { feature: "#4a9", fix: "#c66", improvement: "#6ac", c
 
 window.SPS_CHANGELOG = [
   {
+    version: "0.16.23",
+    date: "2026-08-09",
+    items: [
+      { type: "feature", text: "**Urban Exploits: limit the rich-resource exception by settlement level.** New editable **Full-Tier Levels** list — settlement levels on it may use the higher building band when the resource stack is large; remove a level (e.g. `large_town`) and settlements of that size always stay in the lower band. Default lists every level, so nothing changes until you prune it." },
+      { type: "fix", text: "**Saving a broken Python script now tells you immediately.** The editor still saves (your work is never held hostage), but a `.py` that no longer parses pops the exact error — `line N: what's wrong` — instead of failing silently mid-pipeline later. Note: script edits live in the Suite's project folder and are **re-seeded from the app on every launch** — save a Rule Profile (and Export it) to keep intentional changes." },
+    ],
+  },
+  {
     version: "0.16.22",
     date: "2026-08-09",
     items: [

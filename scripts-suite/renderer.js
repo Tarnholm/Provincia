@@ -1123,6 +1123,8 @@ The <b>bump rule</b> adds extra tier requirements when the resource amount is lo
       variable: 'QUALIFY_MIN_AMOUNT', type: 'number', label: 'Region qualifies when resource amount >=' },
     { section: 'Full-Tier Amount', desc: 'With at least this much of the resource, the building level uses settlement tier − 1; below it, tier − 2 (so towns never qualify and large towns only at the higher amount).',
       variable: 'FULL_TIER_AMOUNT', type: 'number', label: 'Higher level when resource amount >=' },
+    { section: 'Full-Tier Levels', desc: 'Settlement levels the rich-resource exception may apply to. Remove a level (e.g. large_town) and settlements of that size always use the lower band, no matter how much of the resource the region has.',
+      variable: 'FULL_TIER_LEVELS', type: 'set', label: 'Levels eligible for the higher band' },
   ],
   'port_authority.py': [
     { section: 'How Port Assignment Works', desc: '', variable: null, type: 'info',
@@ -3599,6 +3601,9 @@ async function saveCurrentFile() {
     document.getElementById('editor-filename').classList.remove('modified');
     document.getElementById('btn-save-file').disabled = true;
     document.getElementById('btn-revert').disabled = true;
+    if (result.syntaxError) {
+      alert(`Saved, but this Python file has a syntax error and the pipeline will fail on it:\n\n${result.syntaxError}\n\nFix it (or Revert) before running.`);
+    }
   }
 }
 

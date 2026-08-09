@@ -2345,7 +2345,25 @@ ipcMain.handle('sps:write-file', async (_, filePath, content) => {
   if (!safe) return { success: false, error: 'path outside the scripts-suite project dir' };
   try {
     fs.writeFileSync(safe, content, 'utf-8');
-    return { success: true };
+    // A hand-edited .py that no longer parses would fail silently here and
+    // only blow up mid-pipeline. The save still succeeds (never hold work
+    // hostage) but the syntax error rides back so the editor can show it.
+    let syntaxError = null;
+    if (safe.endsWith('.py')) {
+      // The checker prints ONE clean line itself — parsing a CPython traceback
+      // is a trap (its own frames also say "line N" and win a lazy regex).
+      const checker = 'import ast,sys\n' +
+        'try: ast.parse(open(sys.argv[1],encoding="utf-8",errors="ignore").read())\n' +
+        'except SyntaxError as e: print(f"line {e.lineno}: {e.msg}"); sys.exit(1)\n';
+      try {
+        execFileSync(resolvePython(), ['-c', checker, safe],
+          { encoding: 'utf8', timeout: 15000, stdio: ['ignore', 'pipe', 'pipe'] });
+      } catch (e) {
+        syntaxError = String((e && e.stdout) || '').trim()
+          || String((e && e.message) || 'syntax check failed').trim();
+      }
+    }
+    return { success: true, syntaxError };
   } catch (e) {
     return { success: false, error: e.message };
   }
