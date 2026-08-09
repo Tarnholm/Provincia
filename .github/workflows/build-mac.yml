@@ -8,14 +8,14 @@
 # release on GitHub; this workflow listens for that event and appends the
 # .dmg artifact.
 #
-# Manual trigger (workflow_dispatch) supported for re-running on a release
-# that already exists.
+# MANUAL-ONLY since 2026-08-09: the auto-run on every release kept failing and
+# spamming failure emails, so the release trigger is disabled. Run it from the
+# Actions tab (workflow_dispatch) against an existing release when a mac build
+# is actually wanted.
 
 name: build-mac
 
 on:
-  release:
-    types: [created, published]
   workflow_dispatch:
 
 jobs:
