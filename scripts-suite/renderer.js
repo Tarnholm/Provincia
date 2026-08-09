@@ -1101,18 +1101,14 @@ The <b>bump rule</b> adds extra tier requirements unless the region has a large 
     { section: 'Resource → Building Mapping', desc: 'Which building gets assigned for each resource. If a region has this resource, it can get this building.',
       variable: 'RESOURCE_TO_BUILDING', type: 'dict_select', label: 'Resource → Building',
       options: ['wine_industry', 'olive_cultivation', 'dates_cultivation', 'agroforestry',
-        'papyrus_maker', 'honey_industry', 'hunters', 'horse_trainer',
+        'papyrus_maker', 'honey_industry', 'hunters', 'horse_trainer', 'ivory_trade',
         'timber_industry', 'camels_trade', 'hemp_cultivation'] },
-    { section: 'Priority Ranking', desc: 'When a region qualifies for multiple rural buildings, the one listed first here wins.',
-      variable: 'RANKED_EXPLOIT', type: 'list', label: 'Priority order (first = preferred)' },
-    { section: 'Bump Rule — Skip Threshold', desc: 'If a region has at least this much of the resource, the bump rule is skipped and normal settlement requirements apply. Lower = more buildings skip bump.',
-      variable: null, type: 'inline_num', label: 'Skip bump when resource amount >=',
-      pattern: /resource_amt\s*>=\s*(\d+)/,
-      replacePattern: /(resource_amt\s*>=\s*)\d+/ },
-    { section: 'Bump Rule — Extra Tiers', desc: 'When bump is active, the settlement must be this many tiers higher than the building minimum. Set to 0 to disable bump entirely.',
-      variable: null, type: 'inline_num', label: 'Extra tiers required',
-      pattern: /bumped_tier\s*=\s*min_tier\s*\+\s*(\d+)/,
-      replacePattern: /(bumped_tier\s*=\s*min_tier\s*\+\s*)\d+/ },
+    { section: 'Priority Ranking', desc: 'When a region qualifies for multiple rural buildings with the same resource amount, the resource listed first here wins the tie.',
+      variable: 'PRIORITY', type: 'list', label: 'Priority order (first = preferred)' },
+    { section: 'Qualifying Amount', desc: 'A region qualifies for a rural exploit when it has at least this much of a mapped resource. Lower = more regions get a building.',
+      variable: 'QUALIFY_MIN_AMOUNT', type: 'number', label: 'Region qualifies when resource amount >=' },
+    { section: 'Full-Tier Amount', desc: 'With at least this much of the resource, the building level uses the settlement\'s full tier; below it, one tier lower.',
+      variable: 'FULL_TIER_AMOUNT', type: 'number', label: 'Full tier when resource amount >=' },
   ],
   'urban_exploits.py': [
     { section: 'How Urban Exploits Work', desc: '', variable: null, type: 'info',
@@ -1121,14 +1117,12 @@ The <b>bump rule</b> adds extra tier requirements unless the region has a large 
 <b>Step 2:</b> Check which trade resources the region has<br>
 <b>Step 3:</b> If multiple qualify, the priority ranking decides which one wins<br><br>
 The <b>bump rule</b> adds extra tier requirements when the resource amount is low. Regions with plenty of a resource get the building more easily.` },
-    { section: 'Minimum Settlement Tier', desc: 'Settlements below this tier get no urban exploit building at all.',
-      variable: 'URBAN_EXPLOIT_MIN_TIER', type: 'number', label: 'Minimum tier required' },
-    { section: 'Priority Ranking', desc: 'When a region qualifies for multiple urban buildings, the one listed first here wins.',
-      variable: 'URBAN_EXPLOIT_PRIORITY_ORDER', type: 'list', label: 'Priority order (first = preferred)' },
-    { section: 'Bump Rule', desc: 'When a region has less than this amount of the resource, the bump rule kicks in and the settlement needs to be one level bigger than normal. Above this amount, normal requirements apply.',
-      variable: null, type: 'inline_num', label: 'Apply bump when resource amount is below',
-      pattern: /resource_amount\s*<\s*([\d.]+)/,
-      replacePattern: /(resource_amount\s*<\s*)[\d.]+/ },
+    { section: 'Priority Ranking', desc: 'When a region qualifies for multiple urban buildings with the same resource amount, the resource listed first here wins the tie.',
+      variable: 'PRIORITY', type: 'list', label: 'Priority order (first = preferred)' },
+    { section: 'Qualifying Amount', desc: 'A region qualifies for an urban exploit when it has at least this much of a mapped resource. Lower = more regions get a building.',
+      variable: 'QUALIFY_MIN_AMOUNT', type: 'number', label: 'Region qualifies when resource amount >=' },
+    { section: 'Full-Tier Amount', desc: 'With at least this much of the resource, the building level uses settlement tier − 1; below it, tier − 2 (so towns never qualify and large towns only at the higher amount).',
+      variable: 'FULL_TIER_AMOUNT', type: 'number', label: 'Higher level when resource amount >=' },
   ],
   'port_authority.py': [
     { section: 'How Port Assignment Works', desc: '', variable: null, type: 'info',
@@ -1216,6 +1210,7 @@ async function initEditor() {
   document.getElementById('btn-save-as').addEventListener('click', saveFileAs);
   document.getElementById('btn-revert').addEventListener('click', revertFile);
   document.getElementById('btn-save-profile').addEventListener('click', saveProfile);
+  document.getElementById('btn-import-profile').addEventListener('click', importProfile);
   document.getElementById('building-search').addEventListener('input', filterBuildings);
 }
 
@@ -1331,7 +1326,10 @@ function renderSimpleEditor(content) {
         <tbody>`;
       for (const [key, val] of Object.entries(parsed.value)) {
         const displayKey = keyLabels[key] || key;
-        const optionsHtml = options.map(o =>
+        // A value missing from options would silently DISPLAY (and on save,
+        // WRITE) the first option — prepend it so the real value round-trips.
+        const rowOptions = options.includes(val) ? options : [val, ...options];
+        const optionsHtml = rowOptions.map(o =>
           `<option value="${o}" ${o === val ? 'selected' : ''}>${o}</option>`
         ).join('');
         html += `<tr>
@@ -3757,6 +3755,7 @@ async function loadProfiles() {
     item.className = 'source-list-item profile-item';
     item.innerHTML = `
       <span class="item-label" title="${profile.description || ''}">${profile.name}</span>
+      <button class="btn-export-profile" title="Export this profile to a file you can keep or share">Export</button>
       <button class="btn-load-profile">Load</button>
     `;
     item.querySelector('.btn-load-profile').addEventListener('click', async (e) => {
@@ -3772,6 +3771,11 @@ async function loadProfiles() {
         }
       }
     });
+    item.querySelector('.btn-export-profile').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const result = await window.api.exportProfile(profile.name);
+      if (!result.success && !result.canceled) alert(`Export failed: ${result.error}`);
+    });
     list.appendChild(item);
   });
 
@@ -3786,6 +3790,15 @@ async function saveProfile() {
   if (result.success) {
     document.getElementById('profile-name-input').value = '';
     await loadProfiles();
+  }
+}
+
+async function importProfile() {
+  const result = await window.api.importProfile();
+  if (result.success) {
+    await loadProfiles();
+  } else if (!result.canceled) {
+    alert(`Import failed: ${result.error}`);
   }
 }
 

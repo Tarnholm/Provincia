@@ -139,7 +139,8 @@
   justify-content: space-between;
 }
 
-.btn-load-profile {
+.btn-load-profile,
+.btn-export-profile {
   font-size: 10px;
   padding: 2px 8px;
   background: var(--bg-inset);
@@ -151,7 +152,8 @@
   transition: all 0.1s;
 }
 
-.btn-load-profile:hover {
+.btn-load-profile:hover,
+.btn-export-profile:hover {
   background: var(--accent-bright);
   color: #2a1f0a;
   border-color: var(--accent-bright);

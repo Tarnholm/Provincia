@@ -7,6 +7,16 @@ window.SPS_TYPE_COLOURS = { feature: "#4a9", fix: "#c66", improvement: "#6ac", c
 
 window.SPS_CHANGELOG = [
   {
+    version: "0.16.21",
+    date: "2026-08-09",
+    items: [
+      { type: "fix", text: "**Elephants really do map to ivory_trade.** The Rural Exploits mapping editor was missing `ivory_trade` from its dropdown options, so the elephants row silently **displayed** — and on save would have **written** — the first option, `wine_industry`. The script itself was always correct (elephant regions get ivory buildings; verified on the live data). The option is now listed, and the editor defends itself: a value missing from a dropdown's options is shown as-is instead of falling back." },
+      { type: "feature", text: "**Adjustable industry qualification.** Rural and Urban Exploits each gained two editable knobs: the **qualifying amount** (how much of a mapped resource a region needs before it gets an industry at all, default 2) and the **full-tier amount** (how much lifts the building to the higher level band, default 4)." },
+      { type: "feature", text: "**Rule profiles export and import.** Every saved profile has an **Export** button that writes a single portable file, and the sidebar has **Import…** to bring one back — on this machine or a teammate's. Imported profiles never overwrite an existing name (auto-suffixed), and only recognized pipeline scripts are accepted from the file." },
+      { type: "fix", text: "**Dead editor fields removed.** The old rural/urban \"Bump Rule\" fields and urban \"Minimum Settlement Tier\" edited code the current selection model never runs (or variables that don't exist — the priority lists were bound to wrong names and are now editable again). The dead helper functions they pointed at are gone from the scripts too." },
+    ],
+  },
+  {
     version: "0.16.20",
     date: "2026-08-09",
     items: [

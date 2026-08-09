@@ -13,6 +13,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1496",
+    date: "2026-08-09",
+    items: [
+      { type: "fix", text: "**Scripts Suite: elephants really do map to ivory_trade.** The Rural Exploits mapping editor was missing `ivory_trade` from its dropdown, so the elephants row displayed — and on save would have written — `wine_industry`. The script itself was always correct. Dropdowns now always show the file's real value. Suite 0.16.21." },
+      { type: "feature", text: "**Scripts Suite: adjustable industry qualification.** Rural and Urban Exploits gained editable knobs for the qualifying resource amount (default 2) and the full-tier amount (default 4)." },
+      { type: "feature", text: "**Scripts Suite: rule profiles export and import.** Export any saved profile to a portable file and import it back — keep your script changes across machines or share them with the team." },
+    ],
+  },
+
+  {
     version: "0.9.1495",
     date: "2026-08-09",
     items: [

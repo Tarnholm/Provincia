@@ -2492,6 +2492,82 @@ ipcMain.handle('sps:load-profile', async (_, profileName) => {
   }
 });
 
+// Export a rule profile to a single portable JSON file the user picks.
+ipcMain.handle('sps:export-profile', async (_, profileName) => {
+  const safe = safeProfileSegment(profileName);
+  if (!safe) return { success: false, error: 'invalid profile name' };
+  const profileDir = path.join(PROJECT_ROOT, 'rule_profiles', safe);
+  try {
+    if (!fs.existsSync(profileDir)) return { success: false, error: 'profile not found' };
+    const files = {};
+    for (const script of SCRIPT_FILES) {
+      const src = path.join(profileDir, script);
+      if (fs.existsSync(src)) files[script] = fs.readFileSync(src, 'utf-8');
+    }
+    if (Object.keys(files).length === 0) return { success: false, error: 'profile is empty' };
+    const descFile = path.join(profileDir, '_description.txt');
+    const description = fs.existsSync(descFile) ? fs.readFileSync(descFile, 'utf-8').trim() : '';
+    const { canceled, filePath } = await dialog.showSaveDialog(dialogParent(), {
+      title: 'Export rule profile',
+      defaultPath: `${safe}.rule-profile.json`,
+      filters: [{ name: 'Rule Profile', extensions: ['json'] }],
+    });
+    if (canceled || !filePath) return { success: false, canceled: true };
+    fs.writeFileSync(filePath, JSON.stringify({
+      format: 'provincia-rule-profile',
+      version: 1,
+      name: safe,
+      description,
+      exportedAt: new Date().toISOString(),
+      files,
+    }, null, 2), 'utf-8');
+    return { success: true, path: filePath };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// Import a rule profile from a JSON file previously exported (from any machine).
+// Script names are validated against the pipeline's own list — nothing outside
+// SCRIPT_FILES is ever written, so a crafted file can't plant paths.
+ipcMain.handle('sps:import-profile', async () => {
+  try {
+    const { canceled, filePaths } = await dialog.showOpenDialog(dialogParent(), {
+      title: 'Import rule profile',
+      filters: [{ name: 'Rule Profile', extensions: ['json'] }],
+      properties: ['openFile'],
+    });
+    if (canceled || !filePaths || !filePaths[0]) return { success: false, canceled: true };
+    let data;
+    try {
+      data = JSON.parse(fs.readFileSync(filePaths[0], 'utf-8'));
+    } catch {
+      return { success: false, error: 'not a valid JSON file' };
+    }
+    if (!data || data.format !== 'provincia-rule-profile' || typeof data.files !== 'object' || data.files === null) {
+      return { success: false, error: 'not a rule-profile export' };
+    }
+    const entries = Object.entries(data.files)
+      .filter(([name, content]) => SCRIPT_FILES.includes(name) && typeof content === 'string');
+    if (entries.length === 0) return { success: false, error: 'no recognized scripts in the file' };
+    let base = safeProfileSegment(String(data.name || 'imported'));
+    if (!base) base = 'imported';
+    let name = base, n = 2;
+    while (fs.existsSync(path.join(PROJECT_ROOT, 'rule_profiles', name))) name = `${base}-${n++}`;
+    const profileDir = path.join(PROJECT_ROOT, 'rule_profiles', name);
+    fs.mkdirSync(profileDir, { recursive: true });
+    for (const [scriptName, content] of entries) {
+      fs.writeFileSync(path.join(profileDir, scriptName), content, 'utf-8');
+    }
+    if (typeof data.description === 'string' && data.description) {
+      fs.writeFileSync(path.join(profileDir, '_description.txt'), data.description, 'utf-8');
+    }
+    return { success: true, name, scripts: entries.length };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
 // List scripts (for the editor)
 ipcMain.handle('sps:list-scripts', async () => {
   return SCRIPT_FILES.map(script => {
