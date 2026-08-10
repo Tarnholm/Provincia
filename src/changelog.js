@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1501",
+    date: "2026-08-10",
+    items: [
+      { type: "fix", text: "**Crash Reporter v0.1.53: the mod version now gets its own ✅/🔴.** The freshness mark on the mod line now compares the tester's loaded beta version against the live workshop title — so a tester still on v7.14.b shows 🔴 naming the latest (v7.15), and a tester on the current build shows ✅. The previous size-based check produced no mark at all on submod stacks (e.g. 4 Romans on RIS)." },
+    ],
+  },
+
+  {
     version: "0.9.1500",
     date: "2026-08-10",
     items: [

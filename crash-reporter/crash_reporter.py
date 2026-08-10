@@ -30,7 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 APP_NAME = "RIS Crash Reporter"
-APP_VERSION = "0.1.52"
+APP_VERSION = "0.1.53"
 CONFIG_FILENAME = "crash_reporter.ini"
 LOG_FILENAME = "crash_reporter.log"
 
@@ -823,11 +823,11 @@ def _workshop_acf_local_state(item_id: str):
     return None
 
 
-def _workshop_page_state(item_id: str):
-    """{'size_str', 'updated'} scraped from the item's PUBLIC community page.
-    The anonymous web API returns result 9 for unlisted items (field-checked
-    on the RIS beta item) but the page itself is reachable and lists file
-    size + last-update date. None on any failure. Never raises."""
+def workshop_page_title(item_id: str):
+    """The item's CURRENT published title from its PUBLIC community page
+    ("[PublicBETA] RIS 0.7.0 v7.15"), or None. The anonymous web API returns
+    result 9 for the unlisted beta item, but the page itself is reachable and
+    carries the live title — which holds the version. Never raises."""
     try:
         req = urllib.request.Request(
             f"https://steamcommunity.com/sharedfiles/filedetails/?id={item_id}",
@@ -836,33 +836,29 @@ def _workshop_page_state(item_id: str):
             html = resp.read().decode("utf-8", errors="replace")
     except Exception:
         return None
-    stats = re.findall(r'detailsStatRight">([^<]+)<', html)
-    if not stats or not re.search(r"\d\s*(GB|MB)", stats[0]):
-        return None
-    return {"size_str": stats[0].strip(),
-            "updated": stats[2].strip() if len(stats) >= 3 else ""}
+    m = re.search(r'workshopItemTitle"?>([^<]+)<', html)
+    if not m:
+        m = re.search(r'<title>Steam Workshop::([^<]+)</title>', html)
+    return m.group(1).strip() if m else None
 
 
-def size_matches_page(local_bytes: int, page_size_str: str):
-    """The page prints size as bytes/1e9 to 3 decimals ("57.526 GB") — an
-    exact, timezone-free fingerprint of the published version, so equality
-    (within rounding) means the local copy IS the published build. True/False
-    on a definite comparison, None when unparseable."""
-    m = re.match(r"([\d.,]+)\s*(GB|MB)", (page_size_str or "").strip())
-    if not m or not local_bytes:
-        return None
-    try:
-        val = float(m.group(1).replace(",", ""))
-    except ValueError:
-        return None
-    scale = 1e9 if m.group(2) == "GB" else 1e6
-    return abs(local_bytes / scale - val) < 0.002
+def mod_version_token(name: str):
+    """The version token from a mod name — "v7.15", "v7.14.b" — or None. Matches
+    the v-prefixed token so the mod's other numbers (RIS "0.7.0") are ignored."""
+    m = re.search(r'\bv(\d+(?:\.\w+)+)', name or "")
+    return ("v" + m.group(1)) if m else None
 
 
 def version_freshness(log_dir: Path):
     """(reporter_mark, beta_mark, detail_lines) for the report header. Marks
     are " ✅" / " 🔴", or "" when a check could not run (offline, dev copy,
-    hidden page) — an absent mark never accuses. Never raises."""
+    no version in the name) — an absent mark never accuses. Never raises.
+
+    Beta mark = the tester's LOADED mod version (from its display name in
+    mod_loading.txt, which reflects the on-disk modinfo — a stale Steam cache
+    still names the old version) vs the CURRENT title on the item's workshop
+    page. Equal → up to date; different → the page is authoritative-latest, so
+    the local copy is behind."""
     details = []
     rep_mark = ""
     latest = latest_reporter_version()
@@ -880,23 +876,22 @@ def version_freshness(log_dir: Path):
     except Exception:
         workshop_items = []
     for item_id, disp in workshop_items:
-        local = _workshop_acf_local_state(item_id)
-        page = _workshop_page_state(item_id) if local else None
-        match = size_matches_page(local["size"], page["size_str"]) if (local and page) else None
-        if match is None:
-            continue
-        if match:
+        loaded_ver = mod_version_token(disp)
+        if not loaded_ver:
+            continue  # submod with no version in its name (e.g. "4 Romans RIS")
+        page_title = workshop_page_title(item_id)
+        page_ver = mod_version_token(page_title or "")
+        if not page_ver:
+            continue  # page unreachable or unversioned — never accuse
+        if loaded_ver == page_ver:
             if beta_mark != " 🔴":
                 beta_mark = " ✅"
         else:
             beta_mark = " 🔴"
-            local_dt = (datetime.fromtimestamp(local["timeupdated"]).strftime("%Y-%m-%d %H:%M")
-                        if local["timeupdated"] else "unknown date")
             details.append(
-                f"🔴 {disp}: Steam workshop copy is OUTDATED — Steam published an update "
-                f"({page['updated'] or 'newer than the local copy'}, {page['size_str']}) but the local copy "
-                f"is from {local_dt} ({local['size'] / 1e9:.3f} GB). RESTART STEAM so it pulls the update, "
-                "then relaunch the game.")
+                f"🔴 {disp.split(',')[0]}: running {loaded_ver} but the latest published beta is "
+                f"{page_ver}. If you didn't intend to stay on {loaded_ver}, RESTART STEAM so it pulls "
+                "the update (Steam only re-checks workshop items on client restart), then relaunch.")
     return rep_mark, beta_mark, details
 
 
@@ -3526,26 +3521,24 @@ def selftest() -> int:
             print("  module %-16s FAIL: %r" % (mod, exc))
             ok = False
 
-    # Version-freshness helpers (v0.1.52) — pure parts only, no network.
+    # Version-freshness helpers (v0.1.53) — pure parts only, no network.
     _ws_line = (r"Mod D:\SteamLibrary\steamapps\workshop\content\885970\3535851864 "
-                r"(3535851864, , [PublicBETA] RIS 0.7.0 v7.14, Public beta) enabled, load order: 0")
+                r"(3535851864, , [PublicBETA] RIS 0.7.0 v7.14.b, Public beta) enabled, load order: 0")
     _mm_line = (r"Mod C:\Users\x\AppData\Local\Feral Interactive\Total War ROME REMASTERED\Mods\My Mods\RIS "
                 r"(my-mod4, , [OPEN BETA] RTR: Imperium Surrectum 0.7.0, Open beta) enabled, load order: 0")
     import tempfile as _tf
     with _tf.TemporaryDirectory() as _td:
         (Path(_td) / "mod_loading.txt").write_text(_ws_line + "\n" + _mm_line + "\n", encoding="utf-8")
         _items = detect_workshop_items(Path(_td))
-    _acf = ('"AppWorkshop"\n{\n\t"appid"\t\t"885970"\n\t"WorkshopItemsInstalled"\n\t{\n'
-            '\t\t"3535851864"\n\t\t{\n\t\t\t"size"\t\t"57526226705"\n'
-            '\t\t\t"timeupdated"\t\t"1785959572"\n\t\t\t"manifest"\t\t"393"\n\t\t}\n\t}\n}\n')
-    _st = parse_acf_item_state(_acf, "3535851864")
     vf_checks = [
-        ("workshop id from path", _items == [("3535851864", "[PublicBETA] RIS 0.7.0 v7.14")], True),
-        ("acf size+timeupdated", bool(_st and _st["size"] == 57526226705 and _st["timeupdated"] == 1785959572), True),
-        ("acf missing item", parse_acf_item_state(_acf, "999") is None, True),
-        ("size match (page fmt)", size_matches_page(57526226705, "57.526 GB") is True, True),
-        ("size mismatch", size_matches_page(57000000000, "57.526 GB") is False, True),
-        ("size unparseable", size_matches_page(57526226705, "soon") is None, True),
+        ("workshop id from path", _items == [("3535851864", "[PublicBETA] RIS 0.7.0 v7.14.b")], True),
+        ("version token (suffix)", mod_version_token("[PublicBETA] RIS 0.7.0 v7.14.b") == "v7.14.b", True),
+        ("version token (plain)", mod_version_token("[PublicBETA] RIS 0.7.0 v7.15") == "v7.15", True),
+        ("version ignores 0.7.0", mod_version_token("4 Romans RIS 0.7.0") is None, True),
+        ("version none if absent", mod_version_token("4 Romans RIS") is None, True),
+        ("stale != latest", ("v7.14.b" != "v7.15"), True),
+        ("title-parse from page", bool(re.search(r'workshopItemTitle"?>([^<]+)<',
+            'x workshopItemTitle">[PublicBETA] RIS 0.7.0 v7.15</div>')), True),
     ]
     print("version freshness:")
     for label, got, want in vf_checks:
