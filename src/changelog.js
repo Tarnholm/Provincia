@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1500",
+    date: "2026-08-10",
+    items: [
+      { type: "feature", text: "**Crash Reporter v0.1.52: version-freshness marks in every report.** The header now shows a ✅ when the reporter is the latest release and a ✅ on the mod name when the tester's Steam workshop copy matches what Steam has published — or a 🔴 with instructions (outdated reporter → update; stale Steam cache → restart Steam) so out-of-date setups are obvious at a glance in the channel. Local dev copies get no mark (nothing to compare against). The workshop check reads Steam's own install manifest and the item's public page, so it works even though the beta item is unlisted." },
+    ],
+  },
+
+  {
     version: "0.9.1499",
     date: "2026-08-10",
     items: [

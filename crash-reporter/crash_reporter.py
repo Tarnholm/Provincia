@@ -30,7 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 APP_NAME = "RIS Crash Reporter"
-APP_VERSION = "0.1.51"
+APP_VERSION = "0.1.52"
 CONFIG_FILENAME = "crash_reporter.ini"
 LOG_FILENAME = "crash_reporter.log"
 
@@ -731,6 +731,173 @@ def _steam_workshop_roots() -> list[Path]:
         if d.is_dir() and d not in roots:
             roots.append(d)
     return roots
+
+
+# ── Version freshness (v0.1.52) ─────────────────────────────────────────
+# Testers keep reporting on stale setups without knowing it: old reporter
+# builds, and Steam workshop copies the client hasn't refreshed (Steam only
+# re-checks items on client restart — field-verified during the v7.13
+# rollout). The report header now carries a ✅/🔴 for both, so staleness is
+# visible at a glance in the channel.
+
+_LATEST_RELEASE_CACHE: list = [False, None]  # [checked, version-or-None]
+
+
+def latest_reporter_version():
+    """Newest GitHub release tag ("0.1.52"), or None if unreachable. Cached
+    for the process. Never raises."""
+    if _LATEST_RELEASE_CACHE[0]:
+        return _LATEST_RELEASE_CACHE[1]
+    latest = None
+    try:
+        req = urllib.request.Request(
+            GITHUB_LATEST_RELEASE_API,
+            headers={"User-Agent": f"{APP_NAME}/{APP_VERSION}",
+                     "Accept": "application/vnd.github+json"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        latest = (data.get("tag_name") or "").strip().lstrip("vV") or None
+    except Exception:
+        latest = None
+    _LATEST_RELEASE_CACHE[0] = True
+    _LATEST_RELEASE_CACHE[1] = latest
+    return latest
+
+
+def detect_workshop_items(log_dir: Path) -> list:
+    """(workshop_item_id, display_name) for every ENABLED mod whose path is a
+    Steam workshop content dir. My Mods/dev copies carry no workshop id and are
+    skipped (there is no published version to compare against). Reads the same
+    mod_loading.txt lines as detect_active_mods. Never raises."""
+    try:
+        text = (log_dir / "mod_loading.txt").read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+    items = []
+    for line in text.splitlines():
+        m = re.match(r"\s*Mod\s+(.+?)\s+\(([^)]*)\)\s+enabled,\s+load order:\s+(\d+)", line)
+        if not m:
+            continue
+        path_str, inner = m.group(1), m.group(2)
+        pm = (re.search(r"[/\\]workshop[/\\]content[/\\]" + _RTWR_APP_ID + r"[/\\](\d{6,})(?:[/\\]|$)", path_str)
+              or re.search(r"[/\\]steam[/\\]workshop[/\\](\d{6,})(?:[/\\]|$)", path_str, re.I))
+        if not pm:
+            continue
+        parts = [p.strip() for p in inner.split(",")]
+        display = (parts[2] if len(parts) >= 3 and parts[2]
+                   else path_str.replace("\\", "/").rstrip("/").split("/")[-1])
+        entry = (pm.group(1), display)
+        if entry not in items:
+            items.append(entry)
+    return items
+
+
+def parse_acf_item_state(acf_text: str, item_id: str):
+    """{'size': int, 'timeupdated': int} for one installed workshop item from
+    appworkshop_885970.acf content (Steam's own record of what is on disk —
+    the WorkshopItemsInstalled block; format field-verified on the real file).
+    None when the item has no entry."""
+    inst = acf_text.find('"WorkshopItemsInstalled"')
+    seg = acf_text[inst:] if inst >= 0 else acf_text
+    m = re.search(r'"' + re.escape(item_id) + r'"\s*\{([^{}]*)\}', seg)
+    if not m:
+        return None
+    block = m.group(1)
+    size = re.search(r'"size"\s*"(\d+)"', block)
+    tupd = re.search(r'"timeupdated"\s*"(\d+)"', block)
+    return {"size": int(size.group(1)) if size else 0,
+            "timeupdated": int(tupd.group(1)) if tupd else 0}
+
+
+def _workshop_acf_local_state(item_id: str):
+    """parse_acf_item_state over every Steam library's ACF. Never raises."""
+    for root in _steam_workshop_roots():
+        acf = root.parent.parent / f"appworkshop_{_RTWR_APP_ID}.acf"
+        try:
+            text = acf.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        state = parse_acf_item_state(text, item_id)
+        if state:
+            return state
+    return None
+
+
+def _workshop_page_state(item_id: str):
+    """{'size_str', 'updated'} scraped from the item's PUBLIC community page.
+    The anonymous web API returns result 9 for unlisted items (field-checked
+    on the RIS beta item) but the page itself is reachable and lists file
+    size + last-update date. None on any failure. Never raises."""
+    try:
+        req = urllib.request.Request(
+            f"https://steamcommunity.com/sharedfiles/filedetails/?id={item_id}",
+            headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            html = resp.read().decode("utf-8", errors="replace")
+    except Exception:
+        return None
+    stats = re.findall(r'detailsStatRight">([^<]+)<', html)
+    if not stats or not re.search(r"\d\s*(GB|MB)", stats[0]):
+        return None
+    return {"size_str": stats[0].strip(),
+            "updated": stats[2].strip() if len(stats) >= 3 else ""}
+
+
+def size_matches_page(local_bytes: int, page_size_str: str):
+    """The page prints size as bytes/1e9 to 3 decimals ("57.526 GB") — an
+    exact, timezone-free fingerprint of the published version, so equality
+    (within rounding) means the local copy IS the published build. True/False
+    on a definite comparison, None when unparseable."""
+    m = re.match(r"([\d.,]+)\s*(GB|MB)", (page_size_str or "").strip())
+    if not m or not local_bytes:
+        return None
+    try:
+        val = float(m.group(1).replace(",", ""))
+    except ValueError:
+        return None
+    scale = 1e9 if m.group(2) == "GB" else 1e6
+    return abs(local_bytes / scale - val) < 0.002
+
+
+def version_freshness(log_dir: Path):
+    """(reporter_mark, beta_mark, detail_lines) for the report header. Marks
+    are " ✅" / " 🔴", or "" when a check could not run (offline, dev copy,
+    hidden page) — an absent mark never accuses. Never raises."""
+    details = []
+    rep_mark = ""
+    latest = latest_reporter_version()
+    if latest:
+        if _version_tuple(latest) <= _version_tuple(APP_VERSION):
+            rep_mark = " ✅"
+        else:
+            rep_mark = " 🔴"
+            details.append(
+                f"🔴 Reporter v{APP_VERSION} is OUTDATED — latest is v{latest}. Standalone: "
+                "restart the reporter to self-update. Bundled: update Provincia.")
+    beta_mark = ""
+    try:
+        workshop_items = detect_workshop_items(log_dir)
+    except Exception:
+        workshop_items = []
+    for item_id, disp in workshop_items:
+        local = _workshop_acf_local_state(item_id)
+        page = _workshop_page_state(item_id) if local else None
+        match = size_matches_page(local["size"], page["size_str"]) if (local and page) else None
+        if match is None:
+            continue
+        if match:
+            if beta_mark != " 🔴":
+                beta_mark = " ✅"
+        else:
+            beta_mark = " 🔴"
+            local_dt = (datetime.fromtimestamp(local["timeupdated"]).strftime("%Y-%m-%d %H:%M")
+                        if local["timeupdated"] else "unknown date")
+            details.append(
+                f"🔴 {disp}: Steam workshop copy is OUTDATED — Steam published an update "
+                f"({page['updated'] or 'newer than the local copy'}, {page['size_str']}) but the local copy "
+                f"is from {local_dt} ({local['size'] / 1e9:.3f} GB). RESTART STEAM so it pulls the update, "
+                "then relaunch the game.")
+    return rep_mark, beta_mark, details
 
 
 def map_engine_path(engine_path: str, workshop_roots: list[Path] | None = None) -> Path | None:
@@ -2568,8 +2735,11 @@ def main():
     # End-turns advanced this session — separates "crashed 5 turns in" from a
     # long idle sit, and lets telemetry correlate crash classes with turn churn.
     turns_note = f", {msg_tail.turn_count} end-turns" if msg_tail.turn_count else ""
+    # ✅/🔴 freshness marks: reporter vs the latest GitHub release, and each
+    # workshop mod's local copy vs what Steam has published. "" = unverifiable.
+    rep_mark, beta_mark, version_details = version_freshness(log_dir)
     summary = [
-        f"**{APP_NAME} v{APP_VERSION}** — {tester} / {mod_name}",
+        f"**{APP_NAME} v{APP_VERSION}**{rep_mark} — {tester} / {mod_name}{beta_mark}",
         f"Session: {started_at:%Y-%m-%d %H:%M} → {ended_at:%H:%M} ({duration_min:.1f} min{turns_note})",
         f"OS: {platform.platform()}",
         f"Errors: error_log={sys_tail.error_count} (fatal {sys_tail.fatal_count}) · message_log={msg_tail.error_count} (fatal {msg_tail.fatal_count})",
@@ -2604,6 +2774,7 @@ def main():
     if len(active_mods) > 1:
         summary.append(f"Mods active ({len(active_mods)}, in load order): "
                        + " → ".join(active_mods))
+    summary.extend(version_details)
     if crash_signals:
         summary.append("Crash signals:")
         for cs in crash_signals: summary.append(f"  • {cs}")
@@ -3353,6 +3524,34 @@ def selftest() -> int:
             print("  module %-16s ok" % mod)
         except Exception as exc:
             print("  module %-16s FAIL: %r" % (mod, exc))
+            ok = False
+
+    # Version-freshness helpers (v0.1.52) — pure parts only, no network.
+    _ws_line = (r"Mod D:\SteamLibrary\steamapps\workshop\content\885970\3535851864 "
+                r"(3535851864, , [PublicBETA] RIS 0.7.0 v7.14, Public beta) enabled, load order: 0")
+    _mm_line = (r"Mod C:\Users\x\AppData\Local\Feral Interactive\Total War ROME REMASTERED\Mods\My Mods\RIS "
+                r"(my-mod4, , [OPEN BETA] RTR: Imperium Surrectum 0.7.0, Open beta) enabled, load order: 0")
+    import tempfile as _tf
+    with _tf.TemporaryDirectory() as _td:
+        (Path(_td) / "mod_loading.txt").write_text(_ws_line + "\n" + _mm_line + "\n", encoding="utf-8")
+        _items = detect_workshop_items(Path(_td))
+    _acf = ('"AppWorkshop"\n{\n\t"appid"\t\t"885970"\n\t"WorkshopItemsInstalled"\n\t{\n'
+            '\t\t"3535851864"\n\t\t{\n\t\t\t"size"\t\t"57526226705"\n'
+            '\t\t\t"timeupdated"\t\t"1785959572"\n\t\t\t"manifest"\t\t"393"\n\t\t}\n\t}\n}\n')
+    _st = parse_acf_item_state(_acf, "3535851864")
+    vf_checks = [
+        ("workshop id from path", _items == [("3535851864", "[PublicBETA] RIS 0.7.0 v7.14")], True),
+        ("acf size+timeupdated", bool(_st and _st["size"] == 57526226705 and _st["timeupdated"] == 1785959572), True),
+        ("acf missing item", parse_acf_item_state(_acf, "999") is None, True),
+        ("size match (page fmt)", size_matches_page(57526226705, "57.526 GB") is True, True),
+        ("size mismatch", size_matches_page(57000000000, "57.526 GB") is False, True),
+        ("size unparseable", size_matches_page(57526226705, "soon") is None, True),
+    ]
+    print("version freshness:")
+    for label, got, want in vf_checks:
+        good = (got == want)
+        print("  %-26s %-5s %s" % (label, str(got), "ok" if good else "FAIL"))
+        if not good:
             ok = False
 
     print("SELFTEST:", "PASS" if ok else "FAIL")
