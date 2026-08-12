@@ -39,6 +39,12 @@ FARM_CHAINS = [
 BUMP_AMOUNT = 1  # Extra tiers required above building minimum (set to 0 to disable bump)
 FERTILITY_SKIP_BUMP = 10  # Skip bump rule when region fertility >= this value
 
+# Settlement levels a bump exception may apply to. A settlement whose level is
+# NOT listed always takes the full bump, however fertile its region is and
+# however much of the resource it has. Default = all levels (exceptions
+# everywhere), so this changes nothing until a level is removed.
+BUMP_EXCEPTION_LEVELS = {"village", "town", "large_town", "city", "large_city", "huge_city"}
+
 # Per-chain bump exceptions. Each farm chain can list rules that skip the bump
 # for a settlement whose region qualifies. Rules are OR'd — any single match
 # skips the bump for that chain. Two rule kinds:
@@ -260,8 +266,10 @@ class FarmExploitProcessor:
     # Tier-1 farm levels that should never be assigned (base clearing levels)
     BLOCKED_FARM_LEVELS = {"land_clearance", "farms"}
 
-    def bump_exception_reason(self, chain_name, fertility, resources):
+    def bump_exception_reason(self, chain_name, fertility, resources, level=None):
         """Return a human-readable reason if a bump exception applies, else None."""
+        if level is not None and level not in BUMP_EXCEPTION_LEVELS:
+            return None
         if fertility >= FERTILITY_SKIP_BUMP:
             return f"fertility {fertility} >= global {FERTILITY_SKIP_BUMP}"
         for rule in BUMP_EXCEPTIONS.get(chain_name or "", []):
@@ -274,8 +282,8 @@ class FarmExploitProcessor:
                     return f"{rule['resource']} {have:g} >= {need:g}"
         return None
 
-    def choose_farm_level_for_settlement(self, farm_levels, settlement_tier, fertility=0, chain_name=None, resources=None, debug_log=None):
-        skip_reason = self.bump_exception_reason(chain_name, fertility, resources)
+    def choose_farm_level_for_settlement(self, farm_levels, settlement_tier, fertility=0, chain_name=None, resources=None, debug_log=None, level=None):
+        skip_reason = self.bump_exception_reason(chain_name, fertility, resources, level=level)
         if skip_reason and debug_log is not None:
             debug_log.append(f"Bump skipped for {chain_name}: {skip_reason}")
         bump = 0 if skip_reason else BUMP_AMOUNT
@@ -293,7 +301,7 @@ class FarmExploitProcessor:
             return None
         return allowed[-1]
 
-    def select_farm_chain(self, hidden, resources, tier, owner_faction, fertility=0, debug_log=None):
+    def select_farm_chain(self, hidden, resources, tier, owner_faction, fertility=0, debug_log=None, level=None):
         if debug_log is None:
             debug_log = []
 
@@ -309,7 +317,7 @@ class FarmExploitProcessor:
         def pick_chain(chain_name):
             lvls = self.chains_with_minimums.get(chain_name)
             if lvls:
-                farm_level = self.choose_farm_level_for_settlement(lvls, tier, fertility=fertility, chain_name=chain_name, resources=resources, debug_log=debug_log)
+                farm_level = self.choose_farm_level_for_settlement(lvls, tier, fertility=fertility, chain_name=chain_name, resources=resources, debug_log=debug_log, level=level)
                 if farm_level:
                     logmsg(f"Selected {chain_name}, level: {farm_level}")
                     return chain_name, farm_level
@@ -450,12 +458,12 @@ class FarmExploitProcessor:
             rain = self.chains_with_minimums.get("rainfed_farming", [])
             logmsg(f"Floodplains_delta logic: sedentary={sed}, irrigated={irr}, rainfed={rain}")
             if self.has_any(resources, ["livestock"]) and self.has_any(resources, ["horses", "sheep", "salt"]) and sed:
-                farm_level = self.choose_farm_level_for_settlement(sed, tier, fertility=fertility, chain_name="sedentary_animal_husbandry", resources=resources, debug_log=debug_log)
+                farm_level = self.choose_farm_level_for_settlement(sed, tier, fertility=fertility, chain_name="sedentary_animal_husbandry", resources=resources, debug_log=debug_log, level=level)
                 if farm_level:
                     logmsg(f"Floodplains_delta: Selecting sedentary_animal_husbandry {farm_level}")
                     return "sedentary_animal_husbandry", farm_level
             elif not self.has_any_hr(hidden, ["oceanic", "continental", "temperate"]) and irr:
-                farm_level = self.choose_farm_level_for_settlement(irr, tier, fertility=fertility, chain_name="irrigated_farming", resources=resources, debug_log=debug_log)
+                farm_level = self.choose_farm_level_for_settlement(irr, tier, fertility=fertility, chain_name="irrigated_farming", resources=resources, debug_log=debug_log, level=level)
                 if farm_level:
                     logmsg(f"Floodplains_delta: Selecting irrigated_farming {farm_level}")
                     return "irrigated_farming", farm_level
@@ -875,7 +883,7 @@ class FarmExploitProcessor:
             
             # --- FALLBACK TO NORMAL LOGIC ---
             farm_chain, farm_level = self.select_farm_chain(
-                hidden_resources, resources, tier, current_owner_faction or "", fertility=fertility, debug_log=debug_per_settlement
+                hidden_resources, resources, tier, current_owner_faction or "", fertility=fertility, debug_log=debug_per_settlement, level=level
             )
             
             if farm_chain:

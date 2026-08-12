@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1503",
+    date: "2026-08-12",
+    items: [
+      { type: "feature", text: "**Settlement Processor Suite 0.16.26: farm bump exceptions can be limited by settlement size.** New **Bump Exception Levels** set in Farms — the same Levels list Urban and Rural Exploits already have. Remove a level (e.g. `large_town`) and settlements of that size always take the full bump, with both the per-chain rules and the global fertility exception switched off for them. Default lists every level, so nothing changes until you prune it. On RIS, dropping `large_town` demotes 87 large_towns one level and takes the farm off 20 more." },
+    ],
+  },
+
+  {
     version: "0.9.1502",
     date: "2026-08-12",
     items: [

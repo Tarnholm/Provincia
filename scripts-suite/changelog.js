@@ -7,6 +7,13 @@ window.SPS_TYPE_COLOURS = { feature: "#4a9", fix: "#c66", improvement: "#6ac", c
 
 window.SPS_CHANGELOG = [
   {
+    version: "0.16.26",
+    date: "2026-08-12",
+    items: [
+      { type: "feature", text: "**Farms: limit the bump exceptions by settlement level** — the same Levels list Urban and Rural Exploits already have. The new **Bump Exception Levels** set decides which settlement sizes an exception may apply to at all: remove a level (e.g. `large_town`) and settlements of that size always take the full bump, with both the per-chain rules and the global fertility exception switched off for them. Default lists every level, so nothing changes until you prune it — verified byte-identical output with the full list. Dropping `large_town` on RIS demotes 87 large_towns one level (73 of them irrigation, basin back to ditches) and takes the farm off 20 more." },
+    ],
+  },
+  {
     version: "0.16.25",
     date: "2026-08-12",
     items: [
