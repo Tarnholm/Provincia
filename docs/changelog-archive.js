@@ -5,6 +5,41 @@
 // greppable in the working tree. Full authoritative history is in git.
 const CHANGELOG_ARCHIVE = [
   {
+    version: "0.9.1497",
+    date: "2026-08-09",
+    items: [
+      { type: "change", text: "**Scripts Suite: 868 lines of dead code removed from the master pipeline.** master_processor.py carried never-executed inlined copies of the old Rural and Urban Exploits steps — the stale-copy trap that once let a fix silently miss master runs for months. The pipeline now contains only what it runs; full run verified. Suite 0.16.22." },
+    ],
+  },
+
+  {
+    version: "0.9.1496",
+    date: "2026-08-09",
+    items: [
+      { type: "fix", text: "**Scripts Suite: elephants really do map to ivory_trade.** The Rural Exploits mapping editor was missing `ivory_trade` from its dropdown, so the elephants row displayed — and on save would have written — `wine_industry`. The script itself was always correct. Dropdowns now always show the file's real value. Suite 0.16.21." },
+      { type: "feature", text: "**Scripts Suite: adjustable industry qualification.** Rural and Urban Exploits gained editable knobs for the qualifying resource amount (default 2) and the full-tier amount (default 4)." },
+      { type: "feature", text: "**Scripts Suite: rule profiles export and import.** Export any saved profile to a portable file and import it back — keep your script changes across machines or share them with the team." },
+    ],
+  },
+
+  {
+    version: "0.9.1495",
+    date: "2026-08-09",
+    items: [
+      { type: "fix", text: "**Scripts Suite: Carthage gets its capital treasury.** The Core Buildings owner parser cut region names at the first hyphen, so hyphenated regions (`Qart-Khadasht` and ~130 others) had no known owner — carthage, arados, samnites and veneti_gallia never received capital treasuries, and empire sizes were undercounted for factions owning hyphenated regions. Suite 0.16.20." },
+      { type: "feature", text: "**Scripts Suite: large towns can take the tier-2 market.** New editable bump-exception list in Core Buildings — levels on it skip the bump rule and only need their own EDB minimum. Ships with `market`, so a large_town builds the tier-2 market instead of stopping at trader; forum and above still bump." },
+    ],
+  },
+
+  {
+    version: "0.9.1494",
+    date: "2026-08-09",
+    items: [
+      { type: "improvement", text: "**The Palatino voice reaches the whole chrome.** The map-mode category tabs (POLITICAL, GOVERNMENT, …) and mode buttons, the Live/Stats chips, the titlebar **Provincia** wordmark (now letterspaced small caps) and the campaign slot toggles all use the display face." },
+      { type: "improvement", text: "**Region panel headers too**: the region name, Settlement/Faction/Rebels/Fertility/Homeland/Religion label prefixes, Resources/Slaves/Ambience/Tags section labels, and the Characters, Diplomacy & Treasury, Buildings, Recruitable, AOR Units, Garrison and Field armies widget titles — with small optical size bumps so nothing reads smaller than before." },
+    ],
+  },
+  {
     version: "0.9.1493",
     date: "2026-08-09",
     items: [

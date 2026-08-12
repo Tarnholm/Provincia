@@ -46,6 +46,16 @@ FERTILITY_SKIP_BUMP = 10  # Skip bump rule when region fertility >= this value
 #   {"resource": "grain", "min": 3}   -> skip when region has >= 3 of that resource
 # The global FERTILITY_SKIP_BUMP above still applies to every chain.
 BUMP_EXCEPTIONS = {
+    "irrigated_farming": [{"resource": "grain", "min": 2}, {"fertility": 8}],
+    "rainfed_farming": [{"fertility": 9}, {"resource": "grain", "min": 2}],
+    "qanat_farming": [{"resource": "grain", "min": 1}, {"resource": "dates", "min": 2}, {"fertility": 7}],
+    "highland_pastoralism": [{"resource": "livestock", "min": 3}, {"resource": "sheep", "min": 3}],
+    "sedentary_animal_husbandry": [{"resource": "livestock", "min": 3}, {"resource": "horses", "min": 3}],
+    "marsh_reclamation": [{"resource": "grain", "min": 2}, {"fertility": 9}],
+    "wetland_pastoralism": [{"resource": "livestock", "min": 3}, {"resource": "sheep", "min": 3}],
+    "nomadic_pastoralism": [{"resource": "sheep", "min": 3}, {"resource": "livestock", "min": 3}, {"resource": "horses", "min": 3}, {"resource": "camels", "min": 3}],
+    "forest_pastoralism": [{"resource": "livestock", "min": 3}],
+    "shifting_cultivation": [{"resource": "grain", "min": 3}, {"fertility": 9}, {"resource": "elephants", "min": 3}],
 }
 
 class FarmExploitProcessor:

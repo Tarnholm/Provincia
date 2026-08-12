@@ -7,6 +7,13 @@ window.SPS_TYPE_COLOURS = { feature: "#4a9", fix: "#c66", improvement: "#6ac", c
 
 window.SPS_CHANGELOG = [
   {
+    version: "0.16.25",
+    date: "2026-08-12",
+    items: [
+      { type: "change", text: "**Farms now ship with the per-chain bump exceptions filled in.** The table added in 0.16.17 was empty by default, so every farm chain sat behind the full bump. All ten chains now start with a rule set: irrigated and rainfed skip the bump at `fertility` 8 and 9 or `grain` 2, qanat at `grain` 1, `dates` 2 or `fertility` 7, and the pastoral chains at `livestock`, `sheep`, `horses` or `camels` 3. On RIS this lifts 81 settlements to a higher farm level — 63 of them irrigation, mostly large_towns moving from irrigation ditches to basin irrigation — and gives 15 large_towns their first farm building. Clear a row to get the old behaviour back for that chain." },
+    ],
+  },
+  {
     version: "0.16.24",
     date: "2026-08-10",
     items: [
