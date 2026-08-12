@@ -817,7 +817,7 @@
 
 			;;the amount of horde units to disband every time we get a settlement
 			;;if amount of settlements exceeds the numbers in this array, 100% disband assumed
-			"horde unit disband per settlement": [ 5, 7, 10, 12, 15, 17, 20, 100, ],
+			"horde unit disband per settlement": [ 2.5, 5, 7.5, 10, 12.5, 15, 17.5, 20, 100, ],
 		},
 
 		"logos":
@@ -15970,7 +15970,7 @@
 			"defeat": "data/fmv/lose/selge.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "pisidian",
 		"default battle ai personality": "default_personality",
