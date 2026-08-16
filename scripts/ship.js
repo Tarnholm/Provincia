@@ -51,6 +51,39 @@ if (!process.env.GH_TOKEN && !process.env.GITHUB_TOKEN) {
   fail("GH_TOKEN is not set in this environment — electron-builder cannot publish. (It is normally set in the user's env; check the shell you're running in.)");
 }
 
+// Crash reporter: bundled from disk, deliberately untracked.
+//
+// This repo is PUBLIC. v0.9.1438 committed crash-reporter/crash_reporter.py with
+// the live Discord webhook in it; GitHub secret scanning reported it, Discord
+// deleted the webhook, and every tester's upload started failing with
+// "Unknown Webhook" — with no visible symptom on our side, because the reporter
+// only fails on the testers' machines. So: the source is gitignored and copied
+// in before packaging, and this guard enforces all three ways that can go wrong.
+{
+  const crDir = path.join(ROOT, "crash-reporter");
+  for (const f of ["crash_reporter.py", "ai_log_patterns.py", "crash_reporter.ini.example"]) {
+    const p = path.join(crDir, f);
+    if (!fs.existsSync(p) || fs.statSync(p).size === 0) {
+      fail(`crash-reporter/${f} is missing or empty — it is untracked on purpose, so a fresh clone does not have it. Copy the current files in from ..\\RIS-CrashReporter before shipping (otherwise this release bundles a reporter that cannot run).`);
+    }
+  }
+  // Never let the webhook back into a public commit.
+  const tracked = sh('git ls-files "crash-reporter/*.py" "crash-reporter/crash_reporter.ini.example"');
+  if (tracked) {
+    fail(`these crash-reporter files are tracked by git again:\n  ${tracked.split("\n").join("\n  ")}\nThey contain the live Discord webhook and this repo is public — committing them gets the webhook revoked (it already happened once). Run: git rm --cached <files>  and check .gitignore.`);
+  }
+  // A retired webhook builds and installs fine and simply uploads nothing.
+  const py = fs.readFileSync(path.join(crDir, "crash_reporter.py"), "utf8");
+  const dflt = py.match(/^DEFAULT_WEBHOOK_URL\s*=\s*"([^"]+)"/m);
+  const retiredBlock = py.match(/RETIRED_WEBHOOK_IDS\s*=\s*\{([\s\S]*?)\}/);
+  const retired = retiredBlock ? [...retiredBlock[1].matchAll(/"(\d{15,25})"/g)].map((m) => m[1]) : [];
+  const dfltId = dflt && dflt[1].match(/\/webhooks\/(\d+)/);
+  if (!dflt || !dfltId) fail("could not read DEFAULT_WEBHOOK_URL out of crash-reporter/crash_reporter.py.");
+  if (retired.includes(dfltId[1])) {
+    fail(`crash-reporter/crash_reporter.py still has a RETIRED webhook as its default (id ${dfltId[1]}) — this release would collect no reports at all. Create a new webhook in Discord and update DEFAULT_WEBHOOK_URL in ..\\RIS-CrashReporter, then copy it in.`);
+  }
+}
+
 const pkgPath = path.join(ROOT, "package.json");
 const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
 

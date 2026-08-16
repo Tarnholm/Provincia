@@ -6241,7 +6241,7 @@
 			"defeat": "data/fmv/lose/chrysaoria.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "carian",
 		"default battle ai personality": "default_personality",

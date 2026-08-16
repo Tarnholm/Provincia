@@ -65,3 +65,11 @@ _scratch/
 
 # Regenerated descr_strat exports (named after local save files)
 /derived/*.txt
+
+# Crash-reporter source is deliberately NOT tracked here.
+# It carries the live Discord webhook in plaintext; this repo is PUBLIC, and
+# committing it in v0.9.1438 got the webhook auto-revoked by Discord (GitHub
+# secret scanning), which silently killed report uploads for every tester.
+# Master copy lives in ..\RIS-CrashReporter and is copied in before packaging.
+/crash-reporter/*.py
+/crash-reporter/crash_reporter.ini.example

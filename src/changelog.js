@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1505",
+    date: "2026-08-16",
+    items: [
+      { type: "fix", text: "**Crash Reporter v0.1.55: reports reach the channel again.** The report channel's Discord webhook was deleted at Discord's end, so for a while every crash report and every dump failed to upload — with the error landing on the tester's machine and nothing looking wrong from here. The reporter now carries a fresh webhook and, more usefully, repairs itself: your saved `crash_reporter.ini` keeps its settings across updates, so an ini pinned to a retired webhook used to stay broken forever. Such a webhook is now swapped for the current one and the ini rewritten, and a webhook that dies mid-run is retried on the current one instead of losing the report. Leaving `webhook_url` blank means use the one built into the reporter, which is what you want; set it to `none` to stop uploading." },
+    ],
+  },
+
+  {
     version: "0.9.1504",
     date: "2026-08-16",
     items: [
