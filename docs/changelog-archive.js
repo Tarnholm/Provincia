@@ -5,6 +5,15 @@
 // greppable in the working tree. Full authoritative history is in git.
 const CHANGELOG_ARCHIVE = [
   {
+    version: "0.9.1498",
+    date: "2026-08-09",
+    items: [
+      { type: "feature", text: "**Scripts Suite: limit the urban rich-resource exception by settlement level.** New Full-Tier Levels list in Urban Exploits — remove a level (e.g. large_town) and settlements of that size always use the lower building band regardless of resource amount. Suite 0.16.23." },
+      { type: "fix", text: "**Scripts Suite: saving a broken Python script now reports the exact syntax error** (line and message) instead of failing silently in the next pipeline run. The save still goes through so no work is lost." },
+    ],
+  },
+
+  {
     version: "0.9.1497",
     date: "2026-08-09",
     items: [

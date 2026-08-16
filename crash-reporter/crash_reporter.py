@@ -30,9 +30,36 @@ from datetime import datetime
 from pathlib import Path
 
 APP_NAME = "RIS Crash Reporter"
-APP_VERSION = "0.1.53"
+APP_VERSION = "0.1.54"
 CONFIG_FILENAME = "crash_reporter.ini"
 LOG_FILENAME = "crash_reporter.log"
+
+# Long-session mark (v0.1.54). The engine's 16-bit string ref-count wraps after
+# hours of play; the mitigation is to save & restart every ~2 h. 180 min is set
+# deliberately ABOVE that 2 h advice so the mark means "you are well past it",
+# not "you are approaching it" — a mark on every 2 h session would fire on the
+# median tester session and stop being read. Measured over the WHOLE channel
+# 2026-08-16 (1,971 sessions, every one with a parseable duration): 1 h+ is 49%
+# of sessions, 2 h+ is 27%, 3 h+ is 16%, 4 h+ is 10% — 180 min keeps the mark on
+# ~1 session in 6, rare enough to carry weight. NOTE: 3h+ sessions do NOT crash
+# more often overall (20.1% vs 25.6% under 3 h — if anything, less). This mark
+# targets the specific string-refcount CTD class; it is NOT a claim that long
+# sessions are riskier across the board, and no report should imply that.
+LONG_SESSION_MIN = 180
+# "3h+ session" is a CONTRACT, not prose: read_telemetry.js greps that exact
+# substring to flag long sessions in the channel listing, and test_detection.py
+# asserts it stays in this string. Reword the tail freely; keep the token.
+LONG_SESSION_NOTE = "  ⚠ 3h+ session — save & restart every ~2 h to avoid the engine's string-refcount CTD"
+
+
+def long_session_note(duration_min: float) -> str:
+    """The Session-line mark for a session past LONG_SESSION_MIN ("" otherwise).
+
+    Split out of main() so the boundary is testable — the mark is the whole
+    tester-facing deliverable here, and an off-by-one that silences it on every
+    session would look exactly like "no long sessions this week" in telemetry.
+    """
+    return LONG_SESSION_NOTE if duration_min >= LONG_SESSION_MIN else ""
 
 # Auto-update channel. Releases are published to this PUBLIC GitHub repo
 # (releases only — no source, so the baked-in webhook below is never exposed).
@@ -2730,12 +2757,19 @@ def main():
     # End-turns advanced this session — separates "crashed 5 turns in" from a
     # long idle sit, and lets telemetry correlate crash classes with turn churn.
     turns_note = f", {msg_tail.turn_count} end-turns" if msg_tail.turn_count else ""
+    # v0.1.54: mark the session line when the tester sat past LONG_SESSION_MIN.
+    # RTW-R's string ref-count is 16 bits and wraps after hours of play, so a
+    # 3h+ session is accumulating CTD risk WHETHER OR NOT the sharing_count
+    # assert has fired yet — the existing warning below only fires once the
+    # assert appears, which is already too late for that session. This mark is
+    # the tester-facing nudge, on the line they actually read.
+    long_note = long_session_note(duration_min)
     # ✅/🔴 freshness marks: reporter vs the latest GitHub release, and each
     # workshop mod's local copy vs what Steam has published. "" = unverifiable.
     rep_mark, beta_mark, version_details = version_freshness(log_dir)
     summary = [
         f"**{APP_NAME} v{APP_VERSION}**{rep_mark} — {tester} / {mod_name}{beta_mark}",
-        f"Session: {started_at:%Y-%m-%d %H:%M} → {ended_at:%H:%M} ({duration_min:.1f} min{turns_note})",
+        f"Session: {started_at:%Y-%m-%d %H:%M} → {ended_at:%H:%M} ({duration_min:.1f} min{turns_note}){long_note}",
         f"OS: {platform.platform()}",
         f"Errors: error_log={sys_tail.error_count} (fatal {sys_tail.fatal_count}) · message_log={msg_tail.error_count} (fatal {msg_tail.fatal_count})",
         f"Asserts: {assert_total} ({len(sys_tail.asserts) + len(msg_tail.asserts)} distinct) · Script faults: {script_fault_total} ({len(script_faults)} distinct)",
@@ -3412,6 +3446,23 @@ def selftest() -> int:
             ok = False
     except Exception as _exc:
         print("  %-26s FAIL: %r" % ("header mod identity", _exc))
+        ok = False
+
+    # The long-session mark must fire at exactly 3 h, stay silent below it, and
+    # keep the "3h+ session" token that read_telemetry.js greps. Checked in the
+    # FROZEN build because that is the one testers run: a mark that quietly
+    # stopped firing would read in telemetry as "nobody plays long sessions".
+    try:
+        _ok = (long_session_note(LONG_SESSION_MIN) != ""
+               and long_session_note(LONG_SESSION_MIN - 0.1) == ""
+               and long_session_note(0) == ""
+               and "3h+ session" in LONG_SESSION_NOTE)
+        print("  %-26s %-5s %s" % ("long-session mark", str(_ok),
+                                   "ok" if _ok else "FAIL (threshold moved or the telemetry token was dropped)"))
+        if not _ok:
+            ok = False
+    except Exception as _exc:
+        print("  %-26s FAIL: %r" % ("long-session mark", _exc))
         ok = False
 
     # The (0,0)-character detectors, against the exact lines seen in telemetry

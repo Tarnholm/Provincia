@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1504",
+    date: "2026-08-16",
+    items: [
+      { type: "feature", text: "**Crash Reporter v0.1.54: 3h+ sessions are marked.** A session that ran past three hours now says so on the report's Session line — ⚠ **3h+ session**, with the advice that matters: save and restart every ~2 h. The engine's string ref-count is 16 bits and wraps after hours of play, and until now the reporter only mentioned it once the assert had already fired — too late for that session. The telemetry listing carries the same mark, on older reports too, so long sessions are easy to pick out at a glance. Long sessions are not more crash-prone overall (20.1% vs 25.6% under 3 h across 1,971 sessions) — the mark is about that one CTD class and claims nothing more." },
+    ],
+  },
+
+  {
     version: "0.9.1503",
     date: "2026-08-12",
     items: [
@@ -50,15 +58,6 @@ const CHANGELOG = [
     items: [
       { type: "feature", text: "**Scripts Suite: Rural Exploits can also limit the rich-resource exception by settlement level** — same Full-Tier Levels list Urban Exploits got yesterday. Remove a level and settlements of that size always use the lower building band. Suite 0.16.24." },
       { type: "feature", text: "**Scripts Suite: Reset to default.** New editor toolbar button replaces the open pipeline script with the pristine copy shipped with the app — the instant fix for a script that hand edits left unparseable, no restart needed." },
-    ],
-  },
-
-  {
-    version: "0.9.1498",
-    date: "2026-08-09",
-    items: [
-      { type: "feature", text: "**Scripts Suite: limit the urban rich-resource exception by settlement level.** New Full-Tier Levels list in Urban Exploits — remove a level (e.g. large_town) and settlements of that size always use the lower building band regardless of resource amount. Suite 0.16.23." },
-      { type: "fix", text: "**Scripts Suite: saving a broken Python script now reports the exact syntax error** (line and message) instead of failing silently in the next pipeline run. The save still goes through so no work is lost." },
     ],
   },
 
