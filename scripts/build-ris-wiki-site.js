@@ -231,6 +231,51 @@ const EXTRA_JS = `
     });
   }
 })();
+
+// ── team notes, fetched at view time ─────────────────────────────────────────
+// A note written on the GitHub wiki reaches this site through a CI job that CANNOT rebuild
+// the site: the 222 MB of RIS source a rebuild needs lives on rtris.org, which a GitHub
+// runner cannot reach. So the job publishes each note as a small pre-rendered fragment and
+// the page fetches its own when it loads. wiki-notes/index.json lists which pages have one,
+// so a page with no note makes no second request, and the whole thing is skipped when a full
+// local rebuild has already merged the note into the HTML.
+(function () {
+  try {
+    if (location.protocol === "file:") return;              // an offline copy is a snapshot
+    if (document.getElementById("team-notes")) return;      // a rebuild already merged it
+    var main = document.querySelector("main");
+    if (!main || typeof fetch !== "function") return;
+
+    var rootPath = new URL(base || "./", location.href).pathname;
+    var here = decodeURIComponent(location.pathname);
+    if (here.indexOf(rootPath) !== 0) return;
+    var key = here.slice(rootPath.length).replace(/\.html?$/, "");
+    if (!key || key === "index") key = "README";
+
+    fetch(base + "wiki-notes/index.json", { cache: "no-cache" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (idx) {
+        if (!idx || !idx[key]) return null;
+        return fetch(base + "wiki-notes/" + encodeURIComponent(idx[key]) + ".html", { cache: "no-cache" });
+      })
+      .then(function (r) { return r && r.ok ? r.text() : null; })
+      .then(function (html) {
+        if (!html) return;
+        var sec = document.createElement("section");
+        sec.className = "sec";
+        sec.innerHTML = '<h2 id="team-notes">Team notes</h2>' + html;
+        main.appendChild(sec);
+        var jump = document.querySelector(".jump");
+        if (jump && !jump.querySelector('a[href="#team-notes"]')) {
+          var a = document.createElement("a");
+          a.href = "#team-notes";
+          a.textContent = "Team notes";
+          jump.appendChild(a);
+        }
+      })
+      .catch(function () {});   // a missing notes folder is normal, not an error
+  } catch (e) {}
+})();
 `;
 const STORAGE_SHIM = `<script>
 // See build-ris-wiki-site.js: file:// documents may be denied localStorage, and the shell's
@@ -243,7 +288,10 @@ setItem:function(k,v){m[k]=String(v);},removeItem:function(k){delete m[k];}},con
 // Clear the site's CONTENTS, not the folder itself: the output dir is also the git clone that
 // publishes to GitHub Pages (Tarnholm/ris-wiki), and an rmSync of the root deleted .git once —
 // severing the published history. .git and .nojekyll survive a rebuild.
-const KEEP = new Set([".git", ".nojekyll"]);
+// .github holds the workflow that publishes wiki notes, and wiki-notes holds the notes it
+// has already published. Both are written by CI, not by this build, so a rebuild that swept
+// them away would silently delete the automation and every note the team had written.
+const KEEP = new Set([".git", ".nojekyll", ".github", "wiki-notes"]);
 if (fs.existsSync(SITE)) {
   for (const entry of fs.readdirSync(SITE)) {
     if (!KEEP.has(entry)) fs.rmSync(path.join(SITE, entry), { recursive: true, force: true });
@@ -303,7 +351,7 @@ note(`team notes merged: ${n(notesMerged)} (from ${NOTES})`);
 // The root README is the entry point. `file://` will not serve a folder's README for you, so
 // index.html is a byte copy of it — same directory, so every relative link in it still lands.
 if (!fs.existsSync(path.join(SITE, "README.html"))) {
-  console.error("no README.md at the wiki root — there would be nothing to double-click");
+  console.error("no README.md at the wiki root — the site would have no index page");
   process.exit(2);
 }
 fs.copyFileSync(path.join(SITE, "README.html"), path.join(SITE, "index.html"));
@@ -441,20 +489,11 @@ note(`referenced but missing: ${n(missing.size)}${missing.size ? " — e.g. " + 
 note(`present but unreferenced: ${n(unreferenced.length)}${unreferenced.length ? " — " + [...byDir].sort((a, b) => b[1] - a[1]).map(([d, c]) => `${d} ${n(c)}`).join(", ") : ""}`);
 note(`case-mismatched references: ${caseMismatch}${caseSamples.length ? " — e.g. " + caseSamples.join(", ") : ""} (would 404 on GitHub Pages, which is case-sensitive)`);
 
-// ── how to open it ───────────────────────────────────────────────────────────
-fs.writeFileSync(path.join(SITE, "OPEN-ME.txt"),
-  [
-    "RIS wiki — offline copy",
-    "",
-    "Open index.html. That is all: double-click it and it opens in your browser.",
-    "Nothing to install, no internet needed. Everything works offline, including search.",
-    "",
-    "If you were sent a .zip, unzip the WHOLE folder first and then open index.html inside it.",
-    "Opening index.html from inside the zip will show the page with no pictures.",
-    "",
-    "Built from the RIS wiki markdown by scripts/build-ris-wiki-site.js.",
-    "",
-  ].join("\r\n"));
+// No OPEN-ME.txt is written. The wiki is read in the browser at
+// https://tarnholm.github.io/ris-wiki/ and edited in the browser at
+// https://github.com/Tarnholm/ris-wiki/wiki — there is no local step to explain.
+const openMe = path.join(SITE, "OPEN-ME.txt");
+if (fs.existsSync(openMe)) fs.unlinkSync(openMe);
 
 // ── totals ───────────────────────────────────────────────────────────────────
 let files = 0, bytes = 0;

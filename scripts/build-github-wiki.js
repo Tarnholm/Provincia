@@ -110,8 +110,13 @@ for (const abs of files) {
     stats.unresolved.push(`${rel} -> ${href}`); return m;
   });
 
-  // icon belongs after the label on the same line, not stacked above it
-  md = md.replace(/(<img[^>]*>)<br>(\[\*\*[^\]]*\*\*\]\([^)]*\))/g, '$2 $1');
+  // On the index the label reads better first and the icon after it. Scoped to that page
+  // deliberately: the same img-then-bold-link shape occurs 292 times across the culture and
+  // family pages, where icon-first is the intended layout, and a blanket rule would flip
+  // every one of them.
+  if (rel === 'README.md') {
+    md = md.replace(/(<img[^>]*>)\s*(\[\*\*[^\]]*\*\*\]\([^)]*\))/g, '$2 $1');
+  }
 
   const outName = pageName(rel.replace(/\.md$/, '')) + '.md';
   const kept = existingNotes(outName);
@@ -134,6 +139,13 @@ for (const abs of files) {
 // Home page = the generated index, with a note about where the pretty version lives
 const home = fs.readFileSync(path.join(OUT, 'README.md'), 'utf8');
 fs.writeFileSync(path.join(OUT, 'Home.md'), home);
+
+// A flat wiki page name cannot be split back into a path by rule: "factions-overview" is a
+// top-level page while "factions-rome" lives under factions/. So the mapping is written out
+// here, where it is known, for the notes sync to read. Not a wiki page — GitHub ignores it.
+const pageMap = {};
+for (const rel of pageSet) pageMap[pageName(rel)] = rel;
+fs.writeFileSync(path.join(OUT, 'page-map.json'), JSON.stringify(pageMap));
 
 // Sidebar — the flat page list is unusable at this scale without one
 const SB = [

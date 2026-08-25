@@ -250,26 +250,22 @@ every direction a player notices — but not uniformly.** The map and the unit r
 enormously. The building tree does not: it grows *sideways* rather than deeper. Those two
 facts shape most of what plays differently.
 
-## Viewing this locally
+## Reading and adding to this wiki
 
-GitHub renders these pages if you browse the repository. To read them on your own machine
-with the icons, cards and maps showing, **double-click \`view-wiki.bat\`** (or run
-\`./view-wiki.sh\` on macOS/Linux). It needs Node.js and nothing else — no install step, no
-internet, no account. Your browser opens on its own.
+Everything is in the browser. Search from the box above — press \`/\` to jump to it — or move
+around with the sidebar. There are **${pageCount().toLocaleString("en-US")}** pages: one per
+faction, region, settlement, unit and building chain, plus these overviews.
 
-A viewer is needed because a browser shows a \`.md\` file as raw text, and these pages are
-mostly tables. It also gives you the things a folder of files cannot: a search box over every
-page (press \`/\` to jump to it), a sidebar to move between
-sections, and a light/dark switch. The sortable tables below are ordinary HTML and work on
-their own if you would rather not run anything.
-
-There are **${pageCount().toLocaleString("en-US")}** pages in total: one per faction, region,
-unit and building chain, plus these overviews.
+Every figure on these pages is counted from the game's own data files, so the pages
+themselves are not written by hand. A figure marked **${NA}** is one that could not be
+established rather than one that is zero. To add something a data file cannot say — why a
+unit disappoints, which province is the awkward one — open the same page on the
+[editable wiki](https://github.com/Tarnholm/ris-wiki/wiki) and write at the bottom under
+**Team notes**. That part is kept and appears here.
 
 ## Sortable tables
 
-For anything you want to sort or search rather than read, these work on GitHub Pages with
-no server:
+For anything you want to sort or search rather than read:
 
 - [Unit roster](units.html) — all 1,172 units, sortable by any stat
 - [Regions](regions.html) — all 1,311, sortable and searchable
@@ -282,7 +278,7 @@ no server:
 | [**All regions**](regions.md) | ${familyCount("regions").toLocaleString("en-US")} | The land: terrain, climate, fertility, water, port, and the trade goods placed inside its borders |
 | [**All settlements**](settlements.md) | ${familyCount("settlements").toLocaleString("en-US")} | The cities: size, population, who holds them, what is built, what can be raised |
 | [**Settlement sizes**](sizes.md) | ${familyCount("sizes").toLocaleString("en-US")} | Each rung of the ladder: the population it takes, what it first lets you build, how many start there |
-| ${artStrip("resource-icons", 24)}<br>[**Trade goods**](trade-goods.md) | ${familyCount("goods").toLocaleString("en-US")} | What each good is worth, where on the map it is, who holds it, what it unlocks |
+| ${artStrip("resource-icons", 24)} [**Trade goods**](trade-goods.md) | ${familyCount("goods").toLocaleString("en-US")} | What each good is worth, where on the map it is, who holds it, what it unlocks |
 | [**Region tag reference**](tags.md) | ${familyCount("tags").toLocaleString("en-US")} | What a region's terrain, climate, water, port, recruitment zone, homeland and fertility each decide |
 | [The map](map-and-regions.md) | — | How the density compares with vanilla |
 
@@ -290,29 +286,22 @@ no server:
 
 | | Pages | What is on them |
 |---|---:|---|
-| ${artStrip("symbols", 26)}<br>[**All factions**](factions.md) | ${familyCount("factions").toLocaleString("en-US")} | Grouped by culture: what each starts with, its roster, its characters, its territory |
+| ${artStrip("symbols", 26)} [**All factions**](factions.md) | ${familyCount("factions").toLocaleString("en-US")} | Grouped by culture: what each starts with, its roster, its characters, its territory |
 | [**Cultures**](cultures.md) | ${familyCount("cultures").toLocaleString("en-US")} | Who is in each, what its settlements are drawn with, and what the mod gates on being it |
-| ${artStrip("belief-icons", 22)}<br>[**Beliefs**](religions.md) | ${familyCount("religions").toLocaleString("en-US")} | Where each is on the map and at what strength, whose people it is, who follows it |
+| ${artStrip("belief-icons", 22)} [**Beliefs**](religions.md) | ${familyCount("religions").toLocaleString("en-US")} | Where each is on the map and at what strength, whose people it is, who follows it |
 | [**Character traits**](traits.md) | ${familyCount("traits").toLocaleString("en-US")} | Every visible trait: its levels, effects, how it is gained, and the traits that pull against it |
-| ${artStrip("ancillary-icons", 24)}<br>[**Retinue**](ancillaries.md) | ${familyCount("ancillaries").toLocaleString("en-US")} | The followers, keepsakes and offices a character gathers, and the traits that attract them |
+| ${artStrip("ancillary-icons", 24)} [**Retinue**](ancillaries.md) | ${familyCount("ancillaries").toLocaleString("en-US")} | The followers, keepsakes and offices a character gathers, and the traits that attract them |
 | [Factions overview](factions-overview.md) | — | How crowded the world is beside vanilla |
 
 ### What they build and field
 
 | | Pages | What is on them |
 |---|---:|---|
-| ${artStrip("cards", 34)}<br>[**All units**](units.md) | ${familyCount("units").toLocaleString("en-US")} | Stats, cards, who can recruit each one and what they need to build first |
-| ${artStrip("icons", 26)}<br>[**All buildings**](buildings.md) | ${familyCount("buildings").toLocaleString("en-US")} | Every chain: what each level does, what it costs, what it upgrades into |
+| ${artStrip("cards", 34)} [**All units**](units.md) | ${familyCount("units").toLocaleString("en-US")} | Stats, cards, who can recruit each one and what they need to build first |
+| ${artStrip("icons", 26)} [**All buildings**](buildings.md) | ${familyCount("buildings").toLocaleString("en-US")} | Every chain: what each level does, what it costs, what it upgrades into |
 | [Units overview](units-overview.md) | — | How the roster compares with vanilla |
 | [Buildings and economy](buildings-and-economy.md) | — | A wider, shallower tree than vanilla's |
 
-## About these pages
-
-Generated by \`scripts/gen-ris-wiki.js\` in the Provincia repository, which reads the RIS
-data files and the vanilla install and counts what it finds. Re-run it after a release to
-refresh them. Figures marked **${NA}** are ones the generator declined to publish —
-usually because two independent counts of the same thing disagreed, which is a reason to
-fix the generator rather than to trust a number.
 `;
 
   pages["factions-overview.md"] = `# Factions

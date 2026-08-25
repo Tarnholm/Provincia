@@ -866,7 +866,7 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
   </form>
   <div class="right">
     <button id="theme" type="button" title="Switch theme">theme</button>
-    <span>local preview</span>
+    <a href="https://github.com/Tarnholm/ris-wiki/wiki" title="Add a note to this wiki">edit</a>
   </div>
   </div>
   ${jumpStrip(toc)}
