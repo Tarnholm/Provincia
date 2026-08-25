@@ -246,6 +246,10 @@ const EXTRA_JS = `
     var main = document.querySelector("main");
     if (!main || typeof fetch !== "function") return;
 
+    // Declared here, not borrowed: the shell's own copy lives inside a different IIFE, so
+    // reading it from this one is a ReferenceError — which this block's try/catch swallows,
+    // leaving no console error and a page that simply never shows its note.
+    var base = window.RIS_BASE || "";
     var rootPath = new URL(base || "./", location.href).pathname;
     var here = decodeURIComponent(location.pathname);
     if (here.indexOf(rootPath) !== 0) return;
