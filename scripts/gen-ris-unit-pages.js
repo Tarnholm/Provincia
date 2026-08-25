@@ -85,26 +85,92 @@ const first = (b, k) => (b.fields[k] ? b.fields[k][0] : null);
 const csv = (b, k) => (first(b, k) || "").split(",").map((s) => s.trim());
 const num = (v) => { const n = parseInt(v, 10); return Number.isFinite(n) ? n : null; };
 
+// Every field the unit file states, not just the headline ones.
+//
+// TWO FIELDS WERE BEING READ WRONG and both are fixed here:
+//   - the size field is `soldiers` (PLURAL) and its men count is index 0, not 1. Read as
+//     "soldier"[1] it resolved to nothing, so no unit page has ever shown its unit size.
+//   - stat_pri[8] is the SOUND type, not the weapon. Printed as "Weapon" it gave a bow-armed
+//     elephant "Weapon: none". The weapon class is [5], its damage type [7].
 function statsOf(b) {
-  const pri = csv(b, "stat_pri");          // attack, charge, missile?, range, ammo, type, tech, dmg, weapon, delay, ...
-  const armour = csv(b, "stat_pri_armour"); // armour, defence skill, shield, material...
-  const mental = csv(b, "stat_mental");     // morale, discipline, training
-  const cost = csv(b, "stat_cost");         // turns, cost, upkeep, weapon, armour, total?
-  const soldier = csv(b, "soldier");        // model, count, extras, mass
+  const pri = csv(b, "stat_pri");            // attack, charge, projectile, range, ammo, class, tech, damage, sound, delay
+  const sec = csv(b, "stat_sec");
+  const armour = csv(b, "stat_pri_armour");  // armour, defence skill, shield, material
+  const secArm = csv(b, "stat_sec_armour");  // armour, defence skill, material
+  const mental = csv(b, "stat_mental");      // morale, discipline, training
+  const cost = csv(b, "stat_cost");          // turns, cost, upkeep, weapon upgrade, armour upgrade, total
+  const soldiers = csv(b, "soldiers");       // men, extras, mass
+  const health = csv(b, "stat_health");      // man hp, mount/animal hp
+  const ground = csv(b, "stat_ground");      // scrub, sand, forest, snow
+  const food = csv(b, "stat_food");
+  const form = csv(b, "formation");          // close x, close y, loose x, loose y, ranks, style
+
+  const flags = (k) => { const v = csv(b, k).filter((x) => x && x !== "no"); return v.length ? v : null; };
+  const pos = (v) => { const n = num(v); return n ? n : null; };
+  const word = (v) => (v && v !== "no" ? v : null);
+
   return {
-    men: num(soldier[1]),
+    men: num(soldiers[0]),
+    mass: soldiers[2] ? Number(soldiers[2]) : null,
+
     attack: num(pri[0]),
     charge: num(pri[1]),
-    weapon: pri[8] || null,
+    priProjectile: word(pri[2]),
+    priRange: pos(pri[3]),
+    priAmmo: pos(pri[4]),
+    priClass: word(pri[5]),
+    priTech: word(pri[6]),
+    priDamage: word(pri[7]),
+    priDelay: num(pri[9]),
+    priAttr: flags("stat_pri_attr"),
+
+    secAttack: num(sec[0]),
+    secCharge: num(sec[1]),
+    secProjectile: word(sec[2]),
+    secRange: pos(sec[3]),
+    secAmmo: pos(sec[4]),
+    secClass: word(sec[5]),
+    secTech: word(sec[6]),
+    secDamage: word(sec[7]),
+    secDelay: num(sec[9]),
+    secAttr: flags("stat_sec_attr"),
+
     armour: num(armour[0]),
     defence: num(armour[1]),
     shield: num(armour[2]),
+    armourMat: word(armour[3]),
+    secArmour: num(secArm[0]),
+    secDefence: num(secArm[1]),
+    secArmourMat: word(secArm[2]),
+
     morale: num(mental[0]),
     discipline: mental[1] || null,
     training: mental[2] || null,
+
+    hp: num(health[0]),
+    hpMount: num(health[1]),
+    heat: num(csv(b, "stat_heat")[0]),
+    gScrub: num(ground[0]),
+    gSand: num(ground[1]),
+    gForest: num(ground[2]),
+    gSnow: num(ground[3]),
+    chargeDist: num(csv(b, "stat_charge_dist")[0]),
+    fireDelay: num(csv(b, "stat_fire_delay")[0]),
+    foodLow: num(food[0]),
+    foodHigh: num(food[1]),
+
+    mount: first(b, "mount"),
+    mountEffect: first(b, "mount_effect"),
+    formClose: form[0] && form[1] ? `${form[0]} x ${form[1]}` : null,
+    formLoose: form[2] && form[3] ? `${form[2]} x ${form[3]}` : null,
+    ranks: num(form[4]),
+    formStyle: form[5] || null,
+
     turns: num(cost[0]),
     cost: num(cost[1]),
     upkeep: num(cost[2]),
+    costWeaponUp: pos(cost[3]),
+    costArmourUp: pos(cost[4]),
   };
 }
 
@@ -676,6 +742,71 @@ function sectionise(text) {
   });
 }
 
+// ── the rest of the unit file, primary set against secondary ─────────────────
+// The table above carries the headline numbers, which for many units are not the ones that
+// decide a fight: 1,388 units have a real secondary attack and on 241 of them it is the
+// STRONGER of the two. A lithobolos reads as attack 6 — that is the crew's sidearm; the
+// machine itself throws at 30. An elephant reads as attack 6 and defence skill 1 — those are
+// the rider's; the animal attacks at 25 and defends at 24. Showing one and hiding the other
+// is not a shorter description, it is a wrong one, so both are printed side by side.
+const dash = (v) => (v == null || v === "" || (typeof v === "number" && !Number.isFinite(v)) ? "—" : v);
+const dashList = (a) => (a && a.length ? a.join(" · ") : "—");
+
+
+function detailTables(s) {
+  const hasSec = s.secAttack != null && s.secAttack > 0;
+  const out = [];
+
+  const kind = (cls, tech) => (cls ? (tech && tech !== cls ? `${cls} · ${tech}` : cls) : "—");
+
+  out.push("### Weapons", "");
+  if (hasSec && s.secAttack > s.attack) {
+    out.push(`> Its **secondary** attack is the stronger one — ${s.secAttack} against ${s.attack}.`, "");
+  }
+  out.push("| | Primary | Secondary |", "|---|---|---|");
+  out.push(`| Attack | ${dash(s.attack)} | ${hasSec ? dash(s.secAttack) : "—"} |`);
+  out.push(`| Charge bonus | ${dash(s.charge)} | ${hasSec ? dash(s.secCharge) : "—"} |`);
+  out.push(`| Type | ${kind(s.priClass, s.priTech)} | ${hasSec ? kind(s.secClass, s.secTech) : "—"} |`);
+  out.push(`| Damage | ${dash(s.priDamage)} | ${hasSec ? dash(s.secDamage) : "—"} |`);
+  if (s.priProjectile || s.secProjectile) out.push(`| Projectile | ${dash(s.priProjectile)} | ${hasSec ? dash(s.secProjectile) : "—"} |`);
+  if (s.priRange || s.secRange) out.push(`| Range | ${dash(s.priRange)} | ${hasSec ? dash(s.secRange) : "—"} |`);
+  if (s.priAmmo || s.secAmmo) out.push(`| Ammunition | ${dash(s.priAmmo)} | ${hasSec ? dash(s.secAmmo) : "—"} |`);
+  out.push(`| Attributes | ${dashList(s.priAttr)} | ${hasSec ? dashList(s.secAttr) : "—"} |`);
+  out.push(`| Min delay between blows | ${dash(s.priDelay)} | ${hasSec ? dash(s.secDelay) : "—"} |`);
+  out.push("");
+
+  // stat_sec_armour is present on every unit, but on one with nothing to wear it it reads
+  // 0, 0 — that is the absence of a second body, not a second body with no armour.
+  const hasSecArm = (s.secArmour || 0) > 0 || (s.secDefence || 0) > 0;
+  out.push("### Defence", "");
+  out.push("| | Primary | Secondary |", "|---|---|---|");
+  out.push(`| Armour | ${dash(s.armour)} | ${hasSecArm ? dash(s.secArmour) : "—"} |`);
+  out.push(`| Defence skill | ${dash(s.defence)} | ${hasSecArm ? dash(s.secDefence) : "—"} |`);
+  out.push(`| Shield | ${dash(s.shield)} | — |`);
+  out.push(`| Material | ${dash(s.armourMat)} | ${hasSecArm ? dash(s.secArmourMat) : "—"} |`);
+  out.push("");
+
+  out.push("### Condition, terrain and upkeep", "");
+  out.push("| | |", "|---|---|");
+  out.push(`| Hit points | ${dash(s.hp)}${s.hpMount ? ` · mount ${s.hpMount}` : ""} |`);
+  if (s.mount) out.push(`| Mount | ${s.mount} |`);
+  if (s.mountEffect) out.push(`| Bonus against mounts | ${s.mountEffect} |`);
+  out.push(`| Ground: scrub / sand / forest / snow | ${dash(s.gScrub)} / ${dash(s.gSand)} / ${dash(s.gForest)} / ${dash(s.gSnow)} |`);
+  out.push(`| Heat penalty | ${dash(s.heat)} |`);
+  out.push(`| Charge distance | ${dash(s.chargeDist)} |`);
+  out.push(`| Fire delay | ${dash(s.fireDelay)} |`);
+  out.push(`| Food consumed (low / high) | ${dash(s.foodLow)} / ${dash(s.foodHigh)} |`);
+  if (s.mass != null) out.push(`| Mass per man | ${s.mass} |`);
+  out.push(`| Formation: close / loose | ${dash(s.formClose)} / ${dash(s.formLoose)}${s.ranks ? ` · ${s.ranks} ranks` : ""}${s.formStyle ? ` · ${s.formStyle}` : ""} |`);
+  // stat_cost fields 4 and 5 are NOT printed. They are commonly documented as weapon and
+  // armour upgrade costs, but field 4 is 0 or 1 on 1,702 of the 1,731 units, which is a flag
+  // and not a price. Rather than publish a label the data contradicts, they are left out —
+  // the same rule the rest of this wiki follows for anything it cannot establish.
+  out.push("");
+
+  return out.join("\n");
+}
+
 for (const u of list) {
   const s = u.st;
   const stat = (label, v, suffix, key) => v == null ? "" :
@@ -846,7 +977,8 @@ ${cardMarkup(u)}${u.hasName ? "" : "> _This unit has no display name in the text
 
 | | | Rank in roster |
 |---|---:|---|
-${stat("Attack", s.attack, "", "attack")}${stat("Charge bonus", s.charge, "", "charge")}${s.weapon ? `| Weapon | ${s.weapon} | |\n` : ""}${stat("Armour", s.armour, "", "armour")}${stat("Defence skill", s.defence, "", "defence")}${stat("Shield", s.shield, "", "shield")}${stat("Morale", s.morale, "", "morale")}${s.discipline ? `| Discipline | ${s.discipline} | |\n` : ""}${s.training ? `| Training | ${s.training} | |\n` : ""}${stat("Men per unit", s.men, "", "men")}${stat("Recruitment cost", s.cost, " dn", "cost")}${stat("Upkeep per turn", s.upkeep, " dn", "upkeep")}${stat("Turns to recruit", s.turns)}
+${stat("Men per unit", s.men, "", "men")}${stat("Attack", s.attack, "", "attack")}${stat("Charge bonus", s.charge, "", "charge")}${stat("Armour", s.armour, "", "armour")}${stat("Defence skill", s.defence, "", "defence")}${stat("Shield", s.shield, "", "shield")}${stat("Morale", s.morale, "", "morale")}${s.discipline ? `| Discipline | ${s.discipline} | |\n` : ""}${s.training ? `| Training | ${s.training} | |\n` : ""}${stat("Recruitment cost", s.cost, " dn", "cost")}${stat("Upkeep per turn", s.upkeep, " dn", "upkeep")}${stat("Turns to recruit", s.turns)}
+${detailTables(s)}
 ${attrBlock}${u.statsDiffer ? `\n> **The mod gives this unit more than one set of numbers.** The figures above are one of\n> them, so check in-game if the exact values matter.\n` : ""}
 ${hireSection}${
   // A mercenary with no building route at all has nothing to say here, and printing "no
