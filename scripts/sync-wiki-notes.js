@@ -13,7 +13,17 @@
 // written and drift from then on.
 const fs = require('fs'), path = require('path');
 const { extractNotes } = require('./ris-wiki-notes.js');
-const { renderMarkdown } = require('./serve-ris-wiki.js');
+
+// serve-ris-wiki.js resolves its wiki root from process.argv AT LOAD TIME and exits(2) if
+// that directory is missing — defaulting to C:/RIS/RIS/wiki, which exists on the machine
+// that generates the wiki and on no CI runner anywhere. Requiring it with an argv of our own
+// making points it at the wiki clone we do have. build-ris-wiki-site.js does the same thing
+// for the same reason; without it this script dies on a runner before it reads a single note.
+const { renderMarkdown } = (() => {
+  const real = process.argv;
+  process.argv = [real[0], real[1], '--out', process.argv[2] || '.', '--no-open'];
+  try { return require('./serve-ris-wiki.js'); } finally { process.argv = real; }
+})();
 
 const WIKI = process.argv[2];
 const SITE = process.argv[3];
