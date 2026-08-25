@@ -250,18 +250,6 @@ every direction a player notices — but not uniformly.** The map and the unit r
 enormously. The building tree does not: it grows *sideways* rather than deeper. Those two
 facts shape most of what plays differently.
 
-## Reading and adding to this wiki
-
-Everything is in the browser. Search from the box above — press \`/\` to jump to it — or move
-around with the sidebar. There are **${pageCount().toLocaleString("en-US")}** pages: one per
-faction, region, settlement, unit and building chain, plus these overviews.
-
-Every figure on these pages is counted from the game's own data files, so the pages
-themselves are not written by hand. A figure marked **${NA}** is one that could not be
-established rather than one that is zero. To add something a data file cannot say — why a
-unit disappoints, which province is the awkward one — open the same page on the
-[editable wiki](https://github.com/Tarnholm/ris-wiki/wiki) and write at the bottom under
-**Team notes**. That part is kept and appears here.
 
 ## Sortable tables
 
