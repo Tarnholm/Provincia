@@ -78,6 +78,12 @@ const viewer = (() => {
 })();
 const { renderMarkdown, sectionise, SHELL, CSS, INDEX } = viewer;
 
+// Team notes the team wrote in the GitHub wiki, pulled in by scripts/pull-github-wiki-notes.js
+const { readNote, NOTES_DIR, LF } = require("./ris-wiki-notes.js");
+const NOTES = path.resolve(valOf("--notes", NOTES_DIR));
+const NOTE_SEP = LF + LF + "## Team notes" + LF + LF;
+let notesMerged = 0;
+
 // ── the pages ────────────────────────────────────────────────────────────────
 const walk = (dir, hit) => {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -275,7 +281,13 @@ function finish(html, fromRel) {
 // ── render every page ────────────────────────────────────────────────────────
 let rendered = 0;
 for (const rel of mdPages) {
-  const md = fs.readFileSync(path.join(WIKI, rel), "utf8");
+  let md = fs.readFileSync(path.join(WIKI, rel), "utf8");
+
+  // Team notes written by the team in the GitHub wiki, pulled into the notes store by
+  // scripts/pull-github-wiki-notes.js. They live outside C:/RIS/RIS/wiki because the
+  // generators rewrite that wholesale; merging them here is what puts them on the site.
+  const note = readNote(rel, NOTES);
+  if (note) { md = md.trimEnd() + NOTE_SEP + note + "\n"; notesMerged++; }
   const title = (/^#\s+(.+)$/m.exec(md) || [, path.basename(rel)])[1];
   // The toc has to be kept and handed on, not created in the argument list: renderMarkdown fills
   // the array it is given, and SHELL builds the bar's jump strip out of it. Passing a throwaway
@@ -286,6 +298,7 @@ for (const rel of mdPages) {
   rendered++;
 }
 note(`pages rendered: ${n(rendered)} (from ${n(mdPages.length)} .md files under ${WIKI})`);
+note(`team notes merged: ${n(notesMerged)} (from ${NOTES})`);
 
 // The root README is the entry point. `file://` will not serve a folder's README for you, so
 // index.html is a byte copy of it — same directory, so every relative link in it still lands.

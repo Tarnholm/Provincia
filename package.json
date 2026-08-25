@@ -26,7 +26,8 @@
     "gen:ailog-patterns": "node scripts/gen-ailog-patterns.js",
     "wiki:site": "node scripts/build-ris-wiki-site.js",
     "wiki:check": "node scripts/check-ris-wiki-site.js",
-    "wiki:probe": "electron scripts/probe-ris-wiki-site.js"
+    "wiki:probe": "electron scripts/probe-ris-wiki-site.js",
+    "wiki:gen": "node scripts/gen-ris-wiki-all.js"
   },
   "dependencies": {
     "electron-updater": "^6.8.3",

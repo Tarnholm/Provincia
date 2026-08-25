@@ -1287,13 +1287,6 @@ ${builtTable}
 ## What can be recruited here
 
 ${recruitSection(rec, held)}
-
-## The land around it
-
-Terrain, climate, fertility, water, port, the trade goods placed inside the borders, and the
-recruitment zones and homeland this ground counts as, are all on
-**[${placeName(r.region)}](../regions/${encodeURIComponent(r.region)}.md)** — stated there once, so the two pages
-cannot disagree.
 `;
   if (settlementTokens.has(r.settlement)) {
     console.error(`SETTLEMENT NAME COLLISION: "${r.settlement}" is the settlement of both ${settlementTokens.get(r.settlement)} and ${r.region} — one page would overwrite the other`);
