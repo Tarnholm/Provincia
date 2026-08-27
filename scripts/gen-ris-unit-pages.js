@@ -138,6 +138,12 @@ function statsOf(b) {
     armour: num(armour[0]),
     defence: num(armour[1]),
     shield: num(armour[2]),
+    // What the game shows as a unit's Defence is the sum of the three, not the skill alone.
+    // Quoting the skill by itself understates a heavily armoured unit badly: Achaian
+    // Epilektoi read as 33 where the game shows 48.
+    defenceTotal: [armour[0], armour[1], armour[2]].reduce((t, v) => {
+      const x = num(v); return t == null || x == null ? t : t + x;
+    }, 0),
     armourMat: word(armour[3]),
     secArmour: num(secArm[0]),
     secDefence: num(secArm[1]),
@@ -712,7 +718,7 @@ fs.mkdirSync(path.join(OUT, "units"), { recursive: true });
 // than a styled <span>: GitHub strips style attributes when it renders markdown, so a CSS
 // bar would work in the local viewer and silently vanish on the site.
 const SORTED = {};
-for (const k of ["attack", "charge", "armour", "defence", "shield", "morale", "cost", "upkeep", "men"]) {
+for (const k of ["attack", "charge", "armour", "defence", "defenceTotal", "shield", "morale", "cost", "upkeep", "men"]) {
   SORTED[k] = merged.map((u) => u.st[k]).filter((v) => v != null).sort((a, b) => a - b);
 }
 function percentile(key, v) {
@@ -780,6 +786,7 @@ function detailTables(s) {
   const hasSecArm = (s.secArmour || 0) > 0 || (s.secDefence || 0) > 0;
   out.push("### Defence", "");
   out.push("| | Primary | Secondary |", "|---|---|---|");
+  out.push(`| Total | ${dash(s.defenceTotal)} | — |`);
   out.push(`| Armour | ${dash(s.armour)} | ${hasSecArm ? dash(s.secArmour) : "—"} |`);
   out.push(`| Defence skill | ${dash(s.defence)} | ${hasSecArm ? dash(s.secDefence) : "—"} |`);
   out.push(`| Shield | ${dash(s.shield)} | — |`);
@@ -798,6 +805,7 @@ function detailTables(s) {
   out.push(`| Food consumed (low / high) | ${dash(s.foodLow)} / ${dash(s.foodHigh)} |`);
   if (s.mass != null) out.push(`| Mass per man | ${s.mass} |`);
   out.push(`| Formation: close / loose | ${dash(s.formClose)} / ${dash(s.formLoose)}${s.ranks ? ` · ${s.ranks} ranks` : ""}${s.formStyle ? ` · ${s.formStyle}` : ""} |`);
+  out.push(`| Men per unit | ${dash(s.men)} as the unit file states — the game multiplies this by your unit size |`);
   // stat_cost fields 4 and 5 are NOT printed. They are commonly documented as weapon and
   // armour upgrade costs, but field 4 is 0 or 1 on 1,702 of the 1,731 units, which is a flag
   // and not a price. Rather than publish a label the data contradicts, they are left out —
@@ -977,7 +985,7 @@ ${cardMarkup(u)}${u.hasName ? "" : "> _This unit has no display name in the text
 
 | | | Rank in roster |
 |---|---:|---|
-${stat("Men per unit", s.men, "", "men")}${stat("Attack", s.attack, "", "attack")}${stat("Charge bonus", s.charge, "", "charge")}${stat("Armour", s.armour, "", "armour")}${stat("Defence skill", s.defence, "", "defence")}${stat("Shield", s.shield, "", "shield")}${stat("Morale", s.morale, "", "morale")}${s.discipline ? `| Discipline | ${s.discipline} | |\n` : ""}${s.training ? `| Training | ${s.training} | |\n` : ""}${stat("Recruitment cost", s.cost, " dn", "cost")}${stat("Upkeep per turn", s.upkeep, " dn", "upkeep")}${stat("Turns to recruit", s.turns)}
+${stat("Men per unit", s.men, "", "men")}${stat("Attack", s.attack, "", "attack")}${stat("Charge bonus", s.charge, "", "charge")}${stat("Defence", s.defenceTotal, "", "defenceTotal")}${stat("&nbsp;&nbsp;· armour", s.armour, "", "armour")}${stat("&nbsp;&nbsp;· defence skill", s.defence, "", "defence")}${stat("&nbsp;&nbsp;· shield", s.shield, "", "shield")}${stat("Morale", s.morale, "", "morale")}${s.discipline ? `| Discipline | ${s.discipline} | |\n` : ""}${s.training ? `| Training | ${s.training} | |\n` : ""}${stat("Recruitment cost", s.cost, " dn", "cost")}${stat("Upkeep per turn", s.upkeep, " dn", "upkeep")}${stat("Turns to recruit", s.turns)}
 ${detailTables(s)}
 ${attrBlock}${u.statsDiffer ? `\n> **The mod gives this unit more than one set of numbers.** The figures above are one of\n> them, so check in-game if the exact values matter.\n` : ""}
 ${hireSection}${
@@ -1042,12 +1050,17 @@ ${Object.entries(byClass).sort((a, b) => b[1].length - a[1].length).map(([c, v])
 
 ## Full roster
 
+**Defence** is the total the game shows — armour, defence skill and shield added together —
+not the defence skill on its own. **Men** is the count the unit file states; the game
+multiplies it by whichever unit size you play at, so treat it as a figure to compare units
+by rather than the number you will see on the field.
+
 | Unit | Class | Men | Attack | Defence | Morale | Cost | Upkeep | Variants |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
 ${merged.slice().sort((a, b) => a.name.localeCompare(b.name)).map((u) => {
   const s = u.st;
   const n = (v) => (v == null ? "—" : v.toLocaleString("en-US"));
-  return `| [${u.name}](units/${u.slug}.md) | ${u.cls || "—"} | ${n(s.men)} | ${n(s.attack)} | ${n(s.defence)} | ${n(s.morale)} | ${n(s.cost)} | ${n(s.upkeep)} | ${u.variants.length > 1 ? u.variants.length : ""} |`;
+  return `| [${u.name}](units/${u.slug}.md) | ${u.cls || "—"} | ${n(s.men)} | ${n(s.attack)} | ${n(s.defenceTotal)} | ${n(s.morale)} | ${n(s.cost)} | ${n(s.upkeep)} | ${u.variants.length > 1 ? u.variants.length : ""} |`;
 }).join("\n")}
 
 ## A note on the numbers
