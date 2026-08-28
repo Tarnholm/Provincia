@@ -93,6 +93,7 @@
  * stacked.
  */
 const fs = require("fs");
+const BUILDINGS = require("./ris-wiki-buildings.js");
 const path = require("path");
 
 const argv = process.argv.slice(2);
@@ -703,12 +704,14 @@ for (const c of list) {
     return { l, name, ic, art, d, eff, ex };
   });
 
-  const chainName = rows[0].name;
+  // The team's name for the chain, not the first level's. Falls back to the old behaviour
+  // for any chain the table does not cover, so a new chain still gets a page.
+  const chainName = BUILDINGS.chainName(c.chain, rows[0].name);
   const pathLine = rows.map((r) => r.name).join(" → ");
 
   // ── the lede: everything before the first `## ` spans the full page width ──
   const lede = [
-    `# ${rows.length > 1 ? `${chainName} chain` : chainName}`,
+    `# ${chainName}`,
     "",
     "[← all buildings](../buildings.md) · [wiki index](../README.md)",
     "",
@@ -821,7 +824,7 @@ ${glossary.map(([k, v]) => `| \`${k}\` | ${aliasBody(v)} |`).join("\n")}
 
   const firstDesc = rows.map((r) => r.d).find((d) => d.short || d.full);
   index.push({
-    chain: c.chain, name: rows.length > 1 ? `${chainName} chain` : chainName,
+    chain: c.chain, name: chainName,
     levels: levels.length, slug: slug(c.chain),
     exclusions: rows.reduce((a, r) => a + r.ex.length, 0),
     firstIcon: (rows.find((r) => r.ic) || {}).ic || null,
@@ -848,6 +851,28 @@ function oneLine(s) {
 }
 
 index.sort((a, b) => b.levels - a.levels || a.name.localeCompare(b.name));
+// The chains grouped as the team orders them: one list per subsection, subsections in the
+// order the table gives, chains in their given order inside each. The old listing was one
+// flat table sorted by level count, which put Walls between two farming chains.
+const shown = index.filter((e) => !BUILDINGS.isExcluded(e.chain));
+const bySub = new Map();
+for (const e of shown) {
+  const sub = BUILDINGS.chainSubsection(e.chain) || "Other";
+  if (!bySub.has(sub)) bySub.set(sub, []);
+  bySub.get(sub).push(e);
+}
+const subOrder = BUILDINGS.SUBSECTIONS.filter((x) => bySub.has(x))
+  .concat([...bySub.keys()].filter((x) => !BUILDINGS.SUBSECTIONS.includes(x)));
+const chainRow = (e) => `| ${e.firstIcon ? `<img src="${e.firstIcon}" alt="" width="24">` : ""} | [${e.name}](buildings/${e.slug}.md) | ${e.levels} | ${e.exclusions || ""} | ${e.blurb || "no description in the game files"} |`;
+const chainSections = subOrder.map((sub) => [
+  `## ${sub}`,
+  "",
+  "| | Chain | Levels | Excl. | What it is |",
+  "|:-:|---|---:|---:|---|",
+  bySub.get(sub).slice().sort((a, b) => BUILDINGS.chainOrder(a.chain) - BUILDINGS.chainOrder(b.chain)).map(chainRow).join("\n"),
+  "",
+].join("\n")).join("\n");
+
 const idx = `# Buildings
 
 [← wiki index](README.md)
@@ -860,11 +885,7 @@ ${totalExclusions ? `**${totalExclusions} levels exclude another building** — 
 the other. Those are marked on the pages, because a commitment that quietly locks out an
 alternative is worth knowing about first.
 ` : ""}
-## Every chain
-
-| | Chain | Levels | Excl. | What it is |
-|:-:|---|---:|---:|---|
-${index.map((e) => `| ${e.firstIcon ? `<img src="${e.firstIcon}" alt="" width="24">` : ""} | [${e.name}](buildings/${e.slug}.md) | ${e.levels} | ${e.exclusions || ""} | ${e.blurb || "no description in the game files"} |`).join("\n")}
+${chainSections}
 `;
 fs.writeFileSync(path.join(OUT, "buildings.md"), idx, "utf8");
 

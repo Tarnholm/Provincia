@@ -55,6 +55,7 @@
  * the reader apart from itself.
  */
 const fs = require("fs");
+const BUILDINGS = require("./ris-wiki-buildings.js");
 const path = require("path");
 
 const argv = process.argv.slice(2);
@@ -212,7 +213,10 @@ const levelName = (level) => {
   if (!n) levelNameMisses++;
   return n || String(level).replace(/_/g, " ");
 };
-const chainLabel = (chain) => String(chain).replace(/_/g, " ");
+// The team's name for the chain. Without this the column printed the raw token with its
+// underscores swapped for spaces — "salted fish", "academic" — which is the file's name for
+// the thing, not the game's or the team's.
+const chainLabel = (chain) => BUILDINGS.chainName(chain, String(chain).replace(/_/g, " "));
 const levelLink = (chain, level) => {
   const p = String(chain).toLowerCase();
   const label = `**${levelName(level)}**`;

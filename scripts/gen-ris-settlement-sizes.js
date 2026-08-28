@@ -70,6 +70,7 @@
  * size" stays a measured statement.
  */
 const fs = require("fs");
+const BUILDINGS = require("./ris-wiki-buildings.js");
 const path = require("path");
 
 const argv = process.argv.slice(2);
@@ -206,7 +207,7 @@ const levelName = (level) => {
 };
 const chainLink = (chain) => {
   const p = String(chain).toLowerCase();
-  const label = String(chain).replace(/_/g, " ");
+  const label = BUILDINGS.chainName(chain, String(chain).replace(/_/g, " "));
   return buildingPages.has(p) ? `[${label}](../buildings/${p}.md)` : label;
 };
 const levelLink = (chain, level) => {

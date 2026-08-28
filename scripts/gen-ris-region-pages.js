@@ -21,6 +21,7 @@
  * is still listed under "other", because silently dropping a tag would hide real content.
  */
 const fs = require("fs");
+const BUILDINGS = require("./ris-wiki-buildings.js");
 const path = require("path");
 
 const argv = process.argv.slice(2);
@@ -271,7 +272,7 @@ const chainPage = (chain) => {
   return buildingPages.has(c) ? c : null;
 };
 const chainLink = (chain) => {
-  const label = String(chain).replace(/_/g, " ");
+  const label = BUILDINGS.chainName(chain, String(chain).replace(/_/g, " "));
   const p = chainPage(chain);
   return p ? `[${label}](../buildings/${p}.md)` : label;
 };
