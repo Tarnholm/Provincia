@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1506",
+    date: "2026-08-31",
+    items: [
+      { type: "feature", text: "**Crash Reporter v0.1.56: every report now ends with a verdict.** Until now a report listed the evidence and left the conclusion to whoever read it. It now states one, on its own line directly under the status, where it cannot be cut off. Four verdicts, and which one you get decides who picks the report up. **MOD-SIDE** means it is fixable in the mod's own data, and where the engine named a file and a line, the report quotes that line back from the copy the game actually loaded — a lookup only the tester's machine can do, since any other copy is a different branch or a different build. **ENGINE** means the game's own fault or a hard engine limit, like the 16-bit string ref-count that wraps on multi-hour sessions: mitigation only, nothing to fix on our side. **LOCAL** means one machine — a driver, an overlay, or the tester's own save. That bucket exists because the telemetry has a whole class that fits neither of the others: one crash address accounts for 15 sessions from a single tester on a single graphics card, and chasing it as a mod bug would burn time on something nobody else can reproduce. **CANNOT PIN DOWN** is the honest default, and it names the one piece of evidence that would settle it, so the report asks for the save while the tester still has it. The most common crash address in the whole channel stays in that last bucket on purpose — it is measured to death and still unexplained, and promoting it to a real verdict would be worse than staying quiet. Across the 450 sessions already in telemetry, of the 120 crashes about one in five now arrives already triaged. One limit worth knowing: the reporter on a tester's PC only ever sees that one PC, so everything it knows about the other testers is baked in when the build is made. An out-of-date reporter gives out-of-date verdicts." },
+    ],
+  },
+
+  {
     version: "0.9.1505",
     date: "2026-08-16",
     items: [
