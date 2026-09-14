@@ -25,9 +25,25 @@ const ROOT = path.resolve(__dirname, "..");
 const BUNDLE = path.join(ROOT, "crash-reporter");
 const PY_EXE = path.join(ROOT, "python-runtime", process.platform === "win32" ? "python.exe" : path.join("bin", "python3"));
 const havePython = fs.existsSync(PY_EXE);
+// The reporter's .py files are deliberately NOT in this repo: they carry the live Discord
+// webhook in plaintext, this repo is public, and committing them once had the webhook
+// auto-revoked by secret scanning, which silently killed uploads for every tester. The master
+// copy lives in ..\RIS-CrashReporter and is copied in before packaging.
+//
+// So on a fresh clone -- which is every CI run -- the bundle is simply absent, and the checks
+// that read those files cannot mean anything. They used to run anyway and failed every build
+// from 4f93fb4 onward, 16 red runs in a row, while passing on the machine that ships. Guarded
+// the same way the Python-runtime checks already are.
+const haveBundle = ["crash_reporter.py", "ai_log_patterns.py"]
+  .every((f) => fs.existsSync(path.join(BUNDLE, f)));
+// Said out loud: a silent skip is indistinguishable from a pass, which is the confusion this
+// file was written to end.
+if (!haveBundle) {
+  console.log("[crash-reporter] bundle absent (expected on a clone; the .py files are gitignored) — packaging and filter checks NOT run");
+}
 
 describe("the bundled reporter is packaged completely", () => {
-  it("ships the reporter, its generated filter, and a config example", () => {
+  it.runIf(haveBundle)("ships the reporter, its generated filter, and a config example", () => {
     for (const f of ["crash_reporter.py", "ai_log_patterns.py", "crash_reporter.ini.example"]) {
       expect(fs.existsSync(path.join(BUNDLE, f)), `crash-reporter/${f} is missing`).toBe(true);
     }
@@ -54,7 +70,7 @@ describe("the bundled reporter is packaged completely", () => {
   });
 });
 
-describe("the bundled reporter is not older than the standalone one", () => {
+describe.runIf(haveBundle)("the bundled reporter is not older than the standalone one", () => {
   // Nothing copies the standalone reporter into crash-reporter/, so the two drifted six
   // versions apart: testers using the standalone installer were on 0.1.38 while Provincia
   // bundled 0.1.33, and every analyser improvement in between reached only half the users.
@@ -93,7 +109,7 @@ describe("the bundled reporter is not older than the standalone one", () => {
   });
 });
 
-describe("the generated Python filter matches the analyser", () => {
+describe.runIf(haveBundle)("the generated Python filter matches the analyser", () => {
   it("is byte-identical to what the generator would write right now", () => {
     const onDisk = fs.readFileSync(path.join(BUNDLE, "ai_log_patterns.py"), "utf8");
     expect(
@@ -117,8 +133,26 @@ describe("the generated Python filter matches the analyser", () => {
   });
 });
 
+// This one runs EVERYWHERE, and matters most where the bundle is absent: the repo is public,
+// so a .py from the reporter appearing in it means the webhook inside it is about to be
+// revoked by secret scanning. Committing them is the failure that actually cost users their
+// crash uploads; a missing file only costs a skipped check.
+describe("the reporter's secrets stay out of this public repo", () => {
+  it("has no reporter .py tracked by git", () => {
+    const tracked = spawnSync("git", ["ls-files", "crash-reporter"], { cwd: ROOT, encoding: "utf8" });
+    const py = (tracked.stdout || "").split(/\r?\n/).filter((f) => f.endsWith(".py"));
+    expect(py, `these carry the live webhook and must stay ignored: ${py.join(", ")}`).toEqual([]);
+  });
+
+  it("keeps the ignore rules that hold them out", () => {
+    const ig = fs.readFileSync(path.join(ROOT, ".gitignore"), "utf8");
+    expect(ig).toMatch(/^\/crash-reporter\/\*\.py$/m);
+    expect(ig).toMatch(/^\/crash-reporter\/crash_reporter\.ini\.example$/m);
+  });
+});
+
 describe("the reporter runs under Provincia's own Python runtime", () => {
-  it.runIf(havePython)("passes its own --selftest", () => {
+  it.runIf(havePython && haveBundle)("passes its own --selftest", () => {
     const r = spawnSync(PY_EXE, [path.join(BUNDLE, "crash_reporter.py"), "--selftest"], {
       cwd: BUNDLE, encoding: "utf8", timeout: 60000,
     });
@@ -129,7 +163,7 @@ describe("the reporter runs under Provincia's own Python runtime", () => {
     expect(out).toMatch(/ai_log_patterns importable: True/);
   }, 90000);
 
-  it.runIf(havePython)("does not prompt when told not to, and prompts otherwise", () => {
+  it.runIf(havePython && haveBundle)("does not prompt when told not to, and prompts otherwise", () => {
     const src = fs.readFileSync(path.join(BUNDLE, "crash_reporter.py"), "utf8");
     // bundled: stdin is closed, so every wait-for-the-user must be guarded
     expect(src).toMatch(/def pause_for_user\(/);
@@ -139,7 +173,7 @@ describe("the reporter runs under Provincia's own Python runtime", () => {
     expect(src).toMatch(/NON_INTERACTIVE = "--non-interactive" in sys\.argv/);
   });
 
-  it.runIf(havePython)("can be imported without running its main loop", () => {
+  it.runIf(havePython && haveBundle)("can be imported without running its main loop", () => {
     // Provincia's handler spawns it as a script, but the tests and the selftest
     // import it — an unguarded main() would hang the suite
     const r = spawnSync(PY_EXE, ["-c", [
