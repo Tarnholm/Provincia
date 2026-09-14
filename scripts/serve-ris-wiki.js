@@ -128,7 +128,16 @@ function slugId(s) {
 // `break-inside:avoid` is a hint: a section taller than the balanced column height gets split
 // across columns anyway, and the 449-row roster and the long unit descriptions are exactly
 // that case. Distribution has no such failure mode.
-function sectionise(html) {
+//
+// One family of pages opts out of all of it. A building chain page is a SEQUENCE — level 1,
+// then level 2, then level 3 — and distribution is a balance, not an order: on a five-level
+// chain it put levels 1, 4 and 5 down the left pane and 2 and 3 down the right, so the page
+// read t1, t2 / t4, t3 / t5. Nothing inside the balancer can fix that, because any two-column
+// layout reads down-then-across and here the order IS the content. So these pages stack: one
+// card per level, each the full width of the page.
+const SINGLE_COLUMN = /(^|\/)buildings\/[^/]+\.md$/i;
+
+function sectionise(html, rel) {
   const parts = html.split(/(?=<h2 )/);
   if (parts.length < 2) return html;
   const lede = parts[0].trim();
@@ -177,6 +186,14 @@ function sectionise(html) {
   const PANE_PX = 660;
   const isWide = (s) => tableMinPx(s) > PANE_PX;
   const secWrap = (s, wide) => `<section class="sec${wide ? " wide" : ""}">${s}</section>`;
+
+  // Stacked, in the order they were written, each card the full width. `wide` is what the
+  // section carries everywhere else for "this one takes the whole row", so a table inside is
+  // measured against the full width and gets its scroll box on the same terms as anywhere else.
+  if (rel && SINGLE_COLUMN.test(String(rel))) {
+    return (lede ? `<div class="lede">${lede}</div>` : "") + secs.map((s) => secWrap(s, true)).join("");
+  }
+
   // Rendered height, in rough text lines. Table and list rows are one line each; prose is its
   // character count over a line length; an image stands in for the space it occupies. This is
   // an estimate and only has to be good enough to tell a 5-line section from a 500-line one.
@@ -1105,7 +1122,7 @@ const server = http.createServer((req, res) => {
     // the array was being created in the argument list and dropped, so the bar had nothing to
     // build a jump strip from.
     const toc = [];
-    res.end(SHELL(title, sectionise(renderMarkdown(md, toc)), rel, toc));
+    res.end(SHELL(title, sectionise(renderMarkdown(md, toc), rel), rel, toc));
     return;
   }
   res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });

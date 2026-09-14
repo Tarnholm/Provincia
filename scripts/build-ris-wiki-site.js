@@ -456,7 +456,7 @@ for (const rel of mdPages) {
   // the array it is given, and SHELL builds the bar's jump strip out of it. Passing a throwaway
   // array built every page in the site without its section links — the server had the same bug.
   const toc = [];
-  const html = SHELL(title, sectionise(renderMarkdown(md, toc)), "/" + rel, toc);
+  const html = SHELL(title, sectionise(renderMarkdown(md, toc), rel), "/" + rel, toc);
   writeOut(rel.replace(/\.md$/i, ".html"), finish(html, rel));
   rendered++;
 }

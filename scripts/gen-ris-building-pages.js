@@ -84,13 +84,12 @@
  * printed as though it always applies — `trade_level_bonus bonus -10 requires hidden_resource
  * UnderSiege1` is a siege penalty, not a permanent -10.
  *
- * LAYOUT. The local viewer (scripts/serve-ris-wiki.js) makes every `## ` section a grid item
- * and flows the sections into as many columns as the window allows, giving a section the full
- * row when its table has more than four columns. So each LEVEL is its own `## ` section —
- * they sit side by side on a wide screen instead of stacking down one narrow column — and the
- * at-a-glance table is deliberately wide enough to claim a full row. Plain markdown
- * throughout: no inline styles, no CSS, so GitHub Pages renders the same pages correctly, just
- * stacked.
+ * LAYOUT. Each LEVEL is its own `## ` section, and the viewer (scripts/serve-ris-wiki.js)
+ * gives these pages a column of their own: one full-width card per level, in the order the
+ * chain upgrades. It used to distribute the sections into two panes like every other page,
+ * which balances heights and therefore reorders — a five-level chain read t1, t2 / t4, t3 / t5.
+ * A chain is a sequence, so the order is the content; see SINGLE_COLUMN there. Plain markdown
+ * throughout: no inline styles, no CSS, so GitHub Pages renders the same pages correctly.
  */
 const fs = require("fs");
 const BUILDINGS = require("./ris-wiki-buildings.js");
@@ -497,6 +496,31 @@ function parseAliases(edb) {
   return out;
 }
 
+/**
+ * The player-facing label an alias carries: `display_string REQUIRES_GOVERNMENT` beside the
+ * condition, whose text is in text/expanded_bi.txt. This is the string the game's own build
+ * browser prints when it tells a player what a building needs, so a requirement quoting it is
+ * not the wiki's paraphrase of the condition — it is the game's.
+ *
+ * `;display_string …` is a COMMENTED OUT label and must not be picked up: no_other_farm carries
+ * a commented REQUIRES_TEMPLE_DESTRUCTION, which would have printed "requires the destruction
+ * of an existing temple" on every farm level in the mod. The `;` strip below is what stops it.
+ */
+function parseAliasDisplays(edb) {
+  const out = {};
+  let name = null;
+  for (const raw of edb.split(SPLIT_EOL)) {
+    const t = raw.replace(/;.*$/, "").trim();
+    let m = /^alias\s+(\S+)/.exec(t);
+    if (m) { name = m[1].toLowerCase(); continue; }
+    if (!name) continue;
+    if (t === "}") { name = null; continue; }
+    m = /^display_string\s+(\S+)/.exec(t);
+    if (m) { out[name] = m[1].trim().toLowerCase(); name = null; }
+  }
+  return out;
+}
+
 // ── parse the EDB ────────────────────────────────────────────────────────────
 function parseChains(edb) {
   const lines = edb.split(SPLIT_EOL);
@@ -604,6 +628,9 @@ function exclusionsOf(requires, aliases) {
 const edb = rd("export_descr_buildings.txt");
 if (!edb) { console.error("export_descr_buildings.txt not found"); process.exit(2); }
 const ALIASES = parseAliases(edb);
+const ALIAS_DISPLAY = parseAliasDisplays(edb);
+// The game's own UI strings, which is where an alias's display_string points.
+const UI_TEXT = loadText("expanded_bi.txt");
 const chains = parseChains(edb).filter((c) => c.order.length);
 if (!chains.length) { console.error("no building chains parsed"); process.exit(2); }
 
@@ -627,6 +654,120 @@ function excludeText(e) {
   return `${shown} at ${min || `\`${e.min}\``} or above`;
 }
 
+// ── what a level needs before it can be built ────────────────────────────────
+/**
+ * A level's `requires` clause, as a list a player can read.
+ *
+ * The clause was already parsed — exclusionsOf() has been mining the `not building_present`
+ * half of it for the Excludes line since the start — but the rest of it was never printed, so
+ * the pages said what a building DOES and never what it NEEDS. That is the half a player
+ * consults first.
+ *
+ * NOTHING HERE IS A PARAPHRASE. Every shorthand in these clauses is an `alias`, and 52 of them
+ * carry the mod's own `display_string`: the exact line the game's build browser shows when it
+ * tells a player what is missing. Those are printed verbatim — `requires_gov` as "Government
+ * Building", `gov_tier_2` as "Indirect Rule". The engine's own terms (`factions { … }`,
+ * `building_present_min_level`, `resource`) are the ones this file already reads elsewhere and
+ * are stated in the same words the Excludes line uses. Anything else is quoted as the game
+ * files write it and decoded by the shorthand glossary at the foot of the page, which the
+ * requires clauses are now fed into. Guessing at a condition is worse than quoting it: a
+ * requirement a reader cannot trust is one they have to check in the game anyway.
+ */
+const uiText = (key) => {
+  const v = UI_TEXT[String(key).toLowerCase()];
+  return v && !isPlaceholder(v) ? v.replace(/\s+/g, " ").trim() : null;
+};
+
+/**
+ * One term of a condition, negation included. Negation is written into each shape rather than
+ * prefixed onto it: "not the region has the X resource" is not English, and a requirement a
+ * reader has to re-parse is no better than the token it replaced.
+ *
+ * `depth` is how far into an alias body this is. An unlabelled shorthand is worth unpacking
+ * once — `nobuilding` is `not hidden_resource nobuild`, which is a sentence — but only while the
+ * body stays short. `irrigation_chain` is seven clauses and `faction_sed_estate_farming` is 200
+ * factions; inlining those buries the requirement it was meant to explain, so they stay as the
+ * shorthand and the glossary at the foot of the page gives the definition in full.
+ */
+const INLINE_ALIAS_TERMS = 3, INLINE_ALIAS_DEPTH = 2, MAX_FACTIONS_SHOWN = 12;
+function requireAtom(atom, depth = 0) {
+  let t = String(atom).trim().replace(/^\(+|\)+$/g, "");
+  let neg = false;
+  const n = /^not\s+(.+)$/i.exec(t);
+  if (n) { neg = true; t = n[1].trim(); }
+  const say = (yes, no) => (neg ? no : yes);
+  let m;
+
+  if ((m = /^factions\s*\{([^}]*)\}$/i.exec(t))) {
+    const list = m[1].split(",").map((x) => x.trim()).filter(Boolean);
+    if (list.length === 1 && list[0].toLowerCase() === "all") return say("any faction", "no faction");
+    // A list of 97 faction tokens is not a requirement a reader can take in. Past a dozen it is
+    // counted instead, and the list itself is one click away in the condition below the bullets
+    // (or, when the list came from a shorthand, in the glossary at the foot of the page).
+    const f = list.length > MAX_FACTIONS_SHOWN
+      ? `${list.length.toLocaleString("en-US")} factions, listed in the condition below`
+      : `\`${list.join(", ")}\``;
+    return say(`your faction is one of ${f}`, `your faction is not one of ${f}`);
+  }
+  if ((m = /^building_present_min_level\s+(\S+)\s+(\S+)$/i.exec(t))) {
+    const b = excludeText({ target: m[1], min: m[2] });
+    return say(`${b} is built here`, `${b} is not built here`);
+  }
+  if ((m = /^building_present\s+(\S+)$/i.exec(t))) {
+    const b = excludeText({ target: m[1], min: null });
+    return say(`${b} is built here`, `${b} is not built here`);
+  }
+  if ((m = /^no_building_tagged\s+(\S+)(\s+queued)?$/i.exec(t))) {
+    const q = m[2] ? " or queued" : "";
+    return say(`no building tagged \`${m[1]}\` is built${q} here`, `a building tagged \`${m[1]}\` is built${q} here`);
+  }
+  if ((m = /^resource\s+(\S+)$/i.exec(t))) {
+    const r = m[1].replace(/_/g, " ");
+    return say(`the region has the ${r} resource`, `the region does not have the ${r} resource`);
+  }
+  if ((m = /^hidden_resource\s+(\S+)(\s+factionwide)?$/i.exec(t))) {
+    const r = `the hidden resource \`${m[1]}\``;
+    const where = m[2] ? "anywhere in your empire" : "the region";
+    return say(`${where} has ${r}`, `${where} does not have ${r}`);
+  }
+  if (/^is_player$/i.test(t)) return say("the settlement is yours", "the settlement is the AI's");
+
+  // A shorthand the mod labelled for the player. Its own wording, unchanged.
+  const label = ALIAS_DISPLAY[t.toLowerCase()] && uiText(ALIAS_DISPLAY[t.toLowerCase()]);
+  if (label) return say(label, `not: ${label}`);
+
+  // An unlabelled shorthand, short enough to read in place.
+  // Short enough to read in place, by the SAME measure the glossary uses for "too long to
+  // quote". The term count alone is not that measure: `homeland` is a single term and 201
+  // alternatives long, and inlining it put a 22,000-character bullet on governmentd.
+  const body = depth < INLINE_ALIAS_DEPTH && ALIASES[t.toLowerCase()];
+  if (body && body.length <= LONG_ALIAS && requireTerms(body).length <= INLINE_ALIAS_TERMS) {
+    const inner = requireTerms(body).map((term) => requireOrRun(term, depth + 1)).join(" and ");
+    // The shorthand is named once, at the outside, and not again on every nested expansion:
+    // "... (`not_mountains`) and ... (`not_karst_terrain`) (`irrigation_tier_2`)" is three names
+    // for one requirement. The outer one is the one the glossary lists.
+    const tag = depth === 0 ? ` (\`${t}\`)` : "";
+    return say(`${inner}${tag}`, `not: ${inner}${tag}`);
+  }
+  return say(`\`${t}\``, `not \`${t}\``);
+}
+
+/** The `and`-separated terms of a condition. An `or` run is one term — see requirementLines. */
+const requireTerms = (expr) =>
+  String(expr || "").split(/\s+and\s+/i).map((s) => s.trim()).filter(Boolean);
+const requireOrRun = (term, depth) =>
+  term.split(/\s+or\s+/i).map((a) => requireAtom(a, depth)).join(" — or — ");
+
+/**
+ * The clause split into the terms a reader has to satisfy. Top-level `and` separates terms; an
+ * `or` run stays inside one term, because the alternatives are the point of it — splitting
+ * `direct_govs or not is_player` into two bullets would state each as though it were required
+ * on its own, which reverses what the clause says.
+ */
+function requirementLines(requires) {
+  return requireTerms(requires).map((term) => requireOrRun(term, 0));
+}
+
 /**
  * The conditions quoted on a page are full of the mod's own shorthands — `disabling_in_winter`,
  * `mic_tier_1_ships`, `not_extreme_cold` — defined once in an `alias` block and reused
@@ -637,6 +778,7 @@ function excludeText(e) {
  * an alias body names further aliases.
  */
 const LONG_ALIAS = 240;
+const FACTION_LIST_BODY = /^factions\s*\{[^}]*\}$/i;
 function aliasesUsed(texts) {
   const found = new Map();
   let frontier = texts;
@@ -659,7 +801,12 @@ function aliasesUsed(texts) {
 }
 /** A shorthand's definition, or an honest count when it is a list too long to quote. */
 function aliasBody(body) {
-  if (body.length <= LONG_ALIAS) return `\`${body.replace(/\|/g, "\\|")}\``;
+  // A `factions { … }` body is quoted however long it is. It is a SINGLE condition — one list of
+  // factions — and the count below would have called a 97-faction list "any one of 1
+  // alternatives", which says nothing and is wrong about the one thing it does say. It is also
+  // the only place that list appears once a requirement bullet has counted it instead of
+  // printing it.
+  if (body.length <= LONG_ALIAS || FACTION_LIST_BODY.test(body.trim())) return `\`${body.replace(/\|/g, "\\|")}\``;
   const n = body.split(/\s+or\s+/).length;
   return `any one of ${n.toLocaleString("en-US")} alternatives — too long to quote here`;
 }
@@ -764,6 +911,17 @@ Costs in denarii, build time in turns.
     if (l.cost == null && l.turns == null && !l.minSize && !l.upgradesTo.length) parts.push("| Cost and build time | not stated in the game files |");
     parts.push("");
 
+    // Before "What it does", because a reader asks whether they CAN build it before they ask
+    // what it would give them. The minimum settlement size is in the table above rather than
+    // repeated here — it is a field of its own in the game files, not part of the condition.
+    const req = requirementLines(l.requires);
+    if (req.length) {
+      parts.push(`**Requirements** — all of these must hold before this level can be built.`, "");
+      parts.push(...req.map((r) => `- ${r}`), "");
+      parts.push(...fold("the condition as the game files write it",
+        [`\`${String(l.requires).replace(/\|/g, "\\|")}\``], 0));
+    }
+
     // One "What it does" heading over both lists. Split into two labelled blocks, a level whose
     // every effect is conditional (every port level, for one) looked as though it did nothing.
     if (eff.effects.length || eff.conditional.length) {
@@ -802,7 +960,10 @@ Costs in denarii, build time in turns.
     return parts.join("\n");
   });
 
-  const glossary = aliasesUsed(rows.flatMap((r) => [...r.eff.conditional, ...r.eff.raw]));
+  // The requires clauses are fed in too: they are full of the same shorthands, and a
+  // requirement that reads `faction_sed_estate_farming` is only useful if the page says what
+  // that stands for.
+  const glossary = aliasesUsed(rows.flatMap((r) => [...r.eff.conditional, ...r.eff.raw, r.l.requires]));
   // Folded. It decodes the shorthands that appear inside the conditional-effect folds above,
   // so it is only wanted by someone who has already opened one of those — and left open it put
   // a table of engine tokens at the foot of every second building page.
