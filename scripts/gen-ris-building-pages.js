@@ -1024,7 +1024,11 @@ for (const e of shown) {
 }
 const subOrder = BUILDINGS.SUBSECTIONS.filter((x) => bySub.has(x))
   .concat([...bySub.keys()].filter((x) => !BUILDINGS.SUBSECTIONS.includes(x)));
-const chainRow = (e) => `| ${e.firstIcon ? `<img src="${e.firstIcon}" alt="" width="24">` : ""} | [${e.name}](buildings/${e.slug}.md) | ${e.levels} | ${e.exclusions || ""} | ${e.blurb || "no description in the game files"} |`;
+// 48px, not 24. The icons are the only picture on the index and the game draws them at
+// 156x124, so at 24 they were a thumbnail of a thumbnail — half the chain art unreadable
+// and the rows too tight to scan. Nothing sets the row height; the icon is what sets it,
+// so doubling the icon doubles the row.
+const chainRow = (e) => `| ${e.firstIcon ? `<img src="${e.firstIcon}" alt="" width="48">` : ""} | [${e.name}](buildings/${e.slug}.md) | ${e.levels} | ${e.exclusions || ""} | ${e.blurb || "no description in the game files"} |`;
 const chainSections = subOrder.map((sub) => [
   `## ${sub}`,
   "",
