@@ -1067,7 +1067,7 @@ const BELIEF_ICON_PX = 16;
 const beliefIcon = (tok) => (BELIEF_ICONS.map[tok]
   ? `<img src="../${BELIEF_ICONS.map[tok]}" alt="" width="${BELIEF_ICON_PX}" height="${BELIEF_ICON_PX}" style="vertical-align:text-bottom"> `
   : "");
-const goodIcon = (tok) => (RES_ICONS.map[tok] ? `<img src="../${RES_ICONS.map[tok]}" alt="" width="24">` : "");
+const goodIcon = (tok) => (RES_ICONS.map[tok] ? `<img src="../${RES_ICONS.map[tok]}" alt="" width="48">` : "");
 
 // Each trade good has its own reference page (gen-ris-trade-goods.js writes one per good,
 // named for the good's internal token). The Trade goods table listed the good as plain bold
@@ -1267,7 +1267,7 @@ ${gated.join("\n")}
   // blocks and the region's recruitment evaluation; a second generator reading the same file
   // would be a second thing to keep in step.
   const builtTable = held && (held.buildings || []).length
-    ? `| | Building chain | Level |\n|:-:|---|---|\n${held.buildings.map((b) => `| ${(() => { const ic = iconFor(held.faction, b.level); return ic ? `<img src="../${ic}" alt="" width="32">` : ""; })()} | ${chainLink(b.chain)} | ${levelLink(b)} |`).join("\n")}`
+    ? `| | Building chain | Level |\n|:-:|---|---|\n${held.buildings.map((b) => `| ${(() => { const ic = iconFor(held.faction, b.level); return ic ? `<img src="../${ic}" alt="" width="64">` : ""; })()} | ${chainLink(b.chain)} | ${levelLink(b)} |`).join("\n")}`
     : held ? "_Nothing is built here at the campaign start._"
       : "_No faction holds this settlement at the campaign start, so the campaign file records nothing built in it._";
   const townGlance = [

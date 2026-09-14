@@ -877,7 +877,7 @@ for (const c of list) {
 
 | | Level | Cost | Build time | Minimum settlement | Upgrades to |${anyEx ? " Excludes |" : ""}
 |:-:|---|---:|---:|---|---|${anyEx ? "---|" : ""}
-${rows.map((r) => `| ${r.ic ? `<img src="../${r.ic}" alt="" width="28">` : ""} | ${anchorSafe(r.name) ? `[${r.name}](#${anchor(r.name)})` : r.name} | ${r.l.cost != null ? r.l.cost.toLocaleString("en-US") : "not stated"} | ${r.l.turns != null ? r.l.turns : "not stated"} | ${r.l.minSize ? r.l.minSize.replace(/_/g, " ") : "any"} | ${r.l.upgradesTo.length ? r.l.upgradesTo.map((u) => dName(u) || u).join(", ") : "—"} |${anyEx ? ` ${r.ex.length ? r.ex.map(excludeText).join("; ") : "—"} |` : ""}`).join("\n")}
+${rows.map((r) => `| ${r.ic ? `<img src="../${r.ic}" alt="" width="56">` : ""} | ${anchorSafe(r.name) ? `[${r.name}](#${anchor(r.name)})` : r.name} | ${r.l.cost != null ? r.l.cost.toLocaleString("en-US") : "not stated"} | ${r.l.turns != null ? r.l.turns : "not stated"} | ${r.l.minSize ? r.l.minSize.replace(/_/g, " ") : "any"} | ${r.l.upgradesTo.length ? r.l.upgradesTo.map((u) => dName(u) || u).join(", ") : "—"} |${anyEx ? ` ${r.ex.length ? r.ex.map(excludeText).join("; ") : "—"} |` : ""}`).join("\n")}
 
 Costs in denarii, build time in turns.
 ` : "";

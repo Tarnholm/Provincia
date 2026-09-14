@@ -608,7 +608,7 @@ function sizePage(size, i) {
 
   const levelRows = levels.map((l) => {
     const ic = iconFor(l.level);
-    return `| ${ic ? `<img src="../${ic}" alt="" width="32">` : ""} | ${levelLink(l.chain, l.level)} | ${chainLink(l.chain)} |`;
+    return `| ${ic ? `<img src="../${ic}" alt="" width="64">` : ""} | ${levelLink(l.chain, l.level)} | ${chainLink(l.chain)} |`;
   });
   // The card column is dropped above CARDS_UPTO rows. One size gates almost the entire roster,
   // and 739 unit cards on one page is 34 MB of image the reader did not ask for — a browser
@@ -828,7 +828,10 @@ ${PAGES.map((p) => {
   const art = rows.find((r) => r.culture === "roman" && r.png) || rows[0];
   const ownArt = art && art.png && !LADDER.slice(0, LADDER.indexOf(p.size))
     .some((s) => (ART_OUT.bySize.get(s) || []).some((r) => r.png && r.png.name === art.png.name));
-  return `| ${ownArt ? `<img src="settlement-cards/${art.png.name}" alt="" width="48">` : ""} | [${p.name}](sizes/${p.size}.md) | ${one(up)} | ${one(mx)} | ${p.levels || "—"} | ${p.units || "—"} | ${num(p.start)} |`;
+  // 78, which is the card art's own width. The other index icons doubled to 64 and these
+  // would have gone to 96, but the source PNG is 78x62: past that the browser is inventing
+  // pixels, and a soft icon is not a bigger one.
+  return `| ${ownArt ? `<img src="settlement-cards/${art.png.name}" alt="" width="78">` : ""} | [${p.name}](sizes/${p.size}.md) | ${one(up)} | ${one(mx)} | ${p.levels || "—"} | ${p.units || "—"} | ${num(p.start)} |`;
 }).join("\n")}
 
 ${(() => {

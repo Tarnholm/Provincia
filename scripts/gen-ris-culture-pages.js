@@ -667,7 +667,7 @@ function culturePage(f, all) {
   const levels = f.levels.slice().sort((a, b) => levelName(a.level).localeCompare(levelName(b.level)));
   const levelRows = levels.map((l) => {
     const ic = iconFor(tok, l.level);
-    return `| ${ic ? `<img src="../${ic}" alt="" width="32">` : ""} | ${levelLink(l.chain, l.level)} | ${chainLink(l.chain)} |`;
+    return `| ${ic ? `<img src="../${ic}" alt="" width="64">` : ""} | ${levelLink(l.chain, l.level)} | ${chainLink(l.chain)} |`;
   });
   const levelTable = `| | Level | Chain |\n|:-:|---|---|\n${levelRows.join("\n")}`;
   const GOV_CHAIN = /^government/i;
@@ -793,13 +793,13 @@ ${c.unrest && Object.keys(c.unrest).length
 ${govLevels.length
     ? `**${govLevels.length}** government ${govLevels.length === 1 ? "level names" : "levels name"} this culture in ${govLevels.length === 1 ? "its" : "their"} own requirement. Government is the chain that gates most of the rest of the tree, so this is where a culture bites hardest.
 
-${maybeFold(`The ${govLevels.length} government levels`, govLevels.length, `| | Level | Chain |\n|:-:|---|---|\n${govLevels.map((l) => { const ic = iconFor(tok, l.level); return `| ${ic ? `<img src="../${ic}" alt="" width="32">` : ""} | ${levelLink(l.chain, l.level)} | ${chainLink(l.chain)} |`; }).join("\n")}`)}`
+${maybeFold(`The ${govLevels.length} government levels`, govLevels.length, `| | Level | Chain |\n|:-:|---|---|\n${govLevels.map((l) => { const ic = iconFor(tok, l.level); return `| ${ic ? `<img src="../${ic}" alt="" width="64">` : ""} | ${levelLink(l.chain, l.level)} | ${chainLink(l.chain)} |`; }).join("\n")}`)}`
     : `_No government level names this culture. All ${num(EDB.chains.filter((x) => GOV_CHAIN.test(x.chain)).reduce((a, x) => a + Object.keys(x.levels).length, 0))} levels of the ${EDB.chains.filter((x) => GOV_CHAIN.test(x.chain)).length} government chains were checked._`}
 
 ### Other building levels — ${otherLevels.length}
 
 ${otherLevels.length
-    ? `${maybeFold(`The ${otherLevels.length} levels`, otherLevels.length, `| | Level | Chain |\n|:-:|---|---|\n${otherLevels.map((l) => { const ic = iconFor(tok, l.level); return `| ${ic ? `<img src="../${ic}" alt="" width="32">` : ""} | ${levelLink(l.chain, l.level)} | ${chainLink(l.chain)} |`; }).join("\n")}`)}`
+    ? `${maybeFold(`The ${otherLevels.length} levels`, otherLevels.length, `| | Level | Chain |\n|:-:|---|---|\n${otherLevels.map((l) => { const ic = iconFor(tok, l.level); return `| ${ic ? `<img src="../${ic}" alt="" width="64">` : ""} | ${levelLink(l.chain, l.level)} | ${chainLink(l.chain)} |`; }).join("\n")}`)}`
     : NOTHING_BUILD(EDB.chains.reduce((a, x) => a + Object.keys(x.levels).length, 0))}
 
 ### What it blocks — ${f.blockedLevels.length}
