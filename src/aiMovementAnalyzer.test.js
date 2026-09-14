@@ -224,8 +224,8 @@ describe("empty / unsuitable logs are reported honestly (not as 'all clear')", (
     expect(r.emptyReason).toMatch(/campaign_ai_log\.txt/); // tells the user where to look
   });
 
-  it("marks a real movement log usable with no emptyReason", () => {
-    const r = analyzeMovementLog(fs.readFileSync(LOG, "utf8")); // archived 97-turn campaign
+  it.runIf(haveLog)("marks a real movement log usable with no emptyReason", () => {
+    const r = analyzeMovementLog(text); // archived 97-turn campaign
     expect(r.usable).toBe(true);
     expect(r.emptyReason).toBeNull();
   });
