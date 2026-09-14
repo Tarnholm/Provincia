@@ -28,9 +28,20 @@ describe("messageLogParser flee_tile (real-log field orders)", () => {
   });
 });
 
-describe("analyzeMovementLog on the archived 97-turn campaign", () => {
-  const text = fs.readFileSync(LOG, "utf8");
-  const r = analyzeMovementLog(text);
+// calibration/ is gitignored -- the archive is a 2.1 MB real campaign log, kept on the
+// machine that records it, not in the repo. On a clone (every CI run) it is absent, and
+// reading it at collection time took the WHOLE FILE down: the parser checks above, which
+// need no log at all, never ran either. Read up front and guard the suite, rather than
+// inside the describe, because a skipped suite's body is still collected.
+const haveLog = fs.existsSync(LOG);
+if (!haveLog) {
+  // Out loud: a silent skip reads exactly like a pass.
+  console.log(`[ai-movement] archived campaign log absent (${LOG}) -- analyzer checks against it NOT run`);
+}
+const text = haveLog ? fs.readFileSync(LOG, "utf8") : "";
+const r = haveLog ? analyzeMovementLog(text) : null;
+
+describe.runIf(haveLog)("analyzeMovementLog on the archived 97-turn campaign", () => {
 
   it("attributes the full campaign", () => {
     expect(r.totalTurns).toBeGreaterThanOrEqual(97);

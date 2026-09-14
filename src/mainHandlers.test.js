@@ -107,7 +107,14 @@ describe("userData file handlers — containment + round-trip (real handlers)", 
 describe("campaign_data file handlers — traversal rejection (real handlers)", () => {
   // Only the rejection paths are exercised (they return before any write), so
   // these don't touch the repo build/ dir the success path also writes to.
-  const travNames = ["..\\..\\..\\Windows\\System32\\x.txt", "../../../etc/x", "..\\escape.tga"];
+  // Split by platform, because a backslash is a path separator on Windows and an ORDINARY
+  // FILENAME CHARACTER on Linux: "..\escape.tga" is one legal file name there, not an escape,
+  // so the handler is right to accept it and the assertion was wrong, not the code. The app
+  // ships on Windows; the Linux job is here for speed, and it still exercises the forward-
+  // slash traversal that means the same thing everywhere.
+  const travNames = process.platform === "win32"
+    ? ["..\\..\\..\\Windows\\System32\\x.txt", "../../../etc/x", "..\\escape.tga"]
+    : ["../../../etc/x", "../escape.tga"];
 
   it("save-file rejects traversal names (returns false)", async () => {
     for (const n of travNames) expect(await H.invoke("save-file", n, "x")).toBe(false);

@@ -14,9 +14,16 @@ import { fillCampaignFilesFromBase } from "./baseModFallback.js";
 const CAMPAIGN_FILES = ["descr_regions.txt", "descr_strat.txt", "descr_win_conditions.txt", "map_regions.tga", "map_ground_types.tga", "map_heights.tga"];
 const SHARED_FILES = ["descr_sm_factions.txt"];
 
-const SUB = path.join("C:", "mods", "_submods", "four_romans", "data");
-const BASE = path.join("C:", "mods", "ris", "data");
-const VAN = path.join("C:", "steam", "rome", "data");
+// An absolute root on whichever platform is running. path.join("C:", "mods") is a
+// DRIVE-RELATIVE path on Windows and a plain relative one on Linux, so the module under
+// test resolved it against the CI runner's cwd and every assertion compared a resolved
+// path against an unresolved one. The paths here are fixtures, not real locations -- what
+// the test is about is which of the three trees wins -- so the only requirement on the root
+// is that it be absolute.
+const ROOT = process.platform === "win32" ? "C:\\" : "/mnt/c";
+const SUB = path.join(ROOT, "mods", "_submods", "four_romans", "data");
+const BASE = path.join(ROOT, "mods", "ris", "data");
+const VAN = path.join(ROOT, "steam", "rome", "data");
 
 const subCampDir = path.join(SUB, "world", "maps", "campaign", "imperial_campaign");
 
@@ -85,7 +92,7 @@ describe("fillCampaignFilesFromBase", () => {
   it("a FULL mod fills from its OWN world/maps/base — never from sibling mods", () => {
     const fullCampDir = path.join(BASE, "world", "maps", "campaign", "imperial_campaign");
     const camp = { name: "imperial_campaign", dir: fullCampDir, found: {} };
-    const other = path.join("C:", "mods", "other", "data");
+    const other = path.join(ROOT, "mods", "other", "data");
     fillCampaignFilesFromBase([camp], CAMPAIGN_FILES, SHARED_FILES, {
       fs: fakeFs([...baseTree, path.join(other, "world", "maps", "base", "map_regions.tga")]),
       findRelatedModDirs: () => { throw new Error("must not be called for a full mod"); },
@@ -141,7 +148,7 @@ describe("fillCampaignFilesFromBase", () => {
   });
 
   it("skips a campaign whose dir is not in the <dataRoot>/world/maps/campaign/<name> layout", () => {
-    const weird = path.join("C:", "somewhere", "loose_campaign");
+    const weird = path.join(ROOT, "somewhere", "loose_campaign");
     const camp = { name: "loose_campaign", dir: weird, found: {} };
     fillCampaignFilesFromBase([camp], CAMPAIGN_FILES, SHARED_FILES, {
       fs: fakeFs(baseTree), findRelatedModDirs: () => [BASE],
