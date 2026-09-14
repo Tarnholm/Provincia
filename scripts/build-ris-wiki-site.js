@@ -79,10 +79,98 @@ const viewer = (() => {
 const { renderMarkdown, sectionise, SHELL, CSS, INDEX } = viewer;
 
 // Team notes the team wrote in the GitHub wiki, pulled in by scripts/pull-github-wiki-notes.js
-const { readNote, NOTES_DIR, LF } = require("./ris-wiki-notes.js");
+const { readNote, readTeamPages, NOTES_DIR, PAGES_DIR, LF } = require("./ris-wiki-notes.js");
 const NOTES = path.resolve(valOf("--notes", NOTES_DIR));
 const NOTE_SEP = LF + LF + "## Team notes" + LF + LF;
 let notesMerged = 0;
+
+// -- pages the team wrote -----------------------------------------------------
+// Two kinds of team writing reach this build from the GitHub wiki, both pulled in by
+// scripts/pull-github-wiki-notes.js: NOTES, appended under the marker on a generated page and
+// merged into it in the render loop below; and PAGES the team created, which no generator owns
+// and which therefore have no place in C:/RIS/RIS/wiki at all. Those are rendered here into
+// team/, through the same shell as everything else, so a contributor's article reads as part
+// of the wiki rather than as an attachment to it.
+//
+// THE LINKS ARE THE WHOLE PROBLEM. A teammate writing in the wiki links the way the wiki
+// links -- `[[Akarnania]]`, or `/Tarnholm/ris-wiki/wiki/regions-Akarnania` -- and those flat
+// names exist nowhere in this site's layout. page-map.json (written by build-github-wiki.js,
+// copied into the store by the pull) is the only thing that can turn one back into a path, so
+// it travels with the pages. A link that no longer resolves -- because a data regeneration
+// renamed or dropped the page it pointed at -- is REPORTED and rendered as plain text: a dead
+// link must not be published in silence, and one stale link in a contributor's prose must not
+// stop the game data from being published either.
+const TEAM_PAGES_DIR = path.resolve(valOf("--pages", PAGES_DIR));
+const TEAM_MAP_FILE = path.join(TEAM_PAGES_DIR, "page-map.json");
+const TEAM_MAP = fs.existsSync(TEAM_MAP_FILE)
+  ? JSON.parse(fs.readFileSync(TEAM_MAP_FILE, "utf8")) : {};
+const TEAM = readTeamPages(TEAM_PAGES_DIR).map((p) => ({
+  name: p.name,
+  md: p.md,
+  rel: "team/" + p.name + ".md",
+  title: (/^#\s+(.+)$/m.exec(p.md) || [, p.name.split("-").join(" ")])[1].trim(),
+}));
+const TEAM_HUB = "team.md";
+// mapUrl checks every target against the source wiki; these pages are produced here instead,
+// so without this every link to one would be reported as a missing file.
+const PRODUCED_HERE = new Set(TEAM.length ? [TEAM_HUB, ...TEAM.map((p) => p.rel)] : []);
+
+const teamUnresolved = [];    // { from, target }
+let teamLinks = 0;
+
+// A flat GitHub-wiki page name -> a root-relative target in this site, or null.
+function teamTarget(flat, fromName, quiet) {
+  const hash = flat.indexOf("#");
+  const frag = hash >= 0 ? flat.slice(hash) : "";
+  const bare = decodeURIComponent(hash >= 0 ? flat.slice(0, hash) : flat).trim();
+  if (!bare) return null;
+  const src = TEAM_MAP[bare];
+  if (src) { teamLinks++; return "/" + src.split("\\").join("/") + frag; }
+  // A link from one team page to another: those are not in the map, they are in the store.
+  if (TEAM.some((t) => t.name === bare)) { teamLinks++; return "/team/" + bare + ".md" + frag; }
+  if (!quiet) teamUnresolved.push({ from: fromName, target: bare });
+  return null;
+}
+
+// The wiki link syntaxes the team actually has available, turned into ordinary markdown links
+// pointing at this site's paths. Done on the markdown, not the rendered HTML, so the renderer
+// -- the SAME renderer every generated page goes through -- only ever sees a normal link.
+function resolveTeamLinks(md, fromName) {
+  // [[Page]], and the two-part form. Gollum (which is what GitHub wikis run) documents
+  // [[Label|Page]], MediaWiki habit writes [[Page|Label]], and contributors will write both.
+  // Rather than punish whoever guesses wrong, each side is tried as the page name and whichever
+  // one names a real page wins; Gollum's order is preferred when both do. Only when NEITHER
+  // side resolves is the link reported and flattened to text.
+  md = md.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (m, a, b) => {
+    if (b === undefined) {
+      const t = teamTarget(a, fromName);
+      return t ? `[${a.trim()}](${t})` : a.trim();
+    }
+    const asGollum = teamTarget(b, fromName, true);
+    if (asGollum) return `[${a.trim()}](${asGollum})`;
+    const asMediaWiki = teamTarget(a, fromName, true);
+    if (asMediaWiki) return `[${b.trim()}](${asMediaWiki})`;
+    teamUnresolved.push({ from: fromName, target: b.trim() });
+    return a.trim();
+  });
+  md = md.replace(/\[([^\]\n]*)\]\((?:https?:\/\/github\.com)?\/Tarnholm\/ris-wiki\/wiki\/([^)\s]+)\)/g,
+    (m, label, flat) => {
+      const t = teamTarget(flat, fromName);
+      return t ? `[${label}](${t})` : label;
+    });
+  return md;
+}
+
+// The section appended to the index so the team's pages are reachable from the front door.
+// Kept here beside the pages themselves rather than in the render loop: if the team has
+// written nothing, nothing is appended and the index is byte-identical to before.
+const TEAM_INDEX_SECTION = LF + LF + [
+  "## Written by the team",
+  "",
+  `[Team pages](/${TEAM_HUB}) — ${TEAM.length} page${TEAM.length === 1 ? "" : "s"} written by the team in the wiki,`,
+  "rather than generated from the game files.",
+  "",
+].join(LF);
 
 // ── the pages ────────────────────────────────────────────────────────────────
 const walk = (dir, hit) => {
@@ -157,7 +245,8 @@ function mapUrl(fromRel, raw) {
   const rootRel = toRootRel(fromRel, decodeURIComponent(bare));
   // Produced by this script rather than copied from the wiki, so their absence from the
   // source directory is not a missing reference.
-  const produced = ["search.html", "index.html", "search-index.js", "wiki.css", "wiki.js"].includes(rootRel);
+  const produced = ["search.html", "index.html", "search-index.js", "wiki.css", "wiki.js"].includes(rootRel)
+    || PRODUCED_HERE.has(rootRel);
   if (!produced && !fs.existsSync(path.join(WIKI, rootRel))) notedMissing(rootRel, fromRel);
   else if (!produced && !/\.(md|html)$/i.test(rootRel)) {
     assetRefs.set(rootRel, (assetRefs.get(rootRel) || 0) + 1);
@@ -289,32 +378,50 @@ var m={};try{Object.defineProperty(window,"localStorage",{value:{getItem:functio
 setItem:function(k,v){m[k]=String(v);},removeItem:function(k){delete m[k];}},configurable:true});}catch(e2){}}})();
 </script>`;
 
-// Clear the site's CONTENTS, not the folder itself: the output dir is also the git clone that
-// publishes to GitHub Pages (Tarnholm/ris-wiki), and an rmSync of the root deleted .git once —
-// severing the published history. .git and .nojekyll survive a rebuild.
-// .github holds the workflow that publishes wiki notes, and wiki-notes holds the notes it
-// has already published. Both are written by CI, not by this build, so a rebuild that swept
-// them away would silently delete the automation and every note the team had written.
-const KEEP = new Set([".git", ".nojekyll", ".github", "wiki-notes"]);
-if (fs.existsSync(SITE)) {
-  for (const entry of fs.readdirSync(SITE)) {
-    if (!KEEP.has(entry)) fs.rmSync(path.join(SITE, entry), { recursive: true, force: true });
-  }
-}
+// The output directory is also the git clone that publishes to GitHub Pages
+// (Tarnholm/ris-wiki), so what this build removes from it is removed from the published site.
+//
+// IT USED TO CLEAR THE WHOLE TREE except a KEEP set, and that cost a teammate their file:
+// someone committed `test` at the site root, a rebuild swept it away because it was not in
+// KEEP, and `git add -A` published the deletion (73dae8c4). KEEP could only ever list the
+// files whoever edited this script had thought of; a person adding a file to a repo they can
+// write to has not consulted that list.
+//
+// So the build now deletes only what the build itself made. .build-manifest.json records
+// every path the previous run wrote; anything in it that this run did not write is stale
+// output and goes. Anything NOT in it was put there by someone else and is reported, never
+// removed -- the same rule the other scripts in this family follow. --prune-unknown deletes
+// those too, for the rare case of a genuinely abandoned directory.
+const MANIFEST = ".build-manifest.json";
+const PRUNE_UNKNOWN = argv.includes("--prune-unknown");
+// Still never touched, whoever wrote them: git's own directory, the Pages marker, the
+// workflow that publishes notes, and the notes CI has already published.
+const KEEP = new Set([".git", ".nojekyll", ".github", "wiki-notes", MANIFEST]);
+
+const previous = (() => {
+  try { return new Set(JSON.parse(fs.readFileSync(path.join(SITE, MANIFEST), "utf8")).files); }
+  catch { return null; }
+})();
+const written = new Set();   // site-relative posix paths this run produced
+const wrote = (abs) => {
+  written.add(path.relative(SITE, abs).split(path.sep).join("/"));
+  return abs;
+};
+
 fs.mkdirSync(SITE, { recursive: true });
 // The stylesheet gets the same URL rewriting the pages do, and it is written AT THE SITE ROOT,
 // so its one url() is resolved from there. Writing the raw constant instead left
 // `url(/art/ris-rule.png)` in it, which under file:// asks for C:\art\ris-rule.png — so every
 // page in the wiki lost the mod's rule under its title and nothing else looked wrong. A real
 // browser found that; no amount of reading the HTML would have, because the HTML was correct.
-fs.writeFileSync(path.join(SITE, "wiki.css"), rewriteHtml(CSS, "wiki.css"));
-fs.writeFileSync(path.join(SITE, "wiki.js"),
+fs.writeFileSync(wrote(path.join(SITE, "wiki.css")), rewriteHtml(CSS, "wiki.css"));
+fs.writeFileSync(wrote(path.join(SITE, "wiki.js")),
   SHELL_SCRIPT.replace(/^<script>|<\/script>$/g, "") + EXTRA_JS);
 
 const writeOut = (rel, text) => {
   const abs = path.join(SITE, rel);
   fs.mkdirSync(path.dirname(abs), { recursive: true });
-  fs.writeFileSync(abs, text);
+  fs.writeFileSync(wrote(abs), text);
 };
 
 // Turn one shell-rendered page into a file:// -safe document.
@@ -340,6 +447,10 @@ for (const rel of mdPages) {
   // generators rewrite that wholesale; merging them here is what puts them on the site.
   const note = readNote(rel, NOTES);
   if (note) { md = md.trimEnd() + NOTE_SEP + note + "\n"; notesMerged++; }
+  // The index is the only page no generator will ever link the team's pages from, and a page
+  // nothing links to is a page nobody finds. Appended to the markdown rather than to the HTML
+  // so it picks up the same section treatment as everything else on the index.
+  if (rel === "README.md" && TEAM.length) md = md.trimEnd() + TEAM_INDEX_SECTION;
   const title = (/^#\s+(.+)$/m.exec(md) || [, path.basename(rel)])[1];
   // The toc has to be kept and handed on, not created in the argument list: renderMarkdown fills
   // the array it is given, and SHELL builds the bar's jump strip out of it. Passing a throwaway
@@ -352,13 +463,55 @@ for (const rel of mdPages) {
 note(`pages rendered: ${n(rendered)} (from ${n(mdPages.length)} .md files under ${WIKI})`);
 note(`team notes merged: ${n(notesMerged)} (from ${NOTES})`);
 
+// ── the team's own pages, and the hub that lists them ────────────────────────
+// Rendered after the generated corpus so that a link FROM one of them to a game page is
+// resolved against the wiki that was just built, not against whatever was there last time.
+let teamRendered = 0;
+if (TEAM.length) {
+  for (const p of TEAM) {
+    const md = resolveTeamLinks(p.md, p.name);
+    const toc = [];
+    const html = SHELL(p.title, sectionise(renderMarkdown(md, toc)), "/" + p.rel, toc);
+    writeOut(p.rel.replace(/\.md$/i, ".html"), finish(html, p.rel));
+    INDEX.push({ title: p.title, rel: "/" + p.rel, section: "team" });
+    teamRendered++;
+  }
+  const hubMd = [
+    "# Team pages",
+    "",
+    "Written by the team in [the wiki](https://github.com/Tarnholm/ris-wiki/wiki), not generated",
+    "from the game files. Everything else on this site is rebuilt from the RIS data on every",
+    "update; these pages are not, and are only ever changed by the person who writes them.",
+    "",
+    ...TEAM.map((p) => `- [${p.title}](/${p.rel})`),
+    "",
+  ].join(LF);
+  const hubToc = [];
+  const hubHtml = SHELL("Team pages", sectionise(renderMarkdown(hubMd, hubToc)), "/" + TEAM_HUB, hubToc);
+  writeOut(TEAM_HUB.replace(/\.md$/i, ".html"), finish(hubHtml, TEAM_HUB));
+  INDEX.push({ title: "Team pages", rel: "/" + TEAM_HUB, section: "team" });
+}
+note(`team pages: ${n(teamRendered)} rendered (from ${TEAM_PAGES_DIR}), ${n(teamLinks)} links into the game data resolved`);
+
+// A link a contributor wrote that no longer resolves. Reported in full and never fatal: the
+// usual cause is a data regeneration renaming the page it pointed at, and the game data must
+// still publish. This is the one check nothing else does -- verify-ris-wiki.js reads only the
+// generated corpus, so without this a renamed region silently dead-ends a teammate's prose.
+if (teamUnresolved.length) {
+  console.log("");
+  console.log(`⚠ ${teamUnresolved.length} link${teamUnresolved.length === 1 ? "" : "s"} in team-written pages no longer resolve — rendered as plain text:`);
+  for (const u of teamUnresolved.slice(0, 30)) console.log(`  ${u.from}  ->  ${u.target}`);
+  if (teamUnresolved.length > 30) console.log(`  ... and ${teamUnresolved.length - 30} more`);
+  console.log("");
+}
+
 // The root README is the entry point. `file://` will not serve a folder's README for you, so
 // index.html is a byte copy of it — same directory, so every relative link in it still lands.
 if (!fs.existsSync(path.join(SITE, "README.html"))) {
   console.error("no README.md at the wiki root — the site would have no index page");
   process.exit(2);
 }
-fs.copyFileSync(path.join(SITE, "README.html"), path.join(SITE, "index.html"));
+fs.copyFileSync(path.join(SITE, "README.html"), wrote(path.join(SITE, "index.html")));
 
 // ── the sortable views ───────────────────────────────────────────────────────
 // Hand-generated HTML, not markdown, and they carry their table data inline as JSON with
@@ -387,7 +540,7 @@ const searchRows = INDEX.map((e) => {
   const rootRel = e.rel.replace(/^\//, "");
   return [e.title, outNameOf(rootRel), e.section];
 });
-fs.writeFileSync(path.join(SITE, "search-index.js"),
+fs.writeFileSync(wrote(path.join(SITE, "search-index.js")),
   `window.RIS_PAGES=${JSON.stringify(searchRows)};\n`);
 
 const SEARCH_BODY = `<h1>Search</h1>
@@ -472,7 +625,7 @@ for (const rootRel of assetRefs.keys()) {
   if (WITHOUT.has(top)) { skipped++; skippedBytes += size; continue; }
   const dst = path.join(SITE, rootRel);
   fs.mkdirSync(path.dirname(dst), { recursive: true });
-  fs.copyFileSync(src, dst);
+  fs.copyFileSync(src, wrote(dst));
   copied++; copiedBytes += size;
 }
 
@@ -498,6 +651,57 @@ note(`case-mismatched references: ${caseMismatch}${caseSamples.length ? " — e.
 // https://github.com/Tarnholm/ris-wiki/wiki — there is no local step to explain.
 const openMe = path.join(SITE, "OPEN-ME.txt");
 if (fs.existsSync(openMe)) fs.unlinkSync(openMe);
+
+// ── clean up after the PREVIOUS build, and nothing else ──────────────────────
+// The only files this may delete are ones a previous run of this script wrote and this run
+// did not: a page whose source was renamed, an asset no longer referenced. A file nobody here
+// made -- something a person committed to the Pages repo by hand -- is reported and left
+// exactly where it is. That is the whole rule, and it is enforced by the manifest rather than
+// by a list of names someone has to remember to update.
+const walkSite = (dir, acc = []) => {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (dir === SITE && KEEP.has(e.name)) continue;
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) walkSite(p, acc); else acc.push(path.relative(SITE, p).split(path.sep).join("/"));
+  }
+  return acc;
+};
+const onDisk = walkSite(SITE);
+let removed = 0, removedBytes = 0;
+const foreign = [];
+for (const rel of onDisk) {
+  if (written.has(rel)) continue;
+  const mine = previous ? previous.has(rel) : false;
+  if (!mine) { foreign.push(rel); continue; }
+  const abs = path.join(SITE, rel);
+  try { removedBytes += fs.statSync(abs).size; } catch { /* size is for the report only */ }
+  fs.rmSync(abs, { force: true });
+  removed++;
+}
+// Empty directories left behind by those deletions, deepest first. A directory that still
+// holds someone else's file is not empty and so is never touched.
+for (const d of [...new Set(onDisk.map((r) => path.posix.dirname(r)))].filter((d) => d !== ".").sort((a, b) => b.length - a.length)) {
+  const abs = path.join(SITE, d);
+  try { if (fs.readdirSync(abs).length === 0) fs.rmdirSync(abs); } catch { /* not empty, or gone */ }
+}
+
+let prunedForeign = 0;
+if (foreign.length && PRUNE_UNKNOWN) {
+  for (const rel of foreign) { fs.rmSync(path.join(SITE, rel), { force: true }); prunedForeign++; }
+}
+
+fs.writeFileSync(path.join(SITE, MANIFEST),
+  JSON.stringify({ built: new Date().toISOString(), files: [...written].sort() }, null, 0) + "\n");
+
+note(`stale output removed: ${n(removed)} file(s)${removedBytes ? ` (${(removedBytes / 1048576).toFixed(1)} MB)` : ""}${previous ? "" : " — no manifest yet, so nothing was treated as stale on this run"}`);
+if (foreign.length) {
+  console.log("");
+  console.log(`${foreign.length} file(s) in the site that this build did not write — LEFT IN PLACE${PRUNE_UNKNOWN ? ", then deleted because --prune-unknown was passed" : ""}:`);
+  for (const f of foreign.slice(0, 20)) console.log("   " + f);
+  if (foreign.length > 20) console.log(`   ... and ${foreign.length - 20} more`);
+  if (!PRUNE_UNKNOWN) console.log("   (someone added these by hand; they are published as they are)");
+  console.log("");
+}
 
 // ── totals ───────────────────────────────────────────────────────────────────
 let files = 0, bytes = 0;

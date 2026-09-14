@@ -9,6 +9,12 @@
 const fs = require('fs'), path = require('path');
 
 const NOTES_DIR = 'C:/RIS/RIS/wiki-notes';
+// Whole pages the team CREATED in the wiki, as opposed to notes they appended to a generated
+// page. They have no TEAM-NOTES marker because no generator ever wrote them, and they are
+// absent from page-map.json for the same reason -- which is exactly how they are recognised.
+// Same reasoning as the notes store for why they cannot live in C:/RIS/RIS/wiki: the
+// generators rewrite that wholesale. Both stores sit in the RIS repo, so the team shares them.
+const PAGES_DIR = 'C:/RIS/RIS/wiki-pages';
 const MARK = '<!-- TEAM-NOTES -- everything below this line is kept when the wiki is re-imported -->';
 const PLACEHOLDER = 'Nothing yet. Click **Edit** above and write below the line -- it will survive the next import.';
 const HEADING = 'Team notes';
@@ -46,4 +52,18 @@ function readNote(rel, notesDir) {
   return t || null;
 }
 
-module.exports = { NOTES_DIR, MARK, PLACEHOLDER, HEADING, LF, pageName, extractNotes, readNote };
+// A team-written page, as stored: the markdown exactly as the author left it in the wiki.
+// A missing store is simply "no team pages", not an error: it is created on the first pull.
+function readTeamPages(pagesDir) {
+  const dir = pagesDir || PAGES_DIR;
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir)
+    .filter((f) => f.endsWith('.md'))
+    .sort()
+    .map((f) => ({ name: f.replace(/\.md$/, ''), md: fs.readFileSync(path.join(dir, f), 'utf8') }));
+}
+
+module.exports = {
+  NOTES_DIR, PAGES_DIR, MARK, PLACEHOLDER, HEADING, LF,
+  pageName, extractNotes, readNote, readTeamPages,
+};

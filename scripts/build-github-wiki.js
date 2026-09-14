@@ -10,6 +10,9 @@ const OUT = process.argv[3];
 // clone is only a fallback for the very first run, before anything was pulled back.
 const NOTES = require('./ris-wiki-notes.js');
 const NOTES_STORE = process.env.RIS_WIKI_NOTES || NOTES.NOTES_DIR;
+// Whole pages the team wrote. Read here only to tell them apart from genuinely stale
+// leftovers in the report at the end -- this script never rewrites them.
+const PAGES_STORE = process.env.RIS_WIKI_PAGES || NOTES.PAGES_DIR;
 const PREV = process.argv[4] || null;
 
 const CR = String.fromCharCode(13), LF = String.fromCharCode(10);
@@ -147,6 +150,17 @@ const pageMap = {};
 for (const rel of pageSet) pageMap[pageName(rel)] = rel;
 fs.writeFileSync(path.join(OUT, 'page-map.json'), JSON.stringify(pageMap));
 
+// A stamp saying "this is where the machine last wrote". It is what makes
+// scripts/diff-github-wiki.js able to answer "what have the team changed since?" exactly,
+// instead of guessing an import from how many files a commit touched -- a guess that is
+// wrong for a small re-import (one touched three files) and for a big hand-edit alike.
+// Written on every import, so the commit that carries it IS the boundary.
+fs.writeFileSync(path.join(OUT, '.import-stamp.json'), JSON.stringify({
+  imported: new Date().toISOString(),
+  pages: stats.files,
+  source: SRC,
+}, null, 2) + LF);
+
 // Sidebar — the flat page list is unusable at this scale without one
 const SB = [
   '### Start here', '',
@@ -195,14 +209,30 @@ fs.writeFileSync(path.join(OUT, '_Sidebar.md'), SB);
 // Anything in the existing wiki with no source page any more is REPORTED, never
 // removed. Push by copying over the top; do not `git rm` the wiki first, or a
 // page someone hand-created disappears with no warning.
+//
+// Two very different things end up in that list, so they are named separately. A page the
+// TEAM wrote is not stale — it is the point — and telling its author to delete it by hand
+// would be the worst advice this script could give. It is recognised by being in the pages
+// store, which is where pull-github-wiki-notes.js puts every page no generator owns.
 if (PREV) {
   const emitted = new Set(fs.readdirSync(OUT).filter((f) => f.endsWith('.md')));
-  const orphans = fs.readdirSync(PREV)
+  const teamOwned = new Set(
+    fs.existsSync(PAGES_STORE) ? fs.readdirSync(PAGES_STORE).filter((f) => f.endsWith('.md')) : []
+  );
+  const leftovers = fs.readdirSync(PREV)
     .filter((f) => f.endsWith('.md') && !f.startsWith('_') && f !== 'Home.md')
     .filter((f) => !emitted.has(f));
+  const team = leftovers.filter((f) => teamOwned.has(f));
+  const orphans = leftovers.filter((f) => !teamOwned.has(f));
+  if (team.length) {
+    console.log('');
+    console.log('team-written pages in the wiki (KEPT, and published to the site from the pages store):');
+    for (const f of team.slice(0, 20)) console.log('  ' + f.replace(/\.md$/, ''));
+    if (team.length > 20) console.log('  ... and ' + (team.length - 20) + ' more');
+  }
   if (orphans.length) {
     console.log('');
-    console.log('in the wiki but no longer generated (LEFT IN PLACE — delete by hand if you want them gone):');
+    console.log('in the wiki, not generated, and not in the pages store either (LEFT IN PLACE — run the pull, then delete by hand if you still want them gone):');
     for (const f of orphans.slice(0, 20)) console.log('  ' + f.replace(/\.md$/, ''));
     if (orphans.length > 20) console.log('  ... and ' + (orphans.length - 20) + ' more');
     console.log('');

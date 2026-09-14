@@ -27,7 +27,9 @@
     "wiki:site": "node scripts/build-ris-wiki-site.js",
     "wiki:check": "node scripts/check-ris-wiki-site.js",
     "wiki:probe": "electron scripts/probe-ris-wiki-site.js",
-    "wiki:gen": "node scripts/gen-ris-wiki-all.js"
+    "wiki:gen": "node scripts/gen-ris-wiki-all.js",
+    "wiki:diff": "node scripts/diff-github-wiki.js",
+    "wiki:pull": "node scripts/pull-github-wiki-notes.js"
   },
   "dependencies": {
     "electron-updater": "^6.8.3",
