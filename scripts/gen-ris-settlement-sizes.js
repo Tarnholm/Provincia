@@ -526,7 +526,7 @@ function artSection(size) {
   if (!mine.length) {
     return `_The mod declares **${declared.length}** settlement pictures for this size — `
       + `${uniq(declared.map((r) => r.rel)).length} distinct paths across ${uniq(declared.map((r) => r.culture)).length} cultures — `
-      + `and **none of those files is in the mod folder**; they resolve into the base game's packed data, which these pages do not read._`;
+      + `and **none of those files is in the mod folder**; they come from the base game's own art._`;
   }
   // One entry per distinct picture, naming every culture that points at it, because the same
   // file is declared for several cultures and sometimes for several sizes.
@@ -543,8 +543,8 @@ function artSection(size) {
   const blocks = [...byPng.values()].map((e) => {
     const also = shared(e.png.name);
     return `<img src="../settlement-cards/${e.png.name}" alt="${sizeName(size)}" width="${e.png.w}" height="${e.png.h}">\n\n`
-      + `Declared for **${[...e.cultures].sort().join(", ")}** in ${[...e.sources].sort().join(" and ")}, as \`${e.rel}\`.`
-      + (also.length ? ` The same file is the mod's picture for ${also.join(" and ")} as well, so it is not art of its own.` : "");
+      + `Declared for **${[...e.cultures].sort().join(", ")}**, as \`${e.rel}\`.`
+      + (also.length ? ` The same picture is used for ${also.join(" and ")} as well, so it is not art of its own.` : "");
   });
   const missing = declared.filter((r) => !r.exists);
   return blocks.join("\n\n") + (missing.length
@@ -555,21 +555,6 @@ function artSection(size) {
 // ── page assembly ────────────────────────────────────────────────────────────
 const HEAD = (title) => `# ${title}\n\n[← settlement sizes](../sizes.md) · [all settlements](../settlements.md) · [wiki index](../README.md)\n`;
 
-const PROVENANCE = [
-  "<details>",
-  "<summary>Where these answers come from</summary>",
-  "",
-  "The **ladder** is read from descr_sm_settlements.txt and checked against descr_cultures.txt; "
-  + "both files declare it, per culture, and they agree. The **population figures** come from each "
-  + "culture's `settlement upgrade levels` block in descr_cultures.txt, which is the only place in "
-  + "the mod that puts a number on a settlement size — there is no `descr_settlement_mechanics.txt` "
-  + "in RIS. **What a size unlocks** is read off the `settlement_min` field every building level "
-  + "carries in export_descr_buildings.txt, and units are reached through the levels that can raise "
-  + "them. Where the files establish nothing, the section says so with the number of things that "
-  + "were examined, rather than being left silently empty.",
-  "",
-  "</details>",
-].join("\n");
 
 /** The population table for one size. */
 function numbersTable(size) {
@@ -604,7 +589,7 @@ function sizePage(size, i) {
       ? `Every settlement starts here: the mod asks for a population of **0** to be at this size, which is what makes it the bottom of the ladder.`
       : `A settlement reaches this size at a population of **${num([...upVals.keys()][0])}**, and all ${culturesDeclaring(size)} cultures that declare the figure declare the same one.`)
     : upVals.size ? `The cultures do not agree on the population it takes: ${[...upVals.entries()].map(([v, cs]) => `${num(v)} for ${cs.join(", ")}`).join("; ")}.`
-      : `**Not determined** — no culture block in descr_cultures.txt gives a population for this size.`;
+      : `**Not determined** — no culture gives a population for this size.`;
 
   const levelRows = levels.map((l) => {
     const ic = iconFor(l.level);
@@ -672,12 +657,12 @@ function sizePage(size, i) {
       }
       for (const [c, ls] of seen) if (ls.length && !ls.includes(size)) shortLadders.push(c);
     }
-    const lines = [`All **${canDeclared.length}** of the ${CULTURES.length} cultures in descr_cultures.txt declare a \`max settlement level\` that reaches this size.`];
+    const lines = [`All **${canDeclared.length}** of the ${CULTURES.length} cultures declare a \`max settlement level\` that reaches this size.`];
     if (cannot.length) lines[0] = `**${canDeclared.length}** of the ${CULTURES.length} cultures declare a \`max settlement level\` that reaches this size; ${cannot.length} stop below it (${cannot.map((c) => c.tok).join(", ")}).`;
     if (shortLadders.length) {
-      lines.push(`But descr_sm_settlements.txt, which is where a culture gets its strategy-map model and card for each size, declares no block at this size for **${shortLadders.join(", ")}** — ${shortLadders.length === 1 ? "that culture has" : "those cultures have"} a shorter ladder in that file. Which of the two the engine obeys is **not determined** from the mod files; both are stated here because they differ.`);
+      lines.push(`But there is no strategy-map model or card at this size for **${shortLadders.join(", ")}** — ${shortLadders.length === 1 ? "that culture has" : "those cultures have"} a shorter ladder. Which of the two the engine obeys is **not determined**; both are stated here because they differ.`);
     } else if (ladders) {
-      lines.push(`All ${ladders} of the ladders in descr_sm_settlements.txt include it.`);
+      lines.push(`All ${ladders} of the strategy-map ladders include it.`);
     }
     return lines.join("\n\n");
   })();
@@ -687,19 +672,18 @@ ${ladderLine}
 
 ${upSentence}${prev || next ? ` It is rung **${i + 1}** of ${LADDER.length}${prev && next ? `, above ${sizeName(prev)} and below ${sizeName(next)}` : prev ? `, above ${sizeName(prev)}` : `, below ${sizeName(next)}`}.` : ""}
 
-${PROVENANCE}
 
 ## What it takes to reach it, and what holds it there
 
 ${numbersTable(size)}
 
 ${numberDisagreements.length === 0
-    ? `Every one of the **${CULTURES.length}** cultures in descr_cultures.txt gives the same five numbers for every size, so these are the numbers for all of them.`
+    ? `Every one of the **${CULTURES.length}** cultures gives the same five numbers for every size, so these are the numbers for all of them.`
     : `The cultures do not agree on every figure; where they differ the cell above names who says what.`}
 
-**What makes a settlement fall out of this size is not determined.** descr_cultures.txt states
-the population needed to reach a size and the floor below which a settlement's population cannot
-go, and nothing in the mod files states a demotion rule. The upgrade threshold of the rung below
+**What makes a settlement fall out of this size is not determined.** The mod states the population
+needed to reach a size and the floor below which a settlement's population cannot go, but no
+demotion rule. The upgrade threshold of the rung below
 is the obvious candidate and it is not what the file says, so it is not published here.
 
 ## Which cultures can reach it
@@ -714,7 +698,7 @@ ${levels.length
     ? `${levels.length === 1 ? "One level declares" : `**${levels.length}** levels declare`} \`settlement_min ${size}\`, so ${levels.length === 1 ? "it is" : "they are"} the ${levels.length === 1 ? "building" : "buildings"} a settlement can first put up on reaching this size. Counting everything from the bottom of the ladder up to here, **${num(cumulativeLevels)}** of the ${num(levelsWithMin)} building levels in the mod ${cumulativeLevels === 1 ? "is" : "are"} available at this size.
 
 ${maybeFold(`The ${levels.length} levels`, levels.length, levelTable)}`
-    : `_No building level in the mod declares \`settlement_min ${size}\`. All ${num(levelsWithMin)} levels were checked. ${cumulativeLevels ? `The ${num(cumulativeLevels)} that are available at this size all became available lower down the ladder.` : "Nothing at all can be built at this size."}_`}
+    : `_No building level in the mod declares \`settlement_min ${size}\`. ${cumulativeLevels ? `The ${num(cumulativeLevels)} that are available at this size all became available lower down the ladder.` : "Nothing at all can be built at this size."}_`}
 
 ### Units first raisable here — ${units.length}
 
@@ -722,16 +706,15 @@ ${units.length
     ? `**${units.length}** ${units.length === 1 ? "unit" : "units"} cannot be raised in a smaller settlement — the smallest building level that lists ${units.length === 1 ? "it" : "them"} needs this size. Cumulatively **${num(cumulativeUnits)}** of the ${num(unitMin.size)} distinct units the recruitment file names ${cumulativeUnits === 1 ? "is" : "are"} raisable at this size.${withCards ? "" : `\n\nThe roster cards are left off this table on purpose: at ${units.length} rows they would be ${units.length} images on one page. Each unit's own page has its card.`}
 
 ${maybeFold(`The ${units.length} units`, units.length, unitTable)}`
-    : `_No unit first becomes raisable at this size. All ${num(EDB.recruits.length)} recruit lines in the mod were resolved to the ${num(unitMin.size)} distinct units they name, and each unit's minimum size taken from the smallest level that can raise it. ${cumulativeUnits ? `${num(cumulativeUnits)} of them are raisable at this size, every one of them from lower down the ladder.` : "None of them can be raised at this size at all."}_`}
+    : `_No unit first becomes raisable at this size. ${cumulativeUnits ? `${num(cumulativeUnits)} of them are raisable at this size, every one of them from lower down the ladder.` : "None of them can be raised at this size at all."}_`}
 
 ### What it blocks — none
 
 _Nothing in the mod is withheld for a settlement being **this large or larger**. The size clause
-in export_descr_buildings.txt is \`settlement_min\`, a field on a building level rather than a
+is \`settlement_min\`, a field on a building level rather than a
 condition, and it appears **${num(RAW_MIN_LINES.length)}** times with **${NEGATED_CLAUSES}** of them negated —
-a field cannot be. There is no \`settlement_max_level\` in the file (**${MAX_LEVEL_CLAUSES}** occurrences) and no
-\`settlement_min_level\` either (**${MIN_LEVEL_CLAUSES}**), and **${IN_REQUIRES}** \`requires\` expressions in the whole
-file mention a settlement size at all._
+a field cannot be. There is no \`settlement_max_level\` (**${MAX_LEVEL_CLAUSES}** occurrences) and no
+\`settlement_min_level\` either (**${MIN_LEVEL_CLAUSES}**), and **${IN_REQUIRES}** \`requires\` expressions mention a settlement size at all._
 
 ## At the campaign start
 
@@ -792,18 +775,6 @@ overcrowding starts. These pages say what each rung does, one page per size.
 
 ${LADDER.map((s) => `[${sizeName(s)}](sizes/${s}.md)`).join(" < ")}
 
-<details>
-<summary>Where these answers come from</summary>
-
-The ladder is declared twice — by ${SETTLE.ladders} cultures in descr_sm_settlements.txt and by
-${CULTURES.length} in descr_cultures.txt — and both files give the same ${LADDER.length} names in the same order.
-The population figures are descr_cultures.txt's own; there is no \`descr_settlement_mechanics.txt\`
-in RIS, which was the first place looked. What each size unlocks is the \`settlement_min\` field
-that every one of the ${num(levelsWithMin)} building levels in export_descr_buildings.txt carries, with units
-reached through the levels that can raise them.
-
-</details>
-
 ## The ladder
 
 **Population** is what it takes to reach the rung; **ceiling** is the population above which
@@ -840,8 +811,8 @@ ${(() => {
     return a && a.png && !LADDER.slice(0, LADDER.indexOf(s)).some((p) => (ART_OUT.bySize.get(p) || []).some((r) => r.png && r.png.name === a.png.name));
   });
   const total = ART.length;
-  if (!own.length) return `_The mod folder contains none of the ${total} settlement pictures its files declare; they resolve into the base game's packed data._`;
-  return `Only **${ART_OUT.files}** of the **${total}** settlement pictures the mod's files declare are files in the mod folder — the rest resolve into the base game's packed data, which these pages do not read. Those ${ART_OUT.files} are the nomad set, and they cover ${own.length} of the ${LADDER.length} rungs; the rungs above ${sizeName(own[own.length - 1])} are declared with the same picture as ${sizeName(own[own.length - 1])}, so no thumbnail is shown for them.`;
+  if (!own.length) return `_The mod folder contains none of the ${total} settlement pictures declared; they resolve into the base game's packed data._`;
+  return `Only **${ART_OUT.files}** of the **${total}** settlement pictures declared are files in the mod folder — the rest come from the base game's own art. Those ${ART_OUT.files} are the nomad set, and they cover ${own.length} of the ${LADDER.length} rungs; the rungs above ${sizeName(own[own.length - 1])} are declared with the same picture as ${sizeName(own[own.length - 1])}, so no thumbnail is shown for them.`;
 })()}
 
 ## How the map is distributed
@@ -854,7 +825,7 @@ ${(() => {
     : "Every rung has at least one settlement on it at the campaign start.";
 })()}
 
-Culture is the owning faction's, from descr_sm_factions.txt${cultureUnknown ? `; ${num(cultureUnknown)} lookups found no culture and are shown as not determined` : ""}.
+Culture is the owning faction's${cultureUnknown ? `; ${num(cultureUnknown)} lookups found no culture and are shown as not determined` : ""}.
 ${(() => {
   // The largest row is not the largest PEOPLE. Whichever faction holds the most settlements
   // contributes all of them to its declared culture, and in RIS that is the unowned-territory
@@ -866,30 +837,10 @@ ${(() => {
   if (!top) return "";
   const share = top[1] / held.length;
   if (share < 0.2) return "";
-  return `\nRead the largest row with care: **${facName(top[0])}** alone holds **${num(top[1])}** settlements — ${(share * 100).toFixed(0)}% of the map — and descr_sm_factions.txt gives that faction the culture \`${cultureOf(top[0]) || "not determined"}\`, so every one of them counts on that row. It is unclaimed ground, not a people.\n`;
+  return `\nRead the largest row with care: **${facName(top[0])}** alone holds **${num(top[1])}** settlements — ${(share * 100).toFixed(0)}% of the map — and that faction's culture is \`${cultureOf(top[0]) || "not determined"}\`, so every one of them counts on that row. It is unclaimed ground, not a people.\n`;
 })()}
 ${crossTab}
 
-<details>
-<summary>How each number on this page was counted, and checked</summary>
-
-- **The ladder** — \`settlementRanks()\` over descr_sm_settlements.txt gives ${LADDER_A.join(" < ") || "nothing"}
-  from ${SETTLE.ladders} culture blocks, ${SETTLE.disagree} of which disagree with the longest. The keys of the
-  \`settlement upgrade levels\` block in descr_cultures.txt give ${LADDER_B.join(" < ") || "nothing"} across
-  ${CULTURES.length} cultures. ${LADDER_AGREE ? "The two agree." : "**The two do not agree, and the longer one is used** — that disagreement is why this line exists."}
-- **Population figures** — read per culture, then compared across all ${CULTURES.length} of them for each of the
-  ${NUM_KEYS.length} fields at each of the ${LADDER.length} sizes, ${num(CULTURES.length * NUM_KEYS.length * LADDER.length)} values in all.
-  ${numberDisagreements.length === 0 ? "Every culture gives the same number, so a single figure is published." : `${numberDisagreements.length} of those comparisons disagree and are published per culture.`}
-- **Builds** — the \`settlement_min\` field on each building level, counted through the shared
-  parser (${num(levelsWithMin)} of ${num(levelBlocks)} level blocks) and, independently, as a flat pattern over the
-  file text (${num(RAW_MIN_LINES.length)} lines). ${levelsWithMin === RAW_MIN_LINES.length ? "The two agree." : "**The two disagree**, which means the parser is losing a level — see the run output."}
-- **Units** — ${num(EDB.recruits.length)} recruit lines resolved to the ${num(unitMin.size)} distinct units they name, keyed on
-  each unit's EDU \`dictionary\` so the same unit under three type names collapses to one.
-  ${recruitLinesOrphan ? `${num(recruitLinesOrphan)} lines name a level their chain does not declare and are excluded.` : "Every line resolved to a level its chain declares."}
-- **Settlements at the start** — ${num(held.length)} from the campaign parser, and ${num(Object.values(RAW_LEVELS).reduce((a, b) => a + b, 0))} \`level\` lines
-  found by a flat pattern over the same file. ${startCountsAgree ? "The per-size counts agree exactly." : "**The per-size counts do not agree** — see the run output."}
-
-</details>
 `;
 fs.writeFileSync(path.join(OUT, "sizes.md"), indexBody, "utf8");
 

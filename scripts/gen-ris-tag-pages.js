@@ -414,23 +414,6 @@ function regionsFold(f, what) {
 // ── page assembly ────────────────────────────────────────────────────────────
 const HEAD = (title) => `# ${title}\n\n[← reference tables](../tags.md) · [all regions](../regions.md) · [wiki index](../README.md)\n`;
 
-// Folded. This is the page's warranty, not its content: it says how the "what it does" lines
-// were arrived at and why a value with nothing behind it is reported as such instead of being
-// described from its name. Worth keeping — it is the reason the page can be trusted — and worth
-// having to ask for, because a reader looking up what Mountains does should not have to read a
-// paragraph about clause parsing to get there.
-const PROVENANCE = [
-  "<details>",
-  "<summary>Where these answers come from, and what an unestablished effect means</summary>",
-  "",
-  "What each value **does** is read off the clauses the mod conditions on it — a requirement on " +
-  "a building level, on a recruitment line, or on a numeric effect, including the ones reached " +
-  "through the building file's own aliases. Negated clauses count: blocking something is an " +
-  "effect. Where nothing in the mod conditions on a value, the entry says **no effect " +
-  "established** rather than describing what the word suggests.",
-  "",
-  "</details>",
-].join("\n");
 
 function summaryTable(list, cols) {
   return [`| ${cols.map((c) => c[0]).join(" | ")} |`,
@@ -445,8 +428,6 @@ function simplePage(title, file, tokens, lede, opts) {
     && !f.blockedEffects.size && !f.units.size && !f.blockedUnits.size);
   const body = `${HEAD(title)}
 ${lede}
-
-${PROVENANCE}
 
 **${list.length}** values. ${list.length - nothing.length} have an effect established in the files; ${nothing.length} do not.
 
@@ -503,8 +484,6 @@ function recruitmentPage(title, file, tokens, lede) {
   const body = `${HEAD(title)}
 ${lede}
 
-${PROVENANCE}
-
 **${list.length}** zones, covering **${allUnits.size}** distinct units. ${list.length - noUnits.length} unlock at least one unit; ${list.length - noRegions.length} cover at least one region.${noUnits.length ? ` **${noUnits.length}** unlock nothing: ${noUnits.map((f) => f.name).join(", ")}.` : ""}${noRegions.length ? ` **${noRegions.length}** ${noRegions.length === 1 ? "is" : "are"} on no region at all: ${noRegions.map((f) => f.name).join(", ")}.` : ""}${dead.length ? ` ${dead.length} ${dead.length === 1 ? "is" : "are"} both.` : ""}
 
 ${summaryTable([...list].sort((a, b) => b.units.size - a.units.size || a.name.localeCompare(b.name)), [
@@ -549,8 +528,6 @@ function homelandPage() {
 A homeland tag marks the region a faction comes from. **${list.length}** of them exist, one per
 faction with a homeland, and between them they cover **${list.reduce((a, f) => a + f.regions.length, 0).toLocaleString("en-US")}** of the
 ${REGION_COUNT.toLocaleString("en-US")} regions on the map.
-
-${PROVENANCE}
 
 **They all do the same thing, and the effect is not per-tag.** Each one exists so the mod can
 write a paired condition — \`requires factions { massalia, } and hidden_resource
@@ -654,8 +631,6 @@ const indexBody = `# Region tag reference
 A region page lists what the region *is* — its terrain, climate, water source, port, recruitment
 zones, homeland and fertility. These pages say what each of those values **does**, with every
 value in every category listed once.
-
-${PROVENANCE}
 
 | Reference | Values | What it decides |
 |---|---:|---|

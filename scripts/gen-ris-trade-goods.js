@@ -449,27 +449,6 @@ const iconImg = (tok, up, size) => (iconFiles.has(tok)
   ? `<img src="${up}resource-icons/${tok}.png" alt="" width="${size || 24}">` : "");
 
 // ── prose the pages share ────────────────────────────────────────────────────
-// Folded. This is the page's warranty rather than its content — how the "what it does" lines
-// were arrived at, and why a good with nothing behind it is reported as such instead of being
-// described from its name. Kept, because it is the reason the page can be trusted; folded,
-// because a reader looking up what Amber is worth should not have to read about clause parsing
-// to get there. `extra` is where a page adds a fact of the same kind, such as a good's internal
-// token, which is no use in play but is the identifier a modder needs.
-const provenance = (extra) => [
-  "<details>",
-  "<summary>Where these answers come from, and what an unestablished effect means</summary>",
-  "",
-  "What a good **does** is read off the clauses the mod conditions on it — a requirement on a " +
-  "building level, on a numeric effect, or on a recruitment line, including the ones reached " +
-  "through the building file's own aliases. Negated clauses count: withholding something is an " +
-  "effect. Where nothing in the mod conditions on a good, the page says **no effect " +
-  "established** rather than describing what the word suggests.",
-  ...(extra ? ["", extra] : []),
-  "",
-  "</details>",
-].join("\n");
-const PROVENANCE = provenance(null);
-
 const SUBTYPE_WORDS = {
   mineable: "**Mineable** — the mines chain can be built at the settlement that holds it.",
   slaves: "**Slaves** — the engine's own slave resource, created when a settlement is enslaved.",
@@ -644,7 +623,6 @@ ${rows.join("\n")}
 
 ## What it does
 
-${provenance(`The mod calls this good \`${g.tok}\` internally; that is the word the conditions on this page are written against.`)}
 
 ${doesBody}${unitsBody}
 
@@ -722,8 +700,6 @@ ${noEffect.length} ${noEffect.length === 1 ? "has" : "have"} nothing in the mod 
 ${noEffect.length === 1 ? "it" : "them"}: ${noEffect.map((g) => `[${g.name}](goods/${g.tok}.md)`).join(", ")}. That is a finding, not a gap —
 each of those pages says which other files were searched before the claim was made.
 
-${PROVENANCE}
-
 Reading the table: **tier** and **trade value** are the good's own declared numbers — tier its
 rank, trade value what a unit of it is worth in trade. ${noTier.length} goods have their tier line
 commented out in the mod file and show **—**, which means not declared, not zero. **Regions**
@@ -748,22 +724,6 @@ ${groupsUsedInEdb.length === 0
 
 ${familySections}
 
-<details>
-<summary>How each figure on this page was counted, and checked</summary>
-
-- **Goods** — the non-hidden blocks in descr_sm_resources.txt, found by brace depth with
-  comments stripped. The block count was checked a second way against the flat pattern the
-  other generators use over the same file; both find ${BLOCKS.length.toLocaleString("en-US")} blocks,
-  ${hiddenCount.toLocaleString("en-US")} of them hidden.
-- **Markers and regions** — the \`resource\` lines in descr_strat.txt, each mapped to a region
-  through map_regions.tga. Every good's region set was then derived a second, independent way
-  from the region each line names in its own trailing comment. The two agree for all
-  ${goodsAgreeing} placed goods; a good where they disagreed would be shown as **n/d** here.
-- **Builds, effects and units** — counted from export_descr_buildings.txt, alias indirection
-  expanded, negated clauses included. The ${FAMILIES.size} group names were searched for in the
-  same file before the Groups section claimed they gate nothing; ${groupsUsedInEdb.length} appear in it.
-
-</details>
 `;
 fs.writeFileSync(path.join(OUT, "trade-goods.md"), indexBody, "utf8");
 

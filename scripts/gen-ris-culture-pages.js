@@ -592,22 +592,6 @@ const beliefRef = (tok) => {
 // ── page assembly ────────────────────────────────────────────────────────────
 const HEAD = (title) => `# ${title}\n\n[← all cultures](../cultures.md) · [all factions](../factions.md) · [wiki index](../README.md)\n`;
 
-const PROVENANCE = [
-  "<details>",
-  "<summary>Where these answers come from</summary>",
-  "",
-  "**Who is in a culture** is descr_sm_factions.txt, the only file that assigns one. **What a "
-  + "culture lets you build and raise** is read off export_descr_buildings.txt: the word "
-  + "`culture` appears in no `requires` expression in that file, but the engine's faction list "
-  + "takes a culture token as readily as a faction token, and the 22 culture tokens are exactly "
-  + "the tokens in those lists that are not factions and are not `all`. Negated clauses count — "
-  + "blocking something is an effect. **What its settlements look like** comes from "
-  + "descr_cultures.txt and descr_sm_settlements.txt, which disagree about how far up the ladder "
-  + "some cultures go; both are stated. Where nothing in the mod conditions on a culture, the "
-  + "section says so with the number of clauses that were examined.",
-  "",
-  "</details>",
-].join("\n");
 
 const FOLD_AT = 12;
 const maybeFold = (summary, n, table) => (n > FOLD_AT ? fold(summary, [table]) : table);
@@ -635,7 +619,7 @@ function cultureFacts(c) {
   };
 }
 
-const NOTHING_BUILD = (n) => `_No building level in export_descr_buildings.txt names this culture in its own \`requires\`. All ${num(n)} level blocks in the file were checked._`;
+const NOTHING_BUILD = (n) => `_No building level names this culture in its own \`requires\`._`;
 
 function culturePage(f, all) {
   const { tok, c } = f;
@@ -705,9 +689,9 @@ function culturePage(f, all) {
 
   const artLines = [];
   if (sm) {
-    artLines.push(`descr_sm_settlements.txt gives this culture its own strategy-map buildings: **${smSizes.length}** of the ${LADDER.length} rungs have a block, with **${wallCount}** wall models between them${modelFamilies.length ? `, drawn from the \`${modelFamilies.join("`, `")}\` model set${modelFamilies.length === 1 ? "" : "s"}` : ""}.`);
+    artLines.push(`This culture has its own strategy-map buildings: **${smSizes.length}** of the ${LADDER.length} rungs have a block, with **${wallCount}** wall models between them${modelFamilies.length ? `, drawn from the \`${modelFamilies.join("`, `")}\` model set${modelFamilies.length === 1 ? "" : "s"}` : ""}.`);
     if (smMissing.length) {
-      artLines.push(`**The two files disagree about how far this culture's ladder goes, and this page does not pick one.** descr_cultures.txt gives it \`max settlement level: ${c.max || "not stated"}\`, which reaches ${sizeNameOf(c.max || LADDER[LADDER.length - 1])}. descr_sm_settlements.txt declares no block at ${smMissing.map(sizeNameOf).join(" or ")} — so there is no model and no card for ${smMissing.length === 1 ? "that rung" : "those rungs"}. Which of the two the engine obeys is **not determined** from the mod files.`);
+      artLines.push(`**How far this culture's ladder goes is stated two ways, and this page does not pick one.** It is given \`max settlement level: ${c.max || "not stated"}\`, which reaches ${sizeNameOf(c.max || LADDER[LADDER.length - 1])}, but there is no strategy-map block at ${smMissing.map(sizeNameOf).join(" or ")} — so no model and no card for ${smMissing.length === 1 ? "that rung" : "those rungs"}. Which of the two the engine obeys is **not determined**.`);
     } else {
       artLines.push(`Every rung of the ladder has a block, so nothing is missing between the two files for this culture.`);
     }
@@ -720,12 +704,12 @@ function culturePage(f, all) {
       }),
     ]));
   } else {
-    artLines.push(`**descr_sm_settlements.txt declares no block for this culture at all.** That file is where a culture gets its strategy-map buildings, its walls and its settlement card, and only **${SM_SETTLEMENTS.size}** of the ${CULTURES.length} cultures have one — \`${[...SM_SETTLEMENTS.keys()].join("`, `")}\`. What this culture's settlements are drawn with instead is **not determined** from the mod files.`);
+    artLines.push(`**This culture has no strategy-map buildings, walls or settlement card of its own.** Only **${SM_SETTLEMENTS.size}** of the ${CULTURES.length} cultures do — \`${[...SM_SETTLEMENTS.keys()].join("`, `")}\`. What its settlements are drawn with instead is **not determined**.`);
   }
   if (declaredIcons.length) {
-    artLines.push(`descr_cultures.txt declares a settlement card of its own for **${declaredIcons.length}** ${declaredIcons.length === 1 ? "size" : "sizes"}, from the \`${iconFamilies.join("`, `")}\` UI art ${iconFamilies.length === 1 ? "family" : "families"}${iconsOnDisk ? `, and ${iconsOnDisk} of those files ${iconsOnDisk === 1 ? "is" : "are"} in the mod folder` : `, and none of those files is in the mod folder — they resolve into the base game's packed data, which these pages do not read`}.`);
+    artLines.push(`This culture has a settlement card of its own for **${declaredIcons.length}** ${declaredIcons.length === 1 ? "size" : "sizes"}, from the \`${iconFamilies.join("`, `")}\` UI art ${iconFamilies.length === 1 ? "family" : "families"}${iconsOnDisk ? `, and ${iconsOnDisk} of those files ${iconsOnDisk === 1 ? "is" : "are"} in the mod folder` : `, and none of those files is in the mod folder — they come from the base game's own art`}.`);
   } else {
-    artLines.push("_descr_cultures.txt declares no settlement card for this culture._");
+    artLines.push("_This culture has no settlement card of its own._");
   }
   if (c.fort && c.fort["card path"]) {
     artLines.push(`Its fort and watchtower are drawn from the same \`${artFamily(c.fort["card path"]) || "not determined"}\` art${c.watchtower && c.watchtower["base model"] ? `, with the \`${String(c.watchtower["base model"]).split("/").pop()}\` watchtower model` : ""}.`);
@@ -745,20 +729,19 @@ function culturePage(f, all) {
   const body = `${HEAD(name)}
 Internal token \`${tok}\`${c.string ? `, localised from \`${c.string}\`` : ""}. ${glance}
 
-${PROVENANCE}
 
 ## The factions in it
 
 ${factionTable
-    ? `**${facs.length}** of the ${num(Object.keys(FACTIONS).length)} factions in descr_sm_factions.txt ${facs.length === 1 ? "is" : "are"} ${name}. ${facs.length === 1 ? "It holds" : "Between them they hold"} **${num(f.held)}** of the ${num(heldTotal)} settlements the campaign file places — **${share.toFixed(1)}%** of the map at turn 0.${facs.some((x) => NO_PAGE.has(x)) ? ` ${facs.filter((x) => NO_PAGE.has(x)).length} of them cannot be played and are documented together on [factions you cannot play](../factions/non-playable.md).` : ""}
+    ? `**${facs.length}** of the ${num(Object.keys(FACTIONS).length)} factions ${facs.length === 1 ? "is" : "are"} ${name}. ${facs.length === 1 ? "It holds" : "Between them they hold"} **${num(f.held)}** of the ${num(heldTotal)} settlements the campaign file places — **${share.toFixed(1)}%** of the map at turn 0.${facs.some((x) => NO_PAGE.has(x)) ? ` ${facs.filter((x) => NO_PAGE.has(x)).length} of them cannot be played and are documented together on [factions you cannot play](../factions/non-playable.md).` : ""}
 
 ${maybeFold(`The ${facs.length} factions`, facs.length, factionTable)}`
-    : `_No faction in descr_sm_factions.txt is assigned this culture. All ${num(Object.keys(FACTIONS).length)} faction blocks were read._`}
+    : `_No faction is of this culture._`}
 
 ## What its factions believe
 
 ${beliefRows.length
-    ? `descr_sm_factions.txt gives every faction a \`default religion\`. ${facs.length === 1
+    ? `Every faction has a default belief. ${facs.length === 1
       ? `The one ${name} faction carries the belief below.`
       : byBelief.size === 1
         ? `All ${facs.length} ${name} factions carry the same one.`
@@ -776,15 +759,15 @@ ${artLines.join("\n\n")}
 ## How far its settlements can grow
 
 ${ladderDeclared.length
-    ? `descr_cultures.txt gives this culture the ladder ${ladderDeclared.map(sizeRef).join(" < ")}, topping out at **${sizeNameOf(c.max || ladderDeclared[ladderDeclared.length - 1])}**.
+    ? `This culture's ladder is ${ladderDeclared.map(sizeRef).join(" < ")}, topping out at **${sizeNameOf(c.max || ladderDeclared[ladderDeclared.length - 1])}**.
 ${identical
       ? `Every one of the ${CULTURES.length} cultures declares the same six rungs with the same population figures, so this is not something that tells one culture from another. The numbers are on the [settlement size pages](../sizes.md).`
       : `**This culture's figures are not the same as every other culture's** — compare them on the [settlement size pages](../sizes.md).`}`
-    : "_descr_cultures.txt declares no settlement upgrade levels for this culture._"}
+    : "_This culture has no settlement upgrade levels._"}
 
 ${c.unrest && Object.keys(c.unrest).length
     ? `Its unrest factors are ${Object.entries(c.unrest).map(([k, v]) => `${k} **${v}**`).join(", ")}${all.every((o) => JSON.stringify(o.c.unrest) === JSON.stringify(c.unrest)) ? ", which is what all " + CULTURES.length + " cultures declare" : ", which differs from other cultures"}.`
-    : "_descr_cultures.txt declares no unrest factors for this culture._"}
+    : "_This culture has no unrest factors._"}
 
 ## What it lets you build
 
@@ -794,7 +777,7 @@ ${govLevels.length
     ? `**${govLevels.length}** government ${govLevels.length === 1 ? "level names" : "levels name"} this culture in ${govLevels.length === 1 ? "its" : "their"} own requirement. Government is the chain that gates most of the rest of the tree, so this is where a culture bites hardest.
 
 ${maybeFold(`The ${govLevels.length} government levels`, govLevels.length, `| | Level | Chain |\n|:-:|---|---|\n${govLevels.map((l) => { const ic = iconFor(tok, l.level); return `| ${ic ? `<img src="../${ic}" alt="" width="64">` : ""} | ${levelLink(l.chain, l.level)} | ${chainLink(l.chain)} |`; }).join("\n")}`)}`
-    : `_No government level names this culture. All ${num(EDB.chains.filter((x) => GOV_CHAIN.test(x.chain)).reduce((a, x) => a + Object.keys(x.levels).length, 0))} levels of the ${EDB.chains.filter((x) => GOV_CHAIN.test(x.chain)).length} government chains were checked._`}
+    : `_No government level names this culture._`}
 
 ### Other building levels — ${otherLevels.length}
 
@@ -806,7 +789,7 @@ ${otherLevels.length
 
 ${f.blockedLevels.length
     ? `**${f.blockedLevels.length}** building ${f.blockedLevels.length === 1 ? "level is" : "levels are"} written so that being ${name} rules ${f.blockedLevels.length === 1 ? "it" : "them"} out: ${f.blockedLevels.slice().sort((a, b) => levelName(a.level).localeCompare(levelName(b.level))).map((l) => levelLink(l.chain, l.level)).join(", ")}.`
-    : `_No building level in the mod excludes this culture. All ${num(EDB.chains.reduce((a, x) => a + Object.keys(x.levels).length, 0))} level blocks were checked, negated clauses included._`}
+    : `_No building level in the mod excludes this culture._`}
 
 ## What it lets you raise
 
@@ -814,7 +797,7 @@ ${units.length
     ? `**${units.length}** unit ${units.length === 1 ? "type names" : "types name"} this culture in a recruitment gate, out of the ${num(uniq(EDB.recruits.map((r) => unitKey(r.unit))).length)} distinct units the mod's ${num(EDB.recruits.length)} \`recruit\` lines name. These are the ones open to a ${name} faction *because* it is ${name} — a faction's own roster and the regional units it can raise where it holds the right province are on its own page.${withCards ? "" : `\n\nThe roster cards are left off this table on purpose: at ${units.length} rows they would be ${units.length} images on one page.`}
 
 ${maybeFold(`The ${units.length} units`, units.length, unitTable)}`
-    : `_No recruitment line in the mod names this culture. All ${num(EDB.recruits.length)} \`recruit\` lines were checked._`}
+    : `_No recruitment line in the mod names this culture._`}
 
 ${f.blockedUnits.size
     ? `Carrying this culture also **withholds ${f.blockedUnits.size}** unit ${f.blockedUnits.size === 1 ? "type" : "types"} a broader gate would otherwise give: ${[...f.blockedUnits.values()].map((x) => unitLink(x.type)).join(", ")}.`
@@ -826,7 +809,7 @@ ${effRows.length
     ? `**${effRows.length}** numeric ${effRows.length === 1 ? "effect is" : "effects are"} granted specifically because a settlement's owner is ${name}.
 
 ${maybeFold(`The ${effRows.length} effects`, effRows.length, `| Effect | Where |\n|---|---|\n${effRows.join("\n")}`)}`
-    : `_No numeric effect in the mod is conditioned on this culture. All ${num(EDB.effects.length)} conditional effect lines were checked._`}
+    : `_No numeric effect in the mod is conditioned on this culture.._`}
 
 ${blockedEffRows.length
     ? `**${blockedEffRows.length}** further ${blockedEffRows.length === 1 ? "effect is" : "effects are"} granted only where the owner is *not* ${name}.
@@ -839,7 +822,7 @@ ${maybeFold(`The ${blockedEffRows.length} effects it withholds`, blockedEffRows.
 | | |
 |---|---|
 | Portrait set | ${c.portrait ? `\`${c.portrait}\`` : "_not determined_"} |
-| Counted as civilised | ${c.civilised == null ? "_not determined_" : (c.civilised ? "yes" : "**no** — the engine's `InBarbarianLands` and `InUncivilisedLands` script tests are true in its lands, and its soldiers jump less when charging (descr_cultures.txt's own comment)")} |
+| Counted as civilised | ${c.civilised == null ? "_not determined_" : (c.civilised ? "yes" : "**no** — the engine's `InBarbarianLands` and `InUncivilisedLands` script tests are true in its lands, and its soldiers jump less when charging")} |
 | AI assist threshold | ${c.aiAssist == null ? "_not determined_" : c.aiAssist} |
 | Fort cost | ${c.fort && c.fort.cost ? num(c.fort.cost) : "_not determined_"} |
 | Watchtower cost | ${c.watchtower && c.watchtower.cost ? num(c.watchtower.cost) : "_not determined_"} |
@@ -913,18 +896,6 @@ installed there and a slice of what can be raised. **${CULTURES.length}** of the
 
 ${renameNote}
 
-<details>
-<summary>Where these answers come from</summary>
-
-descr_cultures.txt declares the ${CULTURES.length} cultures, descr_sm_factions.txt assigns one to each of the
-${num(Object.keys(FACTIONS).length)} factions, and export_descr_buildings.txt conditions on them — not with a \`culture\`
-keyword, which appears in **${CULTURE_KEYWORD_CLAUSES}** \`requires\` expressions in the whole file, but through the
-engine's faction list, which takes a culture token as readily as a faction token. Of the
-${ALL_LIST_TOKENS.size} distinct tokens inside those lists, ${[...ALL_LIST_TOKENS].filter((t) => FACTION_TOKENS.has(t)).length} are factions, one is \`all\`, and the remaining
-${CULTURES_IN_LISTS.length} are exactly the culture tokens.
-
-</details>
-
 ## The ${CULTURES.length} cultures
 
 **Provinces** is what the culture's factions hold at turn 0, out of the ${num(heldTotal)} settlements the
@@ -936,7 +907,7 @@ this is the column that shows how far the two come apart.
 ${summary}
 
 ${biggestHolder && biggestHolder.n / heldTotal > 0.2
-    ? `Read the Provinces column with care: **${facName(biggestHolder.faction)}** alone holds **${num(biggestHolder.n)}** settlements — ${((biggestHolder.n / heldTotal) * 100).toFixed(0)}% of the map — and descr_sm_factions.txt gives that faction the culture ${biggestHolder.culture.name ? `**${biggestHolder.culture.name}**` : `\`${biggestHolder.culture.tok}\``}, so every one of them counts on that row. It is unclaimed ground, not a people.`
+    ? `Read the Provinces column with care: **${facName(biggestHolder.faction)}** alone holds **${num(biggestHolder.n)}** settlements — ${((biggestHolder.n / heldTotal) * 100).toFixed(0)}% of the map — and that faction's culture is ${biggestHolder.culture.name ? `**${biggestHolder.culture.name}**` : `\`${biggestHolder.culture.tok}\``}, so every one of them counts on that row. It is unclaimed ground, not a people.`
     : ""}
 
 ## What the files agree and disagree on
@@ -944,9 +915,8 @@ ${biggestHolder && biggestHolder.n / heldTotal > 0.2
 - **All ${CULTURES.length} declare the same six-rung ladder** with the same five population figures, and the
   same unrest factors and agent costs. Those are not what tells one culture from another; the
   numbers are on the [settlement size pages](sizes.md).
-- **${SM_SETTLEMENTS.size} of the ${CULTURES.length} have a block in descr_sm_settlements.txt**, which is the file that gives a
-  culture its strategy-map buildings and walls. The other ${CULTURES.length - SM_SETTLEMENTS.size} have none, and what their
-  settlements are drawn with instead is **not determined** from the mod files.
+- **${SM_SETTLEMENTS.size} of the ${CULTURES.length} have strategy-map buildings and walls of their own**. The other ${CULTURES.length - SM_SETTLEMENTS.size} have none, and what their
+  settlements are drawn with instead is **not determined**.
 - **${[...SM_SETTLEMENTS.entries()].filter(([, m]) => LADDER.some((s) => !m.has(s))).length} of those ${SM_SETTLEMENTS.size} stop short of the top rung.** ${(() => {
   const short = [...SM_SETTLEMENTS.entries()].filter(([, m]) => LADDER.some((s) => !m.has(s)));
   if (!short.length) return "None of them does.";
@@ -959,7 +929,7 @@ ${biggestHolder && biggestHolder.n / heldTotal > 0.2
     byTop.get(top).push(cultureName(t) || t);
   }
   const clauses = [...byTop.entries()].map(([top, list]) => `${list.join(" and ")} declare${list.length === 1 ? "s" : ""} nothing above ${top}`);
-  return `${clauses.join("; ")}, while descr_cultures.txt gives all ${CULTURES.length} cultures a \`max settlement level\` of ${sizeNameOf(LADDER[LADDER.length - 1])}. **The two files contradict each other and this wiki does not resolve it** — which one the engine obeys is not stated anywhere in the mod.`;
+  return `${clauses.join("; ")}, while all ${CULTURES.length} cultures have a \`max settlement level\` of ${sizeNameOf(LADDER[LADDER.length - 1])}. **The two contradict each other and this wiki does not resolve it** — which one the engine obeys is not stated anywhere in the mod.`;
 })()}
 - **Culture does not fix belief.** ${(() => {
   const spread = FACTS.map((f) => uniq(f.facs.map((x) => (FACTIONS[x] || {}).religion).filter(Boolean)).length);

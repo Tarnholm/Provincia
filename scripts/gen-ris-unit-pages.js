@@ -1033,14 +1033,6 @@ the map, not recruited from a building. Every one of them is named
 below. ${mercAlreadyNamed.toLocaleString("en-US")} were already named that way by the mod; the
 prefix was added to the other ${mercPrefixed.toLocaleString("en-US")}.
 
-<details>
-<summary>How this wiki tells a mercenary from a regional unit</summary>
-
-A mercenary is identified by its internal type beginning \`merc \`, not by the
-\`mercenary_unit\` attribute — that attribute is also on all 450 area-of-recruitment entries,
-so it labels 770 entries where only 320 are for hire.
-
-</details>
 ${mixedDicts.length ? `\n> **${mixedDicts.length} unit${mixedDicts.length === 1 ? " is" : "s are"} defined both ways** (some entries mercenary, some not) and\n> ${mixedDicts.length === 1 ? "is" : "are"} deliberately left unprefixed: ${mixedDicts.slice(0, 20).map((d) => `\`${d}\``).join(", ")}${mixedDicts.length > 20 ? `, and ${mixedDicts.length - 20} more` : ""}.\n` : ""}
 ## By class
 

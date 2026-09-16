@@ -375,21 +375,6 @@ const cultureRef = (tok) => {
 // ── page assembly ────────────────────────────────────────────────────────────
 const HEAD = (title) => `# ${title}\n\n[← all beliefs](../religions.md) · [all cultures](../cultures.md) · [all regions](../regions.md) · [wiki index](../README.md)\n`;
 
-const PROVENANCE = [
-  "<details>",
-  "<summary>Where these answers come from</summary>",
-  "",
-  "descr_beliefs.txt declares the belief, its pip and its localised name. **Where it is** is the "
-  + "`rel_<belief>_<tier>` tag on a region's tag line in descr_regions.txt — the trailing digit "
-  + "is a 1-4 strength tier and never a percentage. **Who the people are** is that same file's "
-  + "ancestry field, whose shares do sum to 100. **Who follows it** is stated twice, by "
-  + "descr_sm_factions.txt's `default religion` and by export_descr_buildings.txt's "
-  + "`faction_religion_<belief>` alias, and where the two disagree both are shown. **What the "
-  + "mod does with it** is read off export_descr_buildings.txt, with the clauses that GENERATE "
-  + "the belief kept apart from the clauses the belief GATES.",
-  "",
-  "</details>",
-].join("\n");
 
 const TIER_NOTE = "What matters is whether it is the **majority** belief in the settlement or a "
   + "**minority** one. The file records a finer number behind that, and it is not a percentage — "
@@ -539,7 +524,6 @@ function beliefPage(f, all) {
   const body = `${HEAD(`${pip(tok)}${name}`)}
 Internal token \`${tok}\`${b.group ? `, in the ${groupName(b.group)} group` : ""}. ${glance}
 
-${PROVENANCE}
 
 ## Where it is on the map
 
@@ -551,12 +535,12 @@ ${nRegions
 ${tierRows.join("\n")}
 
 ${regionFolds.join("\n\n")}`
-    : `_No region on the map carries a \`rel_${tok}_…\` tag. All ${num(REGIONS.length)} region blocks in descr_regions.txt were read, and ${num(relTagsSeen)} belief tags found on them._`}
+    : `_No region on the map carries a \`rel_${tok}_…\` tag._`}
 
 ## The people it belongs to
 
 ${f.people.length
-    ? `descr_regions.txt names **${name}** as a people living in **${f.people.length}** ${f.people.length === 1 ? "region" : "regions"}, ${majority} of ${f.people.length === 1 ? "which" : "them"} as the majority. Those shares come from the region's own ancestry field, which sums to 100 — they are a different measurement from the strength tier above and are not comparable with it.
+    ? `**${name}** is named as a people living in **${f.people.length}** ${f.people.length === 1 ? "region" : "regions"}, ${majority} of ${f.people.length === 1 ? "which" : "them"} as the majority. Those shares sum to 100 and are a different measurement from the strength tier above; the two are not comparable.
 
 ${maybeFold(`Where its people live (${f.people.length})`, f.people.length,
       `| Region | Share |\n|---|---:|\n${f.people.slice().sort((a, c) => c.pct - a.pct || regionName(a.region).localeCompare(regionName(c.region))).map((p) => `| ${regionLink(p.region)} | ${p.pct}% |`).join("\n")}`)}
@@ -564,24 +548,24 @@ ${maybeFold(`Where its people live (${f.people.length})`, f.people.length,
 ${peopleNoTag.length || tagNoPeople.length
       ? `The two vocabularies do not line up exactly. **${peopleNoTag.length}** ${peopleNoTag.length === 1 ? "region names this people but carries no belief tag for it" : "regions name this people but carry no belief tag for it"}${peopleNoTag.length ? ` — ${peopleNoTag.slice(0, 12).map(regionLink).join(", ")}${peopleNoTag.length > 12 ? `, and ${peopleNoTag.length - 12} more` : ""}` : ""}. **${tagNoPeople.length}** ${tagNoPeople.length === 1 ? "carries the tag without naming the people" : "carry the tag without naming the people"}${tagNoPeople.length ? ` — ${tagNoPeople.slice(0, 12).map(regionLink).join(", ")}${tagNoPeople.length > 12 ? `, and ${tagNoPeople.length - 12} more` : ""}` : ""}. Which of the two the mod means as authoritative is **not determined**; both are shown.`
       : "Every region that names this people also carries its belief tag, and every region that carries the tag names the people."}`
-    : `_No region's ancestry field names \`${tok}\` as a people. All ${num(REGIONS.length)} ancestry fields were read${nRegions ? `, though ${nRegions} ${nRegions === 1 ? "region carries" : "regions carry"} the belief tag` : ""}._`}
+    : `_No region's ancestry field names \`${tok}\` as a people.${nRegions ? ` Though ${nRegions} ${nRegions === 1 ? "region carries" : "regions carry"} the belief tag.` : ""}_`}
 
 ## Who follows it
 
 ${f.facs.length
-    ? `**${f.facs.length}** of the ${num(Object.keys(FACTIONS).length)} factions in descr_sm_factions.txt carry \`"default religion": "${tok}"\`. Between them they hold **${num(heldByFollowers)}** of the ${num(heldTotal)} settlements the campaign file places.
+    ? `**${f.facs.length}** of the ${num(Object.keys(FACTIONS).length)} factions hold this as their state belief. Between them they hold **${num(heldByFollowers)}** of the ${num(heldTotal)} settlements the campaign file places.
 
 ${maybeFold(`The ${f.facs.length} factions`, f.facs.length,
       `| Faction | Culture | Provinces |\n|---|---|---:|\n${facRows.map((r) => `| ${symbolFiles.has(r.f) ? `<img src="../symbols/${r.f}.png" alt="" width="24" height="24" style="vertical-align:middle"> ` : ""}${facLink(r.f)} | ${r.culture ? cultureRef(r.culture) : "_not determined_"} | ${r.n || "—"} |`).join("\n")}`)}`
-    : `_No faction states this as its default religion. All ${num(Object.keys(FACTIONS).length)} faction blocks were read and ${num(RAW_RELIGION_LINES)} \`default religion\` lines found._`}
+    : `_No faction states this as its default religion._`}
 
 ${f.alias
-    ? `export_descr_buildings.txt answers the same question separately, with \`alias faction_religion_${tok}\`, and that alias is what the temples and government levels actually test. It names **${f.alias.length}** ${f.alias.length === 1 ? "entry" : "entries"}${aliasCultures.length ? `, ${aliasCultures.length} of which ${aliasCultures.length === 1 ? "is a culture rather than a faction" : "are cultures rather than factions"} (${aliasCultures.map(cultureRef).join(", ")})` : ""}.
+    ? `The temples and government levels test a separate list, \`faction_religion_${tok}\`. It names **${f.alias.length}** ${f.alias.length === 1 ? "entry" : "entries"}${aliasCultures.length ? `, ${aliasCultures.length} of which ${aliasCultures.length === 1 ? "is a culture rather than a faction" : "are cultures rather than factions"} (${aliasCultures.map(cultureRef).join(", ")})` : ""}.
 
 ${aliasOnly.length || defaultOnly.length
       ? `**The two files disagree, and this page does not resolve it.**${aliasOnly.length ? ` The alias names ${aliasOnly.map((x) => facLink(x)).join(", ")}, ${aliasOnly.length === 1 ? "whose faction block gives a different default religion" : "whose faction blocks give a different default religion"}.` : ""}${defaultOnly.length ? ` ${defaultOnly.map((x) => facLink(x)).join(", ")} ${defaultOnly.length === 1 ? "declares" : "declare"} this as ${defaultOnly.length === 1 ? "its" : "their"} default religion but ${defaultOnly.length === 1 ? "is" : "are"} not in the alias, so the buildings file will not treat ${defaultOnly.length === 1 ? "it" : "them"} as ${name}.` : ""}`
       : "The two agree exactly on who follows this belief."}`
-    : `_export_descr_buildings.txt declares no \`faction_religion_${tok}\` alias, so nothing in the buildings file can test for a faction being ${name}. ${Object.keys(ALIAS_FOLLOWERS).length} such aliases exist for the ${BELIEF_ORDER.length} beliefs._`}
+    : `_There is no \`faction_religion_${tok}\` list, so nothing a settlement builds can test for a faction being ${name}. ${Object.keys(ALIAS_FOLLOWERS).length} such lists exist for the ${BELIEF_ORDER.length} beliefs._`}
 
 ## What builds it
 
@@ -591,7 +575,7 @@ ${tierTable
 ${tierTable}
 
 ${withheldRows.length ? `\n${withheldRows.length} further ${withheldRows.length === 1 ? "grant is" : "grants are"} made only where the belief is **not** already present — that is the conversion path, and it stops once the belief is there.\n\n| Where | What |\n|---|---|\n${withheldRows.join("\n")}` : ""}`
-    : `_No building level scales anything on this belief's strength tier. All ${num(EDB.effects.length)} conditional effect lines in export_descr_buildings.txt were checked against \`rel_${tok}_1\` through \`rel_${tok}_4\`._`}
+    : `_No building level scales anything on this belief's strength tier._`}
 
 ${genOtherRows.length
     ? `### Spread by conversion — ${genOther.length} lines
@@ -603,14 +587,12 @@ Beyond the tier table, **${genOther.length}** further \`religious_belief ${tok}\
 ${genOtherRows.join("\n")}`
     : `### Spread by conversion — none
 
-_Nothing outside the tier table grants this belief. All ${num(EDB.effects.length)} conditional effect lines were checked for a \`religious_belief ${tok}\` grant._`}
+_Nothing outside the tier table grants this belief._`}
 
 ## What it gates
 
-_**Nothing.** No building level and no recruitment line in the mod is conditioned on a belief:
-all ${num(LEVEL_BLOCKS)} building level blocks and all ${num(EDB.recruits.length)} \`recruit\` lines were checked against every
-\`rel_<belief>_<tier>\` token, and **${gatedLevels}** levels and **${gatedRecruits}** recruit lines came back. A belief is a
-number a settlement carries, not a key that opens anything._
+_**Nothing.** No building level and no recruitment line in the mod is conditioned on a belief. A
+belief is a number a settlement carries, not a key that opens anything._
 
 ## Unrest and identity
 
@@ -636,8 +618,8 @@ ${(() => {
 
 ${f.group
     ? (siblings.length
-      ? `The **${groupName(f.group)}** group (\`${f.group}\`) holds **${siblings.length + 1}** beliefs. The others are ${siblings.slice().sort((a, c) => a.name.localeCompare(c.name)).map((o) => `${pip(o.tok)}[${o.name}](${o.tok}.md)`).join(", ")}.\n\nA group has no name of its own in the mod — descr_beliefs.txt declares the token \`${f.group}\` and no text file localises it. ${BELIEFS[f.group] ? `The name above is the belief of that same token, which is the mod's own.` : `No belief carries that token either, so the token is printed as it stands.`}`
-      : `The **${groupName(f.group)}** group (\`${f.group}\`) holds this belief alone — no other belief in descr_beliefs.txt names it.`)
+      ? `The **${groupName(f.group)}** group (\`${f.group}\`) holds **${siblings.length + 1}** beliefs. The others are ${siblings.slice().sort((a, c) => a.name.localeCompare(c.name)).map((o) => `${pip(o.tok)}[${o.name}](${o.tok}.md)`).join(", ")}.\n\nA group has no name of its own in the mod — the token \`${f.group}\` is all there is. ${BELIEFS[f.group] ? `The name above is the belief of that same token, which is the mod's own.` : `No belief carries that token either, so the token is printed as it stands.`}`
+      : `The **${groupName(f.group)}** group (\`${f.group}\`) holds this belief alone — no other belief names it.`)
     : "_This belief declares no group._"}
 `;
   fs.mkdirSync(path.join(OUT, "religions"), { recursive: true });
@@ -712,22 +694,6 @@ has its own page: where it is, who its people are, who follows it, and what the 
 **${FACTS.filter((f) => f.regions.size).length}** of the ${BELIEF_ORDER.length} are on the map at the campaign start, carried between them by ${num(totalTagged)}
 region tags across ${num(REGIONS.length)} regions. ${onNoRegion.length ? `The other ${onNoRegion.length} — ${onNoRegion.map((f) => `**${f.name}**`).join(" and ")} — ${onNoRegion.length === 1 ? "is" : "are"} declared but on no region: ${onNoRegion.length === 1 ? "it is" : "they are"} the umbrella ${onNoRegion.length === 1 ? "entry" : "entries"} the finer-grained beliefs sit under.` : ""}
 
-<details>
-<summary>Where these answers come from, and the trap in reading the file</summary>
-
-descr_beliefs.txt declares all ${BELIEF_ORDER.length}, but not at the same indent: twelve of them, the Anatolian set,
-are written one tab deeper than the rest. A pattern anchored on a single tab finds ${SINGLE_TAB_BLOCKS} — and
-every one of the twelve it misses is a people the map uses, so the loss would have fallen
-exactly where it matters. A block is recognised here by the \`"religion icon"\` line it carries
-instead, which gives ${BELIEF_ORDER.length}, and a flat pattern over the file text finds ${RAW_ICON_LINES} of those lines and
-${RAW_NAME_LINES} \`"name"\` lines. All three numbers are printed on every run.
-
-Where a belief is comes from the \`rel_<belief>_<tier>\` tags in descr_regions.txt — **the digit
-is a 1-4 strength tier, not a percentage**. Who follows it is stated by two files that do not
-always agree, and both are shown.
-
-</details>
-
 ## What a belief does, and what it does not
 
 - **It is a number, not a key.** No building level and no recruitment line in the mod is
@@ -758,14 +724,13 @@ ones where it is held alongside a larger one. Together they are every province t
 **Factions** is not a count of provinces — it is how many factions have this as their state
 belief, so a faction with forty provinces counts once.
 
-A group has no name of its own in the mod: descr_beliefs.txt declares a token and no text file
-localises it. ${groupNamed.viaBelief.size} of the ${groupNamed.viaBelief.size + groupNamed.token.size} group tokens are also belief tokens and take that belief's own
+A group has no name of its own in the mod: there is only a token. ${groupNamed.viaBelief.size} of the ${groupNamed.viaBelief.size + groupNamed.token.size} group tokens are also belief tokens and take that belief's own
 declared name; ${groupNamed.token.size === 1 ? `the one that is not — \`${[...groupNamed.token][0]}\` — is` : `the ${groupNamed.token.size} that are not are`} printed as ${groupNamed.token.size === 1 ? "it stands" : "they stand"}, in lower case, rather than
 given a name this wiki made up.
 
 ${groupSections}
 
-${onNoFaction.length ? `## Beliefs no faction defaults to\n\n**${onNoFaction.length}** of the ${BELIEF_ORDER.length} are the default religion of no faction in descr_sm_factions.txt: ${onNoFaction.map((f) => `${pipRel(f.tok, "")}[${f.name}](religions/${f.tok}.md)`).join(", ")}. ${onNoFaction.filter((f) => f.regions.size).length} of those ${onNoFaction.filter((f) => f.regions.size).length === 1 ? "is" : "are"} still on the map, held by provinces rather than by a state.\n` : ""}
+${onNoFaction.length ? `## Beliefs no faction defaults to\n\n**${onNoFaction.length}** of the ${BELIEF_ORDER.length} are the state belief of no faction: ${onNoFaction.map((f) => `${pipRel(f.tok, "")}[${f.name}](religions/${f.tok}.md)`).join(", ")}. ${onNoFaction.filter((f) => f.regions.size).length} of those ${onNoFaction.filter((f) => f.regions.size).length === 1 ? "is" : "are"} still on the map, held by provinces rather than by a state.\n` : ""}
 `;
 fs.writeFileSync(path.join(OUT, "religions.md"), indexBody, "utf8");
 

@@ -481,22 +481,6 @@ offices and animals that attach themselves to generals, governors and agents and
 with them. Where a trait is who a character has become, retinue is who and what he keeps
 around him, and members can be traded between characters who meet.
 
-<details>
-<summary>What counts as retinue a player sees — the tests that were measured</summary>
-
-Unlike the trait file there is **no Hidden flag here** — the ancillary vocabulary has no
-concealment marker at all. The candidate tests:
-
-| Candidate test | Entries it keeps |
-|---|---:|
-${CANDIDATES.map(([k, n]) => `| ${k} | ${num(n)} |`).join("\n")}
-
-Every entry is localised, so the name test selects nothing; the trigger test would drop
-**${UNREACHABLE.length}** real, displayed followers the campaign script hands out (Hanno the Great among
-them). So all **${num(ALL.length)}** are published, and an entry no trigger grants says so on its page.
-
-</details>
-
 ## How retinue works
 
 - **A member arrives by trigger or by script.** ${num(TRIG_ALL.length)} triggers with ${num(TRIG_ALL.reduce((x, t) => x + t.acquires.length, 0))} grant rules bring
@@ -529,18 +513,6 @@ ${(() => {
 |---|---:|
 ${topAttrs.map(([a, n]) => `| ${attrName(a)} | ${num(n)} |`).join("\n")}
 
-<details>
-<summary>Where these answers come from</summary>
-
-export_descr_ancillaries.txt declares every member, its effects and the triggers that grant
-it; display names and descriptions are text/export_ancillaries.txt (UTF-16LE) — the
-ancillaries' own text file, not export_vnvs.txt — keyed \`{token}\`, \`{token_desc}\`,
-\`{token_effects_desc}\`. Portraits are the mod's ui/ancillaries art, converted as-is. Effect
-attribute names are the engine's UI strings and exist in no mod text file, so they are
-rendered from the token. Where a description has no text entry the page says **not
-determined** rather than inventing one.
-
-</details>
 `;
 fs.writeFileSync(path.join(OUT, "ancillaries.md"), indexBody, "utf8");
 

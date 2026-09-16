@@ -609,26 +609,6 @@ vices, offices, wounds, habits and reputations that appear on a general's, gover
 agent's scroll. Behind them the file also declares **${HIDDEN.length}** hidden bookkeeping traits the player
 never sees; they are counted here and excluded everywhere else.
 
-<details>
-<summary>What counts as a trait a player sees — the tests that were measured</summary>
-
-The file declares **${num(ALL.length)}** traits. Four candidate tests for "the player sees this" were
-measured rather than assumed:
-
-| Candidate test | Traits it keeps |
-|---|---:|
-${CANDIDATES.map(([k, n]) => `| ${k} | ${num(n)} |`).join("\n")}
-
-Every level of every trait has a display name in the text files — the file is generated from
-a spreadsheet, machinery included — so the name test selects nothing. Requiring an Effect
-line drops real display-only traits (epithets, titles); requiring a trigger drops everything
-granted by the campaign script or at birth. The \`Hidden\` flag is the mod's own marker for
-what the player never sees, and it is the test these pages use: **${num(VISIBLE.length)}** visible, **${HIDDEN.length}** hidden.
-
-The ${HIDDEN.length} hidden traits, so the exclusion is inspectable: ${HIDDEN.map((t) => `\`${t.name}\``).join(", ")}.
-
-</details>
-
 ## How traits work
 
 - **A trait is a ladder of levels.** Points accumulate through triggers — battles fought,
@@ -669,17 +649,6 @@ ${topAttrs.map(([a, n]) => `| ${attrName(a)} | ${num(n)} |`).join("\n")}
 
 Who the traits appear on: ${Object.entries(charCounts).sort((a, b) => b[1] - a[1]).map(([c, n]) => `**${num(n)}** on ${charName(c)}`).join(" · ")}.
 
-<details>
-<summary>Where these answers come from</summary>
-
-export_descr_character_traits.txt declares every trait, level, effect and trigger; display
-names and descriptions are text/export_vnvs.txt (UTF-16LE), keyed by level name. Effect
-attribute names (Command, Troop Morale, …) are the engine's own UI strings and exist in no
-mod text file, so they are rendered from the token. Values are printed exactly as the file
-gives them — movement points as points, never converted to percentages. Where a description
-has no text entry the page says **not determined** rather than inventing one.
-
-</details>
 `;
 fs.writeFileSync(path.join(OUT, "traits.md"), indexBody, "utf8");
 

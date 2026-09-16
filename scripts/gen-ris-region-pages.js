@@ -666,8 +666,8 @@ function tagRef(tok) {
 // +0.5xfarmN exactly. Anyone can verify it in the file.
 const FARM_NOTE = "Fertility does not drive population growth in RIS. The engine adds " +
   "+0.5% growth per fertility point, and the `hinterland_region` building subtracts the same " +
-  "amount back (`population_growth_bonus -N` for `farmN`, under BASE GROWTH in " +
-  "export_descr_buildings.txt), so the two cancel by design. Fertility still describes the " +
+  "amount back (`population_growth_bonus -N` for `farmN`, under BASE GROWTH), so the two " +
+  "cancel by design. Fertility still describes the " +
   "land; it is growth specifically that it does not change.";
 
 // What the digit on a `rel_<belief>_N` tag actually is, checked in the file that consumes it.
@@ -682,9 +682,9 @@ const FARM_NOTE = "Fertility does not drive population growth in RIS. The engine
 // tiers as "present", so the tier is about strength, not presence.
 const RELIGION_NOTE = "The number on a `rel_…` tag is a **1-4 strength tier, not a percentage**. " +
   "RIS scales the `religious_belief` a region generates by it — `hinterland_region` grants 2/4/6/8 " +
-  "for tiers 1/2/3/4, and the government chains grant 4/8/12/16 (export_descr_buildings.txt). " +
+  "for tiers 1/2/3/4, and the government chains grant 4/8/12/16. " +
   "Any tier counts as the belief being present. The percentages on the People row are a " +
-  "different thing entirely: they come from the region's own ethnicities field and sum to 100.";
+  "different thing entirely: they are the region's own ethnic shares and sum to 100.";
 
 // ── build ────────────────────────────────────────────────────────────────────
 const regions = loadRegions();
