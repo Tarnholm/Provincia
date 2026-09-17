@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1507",
+    date: "2026-09-17",
+    items: [
+      { type: "improvement", text: "**Crash Reporter v0.1.57: one address demoted, one claim narrowed.** Two corrections, both from reading the 107 sessions testers sent on v7.17 and v7.18. Twenty of those carried a crash dump the reporter could parse, and a single address took seven of the twenty — by a wide margin the largest cluster in the window, and exactly the sort of number that starts a hunt for a mod bug. All seven are the same tester on the same graphics card. Grouped that way it has the same shape as the address already filed as one machine's problem, so it now sits beside it, and a report landing there says as much instead of quietly implicating the mod. Only one address in the whole window turned up on two different testers on two different cards; that one keeps its standing. The second correction is an admission. When the engine can find no free tile beside any of a faction's settlements, a character coming of age is created at the map's origin with empty name strings, and drawing that character's card crashes the game on the spot. The reporter has been calling this a map problem — certain settlements in the mod are sealed in by construction, and those do produce it. But across these 107 sessions the fault was caught in the act exactly once, and the faction it happened to was not one of the sealed ones: an ordinary playable faction, with a real town and a field army. A faction can evidently be closed in during a campaign by whatever has gathered around it, and no edit to the map prevents that. So the reporter no longer promises a map fix closes this. It names the faction and calls the fix necessary rather than sufficient, because that name is what decides which of the two it was. What would settle it is the save from that session. The damage, meanwhile, is wider than the crash count suggests: 68 of the 107 saves already carry these broken characters, across thirteen testers, and nothing can clean them out of a save that has them. The mine is laid nearly everywhere and had simply not been trodden on." },
+    ],
+  },
+
+  {
     version: "0.9.1506",
     date: "2026-08-31",
     items: [
@@ -41,39 +49,6 @@ const CHANGELOG = [
     date: "2026-08-12",
     items: [
       { type: "feature", text: "**Settlement Processor Suite 0.16.26: farm bump exceptions can be limited by settlement size.** New **Bump Exception Levels** set in Farms — the same Levels list Urban and Rural Exploits already have. Remove a level (e.g. `large_town`) and settlements of that size always take the full bump, with both the per-chain rules and the global fertility exception switched off for them. Default lists every level, so nothing changes until you prune it. On RIS, dropping `large_town` demotes 87 large_towns one level and takes the farm off 20 more." },
-    ],
-  },
-
-  {
-    version: "0.9.1502",
-    date: "2026-08-12",
-    items: [
-      { type: "change", text: "**Settlement Processor Suite 0.16.25: farm bump exceptions arrive with real defaults.** The per-chain exception table shipped empty, so every farm chain sat behind the full bump. All ten chains now start with a rule set — irrigated and rainfed skip the bump at `fertility` 8 and 9 or `grain` 2, qanat at `grain` 1, `dates` 2 or `fertility` 7, and the pastoral chains at `livestock`, `sheep`, `horses` or `camels` 3. On RIS that promotes 81 settlements to a higher farm level, 63 of them irrigation, and gives 15 large_towns their first farm building. Clear a row to restore the old behaviour for that chain." },
-    ],
-  },
-
-  {
-    version: "0.9.1501",
-    date: "2026-08-10",
-    items: [
-      { type: "fix", text: "**Crash Reporter v0.1.53: the mod version now gets its own ✅/🔴.** The freshness mark on the mod line now compares the tester's loaded beta version against the live workshop title — so a tester still on v7.14.b shows 🔴 naming the latest (v7.15), and a tester on the current build shows ✅. The previous size-based check produced no mark at all on submod stacks (e.g. 4 Romans on RIS)." },
-    ],
-  },
-
-  {
-    version: "0.9.1500",
-    date: "2026-08-10",
-    items: [
-      { type: "feature", text: "**Crash Reporter v0.1.52: version-freshness marks in every report.** The header now shows a ✅ when the reporter is the latest release and a ✅ on the mod name when the tester's Steam workshop copy matches what Steam has published — or a 🔴 with instructions (outdated reporter → update; stale Steam cache → restart Steam) so out-of-date setups are obvious at a glance in the channel. Local dev copies get no mark (nothing to compare against). The workshop check reads Steam's own install manifest and the item's public page, so it works even though the beta item is unlisted." },
-    ],
-  },
-
-  {
-    version: "0.9.1499",
-    date: "2026-08-10",
-    items: [
-      { type: "feature", text: "**Scripts Suite: Rural Exploits can also limit the rich-resource exception by settlement level** — same Full-Tier Levels list Urban Exploits got yesterday. Remove a level and settlements of that size always use the lower building band. Suite 0.16.24." },
-      { type: "feature", text: "**Scripts Suite: Reset to default.** New editor toolbar button replaces the open pipeline script with the pristine copy shipped with the app — the instant fix for a script that hand edits left unparseable, no restart needed." },
     ],
   },
 

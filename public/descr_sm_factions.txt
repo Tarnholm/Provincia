@@ -6187,6 +6187,9 @@
 				"greek slingers",
 				"greek archers",
 				"greek peltasts",
+				"karian hoplites",
+				"karian thureophoroi",
+				"karian leukaspides swordsmen",
 				"karian light infantry",
 				"karian heavy infantry",
 				"prodromoi",
@@ -19045,7 +19048,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 1,
 		},
 
 		"logos":
@@ -19138,7 +19141,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 1,
 		},
 
 		"logos":
@@ -19231,7 +19234,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 1,
 		},
 
 		"logos":
