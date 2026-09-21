@@ -5,7 +5,12 @@ import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOver
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, prefetchBuildingIconsBulk, invalidateBuildingIcon, warmStats } from "./buildingIcons";
 import { WARM_TUNING, runWarmChunks } from "./iconWarmScheduler";
 import { buildSeaGrid, buildLandGrid, nearestSea, aStarSea, seaComponents, nearestSeaBig, roadAStarExact } from "./seaLanePath";
-import { CAPTURED_MAPS } from "./risRoads";
+// src/risRoads.js is 2.9 MB of captured road geometry — two thirds of what the
+// main chunk used to parse at startup, needed only once the road layer is first
+// computed (and not even then on a lane-cache hit for an uncaptured map). Loaded
+// on demand, once; Vite splits it into its own chunk.
+let _capturedMapsPromise = null;
+const loadCapturedMaps = () => _capturedMapsPromise || (_capturedMapsPromise = import("./risRoads").then((m) => m.CAPTURED_MAPS || []).catch((e) => { console.warn("[roads] captured road data failed to load:", e && e.message); _capturedMapsPromise = null; return []; }));
 import { getCachedUnitIcon, prefetchUnitIcons, prefetchUnitIconsBulk } from "./unitIcons";
 import { loadPortrait } from "./portraitIcons";
 // Heavy, single-use panels are code-split (2026-07-15): each is loaded as its
@@ -1963,7 +1968,6 @@ function App() {
   const bootStampsRef = useRef({});
   const bootLoggedRef = useRef(false);
   const topBarRef = useRef(null);
-  const [topBarHeight, setTopBarHeight] = useState(0);
 
   const [regions, setRegions] = useState({});
   const [regionInfo, setRegionInfo] = useState(null);
@@ -2032,6 +2036,14 @@ function App() {
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [drag, setDrag] = useState(null);
+  // The legend element from the last render that was NOT a pan frame. renderLegend()
+  // is ~2,200 lines and in faction mode re-aggregates and sorts every faction's
+  // regions (~240 rows; the region list is ~1,300) — and a pan re-renders App on
+  // every pointer move. Nothing the legend reads changes with the pan offset, so
+  // while the map is being dragged the previous element is handed back as-is:
+  // React sees the identical element and skips that whole subtree. It is rebuilt
+  // on the first render after the drag ends.
+  const legendElRef = useRef(null);
   const [offscreen, setOffscreen] = useState(null);
   const [coloredOffscreen, setColoredOffscreen] = useState(null);
   const [stripeOverlay, setStripeOverlay] = useState(null);
@@ -2330,7 +2342,6 @@ function App() {
   useEffect(() => {
     try { localStorage.setItem("diploShowNeutral", diploShowNeutral ? "1" : "0"); } catch {}
   }, [diploShowNeutral]);
-  const [diploConfigOpen, setDiploConfigOpen] = useState(false);
   const [showLabels, setShowLabels] = useState("off"); // "off" | "city" | "region"
   const [cityPixels, setCityPixels] = useState([]); // [{x, y, rgbKey}] — black pixel positions mapped to nearest region
   const [hoveredCity, setHoveredCity] = useState(null); // { city, region, x, y, tier, screenX, screenY }
@@ -3728,17 +3739,9 @@ function App() {
   const [liveLoadingStage, setLiveLoadingStage] = useState("");
   const [liveLoadingStartedAt, setLiveLoadingStartedAt] = useState(null);
   const liveLoadingStartedAtRef = useRef(null);
-  const [liveLoadingElapsedSec, setLiveLoadingElapsedSec] = useState(0);
   const [saveLoadedAt, setSaveLoadedAt] = useState(null); // wall-clock ms when the last save snapshot landed
-  // Tick the elapsed-seconds counter while a parse is in flight. Runs at
-  // 250ms cadence — fine enough to feel responsive, sparing on re-renders.
-  useEffect(() => {
-    if (!liveLoading || !liveLoadingStartedAt) return;
-    const id = setInterval(() => {
-      setLiveLoadingElapsedSec(Math.floor((Date.now() - liveLoadingStartedAt) / 1000));
-    }, 250);
-    return () => clearInterval(id);
-  }, [liveLoading, liveLoadingStartedAt]);
+  // (An elapsed-seconds counter ticked here until 2026-09-21 — a whole-App
+  // re-render every second of a save parse, for a number nothing displayed.)
   const [, setNowTick] = useState(0); // force re-render every 30s so the "ago" label updates without a save event
   useEffect(() => {
     if (!saveLoadedAt) return;
@@ -5436,7 +5439,6 @@ function App() {
   );
   const [populationData, setPopulationData] = useState({});
   const [dimOverlay, setDimOverlay] = useState(null);
-  const [factionSearch, setFactionSearch] = useState("");
   const [classicToImperial, setClassicToImperial] = useState(null); // city mapping
   const [classicVictory, setClassicVictory] = useState(null); // parsed classic victory conditions
   const [portedVictory, setPortedVictory] = useState(null); // ported conditions (null = not computed)
@@ -5448,11 +5450,9 @@ function App() {
   // ── Live log watcher state ──
   const [liveLogActive, setLiveLogActive] = useState(false);
   const [liveLogEvents, setLiveLogEvents] = useState([]); // [{type, text, turn, ts}]
-  const [liveLogTurn, setLiveLogTurn] = useState(null); // {turn, year, season, faction}
   // Number of Turn-End events seen since activation. Used to gate save-derived
   // building overrides — the heuristic save parser produces false positives
   // when the game is still on turn 0, so only trust it once a turn has ended.
-  const [liveTurnsEnded, setLiveTurnsEnded] = useState(0);
   // Player's faction for live mode. Persisted so repeat launches remember.
   const [playerFaction, setPlayerFaction] = useState(() => {
     try { return localStorage.getItem("playerFaction") || null; } catch { return null; }
@@ -5915,12 +5915,10 @@ function App() {
           truncateTurn = ev.turn;
         }
         currentTurnRef.current = ev.turn;
-        setLiveLogTurn(prev => ({ ...prev, turn: ev.turn, phase: ev.phase, year: ev.year, season: ev.season, campaign: ev.campaign }));
         // On turn end, trigger save file parse for building/army updates,
         // and mark that we've seen at least one real turn so the UI can
         // trust save-derived data from here on.
         if (ev.phase === "End" && !isBackfill) {
-          setLiveTurnsEnded(n => n + 1);
           const api = window.electronAPI;
           if (api?.saveCheckNow) api.saveCheckNow();
         }
@@ -6296,7 +6294,6 @@ function App() {
     setLiveLoading(true);
     setLiveLoadingStage("Starting live mode...");
     setLiveLoadingStartedAt(Date.now());
-    setLiveLoadingElapsedSec(0);
     const unsubProgress = api.onSaveProgress?.(({ stage, pct }) => {
       setLiveLoadingStage(stage || "");
       if (stage === "Done" || pct === 100) {
@@ -6312,7 +6309,6 @@ function App() {
         if (!liveLoadingStartedAtRef.current) {
           liveLoadingStartedAtRef.current = Date.now();
           setLiveLoadingStartedAt(Date.now());
-          setLiveLoadingElapsedSec(0);
         }
       }
     });
@@ -10115,16 +10111,35 @@ function App() {
 
   // Draw minimap
   const MINIMAP_W = 160;
+  const minimapBaseRef = useRef(null);
   useEffect(() => {
     const mm = minimapRef.current;
     if (!mm || !offscreen || showSplash) return;
     const drawCanvas = coloredOffscreen || offscreen;
     const mmH = Math.round(MINIMAP_W * imgSize.height / imgSize.width);
-    mm.width = MINIMAP_W;
-    mm.height = mmH;
+    // The smooth downscale of the full map (1020x700 → 160 px) is the costly part
+    // and only changes when the map image does; `offset` is in the deps, so this
+    // effect runs on every pan frame. Keep the downscaled base in its own canvas,
+    // rebuilt only for a new source or size — a pan frame is one 160 px blit and
+    // a rectangle.
+    let base = minimapBaseRef.current;
+    // Paint mode (and undo/redo, which bump paintHistTick) edits the source canvas
+    // IN PLACE — same object, new pixels — so identity proves nothing there: always
+    // rebuild while painting.
+    if (paintMode || !base || base.src !== drawCanvas || base.w !== MINIMAP_W || base.h !== mmH) {
+      const c = document.createElement("canvas");
+      c.width = MINIMAP_W; c.height = mmH;
+      const bctx = c.getContext("2d");
+      bctx.imageSmoothingEnabled = true;
+      bctx.drawImage(drawCanvas, 0, 0, MINIMAP_W, mmH);
+      base = { src: drawCanvas, w: MINIMAP_W, h: mmH, canvas: c };
+      minimapBaseRef.current = paintMode ? null : base; // never keep a base built mid-paint: leaving paint mode rebuilds it
+    }
+    if (mm.width !== MINIMAP_W) mm.width = MINIMAP_W;
+    if (mm.height !== mmH) mm.height = mmH;
     const ctx = mm.getContext("2d");
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(drawCanvas, 0, 0, MINIMAP_W, mmH);
+    ctx.clearRect(0, 0, MINIMAP_W, mmH);
+    ctx.drawImage(base.canvas, 0, 0);
     // Viewport rectangle
     const { totalScale, baseOffsetX, baseOffsetY } = computeTransform();
     const mmScale = MINIMAP_W / imgSize.width;
@@ -10136,7 +10151,7 @@ function App() {
     ctx.lineWidth = 1.5;
     ctx.strokeRect(Math.max(0, vx), Math.max(0, vy),
       Math.min(MINIMAP_W - Math.max(0, vx), vw), Math.min(mmH - Math.max(0, vy), vh));
-  }, [offscreen, coloredOffscreen, zoom, offset, canvasSize, imgSize, computeTransform, showSplash]);
+  }, [offscreen, coloredOffscreen, zoom, offset, canvasSize, imgSize, computeTransform, showSplash, paintMode, paintHistTick]);
 
   // Load regions
   useEffect(() => {
@@ -10648,6 +10663,10 @@ function App() {
     // fingerprint-gated (dims + a marker pixel) so it never applies to a
     // different map. Any RR map/mod can be added by capturing it. Everything
     // unmatched falls back to the reverse-engineered A* below.
+    let cancelled = false;
+    (async () => {
+    const CAPTURED_MAPS = await loadCapturedMaps();
+    if (cancelled) return;
     const capMap = CAPTURED_MAPS.find((cm) => {
       const f = cm.fingerprint; if (W !== f.mapW || H !== f.mapH) return false;
       const o = (f.y * W + f.x) * 4;
@@ -10655,8 +10674,6 @@ function App() {
     });
     const roadSig = `road|v53holes|${modDataDir}|${W}x${H}|${capMap ? "cap:" + capMap.name + ":" + capMap.roads.length : ""}|${roadRegionsEff ? cheapStrHash([...roadRegionsEff].sort().join(",")) : 0}|${portRegionsEff ? cheapStrHash([...portRegionsEff].sort().join(",")) : 0}|${Object.keys(regionAdjacency || {}).length}|${Object.keys(tradeLaneAnchors || {}).length}|${portByRegion ? Object.keys(portByRegion).length : 0}|${(portPixels || []).length}|${groundTypesPixels ? 1 : 0}`;
     if (_laneMemCache[roadSig]) { setRoadsPrecurved(!!_laneMemCache[roadSig].precurved); setRoadPaths(_laneMemCache[roadSig].roadPaths); return; }
-    let cancelled = false;
-    (async () => {
     try {
       const disk = await window.electronAPI?.laneCacheGet?.(modDataDir, "road", roadSig);
       if (cancelled) return;
@@ -11027,7 +11044,10 @@ function App() {
     if (stripeOverlay) {
       ctx.save();
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "high";
+      // The overlay is an 8x canvas (8160x5600 on the RIS map); "high" quality
+      // resamples all of it on every pan frame. Same `panning` rule as the other
+      // heavy layers: cheapest filter during the drag, full quality on release.
+      ctx.imageSmoothingQuality = panning ? "low" : "high";
       ctx.drawImage(stripeOverlay, 0, 0, imgSize.width, imgSize.height);
       ctx.restore();
     }
@@ -12207,9 +12227,6 @@ function App() {
   // engine's 0.05 grid (see src/taxCalib.js) and persists it per modDir+faction.
   // H is a campaign-start roll seeded by the exact file set — NOT file-derivable,
   // NOT in saves — so one paste per campaign makes the tax model denarius-grade.
-  const [taxCalibText, setTaxCalibText] = useState("");
-  const [taxCalibOpen, setTaxCalibOpen] = useState(false);
-  const [taxCalibBump, setTaxCalibBump] = useState(0); // re-render/refetch tick after apply/clear
   const taxCalibKey = (mod, fac) => `taxCalibH::${mod || ""}::${String(fac || "").toLowerCase()}`;
   const taxCalibStored = (mod, fac) => {
     try {
@@ -12220,8 +12237,6 @@ function App() {
   // PER-TOWN CORRUPTION CALIBRATION (2026-06-14): same pattern — paste live per-town
   // corruption once, reproduced exactly (corruption's road distance isn't file-derivable
   // but is deterministic per files). Persisted per modDir+faction.
-  const [corrCalibText, setCorrCalibText] = useState("");
-  const [corrCalibOpen, setCorrCalibOpen] = useState(false);
   const corrCalibKey = (mod, fac) => `corrCalib::${mod || ""}::${String(fac || "").toLowerCase()}`;
   const corrCalibStored = (mod, fac) => {
     try {
@@ -12521,18 +12536,6 @@ function App() {
     ? Math.round((typeof window !== "undefined" ? window.innerHeight : 1000) * bottomStripPct)
     : REGIONINFO_HEIGHT;
 
-  // Measure top-left bar height dynamically so the legend panel can avoid overlapping it
-  useEffect(() => {
-    const el = topBarRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        setTopBarHeight(entry.contentRect.height);
-      }
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
   // ── Pointer-event wrappers: the canvas listens to pointer events so
   // touchscreens work — single-finger pan, two-finger pinch zoom (anchored
@@ -14697,9 +14700,7 @@ function App() {
       currentCampaignRef.current = null;
       setLiveHistory([]);
       setLiveLogEvents([]);
-      setLiveLogTurn(null);
       setActiveSieges({});
-      setLiveTurnsEnded(0);
       if (api?.saveUserFile) api.saveUserFile("live_history.json", "[]");
 
       setLiveLogActive(true);
@@ -19784,7 +19785,7 @@ Click for unit card`}
                       </div>
                     </div>
                   )}
-                  {renderLegend()}
+                  {(drag && drag.moved && legendElRef.current) || (legendElRef.current = renderLegend())}
                   {renderSettlementLegend()}
                   {renderResourceFilter()}
                   {colorMode === "homeland" && selectedFaction && (
