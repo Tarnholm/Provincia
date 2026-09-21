@@ -42,6 +42,13 @@ export default function ExtinctionWatchPanel({ familiesByFaction, settlementCoun
 
   const { rows, summary } = React.useMemo(() => assessAll(familiesByFaction, settlementCount), [familiesByFaction, settlementCount]);
   const facLabel = React.useCallback((f) => (factionDisplayNames && f && factionDisplayNames[f]) || (f ? f.replace(/_/g, " ") : "—"), [factionDisplayNames]);
+  // Two factions can share a display name (RIS: roman_rebels_1 and _2 are both
+  // "Roman Rebels"); those rows also show the faction id so they can be told apart.
+  const sharedLabels = React.useMemo(() => {
+    const seen = new Map();
+    for (const r of rows) { const l = facLabel(r.faction); seen.set(l, (seen.get(l) || 0) + 1); }
+    return new Set([...seen].filter(([, n]) => n > 1).map(([l]) => l));
+  }, [rows, facLabel]);
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase();
     return rows.filter((r) => (!tiers.size || tiers.has(r.tier)) && (!q || r.faction.toLowerCase().includes(q) || facLabel(r.faction).toLowerCase().includes(q) || r.adults.some((a) => a.name.toLowerCase().includes(q))));
@@ -71,7 +78,7 @@ export default function ExtinctionWatchPanel({ familiesByFaction, settlementCoun
         style={{ background: "rgba(26,22,18,0.98)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, width: "min(900px, 94vw)", maxHeight: "86vh", display: "flex", flexDirection: "column", color: "#ddd", boxShadow: "0 18px 60px rgba(0,0,0,0.55)" }}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "12px 16px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <div style={{ fontSize: "1.02rem", fontWeight: 600, color: GOLD }}>
+          <div className="panel-heading" style={{ fontSize: "1.1rem", fontWeight: 600, color: GOLD }}>
             Extinction Watch
             <span style={{ marginLeft: 10, fontSize: "0.74rem", color: "#9ab", fontWeight: 400 }}>
               {loaded ? `${filtered.length} / ${rows.length} factions  ·  campaign start (descr_strat)` : ""}
@@ -121,7 +128,10 @@ export default function ExtinctionWatchPanel({ familiesByFaction, settlementCoun
                   <span style={{ minWidth: 46, textAlign: "center", borderRadius: 10, padding: "1px 0", fontSize: "0.74rem", fontWeight: 600, color: s.color, background: s.bg, border: `1px solid ${s.border}` }}>
                     {r.noFamily ? "—" : r.adultMales}
                   </span>
-                  <span style={{ flex: "0 1 240px", fontSize: "0.86rem", color: "#e6e6e6", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{facLabel(r.faction)}</span>
+                  <span style={{ flex: "0 1 240px", fontSize: "0.86rem", color: "#e6e6e6", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {facLabel(r.faction)}
+                    {sharedLabels.has(facLabel(r.faction)) && <span style={{ marginLeft: 6, fontSize: "0.72rem", color: "#7d8896" }}>{r.faction}</span>}
+                  </span>
                   <span style={{ flex: 1, fontSize: "0.76rem", color: r.flags.length ? "#ffb59a" : "#8a97a6", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {r.noFamily ? "no family recorded" : r.flags.length ? r.flags.join(" · ") : (r.boys.length ? `${r.boys.length} boy${r.boys.length === 1 ? "" : "s"}${r.nextOfAgeIn != null ? `, next of age in ${r.nextOfAgeIn}y` : ""}` : "")}
                   </span>
