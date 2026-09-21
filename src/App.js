@@ -126,6 +126,9 @@ import {
   parseDescrStratResources,
   detectResourceOrientation,
   parseDescrStratArmies,
+  rowToStratY,
+  resourceIconCenter,
+  formatStratResourceLine,
 } from "./parsers";
 
 // Auto-update errors arrive as full HttpError dumps (URL + headers + stack
@@ -1712,14 +1715,9 @@ function patchDescrStrat(originalText, resourcesData, populationData, dirtyFiles
   }
 
   // Emit a resource line in the canonical descr_strat format.
-  const fmtResource = (regionName, res) => {
-    const type = (res.type + ",").padEnd(24);
-    const amount = (String(res.amount || 1) + ",").padEnd(5);
-    const x = String(res.x).padStart(5);
-    const stratY = mapHeight ? mapHeight - res.y : res.y;
-    const y = String(stratY).padStart(5);
-    return `resource        ${type}${amount}      ${x},${y}      ; ${regionName}`;
-  };
+  // parsers.js owns the row convention (rowToStratY). This used to write
+  // mapHeight - res.y — one row north of where the reader had found it.
+  const fmtResource = (regionName, res) => formatStratResourceLine(regionName, res, mapHeight);
 
   for (let i = 0; i < lines.length; i++) {
     // Replace resource block. Re-emit in three categories so trade / slave /
@@ -1785,7 +1783,7 @@ function patchDescrStrat(originalText, resourcesData, populationData, dirtyFiles
       if (!Array.isArray(entries)) continue;
       for (const res of entries) {
         // Reuse fmtResource so this insert-fresh fallback applies the SAME
-        // display→strat Y-flip (mapHeight - res.y) as the in-place replace
+        // display→strat Y-flip (parsers.js rowToStratY) as the in-place replace
         // path above. Writing res.y raw here was a latent bug: every resource
         // landed at its display Y instead of strat Y, throwing it ~half the
         // map away (descr_strat is bottom-up; the app is top-down).
@@ -11257,12 +11255,12 @@ function App() {
             drawX = (devDragResource.mx - baseOffsetX - offset.x) / totalScale;
             drawY = (devDragResource.my - baseOffsetY - offset.y) / totalScale;
           } else {
-            drawX = res.x + 0.5;
+            drawX = resourceIconCenter(res).x;
             // res.y is now the correct top-down pixel row (parsers.js uses
             // H-1-gameY); center the icon on that pixel symmetrically with x
             // (+0.5). The old `-0.5` compensated for the parser's off-by-one
             // (H-gameY) and is no longer needed.
-            drawY = res.y + 0.5;
+            drawY = resourceIconCenter(res).y;
           }
           // Cull off-screen
           const sx = drawX * totalScale + baseOffsetX + offset.x;
@@ -12696,8 +12694,9 @@ function App() {
       for (const [regionName, entries] of Object.entries(resourcesData)) {
         if (!Array.isArray(entries)) continue;
         for (const res of entries) {
-          const sx = (res.x + 0.5) * totalScale + baseOffsetX + offset.x;
-          const sy = (res.y - 0.5) * totalScale + baseOffsetY + offset.y;
+          const ic = resourceIconCenter(res); // the SAME centre the icon is drawn at
+          const sx = ic.x * totalScale + baseOffsetX + offset.x;
+          const sy = ic.y * totalScale + baseOffsetY + offset.y;
           if (Math.abs(mx - sx) <= ICON_PX / 2 && Math.abs(my - sy) <= ICON_PX / 2) {
             setDevDragResource({ regionName, type: res.type, mx, my });
             e.preventDefault();
@@ -12789,13 +12788,13 @@ function App() {
       setResourcesData(prev => {
         const next = { ...prev };
         next[devDragResource.regionName] = (next[devDragResource.regionName] || []).map(r =>
-          r.type === devDragResource.type ? { ...r, x: Math.floor(mapX), y: Math.floor(mapY) + 1 } : r
+          r.type === devDragResource.type ? { ...r, x: Math.floor(mapX), y: Math.floor(mapY) } : r
         );
         return next;
       });
       markDirty("resources", {
         kind: "resource",
-        description: `move ${devDragResource.type} in ${devDragResource.regionName} → (${Math.floor(mapX)}, ${Math.floor(mapY) + 1})`,
+        description: `move ${devDragResource.type} in ${devDragResource.regionName} → (${Math.floor(mapX)}, ${Math.floor(mapY)})`,
         revert: { type: "resource-pos", region: devDragResource.regionName, resourceType: devDragResource.type, before },
       });
       setDevDragResource(null);
@@ -12834,8 +12833,9 @@ function App() {
       setDevDragResource(prev => prev ? { ...prev, mx, my } : null);
       // Update tooltip to show coordinates at current drag position
       const { totalScale, baseOffsetX, baseOffsetY } = computeTransform();
-      const mapX = Math.round((mx - baseOffsetX - offset.x) / totalScale);
-      const mapY = Math.round((my - baseOffsetY - offset.y) / totalScale);
+      // floor, like the drop: the coordinates shown are the tile it will land on
+      const mapX = Math.floor((mx - baseOffsetX - offset.x) / totalScale);
+      const mapY = Math.floor((my - baseOffsetY - offset.y) / totalScale);
       setHoveredResource(prev => prev ? { ...prev, resX: mapX, resY: mapY, screenX: mx, screenY: my } :
         { type: devDragResource.type, amount: null, resX: mapX, resY: mapY, screenX: mx, screenY: my });
       return;
@@ -12957,13 +12957,14 @@ function App() {
             if (SKIP.has(res.type)) continue;
             if (resourceFilter !== null && !resourceFilter.has(res.type)) continue;
             const { totalScale: ts, baseOffsetX: bx, baseOffsetY: by } = computeTransform();
-            const sx = (res.x + 0.5) * ts + bx + offset.x;
-            const sy = (res.y - 0.5) * ts + by + offset.y;
+            const ic = resourceIconCenter(res); // the SAME centre the icon is drawn at
+            const sx = ic.x * ts + bx + offset.x;
+            const sy = ic.y * ts + by + offset.y;
             if (Math.abs(mouseScreenX - sx) <= ICON_PX / 2 && Math.abs(mouseScreenY - sy) <= ICON_PX / 2) {
               // Look up region at the resource's pixel position using pixelDataRef (same as map hover)
               let resolvedRegion = regionName;
               const data = pixelDataRef.current;
-              const lookupY = res.y - 1; // resource Y is height-stratY; pixel lookup needs height-1-stratY
+              const lookupY = res.y; // res.y IS the top-down pixel row (parsers.js stratYToRow)
               if (data && res.x >= 0 && lookupY >= 0 && res.x < imgSize.width && lookupY < imgSize.height) {
                 const pi = (lookupY * imgSize.width + res.x) * 4;
                 let rk = `${data[pi]},${data[pi+1]},${data[pi+2]}`;
@@ -13067,8 +13068,9 @@ function App() {
         for (const res of entries) {
           if (SKIP.has(res.type)) continue;
           if (resourceFilter !== null && !resourceFilter.has(res.type)) continue;
-          const sx = (res.x + 0.5) * totalScale + baseOffsetX + offset.x;
-          const sy = (res.y - 0.5) * totalScale + baseOffsetY + offset.y;
+          const ic = resourceIconCenter(res); // the SAME centre the icon is drawn at
+          const sx = ic.x * totalScale + baseOffsetX + offset.x;
+          const sy = ic.y * totalScale + baseOffsetY + offset.y;
           if (Math.abs(mx - sx) <= ICON_PX / 2 && Math.abs(my - sy) <= ICON_PX / 2) {
             setResourceFilter(prev =>
               prev instanceof Set && prev.size === 1 && prev.has(res.type)
@@ -20282,7 +20284,7 @@ Click for unit card`}
                     )}
                     <strong>{hoveredResource.type.replace(/_/g, " ")}</strong>
                     {hoveredResource.amount != null && <> &times; {hoveredResource.amount}</>}
-                    {devMode && hoveredResource.resX != null && <><br /><span style={{ fontSize: "0.75rem", color: "#aaa" }}>x: {hoveredResource.resX}, y: {imgSize.height - hoveredResource.resY}</span></>}
+                    {devMode && hoveredResource.resX != null && <><br /><span style={{ fontSize: "0.75rem", color: "#aaa" }}>x: {hoveredResource.resX}, y: {rowToStratY(hoveredResource.resY, imgSize.height)}</span></>}
                   </div>
                 )}
 

@@ -283,6 +283,31 @@ function parseDescrStratBuildings(text) {
 //   - after `;;;; AMBIENCE ;;;;`             → "ambience" (aqueducts, shipwrecks — decorative)
 // Vanilla descr_strats without these headers just produce all-"trade" output,
 // which matches prior behaviour.
+// ── The resource row convention, in ONE place ─────────────────────────────
+// descr_strat counts Y from the BOTTOM of the map; the app works in top-down
+// pixel rows. A resource at game (x, gameY) sits on pixel row H-1-gameY, and its
+// icon is centred on that pixel: (x + 0.5, row + 0.5).
+//
+// 2026-06-14 (e44d4ee) moved the READER and the icon DRAWING from the old
+// H-gameY to H-1-gameY — and nothing else. Until 2026-09-21 the hover / click /
+// drag hit tests still looked at row - 0.5 (one tile ABOVE the icon: "the hitbox
+// is a tile off"), the drop stored row + 1, and the WRITER still emitted
+// H - row, i.e. gameY + 1 — so saving resources from the app would have moved
+// every resource the user had NOT touched one row north. Reader, writer, hit
+// tests and the drop all go through these now; do not re-spell the arithmetic.
+function stratYToRow(gameY, mapHeight) { return mapHeight ? mapHeight - 1 - gameY : gameY; }
+function rowToStratY(row, mapHeight) { return mapHeight ? mapHeight - 1 - row : row; }
+// Map-space centre of a resource's icon (multiply by the view scale, add offsets).
+function resourceIconCenter(res) { return { x: res.x + 0.5, y: res.y + 0.5 }; }
+// A resource line in the canonical descr_strat format.
+function formatStratResourceLine(regionName, res, mapHeight) {
+  const type = (res.type + ",").padEnd(24);
+  const amount = (String(res.amount || 1) + ",").padEnd(5);
+  const x = String(res.x).padStart(5);
+  const y = String(rowToStratY(res.y, mapHeight)).padStart(5);
+  return `resource        ${type}${amount}      ${x},${y}      ; ${regionName}`;
+}
+
 function parseDescrStratResources(text, mapHeight, tgaBuf, regionsMap) {
   let pixelLookup = null;
   if (tgaBuf && regionsMap) {
@@ -337,7 +362,7 @@ function parseDescrStratResources(text, mapHeight, tgaBuf, regionsMap) {
     // flipped/scattered. H-1-gameY matches incomeModel.js's verified `regionAt`
     // transform (rowTop = H-1-yGame) and lands 100% of RIS + classic resources
     // in their commented region (exact pixel), vs ~83% for the old formula.
-    const y = mapHeight ? mapHeight - 1 - parseInt(m[4]) : parseInt(m[4]);
+    const y = stratYToRow(parseInt(m[4]), mapHeight);
     let region;
     if (pixelLookup) {
       // `y` is already the top-down row; pixelLookup re-applies the TGA origin
@@ -564,4 +589,8 @@ export {
   parseDescrStratFactionRelationships,
   parseCampaignScriptDiplomacy,
   mergeFactionRelationships,
+  stratYToRow,
+  rowToStratY,
+  resourceIconCenter,
+  formatStratResourceLine,
 };

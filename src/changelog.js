@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1509",
+    date: "2026-09-21",
+    items: [
+      { type: "fix", text: "**Resource icons: the hover and drag hitbox sits on the icon again.** It had been one tile above the icon since the June fix that moved resources onto their true map row — that change updated where icons are read and drawn, but not where the pointer looks for them. Hovering, clicking to filter, and picking a resource up to drag all use the icon's own centre now, and a dropped resource lands on the tile under the pointer." },
+      { type: "fix", text: "**Saving resources no longer moves the ones you did not touch.** The same leftover was in the save path: every resource was written one row north of where it had been read, so a resource save would have shifted the whole map's resources by a tile (the one you had just dragged landed correctly, which hid it). Reading and writing now share one conversion, with a round-trip test. RIS's own descr_strat shows no such mass shift, so nothing needs repairing." },
+    ],
+  },
+
+  {
     version: "0.9.1508",
     date: "2026-09-21",
     items: [
