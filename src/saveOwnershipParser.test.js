@@ -10,9 +10,9 @@ const RIS_DATA = "C:/RIS/RIS/data";
 const hasRisData = fs.existsSync(path.join(RIS_DATA, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"));
 
 describe.skipIf(!hasRisData)("resolveCurrentOwners (RIS imperial)", () => {
-  test("plurality vote recovers conquests at turn 22 athens", () => {
+  test("plurality vote recovers conquests at turn 22 athens", (ctx) => {
     const fp = path.join(FIXTURE_DIR, "athens_t22mid.sav");
-    if (!fs.existsSync(fp)) return;
+    if (!fs.existsSync(fp)) return ctx.skip();
     const init = buildInitialOwnership(RIS_DATA);
     const cur = resolveCurrentOwners(fs.readFileSync(fp), init.ownerByCity);
     // ≥80% of the ~1095 settlement markers should resolve. The 60%-majority
@@ -27,9 +27,9 @@ describe.skipIf(!hasRisData)("resolveCurrentOwners (RIS imperial)", () => {
     expect(conquests).toBeGreaterThan(100);
   });
 
-  test("uuid=0 settlements resolve to the slave/rebel faction", () => {
+  test("uuid=0 settlements resolve to the slave/rebel faction", (ctx) => {
     const fp = path.join(FIXTURE_DIR, "athens_t22mid.sav");
-    if (!fs.existsSync(fp)) return;
+    if (!fs.existsSync(fp)) return ctx.skip();
     const init = buildInitialOwnership(RIS_DATA);
     const cur = resolveCurrentOwners(fs.readFileSync(fp), init.ownerByCity);
     // Slave/rebel faction is the most common in starting ownership.
@@ -38,10 +38,10 @@ describe.skipIf(!hasRisData)("resolveCurrentOwners (RIS imperial)", () => {
     expect(counts.has("slave")).toBe(true);
   });
 
-  test("identical-state pair → identical owner attribution", () => {
+  test("identical-state pair → identical owner attribution", (ctx) => {
     const a = path.join(FIXTURE_DIR, "identical_A.sav");
     const b = path.join(FIXTURE_DIR, "identical_B.sav");
-    if (!fs.existsSync(a) || !fs.existsSync(b)) return;
+    if (!fs.existsSync(a) || !fs.existsSync(b)) return ctx.skip();
     const init = buildInitialOwnership(RIS_DATA);
     const ca = resolveCurrentOwners(fs.readFileSync(a), init.ownerByCity);
     const cb = resolveCurrentOwners(fs.readFileSync(b), init.ownerByCity);

@@ -3,12 +3,12 @@
 // pair with model lane features, refit log-linear (truth-weighted). Output new beta.
 process.env.TRADE_DEBUG = "1";
 const fs = require("fs");
-const { crackSave } = require("./src/saveCracker.js");
-const te = require("./src/traitEffects.js");
-const im = require("./src/incomeModel.js");
+const { crackSave } = require("../../src/saveCracker.js");
+const te = require("../../src/traitEffects.js");
+const im = require("../../src/incomeModel.js");
 const MOD = "C:/RIS/RIS/data";
 const SAVE = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/saves/save_Autosave   Carthage   Turn 1.sav";
-const TRUTH = require("./docs/carthage-screenshots-truth.json");
+const TRUTH = require("../../docs/carthage-screenshots-truth.json");
 const norm = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const own = new Set(TRUTH.settlements.map(s => norm(s.name)));
 const rowsAB = {};

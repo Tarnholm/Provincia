@@ -344,7 +344,7 @@ function main() {
     return;
   }
 
-  console.log(`scanned ${scanned} save file(s); ${campaigns.length} campaign(s) tracked` + (errors.length ? `; ${errors.length} crack error(s)` : ""));
+  console.log(`scanned ${scanned} save file(s); ${campaigns.length} campaign(s) tracked` + (errors.length ? `; ${errors.length} save(s) could not be read` : ""));
   for (const e of errors) console.log(`  ! ${e.file}: ${e.error}`);
   for (const c of campaigns) reportCampaign(c.player, c.rows, args);
 }

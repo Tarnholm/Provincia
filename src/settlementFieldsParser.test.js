@@ -10,8 +10,8 @@ const { crackSave } = require("./saveCracker.js");
 const SAVE = path.join("bundled-mod", "saves", "sample.sav");
 
 describe("parseSettlementFields", () => {
-  test("decodes plausible per-settlement fields from the bundled save", () => {
-    if (!fs.existsSync(SAVE)) return; // skip if asset absent
+  test("decodes plausible per-settlement fields from the bundled save", (ctx) => {
+    if (!fs.existsSync(SAVE)) return ctx.skip(); // skip if asset absent
     const buf = fs.readFileSync(SAVE);
     const fields = parseSettlementFields(buf, findAllSettlementMarkers(buf));
     const names = Object.keys(fields);
@@ -30,8 +30,8 @@ describe("parseSettlementFields", () => {
     expect(plausibleOrder).toBeGreaterThan(names.length * 0.8);
   });
 
-  test("population growth = projected - committed (roll-forward consistency)", () => {
-    if (!fs.existsSync(SAVE)) return;
+  test("population growth = projected - committed (roll-forward consistency)", (ctx) => {
+    if (!fs.existsSync(SAVE)) return ctx.skip();
     const buf = fs.readFileSync(SAVE);
     const fields = parseSettlementFields(buf, findAllSettlementMarkers(buf));
     for (const f of Object.values(fields)) {
@@ -47,8 +47,8 @@ describe("parseSettlementFields", () => {
   // s12 = religious/cultural-unrest penalty (0 for the culturally-homogeneous
   // Carthaginian empire); s2 = tax (0 before any tax rate is set, e.g. turn 1).
   const CARTHAGE_SAVE = "C:\\Users\\vtarn\\AppData\\Local\\Feral Interactive\\Total War ROME REMASTERED\\VFS\\Local\\Rome\\saves\\save_Carthage1.sav";
-  test("order slot s11 = distance-to-capital, s12 = religion, s2 = tax (Carthage T1)", () => {
-    if (!fs.existsSync(CARTHAGE_SAVE)) return; // machine-local asset
+  test("order slot s11 = distance-to-capital, s12 = religion, s2 = tax (Carthage T1)", (ctx) => {
+    if (!fs.existsSync(CARTHAGE_SAVE)) return ctx.skip(); // machine-local asset
     const buf = fs.readFileSync(CARTHAGE_SAVE);
     // PRECONDITION: these slot values are pinned to a FRESH Carthage turn-1
     // state. save_Carthage1.sav is a live file the user re-saves during play —
@@ -57,7 +57,7 @@ describe("parseSettlementFields", () => {
     const r = crackSave(buf, "C:\\RIS\\RIS\\data");
     if (r.playerFaction !== "carthage" || r.turn !== 1) {
       console.warn(`[test-skip] s11/s12/s2 Carthage T1: save not in expected state (player=${r.playerFaction}, turn=${r.turn}; expected carthage turn 1)`);
-      return;
+      return ctx.skip();
     }
     const fields = parseSettlementFields(buf, findAllSettlementMarkers(buf));
     const cap = fields["Carthage"];   // faction capital
@@ -66,7 +66,7 @@ describe("parseSettlementFields", () => {
     // than hard-fail.
     if (!cap || !far) {
       console.warn("[test-skip] s11/s12/s2 Carthage T1: expected settlements (Carthage/Tingi) not present in loaded save");
-      return;
+      return ctx.skip();
     }
 
     // s11 distance-to-capital: 0 at the capital, clearly positive far away.
@@ -90,10 +90,10 @@ describe("parseSettlementFields", () => {
   // CONFIRMED 2026-05-31 (findings-order-slots-v3): s10 = capital-status bonus,
   // s7 = turn-1-only start transient. Pinned against the real local saves.
   const SAVES_DIR = "C:\\Users\\vtarn\\AppData\\Local\\Feral Interactive\\Total War ROME REMASTERED\\VFS\\Local\\Rome\\saves";
-  test("order slot s10 = capital bonus (single high city = Carthage), s7 = turn-1 transient", () => {
+  test("order slot s10 = capital bonus (single high city = Carthage), s7 = turn-1 transient", (ctx) => {
     const t1 = path.join(SAVES_DIR, "save_Carthage1.sav");
     const t3 = path.join(SAVES_DIR, "save_carthage3.sav");
-    if (!fs.existsSync(t1) || !fs.existsSync(t3)) return; // machine-local assets
+    if (!fs.existsSync(t1) || !fs.existsSync(t3)) return ctx.skip(); // machine-local assets
 
     const buf1 = fs.readFileSync(t1);
     const f1 = parseSettlementFields(buf1, findAllSettlementMarkers(buf1));
@@ -141,9 +141,9 @@ describe("parseSettlementFields", () => {
   // present, and the magnitude dose-responds to health tier. Pinned on julii2
   // (turn 2 start: 14 tp / 11 tn, zero mismatches) cross-referencing the building
   // parser's `health`/`hospitals` (tag=sanitation) chains.
-  test("order slot s9 = health/sewerage bonus (presence ⇔ sanitation building, julii T2)", () => {
+  test("order slot s9 = health/sewerage bonus (presence ⇔ sanitation building, julii T2)", (ctx) => {
     const sv = path.join(SAVES_DIR, "save_julii2.sav");
-    if (!fs.existsSync(sv)) return; // machine-local asset
+    if (!fs.existsSync(sv)) return ctx.skip(); // machine-local asset
     const buf = fs.readFileSync(sv);
     const fields = parseSettlementFields(buf, findAllSettlementMarkers(buf));
     const r = crackSave(buf, "C:\\RIS\\RIS\\data");
@@ -152,7 +152,7 @@ describe("parseSettlementFields", () => {
     // skip (visibly) if it's no longer a romans_julii early-turn save with Rome.
     if (r.playerFaction !== "romans_julii" || !fields["Rome"]) {
       console.warn(`[test-skip] s9 health julii T2: save not in expected state (player=${r.playerFaction}, hasRome=${!!fields["Rome"]}; expected romans_julii holding Rome)`);
-      return;
+      return ctx.skip();
     }
     const own = (r.factions[r.playerFaction] && r.factions[r.playerFaction].regions) || [];
     expect(own.length).toBeGreaterThan(10);

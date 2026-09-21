@@ -6,8 +6,8 @@ import { parseEventSchedule, CATEGORIES } from "./eventScheduleParser.js";
 const SAVE = path.join("bundled-mod", "saves", "sample.sav");
 
 describe("parseEventSchedule", () => {
-  test("parses the descr_events schedule when present (structure well-formed)", () => {
-    if (!fs.existsSync(SAVE)) return; // skip if asset absent
+  test("parses the descr_events schedule when present (structure well-formed)", (ctx) => {
+    if (!fs.existsSync(SAVE)) return ctx.skip(); // skip if asset absent
     const sched = parseEventSchedule(fs.readFileSync(SAVE));
     // The bundled sample is a different mod build and may not carry this table;
     // the parser is validated on RIS saves. When the table IS present, assert it

@@ -2,7 +2,7 @@
 // For each Carthaginian pair (A,B) where both panels list each other, the larger of
 // {A's row to B, B's row to A} is the export; the smaller should be ~1/5 of the matching
 // export. This both VALIDATES the /5 law on real data and yields a clean export-only set.
-const TRUTH = require("./docs/carthage-screenshots-truth.json");
+const TRUTH = require("../../docs/carthage-screenshots-truth.json");
 const norm = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const own = new Set(TRUTH.settlements.map(s => norm(s.name)));
 

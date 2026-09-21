@@ -226,16 +226,16 @@ const CRIB = {
 };
 
 describe("economyParser — Julii Financial Overview save (STORED breakdown)", () => {
-  test("reproduces the in-game Financial Overview cribs to the denarius", () => {
+  test("reproduces the in-game Financial Overview cribs to the denarius", (ctx) => {
     if (!fs.existsSync(ECO_SAVE) || !fs.existsSync(MOD)) {
       console.warn(`[test-skip] economyParser integration: missing ${ECO_SAVE} or mod data`);
-      return;
+      return ctx.skip();
     }
     const buf = fs.readFileSync(ECO_SAVE);
     const cracked = crackSave(buf, MOD);
     if (cracked.playerFaction !== "romans_julii") {
       console.warn(`[test-skip] economyParser: save not Julii (player=${cracked.playerFaction})`);
-      return;
+      return ctx.skip();
     }
 
     // parseFinancialOverview is the breakthrough entry point (alias of

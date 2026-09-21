@@ -4,8 +4,8 @@
 // as traits are added. Run: node verify-traits.js [savePath]
 const fs = require("fs");
 const path = require("path");
-const { crackSave } = require("./src/saveCracker.js");
-const TE = require("./src/traitEffects.js");
+const { crackSave } = require("../../src/saveCracker.js");
+const TE = require("../../src/traitEffects.js");
 
 const MOD = "C:/RIS/RIS/data";
 const SAVE = process.argv[2] || "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/saves/save_julii4 tax.sav";

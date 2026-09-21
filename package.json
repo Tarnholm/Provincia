@@ -182,7 +182,15 @@
     "extraResources": [
       {
         "from": "scripts-suite-py",
-        "to": "app_data"
+        "to": "app_data",
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**",
+          "!**/*.pyc",
+          "!processed_output/**",
+          "!_backups/**",
+          "!_user_edits/**"
+        ]
       },
       {
         "from": "python-runtime",
@@ -194,7 +202,12 @@
       },
       {
         "from": "crash-reporter",
-        "to": "crash-reporter"
+        "to": "crash-reporter",
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**",
+          "!**/*.pyc"
+        ]
       }
     ],
     "publish": [

@@ -6,8 +6,8 @@ import { parseFactionKnowledge, findFactionRecords, resolveNames } from "./facti
 const SAVE = path.join("bundled-mod", "saves", "sample.sav");
 
 describe("parseFactionKnowledge", () => {
-  test("enumerates ff0aaff0 faction records (well-formed when present)", () => {
-    if (!fs.existsSync(SAVE)) return;
+  test("enumerates ff0aaff0 faction records (well-formed when present)", (ctx) => {
+    if (!fs.existsSync(SAVE)) return ctx.skip();
     // The bundled sample is a different mod build (map dims may differ), so it
     // may carry 0 records matching the 1020x700 RIS-imperial signature; the
     // parser is validated against the live RIS saves. Just assert well-formedness.
@@ -16,8 +16,8 @@ describe("parseFactionKnowledge", () => {
     for (const r of recs) { expect(r.size).toBeGreaterThan(24); }
   });
 
-  test("parses known-settlement tuples with sane fields", () => {
-    if (!fs.existsSync(SAVE)) return;
+  test("parses known-settlement tuples with sane fields", (ctx) => {
+    if (!fs.existsSync(SAVE)) return ctx.skip();
     const k = parseFactionKnowledge(fs.readFileSync(SAVE));
     // Some factions should have a populated tail; if the build differs and none
     // do, the parser must still return a well-formed (empty) result.

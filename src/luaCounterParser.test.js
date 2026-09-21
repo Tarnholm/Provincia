@@ -6,17 +6,17 @@ import { findLuaCounters, indexCountersByName } from "./luaCounterParser.js";
 const FIXTURE_DIR = path.join("scripts", "save-cracker", "fixtures", "feral");
 
 describe("findLuaCounters", () => {
-  test("finds 115 counters in identical_A.sav (RIS imperial)", () => {
+  test("finds 115 counters in identical_A.sav (RIS imperial)", (ctx) => {
     const fp = path.join(FIXTURE_DIR, "identical_A.sav");
-    if (!fs.existsSync(fp)) return;
+    if (!fs.existsSync(fp)) return ctx.skip();
     const buf = fs.readFileSync(fp);
     const counters = findLuaCounters(buf);
     expect(counters.length).toBe(115);
   });
 
-  test("known faction UUIDs match cross-validation", () => {
+  test("known faction UUIDs match cross-validation", (ctx) => {
     const fp = path.join(FIXTURE_DIR, "identical_A.sav");
-    if (!fs.existsSync(fp)) return;
+    if (!fs.existsSync(fp)) return ctx.skip();
     const counters = findLuaCounters(fs.readFileSync(fp));
     const byName = indexCountersByName(counters);
     // Verified against Python rtw-sav-parser cracker output 2026-05-09.
@@ -25,10 +25,10 @@ describe("findLuaCounters", () => {
     expect(byName.get("id_athens")).toBe(1330201);
   });
 
-  test("identical-state pair produces identical counter output", () => {
+  test("identical-state pair produces identical counter output", (ctx) => {
     const a = path.join(FIXTURE_DIR, "identical_A.sav");
     const b = path.join(FIXTURE_DIR, "identical_B.sav");
-    if (!fs.existsSync(a) || !fs.existsSync(b)) return;
+    if (!fs.existsSync(a) || !fs.existsSync(b)) return ctx.skip();
     const ca = findLuaCounters(fs.readFileSync(a));
     const cb = findLuaCounters(fs.readFileSync(b));
     expect(ca.length).toBe(cb.length);

@@ -6,10 +6,10 @@ import { findUnitRecords } from "./unitParser.js";
 const FIXTURE_DIR = path.join("scripts", "save-cracker", "fixtures", "feral");
 
 describe("findUnitRecords", () => {
-  test("identical-state pair → identical unit output", () => {
+  test("identical-state pair → identical unit output", (ctx) => {
     const a = path.join(FIXTURE_DIR, "identical_A.sav");
     const b = path.join(FIXTURE_DIR, "identical_B.sav");
-    if (!fs.existsSync(a) || !fs.existsSync(b)) return;
+    if (!fs.existsSync(a) || !fs.existsSync(b)) return ctx.skip();
     const ra = findUnitRecords(fs.readFileSync(a));
     const rb = findUnitRecords(fs.readFileSync(b));
     expect(ra.length).toBe(rb.length);
@@ -19,9 +19,9 @@ describe("findUnitRecords", () => {
     expect(ra.map((r) => r.soldiers)).toEqual(rb.map((r) => r.soldiers));
   });
 
-  test("athens_t22mid finds RIS imperial unit count", () => {
+  test("athens_t22mid finds RIS imperial unit count", (ctx) => {
     const fp = path.join(FIXTURE_DIR, "athens_t22mid.sav");
-    if (!fs.existsSync(fp)) return;
+    if (!fs.existsSync(fp)) return ctx.skip();
     const recs = findUnitRecords(fs.readFileSync(fp));
     // Empirically validated 2026-05-09: 5626 units across 1208 regions on this save.
     expect(recs.length).toBeGreaterThanOrEqual(5500);
@@ -30,9 +30,9 @@ describe("findUnitRecords", () => {
     expect(recs.every((u) => u.region && u.region.length > 0)).toBe(true);
   });
 
-  test("captures long region names (RIS-imperial 26-35 char regions)", () => {
+  test("captures long region names (RIS-imperial 26-35 char regions)", (ctx) => {
     const fp = path.join(FIXTURE_DIR, "athens_t22mid.sav");
-    if (!fs.existsSync(fp)) return;
+    if (!fs.existsSync(fp)) return ctx.skip();
     const recs = findUnitRecords(fs.readFileSync(fp));
     const longRegions = new Set(recs.map((r) => r.region).filter((r) => r.length > 25));
     // RIS imperial has ~22 regions exceeding 25 chars; the vintage 25-char
@@ -40,9 +40,9 @@ describe("findUnitRecords", () => {
     expect(longRegions.size).toBeGreaterThan(15);
   });
 
-  test("extracts naval units with non-zero soldier counts", () => {
+  test("extracts naval units with non-zero soldier counts", (ctx) => {
     const fp = path.join(FIXTURE_DIR, "athens_t22mid.sav");
-    if (!fs.existsSync(fp)) return;
+    if (!fs.existsSync(fp)) return ctx.skip();
     const recs = findUnitRecords(fs.readFileSync(fp));
     const navy = recs.filter((u) => /^naval\s/.test(u.name));
     expect(navy.length).toBeGreaterThan(50);
@@ -130,7 +130,7 @@ describe("findUnitRecords", () => {
     expect(u.upgradeLevel).toBeNull();
   });
 
-  test("upgradeLevel on a real RIS save is in 0..9 or null (skip if no save)", () => {
+  test("upgradeLevel on a real RIS save is in 0..9 or null (skip if no save)", (ctx) => {
     // Skip-if-fixture-absent, mirroring the corpus tests above. Uses the
     // user's live Feral save dir; if absent (CI / other machines), the test
     // no-ops. CONFIRMED 2026-06-01: julii3 dist {0:1854 1:2343 2:25 3:24 9:4}.
@@ -140,7 +140,7 @@ describe("findUnitRecords", () => {
       "VFS", "Local", "Rome", "saves"
     );
     const candidate = path.join(saveDir, "save_julii3.sav");
-    if (!fs.existsSync(candidate)) return;
+    if (!fs.existsSync(candidate)) return ctx.skip();
     const recs = findUnitRecords(fs.readFileSync(candidate));
     expect(recs.length).toBeGreaterThan(0);
     // Every emitted upgradeLevel is either null (unknown) or an integer 0..9.

@@ -3,12 +3,12 @@
 // truth_tax - flat (buildings held as modeled), and compare to the model's W(pop) curve.
 // If implied W is a clean function of pop that differs from the anchors, refit the anchors.
 const fs = require("fs");
-const { crackSave } = require("./src/saveCracker.js");
-const te = require("./src/traitEffects.js");
-const im = require("./src/incomeModel.js");
+const { crackSave } = require("../../src/saveCracker.js");
+const te = require("../../src/traitEffects.js");
+const im = require("../../src/incomeModel.js");
 const MOD = "C:/RIS/RIS/data";
 const SAVE = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/saves/save_Autosave   Carthage   Turn 1.sav";
-const TRUTH = require("./docs/carthage-screenshots-truth.json");
+const TRUTH = require("../../docs/carthage-screenshots-truth.json");
 const cr = crackSave(fs.readFileSync(SAVE), MOD);
 const gov = te.govEffectByCityFromSave(cr, te.parseTraitEffects(MOD), MOD);
 const B = im.computeTurn1Budget(MOD, "carthage", null, { govEffectByCity: gov });

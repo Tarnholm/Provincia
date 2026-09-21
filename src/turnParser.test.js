@@ -73,8 +73,8 @@ const REAL = [
 
 describe("parseTurn (real saves, when available)", () => {
   for (const { turn, live, file } of REAL) {
-    test(`turn ${turn}: ${file.split(/[\\/]/).pop()}`, () => {
-      if (!fs.existsSync(file)) return; // skip if asset absent
+    test(`turn ${turn}: ${file.split(/[\\/]/).pop()}`, (ctx) => {
+      if (!fs.existsSync(file)) return ctx.skip(); // skip if asset absent
       const r = parseTurn(fs.readFileSync(file));
       // INVARIANT (always): parseTurn locates the date record and reads a valid
       // 1-based turn — the actual thing under test on a real save.
@@ -85,7 +85,7 @@ describe("parseTurn (real saves, when available)", () => {
       // the canonical state; otherwise skip the equality (visibly).
       if (live && r.turn !== turn) {
         console.warn(`[test-skip] turn pin ${file.split(/[\\/]/).pop()}: live save re-saved to turn ${r.turn} (expected ${turn}); structural turn-read still verified`);
-        return;
+        return ctx.skip();
       }
       expect(r.turn).toBe(turn);
     });

@@ -6,8 +6,8 @@ import { parseEventLog, diffTurn, EVENT_CLASS } from "./eventLogParser.js";
 const SAVE = path.join("bundled-mod", "saves", "sample.sav");
 
 describe("parseEventLog", () => {
-  test("parses end-of-turn event records from the bundled save", () => {
-    if (!fs.existsSync(SAVE)) return; // skip if asset absent
+  test("parses end-of-turn event records from the bundled save", (ctx) => {
+    if (!fs.existsSync(SAVE)) return ctx.skip(); // skip if asset absent
     const ev = parseEventLog(fs.readFileSync(SAVE));
     expect(ev.length).toBeGreaterThan(10);
     // every record has a known event type and a subject string
@@ -21,8 +21,8 @@ describe("parseEventLog", () => {
     expect(known).toBe(ev.length);
   });
 
-  test("diffTurn returns only events new in the after-set", () => {
-    if (!fs.existsSync(SAVE)) return;
+  test("diffTurn returns only events new in the after-set", (ctx) => {
+    if (!fs.existsSync(SAVE)) return ctx.skip();
     const all = parseEventLog(fs.readFileSync(SAVE));
     const before = all.slice(0, Math.floor(all.length / 2));
     const fresh = diffTurn(before, all);

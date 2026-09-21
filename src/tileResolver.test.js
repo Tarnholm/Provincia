@@ -27,8 +27,8 @@ describe("tileResolver", () => {
     expect(px(1, 0)).toEqual([0, 255, 0]);
   });
 
-  test("parseRgbToRegion + buildTileIndex resolve known RIS settlements", () => {
-    if (!fs.existsSync(RIS_MOD)) return;
+  test("parseRgbToRegion + buildTileIndex resolve known RIS settlements", (ctx) => {
+    if (!fs.existsSync(RIS_MOD)) return ctx.skip();
     const idx = buildTileIndex(RIS_MOD);
     // RIS world map: ~1310 region settlement pixels, 1020x700, none unmatched.
     expect(idx.W).toBe(1020);

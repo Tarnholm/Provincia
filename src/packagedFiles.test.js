@@ -63,3 +63,20 @@ describe("electron-builder build.files covers every main-process src require", (
     expect(gone, "build.files lists src files that no longer exist (electron-builder would fail or silently skip)").toEqual([]);
   });
 });
+
+// extraResources copies whole folders, and .gitignore does not apply to
+// electron-builder: v0.9.1507's installer carried 58 MB of THIS machine's
+// scripts-suite-py/processed_output (a master run from 2026-08-09) plus
+// __pycache__, none of which the app ever reads (seedProject copies *.py and
+// config/ only). The filters must stay.
+describe("extraResources keep machine-local output out of the installer", () => {
+  const byFrom = Object.fromEntries((pkg.build.extraResources || []).map((r) => [r.from, r]));
+  it("scripts-suite-py excludes processed_output and python caches", () => {
+    const f = (byFrom["scripts-suite-py"] || {}).filter || [];
+    expect(f).toContain("!processed_output/**");
+    expect(f).toContain("!**/__pycache__/**");
+  });
+  it("crash-reporter excludes python caches", () => {
+    expect((byFrom["crash-reporter"] || {}).filter || []).toContain("!**/__pycache__/**");
+  });
+});

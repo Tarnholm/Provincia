@@ -3,8 +3,8 @@
 // tax-residual extremes (Ebusus model-over vs Rusadir model-under) to see if a tax-relevant
 // trait/stat differs in the save — i.e. whether the governor tax effect is save-derivable.
 const fs = require("fs");
-const { crackSave } = require("./src/saveCracker.js");
-const te = require("./src/traitEffects.js");
+const { crackSave } = require("../../src/saveCracker.js");
+const te = require("../../src/traitEffects.js");
 const MOD = "C:/RIS/RIS/data";
 const SAVE = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/saves/save_Autosave   Carthage   Turn 1.sav";
 const cr = crackSave(fs.readFileSync(SAVE), MOD);

@@ -3,12 +3,12 @@
 // reports (cargo, d, popSum, TRUE export) so the slope law can be cracked.
 process.env.TRADE_DEBUG = "1";
 const fs = require("fs");
-const { crackSave } = require("./src/saveCracker.js");
-const te = require("./src/traitEffects.js");
-const im = require("./src/incomeModel.js");
+const { crackSave } = require("../../src/saveCracker.js");
+const te = require("../../src/traitEffects.js");
+const im = require("../../src/incomeModel.js");
 const MOD = "C:/RIS/RIS/data";
 const SAVE = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/saves/save_Autosave   Carthage   Turn 1.sav";
-const TRUTH = require("./docs/carthage-screenshots-truth.json");
+const TRUTH = require("../../docs/carthage-screenshots-truth.json");
 
 const cr = crackSave(fs.readFileSync(SAVE), MOD);
 const gov = te.govEffectByCityFromSave(cr, te.parseTraitEffects(MOD), MOD);
@@ -66,5 +66,5 @@ for (const d of Object.keys(byD).map(Number).sort((a, b) => a - b)) {
   console.log(`d=${String(d).padEnd(4)} n=${String(a.length).padEnd(3)} meanSlope ${mean.toFixed(2)}  [${a.map(x => x.toFixed(1)).join(", ")}]`);
 }
 
-fs.writeFileSync("./docs/trade-pairs.json", JSON.stringify(paired, null, 1));
+fs.writeFileSync(require("path").join(__dirname, "..", "..", "docs", "trade-pairs.json"), JSON.stringify(paired, null, 1));
 console.log("\nwrote docs/trade-pairs.json");

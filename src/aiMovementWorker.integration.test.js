@@ -336,9 +336,9 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
     for (const f of imp) expect(["recruitment", "income"]).toContain(f.blockedBy);
   }, 180000);
 
-  it.runIf(haveRefs)("classifies the user's live message_log by its content — unusable when warnings-only, analysed when played", async () => {
+  it.runIf(haveRefs)("classifies the user's live message_log by its content — unusable when warnings-only, analysed when played", async (ctx) => {
     const live = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/logs/message_log.txt";
-    if (!fs.existsSync(live)) return;
+    if (!fs.existsSync(live)) return ctx.skip();
     // The game rewrites this file: a launch-and-quit session leaves warnings
     // only, a played campaign leaves MOVING_NORMAL traces. The original test
     // pinned usable:false and failed the 2026-08-03 ship the day the log next

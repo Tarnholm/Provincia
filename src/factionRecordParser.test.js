@@ -6,9 +6,9 @@ import { findFactionRecords, summarizeFactionArray } from "./factionRecordParser
 const FIXTURE_DIR = path.join("scripts", "save-cracker", "fixtures", "feral");
 
 describe("findFactionRecords", () => {
-  test("finds 238 records in identical_A.sav (RIS imperial)", () => {
+  test("finds 238 records in identical_A.sav (RIS imperial)", (ctx) => {
     const fp = path.join(FIXTURE_DIR, "identical_A.sav");
-    if (!fs.existsSync(fp)) return; // skip if fixtures aren't staged
+    if (!fs.existsSync(fp)) return ctx.skip(); // skip if fixtures aren't staged
     const buf = fs.readFileSync(fp);
     const records = findFactionRecords(buf);
     expect(records.length).toBe(238);
@@ -18,10 +18,10 @@ describe("findFactionRecords", () => {
     }
   });
 
-  test("identical-state pair produces identical output (parser determinism)", () => {
+  test("identical-state pair produces identical output (parser determinism)", (ctx) => {
     const a = path.join(FIXTURE_DIR, "identical_A.sav");
     const b = path.join(FIXTURE_DIR, "identical_B.sav");
-    if (!fs.existsSync(a) || !fs.existsSync(b)) return;
+    if (!fs.existsSync(a) || !fs.existsSync(b)) return ctx.skip();
     const recA = findFactionRecords(fs.readFileSync(a));
     const recB = findFactionRecords(fs.readFileSync(b));
     expect(recA.length).toBe(recB.length);
@@ -29,10 +29,10 @@ describe("findFactionRecords", () => {
     expect(recA.map((r) => r.size)).toEqual(recB.map((r) => r.size));
   });
 
-  test("array span grows with campaign turn (bloat curve)", () => {
+  test("array span grows with campaign turn (bloat curve)", (ctx) => {
     const t1 = path.join(FIXTURE_DIR, "ror_t1e.sav");
     const t11 = path.join(FIXTURE_DIR, "ror_t11s.sav");
-    if (!fs.existsSync(t1) || !fs.existsSync(t11)) return;
+    if (!fs.existsSync(t1) || !fs.existsSync(t11)) return ctx.skip();
     const sumT1 = summarizeFactionArray(findFactionRecords(fs.readFileSync(t1)));
     const sumT11 = summarizeFactionArray(findFactionRecords(fs.readFileSync(t11)));
     expect(sumT11.totalBytes).toBeGreaterThan(sumT1.totalBytes);

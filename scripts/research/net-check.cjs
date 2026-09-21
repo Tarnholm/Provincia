@@ -1,6 +1,6 @@
 // Cross-check every town: farms + taxes + trade + admin - |corruption| should = net_income.
 // Mismatches reveal transcription errors in the truth file (like Hadrumetum 534->334).
-const TRUTH = require("./docs/carthage-screenshots-truth.json");
+const TRUTH = require("../../docs/carthage-screenshots-truth.json");
 let bad = 0;
 for (const s of TRUTH.settlements) {
   if (s.net_income == null) continue;

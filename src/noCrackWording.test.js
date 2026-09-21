@@ -31,8 +31,13 @@ const SRC = __dirname;
 const ROOT = path.resolve(__dirname, "..");
 // The main process and the preload bridge produce user-visible text too (dialog
 // titles, error messages, log lines), so they are in scope. `scripts/` is not —
-// those are development tools that never ship inside the app.
-const EXTRA_FILES = ["main.js", "main-scripts.js", "preload.js"]
+// those are development tools that never ship inside the app — EXCEPT the ones
+// package.json build.files packages (scripts/campaign-timeline.js printed
+// "N crack error(s)" outside this guard until 2026-09-21), which are picked up
+// from build.files below, with the scripts-suite window's own JS and preload.
+const SHIPPED_SCRIPTS = (JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8")).build.files || [])
+  .filter((f) => typeof f === "string" && /^scripts\/[^*]+\.(c?js|mjs)$/.test(f));
+const EXTRA_FILES = ["main.js", "main-scripts.js", "preload.js", "preload-scripts.js", "scripts-suite/renderer.js", "scripts-suite/changelog.js", ...SHIPPED_SCRIPTS]
   .map((f) => path.join(ROOT, f))
   .filter((f) => fs.existsSync(f));
 

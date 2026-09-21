@@ -12,15 +12,15 @@ function loadLookup() {
 }
 
 describe("parseFamilyRecords", () => {
-  test("auto-detects the mod-specific family marker", () => {
-    if (!fs.existsSync(SAVE) || !fs.existsSync(LOOKUP)) return; // skip if assets absent
+  test("auto-detects the mod-specific family marker", (ctx) => {
+    if (!fs.existsSync(SAVE) || !fs.existsSync(LOOKUP)) return ctx.skip(); // skip if assets absent
     const det = detectMarker(fs.readFileSync(SAVE), loadLookup());
     expect(det.marker).toBeGreaterThan(0);
     expect(det.count).toBeGreaterThan(300); // dominant modal value = real records
   });
 
-  test("parses the family table (names, gender, ages)", () => {
-    if (!fs.existsSync(SAVE) || !fs.existsSync(LOOKUP)) return;
+  test("parses the family table (names, gender, ages)", (ctx) => {
+    if (!fs.existsSync(SAVE) || !fs.existsSync(LOOKUP)) return ctx.skip();
     const recs = parseFamilyRecords(fs.readFileSync(SAVE), loadLookup());
     expect(recs.length).toBeGreaterThan(300);
     // every record has a valid first name
@@ -39,8 +39,8 @@ describe("parseFamilyRecords", () => {
     expect(livingWithAge).toBeGreaterThan(living.length * 0.8);
   });
 
-  test("spouse links are reciprocal (structural integrity)", () => {
-    if (!fs.existsSync(SAVE) || !fs.existsSync(LOOKUP)) return;
+  test("spouse links are reciprocal (structural integrity)", (ctx) => {
+    if (!fs.existsSync(SAVE) || !fs.existsSync(LOOKUP)) return ctx.skip();
     const recs = parseFamilyRecords(fs.readFileSync(SAVE), loadLookup());
     const byUuid = new Map(recs.map((r) => [r.uuid >>> 0, r]));
     let pairs = 0, recip = 0;
@@ -55,8 +55,8 @@ describe("parseFamilyRecords", () => {
     expect(recip).toBe(pairs); // every in-table spouse pair must be mutual
   });
 
-  test("child links reciprocate with father links", () => {
-    if (!fs.existsSync(SAVE) || !fs.existsSync(LOOKUP)) return;
+  test("child links reciprocate with father links", (ctx) => {
+    if (!fs.existsSync(SAVE) || !fs.existsSync(LOOKUP)) return ctx.skip();
     const recs = parseFamilyRecords(fs.readFileSync(SAVE), loadLookup());
     indexFamily(recs);
     const byUuid = new Map(recs.map((r) => [r.uuid >>> 0, r]));
