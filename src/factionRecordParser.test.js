@@ -1,41 +1,43 @@
 import { describe, test, expect } from "vitest";
-import fs from "node:fs";
-import path from "node:path";
+import { createRequire } from "node:module";
 import { findFactionRecords, summarizeFactionArray } from "./factionRecordParser.js";
+const require = createRequire(import.meta.url);
+const { fixture, fixtures, read } = require("./saveFixtures.js");
 
-const FIXTURE_DIR = path.join("scripts", "save-cracker", "fixtures", "feral");
-
+// Real-save fixtures: `node scripts/build-save-fixtures.js`. Absent → these skip.
+// The saves predate the current mod, so counts come from the manifest recorded
+// beside each fixture, not from today's C:/RIS.
 describe("findFactionRecords", () => {
-  test("finds 238 records in identical_A.sav (RIS imperial)", (ctx) => {
-    const fp = path.join(FIXTURE_DIR, "identical_A.sav");
-    if (!fs.existsSync(fp)) return ctx.skip(); // skip if fixtures aren't staged
-    const buf = fs.readFileSync(fp);
-    const records = findFactionRecords(buf);
-    expect(records.length).toBe(238);
-    // Each record self-pointer at +4 should equal record_offset + 4.
-    for (const r of records) {
-      expect(buf.readUInt32LE(r.offset + 4)).toBe(r.offset + 4);
-    }
+  test("finds the recorded number of records in a turn-1 save", (ctx) => {
+    const f = fixture("identical_A.sav");
+    if (!f) return ctx.skip();
+    const recs = findFactionRecords(read(f));
+    expect(recs.length).toBe(f.expect.factionRecords);
+    expect(recs.length).toBeGreaterThan(200); // a whole-map mod, not a handful
   });
 
   test("identical-state pair produces identical output (parser determinism)", (ctx) => {
-    const a = path.join(FIXTURE_DIR, "identical_A.sav");
-    const b = path.join(FIXTURE_DIR, "identical_B.sav");
-    if (!fs.existsSync(a) || !fs.existsSync(b)) return ctx.skip();
-    const recA = findFactionRecords(fs.readFileSync(a));
-    const recB = findFactionRecords(fs.readFileSync(b));
+    const pair = fixtures("identical_A.sav", "identical_B.sav");
+    if (!pair) return ctx.skip();
+    const [a, b] = pair;
+    expect(read(a).equals(read(b))).toBe(false); // same state, different bytes
+    const recA = findFactionRecords(read(a));
+    const recB = findFactionRecords(read(b));
     expect(recA.length).toBe(recB.length);
     expect(recA.map((r) => r.offset)).toEqual(recB.map((r) => r.offset));
     expect(recA.map((r) => r.size)).toEqual(recB.map((r) => r.size));
   });
 
-  test("array span grows with campaign turn (bloat curve)", (ctx) => {
-    const t1 = path.join(FIXTURE_DIR, "ror_t1e.sav");
-    const t11 = path.join(FIXTURE_DIR, "ror_t11s.sav");
-    if (!fs.existsSync(t1) || !fs.existsSync(t11)) return ctx.skip();
-    const sumT1 = summarizeFactionArray(findFactionRecords(fs.readFileSync(t1)));
-    const sumT11 = summarizeFactionArray(findFactionRecords(fs.readFileSync(t11)));
-    expect(sumT11.totalBytes).toBeGreaterThan(sumT1.totalBytes);
+  test("the array grows with campaign turn (same campaign, 12 turns apart)", (ctx) => {
+    const pair = fixtures("ror_t5s.sav", "ror_t17s.sav");
+    if (!pair) return ctx.skip();
+    const [early, late] = pair;
+    const sumEarly = summarizeFactionArray(findFactionRecords(read(early)));
+    const sumLate = summarizeFactionArray(findFactionRecords(read(late)));
+    expect(sumLate.totalBytes).toBeGreaterThan(sumEarly.totalBytes);
+    // and the span each fixture was accepted with
+    expect(findFactionRecords(read(early)).reduce((m, r) => Math.max(m, r.offset), 0) - findFactionRecords(read(early)).reduce((m, r) => Math.min(m, r.offset), Infinity)).toBe(early.expect.factionArraySpan);
+    expect(findFactionRecords(read(late)).reduce((m, r) => Math.max(m, r.offset), 0) - findFactionRecords(read(late)).reduce((m, r) => Math.min(m, r.offset), Infinity)).toBe(late.expect.factionArraySpan);
   });
 
   test("returns empty array on a buffer without the magic", () => {

@@ -1,17 +1,23 @@
 import { describe, test, expect } from "vitest";
-import fs from "node:fs";
-import path from "node:path";
+import { createRequire } from "node:module";
 import { findUnitRecords } from "./unitParser.js";
+const require = createRequire(import.meta.url);
+const { fixture, fixtures, read } = require("./saveFixtures.js");
 
-const FIXTURE_DIR = path.join("scripts", "save-cracker", "fixtures", "feral");
-
+// Real-save fixtures: build them with `node scripts/build-save-fixtures.js`.
+// Without them every test here SKIPS (visibly). The saves are older than the
+// current mod, so counts are compared against the manifest recorded beside the
+// fixture — never against today's C:/RIS.
 describe("findUnitRecords", () => {
   test("identical-state pair → identical unit output", (ctx) => {
-    const a = path.join(FIXTURE_DIR, "identical_A.sav");
-    const b = path.join(FIXTURE_DIR, "identical_B.sav");
-    if (!fs.existsSync(a) || !fs.existsSync(b)) return ctx.skip();
-    const ra = findUnitRecords(fs.readFileSync(a));
-    const rb = findUnitRecords(fs.readFileSync(b));
+    // Two saves of the SAME game state, made a second apart: different bytes,
+    // so this is a real determinism check and not a file compared with itself.
+    const pair = fixtures("identical_A.sav", "identical_B.sav");
+    if (!pair) return ctx.skip();
+    const [a, b] = pair;
+    expect(read(a).equals(read(b))).toBe(false);
+    const ra = findUnitRecords(read(a));
+    const rb = findUnitRecords(read(b));
     expect(ra.length).toBe(rb.length);
     expect(ra.map((r) => r.name)).toEqual(rb.map((r) => r.name));
     expect(ra.map((r) => r.region)).toEqual(rb.map((r) => r.region));
@@ -19,36 +25,34 @@ describe("findUnitRecords", () => {
     expect(ra.map((r) => r.soldiers)).toEqual(rb.map((r) => r.soldiers));
   });
 
-  test("athens_t22mid finds RIS imperial unit count", (ctx) => {
-    const fp = path.join(FIXTURE_DIR, "athens_t22mid.sav");
-    if (!fs.existsSync(fp)) return ctx.skip();
-    const recs = findUnitRecords(fs.readFileSync(fp));
-    // Empirically validated 2026-05-09: 5626 units across 1208 regions on this save.
-    expect(recs.length).toBeGreaterThanOrEqual(5500);
-    expect(recs.length).toBeLessThanOrEqual(5800);
-    // Every unit must have a region.
+  test("a mid-campaign save yields the recorded unit count, every unit in a region", (ctx) => {
+    const f = fixture("ror_t17s.sav");
+    if (!f) return ctx.skip();
+    const recs = findUnitRecords(read(f));
+    expect(recs.length).toBe(f.expect.units);
+    expect(new Set(recs.map((r) => r.region)).size).toBe(f.expect.unitRegions);
+    // invariant, whatever the mod: a unit without a region means the record
+    // walk lost its place
     expect(recs.every((u) => u.region && u.region.length > 0)).toBe(true);
   });
 
-  test("captures long region names (RIS-imperial 26-35 char regions)", (ctx) => {
-    const fp = path.join(FIXTURE_DIR, "athens_t22mid.sav");
-    if (!fs.existsSync(fp)) return ctx.skip();
-    const recs = findUnitRecords(fs.readFileSync(fp));
+  test("captures long region names (the old 25-char cap silently dropped those units)", (ctx) => {
+    const f = fixture("ror_t17s.sav");
+    if (!f) return ctx.skip();
+    const recs = findUnitRecords(read(f));
     const longRegions = new Set(recs.map((r) => r.region).filter((r) => r.length > 25));
-    // RIS imperial has ~22 regions exceeding 25 chars; the vintage 25-char
-    // cap silently dropped any unit in those regions.
-    expect(longRegions.size).toBeGreaterThan(15);
+    expect(longRegions.size).toBe(f.expect.longRegions);
+    expect(longRegions.size).toBeGreaterThan(15); // RIS-era maps have ~21 of them
   });
 
-  test("extracts naval units with non-zero soldier counts", (ctx) => {
-    const fp = path.join(FIXTURE_DIR, "athens_t22mid.sav");
-    if (!fs.existsSync(fp)) return ctx.skip();
-    const recs = findUnitRecords(fs.readFileSync(fp));
-    const navy = recs.filter((u) => /^naval\s/.test(u.name));
+  test("extracts naval units, all of them crewed", (ctx) => {
+    const f = fixture("ror_t17s.sav");
+    if (!f) return ctx.skip();
+    const navy = findUnitRecords(read(f)).filter((u) => /^naval\s/.test(u.name));
+    expect(navy.length).toBe(f.expect.navy);
     expect(navy.length).toBeGreaterThan(50);
     expect(navy.every((u) => u.soldiers > 0)).toBe(true);
   });
-
   test("reads movementPoints at +4 for a non-bodyguard (commanderUuid==0) line unit", () => {
     // Verbatim 65-byte unit record lifted from a real RoR "Turn 3 Start"
     // autosave: a "roman leves" with no commander (uuid==0). Confirmed
@@ -130,19 +134,13 @@ describe("findUnitRecords", () => {
     expect(u.upgradeLevel).toBeNull();
   });
 
-  test("upgradeLevel on a real RIS save is in 0..9 or null (skip if no save)", (ctx) => {
-    // Skip-if-fixture-absent, mirroring the corpus tests above. Uses the
-    // user's live Feral save dir; if absent (CI / other machines), the test
-    // no-ops. CONFIRMED 2026-06-01: julii3 dist {0:1854 1:2343 2:25 3:24 9:4}.
-    const saveDir = path.join(
-      process.env.LOCALAPPDATA || "",
-      "Feral Interactive", "Total War ROME REMASTERED",
-      "VFS", "Local", "Rome", "saves"
-    );
-    const candidate = path.join(saveDir, "save_julii3.sav");
-    if (!fs.existsSync(candidate)) return ctx.skip();
-    const recs = findUnitRecords(fs.readFileSync(candidate));
-    expect(recs.length).toBeGreaterThan(0);
+  test("upgradeLevel is null or an integer 0..9 on a real save", (ctx) => {
+    // Was pinned to save_julii3.sav in the user's live save folder, which is long
+    // gone — so it silently no-opped. Runs on the fixture instead.
+    const f = fixture("ror_t17s.sav");
+    if (!f) return ctx.skip();
+    const recs = findUnitRecords(read(f));
+    expect(recs.length).toBe(f.expect.units);
     // Every emitted upgradeLevel is either null (unknown) or an integer 0..9.
     for (const r of recs) {
       if (r.upgradeLevel === null) continue;

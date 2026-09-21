@@ -1,0 +1,74 @@
+{
+  "note": "Derived values, recorded when each fixture was accepted. The saves predate the current mod — never check them against C:/RIS.",
+  "builtAt": "2026-09-21",
+  "fixtures": {
+    "identical_A.sav": {
+      "source": "save_18-06-2026   Bactria   Turn 1 b.sav",
+      "why": "Turn 1, no conquests: the parser-determinism pair, and the mod-drift baseline.",
+      "sha256": "b78c77b262dfab6d09584fe1f6344c5784676d6a207f55206070b709b3fcbefe",
+      "expect": {
+        "bytes": 35260989,
+        "turn": 1,
+        "units": 4068,
+        "unitRegions": 1304,
+        "longRegions": 22,
+        "navy": 53,
+        "navyWithSoldiers": 53,
+        "factionRecords": 238,
+        "luaCounters": 115,
+        "factionArraySpan": 2170207
+      }
+    },
+    "identical_B.sav": {
+      "source": "save_Autosave   Bactria   Turn 1.sav",
+      "why": "The same game state as identical_A saved a second time — DIFFERENT bytes, identical parse. That is what makes the determinism tests mean something; a byte copy would pass trivially.",
+      "sha256": "9f237c6d9192af7b398221b9067e0951683072981cc88776659eec4ba30be103",
+      "expect": {
+        "bytes": 35260989,
+        "turn": 1,
+        "units": 4068,
+        "unitRegions": 1304,
+        "longRegions": 22,
+        "navy": 53,
+        "navyWithSoldiers": 53,
+        "factionRecords": 238,
+        "luaCounters": 115,
+        "factionArraySpan": 2170207
+      }
+    },
+    "ror_t5s.sav": {
+      "source": "save_Autosave   Republic of Rome   Turn 5 Start.sav",
+      "why": "Early turn of a campaign continued in ror_t17s — the two ends of the faction-record growth curve.",
+      "sha256": "02c456e69f2a83a27617db39e88cd97554bca107360dd7a908053857c7564454",
+      "expect": {
+        "bytes": 40694434,
+        "turn": 5,
+        "units": 6007,
+        "unitRegions": 1276,
+        "longRegions": 21,
+        "navy": 108,
+        "navyWithSoldiers": 108,
+        "factionRecords": 238,
+        "luaCounters": 121,
+        "factionArraySpan": 1533329
+      }
+    },
+    "ror_t17s.sav": {
+      "source": "save_Autosave   Republic of Rome   Turn 17 Start.sav",
+      "why": "Same campaign, 12 turns later: conquests to recover, long region names, a real navy.",
+      "sha256": "26d8b196ced10b9ca3e6847aa08f32fb6eef56f39c3ddece3088b3f955aa6f48",
+      "expect": {
+        "bytes": 45000362,
+        "turn": 17,
+        "units": 7075,
+        "unitRegions": 1225,
+        "longRegions": 21,
+        "navy": 158,
+        "navyWithSoldiers": 158,
+        "factionRecords": 238,
+        "luaCounters": 120,
+        "factionArraySpan": 2314440
+      }
+    }
+  }
+}

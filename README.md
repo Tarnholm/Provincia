@@ -42,6 +42,12 @@ saves or the RIS mod on disk (neither is committed); without them those tests
 report **skipped** — never passed. If a run shows more skips than you expect,
 a fixture has gone missing.
 
+`npm run fixtures` copies the save-parser fixtures in from wherever saves live
+on this machine (see [scripts/save-fixtures/README.md](scripts/save-fixtures/README.md)),
+which turns ~20 of those skips into real tests. The saves are older than the
+mod, so the fixtures are compared against a manifest recorded beside them rather
+than against today's `C:/RIS`.
+
 Two conventions the suite enforces, worth knowing before adding code:
 
 - **A new main-process module must be listed in `package.json` `build.files`**

@@ -19,6 +19,7 @@
     "dist:win": "npm run build && electron-builder --win nsis",
     "dist:mac": "npm run build && electron-builder --mac dmg",
     "dist:linux": "npm run build && electron-builder --linux AppImage",
+    "fixtures": "node scripts/build-save-fixtures.js",
     "changelog:trim": "node scripts/trim-changelog.js",
     "changelog:check": "node scripts/trim-changelog.js --check",
     "ship": "node scripts/ship.js",
