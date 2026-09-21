@@ -127,6 +127,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getArmySetup: (faction, modDataDir, floor) => ipcRenderer.invoke("get-army-setup", faction, modDataDir, floor),
   getCampaignFactions: (modDataDir) => ipcRenderer.invoke("get-campaign-factions", modDataDir),
   getStratPopulations: (modDataDir) => ipcRenderer.invoke("get-strat-populations", modDataDir),
+  getHordeFactions: (modDataDir) => ipcRenderer.invoke("get-horde-factions", modDataDir),
   applyStratPopulations: (modDataDir, changes) => ipcRenderer.invoke("apply-strat-populations", modDataDir, changes),
   getSavePlayerBudget: (savePath) => ipcRenderer.invoke("get-save-player-budget", savePath),
   getAllFactionBudgets: (savePath, modDataDir, playerHint) => ipcRenderer.invoke("get-all-faction-budgets", savePath, modDataDir, playerHint),

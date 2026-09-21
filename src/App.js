@@ -23579,6 +23579,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
       {showExtinctionWatch && (
         <ExtinctionWatchPanel
           familiesByFaction={modFamiliesByFaction}
+          modDataDir={modDataDir}
           settlementCount={extinctionSettlementCount}
           factionDisplayNames={factionDisplayNames}
           selectedFaction={selectedFaction}

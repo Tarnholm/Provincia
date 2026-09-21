@@ -5,7 +5,9 @@ import React from "react";
 import { describe, it, expect, afterEach } from "vitest";
 import { createRoot } from "react-dom/client";
 import { flushSync } from "react-dom";
-import { assessFaction, assessAll, isFamily, fullName } from "./extinctionWatch.js";
+import { assessFaction, assessAll, assessLand, isFamily, fullName } from "./extinctionWatch.js";
+import { createRequire } from "node:module";
+const { parseHordeFactions } = createRequire(import.meta.url)("./hordeFactions.js");
 import ExtinctionWatchPanel from "./panels/ExtinctionWatchPanel.js";
 
 // No testing-library in this repo: mount with react-dom, drive with real DOM events
@@ -88,7 +90,7 @@ describe("extinctionWatch — who counts", () => {
     };
     const { rows, summary } = assessAll(fam, { big: 40, small: 2, safe: 10 });
     expect(rows.map((r) => r.faction)).toEqual(["big", "small", "safe", "empty"]);
-    expect(summary).toEqual({ extinct: 0, critical: 2, fragile: 0, secure: 1, none: 1 });
+    expect(summary).toMatchObject({ extinct: 0, critical: 2, fragile: 0, secure: 1, none: 1 });
   });
 });
 
@@ -127,5 +129,46 @@ describe("ExtinctionWatchPanel", () => {
     expect(picked).toBe("mauryan");
     fire(window, "keydown", { key: "Escape" });
     expect(closed).toBe(1);
+  });
+});
+
+describe("the second route: the last settlement, and the horde exception", () => {
+  it("one settlement and no horde block = one siege from destruction; a horde faction is spared", () => {
+    expect(assessLand(1, null)).toMatchObject({ lastTown: true, canHorde: false, hordeSaves: false });
+    expect(assessLand(1, { maxUnits: 40 })).toMatchObject({ lastTown: false, canHorde: true, hordeSaves: true });
+    expect(assessLand(2, null).lastTown).toBe(false);
+    expect(assessLand(0, null).lastTown).toBe(false);   // holds nothing: emergent or already hording — not "one siege away"
+    expect(assessLand(null, null).lastTown).toBe(false); // count unknown → no accusation
+  });
+
+  it("assessAll counts both and ranks a last-town faction above its tier-mates", () => {
+    const fam = { twoTowns: { members: [char("A", "X", 30)] }, oneTown: { members: [char("B", "Y", 30)] }, nomad: { members: [char("C", "Z", 30)] } };
+    const { rows, summary } = assessAll(fam, { twoTowns: 2, oneTown: 1, nomad: 1 }, { nomad: { maxUnits: 40 } });
+    expect(rows[0].faction).toBe("oneTown");
+    expect(summary.lastTown).toBe(1);
+    expect(summary.canHorde).toBe(1);
+    expect(rows.find((r) => r.faction === "nomad").landNote).toMatch(/can horde/);
+  });
+
+  it("parseHordeFactions reads horde blocks and ignores a commented-out one", () => {
+    const txt = ['"factions":', "{", '	"parni":', "	{", '		"horde":', "		{", '			"min horde units": 100,', '			"max horde units": 100,', '			"horde unit reduction per horde": 100, ;; a comment', "		},", "	},",
+      '	"romans_julii":', "	{", '		;"horde":', "		;{", '		;	"max horde units": 40,', "		;},", "	},", "}"].join(String.fromCharCode(13, 10));
+    const h = parseHordeFactions(txt);
+    expect(Object.keys(h)).toEqual(["parni"]);
+    expect(h.parni).toMatchObject({ minUnits: 100, maxUnits: 100, reductionPerHorde: 100 });
+  });
+
+  it("the panel marks last-town factions only once the horde list has been read, and spares the horde faction", async () => {
+    const fam = { oneTown: { members: [char("B", "Y", 30)] }, nomad: { members: [char("C", "Z", 30)] } };
+    window.electronAPI = { getHordeFactions: () => Promise.resolve({ factions: { nomad: { maxUnits: 40 } } }) };
+    mount(<ExtinctionWatchPanel familiesByFaction={fam} settlementCount={{ oneTown: 1, nomad: 1 }} modDataDir="C:/x" onClose={() => { }} />);
+    expect(text()).not.toMatch(/taking it destroys the faction/); // nothing claimed before the read lands
+    await new Promise((r) => setTimeout(r, 0));
+    flushSync(() => { });
+    expect(text()).toMatch(/taking it destroys the faction/);
+    expect(text()).toMatch(/it can horde instead of dying/);
+    fire(document.querySelector('button[title^="Factions holding exactly one settlement"]'), "click");
+    expect(tiersShown().length).toBe(1);
+    delete window.electronAPI;
   });
 });

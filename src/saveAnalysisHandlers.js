@@ -1239,6 +1239,26 @@ ipcMain.handle("get-campaign-factions", async (_event, modDataDir) => {
   } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
 });
 
+// IPC: which factions can horde (descr_sm_factions "horde" blocks) — Extinction
+// Watch's exception to "lose the last settlement, lose the faction". Read through
+// the merged view (a thin submod inherits the base mod's file); cached per file
+// mtime, so an edit to descr_sm_factions is seen on the next open.
+const _hordeCache = new Map(); // path → { mtimeMs, data }
+ipcMain.handle("get-horde-factions", async (_event, modDataDir) => {
+  try {
+    if (!modDataDir) return { error: "modDataDir required" };
+    const p = path.join(_effDir(modDataDir), "descr_sm_factions.txt");
+    if (!fs.existsSync(p)) return { factions: {}, missing: true };
+    const mtimeMs = fs.statSync(p).mtimeMs;
+    const hit = _hordeCache.get(p);
+    if (hit && hit.mtimeMs === mtimeMs) return hit.data;
+    const data = { factions: require("./hordeFactions.js").parseHordeFactions(fs.readFileSync(p, "latin1")) };
+    _hordeCache.set(p, { mtimeMs, data });
+    _writeLog(`[horde-factions] ${Object.keys(data.factions).length} horde-capable: ${Object.keys(data.factions).join(", ")}`);
+    return data;
+  } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+});
+
 // IPC: every settlement's starting population from descr_strat — feeds the
 // editable Populations table (2026-08-06). Reads the campaign's OWN descr_strat
 // (a submod slot passes the submod root; its strat IS the campaign), while

@@ -7,6 +7,14 @@
 // number that matters is the count of living adult males in the family, not
 // the heir's age or the ruler's traits.
 //
+// SECOND ROUTE (user rule 2026-09-21): a faction also dies when its LAST
+// SETTLEMENT is taken — unless it is a hording faction that has not used up its
+// horde attempts, in which case it takes to the field instead. So a faction is
+// judged on two independent axes: its LINE (adult males) and its LAND (last
+// settlement, with the horde exception read from descr_sm_factions). At campaign
+// start no horde attempt has been used, so every horde-capable faction has the
+// escape; how many attempts the engine allows is not derived here.
+//
 // Input is the per-faction family data the app already holds:
 //   modFamiliesByFaction[faction] = { members: [{ firstName, lastName, gender,
 //     age, alive, role, isCharacter, tags, x, y }], relatives: [...] }
@@ -103,15 +111,35 @@ export function assessFaction(faction, bucket) {
 
 const TIER_ORDER = { extinct: 0, critical: 1, fragile: 2, secure: 3, none: 4 };
 
-// All factions, most endangered first; within a tier, fewer adults, then more
-// flags, then more settlements at stake (settlementCount: { faction: n }).
-export function assessAll(familiesByFaction, settlementCount) {
+// The LAND axis for one faction. settlements: how many it holds (null = unknown);
+// horde: its descr_sm_factions horde block, or falsy.
+//   lastTown   — exactly one settlement and no horde escape: one siege ends it
+//   hordeSaves — exactly one settlement, but it can horde instead of dying
+export function assessLand(settlements, horde) {
+  const canHorde = !!horde;
+  const one = settlements === 1;
+  return {
+    canHorde,
+    lastTown: one && !canHorde,
+    hordeSaves: one && canHorde,
+    landNote: one ? (canHorde ? "last settlement — but it can horde instead of dying" : "last settlement — taking it destroys the faction") : null,
+  };
+}
+
+// All factions, most endangered first: by line tier, then factions on their last
+// settlement, then fewer adults, more flags, more settlements at stake.
+// settlementCount: { faction: n }; hordeByFaction: { faction: hordeBlock }.
+export function assessAll(familiesByFaction, settlementCount, hordeByFaction) {
   const counts = settlementCount || {};
-  const rows = Object.entries(familiesByFaction || {}).map(([fac, bucket]) => ({ ...assessFaction(fac, bucket), settlements: counts[fac] ?? null }));
-  rows.sort((a, b) => (TIER_ORDER[a.tier] - TIER_ORDER[b.tier]) || (a.adultMales - b.adultMales) || (b.flags.length - a.flags.length) || ((b.settlements || 0) - (a.settlements || 0)) || a.faction.localeCompare(b.faction));
-  const summary = { extinct: 0, critical: 0, fragile: 0, secure: 0, none: 0 };
-  for (const r of rows) summary[r.tier]++;
+  const hordes = hordeByFaction || {};
+  const rows = Object.entries(familiesByFaction || {}).map(([fac, bucket]) => {
+    const settlements = counts[fac] ?? null;
+    return { ...assessFaction(fac, bucket), settlements, ...assessLand(settlements, hordes[fac] || hordes[String(fac).toLowerCase()]) };
+  });
+  rows.sort((a, b) => (TIER_ORDER[a.tier] - TIER_ORDER[b.tier]) || ((b.lastTown ? 1 : 0) - (a.lastTown ? 1 : 0)) || (a.adultMales - b.adultMales) || (b.flags.length - a.flags.length) || ((b.settlements || 0) - (a.settlements || 0)) || a.faction.localeCompare(b.faction));
+  const summary = { extinct: 0, critical: 0, fragile: 0, secure: 0, none: 0, lastTown: 0, canHorde: 0 };
+  for (const r of rows) { summary[r.tier]++; if (r.lastTown) summary.lastTown++; if (r.canHorde) summary.canHorde++; }
   return { rows, summary };
 }
 
-export default { assessFaction, assessAll, isFamily, fullName, COMING_OF_AGE, ELDERLY_AGE, TIERS };
+export default { assessFaction, assessLand, assessAll, isFamily, fullName, COMING_OF_AGE, ELDERLY_AGE, TIERS };

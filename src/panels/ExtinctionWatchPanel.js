@@ -4,11 +4,14 @@
 // RTW destroys a faction the moment its last living male family member dies
 // (its settlements revert to the rebels), so the panel counts each faction's
 // living ADULT males. Presentational + renderer-pure: everything derives from
-// the descr_strat family data App already holds (modFamiliesByFaction). No IPC.
+// the descr_strat family data App already holds (modFamiliesByFaction); the one
+// IPC is get-horde-factions, for the second route to destruction — losing the
+// last settlement — and its exception, the factions that can horde instead.
 //
 // Props:
 //   familiesByFaction   — { faction: { members, relatives } } | null until loaded
 //   settlementCount     — optional { faction: n } (what is at stake)
+//   modDataDir          — optional; with it the panel reads which factions can horde
 //   factionDisplayNames — optional { factionTag: "Display Name" }
 //   selectedFaction     — optional, highlights that row
 //   onPickFaction       — optional (faction) => void; clicking a row focuses it on the map
@@ -35,12 +38,30 @@ const TIER_TITLE = {
   none: "No family recorded in descr_strat (emergent factions, the rebels)",
 };
 
-export default function ExtinctionWatchPanel({ familiesByFaction, settlementCount, factionDisplayNames, selectedFaction, onPickFaction, onClose }) {
+export default function ExtinctionWatchPanel({ familiesByFaction, settlementCount, modDataDir, factionDisplayNames, selectedFaction, onPickFaction, onClose }) {
   const [query, setQuery] = React.useState("");
   const [tiers, setTiers] = React.useState(() => new Set());
   const [open, setOpen] = React.useState(null);
+  const [lastTownOnly, setLastTownOnly] = React.useState(false);
+  // { faction: hordeBlock } once read; null while unknown. Until it is known NO
+  // faction is called "one siege from destruction" — a horde faction would be
+  // accused wrongly for the moment the read takes.
+  const [hordes, setHordes] = React.useState(null);
+  const [hordeNote, setHordeNote] = React.useState("");
+  React.useEffect(() => {
+    let dead = false;
+    const api = typeof window !== "undefined" ? window.electronAPI : null;
+    if (!modDataDir || !api || !api.getHordeFactions) { setHordes(null); setHordeNote(modDataDir ? "" : "horde factions unknown (no mod folder)"); return undefined; }
+    api.getHordeFactions(modDataDir).then((r) => {
+      if (dead) return;
+      if (r && r.factions) { setHordes(r.factions); setHordeNote(r.missing ? "descr_sm_factions.txt not found — no faction treated as hording" : ""); }
+      else { setHordes(null); setHordeNote(`horde factions could not be read${r && r.error ? ": " + r.error : ""}`); }
+    }).catch((e) => { if (!dead) { setHordes(null); setHordeNote(`horde factions could not be read: ${e && e.message}`); } });
+    return () => { dead = true; };
+  }, [modDataDir]);
 
-  const { rows, summary } = React.useMemo(() => assessAll(familiesByFaction, settlementCount), [familiesByFaction, settlementCount]);
+  const { rows, summary } = React.useMemo(() => assessAll(familiesByFaction, hordes ? settlementCount : null, hordes), [familiesByFaction, settlementCount, hordes]);
+  const countOf = React.useCallback((f) => (settlementCount && settlementCount[f] != null ? settlementCount[f] : null), [settlementCount]);
   const facLabel = React.useCallback((f) => (factionDisplayNames && f && factionDisplayNames[f]) || (f ? f.replace(/_/g, " ") : "—"), [factionDisplayNames]);
   // Two factions can share a display name (RIS: roman_rebels_1 and _2 are both
   // "Roman Rebels"); those rows also show the faction id so they can be told apart.
@@ -51,8 +72,8 @@ export default function ExtinctionWatchPanel({ familiesByFaction, settlementCoun
   }, [rows, facLabel]);
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase();
-    return rows.filter((r) => (!tiers.size || tiers.has(r.tier)) && (!q || r.faction.toLowerCase().includes(q) || facLabel(r.faction).toLowerCase().includes(q) || r.adults.some((a) => a.name.toLowerCase().includes(q))));
-  }, [rows, tiers, query, facLabel]);
+    return rows.filter((r) => (!lastTownOnly || r.lastTown) && (!tiers.size || tiers.has(r.tier)) && (!q || r.faction.toLowerCase().includes(q) || facLabel(r.faction).toLowerCase().includes(q) || r.adults.some((a) => a.name.toLowerCase().includes(q))));
+  }, [rows, tiers, query, facLabel, lastTownOnly]);
 
   const close = onClose || (() => { });
   React.useEffect(() => {
@@ -88,8 +109,9 @@ export default function ExtinctionWatchPanel({ familiesByFaction, settlementCoun
         </div>
 
         <div style={{ padding: "8px 16px 0", fontSize: "0.78rem", color: "#a9b4c0", lineHeight: 1.45 }}>
-          A faction is destroyed when its last living male family member dies — its settlements go to the rebels, however many it holds.
-          Counted here: living males of {COMING_OF_AGE}+ in the family. Boys are listed but never counted.
+          A faction is destroyed when its last living male family member dies — its settlements go to the rebels, however many it holds —
+          or when its last settlement is taken, unless it can still horde. Counted here: living males of {COMING_OF_AGE}+ in the family
+          (boys are listed, never counted) and factions down to one settlement.
         </div>
 
         {/* Tier chips = legend AND filter */}
@@ -103,7 +125,14 @@ export default function ExtinctionWatchPanel({ familiesByFaction, settlementCoun
               </button>
             );
           })}
-          {tiers.size > 0 && <button onClick={() => setTiers(new Set())} style={{ cursor: "pointer", background: "transparent", border: "none", color: "#9ab", fontSize: "0.76rem" }}>✕ clear</button>}
+          <span style={{ width: 1, height: 16, background: "rgba(255,255,255,0.14)", margin: "0 2px" }} />
+          <button onClick={() => setLastTownOnly((v) => !v)} aria-pressed={lastTownOnly} disabled={!hordes}
+            title={hordes ? "Factions holding exactly one settlement that cannot horde — taking it destroys them. Click to filter." : (hordeNote || "Reading which factions can horde…")}
+            style={{ cursor: hordes ? "pointer" : "default", borderRadius: 12, padding: "2px 10px", fontSize: "0.76rem", color: "#ff9d7a", opacity: hordes ? 1 : 0.5, background: lastTownOnly ? "rgba(224,110,70,0.20)" : "transparent", border: `1px solid ${lastTownOnly ? "rgba(224,110,70,0.5)" : "rgba(255,255,255,0.14)"}` }}>
+            🏰 last town <span style={{ color: "#ccd", marginLeft: 4 }}>{hordes ? summary.lastTown : "…"}</span>
+          </button>
+          {hordes && summary.canHorde > 0 && <span title="Factions with a horde block in descr_sm_factions — they take to the field instead of dying with their last settlement" style={{ fontSize: "0.74rem", color: "#9ab" }}>🐎 {summary.canHorde} can horde</span>}
+          {(tiers.size > 0 || lastTownOnly) && <button onClick={() => { setTiers(new Set()); setLastTownOnly(false); }} style={{ cursor: "pointer", background: "transparent", border: "none", color: "#9ab", fontSize: "0.76rem" }}>✕ clear</button>}
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search faction or family member…" aria-label="Search"
             style={{ marginLeft: "auto", background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "4px 8px", fontSize: "0.8rem", width: 230 }} />
         </div>
@@ -132,10 +161,11 @@ export default function ExtinctionWatchPanel({ familiesByFaction, settlementCoun
                     {facLabel(r.faction)}
                     {sharedLabels.has(facLabel(r.faction)) && <span style={{ marginLeft: 6, fontSize: "0.72rem", color: "#7d8896" }}>{r.faction}</span>}
                   </span>
-                  <span style={{ flex: 1, fontSize: "0.76rem", color: r.flags.length ? "#ffb59a" : "#8a97a6", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {r.noFamily ? "no family recorded" : r.flags.length ? r.flags.join(" · ") : (r.boys.length ? `${r.boys.length} boy${r.boys.length === 1 ? "" : "s"}${r.nextOfAgeIn != null ? `, next of age in ${r.nextOfAgeIn}y` : ""}` : "")}
+                  <span style={{ flex: 1, fontSize: "0.76rem", color: (r.flags.length || r.lastTown) ? "#ffb59a" : "#8a97a6", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {r.noFamily ? "no family recorded" : (r.flags.length || r.landNote) ? [...r.flags, ...(r.landNote ? [r.landNote] : [])].join(" · ") : (r.boys.length ? `${r.boys.length} boy${r.boys.length === 1 ? "" : "s"}${r.nextOfAgeIn != null ? `, next of age in ${r.nextOfAgeIn}y` : ""}` : "")}
                   </span>
-                  {r.settlements != null && <span title="Settlements held at campaign start — what reverts to the rebels" style={{ fontSize: "0.74rem", color: "#9ab", whiteSpace: "nowrap" }}>{r.settlements} town{r.settlements === 1 ? "" : "s"}</span>}
+                  {r.canHorde && <span title="Can horde (descr_sm_factions): losing its last settlement sends it into the field instead of destroying it — no horde attempt is used at campaign start" style={{ fontSize: "0.78rem" }}>🐎</span>}
+                  {countOf(r.faction) != null && <span title={r.lastTown ? "Its ONLY settlement — taking it destroys the faction" : "Settlements held at campaign start — what reverts to the rebels"} style={{ fontSize: "0.74rem", color: r.lastTown ? "#ff9d7a" : "#9ab", fontWeight: r.lastTown ? 600 : 400, whiteSpace: "nowrap" }}>{r.lastTown ? "🏰 " : ""}{countOf(r.faction)} town{countOf(r.faction) === 1 ? "" : "s"}</span>}
                   <span style={{ color: "#778", fontSize: "0.7rem", width: 10 }}>{isOpen ? "▾" : "▸"}</span>
                 </div>
                 {isOpen && (
@@ -157,7 +187,7 @@ export default function ExtinctionWatchPanel({ familiesByFaction, settlementCoun
         </div>
 
         <div style={{ padding: "7px 16px", borderTop: "1px solid rgba(255,255,255,0.08)", fontSize: "0.72rem", color: "#7d8896" }}>
-          Source: the campaign's descr_strat (`character` and `character_record` lines). A live save's family roster is only partly readable, so this view does not follow a running campaign.
+          Source: the campaign's descr_strat (`character` and `character_record` lines) and descr_sm_factions (horde blocks).{hordeNote ? ` ${hordeNote}.` : ""} A live save's family roster is only partly readable, so this view does not follow a running campaign.
         </div>
       </div>
     </div>,
