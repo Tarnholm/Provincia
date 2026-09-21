@@ -113,6 +113,21 @@ function _hasFreshBackup(p, freshMs) {
   } catch { return false; }
 }
 
+// Which file an EDIT should start from. In export mode every handler used to
+// read the LIVE file and write the export copy, so a second edit rebuilt the
+// export from the untouched original and silently threw the first edit away.
+// The exported copy is the base once it exists — but only while it is at least
+// as new as the live file: an export folder left over from last month must not
+// become the base for today's edits.
+function editBasePath(livePath, outPath) {
+  if (!outPath || path.resolve(outPath) === path.resolve(livePath)) return livePath;
+  try {
+    const out = fs.statSync(outPath);
+    if (!fs.existsSync(livePath) || out.mtimeMs >= fs.statSync(livePath).mtimeMs) return outPath;
+  } catch { /* no exported copy yet */ }
+  return livePath;
+}
+
 // The one write call. opts:
 //   outPath  where the bytes go (export mode); defaults to livePath
 //   backup   take the stamped backup first (default true; ignored in export
@@ -166,4 +181,4 @@ function safeWriteModFiles(files, opts) {
   return { stamp, results: done.map((d) => d.r) };
 }
 
-module.exports = { newStamp, readModText, writeFileAtomic, listBackupStamps, pruneBackups, backupStamped, safeWriteModFile, safeWriteModFiles, KEEP_BACKUPS };
+module.exports = { editBasePath, newStamp, readModText, writeFileAtomic, listBackupStamps, pruneBackups, backupStamped, safeWriteModFile, safeWriteModFiles, KEEP_BACKUPS };

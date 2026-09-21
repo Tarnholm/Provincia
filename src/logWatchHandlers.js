@@ -481,8 +481,15 @@ ipcMain.handle("log-read-full", async (_event, logDir) => {
   const msgPath = path.join(logDir, "message_log.txt");
   const aiPath = path.join(logDir, "campaign_ai_log.txt");
   let msg = null, ai = null;
-  try { msg = fs.readFileSync(msgPath, "utf8"); } catch {}
-  try { ai = fs.readFileSync(aiPath, "utf8"); } catch {}
+  // A missing log is normal (ENOENT, stay quiet). Anything else — above all a
+  // campaign_ai_log past V8's string limit, which used to come back as a silent
+  // null and read as "no AI log" — is said out loud.
+  const readLog = (p) => {
+    try { return fs.readFileSync(p, "utf8"); }
+    catch (e) { if (!e || e.code !== "ENOENT") console.warn(`[log-read-full] ${path.basename(p)} could not be read: ${e && (e.code || e.message)}`); return null; }
+  };
+  msg = readLog(msgPath);
+  ai = readLog(aiPath);
   // Set offsets to end so watcher only gets new stuff
   try { logOffset = fs.statSync(msgPath).size; } catch {}
   try { logOffsetAI = fs.statSync(aiPath).size; } catch {}

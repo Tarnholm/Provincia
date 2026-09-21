@@ -48,6 +48,14 @@ function registerSaveAnalysisHandlers(ipcMain, { _writeLog, getLastSaveBuf, base
   // that restore-mod-backup can read, atomic temp+rename, and export mode honoured
   // — these handlers take the campaign's OWN modDataDir (a submod slot passes the
   // submod root), so the export path is made relative to THAT, not the active mod.
+  const _exportPathFor = (modDataDir, p) => {
+    const exp = typeof getModExportDir === "function" ? getModExportDir() : null;
+    if (!exp) return p;
+    const rel = path.relative(modDataDir, p);
+    return (!rel.startsWith("..") && !path.isAbsolute(rel)) ? path.join(exp, rel) : p;
+  };
+  // the text an apply-* edit starts from (export mode: the exported copy when current)
+  const _readModBase = (modDataDir, p) => fs.readFileSync(require("./safeModWrite.js").editBasePath(p, _exportPathFor(modDataDir, p)), "latin1");
   const _writeModText = (modDataDir, p, text, encoding) => {
     const exp = typeof getModExportDir === "function" ? getModExportDir() : null;
     let outPath = p;
@@ -680,7 +688,7 @@ ipcMain.handle("get-map-mode-metrics", async (_event, modDataDir) => {
           if (s.totalIncome > maxIncome) maxIncome = s.totalIncome;
           if (s.corruption > maxCorr) maxCorr = s.corruption;
         }
-      } catch { /* faction fails → its regions stay dark */ }
+      } catch (e) { _writeLog(`[map-metrics] ${fac}: budget failed, its regions stay dark — ${e && e.message}`); }
       try {
         const p = pp.projectPopulation(modDataDir, fac, 1);
         for (const s of (p && p.settlements) || []) {
@@ -1213,7 +1221,7 @@ ipcMain.handle("add-region-to-merc-pool", async (_event, modDataDir, poolName, r
     const mp = require("./mercenaryParser.js");
     const p = mp.findDescrMercenaries(modDataDir);
     if (!p || !fs.existsSync(p)) return { error: "descr_mercenaries.txt not found" };
-    const text = fs.readFileSync(p, "latin1");
+    const text = _readModBase(modDataDir, p);
     const r = mp.addRegionToPool(text, poolName, region);
     if (!r.ok) return { error: r.error, already: !!r.already };
     const w = _writeModText(modDataDir, p, r.text, "latin1");
@@ -1298,7 +1306,7 @@ ipcMain.handle("apply-strat-populations", async (_event, modDataDir, changes) =>
     const as = require("./armySetup.js");
     const p = as.findDescrStrat(modDataDir);
     if (!p || !fs.existsSync(p)) return { error: "descr_strat.txt not found" };
-    const text = fs.readFileSync(p, "latin1");
+    const text = _readModBase(modDataDir, p);
     const { applyPopulations } = require("./stratPopulations.js");
     const r = applyPopulations(text, changes);
     if (!r.applied.length) return { error: "no population line changed" + (r.missing.length ? ` — regions not found: ${r.missing.slice(0, 5).join(", ")}` : "") + (r.noPopLine.length ? ` — no population line in: ${r.noPopLine.slice(0, 5).join(", ")}` : ""), missing: r.missing, noPopLine: r.noPopLine };
@@ -1316,7 +1324,7 @@ ipcMain.handle("apply-army-swap", async (_event, modDataDir, faction, character,
     const as = require("./armySetup.js");
     const p = as.findDescrStrat(modDataDir);
     if (!p || !fs.existsSync(p)) return { error: "descr_strat.txt not found" };
-    const text = fs.readFileSync(p, "latin1");
+    const text = _readModBase(modDataDir, p);
     const r = as.applySwap(text, faction, character, oldUnit, newUnit);
     if (!r.ok) return { error: r.error };
     const w = _writeModText(modDataDir, p, r.text, "latin1");
@@ -1338,7 +1346,7 @@ ipcMain.handle("apply-add-garrison", async (_event, modDataDir, faction, settlem
     if (!p || !fs.existsSync(p)) return { error: "descr_strat.txt not found" };
     let regionToCity = {};
     try { const regPath = path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"); regionToCity = (dg.parseDescrRegions(fs.readFileSync(regPath, "utf8")) || {}).regionToCity || {}; } catch { }
-    const text = fs.readFileSync(p, "latin1");
+    const text = _readModBase(modDataDir, p);
     const r = as.applyAddGarrison(text, faction, settlementName, unitName, regionToCity);
     if (!r.ok) return { error: r.error };
     const w = _writeModText(modDataDir, p, r.text, "latin1");
@@ -1358,7 +1366,7 @@ ipcMain.handle("apply-add-army-units", async (_event, modDataDir, faction, chara
     const as = require("./armySetup.js");
     const p = as.findDescrStrat(modDataDir);
     if (!p || !fs.existsSync(p)) return { error: "descr_strat.txt not found" };
-    const text = fs.readFileSync(p, "latin1");
+    const text = _readModBase(modDataDir, p);
     const r = as.applyAddArmyUnits(text, faction, character, unitNames);
     if (!r.ok) return { error: r.error };
     const w = _writeModText(modDataDir, p, r.text, "latin1");
@@ -1381,7 +1389,7 @@ ipcMain.handle("apply-replace-garrison", async (_event, modDataDir, faction, set
     if (!p || !fs.existsSync(p)) return { error: "descr_strat.txt not found" };
     let regionToCity = {};
     try { const regPath = path.join(modDataDir, "world", "maps", "base", "descr_regions.txt"); regionToCity = (dg.parseDescrRegions(fs.readFileSync(regPath, "utf8")) || {}).regionToCity || {}; } catch { }
-    const text = fs.readFileSync(p, "latin1");
+    const text = _readModBase(modDataDir, p);
     const r = as.applyReplaceGarrison(text, faction, settlementName, removeUnits || [], addUnits || [], regionToCity);
     if (!r.ok) return { error: r.error };
     const w = _writeModText(modDataDir, p, r.text, "latin1");
@@ -1400,7 +1408,7 @@ ipcMain.handle("apply-upgrade-fix", async (_event, modDataDir, faction, characte
     const as = require("./armySetup.js");
     const p = as.findDescrStrat(modDataDir);
     if (!p || !fs.existsSync(p)) return { error: "descr_strat.txt not found" };
-    const text = fs.readFileSync(p, "latin1");
+    const text = _readModBase(modDataDir, p);
     const r = as.applyUpgradeFix(text, faction, character, opts);
     if (!r.ok) return { error: r.error };
     const w = _writeModText(modDataDir, p, r.text, "latin1");

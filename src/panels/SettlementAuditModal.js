@@ -10,33 +10,39 @@ export default function SettlementAuditModal({
   regions, saveCharactersByRegion, factionDisplayNames, onClose,
 }) {
   const focusFaction = selectedFaction || playerFaction || null;
-  const owner = currentOwnerByCity || {};
-  const sf = saveSettlementFields || {};
-  // city → region (from the rgb region map) for the governor lookup.
-  const cityToRegion = {};
-  if (regions) for (const v of Object.values(regions)) { if (v && v.city && v.region) cityToRegion[v.city] = v.region; }
-  // Regions holding a "family member" = a named v1 character that isn't an
-  // agent and isn't a v2 captain stack. A settlement with none = "no family
-  // member stationed" (a captain may still auto-govern it).
-  const AGENT = new Set(["spy", "assassin", "diplomat", "merchant"]);
-  const familyRegion = new Set();
-  if (saveCharactersByRegion) for (const [reg, arr] of Object.entries(saveCharactersByRegion)) {
-    if (Array.isArray(arr) && arr.some(c => c && c.firstName && !c._fromV2 && !AGENT.has(c.type))) familyRegion.add(reg);
-  }
-  const rows = [];
-  for (const [city, f] of Object.entries(sf)) {
-    const own = owner[city] || null;
-    if (focusFaction && own !== focusFaction) continue;
-    if (!focusFaction && !own) continue;
-    const po = (f && typeof f.publicOrder === "number" && isFinite(f.publicOrder) && Math.abs(f.publicOrder) < 100000) ? Math.round(f.publicOrder) : null; // exact save PO (NOT 5-snapped)
-    const inc = (f && typeof f.income === "number") ? f.income : null;
-    const grow = (f && f.populationGrowth != null && f.committedPopulation) ? (f.populationGrowth / f.committedPopulation * 100) : null;
-    const tax = (f && f.taxRate != null) ? f.taxRate : null;
-    const reg = cityToRegion[city] || null;
-    const hasGov = reg ? familyRegion.has(reg) : true;
-    rows.push({ city, tax, po, inc, grow, hasGov });
-  }
-  rows.sort((a, b) => (a.city || "").localeCompare(b.city || ""));
+  // App re-renders on every pan frame and hover; with no faction focused this
+  // walked and sorted all ~1,300 settlements each time. The inputs are App state
+  // objects (stable between save loads), so the rows are built once per change.
+  const rows = React.useMemo(() => {
+    const owner = currentOwnerByCity || {};
+    const sf = saveSettlementFields || {};
+    // city → region (from the rgb region map) for the governor lookup.
+    const cityToRegion = {};
+    if (regions) for (const v of Object.values(regions)) { if (v && v.city && v.region) cityToRegion[v.city] = v.region; }
+    // Regions holding a "family member" = a named v1 character that isn't an
+    // agent and isn't a v2 captain stack. A settlement with none = "no family
+    // member stationed" (a captain may still auto-govern it).
+    const AGENT = new Set(["spy", "assassin", "diplomat", "merchant"]);
+    const familyRegion = new Set();
+    if (saveCharactersByRegion) for (const [reg, arr] of Object.entries(saveCharactersByRegion)) {
+      if (Array.isArray(arr) && arr.some(c => c && c.firstName && !c._fromV2 && !AGENT.has(c.type))) familyRegion.add(reg);
+    }
+    const rows = [];
+    for (const [city, f] of Object.entries(sf)) {
+      const own = owner[city] || null;
+      if (focusFaction && own !== focusFaction) continue;
+      if (!focusFaction && !own) continue;
+      const po = (f && typeof f.publicOrder === "number" && isFinite(f.publicOrder) && Math.abs(f.publicOrder) < 100000) ? Math.round(f.publicOrder) : null; // exact save PO (NOT 5-snapped)
+      const inc = (f && typeof f.income === "number") ? f.income : null;
+      const grow = (f && f.populationGrowth != null && f.committedPopulation) ? (f.populationGrowth / f.committedPopulation * 100) : null;
+      const tax = (f && f.taxRate != null) ? f.taxRate : null;
+      const reg = cityToRegion[city] || null;
+      const hasGov = reg ? familyRegion.has(reg) : true;
+      rows.push({ city, tax, po, inc, grow, hasGov });
+    }
+    rows.sort((a, b) => (a.city || "").localeCompare(b.city || ""));
+    return rows;
+  }, [focusFaction, currentOwnerByCity, saveSettlementFields, regions, saveCharactersByRegion]);
   const TAXLABEL = ["low", "normal", "high", "v.high"];
   const focusLabel = (factionDisplayNames && focusFaction && factionDisplayNames[focusFaction]) || focusFaction || "—";
   const negGrowth = rows.filter(r => r.grow != null && r.grow < 0).length;

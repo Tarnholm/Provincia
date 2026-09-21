@@ -88,7 +88,7 @@ function registerFileHandlers(ipcMain, deps) {
         } catch {}
       }
       return true;
-    } catch { return false; }
+    } catch (e) { console.warn(`[save-file] failed: ${e && e.message}`); return false; }
   });
 
   // IPC: write a binary buffer (Uint8Array) to campaign_data + dev build/.
@@ -162,7 +162,7 @@ function registerFileHandlers(ipcMain, deps) {
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(filePath, gameTextCRLF(filePath, content), "utf8");
       return true;
-    } catch { return false; }
+    } catch (e) { console.warn(`[save-user-file] failed: ${e && e.message}`); return false; }
   });
 
   // IPC: read a file from the userData directory

@@ -56,7 +56,10 @@ function registerModEditingHandlers(ipcMain, { getActiveModDataDir, getModExport
 // Backups for the single-file handlers are taken by the renderer's
 // backup-mod-files call before it saves.
 const _enc = new Map();
-const _read = (p) => { const r = safeWrite.readModText(p); _enc.set(p, r.encoding); return r.text; };
+// Reads go through editBasePath: in export mode an edit builds on the exported
+// copy (when it is current), not on the untouched live file.
+const _base = (p) => safeWrite.editBasePath(p, modOut(p));
+const _read = (p) => { const r = safeWrite.readModText(_base(p)); _enc.set(p, r.encoding); return r.text; };
 const _put = (p, data, encoding) => safeWrite.safeWriteModFile(p, data, encoding || _enc.get(p) || "utf8", { outPath: modOut(p), backup: false });
 ipcMain.handle("update-character-traits", async (_event, firstName, faction, traits) => {
   if (!getActiveModDataDir()) return { ok: false, error: "no active mod" };
@@ -452,9 +455,9 @@ ipcMain.handle("rename-character", async (_event, faction, oldFirst, newFirstRaw
     const lookupPath = path.join(getActiveModDataDir(), "descr_names_lookup.txt");
     try {
       if (fs.existsSync(namesPath)) {
-        const names = descrGen.parseNamesTxt(fs.readFileSync(namesPath, "utf16le"));
+        const names = descrGen.parseNamesTxt(fs.readFileSync(_base(namesPath), "utf16le"));
         if (!names.tokenToDisplay.has(newFirst)) {
-          staged.push({ livePath: namesPath, outPath: modOut(namesPath), data: insertSortedNames(fs.readFileSync(namesPath, "utf16le"), [{ token: newFirst, display: newFirst }]), encoding: "utf16le" });
+          staged.push({ livePath: namesPath, outPath: modOut(namesPath), data: insertSortedNames(fs.readFileSync(_base(namesPath), "utf16le"), [{ token: newFirst, display: newFirst }]), encoding: "utf16le" });
           minted = true;
           if (fs.existsSync(lookupPath)) {
             const lkOut = insertSortedLookup(_read(lookupPath), [newFirst]);
@@ -738,7 +741,7 @@ ipcMain.handle("addgen-get-data", async () => {
     const dsPath = findActiveDescrStratPath();
     if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
     const namesPath = path.join(getActiveModDataDir(), "text", "names.txt");
-    const names = descrGen.parseNamesTxt(fs.readFileSync(namesPath, "utf16le"));
+    const names = descrGen.parseNamesTxt(fs.readFileSync(_base(namesPath), "utf16le"));
     const parsed = descrGen.parseDescrStrat(_read(dsPath));
     // LIVE culture namelists → so the name dropdowns offer every name registered
     // in descr_namelists.txt for the faction's culture (e.g. greek_men), not just
@@ -793,7 +796,7 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
     const lookupPath = path.join(getActiveModDataDir(), "descr_names_lookup.txt");
     const dsRaw = _read(dsPath);
     const eol = "\r\n"; // RTW:R game text files are ALWAYS CRLF
-    const names = descrGen.parseNamesTxt(fs.readFileSync(namesPath, "utf16le"));
+    const names = descrGen.parseNamesTxt(fs.readFileSync(_base(namesPath), "utf16le"));
     const parsed = descrGen.parseDescrStrat(dsRaw);
     // Faction's descr_namelists pools (men/women) so composeAddGeneral can name
     // the general + family from VALID unused namelist entries instead of minting
@@ -817,7 +820,7 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
     // Export mode leaves the live files alone, so it takes no backups.
     const files = [];
     if (res.namesAppend.length) {
-      files.push({ livePath: namesPath, outPath: modOut(namesPath), data: insertSortedNames(fs.readFileSync(namesPath, "utf16le"), res.namesAppend), encoding: "utf16le" });
+      files.push({ livePath: namesPath, outPath: modOut(namesPath), data: insertSortedNames(fs.readFileSync(_base(namesPath), "utf16le"), res.namesAppend), encoding: "utf16le" });
     }
     if (res.lookupAppend.length) {
       const lkOut = insertSortedLookup(_read(lookupPath), res.lookupAppend);

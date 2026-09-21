@@ -135,3 +135,30 @@ describe("safeWriteModFiles", () => {
     }
   });
 });
+
+describe("editBasePath — what an export-mode edit starts from", () => {
+  it("the live file when export is off or nothing has been exported yet", () => {
+    const p = path.join(mk(), "descr_strat.txt");
+    fs.writeFileSync(p, "live");
+    expect(sw.editBasePath(p, p)).toBe(p);
+    expect(sw.editBasePath(p, undefined)).toBe(p);
+    expect(sw.editBasePath(p, path.join(dir, "export", "descr_strat.txt"))).toBe(p);
+  });
+
+  it("the exported copy once it exists and is current — so a second edit keeps the first", () => {
+    const p = path.join(mk(), "descr_strat.txt"), out = path.join(dir, "export", "descr_strat.txt");
+    fs.writeFileSync(p, "live");
+    sw.safeWriteModFile(p, "edit 1", "latin1", { outPath: out });
+    expect(sw.editBasePath(p, out)).toBe(out);
+  });
+
+  it("NOT a stale export left over from before the live file last changed", () => {
+    const p = path.join(mk(), "descr_strat.txt"), out = path.join(dir, "export", "descr_strat.txt");
+    fs.mkdirSync(path.dirname(out), { recursive: true });
+    fs.writeFileSync(out, "last month's export");
+    fs.writeFileSync(p, "live, edited since");
+    const old = new Date(Date.now() - 30 * 24 * 3600 * 1000);
+    fs.utimesSync(out, old, old);
+    expect(sw.editBasePath(p, out)).toBe(p);
+  });
+});
