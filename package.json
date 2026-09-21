@@ -127,6 +127,7 @@
       "src/portraitHandlers.js",
       "src/modEditingHandlers.js",
       "src/campaignScan.js",
+      "src/characterFactionBlocks.js",
       "src/hordeFactions.js",
       "src/safeModWrite.js",
       "src/stratTokens.js",

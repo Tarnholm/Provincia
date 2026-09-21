@@ -66,7 +66,12 @@ function governorLink({ settlementFields = null, ownerByCity = null, v1 = null }
       name: c.firstName || null,
       // The label the record carries, and the label the settlement implies. Kept as two
       // fields on purpose — collapsing them would hide which one was believed.
-      factionOnRecord: c.faction ? String(c.faction).toLowerCase() : null,
+      // Judge the POSITIONAL guess this falsifier was written to expose. Since
+      // 2026-09-21 `c.faction` is labelled FROM the governor link
+      // (src/characterFactionBlocks.js), so testing it against the same link
+      // would be true by construction; the old guess survives as factionByMarker.
+      factionOnRecord: (("factionByMarker" in c) ? c.factionByMarker : c.faction) ? String(("factionByMarker" in c) ? c.factionByMarker : c.faction).toLowerCase() : null,
+      verifiedFaction: ("factionByMarker" in c) && c.faction ? String(c.faction).toLowerCase() : null,
       factionFromSettlement: String(owner).toLowerCase(),
     });
   }

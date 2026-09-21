@@ -188,6 +188,16 @@ describe("AI Movement Lab — real log + save through the real worker", () => {
     // The min-sample floor must be published, because without it the same data reads as
     // "65 of 102 owners consistently relabelled" — an artifact of single-governor owners.
     expect(r.governorLink.systematicRelabel.minSample).toBe(3);
+    // Since 2026-09-21 the records carry a VERIFIED faction beside that old guess
+    // (src/characterFactionBlocks.js): a governor is labelled with the owner of the
+    // town he governs. The figures above still judge the positional guess, now kept
+    // as factionByMarker — judging the new label against the same link would be true
+    // by construction. What CAN fail here: a governor of a non-rebel town carrying any
+    // faction other than the town's owner (the first version relabelled 60 of them
+    // from their neighbours on exactly this save).
+    const verified = r.governorLink.links.filter((l) => l.verifiedFaction && l.owner !== "slave");
+    expect(verified.length).toBeGreaterThan(50);
+    expect(verified.filter((l) => l.verifiedFaction !== l.owner)).toEqual([]);
 
     // ── WHY THERE IS NO character-shortage LEAD ──
     // The obvious follow-up to 463 ungoverned settlements is "shortage or deployment

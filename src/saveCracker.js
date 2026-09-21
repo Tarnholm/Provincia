@@ -16,6 +16,7 @@ const path = require("path");
 
 const { parseSettlements } = require("./buildingParser.js");
 const { resolveCurrentOwners } = require("./saveOwnershipParser.js");
+const { labelByFactionBlocks } = require("./characterFactionBlocks.js");
 const { buildInitialOwnership, parseDescrRegions } = require("./ownershipParser.js");
 const { findCharacterRecords } = require("./characterParser.js");
 const { findUnitRecords } = require("./unitParser.js");
@@ -242,17 +243,54 @@ function crackSave(saveBuf, modDataDir, opts = {}) {
   // portrait-pool offset. (Same coord bridge bridgeV1Traits relies on.)
   try { if (!skipHeavy) x.attachMapCoords(saveBuf, v2Chars); } catch (e) { /* coords optional */ }
 
+  // Per-settlement runtime fields (population growth, income, public order,
+  // governor) — cracked 2026-05-31, src/settlementFieldsParser.js. Keyed by name.
+  let settlementFields = {};
+  try {
+    const raw = parseSettlementFields(saveBuf, findAllSettlementMarkers(saveBuf));
+    // Normalize region-name marker keys (e.g. "Roma"/"Etruria") to their
+    // settlement name ("Rome"/"Arretium") so the keys line up with ownerByCity
+    // — the marker scanner now also surfaces region-name markers for a handful
+    // of settlements, and those phantom keys would otherwise orphan against
+    // ownerByCity. Never clobber a real settlement-name entry already present.
+    settlementFields = {};
+    // Pass 1: settlement-name (real) keys win.
+    for (const [k, v] of Object.entries(raw)) {
+      if (k in ownership.ownerByCity) settlementFields[k] = v;
+    }
+    // Pass 2: region-name marker keys map to their settlement name, only if a
+    // real entry isn't already present (so we never clobber real fields).
+    for (const [k, v] of Object.entries(raw)) {
+      if (k in ownership.ownerByCity) continue;
+      const s = regionToSettlement[k];
+      const key = (s && s in ownership.ownerByCity) ? s : k;
+      if (!(key in settlementFields)) settlementFields[key] = v;
+    }
+  } catch (e) { /* leave empty on failure */ }
+  // (computed BEFORE the characters since 2026-09-21: the governor uuids in it are
+  // what character faction labelling is anchored on — src/characterFactionBlocks.js)
+
   // findCharacterRecords returns FULLY-PARSED records (firstName, age, role,
   // stats, traits, etc) — no separate parseCharacter call needed. The records
   // arrive without faction attribution; we tag each via the captain_card
   // marker trick used by save-to-descr-strat.
   let v1Chars = [];
+  let v1FactionReport = null;
   let factionMarkers = [];
   if (!skipHeavy) {
     if (nameLookup.length && traitNames.length) {
       v1Chars = findCharacterRecords(saveBuf, nameLookup, traitNames, null);
       factionMarkers = findFactionMarkers(saveBuf);
       assignFactions(v1Chars, factionMarkers);
+      // The marker guess above is right for ~1 record in 8. Replace it with
+      // labels anchored on governors (faction = owner of the settlement
+      // governed) over contiguous faction blocks; unverifiable records become
+      // null and keep the old guess only as `factionByMarker`.
+      try {
+        v1FactionReport = labelByFactionBlocks(v1Chars, {
+          settlementFields, ownerByCity: ownersOut.ownerByCity || {}, factionOrder: stratOrder || [],
+        });
+      } catch (e) { v1FactionReport = { usable: false, error: e && e.message }; }
     } else {
       factionMarkers = findFactionMarkers(saveBuf);
     }
@@ -376,30 +414,6 @@ function crackSave(saveBuf, modDataDir, opts = {}) {
   // diffTurn() against the previous save yields "what happened last turn".
   const events = skipHeavy ? [] : parseEventLog(saveBuf, stratOrder);
 
-  // Per-settlement runtime fields (population growth, income, public order,
-  // governor) — cracked 2026-05-31, src/settlementFieldsParser.js. Keyed by name.
-  let settlementFields = {};
-  try {
-    const raw = parseSettlementFields(saveBuf, findAllSettlementMarkers(saveBuf));
-    // Normalize region-name marker keys (e.g. "Roma"/"Etruria") to their
-    // settlement name ("Rome"/"Arretium") so the keys line up with ownerByCity
-    // — the marker scanner now also surfaces region-name markers for a handful
-    // of settlements, and those phantom keys would otherwise orphan against
-    // ownerByCity. Never clobber a real settlement-name entry already present.
-    settlementFields = {};
-    // Pass 1: settlement-name (real) keys win.
-    for (const [k, v] of Object.entries(raw)) {
-      if (k in ownership.ownerByCity) settlementFields[k] = v;
-    }
-    // Pass 2: region-name marker keys map to their settlement name, only if a
-    // real entry isn't already present (so we never clobber real fields).
-    for (const [k, v] of Object.entries(raw)) {
-      if (k in ownership.ownerByCity) continue;
-      const s = regionToSettlement[k];
-      const key = (s && s in ownership.ownerByCity) ? s : k;
-      if (!(key in settlementFields)) settlementFields[key] = v;
-    }
-  } catch (e) { /* leave empty on failure */ }
 
   // Scripted-event / disaster schedule (descr_events table) — cracked
   // 2026-05-31, src/eventScheduleParser.js. Static historical events + appended
@@ -696,6 +710,7 @@ function crackSave(saveBuf, modDataDir, opts = {}) {
       factions: Object.keys(factions).length,
       settlements: (settlements && settlements.settlements || []).length,
       v1Characters: v1Chars.length,
+      v1FactionLabels: v1FactionReport,
       v2Characters: v2Chars.length,
       familyMembers: family.length,
       typedAgents: agents.length,
