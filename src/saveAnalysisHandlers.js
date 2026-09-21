@@ -38,12 +38,22 @@ function _laneSrcMtimes(modDataDir, kind) {
   return files.map((f) => { try { return fs.statSync(f).mtimeMs; } catch { return 0; } });
 }
 
-function registerSaveAnalysisHandlers(ipcMain, { _writeLog, getLastSaveBuf, baselineDir, overlayDir }) {
+function registerSaveAnalysisHandlers(ipcMain, { _writeLog, getLastSaveBuf, baselineDir, overlayDir, getModExportDir }) {
   // SUBMOD OVERLAY (2026-07-30, RIS_Four_Romans): thin submods ship only the files
   // they change; analysis reads must go through the merged submod-over-base view.
   // READ handlers only — the Army Setup APPLY handlers keep writing the submod's
   // real descr_strat via the original modDataDir (see src/modOverlay.js header).
   const _effDir = (modDataDir) => require("./modOverlay.js").effectiveModDataDir(modDataDir, overlayDir, (m) => _writeLog(`[mod-overlay] ${m}`));
+  // Every apply-* writer goes through here (src/safeModWrite.js): stamped backup
+  // that restore-mod-backup can read, atomic temp+rename, and export mode honoured
+  // — these handlers take the campaign's OWN modDataDir (a submod slot passes the
+  // submod root), so the export path is made relative to THAT, not the active mod.
+  const _writeModText = (modDataDir, p, text, encoding) => {
+    const exp = typeof getModExportDir === "function" ? getModExportDir() : null;
+    let outPath = p;
+    if (exp) { const rel = path.relative(modDataDir, p); if (!rel.startsWith("..") && !path.isAbsolute(rel)) outPath = path.join(exp, rel); }
+    return require("./safeModWrite.js").safeWriteModFile(p, text, encoding, { outPath });
+  };
   // Run a heavy save crack in a worker thread so it never blocks the Electron
   // main thread (a ~5s synchronous crack froze all IPC/window events). The
   // worker reads the save file itself when given a savePath — keeping the 30-45
@@ -1196,10 +1206,9 @@ ipcMain.handle("add-region-to-merc-pool", async (_event, modDataDir, poolName, r
     const text = fs.readFileSync(p, "latin1");
     const r = mp.addRegionToPool(text, poolName, region);
     if (!r.ok) return { error: r.error, already: !!r.already };
-    try { fs.copyFileSync(p, p + ".provincia-bak"); } catch (e) { _writeLog(`[merc-add] backup failed: ${e && e.message}`); }
-    fs.writeFileSync(p, r.text, "latin1");
+    const w = _writeModText(modDataDir, p, r.text, "latin1");
     _writeLog(`[merc-add] added region "${region}" to pool "${poolName}" @line ${r.changedLine} ("${r.before}" → "${r.after}")`);
-    return { ok: true, changedLine: r.changedLine, before: r.before, after: r.after, path: p };
+    return { ok: true, changedLine: r.changedLine, before: r.before, after: r.after, path: w.path, exported: w.exported, backupStamp: w.backupStamp };
   } catch (e) { _writeLog(`[merc-add] failed: ${e && e.message}`); return { error: e && e.message ? e.message : String(e) }; }
 });
 
@@ -1270,8 +1279,8 @@ ipcMain.handle("get-strat-populations", async (_event, modDataDir) => {
 
 // IPC: write edited starting populations back to descr_strat. Surgical per-line
 // rewrites keyed by region (src/stratPopulations.js — brace-depth walk, only the
-// matched population lines change, CRLF/indentation preserved), rolling
-// .provincia-bak backup first — the apply-army-swap contract. Writes the
+// matched population lines change, CRLF/indentation preserved), stamped backup +
+// atomic write via _writeModText — the apply-army-swap contract. Writes the
 // ORIGINAL campaign file (a submod slot edits the submod's own descr_strat).
 ipcMain.handle("apply-strat-populations", async (_event, modDataDir, changes) => {
   try {
@@ -1283,10 +1292,9 @@ ipcMain.handle("apply-strat-populations", async (_event, modDataDir, changes) =>
     const { applyPopulations } = require("./stratPopulations.js");
     const r = applyPopulations(text, changes);
     if (!r.applied.length) return { error: "no population line changed" + (r.missing.length ? ` — regions not found: ${r.missing.slice(0, 5).join(", ")}` : "") + (r.noPopLine.length ? ` — no population line in: ${r.noPopLine.slice(0, 5).join(", ")}` : ""), missing: r.missing, noPopLine: r.noPopLine };
-    try { fs.copyFileSync(p, p + ".provincia-bak"); } catch (e) { _writeLog(`[strat-pops] backup failed: ${e && e.message}`); }
-    fs.writeFileSync(p, r.text, "latin1");
+    const w = _writeModText(modDataDir, p, r.text, "latin1");
     _writeLog(`[strat-pops] wrote ${r.applied.length} population change(s) to ${p}: ${r.applied.slice(0, 6).map((a) => `${a.region} ${a.from}→${a.to}`).join(", ")}${r.applied.length > 6 ? ` …+${r.applied.length - 6}` : ""}`);
-    return { ok: true, path: p, applied: r.applied, missing: r.missing, noPopLine: r.noPopLine };
+    return { ok: true, path: w.path, exported: w.exported, backupStamp: w.backupStamp, applied: r.applied, missing: r.missing, noPopLine: r.noPopLine };
   } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
 });
 
@@ -1301,11 +1309,9 @@ ipcMain.handle("apply-army-swap", async (_event, modDataDir, faction, character,
     const text = fs.readFileSync(p, "latin1");
     const r = as.applySwap(text, faction, character, oldUnit, newUnit);
     if (!r.ok) return { error: r.error };
-    // backup before writing (single rolling .provincia-bak + a one-shot timestamp)
-    try { fs.copyFileSync(p, p + ".provincia-bak"); } catch (e) { _writeLog(`[army-swap] backup failed: ${e && e.message}`); }
-    fs.writeFileSync(p, r.text, "latin1");
+    const w = _writeModText(modDataDir, p, r.text, "latin1");
     _writeLog(`[army-swap] ${faction}/${character}: "${oldUnit}" → "${newUnit}" @line ${r.changedLine}`);
-    return { ok: true, changedLine: r.changedLine, before: r.before, after: r.after, path: p };
+    return { ok: true, changedLine: r.changedLine, before: r.before, after: r.after, path: w.path, exported: w.exported, backupStamp: w.backupStamp };
   } catch (e) {
     _writeLog(`[army-swap] failed: ${e && e.message}`);
     return { error: e && e.message ? e.message : String(e) };
@@ -1325,10 +1331,9 @@ ipcMain.handle("apply-add-garrison", async (_event, modDataDir, faction, settlem
     const text = fs.readFileSync(p, "latin1");
     const r = as.applyAddGarrison(text, faction, settlementName, unitName, regionToCity);
     if (!r.ok) return { error: r.error };
-    try { fs.copyFileSync(p, p + ".provincia-bak"); } catch (e) { _writeLog(`[add-garrison] backup failed: ${e && e.message}`); }
-    fs.writeFileSync(p, r.text, "latin1");
+    const w = _writeModText(modDataDir, p, r.text, "latin1");
     _writeLog(`[add-garrison] ${faction} ${settlementName}: +1 "${unitName}" @line ${r.insertedAtLine} (${r.anchor})`);
-    return { ok: true, insertedAtLine: r.insertedAtLine, anchor: r.anchor, newLine: r.newLine, path: p };
+    return { ok: true, insertedAtLine: r.insertedAtLine, anchor: r.anchor, newLine: r.newLine, path: w.path, exported: w.exported, backupStamp: w.backupStamp };
   } catch (e) {
     _writeLog(`[add-garrison] failed: ${e && e.message}`);
     return { error: e && e.message ? e.message : String(e) };
@@ -1346,10 +1351,9 @@ ipcMain.handle("apply-add-army-units", async (_event, modDataDir, faction, chara
     const text = fs.readFileSync(p, "latin1");
     const r = as.applyAddArmyUnits(text, faction, character, unitNames);
     if (!r.ok) return { error: r.error };
-    try { fs.copyFileSync(p, p + ".provincia-bak"); } catch (e) { _writeLog(`[add-army-units] backup failed: ${e && e.message}`); }
-    fs.writeFileSync(p, r.text, "latin1");
+    const w = _writeModText(modDataDir, p, r.text, "latin1");
     _writeLog(`[add-army-units] ${faction}/${character}: +${r.addedCount} unit(s) [${unitNames.slice(0, r.addedCount).join(", ")}] @line ${r.insertedAtLine}${r.capClipped ? ` (CLIPPED from ${r.requested} — 20-unit cap)` : ""}`);
-    return { ok: true, addedCount: r.addedCount, capClipped: r.capClipped, insertedAtLine: r.insertedAtLine, path: p };
+    return { ok: true, addedCount: r.addedCount, capClipped: r.capClipped, insertedAtLine: r.insertedAtLine, path: w.path, exported: w.exported, backupStamp: w.backupStamp };
   } catch (e) {
     _writeLog(`[add-army-units] failed: ${e && e.message}`);
     return { error: e && e.message ? e.message : String(e) };
@@ -1370,10 +1374,9 @@ ipcMain.handle("apply-replace-garrison", async (_event, modDataDir, faction, set
     const text = fs.readFileSync(p, "latin1");
     const r = as.applyReplaceGarrison(text, faction, settlementName, removeUnits || [], addUnits || [], regionToCity);
     if (!r.ok) return { error: r.error };
-    try { fs.copyFileSync(p, p + ".provincia-bak"); } catch (e) { _writeLog(`[replace-garrison] backup failed: ${e && e.message}`); }
-    fs.writeFileSync(p, r.text, "latin1");
+    const w = _writeModText(modDataDir, p, r.text, "latin1");
     _writeLog(`[replace-garrison] ${faction} ${settlementName}: −${r.removedCount} non-recruitable, +${r.addedCount} unit(s) [${(r.addedLines || []).join(", ")}] (${r.anchor}; lineΔ ${r.lineDelta})`);
-    return { ok: true, removedCount: r.removedCount, addedCount: r.addedCount, removedLines: r.removedLines, addedLines: r.addedLines, anchor: r.anchor, path: p };
+    return { ok: true, removedCount: r.removedCount, addedCount: r.addedCount, removedLines: r.removedLines, addedLines: r.addedLines, anchor: r.anchor, path: w.path, exported: w.exported, backupStamp: w.backupStamp };
   } catch (e) {
     _writeLog(`[replace-garrison] failed: ${e && e.message}`);
     return { error: e && e.message ? e.message : String(e) };
@@ -1390,10 +1393,9 @@ ipcMain.handle("apply-upgrade-fix", async (_event, modDataDir, faction, characte
     const text = fs.readFileSync(p, "latin1");
     const r = as.applyUpgradeFix(text, faction, character, opts);
     if (!r.ok) return { error: r.error };
-    try { fs.copyFileSync(p, p + ".provincia-bak"); } catch (e) { _writeLog(`[upgrade-fix] backup failed: ${e && e.message}`); }
-    fs.writeFileSync(p, r.text, "latin1");
+    const w = _writeModText(modDataDir, p, r.text, "latin1");
     _writeLog(`[upgrade-fix] ${faction}/${character}: zeroed ${r.fixed} unit upgrade line(s)`);
-    return { ok: true, fixed: r.fixed };
+    return { ok: true, fixed: r.fixed, path: w.path, exported: w.exported, backupStamp: w.backupStamp };
   } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
 });
 

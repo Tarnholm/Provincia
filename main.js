@@ -2469,7 +2469,8 @@ registerFileHandlers(ipcMain, { app, dialog, isConsentedPath, appRoot: __dirname
 const { registerSaveAnalysisHandlers } = require("./src/saveAnalysisHandlers.js");
 registerSaveAnalysisHandlers(ipcMain, { _writeLog: (s) => _writeLog(s), getLastSaveBuf: () => lastSaveBuf,
   baselineDir: path.join(app.getPath("userData"), "garrison-baselines"),
-  overlayDir: path.join(app.getPath("userData"), "mod-overlay") });
+  overlayDir: path.join(app.getPath("userData"), "mod-overlay"),
+  getModExportDir: () => _modExportDir });
 
 // IPC: get app version
 // App/system info + log-folder picker IPC handlers — see src/systemHandlers.js.
@@ -3813,9 +3814,20 @@ ipcMain.handle("write-active-mod-file", async (_event, relPath, content) => {
     // RTW:R game text files MUST be CRLF — force it here so a renderer-side
     // patcher can never ship LF (which silently breaks the game's parser, e.g.
     // "Expected faction list starting with playable"). See gameTextCRLF.
-    fs.writeFileSync(full, gameTextCRLF(normalised, content), "utf8");
-    console.log(`[write-active-mod-file] wrote ${normalised} (${content.length} bytes)${_modExportDir ? " (exported)" : ""}`);
-    return { ok: true, path: full };
+    // The renderer composed `content` from text it was handed as utf8. If the
+    // live file is ANSI with high-bit bytes, those arrived as U+FFFD and writing
+    // them back would replace every accented character for good — refuse
+    // rather than corrupt (RIS carries none today; other mods may).
+    const livePath = path.join(activeModDataDir, normalised);
+    if (content.includes("\uFFFD") && fs.existsSync(livePath) && !fs.readFileSync(livePath).includes(Buffer.from([0xEF, 0xBF, 0xBD]))) {
+      return { ok: false, error: `${normalised} holds characters that are not valid UTF-8; saving would replace them permanently. Nothing was written.` };
+    }
+    // Atomic temp+rename, and its OWN stamped backup (the renderer's
+    // backup-mod-files result is not checked there) unless one was taken
+    // seconds ago — src/safeModWrite.js.
+    const w = require("./src/safeModWrite.js").safeWriteModFile(livePath, gameTextCRLF(normalised, content), "utf8", { outPath: full, freshMs: 15000 });
+    console.log(`[write-active-mod-file] wrote ${normalised} (${content.length} bytes)${w.exported ? " (exported)" : w.backupStamp ? ` (backup ${w.backupStamp})` : ""}`);
+    return { ok: true, path: full, backupStamp: w.backupStamp };
   } catch (e) {
     console.warn(`[write-active-mod-file] failed for ${normalised}: ${e.message}`);
     return { ok: false, error: e.message };

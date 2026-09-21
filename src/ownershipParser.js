@@ -10,6 +10,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { REGION_LINE_RE } = require("./stratTokens.js");
 
 function findCampaignDescrStrat(modDataDir) {
   // RIS-style mods can ship the live campaign under
@@ -137,7 +138,7 @@ function parseDescrStrat(filePath) {
     }
     if (line === "settlement") { inSettlement = true; curRegion = null; continue; }
     if (inSettlement) {
-      const rmatch = line.match(/^region\s+([A-Za-z][A-Za-z0-9_\-]*)/);
+      const rmatch = line.match(REGION_LINE_RE);
       if (rmatch && currentFaction) {
         factionRegions[currentFaction].push(rmatch[1]);
         curRegion = rmatch[1];

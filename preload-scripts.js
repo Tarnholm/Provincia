@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld("api", {
   exportProfile: (name) => invoke("export-profile", name),
   importProfile: () => invoke("import-profile"),
   resetScript: (name) => invoke("reset-script", name),
+  getSeedReport: () => invoke("get-seed-report"),
   listScripts: () => invoke("list-scripts"),
 
   // Comparison

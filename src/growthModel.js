@@ -45,6 +45,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { REGION_LINE_RE } = require("./stratTokens.js");
 
 // Calibrated coefficients (fit to Carthage+Julii all-Normal turn-2 base growth,
 // 67 settlements). The govLevel coefficient is noisy (correlates with city size);
@@ -179,7 +180,7 @@ function computeStratTaxPlanLegacy(modDataDir, faction) {
     if (fm) { pushSettle(); curFac = fm[1]; continue; }
     if (/^settlement\b/.test(ln)) { pushSettle(); curSettle = { region: null, pop: 0, buildings: [] }; continue; }
     if (curSettle) {
-      const rg = ln.match(/^\s*region\s+([\w-]+)/); if (rg) curSettle.region = rg[1];
+      const rg = ln.match(REGION_LINE_RE); if (rg) curSettle.region = rg[1];
       const pp = ln.match(/^\s*population\s+(\d+)/); if (pp) curSettle.pop = +pp[1];
       const bt = ln.match(/^\s*type\s+(\w+)\s+(\w+)/); if (bt) curSettle.buildings.push(bt[1] + ":" + bt[2]);
     }

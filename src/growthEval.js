@@ -42,6 +42,7 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
+const { REGION_LINE_RE } = require("./stratTokens.js");
 
 // Calibrated coefficients (free least-squares fit to Carthage+Julii all-Normal
 // turn-2 base growth; best out-of-sample LOFO performance). See header for accuracy.
@@ -225,7 +226,7 @@ function parseStratUncached(stratPath) {
     }
     if (!inSettle || !cur) continue;
     const lv = ln.match(/^\s*level\s+(\w+)/); if (lv) cur.level = lv[1];
-    const rg = ln.match(/^\s*region\s+([\w-]+)/); if (rg) cur.region = rg[1];
+    const rg = ln.match(REGION_LINE_RE); if (rg) cur.region = rg[1];
     const pp = ln.match(/^\s*population\s+(\d+)/); if (pp) cur.pop = +pp[1];
     // level names can contain +/- (granary+1, grain-1) — \w+ truncated them to the
     // bare chain word, silently DROPPING those levels' capabilities (the granary −1

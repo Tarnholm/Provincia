@@ -749,3 +749,40 @@ html, body {
   margin-top: 8px;
   min-height: 16px;
 }
+
+/* Launch-refresh notice: an edited script was set aside (renderer.js showSeedNotice) */
+.seed-notice {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 9000;
+  width: min(760px, calc(100vw - 32px));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  border-left: 3px solid var(--accent-bright);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(34, 31, 26, 0.28);
+  color: var(--text-primary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.seed-notice-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.seed-notice-text strong { color: var(--text-accent); }
+.seed-notice-btn {
+  flex: none;
+  padding: 3px 10px;
+  border: 1px solid var(--border-control);
+  border-radius: 5px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+.seed-notice-btn:hover { background: var(--bg-hover); }
+.seed-notice-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.seed-notice-close { border-color: transparent; background: transparent; color: var(--text-secondary); }

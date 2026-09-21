@@ -126,6 +126,8 @@
       "src/iconHandlers.js",
       "src/portraitHandlers.js",
       "src/modEditingHandlers.js",
+      "src/safeModWrite.js",
+      "src/stratTokens.js",
       "src/saveAnalysisHandlers.js",
       "src/saveCrackWorker.js",
       "src/timelineRowWorker.js",

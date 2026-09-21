@@ -16,6 +16,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { REGION_LINE_RE } = require("./stratTokens.js");
 const recruitPool = require("./recruitPool.js");
 
 // Tax-income bracket multipliers (relative to normal), cracked 2026-06-07.
@@ -99,9 +100,13 @@ function parseFaction(modDataDir, faction) {
     if (/^settlement\b/.test(ln)) { curSettle = { region: null, level: null, buildings: [] }; settleDepth = 0; continue; }
     if (curSettle) {
       if (/\{/.test(ln)) settleDepth += (ln.match(/\{/g) || []).length;
-      const rg = ln.match(/^\s*region\s+(\w+)/); if (rg) curSettle.region = rg[1];
+      const rg = ln.match(REGION_LINE_RE); if (rg) curSettle.region = rg[1];
       const lv = ln.match(/^\s*level\s+(\w+)/); if (lv) curSettle.level = lv[1];
-      const bt = ln.match(/^\s*type\s+\w+\s+(\S+)/); if (bt) curSettle.buildings.push(bt[1]); // \S+: levels like granary+1
+      // "class level" — recruitPool gates every recruit line on the settlement OWNING
+      // the enclosing building CLASS (v0.9.1207). This pushed the level alone, so the
+      // owned-class set came out empty and EVERY settlement's pool was empty (Roma: 0
+      // units, 8 with the class). \S+: levels like granary+1.
+      const bt = ln.match(/^\s*type\s+(\w+)\s+(\S+)/); if (bt) curSettle.buildings.push(`${bt[1]} ${bt[2]}`);
       if (/\}/.test(ln)) { settleDepth -= (ln.match(/\}/g) || []).length; if (settleDepth <= 0) { out.settlements.push(curSettle); curSettle = null; } }
       continue;
     }

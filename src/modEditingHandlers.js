@@ -14,8 +14,50 @@ const fs = require("fs");
 const path = require("path");
 const descrGen = require("./descrStratGeneral.js");
 const { gameTextCRLF } = require("./mainUtils.js");
+const safeWrite = require("./safeModWrite.js");
+
+// names.txt / descr_names_lookup.txt are sorted by token and end in a {ZZZZZ}
+// marker — a name appended after it is never read by the engine, so every mint
+// goes in at its sorted position. One copy (rename-character and addgen-apply
+// each carried their own). The BOM lives on line 0: lift it off before the
+// insert and put it back after, or a token that sorts first would push the BOM
+// into the middle of the file.
+function insertSortedNames(ntText, entries) {
+  const bom = ntText.charCodeAt(0) === 0xFEFF ? "\uFEFF" : "";
+  const ntLines = (bom ? ntText.slice(1) : ntText).split(/\r?\n/);
+  const tokenOf = (l) => { const m = l.match(/^\{([^}]*)\}/); return m ? m[1].toLowerCase() : null; };
+  for (const n of entries) {
+    const entry = `{${n.token}}${n.display}`;
+    const tokLc = n.token.toLowerCase();
+    const idx = ntLines.findIndex((l) => { const k = tokenOf(l); return k != null && k > tokLc; });
+    if (idx < 0) { while (ntLines.length && ntLines[ntLines.length - 1].trim() === "") ntLines.pop(); ntLines.push(entry); }
+    else ntLines.splice(idx, 0, entry);
+  }
+  return bom + ntLines.join("\r\n"); // RTW:R names.txt (UTF-16LE) is CRLF
+}
+function insertSortedLookup(lkText, tokens) {
+  const lkLines = lkText.split(/\r?\n/);
+  let added = 0;
+  for (const tok of tokens) {
+    const tokLc = tok.toLowerCase();
+    if (lkLines.some((l) => l.trim().toLowerCase() === tokLc)) continue;
+    const idx = lkLines.findIndex((l) => l.trim() && l.trim().toLowerCase() > tokLc);
+    if (idx < 0) { while (lkLines.length && lkLines[lkLines.length - 1].trim() === "") lkLines.pop(); lkLines.push(tok); }
+    else lkLines.splice(idx, 0, tok);
+    added++;
+  }
+  return added ? lkLines.join("\r\n") : null; // RTW:R always CRLF
+}
 
 function registerModEditingHandlers(ipcMain, { getActiveModDataDir, getModExportDir, getModDescrStratFamilies, _writeLog, buildStartingArmiesFromMod, getVanillaDataDir, loadModCharacterData, loadPortraitMapping, resolvePortraitPool, modOut }) {
+// Reads remember how the bytes decoded (utf8 only when they ARE valid utf8,
+// latin1 otherwise) so the write-back is byte-exact for everything the edit
+// did not touch; writes are atomic and honour export mode (src/safeModWrite.js).
+// Backups for the single-file handlers are taken by the renderer's
+// backup-mod-files call before it saves.
+const _enc = new Map();
+const _read = (p) => { const r = safeWrite.readModText(p); _enc.set(p, r.encoding); return r.text; };
+const _put = (p, data, encoding) => safeWrite.safeWriteModFile(p, data, encoding || _enc.get(p) || "utf8", { outPath: modOut(p), backup: false });
 ipcMain.handle("update-character-traits", async (_event, firstName, faction, traits) => {
   if (!getActiveModDataDir()) return { ok: false, error: "no active mod" };
   if (!firstName) return { ok: false, error: "missing firstName" };
@@ -30,7 +72,7 @@ ipcMain.handle("update-character-traits", async (_event, firstName, faction, tra
   const dsPath = candidates.find((p) => fs.existsSync(p));
   if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
   try {
-    const text = fs.readFileSync(dsPath, "utf8");
+    const text = _read(dsPath);
     const lines = text.split(/\r?\n/);
     // Find the `character` line for this firstName + faction. descr_strat
     // groups characters under `faction <id>,` headers, so we track the
@@ -79,7 +121,7 @@ ipcMain.handle("update-character-traits", async (_event, firstName, faction, tra
     // Write back. Preserve line endings as found in the file.
     const usesCRLF = true; // RTW:R game text files are ALWAYS CRLF
     const out = lines.join(usesCRLF ? "\r\n" : "\n");
-    fs.writeFileSync(modOut(dsPath), out, "utf8");
+    _put(dsPath, out);
     console.log(`[trait-edit] wrote ${traits.length} traits for ${firstName} (faction ${faction || "?"}) to ${path.basename(dsPath)}:${traitsLineIdx >= 0 ? traitsLineIdx + 1 : charLineIdx + 2}${getModExportDir() ? " (exported)" : ""}`);
     return { ok: true, file: dsPath, line: traitsLineIdx >= 0 ? traitsLineIdx + 1 : charLineIdx + 2 };
   } catch (e) {
@@ -101,7 +143,7 @@ ipcMain.handle("update-character-position", async (_event, faction, oldX, oldY, 
   const dsPath = candidates.find((p) => fs.existsSync(p));
   if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
   try {
-    const text = fs.readFileSync(dsPath, "utf8");
+    const text = _read(dsPath);
     const lines = text.split(/\r?\n/);
     const targetFaction = String(faction || "").toLowerCase();
     let curFaction = null, hitIdx = -1;
@@ -118,7 +160,7 @@ ipcMain.handle("update-character-position", async (_event, faction, oldX, oldY, 
     if (hitIdx < 0) return { ok: false, error: `no character at (${oldX},${oldY}) in faction "${faction}"` };
     lines[hitIdx] = lines[hitIdx].replace(/\bx\s+-?\d+\s*,\s*y\s+-?\d+/i, `x ${newX}, y ${newY}`);
     const usesCRLF = true; // RTW:R game text files are ALWAYS CRLF
-    fs.writeFileSync(modOut(dsPath), lines.join(usesCRLF ? "\r\n" : "\n"), "utf8");
+    _put(dsPath, lines.join(usesCRLF ? "\r\n" : "\n"));
     if (!getModExportDir()) { try { loadModCharacterData(getActiveModDataDir()); } catch (e) { console.warn("[char-move] post-write re-parse failed:", e && e.message); } }
     console.log(`[char-move] ${faction} character (${oldX},${oldY}) → (${newX},${newY}) in ${path.basename(dsPath)}:${hitIdx + 1}`);
     return { ok: true, file: dsPath, line: hitIdx + 1 };
@@ -144,7 +186,7 @@ ipcMain.handle("update-character-fields", async (_event, firstName, faction, fie
   const dsPath = candidates.find((p) => fs.existsSync(p));
   if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
   try {
-    const text = fs.readFileSync(dsPath, "utf8");
+    const text = _read(dsPath);
     const lines = text.split(/\r?\n/);
     const targetFaction = String(faction || "").toLowerCase();
     let curFaction = null, charLineIdx = -1;
@@ -176,7 +218,7 @@ ipcMain.handle("update-character-fields", async (_event, firstName, faction, fie
     if (!applied.length) return { ok: false, error: "no recognised fields to apply" };
     lines[charLineIdx] = line;
     const usesCRLF = true; // RTW:R game text files are ALWAYS CRLF
-    fs.writeFileSync(modOut(dsPath), lines.join(usesCRLF ? "\r\n" : "\n"), "utf8");
+    _put(dsPath, lines.join(usesCRLF ? "\r\n" : "\n"));
     if (!getModExportDir()) { try { loadModCharacterData(getActiveModDataDir()); } catch (e) { console.warn("[char-fields] post-write re-parse failed:", e && e.message); } }
     console.log(`[char-fields] ${firstName} (${faction || "?"}): ${applied.join(", ")} in ${path.basename(dsPath)}:${charLineIdx + 1}`);
     return { ok: true, file: dsPath, line: charLineIdx + 1, applied };
@@ -200,24 +242,29 @@ function backupTargets() {
   }
   out.push(path.join(getActiveModDataDir(), "text", "names.txt"));
   out.push(path.join(getActiveModDataDir(), "descr_names_lookup.txt"));
+  // addgen-apply registers minted names here too — without it a restore would
+  // put descr_strat back and leave the namelist edited.
+  out.push(path.join(getActiveModDataDir(), "descr_namelists.txt"));
   return out.filter((p) => { try { return fs.existsSync(p); } catch { return false; } });
 }
 ipcMain.handle("backup-mod-files", async () => {
   try {
     const targets = backupTargets();
     if (!targets.length) return { ok: false, error: "no files to back up" };
-    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    for (const p of targets) { try { fs.copyFileSync(p, `${p}.provincia-${stamp}.bak`); } catch {} }
-    // Prune: keep newest 10 backup stamps per file.
+    const stamp = safeWrite.newStamp();
+    // Count what actually LANDED (this used to swallow every copy error and
+    // still answer ok with files = targets.length — a Save could proceed on a
+    // backup that did not exist). backupStamped verifies size and prunes to 10.
+    const failed = [];
+    let files = 0;
     for (const p of targets) {
-      try {
-        const dir = path.dirname(p), base = path.basename(p);
-        const baks = fs.readdirSync(dir).filter((f) => f.startsWith(base + ".provincia-") && f.endsWith(".bak")).sort();
-        while (baks.length > 10) { try { fs.unlinkSync(path.join(dir, baks.shift())); } catch {} }
-      } catch {}
+      try { safeWrite.backupStamped(p, stamp); files++; }
+      catch (e) { failed.push(`${path.basename(p)}: ${e && e.message}`); }
     }
-    console.log(`[backup] mod files backed up @ ${stamp} (${targets.length} files)`);
-    return { ok: true, stamp, files: targets.length };
+    if (failed.length) console.warn(`[backup] ${failed.length} of ${targets.length} backup(s) FAILED @ ${stamp}: ${failed.join("; ")}`);
+    if (!files) return { ok: false, error: `no backup could be written (${failed[0] || "unknown error"})`, failed };
+    console.log(`[backup] mod files backed up @ ${stamp} (${files} of ${targets.length} files)`);
+    return { ok: true, stamp, files, failed };
   } catch (e) { return { ok: false, error: e.message }; }
 });
 ipcMain.handle("list-mod-backups", async () => {
@@ -246,13 +293,18 @@ ipcMain.handle("restore-mod-backup", async (_event, stamp) => {
     }
     if (!useStamp) return { ok: false, error: "no backups found" };
     let restored = 0;
+    const failed = [];
     for (const p of targets) {
       const bak = `${p}.provincia-${useStamp}.bak`;
-      if (fs.existsSync(bak)) { try { fs.copyFileSync(bak, p); restored++; } catch {} }
+      if (!fs.existsSync(bak)) continue;
+      try { safeWrite.writeFileAtomic(p, fs.readFileSync(bak)); restored++; }
+      catch (e) { failed.push(`${path.basename(p)}: ${e && e.message}`); }
     }
+    if (failed.length) console.warn(`[backup] restore from ${useStamp}: ${failed.length} file(s) FAILED: ${failed.join("; ")}`);
+    if (!restored) return { ok: false, error: failed.length ? `restore failed (${failed[0]})` : `no backup files carry the stamp ${useStamp}`, failed };
     try { loadModCharacterData(getActiveModDataDir()); } catch {}
     console.log(`[backup] restored ${restored} file(s) from ${useStamp}`);
-    return { ok: true, stamp: useStamp, restored };
+    return { ok: true, stamp: useStamp, restored, failed };
   } catch (e) { return { ok: false, error: e.message }; }
 });
 
@@ -276,7 +328,7 @@ ipcMain.handle("relocate-garrison", async (_event, faction, region, newX, newY) 
   const dsPath = candidates.find((p) => fs.existsSync(p));
   if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
   try {
-    const text = fs.readFileSync(dsPath, "utf8");
+    const text = _read(dsPath);
     const usesCRLF = true; // RTW:R game text files are ALWAYS CRLF
     const lines = text.split(/\r?\n/);
     const wantFac = String(faction || "").toLowerCase();
@@ -330,7 +382,7 @@ ipcMain.handle("relocate-garrison", async (_event, faction, region, newX, newY) 
     if (insAt < 0) insAt = ownerFacLine + 1;
     const block = [`character\t${captain}, general, age 20, , x ${newX}, y ${newY}`, "army", ...units, ""];
     lines.splice(insAt, 0, ...block);
-    fs.writeFileSync(modOut(dsPath), lines.join(usesCRLF ? "\r\n" : "\n"), "utf8");
+    _put(dsPath, lines.join(usesCRLF ? "\r\n" : "\n"));
     if (!getModExportDir()) { try { loadModCharacterData(getActiveModDataDir()); } catch (e) { console.warn("[garrison-relocate] post-write re-parse failed:", e && e.message); } }
     console.log(`[garrison-relocate] ${ownerFac} ${region}: ${units.length} units → captain "${captain}" at (${newX},${newY}) in ${path.basename(dsPath)}`);
     return { ok: true, captain, units: units.length, faction: ownerFac };
@@ -356,7 +408,7 @@ ipcMain.handle("rename-character", async (_event, faction, oldFirst, newFirstRaw
   const dsPath = findActiveDescrStratPath();
   if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
   try {
-    const text = fs.readFileSync(dsPath, "utf8");
+    const text = _read(dsPath);
     const eol = "\r\n"; // RTW:R game text files are ALWAYS CRLF
     const lines = text.split(/\r?\n/);
     const wantFac = String(faction || "").toLowerCase();
@@ -391,39 +443,28 @@ ipcMain.handle("rename-character", async (_event, faction, oldFirst, newFirstRaw
       if (lines[i].includes(oldFull)) { lines[i] = lines[i].split(oldFull).join(newFull); count++; }
     }
     // Ensure the new first name is a known names.txt token; mint if missing.
+    // Name registration is staged and written BEFORE descr_strat: a registered
+    // name nobody uses is harmless, a descr_strat name nobody registered stops
+    // the campaign loading. A failure part-way rolls the earlier files back.
     let minted = false;
+    const staged = [];
     const namesPath = path.join(getActiveModDataDir(), "text", "names.txt");
     const lookupPath = path.join(getActiveModDataDir(), "descr_names_lookup.txt");
     try {
       if (fs.existsSync(namesPath)) {
         const names = descrGen.parseNamesTxt(fs.readFileSync(namesPath, "utf16le"));
         if (!names.tokenToDisplay.has(newFirst)) {
-          const nt = fs.readFileSync(namesPath, "utf16le");
-          const ntEol = "\r\n"; // RTW:R names.txt (UTF-16LE) is CRLF
-          const ntLines = nt.split(/\r?\n/);
-          const tokenOf = (l) => { const m = l.match(/^﻿?\{([^}]*)\}/); return m ? m[1].toLowerCase() : null; };
-          const tokLc = newFirst.toLowerCase();
-          const entry = `{${newFirst}}${newFirst}`;
-          let idx = ntLines.findIndex((l) => { const k = tokenOf(l); return k != null && k > tokLc; });
-          if (idx < 0) { while (ntLines.length && ntLines[ntLines.length - 1].trim() === "") ntLines.pop(); ntLines.push(entry); }
-          else ntLines.splice(idx, 0, entry);
-          fs.writeFileSync(modOut(namesPath), ntLines.join(ntEol), "utf16le");
+          staged.push({ livePath: namesPath, outPath: modOut(namesPath), data: insertSortedNames(fs.readFileSync(namesPath, "utf16le"), [{ token: newFirst, display: newFirst }]), encoding: "utf16le" });
           minted = true;
           if (fs.existsSync(lookupPath)) {
-            const lk = fs.readFileSync(lookupPath, "utf8");
-            const lkEol = "\r\n"; // RTW:R always CRLF
-            const lkLines = lk.split(/\r?\n/);
-            if (!lkLines.some((l) => l.trim().toLowerCase() === tokLc)) {
-              let li = lkLines.findIndex((l) => l.trim() && l.trim().toLowerCase() > tokLc);
-              if (li < 0) { while (lkLines.length && lkLines[lkLines.length - 1].trim() === "") lkLines.pop(); lkLines.push(newFirst); }
-              else lkLines.splice(li, 0, newFirst);
-              fs.writeFileSync(modOut(lookupPath), lkLines.join(lkEol), "utf8");
-            }
+            const lkOut = insertSortedLookup(_read(lookupPath), [newFirst]);
+            if (lkOut != null) staged.push({ livePath: lookupPath, outPath: modOut(lookupPath), data: lkOut, encoding: _enc.get(lookupPath) });
           }
         }
       }
-    } catch (ne) { console.warn("[char-rename] names.txt update failed:", ne && ne.message); }
-    fs.writeFileSync(modOut(dsPath), lines.join(eol), "utf8");
+    } catch (ne) { console.warn("[char-rename] names.txt update failed:", ne && ne.message); staged.length = 0; minted = false; }
+    staged.push({ livePath: dsPath, outPath: modOut(dsPath), data: lines.join(eol), encoding: _enc.get(dsPath) });
+    safeWrite.safeWriteModFiles(staged, { backup: false });
     if (!getModExportDir()) { try { loadModCharacterData(getActiveModDataDir()); } catch (e) { console.warn("[char-rename] re-parse failed:", e && e.message); } }
     console.log(`[char-rename] ${faction}: "${oldFull}" → "${newFull}" (${count} line(s)${minted ? ", minted name token" : ""})`);
     return { ok: true, count, minted, newFull };
@@ -445,7 +486,7 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
   const dsPath = findActiveDescrStratPath();
   if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
   try {
-    const text = fs.readFileSync(dsPath, "utf8");
+    const text = _read(dsPath);
     const eol = "\r\n"; // RTW:R game text files are ALWAYS CRLF
     const lines = text.split(/\r?\n/);
     const byRegion = locator && locator.region != null;
@@ -670,7 +711,7 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
     const fmtUnit = (u) => `${indent}unit\t\t${unitName(u)}\t\t\texp ${unitExp(u)} armour ${unitArm(u)} weapon_lvl ${unitWep(u)}`;
     const newLines = units.filter((u) => unitName(u)).map(fmtUnit);
     lines.splice(unitStart, unitEnd - unitStart, ...newLines);
-    fs.writeFileSync(modOut(dsPath), lines.join(eol), "utf8");
+    _put(dsPath, lines.join(eol));
     if (!getModExportDir()) { try { loadModCharacterData(getActiveModDataDir()); } catch (e) { console.warn("[army-units] re-parse failed:", e && e.message); } }
     console.log(`[army-units] ${faction} ${byCoord ? `@(${locator.x},${locator.y})` : locator.region}: wrote ${newLines.length} unit(s)`);
     return { ok: true, units: newLines.length };
@@ -698,7 +739,7 @@ ipcMain.handle("addgen-get-data", async () => {
     if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
     const namesPath = path.join(getActiveModDataDir(), "text", "names.txt");
     const names = descrGen.parseNamesTxt(fs.readFileSync(namesPath, "utf16le"));
-    const parsed = descrGen.parseDescrStrat(fs.readFileSync(dsPath, "utf8"));
+    const parsed = descrGen.parseDescrStrat(_read(dsPath));
     // LIVE culture namelists → so the name dropdowns offer every name registered
     // in descr_namelists.txt for the faction's culture (e.g. greek_men), not just
     // names already used by existing characters. Read fresh each call; best-effort.
@@ -707,7 +748,7 @@ ipcMain.handle("addgen-get-data", async () => {
       const smP = path.join(getActiveModDataDir(), "descr_sm_factions.txt");
       if (fs.existsSync(smP)) facNamelists = descrGen.parseSmFactionNamelists(fs.readFileSync(smP, "utf8"));
       const nlP = path.join(getActiveModDataDir(), "descr_namelists.txt");
-      if (fs.existsSync(nlP)) nlPools = descrGen.parseNamelistPools(fs.readFileSync(nlP, "utf8"));
+      if (fs.existsSync(nlP)) nlPools = descrGen.parseNamelistPools(_read(nlP));
       console.log(`[addgen] namelists: ${Object.keys(facNamelists).length} faction maps, ${Object.keys(nlPools).length} pools`);
     } catch (ne) { console.warn("[addgen] namelist load failed (dropdown = existing names only):", ne && ne.message); }
     const settIdx = descrGen.buildSettlementCoordIndex(parsed);
@@ -750,7 +791,7 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
     if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
     const namesPath = path.join(getActiveModDataDir(), "text", "names.txt");
     const lookupPath = path.join(getActiveModDataDir(), "descr_names_lookup.txt");
-    const dsRaw = fs.readFileSync(dsPath, "utf8");
+    const dsRaw = _read(dsPath);
     const eol = "\r\n"; // RTW:R game text files are ALWAYS CRLF
     const names = descrGen.parseNamesTxt(fs.readFileSync(namesPath, "utf16le"));
     const parsed = descrGen.parseDescrStrat(dsRaw);
@@ -763,49 +804,24 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
       const nlP = path.join(getActiveModDataDir(), "descr_namelists.txt");
       if (fs.existsSync(smP) && fs.existsSync(nlP)) {
         const facNl = descrGen.parseSmFactionNamelists(fs.readFileSync(smP, "utf8"))[selection.factionName] || {};
-        const nlPools = descrGen.parseNamelistPools(fs.readFileSync(nlP, "utf8"));
+        const nlPools = descrGen.parseNamelistPools(_read(nlP));
         pools = { men: nlPools[facNl.men] || [], women: nlPools[facNl.women] || [] };
         console.log(`[addgen] name pools for ${selection.factionName}: ${pools.men.length} men (${facNl.men}), ${pools.women.length} women (${facNl.women})`);
       }
     } catch (pe) { console.warn("[addgen] pool load failed (will fall back to minting):", pe && pe.message); }
     const res = descrGen.composeAddGeneral(parsed, names, selection, pools);
-    // In export mode we don't back up the live files (we're not changing
-    // them); the timestamped .bak is skipped and backupStamp returns null.
-    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    if (!getModExportDir()) fs.copyFileSync(dsPath, dsPath + "." + stamp + ".bak");
-    fs.writeFileSync(modOut(dsPath), res.lines.join(eol), "utf8");
+    // All four files are composed first, then written as one unit (stamped
+    // backups restore-mod-backup can read, atomic renames, rollback on a
+    // part-way failure). descr_strat goes LAST: names registered for a general
+    // that never landed are harmless, the reverse stops the campaign loading.
+    // Export mode leaves the live files alone, so it takes no backups.
+    const files = [];
     if (res.namesAppend.length) {
-      if (!getModExportDir()) fs.copyFileSync(namesPath, namesPath + "." + stamp + ".bak");
-      const nt = fs.readFileSync(namesPath, "utf16le");
-      const ntEol = "\r\n"; // RTW:R always CRLF
-      const ntLines = nt.split(/\r?\n/);
-      // names.txt is sorted by token and the {ZZZZZ} entry is an end-marker —
-      // appending AFTER it means the engine never reads the new names. Insert
-      // each mint in its sorted-by-token position (which lands it before ZZZZZ).
-      const tokenOf = (line) => { const m = line.match(/^﻿?\{([^}]*)\}/); return m ? m[1].toLowerCase() : null; };
-      for (const n of res.namesAppend) {
-        const entry = `{${n.token}}${n.display}`;
-        const tokLc = n.token.toLowerCase();
-        let idx = ntLines.findIndex((l) => { const k = tokenOf(l); return k != null && k > tokLc; });
-        if (idx < 0) { while (ntLines.length && ntLines[ntLines.length - 1].trim() === "") ntLines.pop(); ntLines.push(entry); }
-        else ntLines.splice(idx, 0, entry);
-      }
-      fs.writeFileSync(modOut(namesPath), ntLines.join(ntEol), "utf16le");
+      files.push({ livePath: namesPath, outPath: modOut(namesPath), data: insertSortedNames(fs.readFileSync(namesPath, "utf16le"), res.namesAppend), encoding: "utf16le" });
     }
     if (res.lookupAppend.length) {
-      if (!getModExportDir()) fs.copyFileSync(lookupPath, lookupPath + "." + stamp + ".bak");
-      const lk = fs.readFileSync(lookupPath, "utf8");
-      const lkEol = "\r\n"; // RTW:R always CRLF
-      const lkLines = lk.split(/\r?\n/);
-      // descr_names_lookup.txt is alphabetically sorted (and ends with ZZZZZ).
-      // Insert each token in sorted position so the engine's lookup finds it.
-      for (const tok of res.lookupAppend) {
-        const tokLc = tok.toLowerCase();
-        let idx = lkLines.findIndex((l) => l.trim() && l.trim().toLowerCase() > tokLc);
-        if (idx < 0) { while (lkLines.length && lkLines[lkLines.length - 1].trim() === "") lkLines.pop(); lkLines.push(tok); }
-        else lkLines.splice(idx, 0, tok);
-      }
-      fs.writeFileSync(modOut(lookupPath), lkLines.join(lkEol), "utf8");
+      const lkOut = insertSortedLookup(_read(lookupPath), res.lookupAppend);
+      if (lkOut != null) files.push({ livePath: lookupPath, outPath: modOut(lookupPath), data: lkOut, encoding: _enc.get(lookupPath) });
     }
     // 0.9.869: register minted names in the faction's CULTURE NAMELIST
     // (descr_namelists.txt). RTW validates every descr_strat character name
@@ -820,7 +836,7 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
           const facNl = (descrGen.parseSmFactionNamelists(fs.readFileSync(smP, "utf8"))[selection.factionName]) || {};
           const menToks = res.namesAppend.filter((n) => n.gender === "male").map((n) => n.token);
           const womenToks = res.namesAppend.filter((n) => n.gender === "female").map((n) => n.token);
-          let nlRaw = fs.readFileSync(nlP, "utf8");
+          let nlRaw = _read(nlP);
           const nlEol = nlRaw.includes("\r\n") ? "\r\n" : "\n";
           let changed = false;
           if (facNl.men && menToks.length) {
@@ -832,9 +848,8 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
             if (upd) { nlRaw = upd; changed = true; }
           }
           if (changed) {
-            if (!getModExportDir()) fs.copyFileSync(nlP, nlP + "." + stamp + ".bak");
-            fs.writeFileSync(modOut(nlP), gameTextCRLF(nlP, nlRaw), "utf8");
-            console.log(`[addgen] registered minted names in descr_namelists.txt — ${menToks.length} male (${facNl.men}), ${womenToks.length} female (${facNl.women})`);
+            files.push({ livePath: nlP, outPath: modOut(nlP), data: gameTextCRLF(nlP, nlRaw), encoding: _enc.get(nlP) });
+            console.log(`[addgen] registering minted names in descr_namelists.txt — ${menToks.length} male (${facNl.men}), ${womenToks.length} female (${facNl.women})`);
           } else {
             console.warn(`[addgen] descr_namelists NOT updated for ${selection.factionName} (men=${facNl.men} women=${facNl.women}); minted names: ${res.namesAppend.map((n) => n.token + ":" + n.gender).join(", ")} — campaign may reject them`);
           }
@@ -843,6 +858,8 @@ ipcMain.handle("addgen-apply", async (_event, selection) => {
         }
       } catch (nlErr) { console.warn("[addgen] namelist registration failed:", nlErr && nlErr.message); }
     }
+    files.push({ livePath: dsPath, outPath: modOut(dsPath), data: res.lines.join(eol), encoding: _enc.get(dsPath) });
+    const { stamp } = safeWrite.safeWriteModFiles(files);
     // Re-parse the mod's descr_strat so the new general shows in the Characters
     // view + Family Tree immediately (these read cached parses). Skip in export
     // mode: the live mod is unchanged, so re-parsing it would discard the edit
@@ -896,7 +913,7 @@ ipcMain.handle("update-character-ancillaries", async (_event, firstName, faction
   const dsPath = candidates.find((p) => fs.existsSync(p));
   if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
   try {
-    const text = fs.readFileSync(dsPath, "utf8");
+    const text = _read(dsPath);
     const lines = text.split(/\r?\n/);
     const targetFaction = String(faction || "").toLowerCase();
     let curFaction = null;
@@ -943,7 +960,7 @@ ipcMain.handle("update-character-ancillaries", async (_event, firstName, faction
     }
     const usesCRLF = true; // RTW:R game text files are ALWAYS CRLF
     const out = lines.join(usesCRLF ? "\r\n" : "\n");
-    fs.writeFileSync(modOut(dsPath), out, "utf8");
+    _put(dsPath, out);
     const reportLine = ancLineIdx >= 0 ? ancLineIdx + 1 : charLineIdx + 2;
     console.log(`[ancillary-edit] wrote ${cleaned.length} ancillaries for ${firstName} (faction ${faction || "?"}) to ${path.basename(dsPath)}:${reportLine}`);
     return { ok: true, file: dsPath, line: reportLine };
@@ -969,7 +986,7 @@ ipcMain.handle("update-region-buildings", async (_event, regionName, buildings) 
   const dsPath = candidates.find((p) => fs.existsSync(p));
   if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
   try {
-    const text = fs.readFileSync(dsPath, "utf8");
+    const text = _read(dsPath);
     const lines = text.split(/\r?\n/);
     // Walk settlement blocks. Each settlement is:
     //   settlement
@@ -1086,7 +1103,7 @@ ipcMain.handle("update-region-buildings", async (_event, regionName, buildings) 
         lines.splice(insertAt, 0, ...newLines);
         const usesCRLF = true; // RTW:R game text files are ALWAYS CRLF
         const out = lines.join(usesCRLF ? "\r\n" : "\n");
-        fs.writeFileSync(modOut(dsPath), out, "utf8");
+        _put(dsPath, out);
         console.log(`[building-edit] wrote ${buildings.length} buildings for region "${regionName}" to ${path.basename(dsPath)}:${insertAt + 1} (replaced ${buildingRanges.length} existing blocks)${getModExportDir() ? " (exported)" : ""}`);
         return { ok: true, file: dsPath, line: insertAt + 1 };
       }
@@ -1234,7 +1251,7 @@ ipcMain.handle("get-core-attitudes", async () => {
     if (!getActiveModDataDir()) return { ok: false };
     const dsPath = findActiveDescrStratPath();
     if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
-    const text = fs.readFileSync(dsPath, "utf8");
+    const text = _read(dsPath);
     const dip = descrGen.parseDiplomacy(text);
     const parsed = descrGen.parseDescrStrat(text);
     const factions = new Set();
@@ -1253,12 +1270,10 @@ ipcMain.handle("update-core-attitudes", async (_event, edits) => {
     if (!Array.isArray(edits) || edits.length === 0) return { ok: true, applied: 0 };
     const dsPath = findActiveDescrStratPath();
     if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
-    const text = fs.readFileSync(dsPath, "utf8");
+    const text = _read(dsPath);
     const eol = "\r\n"; // RTW:R game text files are ALWAYS CRLF
     const lines = text.split(/\r?\n/);
     const dip = descrGen.parseDiplomacy(text);
-    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    if (!getModExportDir()) fs.copyFileSync(dsPath, dsPath + "." + stamp + ".bak");
     const insertsByKind = { core: [], rel: [], agg: [] };
     let applied = 0;
     for (const e of edits) {
@@ -1273,7 +1288,7 @@ ipcMain.handle("update-core-attitudes", async (_event, edits) => {
     // Insert new lines high index → low so positions stay valid.
     const allInserts = [...insertsByKind.core, ...insertsByKind.rel, ...insertsByKind.agg].sort((a, b) => b.at - a.at);
     for (const ins of allInserts) lines.splice(ins.at + 1, 0, ins.line);
-    fs.writeFileSync(modOut(dsPath), lines.join(eol), "utf8");
+    const { backupStamp: stamp } = safeWrite.safeWriteModFile(dsPath, lines.join(eol), _enc.get(dsPath) || "utf8", { outPath: modOut(dsPath) });
     console.log(`[diplo-edit] applied ${applied} diplomacy edit(s) to ${path.basename(dsPath)}; ${getModExportDir() ? `exported under ${getModExportDir()}` : `backup ${stamp}`}`);
     return { ok: true, applied, backupStamp: getModExportDir() ? null : stamp };
   } catch (e) { console.warn("[diplo-edit] update failed:", e && e.message); return { ok: false, error: e.message }; }

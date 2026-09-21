@@ -2,7 +2,7 @@
 // table of every settlement's descr_strat starting population, with the city-
 // level ladder from descr_cultures beside it — view, adjust, apply. Writes are
 // surgical population-line rewrites (src/stratPopulations.js) with a rolling
-// .provincia-bak backup; a submod slot edits the submod's own descr_strat.
+// stamped .provincia-<time>.bak backup; a submod slot edits the submod's own descr_strat.
 // Presentational + self-contained state; styling matches ArmySetupModal's dark
 // inline-style aesthetic (no external CSS).
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -160,7 +160,7 @@ export default function StratPopulationsModal({ modDataDir, factionDisplayNames,
     try {
       const r = await window.electronAPI.applyStratPopulations(modDataDir, changes);
       if (r && r.ok) {
-        pushToast(`✔ ${r.applied.length} population${r.applied.length === 1 ? "" : "s"} written to descr_strat (backup: .provincia-bak). Click 🔄 Reload so analyses see the new values.`, "info", 7000);
+        pushToast(`✔ ${r.applied.length} population${r.applied.length === 1 ? "" : "s"} ${r.exported ? `exported to ${r.path} — the live descr_strat is untouched.` : `written to descr_strat (timestamped backup kept beside it). Click 🔄 Reload so analyses see the new values.`}`, "info", 7000);
         setEdits({});
         await load();
       } else {
@@ -327,7 +327,7 @@ export default function StratPopulationsModal({ modDataDir, factionDisplayNames,
               </button>
             )}
             <button onClick={apply} disabled={!nChanged || applying}
-              title={nChanged ? `Write ${nChanged} changed population${nChanged === 1 ? "" : "s"} into descr_strat. A rolling backup (.provincia-bak) is written first; only the population lines change.` : "Edit a population box to stage changes."}
+              title={nChanged ? `Write ${nChanged} changed population${nChanged === 1 ? "" : "s"} into descr_strat. A timestamped backup is written beside it first (the newest 10 are kept); only the population lines change.` : "Edit a population box to stage changes."}
               style={{ background: nChanged ? "rgba(143,180,110,0.25)" : "rgba(60,60,60,0.5)", color: nChanged ? "#b8d38f" : "#778", border: "1px solid " + (nChanged ? "#7a9a5a" : "rgba(255,255,255,0.15)"), borderRadius: 5, padding: "3px 12px", cursor: nChanged ? "pointer" : "default", fontSize: "0.78rem", fontWeight: 600 }}>
               {applying ? "Writing…" : `✍ Apply ${nChanged || ""}${nChanged ? ` change${nChanged === 1 ? "" : "s"}` : ""}`}
             </button>

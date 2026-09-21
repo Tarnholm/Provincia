@@ -140,7 +140,7 @@ export default function AddGeneralModal({ settlementName, ownerFactionId, factio
               <div style={{ fontSize: "0.7rem", marginTop: 4 }}>
                 wife: {result.summary.wife ? "yes" : "no"} · children: {result.summary.children}<br />
                 new name tokens minted: {result.summary.minted.length ? result.summary.minted.join(", ") : "none"}<br />
-                backups saved (suffix {result.backupStamp}.bak) · <span style={{ color: "#bbb" }}>Start a new campaign to see the general.</span>
+                backups saved (suffix .provincia-{result.backupStamp}.bak — restorable from the backups list) · <span style={{ color: "#bbb" }}>Start a new campaign to see the general.</span>
               </div>
             </div>
             <div style={{ marginTop: 12, textAlign: "right" }}>

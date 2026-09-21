@@ -767,7 +767,7 @@ export default function ArmySetupModal({
                                   if (s.spendArmy || s.spendGarr) {
                                     if (!modDataDir) { alert("No mod loaded."); return; }
                                     const target = s.spendArmy ? `${s.character}'s army` : `${s.settlement}'s garrison`;
-                                    if (!confirm(`Add ${s.addUnits.length} unit(s) to ${target} in descr_strat?\n\n(${d.faction}) Adds: ${s.addUnits.join(", ")}.\nWrites the campaign descr_strat.txt (a backup, descr_strat.txt.provincia-bak, is saved first). Reload the mod (🔄) or restart the game to see it.`)) return;
+                                    if (!confirm(`Add ${s.addUnits.length} unit(s) to ${target} in descr_strat?\n\n(${d.faction}) Adds: ${s.addUnits.join(", ")}.\nWrites the campaign descr_strat.txt (a timestamped backup is saved beside it first). Reload the mod (🔄) or restart the game to see it.`)) return;
                                     try {
                                       const r = s.spendArmy
                                         ? await window.electronAPI.applyAddArmyUnits(modDataDir, d.faction, s.character, s.addUnits)
@@ -783,7 +783,7 @@ export default function ArmySetupModal({
                                     const rp = s.repl;
                                     const addStr2 = (rp.addSummary || []).map(a => `${a.count}× ${a.unit}`).join(" + ");
                                     const actMsg = addStr2 ? `Replace ${rp.dropCount} non-recruitable unit(s) at ${s.settlement} with ${addStr2}?` : `Drop ${rp.dropCount} non-recruitable unit(s) at ${s.settlement}?`;
-                                    if (!confirm(`${actMsg}\n\n(${d.faction}) Drops: ${rp.removeUnits.join(", ")}.\nWrites the campaign descr_strat.txt (a backup, descr_strat.txt.provincia-bak, is saved first). Reload the mod (🔄) or restart the game to see it.`)) return;
+                                    if (!confirm(`${actMsg}\n\n(${d.faction}) Drops: ${rp.removeUnits.join(", ")}.\nWrites the campaign descr_strat.txt (a timestamped backup is saved beside it first). Reload the mod (🔄) or restart the game to see it.`)) return;
                                     try {
                                       const r = await window.electronAPI.applyReplaceGarrison(modDataDir, d.faction, s.settlement, rp.removeUnits, rp.addUnits);
                                       if (r && r.ok) { pushToast(`Replaced garrison at ${s.settlement} (−${r.removedCount}/+${r.addedCount})`, "info", 6000); setPendingReload(true); setGarrDone(prev => new Set(prev).add(s.text)); }
@@ -795,7 +795,7 @@ export default function ArmySetupModal({
                                     if (!modDataDir) { alert("No mod loaded."); return; }
                                     const gunit = s.garrUnit ? s.garrUnit.unit : null;
                                     if (!gunit) { pushToast("No garrison unit suggested.", "info", 4000); return; }
-                                    if (!confirm(`Add 1× ${gunit} to ${s.settlement}'s garrison in descr_strat?\n\n(${d.faction}) Writes the campaign descr_strat.txt (a backup, descr_strat.txt.provincia-bak, is saved first). Reload the mod (🔄) or restart the game to see it.`)) return;
+                                    if (!confirm(`Add 1× ${gunit} to ${s.settlement}'s garrison in descr_strat?\n\n(${d.faction}) Writes the campaign descr_strat.txt (a timestamped backup is saved beside it first). Reload the mod (🔄) or restart the game to see it.`)) return;
                                     try {
                                       const r = await window.electronAPI.applyAddGarrison(modDataDir, d.faction, s.settlement, gunit);
                                       if (r && r.ok) { pushToast(`Added 1× ${gunit} to ${s.settlement}'s garrison (line ${r.insertedAtLine})`, "info", 6000); setPendingReload(true); setGarrDone(prev => new Set(prev).add(s.text)); }
@@ -806,7 +806,7 @@ export default function ArmySetupModal({
                                   }
                                   if (!modDataDir) { alert("No mod loaded."); return; }
                                   const warn = s.ok ? "" : "\n\n⚠ This swap goes OVER your budget floor — apply anyway?";
-                                  if (!confirm(`Apply this swap to descr_strat?\n\nIn ${s.character}'s army (${d.faction}):\n  ${s.oldUnit} → ${s.newUnit}${warn}\n\nWrites the campaign descr_strat.txt (a backup, descr_strat.txt.provincia-bak, is saved first). Reload the mod / restart the game to see it.`)) return;
+                                  if (!confirm(`Apply this swap to descr_strat?\n\nIn ${s.character}'s army (${d.faction}):\n  ${s.oldUnit} → ${s.newUnit}${warn}\n\nWrites the campaign descr_strat.txt (a timestamped backup is saved beside it first). Reload the mod / restart the game to see it.`)) return;
                                   try {
                                     const r = await window.electronAPI.applyArmySwap(modDataDir, d.faction, s.character, s.oldUnit, s.newUnit);
                                     if (r && r.ok) { pushToast(`Applied: ${s.oldUnit} → ${s.newUnit} (line ${r.changedLine})`, "info", 6000); setPendingReload(true); setGarrDone(prev => new Set(prev).add(s.text)); }

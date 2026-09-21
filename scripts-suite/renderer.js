@@ -55,7 +55,38 @@ document.addEventListener('DOMContentLoaded', async () => {
   initCompare();
   initMaster();
   setupEventListeners();
+  showSeedNotice();
 });
+
+// The app refreshes every pipeline script at launch. If that replaced a script
+// somebody had edited, say so — and say where the edited copy went.
+async function showSeedNotice() {
+  let rep = null;
+  try { rep = await window.api.getSeedReport(); } catch { return; }
+  if (!rep || !rep.certain || !rep.preserved || !rep.preserved.length) return;
+  const n = rep.preserved.length;
+  const bar = document.createElement('div');
+  bar.className = 'seed-notice';
+  bar.setAttribute('role', 'status');
+  const msg = document.createElement('div');
+  msg.className = 'seed-notice-text';
+  const head = document.createElement('strong');
+  head.textContent = `${n} edited script${n === 1 ? ' was' : 's were'} refreshed to this version's copy.`;
+  const body = document.createElement('span');
+  body.textContent = ` Your ${n === 1 ? 'version is' : 'versions are'} kept in ${rep.dir} — ${rep.preserved.join(', ')}. To keep rule changes across launches, save them as a rule profile.`;
+  msg.append(head, body);
+  const open = document.createElement('button');
+  open.className = 'seed-notice-btn';
+  open.textContent = 'Open folder';
+  open.addEventListener('click', () => { try { window.api.openFolder(rep.dir); } catch { } });
+  const close = document.createElement('button');
+  close.className = 'seed-notice-btn seed-notice-close';
+  close.setAttribute('aria-label', 'Dismiss');
+  close.textContent = '✕';
+  close.addEventListener('click', () => bar.remove());
+  bar.append(msg, open, close);
+  document.body.append(bar);
+}
 
 // ══════════════════════════════════════
 //  TAB NAVIGATION (Segmented Control)

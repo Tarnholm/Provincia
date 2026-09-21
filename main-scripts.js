@@ -91,14 +91,64 @@ function resolvePython() {
 
 // Seed the working dir from the bundle: refresh .py every launch (match the
 // installed version) and add any missing default config files.
+//
+// The refresh used to be a blind overwrite, which silently destroyed any script
+// a teammate had edited (2026-08-10: a day of hand-edits to farms.py gone on the
+// next launch). It still refreshes — a stale script against a new app is worse —
+// but a script that differs from what THIS app last seeded is first copied to
+// _user_edits/<stamp>/, and the suite window says so (sps:get-seed-report).
+// .seed-manifest.json holds the sha1 of each script as last seeded; with no
+// manifest (first launch of this version) a differing script is still kept,
+// but quietly — it is most likely just the previous release's copy.
+const SEED_MANIFEST = '.seed-manifest.json';
+const USER_EDITS_DIR = '_user_edits';
+const KEEP_USER_EDIT_SETS = 10;
+let lastSeedReport = { preserved: [], dir: null, certain: false };
+function _sha1(file) { return require('crypto').createHash('sha1').update(fs.readFileSync(file)).digest('hex'); }
 function seedProject() {
   try {
     if (!fs.existsSync(PROJECT_ROOT)) fs.mkdirSync(PROJECT_ROOT, { recursive: true });
     if (!fs.existsSync(SCRIPTS_DIR)) return;
+    const manifestPath = path.join(PROJECT_ROOT, SEED_MANIFEST);
+    let manifest = null;
+    try { manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8')); } catch { manifest = null; }
+    const next = {};
+    const preserved = [];
+    let keepDir = null;
     for (const file of fs.readdirSync(SCRIPTS_DIR)) {
-      if (file.endsWith('.py')) {
-        fs.copyFileSync(path.join(SCRIPTS_DIR, file), path.join(PROJECT_ROOT, file));
+      if (!file.endsWith('.py')) continue;
+      const src = path.join(SCRIPTS_DIR, file), dest = path.join(PROJECT_ROOT, file);
+      const srcHash = _sha1(src);
+      next[file] = srcHash;
+      if (fs.existsSync(dest)) {
+        const destHash = _sha1(dest);
+        if (destHash === srcHash) continue; // already current — nothing to do
+        const seeded = manifest && manifest[file];
+        if (!seeded || destHash !== seeded) {
+          // differs from what we last put there → somebody's work. Keep it; if
+          // it cannot be kept, do NOT overwrite it.
+          try {
+            if (!keepDir) { keepDir = path.join(PROJECT_ROOT, USER_EDITS_DIR, new Date().toISOString().replace(/[:.]/g, '-')); fs.mkdirSync(keepDir, { recursive: true }); }
+            fs.copyFileSync(dest, path.join(keepDir, file));
+            preserved.push(file);
+          } catch (e) {
+            console.warn(`[scripts-suite] could not preserve edited ${file} (${e.message}) — left as is, NOT refreshed`);
+            next[file] = seeded || null;
+            continue;
+          }
+        }
       }
+      fs.copyFileSync(src, dest);
+    }
+    try { fs.writeFileSync(manifestPath, JSON.stringify(next, null, 1)); } catch (e) { console.warn('[scripts-suite] seed manifest not written:', e.message); }
+    if (preserved.length) {
+      lastSeedReport = { preserved, dir: keepDir, certain: !!manifest };
+      console.log(`[scripts-suite] ${preserved.length} edited script(s) kept in ${keepDir} before refresh: ${preserved.join(', ')}${manifest ? '' : ' (no seed manifest yet — may only be the previous release\'s copies)'}`);
+      try {
+        const base = path.join(PROJECT_ROOT, USER_EDITS_DIR);
+        const sets = fs.readdirSync(base).sort();
+        while (sets.length > KEEP_USER_EDIT_SETS) fs.rmSync(path.join(base, sets.shift()), { recursive: true, force: true });
+      } catch { }
     }
     const srcConfig = path.join(SCRIPTS_DIR, 'config');
     const destConfig = path.join(PROJECT_ROOT, 'config');
@@ -2512,6 +2562,10 @@ ipcMain.handle('sps:load-profile', async (_, profileName) => {
 
 // Replace one pipeline script with the pristine bundled copy (the same file
 // the launch-time seed writes). Scripts only — config files are user data.
+// What the launch refresh had to set aside (see seedProject). `certain` is false
+// when there was no manifest to compare against, and the window stays quiet then.
+ipcMain.handle('sps:get-seed-report', async () => lastSeedReport);
+
 ipcMain.handle('sps:reset-script', async (_, scriptName) => {
   if (!SCRIPT_FILES.includes(scriptName)) return { success: false, error: 'not a pipeline script' };
   try {
