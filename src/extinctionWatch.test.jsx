@@ -162,11 +162,11 @@ describe("the second route: the last settlement, and the horde exception", () =>
     const fam = { oneTown: { members: [char("B", "Y", 30)] }, nomad: { members: [char("C", "Z", 30)] } };
     window.electronAPI = { getHordeFactions: () => Promise.resolve({ factions: { nomad: { maxUnits: 40 } } }) };
     mount(<ExtinctionWatchPanel familiesByFaction={fam} settlementCount={{ oneTown: 1, nomad: 1 }} modDataDir="C:/x" onClose={() => { }} />);
-    expect(text()).not.toMatch(/taking it destroys the faction/); // nothing claimed before the read lands
+    expect(text()).not.toMatch(/🏰 1 town/); // nothing claimed before the read lands
     await new Promise((r) => setTimeout(r, 0));
     flushSync(() => { });
-    expect(text()).toMatch(/taking it destroys the faction/);
-    expect(text()).toMatch(/it can horde instead of dying/);
+    expect(text()).toMatch(/🏰 1 town/);
+    expect(text()).toMatch(/last settlement, can horde/);
     fire(document.querySelector('button[title^="Factions holding exactly one settlement"]'), "click");
     expect(tiersShown().length).toBe(1);
     delete window.electronAPI;

@@ -122,7 +122,7 @@ export function assessLand(settlements, horde) {
     canHorde,
     lastTown: one && !canHorde,
     hordeSaves: one && canHorde,
-    landNote: one ? (canHorde ? "last settlement — but it can horde instead of dying" : "last settlement — taking it destroys the faction") : null,
+    landNote: one ? (canHorde ? "last settlement, can horde" : "last settlement") : null,
   };
 }
 
