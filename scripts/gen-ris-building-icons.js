@@ -57,7 +57,7 @@ const RIS = valOf("--ris", "C:/RIS/RIS/data");
 // come from the base game — 164 pairs were unresolved until this was added.
 const VAN = valOf("--vanilla",
   "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data");
-const OUT = valOf("--out", "C:/RIS/RIS/wiki");
+const OUT = valOf("--out", "C:/RIS/wiki");
 const SCALE = Math.max(1, parseInt(valOf("--scale", "1"), 10));
 // The constructed banners are ~361x163 and mostly photographic, so PNG barely compresses
 // them: 226 of them come to 32 MB at native size. Kept at 1 because a chain page shows them

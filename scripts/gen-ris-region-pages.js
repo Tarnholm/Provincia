@@ -29,7 +29,7 @@ const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1]
 const RIS = valOf("--ris", "C:/RIS/RIS/data");
 // For the region-colour parser and the TGA reader, both already used elsewhere in Provincia.
 const dg = require(path.join(__dirname, "..", "src", "descrStratGeneral.js"));
-const OUT = valOf("--out", "C:/RIS/RIS/wiki");
+const OUT = valOf("--out", "C:/RIS/wiki");
 const ONLY = (valOf("--only", "") || "").split(",").map((s) => s.trim()).filter(Boolean);
 
 const gv = require(path.join(__dirname, "..", "src", "growthEval.js"));

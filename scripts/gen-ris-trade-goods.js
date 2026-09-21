@@ -59,7 +59,7 @@ const path = require("path");
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const RIS = valOf("--ris", "C:/RIS/RIS/data");
-const OUT = valOf("--out", "C:/RIS/RIS/wiki");
+const OUT = valOf("--out", "C:/RIS/wiki");
 const rd = (...f) => { try { return fs.readFileSync(path.join(RIS, ...f), "latin1"); } catch { return null; } };
 // Matches both GitHub's heading-anchor rule and the local viewer's slugId(), which is the
 // pair that has to agree or an in-page link breaks in one of the two places.

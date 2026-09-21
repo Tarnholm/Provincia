@@ -3,18 +3,18 @@
 //   pull-github-wiki-notes.js  GitHub wiki pages -> notes store
 //   build-ris-wiki-site.js     notes store -> the styled site
 //
-// The generators own C:/RIS/RIS/wiki and rewrite it wholesale, so notes CANNOT
-// live there. They live beside it in C:/RIS/RIS/wiki-notes, one flat file per
+// The generators own C:/RIS/wiki and rewrite it wholesale, so notes CANNOT
+// live there. They live beside it in C:/RIS/wiki-notes, one flat file per
 // wiki page name, which is also the RIS repo so the team shares them.
 const fs = require('fs'), path = require('path');
 
-const NOTES_DIR = 'C:/RIS/RIS/wiki-notes';
+const NOTES_DIR = 'C:/RIS/wiki-notes';
 // Whole pages the team CREATED in the wiki, as opposed to notes they appended to a generated
 // page. They have no TEAM-NOTES marker because no generator ever wrote them, and they are
 // absent from page-map.json for the same reason -- which is exactly how they are recognised.
-// Same reasoning as the notes store for why they cannot live in C:/RIS/RIS/wiki: the
+// Same reasoning as the notes store for why they cannot live in C:/RIS/wiki: the
 // generators rewrite that wholesale. Both stores sit in the RIS repo, so the team shares them.
-const PAGES_DIR = 'C:/RIS/RIS/wiki-pages';
+const PAGES_DIR = 'C:/RIS/wiki-pages';
 const MARK = '<!-- TEAM-NOTES -- everything below this line is kept when the wiki is re-imported -->';
 const PLACEHOLDER = 'Nothing yet. Click **Edit** above and write below the line -- it will survive the next import.';
 const HEADING = 'Team notes';

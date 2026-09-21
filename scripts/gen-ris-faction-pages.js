@@ -29,7 +29,7 @@ const path = require("path");
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const RIS = valOf("--ris", "C:/RIS/RIS/data");
-const OUT = valOf("--out", "C:/RIS/RIS/wiki");
+const OUT = valOf("--out", "C:/RIS/wiki");
 // RIS ships only the files it changed, so art a mod inherits sits in the vanilla install and
 // nowhere else. Kept as a second root for that reason; see loadSymbolFiles for what it found.
 const VANILLA = valOf("--vanilla", "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data");

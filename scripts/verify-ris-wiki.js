@@ -26,7 +26,7 @@ const path = require("path");
 
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
-const OUT = valOf("--out", "C:/RIS/RIS/wiki");
+const OUT = valOf("--out", "C:/RIS/wiki");
 const SCRIPTS = __dirname;
 const QUIET = argv.includes("--quiet");
 

@@ -19,7 +19,7 @@ const parsers = require(path.join(ROOT, "src/parsers.js"));
 const gv = require(path.join(ROOT, "src/growthEval.js"));
 const fmap = require(path.join(ROOT, "scripts/lib/factionMap.js"));
 
-const MAPS = process.argv[2] || "C:/RIS/RIS/wiki/maps";
+const MAPS = process.argv[2] || "C:/RIS/wiki/maps";
 const RIS = process.argv[3] || "C:/RIS/RIS/data";
 
 function decode(file) {
