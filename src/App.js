@@ -17650,7 +17650,7 @@ Click for unit card`}
         if (!tradeLanes) return [];
         const merged = {};
         for (const l of tradeLanes) {
-          const key = [l.from, l.to].sort().join(" ");
+          const key = [l.from, l.to].sort().join("\0");
           const m = merged[key] || (merged[key] = { from: l.from, to: l.to, flow: 0, value: 0 });
           m.flow += l.flow;
           m.value += (l.value || 0);
