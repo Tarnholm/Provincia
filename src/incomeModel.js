@@ -1034,6 +1034,11 @@ const _MOD_EPOCH_FILES = [
   ["export_descr_buildings.txt"],
   ["descr_sm_resources.txt"],
   ["descr_sm_factions.txt"],
+  // unit stats, culture tier ladders and trait effects feed the registered
+  // recruit-pool / growth / population caches (added 2026-09-21)
+  ["export_descr_unit.txt"],
+  ["descr_cultures.txt"],
+  ["export_descr_character_traits.txt"],
 ];
 const _modEpochSigs = new Map();    // modDataDir → last mtime signature
 const _modEpochChecked = new Map(); // modDataDir → last sweep wall-clock ms
@@ -1050,7 +1055,13 @@ function _modEpochCheck(modDataDir) {
   }
   const prev = _modEpochSigs.get(modDataDir);
   if (prev !== undefined && prev !== sig) {
-    for (const c of _modEpochCaches) for (const k of Object.keys(c)) delete c[k];
+    // A registered cache may be a plain object, a Map, or anything with clear()
+    // (the LRUs). Object.keys() on a Map is [] — registering one used to do
+    // NOTHING, silently.
+    for (const c of _modEpochCaches) {
+      if (c && typeof c.clear === "function") c.clear();
+      else if (c) for (const k of Object.keys(c)) delete c[k];
+    }
   }
   _modEpochSigs.set(modDataDir, sig);
 }

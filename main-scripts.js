@@ -2271,6 +2271,27 @@ function findAllCampaignFileLocations(dataDir, campaignName, fileName) {
   return candidates.filter(p => fs.existsSync(p));
 }
 
+// A pipeline step that died after opening its output leaves an empty or partial
+// file, and findLatestOutputFile picks purely by mtime — so that file would be
+// copied over the live mod. Refuse anything that cannot be a whole file: empty,
+// under half the size of what it replaces, or (descr_strat) without a single
+// faction and settlement block. Returns an error string, or null when plausible.
+function outputLooksBroken(src, dest, kind) {
+  const size = fs.statSync(src).size;
+  if (!size) return `${path.basename(src)} in processed_output is EMPTY`;
+  if (dest && fs.existsSync(dest)) {
+    const live = fs.statSync(dest).size;
+    if (live > 0 && size < live * 0.5) return `${path.basename(src)} in processed_output is ${size.toLocaleString('en-US')} bytes — under half of the ${live.toLocaleString('en-US')}-byte file it would replace`;
+  }
+  if (kind === 'strat') {
+    const text = fs.readFileSync(src, 'latin1');
+    if (!/^\s*faction\s+\S+\s*,/m.test(text) || !/^\s*settlement\b/m.test(text)) return `${path.basename(src)} in processed_output has no faction/settlement blocks`;
+  }
+  return null;
+}
+// temp + rename: the live file is the old one or the new one, never half of each
+function copyOverAtomic(src, dest) { require('./src/safeModWrite.js').writeFileAtomic(dest, fs.readFileSync(src)); }
+
 // Save processed files back to the mod folder
 ipcMain.handle('sps:save-back-to-mod', async (_, dataDir, campaignName) => {
   // campaignName is interpolated into write paths (…/campaign/<campaignName>/…);
@@ -2293,13 +2314,17 @@ ipcMain.handle('sps:save-back-to-mod', async (_, dataDir, campaignName) => {
     }
 
     const stratDests = findAllCampaignFileLocations(dataDir, campaignName, 'descr_strat.txt');
+    {
+      const bad = outputLooksBroken(stratSrc, stratDests[0], 'strat');
+      if (bad) return { success: false, error: `Nothing was written: ${bad}. Run the pipeline again and check its log.` };
+    }
     if (stratDests.length === 0) {
       // No existing file found — create in standard campaign dir
       const fallback = path.join(dataDir, 'world', 'maps', 'campaign', campaignName, 'descr_strat.txt');
       if (!fs.existsSync(path.dirname(fallback))) {
         return { success: false, error: `Campaign directory not found for: ${campaignName}` };
       }
-      fs.copyFileSync(stratSrc, fallback);
+      copyOverAtomic(stratSrc, fallback);
       saved.push(`descr_strat.txt → ${path.dirname(fallback)}`);
     } else {
       // Write to EVERY existing copy (base campaign dir AND original_overrides)
@@ -2308,7 +2333,7 @@ ipcMain.handle('sps:save-back-to-mod', async (_, dataDir, campaignName) => {
         const stratBackupDir = path.join(path.dirname(stratDest), '_backups');
         fs.mkdirSync(stratBackupDir, { recursive: true });
         fs.copyFileSync(stratDest, path.join(stratBackupDir, `descr_strat_${timestamp}.txt`));
-        fs.copyFileSync(stratSrc, stratDest);
+        copyOverAtomic(stratSrc, stratDest);
         saved.push(`descr_strat.txt → ${path.dirname(stratDest)}`);
         console.log(`[save-back] Saved descr_strat.txt to: ${stratDest}`);
       }
@@ -2318,11 +2343,13 @@ ipcMain.handle('sps:save-back-to-mod', async (_, dataDir, campaignName) => {
     const regionsSrc = findLatestOutputFile('descr_regions.txt');
     if (regionsSrc) {
       const regionsDest = findModFile(dataDir, campaignName, 'descr_regions.txt');
-      if (regionsDest) {
+      const regionsBad = regionsDest ? outputLooksBroken(regionsSrc, regionsDest) : null;
+      if (regionsBad) { saved.push(`descr_regions.txt SKIPPED — ${regionsBad}`); console.warn(`[save-back] ${regionsBad}`); }
+      else if (regionsDest) {
         const regionsBackupDir = path.join(path.dirname(regionsDest), '_backups');
         fs.mkdirSync(regionsBackupDir, { recursive: true });
         fs.copyFileSync(regionsDest, path.join(regionsBackupDir, `descr_regions_${timestamp}.txt`));
-        fs.copyFileSync(regionsSrc, regionsDest);
+        copyOverAtomic(regionsSrc, regionsDest);
         saved.push(`descr_regions.txt → ${path.dirname(regionsDest)}`);
         console.log(`[save-back] Saved descr_regions.txt to: ${regionsDest}`);
       }
@@ -2338,11 +2365,13 @@ ipcMain.handle('sps:save-back-to-mod', async (_, dataDir, campaignName) => {
       const importMtime = fs.existsSync(edbConfig) ? fs.statSync(edbConfig).mtimeMs : 0;
       if (fs.statSync(edbSrc).mtimeMs >= importMtime) {
         const edbDest = path.join(dataDir, 'export_descr_buildings.txt');
-        if (fs.existsSync(edbDest)) {
+        const edbBad = fs.existsSync(edbDest) ? outputLooksBroken(edbSrc, edbDest) : null;
+        if (edbBad) { saved.push(`export_descr_buildings.txt SKIPPED — ${edbBad}`); console.warn(`[save-back] ${edbBad}`); }
+        else if (fs.existsSync(edbDest)) {
           const edbBackupDir = path.join(dataDir, '_backups');
           fs.mkdirSync(edbBackupDir, { recursive: true });
           fs.copyFileSync(edbDest, path.join(edbBackupDir, `export_descr_buildings_${timestamp}.txt`));
-          fs.copyFileSync(edbSrc, edbDest);
+          copyOverAtomic(edbSrc, edbDest);
           saved.push(`export_descr_buildings.txt → ${dataDir}`);
           console.log(`[save-back] Saved export_descr_buildings.txt to: ${edbDest}`);
         }

@@ -1944,76 +1944,14 @@ function consentStore() {
 }
 function addConsentedRoot(dir) { consentStore().add(dir); }
 function isConsentedPath(p) { return consentStore().isConsented(p); }
-// Scan a known folder for campaign data — same scan logic as
-// select-folder but skips the dialog. Used by auto-reimport on launch.
-async function scanFolderForCampaigns(dir) {
-  // map_ground_types.tga + map_heights.tga are REQUIRED here (regression fix
-  // 2026-07-18): applyFiles copies them into campaign_data per slot, but only
-  // from sourcePaths — and they only land in sourcePaths if the scan lists
-  // them. Dropping them (they were absent for a while) silently broke the
-  // Geography mode, the Terrain overlay and the Heights overlay on every
-  // imported slot (they fell back to the raw region map / 404'd).
-  const campaignFiles = ["descr_regions.txt", "descr_strat.txt", "descr_win_conditions.txt", "map_regions.tga", "map_ground_types.tga", "map_heights.tga"];
-  const sharedFiles = ["descr_sm_factions.txt"];
-  const allNeeded = [...campaignFiles, ...sharedFiles];
-  const dirFiles = new Map();
-  const addHit = (dirPath, fileName, filePath) => {
-    if (!dirFiles.has(dirPath)) dirFiles.set(dirPath, {});
-    dirFiles.get(dirPath)[fileName] = filePath;
-  };
-  const scan = (dirPath, depth) => {
-    if (depth > 7) return;
-    try {
-      const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-      for (const entry of entries) {
-        if (entry.isFile()) {
-          const lower = entry.name.toLowerCase();
-          for (const n of allNeeded) {
-            if (lower === n.toLowerCase()) addHit(dirPath, n, path.join(dirPath, entry.name));
-          }
-        } else if (entry.isDirectory()) {
-          scan(path.join(dirPath, entry.name), depth + 1);
-        }
-      }
-    } catch {}
-  };
-  scan(dir, 0);
-  const campaigns = [];
-  let baseFound = {};
-  const sharedFound = {};
-  for (const [dirPath, files] of dirFiles) {
-    const dirName = path.basename(dirPath).toLowerCase();
-    if (dirName === "base" && campaignFiles.some(f => files[f])) {
-      baseFound = { ...files };
-    } else if (files["descr_strat.txt"]) {
-      campaigns.push({ name: path.basename(dirPath), dir: dirPath, found: { ...files } });
-    }
-    for (const sf of sharedFiles) {
-      if (files[sf] && !sharedFound[sf]) sharedFound[sf] = files[sf];
-    }
-  }
-  // Merge base files into each campaign (base provides shared descr_regions etc.)
-  for (const camp of campaigns) {
-    for (const [k, v] of Object.entries(baseFound)) {
-      if (!camp.found[k]) camp.found[k] = v;
-    }
-  }
-  // Submod trees ship only the files they change (2026-08-06): inherit what is
-  // STILL missing from the submod's base mod (same resolver as the analysis
-  // overlay), vanilla install last — so a submod slot re-imports the base's map
-  // files and the user's base-folder edits reach it on reload. Every source
-  // root used becomes a consented read root, or read-file would refuse it.
-  try {
-    const { fillCampaignFilesFromBase } = require("./src/baseModFallback.js");
-    fillCampaignFilesFromBase(campaigns, campaignFiles, sharedFiles, {
-      getVanillaDataDir, onRootUsed: addConsentedRoot,
-      log: (m) => console.log("[scan-folder]", m),
-    });
-    for (const camp of campaigns) {
-      for (const sf of sharedFiles) if (camp.found[sf] && !sharedFound[sf]) sharedFound[sf] = camp.found[sf];
-    }
-  } catch (e) { console.warn("[scan-folder] base-mod inheritance failed:", e && e.message); }
-  return { dir, campaigns, sharedFound };
+// Scan a folder for campaign data — the single scanner both scan-folder (the
+// silent re-import at launch) and select-folder (the picker) call; see
+// src/campaignScan.js for why there is only one.
+async function scanFolderForCampaigns(dir, tag) {
+  return require("./src/campaignScan.js").scanFolderForCampaigns(dir, {
+    getVanillaDataDir, onRootUsed: addConsentedRoot,
+    log: (m) => console.log(`[${tag || "scan-folder"}]`, m),
+  });
 }
 
 // Scan a known path (no dialog) — used by auto-reimport on launch.
@@ -2285,6 +2223,13 @@ ipcMain.handle("clear-mod-caches", async () => {
   try { _unitStatsCache.clear(); } catch {}
   try { _buildingStatsCache.clear(); } catch {}
   try { _textDictCache.clear(); } catch {}
+  // keyed by modDataDir alone and previously survived "Reload mod data" (2026-09-21)
+  try { _portraitMappingCache.clear(); } catch {}
+  try { _portraitPoolCache.clear(); } catch {}
+  try { _rebelFactionsCache.clear(); } catch {}
+  try { _unitUpkeepMapCache.clear(); } catch {}
+  try { _buildingDisplayCache.clear(); } catch {}
+  try { _uiBuildingsCache.clear(); } catch {}
   try { require("./src/definitionLocator.js").clearDefinitionLocatorCache(); } catch {}
   try { clearFactionDisplayCaches(); } catch {} // display+culture LRUs live in src/factionDisplayHandlers.js
   return true;

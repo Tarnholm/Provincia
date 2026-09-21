@@ -390,6 +390,7 @@ ipcMain.handle("get-faction-metrics", async (_event, modDataDir, faction) => {
   try {
     if (!modDataDir || !faction) return { error: "modDataDir and faction required" };
     const key = modDataDir + "|" + String(faction).toLowerCase();
+    _epochTouch(modDataDir);
     if (_factionMetricsCache.has(key)) return _factionMetricsCache.get(key);
     const t0 = Date.now();
     const im = require("./incomeModel.js");
@@ -639,6 +640,7 @@ const _facRelCache = new Map();
 ipcMain.handle("get-faction-religions", async (_event, modDataDir) => {
   try {
     if (!modDataDir) return {};
+    _epochTouch(modDataDir);
     if (_facRelCache.has(modDataDir)) return _facRelCache.get(modDataDir);
     const out = require("./poModel.js").factionReligions(modDataDir) || {};
     _facRelCache.set(modDataDir, out);
@@ -646,10 +648,17 @@ ipcMain.handle("get-faction-religions", async (_event, modDataDir) => {
   } catch (e) { return { error: e && e.message ? e.message : "faction religions failed" }; }
 });
 
-let _mapMetricsCache = { key: null, data: null, busy: false };
+const _mapMetricsCache = { key: null, data: null, busy: false };
+// These three were keyed by modDataDir alone and never cleared — not by the
+// mod-file epoch, not even by "Reload mod data" — so a map repaint or a
+// descr_strat edit left the map-mode metrics and faction relations stale until
+// the app restarted. Registered with the epoch; _epochTouch() runs it.
+try { const _im = require("./incomeModel.js"); _im._modEpochRegister(_factionMetricsCache, _facRelCache, _mapMetricsCache, require("./growthEval.js")._cultureBaseCache, require("./popProjection.js")._tierCache); } catch (e) { _writeLog(`[mod-epoch] cache registration failed: ${e && e.message}`); }
+const _epochTouch = (modDataDir) => { try { require("./incomeModel.js")._modEpochCheck(modDataDir); } catch { } };
 ipcMain.handle("get-map-mode-metrics", async (_event, modDataDir) => {
   try {
     if (!modDataDir) return { error: "modDataDir required" };
+    _epochTouch(modDataDir);
     if (_mapMetricsCache.key === modDataDir && _mapMetricsCache.data) return _mapMetricsCache.data;
     if (_mapMetricsCache.busy) return { busy: true };
     _mapMetricsCache.busy = true;
@@ -682,7 +691,8 @@ ipcMain.handle("get-map-mode-metrics", async (_event, modDataDir) => {
       await new Promise((r) => setImmediate(r));
     }
     const data = { byRegion, maxIncome, maxCorr, factions: facList.length, ms: Date.now() - t0 };
-    _mapMetricsCache = { key: modDataDir, data, busy: false };
+    // mutate, never reassign: the object is registered with the mod-file epoch
+    _mapMetricsCache.key = modDataDir; _mapMetricsCache.data = data; _mapMetricsCache.busy = false;
     _writeLog(`[map-metrics] swept ${facList.length} factions, ${Object.keys(byRegion).length} regions in ${data.ms}ms`);
     return data;
   } catch (e) {

@@ -219,6 +219,7 @@ function projectPopulation(modDataDir, faction, turns = 20) {
 }
 
 module.exports = {
+  _tierCache, // modDir-keyed: registered with incomeModel's mod-file epoch by saveAnalysisHandlers
   projectPopulation,
   // pure helpers (hermetic tests)
   parseTierTable, nextTierAt, compoundTrajectory, simulateTrajectory,

@@ -41,6 +41,10 @@ function makeLRU(limit) {
         m.delete(oldest);
       }
     },
+    // clear-mod-caches calls .clear() on every cache inside try/catch — without
+    // this an LRU there was silently never cleared.
+    clear: () => m.clear(),
+    get size() { return m.size; },
   };
 }
 

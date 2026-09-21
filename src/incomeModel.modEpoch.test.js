@@ -8,7 +8,7 @@ import { describe, test, expect, beforeEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { regionAdjacency } from "./incomeModel.js";
+import { regionAdjacency, _modEpochRegister, _modEpochCheck } from "./incomeModel.js";
 
 let modDir;
 
@@ -64,6 +64,20 @@ describe("mod-file epoch — external map_regions.tga edits invalidate topology 
     await new Promise((r) => setTimeout(r, 1100));
     const adj2 = regionAdjacency(modDir);
     expect(adj2.region_a).toBeUndefined(); // single region left → no adjacency
+  }, 10000);
+
+  test("a registered Map (or anything with clear()) is emptied too — Object.keys(Map) is [], so it used to be skipped", async () => {
+    const asMap = new Map([["k", 1]]), asObj = { k: 1 }, asLru = { n: 1, clear() { this.n = 0; } };
+    _modEpochRegister(asMap, asObj, asLru);
+    _modEpochCheck(modDir); // records the signature
+    const tga = path.join(modDir, "world", "maps", "base", "map_regions.tga");
+    const st = fs.statSync(tga);
+    fs.utimesSync(tga, st.atime, new Date(st.mtimeMs + 2000));
+    await new Promise((r) => setTimeout(r, 1100));
+    _modEpochCheck(modDir);
+    expect(asMap.size).toBe(0);
+    expect(Object.keys(asObj)).toEqual([]);
+    expect(asLru.n).toBe(0);
   }, 10000);
 
   test("unchanged files → cache hit (same object back)", () => {

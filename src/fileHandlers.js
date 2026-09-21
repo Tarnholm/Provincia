@@ -118,8 +118,11 @@ function registerFileHandlers(ipcMain, deps) {
     try {
       const userDir = campaignDir();
       if (!fs.existsSync(userDir)) fs.mkdirSync(userDir, { recursive: true });
-      // src may be anywhere (it comes from user-picked mod folders); only the
-      // destination NAME is renderer-controlled and must stay inside userDir.
+      // src comes from user-picked mod folders — the same consented roots
+      // read-file enforces. Ungated, copy-file + read-campaign-file was a way to
+      // read ANY file on disk past the consent store. The destination NAME is
+      // renderer-controlled and must stay inside userDir.
+      if (typeof src !== "string" || !isConsentedPath(src)) { console.warn("[consent] copy-file refused:", src); return false; }
       const dest = resolveInside(userDir, destName);
       if (!dest) return false;
       fs.copyFileSync(src, dest);
@@ -132,7 +135,7 @@ function registerFileHandlers(ipcMain, deps) {
         } catch {}
       }
       return true;
-    } catch { return false; }
+    } catch (e) { console.warn(`[copy-file] ${src} -> ${destName} failed: ${e && e.message}`); return false; }
   });
 
   // IPC: read a campaign data file — checks userData first, then build/ (bundled fallback)

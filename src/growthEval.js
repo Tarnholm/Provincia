@@ -601,4 +601,5 @@ module.exports = {
   settlementFeatures, parseRegions, parseResources, parseStrat, parseEDB, evalReq,
   parseFactionGroups, factionTokenSet,
   COEF, COEF_SAVE, ACCURACY, ACCURACY_SAVE, TAX_MOD,
+  _cultureBaseCache, // modDir-keyed: registered with incomeModel's mod-file epoch by saveAnalysisHandlers
 };
