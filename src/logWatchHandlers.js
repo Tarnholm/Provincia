@@ -484,15 +484,31 @@ ipcMain.handle("log-read-full", async (_event, logDir) => {
   // A missing log is normal (ENOENT, stay quiet). Anything else — above all a
   // campaign_ai_log past V8's string limit, which used to come back as a silent
   // null and read as "no AI log" — is said out loud.
-  const readLog = (p) => {
-    try { return fs.readFileSync(p, "utf8"); }
-    catch (e) { if (!e || e.code !== "ENOENT") console.warn(`[log-read-full] ${path.basename(p)} could not be read: ${e && (e.code || e.message)}`); return null; }
+  // async reads: both logs can run to hundreds of MB, and a sync read on the
+  // main thread froze the whole window until the disk was done
+  // Read EXACTLY the bytes that exist at open time and hand the watcher that same
+  // offset: whatever the game appends while we read is then delivered by the
+  // watcher — once. (Reading the whole file and stat-ing afterwards could drop
+  // lines written in between, or deliver them twice.)
+  const readLog = async (p) => {
+    let fh = null;
+    try {
+      fh = await fs.promises.open(p, "r");
+      const size = (await fh.stat()).size;
+      const buf = Buffer.allocUnsafe(size);
+      let got = 0;
+      while (got < size) { const { bytesRead } = await fh.read(buf, got, size - got, got); if (!bytesRead) break; got += bytesRead; }
+      return { text: buf.toString("utf8", 0, got), size: got };
+    } catch (e) {
+      if (!e || e.code !== "ENOENT") console.warn(`[log-read-full] ${path.basename(p)} could not be read: ${e && (e.code || e.message)}`);
+      return { text: null, size: null };
+    } finally { if (fh) { try { await fh.close(); } catch { } } }
   };
-  msg = readLog(msgPath);
-  ai = readLog(aiPath);
-  // Set offsets to end so watcher only gets new stuff
-  try { logOffset = fs.statSync(msgPath).size; } catch {}
-  try { logOffsetAI = fs.statSync(aiPath).size; } catch {}
+  const [m, a] = await Promise.all([readLog(msgPath), readLog(aiPath)]);
+  msg = m.text; ai = a.text;
+  // The watcher continues from exactly where this read stopped.
+  if (m.size != null) logOffset = m.size; else { try { logOffset = fs.statSync(msgPath).size; } catch {} }
+  if (a.size != null) logOffsetAI = a.size; else { try { logOffsetAI = fs.statSync(aiPath).size; } catch {} }
   return { msg, ai };
 });
 

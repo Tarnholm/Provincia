@@ -112,7 +112,10 @@ function openMaybeCompressed(logPath, opts = {}) {
 /** Remove a temp directory created by openMaybeCompressed. Never throws. */
 function cleanup(temp) {
   if (!temp) return;
-  try { fs.rmSync(temp, { recursive: true, force: true }); } catch { /* the OS will get it */ }
+  // maxRetries: on Windows an indexer or antivirus can hold the fresh extract for
+  // a moment; a single attempt then fails with EBUSY/EPERM, the catch below hid
+  // it, and a ~100 MB extract stayed in %TEMP% (seen as a test flake under load).
+  try { fs.rmSync(temp, { recursive: true, force: true, maxRetries: 8, retryDelay: 120 }); } catch { /* the OS will get it */ }
 }
 
 module.exports = { openMaybeCompressed, cleanup, isCompressed, resolvePython };

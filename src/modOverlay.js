@@ -40,12 +40,35 @@ const { findRelatedModDirs } = require("./modPathResolver.js");
 
 const _throttle = new Map(); // mergeKey → last refresh wall-clock ms
 
+// Remove one entry of the overlay WITHOUT ever following a link. The overlay is
+// full of junctions that point INTO the user's live mod (C:\RIS\...\data\ui and
+// friends); a recursive delete that descended through one would delete the mod.
+// fs.rmSync does unlink links rather than follow them, but that was the only
+// thing standing between a cache prune and the mod — so links are unlinked
+// explicitly here and only REAL directories are ever walked.
+function _removeEntry(p) {
+  let st;
+  try { st = fs.lstatSync(p); } catch { return; }
+  if (st.isSymbolicLink()) { // junctions report as symbolic links
+    try { fs.unlinkSync(p); } catch { try { fs.rmdirSync(p); } catch { } }
+    return;
+  }
+  if (st.isDirectory()) {
+    let names = [];
+    try { names = fs.readdirSync(p); } catch { }
+    for (const n of names) _removeEntry(path.join(p, n));
+    try { fs.rmdirSync(p); } catch { }
+    return;
+  }
+  try { fs.unlinkSync(p); } catch { }
+}
+
 function _copyIfStale(src, dst) {
   const s = fs.statSync(src);
   let d = null;
   try { d = fs.statSync(dst); } catch { }
   if (d && d.size === s.size && Math.abs(d.mtimeMs - s.mtimeMs) < 1000) return;
-  try { fs.rmSync(dst, { force: true }); } catch { }
+  _removeEntry(dst);
   fs.copyFileSync(src, dst);
   fs.utimesSync(dst, s.atime, s.mtime);
 }
@@ -54,9 +77,9 @@ function _ensureJunction(dst, target) {
   try {
     const cur = fs.readlinkSync(dst);
     if (path.resolve(cur) === path.resolve(target)) return;
-    fs.rmSync(dst, { recursive: true, force: true });
+    _removeEntry(dst);
   } catch { /* not a link / missing */
-    try { if (fs.existsSync(dst)) fs.rmSync(dst, { recursive: true, force: true }); } catch { }
+    _removeEntry(dst);
   }
   fs.symlinkSync(target, dst, "junction");
 }
@@ -81,7 +104,7 @@ function _mergeDir(subDir, baseDir, outDir) {
   }
   // prune entries whose source vanished
   for (const name of list(outDir)) {
-    if (!union.has(name)) { try { fs.rmSync(path.join(outDir, name), { recursive: true, force: true }); } catch { } }
+    if (!union.has(name)) _removeEntry(path.join(outDir, name));
   }
 }
 
@@ -112,4 +135,4 @@ function effectiveModDataDir(modDataDir, cacheRoot, log) {
   }
 }
 
-module.exports = { effectiveModDataDir };
+module.exports = { effectiveModDataDir, _removeEntry };

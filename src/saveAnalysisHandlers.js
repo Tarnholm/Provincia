@@ -636,7 +636,9 @@ ipcMain.handle("chronicle-read-message-log", async (_event, logDir) => {
     if (!logDir) return { text: null };
     const p = path.join(logDir, "message_log.txt");
     if (!fs.existsSync(p)) return { text: null };
-    return { text: fs.readFileSync(p, "latin1") };
+    // async: a long campaign's message_log is tens of MB — a sync read froze the
+    // window (this runs on the main thread) for as long as the disk took
+    return { text: await fs.promises.readFile(p, "latin1") };
   } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
 });
 
