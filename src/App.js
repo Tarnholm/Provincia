@@ -82,6 +82,7 @@ import AiMovementPanel from "./panels/AiMovementPanel";
 import FactionChroniclePanel from "./panels/FactionChroniclePanel";
 import CrashReporterPanel from "./panels/CrashReporterPanel";
 import TraitExplorerPanel from "./panels/TraitExplorerPanel";
+import ExtinctionWatchPanel from "./panels/ExtinctionWatchPanel";
 import CampaignAutopsyPanel from "./panels/CampaignAutopsyPanel";
 import BuildOrderPanel from "./panels/BuildOrderPanel";
 import DefinitionLocatorPanel from "./panels/DefinitionLocatorPanel";
@@ -12099,6 +12100,8 @@ function App() {
   const [showRecruitPlanner, setShowRecruitPlanner] = useState(false); // 🏗 what each building upgrade unlocks (2026-07-17)
   const [showDiploHeatmap, setShowDiploHeatmap] = useState(false); // 🕊 NxN diplomacy heatmap (2026-07-17)
   const [showTraitExplorer, setShowTraitExplorer] = useState(false); // 🎭 trait browser (2026-07-17)
+  const [showExtinctionWatch, setShowExtinctionWatch] = useState(false); // ☠ living adult males per faction (2026-09-21)
+  const extinctionSettlementCount = useMemo(() => Object.fromEntries(Object.entries(factionRegionsMap || {}).map(([f, rs]) => [f, Array.isArray(rs) ? rs.length : 0])), [factionRegionsMap]);
   const [showCampaignAutopsy, setShowCampaignAutopsy] = useState(false); // ⚰ campaign post-mortem (2026-07-17)
   const [showBuildOrder, setShowBuildOrder] = useState(false); // 🔨 build-order payback ranking (2026-07-17)
   const [showDefLocator, setShowDefLocator] = useState(false); // ⌖ "where is this defined?" (2026-07-17)
@@ -15482,6 +15485,7 @@ function App() {
                       { icon: "🏗", label: "Recruit Planner", color: "#a8d8a0", desc: "For the selected settlement: what each next building upgrade unlocks for recruitment.", open: () => { if (lockedRegionInfo || regionInfo) setShowRecruitPlanner(true); else pushToast("Select a region first — the planner works on the selected settlement.", "info", 5000); } },
                       { icon: "🕊", label: "Diplomacy Heatmap", color: "#d8a0a0", desc: "NxN heatmap of the live diplomacy matrix — war blocs and alliance clusters at a glance.", open: () => setShowDiploHeatmap(true) },
                       { icon: "🎭", label: "Trait Explorer", color: "#c9b8e0", desc: "Browse every character trait — filter by effect (tax, law, command…), see levels/thresholds/effects, and in live mode who carries each.", open: () => setShowTraitExplorer(true) },
+                      { icon: "☠", label: "Extinction Watch", color: "#e0a090", desc: "Which factions are one death from destruction — a faction dies with its last living male family member, however much land it holds. Living adult males per faction at campaign start, leader and heir, boys about to come of age, and lines that stand on a single tile.", open: () => setShowExtinctionWatch(true) },
                       { icon: "⚰", label: "Campaign Autopsy", color: "#cf8f6a", desc: "Post-mortem over a scanned saves timeline — each faction's settlement/treasury/army arc, when they peaked, declined or were wiped, and who won.", open: () => setShowCampaignAutopsy(true) },
                       { icon: "🔨", label: "Build-Order Optimizer", color: "#d8c088", desc: "For the selected settlement: rank its buildable structures by payback time (cost ÷ extra income per turn).", open: () => { if (lockedRegionInfo || regionInfo) setShowBuildOrder(true); else pushToast("Select a region first — the optimizer works on the selected settlement.", "info", 5000); } },
                       { icon: "⌖", label: "Find Definition", color: "#c8c8e8", desc: "Where is this unit/building/region defined? File + line across all mod files, click to open in editor.", open: () => setShowDefLocator(true) },
@@ -23570,6 +23574,16 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           liveCharacters={saveCharactersByRegion ? Object.values(saveCharactersByRegion).flat() : null}
           factionDisplayNames={factionDisplayNames}
           onClose={() => setShowTraitExplorer(false)}
+        />
+      )}
+      {showExtinctionWatch && (
+        <ExtinctionWatchPanel
+          familiesByFaction={modFamiliesByFaction}
+          settlementCount={extinctionSettlementCount}
+          factionDisplayNames={factionDisplayNames}
+          selectedFaction={selectedFaction}
+          onPickFaction={(f) => { setSelectedFaction(f); setShowExtinctionWatch(false); }}
+          onClose={() => setShowExtinctionWatch(false)}
         />
       )}
       {showCampaignAutopsy && (
