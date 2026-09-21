@@ -34,6 +34,20 @@
 			"women":    "roman_women",
 			"surnames": "roman_surnames",
 		},
+		
+		;;information for when this faction emerges
+		"emergence":
+		{
+			;;units to use if we emerge inside a settlement
+			"settlement units":
+			[
+				"roman leves armaturae",
+				"legionary cohort",
+			],
+
+			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
+			"strength": 3.5,
+		},
 
 		"logos":
 		{
@@ -106,6 +120,20 @@
 			"men":      "greenr_men",
 			"women":    "greenr_women",
 			"surnames": "greenr_surnames",
+		},
+
+		;;information for when this faction emerges
+		"emergence":
+		{
+			;;units to use if we emerge inside a settlement
+			"settlement units":
+			[
+				"roman leves armaturae",
+				"legionary cohort",
+			],
+
+			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
+			"strength": 3.5,
 		},
 
 		"logos":
@@ -181,6 +209,20 @@
 			"surnames": "bluer_surnames",
 		},
 
+		;;information for when this faction emerges
+		"emergence":
+		{
+			;;units to use if we emerge inside a settlement
+			"settlement units":
+			[
+				"roman leves armaturae",
+				"legionary cohort",
+			],
+
+			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
+			"strength": 3.5,
+		},
+
 		"logos":
 		{
 			;;logo to use in the loading screens (seperate as sprite sheets aren't loaded at that point)
@@ -252,6 +294,20 @@
 			"men":      "senate_men",
 			"women":    "senate_women",
 			"surnames": "senate_surnames",
+		},
+
+		;;information for when this faction emerges
+		"emergence":
+		{
+			;;units to use if we emerge inside a settlement
+			"settlement units":
+			[
+				"roman leves armaturae",
+				"legionary cohort",
+			],
+
+			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
+			"strength": 3.5,
 		},
 
 		"logos":
