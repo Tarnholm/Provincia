@@ -1205,6 +1205,7 @@ ipcMain.handle('sps:autofix-building-images', async (_, dataDir) => {
         chainDonors[chain].push({ culture, path: path.join(bDir, f) });
       }
     }
+    const EXCL = fs.constants.COPYFILE_EXCL;
     // Pass 2: for each culture, seed missing constructed + preconstruction
     // for its OWN base images, plus copy from donor culture for any chain
     // absent in this culture but present elsewhere.
@@ -1216,27 +1217,31 @@ ipcMain.handle('sps:autofix-building-images', async (_, dataDir) => {
         continue;
       }
       let files; try { files = fs.readdirSync(bDir); } catch { continue; }
-      const set = new Set(files);
+      // Windows file names ignore case, so "already there" must too: a mod
+      // holding #ROMAN_temple.tga used to fail has("#roman_temple.tga") and
+      // get another culture's art copied over it. COPYFILE_EXCL below makes
+      // "never overwritten" (the confirm dialog's promise) hold regardless.
+      const set = new Set(files.map(f => f.toLowerCase()));
       const preDir = path.join(bDir, 'construction');
       let preSet = new Set();
-      if (fs.existsSync(preDir)) { try { preSet = new Set(fs.readdirSync(preDir)); } catch {} }
+      if (fs.existsSync(preDir)) { try { preSet = new Set(fs.readdirSync(preDir).map(f => f.toLowerCase())); } catch {} }
       // (1) + (2) — for existing base images in this culture.
       for (const f of files) {
         const m = f.match(new RegExp(`^#${culture}_(.+)\\.tga$`, 'i'));
         if (!m || /_constructed$/.test(m[1])) continue;
         const constructed = `#${culture}_${m[1]}_constructed.tga`;
-        if (!set.has(constructed)) {
+        if (!set.has(constructed.toLowerCase())) {
           try {
-            fs.copyFileSync(path.join(bDir, f), path.join(bDir, constructed));
+            fs.copyFileSync(path.join(bDir, f), path.join(bDir, constructed), EXCL);
             out.copied++;
             if (out.copies.length < 50) out.copies.push({ from: f, to: constructed });
           } catch {}
         }
         const preconstructed = `#${culture}_${m[1]}.tga`;
-        if (!preSet.has(preconstructed)) {
+        if (!preSet.has(preconstructed.toLowerCase())) {
           try {
             if (!fs.existsSync(preDir)) fs.mkdirSync(preDir, { recursive: true });
-            fs.copyFileSync(path.join(bDir, f), path.join(preDir, preconstructed));
+            fs.copyFileSync(path.join(bDir, f), path.join(preDir, preconstructed), EXCL);
             out.copied++;
             if (out.copies.length < 50) out.copies.push({ from: f, to: `construction/${preconstructed}` });
           } catch {}
@@ -1245,19 +1250,19 @@ ipcMain.handle('sps:autofix-building-images', async (_, dataDir) => {
       // (3) — for chains this culture doesn't have, but another does.
       for (const [chain, donors] of Object.entries(chainDonors)) {
         const expected = `#${culture}_${chain}.tga`;
-        if (set.has(expected)) continue; // already there
+        if (set.has(expected.toLowerCase())) continue; // already there
         const donor = donors.find(d => d.culture !== culture);
         if (!donor) continue;
         try {
-          fs.copyFileSync(donor.path, path.join(bDir, expected));
+          fs.copyFileSync(donor.path, path.join(bDir, expected), EXCL);
           out.copied++;
           if (out.copies.length < 50) out.copies.push({ from: `${donor.culture}/${path.basename(donor.path)}`, to: `${culture}/buildings/${expected}` });
           // Also seed its constructed + preconstruction since base is brand-new.
           const constructed = `#${culture}_${chain}_constructed.tga`;
-          try { fs.copyFileSync(donor.path, path.join(bDir, constructed)); out.copied++; } catch {}
+          try { fs.copyFileSync(donor.path, path.join(bDir, constructed), EXCL); out.copied++; } catch {}
           try {
             if (!fs.existsSync(preDir)) fs.mkdirSync(preDir, { recursive: true });
-            fs.copyFileSync(donor.path, path.join(preDir, expected));
+            fs.copyFileSync(donor.path, path.join(preDir, expected), EXCL);
             out.copied++;
           } catch {}
         } catch {}
@@ -2289,9 +2294,6 @@ function outputLooksBroken(src, dest, kind) {
   }
   return null;
 }
-// temp + rename: the live file is the old one or the new one, never half of each
-function copyOverAtomic(src, dest) { require('./src/safeModWrite.js').writeFileAtomic(dest, fs.readFileSync(src)); }
-
 // Save processed files back to the mod folder
 ipcMain.handle('sps:save-back-to-mod', async (_, dataDir, campaignName) => {
   // campaignName is interpolated into write paths (…/campaign/<campaignName>/…);
@@ -2300,11 +2302,17 @@ ipcMain.handle('sps:save-back-to-mod', async (_, dataDir, campaignName) => {
   if (!safeProfileSegment(campaignName)) return { success: false, error: 'invalid campaign name' };
   try {
     const configDir = path.join(PROJECT_ROOT, 'config');
-    const outputDir = path.join(PROJECT_ROOT, 'processed_output');
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     const saved = [];
+    // Everything is decided first and written in ONE safeWriteModFiles call:
+    // stamped .provincia-<stamp>.bak backups (the ones "Restore last backup"
+    // reads; a backup failure writes nothing), and a failure part-way puts
+    // back the files already replaced. Order: EDB, regions, then descr_strat
+    // LAST. This used to write descr_strat first, keep its own _backups copies
+    // (1-second stamps, so two saves in a second overwrote the first backup)
+    // and leave earlier files changed when a later one failed.
+    const writes = []; // { livePath, data, label }
 
-    // --- Save descr_strat.txt ---
+    // --- descr_strat.txt ---
     // Prefer processed output (from pipeline run), fall back to config
     const stratFromOutput = findLatestOutputFile('descr_strat.txt');
     const stratFromConfig = path.join(configDir, 'descr_strat.txt');
@@ -2318,44 +2326,23 @@ ipcMain.handle('sps:save-back-to-mod', async (_, dataDir, campaignName) => {
       const bad = outputLooksBroken(stratSrc, stratDests[0], 'strat');
       if (bad) return { success: false, error: `Nothing was written: ${bad}. Run the pipeline again and check its log.` };
     }
+    const stratWrites = [];
     if (stratDests.length === 0) {
       // No existing file found — create in standard campaign dir
       const fallback = path.join(dataDir, 'world', 'maps', 'campaign', campaignName, 'descr_strat.txt');
       if (!fs.existsSync(path.dirname(fallback))) {
         return { success: false, error: `Campaign directory not found for: ${campaignName}` };
       }
-      copyOverAtomic(stratSrc, fallback);
-      saved.push(`descr_strat.txt → ${path.dirname(fallback)}`);
+      stratWrites.push({ livePath: fallback, data: fs.readFileSync(stratSrc), label: `descr_strat.txt → ${path.dirname(fallback)}` });
     } else {
       // Write to EVERY existing copy (base campaign dir AND original_overrides)
-      // so the engine can't keep loading a stale one. Backup each first.
+      // so the engine can't keep loading a stale one.
       for (const stratDest of stratDests) {
-        const stratBackupDir = path.join(path.dirname(stratDest), '_backups');
-        fs.mkdirSync(stratBackupDir, { recursive: true });
-        fs.copyFileSync(stratDest, path.join(stratBackupDir, `descr_strat_${timestamp}.txt`));
-        copyOverAtomic(stratSrc, stratDest);
-        saved.push(`descr_strat.txt → ${path.dirname(stratDest)}`);
-        console.log(`[save-back] Saved descr_strat.txt to: ${stratDest}`);
+        stratWrites.push({ livePath: stratDest, data: fs.readFileSync(stratSrc), label: `descr_strat.txt → ${path.dirname(stratDest)}` });
       }
     }
 
-    // --- Save descr_regions.txt (from hidden_resources step) ---
-    const regionsSrc = findLatestOutputFile('descr_regions.txt');
-    if (regionsSrc) {
-      const regionsDest = findModFile(dataDir, campaignName, 'descr_regions.txt');
-      const regionsBad = regionsDest ? outputLooksBroken(regionsSrc, regionsDest) : null;
-      if (regionsBad) { saved.push(`descr_regions.txt SKIPPED — ${regionsBad}`); console.warn(`[save-back] ${regionsBad}`); }
-      else if (regionsDest) {
-        const regionsBackupDir = path.join(path.dirname(regionsDest), '_backups');
-        fs.mkdirSync(regionsBackupDir, { recursive: true });
-        fs.copyFileSync(regionsDest, path.join(regionsBackupDir, `descr_regions_${timestamp}.txt`));
-        copyOverAtomic(regionsSrc, regionsDest);
-        saved.push(`descr_regions.txt → ${path.dirname(regionsDest)}`);
-        console.log(`[save-back] Saved descr_regions.txt to: ${regionsDest}`);
-      }
-    }
-
-    // --- Save export_descr_buildings.txt (from migrate_chain step) ---
+    // --- export_descr_buildings.txt (from migrate_chain step) ---
     // EDB lives at the data root (not a campaign file). Only push it when the
     // migration produced a NEWER output than the current import, so a stale EDB
     // left in processed_output by a previous mod/import is never written back.
@@ -2367,20 +2354,25 @@ ipcMain.handle('sps:save-back-to-mod', async (_, dataDir, campaignName) => {
         const edbDest = path.join(dataDir, 'export_descr_buildings.txt');
         const edbBad = fs.existsSync(edbDest) ? outputLooksBroken(edbSrc, edbDest) : null;
         if (edbBad) { saved.push(`export_descr_buildings.txt SKIPPED — ${edbBad}`); console.warn(`[save-back] ${edbBad}`); }
-        else if (fs.existsSync(edbDest)) {
-          const edbBackupDir = path.join(dataDir, '_backups');
-          fs.mkdirSync(edbBackupDir, { recursive: true });
-          fs.copyFileSync(edbDest, path.join(edbBackupDir, `export_descr_buildings_${timestamp}.txt`));
-          copyOverAtomic(edbSrc, edbDest);
-          saved.push(`export_descr_buildings.txt → ${dataDir}`);
-          console.log(`[save-back] Saved export_descr_buildings.txt to: ${edbDest}`);
-        }
+        else if (fs.existsSync(edbDest)) writes.push({ livePath: edbDest, data: fs.readFileSync(edbSrc), label: `export_descr_buildings.txt → ${dataDir}` });
       } else {
         console.log('[save-back] Skipped EDB (output older than current import — stale).');
       }
     }
 
-    return { success: true, saved };
+    // --- descr_regions.txt (from hidden_resources step) ---
+    const regionsSrc = findLatestOutputFile('descr_regions.txt');
+    if (regionsSrc) {
+      const regionsDest = findModFile(dataDir, campaignName, 'descr_regions.txt');
+      const regionsBad = regionsDest ? outputLooksBroken(regionsSrc, regionsDest) : null;
+      if (regionsBad) { saved.push(`descr_regions.txt SKIPPED — ${regionsBad}`); console.warn(`[save-back] ${regionsBad}`); }
+      else if (regionsDest) writes.push({ livePath: regionsDest, data: fs.readFileSync(regionsSrc), label: `descr_regions.txt → ${path.dirname(regionsDest)}` });
+    }
+
+    writes.push(...stratWrites);
+    const { stamp } = require('./src/safeModWrite.js').safeWriteModFiles(writes.map((w) => ({ livePath: w.livePath, data: w.data })));
+    for (const w of writes) { saved.push(w.label); console.log(`[save-back] Saved ${w.label}`); }
+    return { success: true, saved, backupStamp: stamp };
   } catch (err) {
     console.error('[save-back] Error:', err);
     return { success: false, error: err.message };

@@ -12,6 +12,7 @@ const fs = require("fs");
 const path = require("path");
 const { encodeTga32BGRA } = require("./tgaCodec.js");
 const pathSafety = require("./pathSafety.js");
+const { writeFileAtomic } = require("./safeModWrite.js");
 const { pngCacheGet, registerPngCacheIpc } = require("./iconPngCache.js");
 
 function registerIconHandlers(ipcMain, { _unitOwnershipCache, _unitStatsCache, _unitUpkeepMapCache, _buildingRecruitsCache, _buildingDisplayCache, _iconDirCache, _uiBuildingsCache, getEdbSourceFiles, findRelatedModDirs, getIconSearchRoots, nativeImage, getActiveModDataDir }) {
@@ -792,16 +793,19 @@ ipcMain.handle("replace-building-icon", async (_event, modDataDir, culture, leve
       fs.copyFileSync(destPath, backupPath);
       console.log(`[icon-replace] backup-saved: ${backupPath}`);
     } catch (e) {
-      console.warn(`[icon-replace] backup failed: ${e.message}`);
-      // Continue — losing the backup is worse than failing the whole replace,
-      // but the user can also just re-drop the original file.
+      // Stop. Writing on without a backup lost the mod's own icon for good —
+      // and revert, finding no backup, then deleted the file outright.
+      console.warn(`[icon-replace] backup failed, nothing replaced: ${e.message}`);
+      return { ok: false, error: `backup of ${destFn} failed, nothing was replaced (${e.message})` };
     }
   }
   // Convert source to TGA (or copy directly if already TGA).
   const ext = path.extname(sourceFile).toLowerCase();
   try {
+    // Temp + rename (safeModWrite): a crash mid-write used to leave a
+    // truncated TGA in the mod.
     if (ext === ".tga") {
-      fs.copyFileSync(sourceFile, destPath);
+      writeFileAtomic(destPath, fs.readFileSync(sourceFile));
       console.log(`[icon-replace] success (tga-copy): ${sourceFile} → ${destPath}`);
     } else if (ext === ".png" || ext === ".jpg" || ext === ".jpeg") {
       // nativeImage decodes PNG/JPG and gives us BGRA via toBitmap().
@@ -811,7 +815,7 @@ ipcMain.handle("replace-building-icon", async (_event, modDataDir, culture, leve
       if (!size.width || !size.height) throw new Error(`invalid size ${size.width}x${size.height}`);
       const bgra = img.toBitmap(); // BGRA, top-down
       const tga = encodeTga32BGRA(size.width, size.height, bgra);
-      fs.writeFileSync(destPath, tga);
+      writeFileAtomic(destPath, tga);
       console.log(`[icon-replace] success (png/jpg→tga ${size.width}x${size.height}): ${sourceFile} → ${destPath}`);
     } else {
       return { ok: false, error: `unsupported extension: ${ext} (expected .png / .jpg / .tga)` };
@@ -842,7 +846,7 @@ ipcMain.handle("revert-building-icon", async (_event, destPath, backupPath) => {
   if (backupPath && !safeBackup) { console.warn(`[icon-replace] revert refused (backup outside mod): ${backupPath}`); return { ok: false, error: "backup outside the active mod dir" }; }
   try {
     if (safeBackup && fs.existsSync(safeBackup)) {
-      fs.copyFileSync(safeBackup, safeDest);
+      writeFileAtomic(safeDest, fs.readFileSync(safeBackup));
       try { fs.unlinkSync(safeBackup); } catch {}
       clearIconDirCache(path.dirname(safeDest));
       console.log(`[icon-replace] revert-restored: ${safeBackup} → ${safeDest}`);

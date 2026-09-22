@@ -2115,7 +2115,10 @@ function App() {
   // Deduplicate identical toasts: if the same (message, kind) is already
   // visible, bump its count and refresh its expiry instead of pushing a new
   // row. Avoids stacking when the user mashes the version-check button.
-  const pushToast = useCallback((message, kind = "error") => {
+  // Callers pass a duration (ms) as the third argument; it used to be dropped
+  // and every toast lasted 6 s.
+  const pushToast = useCallback((message, kind = "error", ms = 6000) => {
+    const life = Number.isFinite(ms) && ms > 0 ? ms : 6000;
     setToasts(prev => {
       const existing = prev.find(t => t.message === message && t.kind === kind);
       if (existing) {
@@ -2123,7 +2126,7 @@ function App() {
         clearTimeout(existing._dismissTimer);
         existing._dismissTimer = setTimeout(
           () => setToasts(p => p.filter(x => x.id !== existing.id)),
-          6000
+          life
         );
         return prev.map(t => t === existing ? { ...t, count: (t.count || 1) + 1 } : t);
       }
@@ -2131,7 +2134,7 @@ function App() {
       const entry = { id, message, kind, count: 1 };
       entry._dismissTimer = setTimeout(
         () => setToasts(p => p.filter(t => t.id !== id)),
-        6000
+        life
       );
       return [...prev, entry];
     });
@@ -23190,8 +23193,18 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                 // so a bad edit can be rolled back via "Restore last backup".
                 // Skipped in export mode — the live mod isn't being changed, so
                 // there's nothing to roll back.
+                // The region/character/army handlers below write with backup:false
+                // and rely on THIS snapshot, so a failed backup stops the Apply
+                // (it used to be logged and the edits written anyway).
                 if (!exportModeOn) {
-                  try { if (api.backupModFiles) await api.backupModFiles(); } catch (e) { console.warn("[backup] pre-save backup failed:", e); }
+                  let bk;
+                  try { bk = api.backupModFiles ? await api.backupModFiles() : { ok: false, error: "backup unavailable" }; }
+                  catch (e) { bk = { ok: false, error: e.message }; }
+                  if (!bk?.ok) {
+                    console.warn("[backup] pre-save backup failed:", bk);
+                    pushToast(`Nothing was saved: the backup taken before every Apply failed (${bk?.error || "unknown error"}). Close the game if it has the mod files open, then try again.`, "warning", 12000);
+                    return;
+                  }
                 }
                 for (const [regionKey, buildings] of pendingBuildings.entries()) {
                   try {

@@ -265,7 +265,9 @@ ipcMain.handle("backup-mod-files", async () => {
       catch (e) { failed.push(`${path.basename(p)}: ${e && e.message}`); }
     }
     if (failed.length) console.warn(`[backup] ${failed.length} of ${targets.length} backup(s) FAILED @ ${stamp}: ${failed.join("; ")}`);
-    if (!files) return { ok: false, error: `no backup could be written (${failed[0] || "unknown error"})`, failed };
+    // Any miss is a failure: the callers write every one of these files with
+    // backup:false, so a partial snapshot would let an edit land unbacked.
+    if (failed.length) return { ok: false, error: `backup failed for ${failed.join("; ")}`, failed, files };
     console.log(`[backup] mod files backed up @ ${stamp} (${files} of ${targets.length} files)`);
     return { ok: true, stamp, files, failed };
   } catch (e) { return { ok: false, error: e.message }; }
@@ -284,6 +286,9 @@ ipcMain.handle("list-mod-backups", async () => {
 });
 ipcMain.handle("restore-mod-backup", async (_event, stamp) => {
   try {
+    // The stamp is spliced into a path: "x/../../any" would name any .bak
+    // on disk and copy it over descr_strat. Stamps are newStamp() output.
+    if (stamp != null && !/^[\w-]+$/.test(String(stamp))) return { ok: false, error: "invalid backup stamp" };
     const targets = backupTargets();
     if (!targets.length) return { ok: false, error: "no active mod" };
     // Use the latest stamp if none given.

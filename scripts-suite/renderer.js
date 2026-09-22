@@ -491,7 +491,7 @@ async function saveBackToMod() {
     `Mod: ${modName}\n` +
     `Campaign: ${campaign}\n\n` +
     `Files: descr_strat.txt (campaign) + descr_regions.txt (base) + export_descr_buildings.txt (if a migration changed it)\n` +
-    `Backups of originals will be created in _backups folders.\n\n` +
+    `Each original is backed up next to itself (.provincia-<time>.bak) first; if any backup or write fails, nothing is changed.\n\n` +
     `This will OVERWRITE the mod files. Continue?`
   );
 
@@ -505,7 +505,7 @@ async function saveBackToMod() {
 
     if (result.success) {
       const files = result.saved ? result.saved.join(', ') : 'descr_strat.txt';
-      appendConsole(`Saved: ${files}. Backups in _backups folders.\n`, 'success');
+      appendConsole(`Saved: ${files}. Backups: .provincia-${result.backupStamp || '<time>'}.bak next to each file.\n`, 'success');
     } else {
       appendConsole(`Save failed: ${result.error}\n`, 'stderr');
     }
