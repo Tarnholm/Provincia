@@ -5,6 +5,14 @@
 // greppable in the working tree. Full authoritative history is in git.
 const CHANGELOG_ARCHIVE = [
   {
+    version: "0.9.1510",
+    date: "2026-09-21",
+    items: [
+      { type: "fix", text: "**Live saves: characters are filed under the right faction — or under none, never the wrong one.** Each character in a save was labelled with the last faction marker before it in the file. A save holds about 47 such markers for 239 factions, and a marker sits inside its faction's block rather than at its start, so the label was right for roughly one character in eight: every Roman governor was filed under a Seleucid rebel faction, and the family attribution built on those labels inherited it. Characters are now anchored on something certain — a governor belongs to the faction that owns the town he governs — and, where the save still has its campaign-start layout, everyone filed between two governors of the same faction, plus their relatives, takes that faction. Measured on a turn-1 and a turn-57 RIS save: hiding each governor in turn and re-deriving him was right 373 of 373 and 73 of 73 times. A character that cannot be pinned this way now shows no faction instead of a wrong one." },
+      { type: "change", text: "**Long campaigns get fewer labels, on purpose.** That layout does not survive a long campaign: characters who come of age later are filed into freed slots anywhere in the file. On a 102-turn all-AI save half the factions were split across the file and the same rule was right only three times in four, so the save reader now measures this on every save (the share of governors out of block order: 0% at turn 1, 4.5% at turn 57, 48% at turn 102) and, above 10%, labels the governors alone." },
+    ],
+  },
+  {
     version: "0.9.1509",
     date: "2026-09-21",
     items: [

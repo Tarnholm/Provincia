@@ -13,6 +13,19 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1515",
+    date: "2026-09-22",
+    items: [
+      { type: "fix", text: "**New Faction: two donors no longer damage the mod's files.** Building from `dummies` — the last faction in descr_sm_factions — copied the file's closing bracket into the new entry and wrote it after the end of the list. Building from `slave` — the last faction in every section of descr_character — carried the next section's header along with it, so the new faction's character types landed in the wrong section. Each block now ends where it really ends, and the clone goes in right after its donor." },
+      { type: "fix", text: "**New Faction: the new faction uses its own AI, and a failed write no longer leaves it half-made.** It was given a copy of the donor's AI personality, but its campaign entry still pointed at the donor's, so the copy did nothing. And the files were written one at a time: if one could not be written (the game holding it open, say), the ones before it stayed changed, and every retry said the faction “already exists”. Now the files land together or not at all, under one backup, with descr_strat last. Bring In a Faction and New Faction also build on what you already exported, instead of starting again from the live mod and losing your first faction, and refuse to write into a campaign other than the one on screen." },
+      { type: "fix", text: "**Nothing is written to your mod when its backup fails.** Apply takes a backup of the campaign files before it writes, and the settlement, character and army edits after it rely on that backup — but a failed backup was only logged and the edits went through anyway. Apply now stops and says why. The same rule now holds for replacing a building icon (a failed backup used to be followed by the write, and “revert” then deleted the icon), and the Scripts window's “Save back to mod” now writes all its files together with the same timestamped backups that “Restore last backup” reads, descr_strat last." },
+      { type: "fix", text: "**The building-image auto-fix never overwrites art again.** It promised not to, but it checked whether an image already existed with the exact capitalisation, while Windows ignores it: a culture whose image was named `#ROMAN_temple.tga` had it replaced with another culture's temple. It now matches names the way Windows does, and refuses to replace any file." },
+      { type: "fix", text: "**Live mode keeps up with every save, and starts without freezing.** After a save that had already been read, the next one could wait up to two minutes before it showed — an early exit left the reader marked “busy” until a safety timer cleared it. And starting live mode read the whole message log in one go, which froze the window on long campaigns and, past a few hundred megabytes, silently skipped placing armies from the log. It is now read in pieces in the background." },
+      { type: "improvement", text: "**Smaller fixes.** Notices stay up for as long as they were meant to (every one closed after six seconds). The warning at the faction ceiling says “240th”. Renaming or deleting the mod folder while Provincia watches it no longer trips the crash handler, and two file operations that take a path from the window now check it properly." },
+    ],
+  },
+
+  {
     version: "0.9.1514",
     date: "2026-09-22",
     items: [
@@ -45,15 +58,6 @@ const CHANGELOG = [
     date: "2026-09-22",
     items: [
       { type: "change", text: "**Internal: the save parsers are under test again — nothing changes on screen.** The tests that read real save files had lost the saves they needed, so fifteen of them were skipping: the unit reader, the ownership recovery, the faction records and the campaign counters all went unchecked. They run again, driven by saves rebuilt from this machine. Because those saves are older than the mod, each one is measured against a record of what the parsers produced when it was accepted rather than against the current mod data, and the drift between the two is now asserted rather than assumed (two settlements out of 1,310). This release carries no user-facing change; it exists so the next parser mistake is caught by a test instead of by a wrong number in a panel." },
-    ],
-  },
-
-  {
-    version: "0.9.1510",
-    date: "2026-09-21",
-    items: [
-      { type: "fix", text: "**Live saves: characters are filed under the right faction — or under none, never the wrong one.** Each character in a save was labelled with the last faction marker before it in the file. A save holds about 47 such markers for 239 factions, and a marker sits inside its faction's block rather than at its start, so the label was right for roughly one character in eight: every Roman governor was filed under a Seleucid rebel faction, and the family attribution built on those labels inherited it. Characters are now anchored on something certain — a governor belongs to the faction that owns the town he governs — and, where the save still has its campaign-start layout, everyone filed between two governors of the same faction, plus their relatives, takes that faction. Measured on a turn-1 and a turn-57 RIS save: hiding each governor in turn and re-deriving him was right 373 of 373 and 73 of 73 times. A character that cannot be pinned this way now shows no faction instead of a wrong one." },
-      { type: "change", text: "**Long campaigns get fewer labels, on purpose.** That layout does not survive a long campaign: characters who come of age later are filed into freed slots anywhere in the file. On a 102-turn all-AI save half the factions were split across the file and the same rule was right only three times in four, so the save reader now measures this on every save (the share of governors out of block order: 0% at turn 1, 4.5% at turn 57, 48% at turn 102) and, above 10%, labels the governors alone." },
     ],
   },
 
