@@ -7,7 +7,12 @@
 import React from "react";
 import { describe, it, expect, afterEach } from "vitest";
 import { createRoot } from "react-dom/client";
-import { flushSync } from "react-dom";
+import { act } from "react";
+
+// act() drains React's scheduler, promise chains included. A single
+// setTimeout(0) did not: under full-suite load the timer fired before React
+// rendered the roster, and clicking a town that was not there yet threw.
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 import NewFactionPanel from "./panels/NewFactionPanel.js";
 
 let container, root;
@@ -15,22 +20,22 @@ function mount(el) {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
-  flushSync(() => root.render(el));
+  act(() => root.render(el));
 }
-const settle = () => new Promise((r) => setTimeout(r, 0)).then(() => flushSync(() => { }));
+const settle = () => act(async () => { await new Promise((r) => setTimeout(r, 0)); });
 afterEach(() => {
-  if (root) { try { flushSync(() => root.unmount()); } catch { /* */ } root = null; }
+  if (root) { try { act(() => root.unmount()); } catch { /* */ } root = null; }
   if (container && container.parentNode) container.parentNode.removeChild(container);
   container = null;
   delete window.electronAPI;
 });
 const text = () => document.body.textContent;
-const click = (node) => flushSync(() => node.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+const click = (node) => act(() => node.dispatchEvent(new MouseEvent("click", { bubbles: true })));
 const button = (re) => [...document.querySelectorAll("button")].find((b) => re.test(b.textContent || ""));
 const typeIn = (sel, value) => {
   const el = document.querySelector(sel);
   const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-  flushSync(() => { setter.call(el, value); el.dispatchEvent(new Event("input", { bubbles: true })); });
+  act(() => { setter.call(el, value); el.dispatchEvent(new Event("input", { bubbles: true })); });
   return el;
 };
 
