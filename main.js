@@ -458,6 +458,9 @@ function setupModWatcher(modDataDir) {
         console.log(`[mod-watch] ${base} changed on disk → notified renderer`);
       }, 400);
     });
+    // A watched folder that is deleted or renamed emits 'error'; unhandled, it
+    // reached uncaughtException and the watch died silently.
+    w.on("error", (e) => console.warn("[mod-watch] watcher stopped:", e && e.message));
     modFileWatchers.push(w);
     console.log(`[mod-watch] watching ${modDataDir} for ${WATCHED_MOD_FILES.join(", ")}`);
   } catch (e) {
@@ -482,6 +485,7 @@ function setupModWatcher(modDataDir) {
           console.log("[mod-watch] faction icon TGA changed on disk → notified renderer");
         }, 400);
       });
+      wi.on("error", (e) => console.warn("[mod-watch] faction-icon watcher stopped:", e && e.message));
       modFileWatchers.push(wi);
       console.log(`[mod-watch] watching ${iconsDir} for icon TGA changes`);
     }

@@ -548,9 +548,11 @@ ipcMain.handle("delete-ai-baseline", async (_event, baselineFile) => {
   try {
     if (!baselineFile) return { error: "no file" };
     const dir = _baselineDir();
-    // containment: only ever delete inside our own baselines folder
-    if (path.resolve(baselineFile).indexOf(path.resolve(dir)) !== 0) return { error: "refusing to delete outside the baselines folder" };
-    fs.unlinkSync(baselineFile);
+    // containment: only ever delete inside our own baselines folder. A plain
+    // prefix test let <userData>/ai-baselines-old/x or ai-baselinesX.json through.
+    const safe = require("./pathSafety.js").containedPath(dir, baselineFile);
+    if (!safe) return { error: "refusing to delete outside the baselines folder" };
+    fs.unlinkSync(safe);
     return { ok: true };
   } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
 });
