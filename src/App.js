@@ -6036,8 +6036,10 @@ function App() {
     const mh = (CAMPAIGNS[mapCampaign]?.mapHeight || 350) - 1;
     for (const ev of events) {
       if (ev.type === "army_move") {
-        // For BESIEGE/ASSAULT, 'end' is the settlement — use 'start' (army's actual position)
-        const useFrom = ev.action === 'BESIEGE' || ev.action === 'ASSAULT' || ev.action === 'CAPTURE_RESIDENCE';
+        // For these, 'end' is the TARGET and the army stays on 'start' — same
+        // measured set as messageLogParser.STAYS_AT_START. CAPTURE_RESIDENCE
+        // was listed here too, but the army does end ON the town it takes.
+        const useFrom = ev.action === 'BESIEGE' || ev.action === 'ASSAULT' || ev.action === 'ATTACK' || ev.action === 'BLOCKADE' || ev.action === 'DISEMBARK';
         const mapX = useFrom ? ev.fromX : ev.toX;
         const mapY = mh - (useFrom ? ev.fromY : ev.toY);
         setArmiesData(prev => {

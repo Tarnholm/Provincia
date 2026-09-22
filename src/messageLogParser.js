@@ -348,4 +348,19 @@ function parseChunk(text) {
   return events;
 }
 
-module.exports = { parseLine, parseChunk, shortUuid };
+// Where the army STANDS after a move line. For these statuses end(x,y) is
+// the TARGET (the town besieged or stormed, the army attacked, the port
+// blockaded) and the army stays on start(x,y). Measured on a 97-turn log
+// (calibration/logs-archive/message_log-97turns.txt): the character's next
+// move started from `start` after BESIEGE 21/21, ASSAULT 22/22, ATTACK 42/42,
+// BLOCKADE 16/16, DISEMBARK 2/2 (never from `end`), while CAPTURE_RESIDENCE
+// 12/12 and CAPTURE_TILE 57/58 started from `end`. Using `end` for a siege put
+// the besieging army under the town's own icon (user report 2026-09-22).
+const STAYS_AT_START = new Set(["ATTACK", "BESIEGE", "ASSAULT", "BLOCKADE", "DISEMBARK"]);
+function restingTile(ev) {
+  return STAYS_AT_START.has(ev.status || ev.action)
+    ? { x: ev.fromX, y: ev.fromY }
+    : { x: ev.toX, y: ev.toY };
+}
+
+module.exports = { parseLine, parseChunk, shortUuid, restingTile, STAYS_AT_START };

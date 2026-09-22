@@ -8,7 +8,7 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
-const { parseLine: parseLogLineV2 } = require("./messageLogParser.js");
+const { parseLine: parseLogLineV2, restingTile } = require("./messageLogParser.js");
 
 // ── Live log watcher for Rome Remastered ──────────────────────────────────
 // Watches message_log.txt and campaign_ai_log.txt, tails new lines, sends to renderer.
@@ -327,14 +327,15 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
           // their passengers. Clears the passenger list so the fanout
           // below doesn't fire for ex-passengers.
           detectAndApplySplit(ev.charUuid, ev.armyUuid);
-          moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: ev.toX, y: ev.toY, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn: backfillTurn });
+          const at = restingTile(ev); // a siege's end(x,y) is the town, not where the army stands
+          moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: at.x, y: at.y, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn: backfillTurn });
           // Propagate to passengers: the leader is the one emitting
           // MOVING_NORMAL; lesser generals folded into this stack don't
           // emit their own move event, so synthesize one per passenger.
           const passengers = ev.charUuid ? armyPassengers.get(ev.charUuid) : null;
           if (passengers) {
             for (const p of passengers) {
-              moves.push({ name: p.name, faction: p.faction || ev.faction, role: ev.role, x: ev.toX, y: ev.toY, armyUuid: ev.armyUuid, charUuid: p.charUuid, turn: backfillTurn });
+              moves.push({ name: p.name, faction: p.faction || ev.faction, role: ev.role, x: at.x, y: at.y, armyUuid: ev.armyUuid, charUuid: p.charUuid, turn: backfillTurn });
             }
           }
         } else if (ev.type === "general_transfer") {
@@ -430,11 +431,12 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
             const turn = logPollTurnIdx;
             if (ev.type === "character_move") {
               detectAndApplySplit(ev.charUuid, ev.armyUuid);
-              moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: ev.toX, y: ev.toY, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn });
+              const at = restingTile(ev);
+              moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: at.x, y: at.y, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn });
               const passengers = ev.charUuid ? armyPassengers.get(ev.charUuid) : null;
               if (passengers) {
                 for (const p of passengers) {
-                  moves.push({ name: p.name, faction: p.faction || ev.faction, role: ev.role, x: ev.toX, y: ev.toY, armyUuid: ev.armyUuid, charUuid: p.charUuid, turn });
+                  moves.push({ name: p.name, faction: p.faction || ev.faction, role: ev.role, x: at.x, y: at.y, armyUuid: ev.armyUuid, charUuid: p.charUuid, turn });
                 }
               }
             } else if (ev.type === "general_transfer") {
