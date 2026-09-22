@@ -69,6 +69,34 @@ describe("scanFolderForCampaigns", () => {
     expect(path.basename(r.campaigns[0].found["descr_strat.txt"]).toLowerCase()).toBe("descr_strat.txt");
   });
 
+  // User report 2026-09-22: picking the RIS repo root listed
+  // _resources/backups/alternate_campaign, and every campaign got the LAST
+  // base/ the walk met — some other mod's regions and map.
+  it("a repo root: skips backups, gives each mod's campaign its OWN base/, keeps same-named campaigns of different mods apart", () => {
+    const { data, base, camp } = makeMod();
+    const repo = path.dirname(path.dirname(data)); // …/p5
+    const sub = path.join(repo, "_submods", "Sub", "data");
+    const subBase = path.join(sub, "world", "maps", "base");
+    const subCamp = path.join(sub, "world", "maps", "campaign", "sub_campaign");
+    const twin = path.join(repo, "_submods", "Twin", "data", "world", "maps", "campaign", "imperial_campaign");
+    const backup = path.join(repo, "_resources", "backups", "alternate_campaign");
+    for (const d of [subBase, subCamp, twin, backup]) fs.mkdirSync(d, { recursive: true });
+    for (const f of ["descr_regions.txt", "map_regions.tga"]) fs.writeFileSync(path.join(subBase, f), "sub:" + f);
+    fs.writeFileSync(path.join(subCamp, "descr_strat.txt"), "sub strat");
+    fs.writeFileSync(path.join(twin, "descr_strat.txt"), "twin strat");
+    fs.writeFileSync(path.join(backup, "descr_strat.txt"), "old strat");
+
+    const r = scanFolderForCampaigns(repo, opts().o);
+    const byDir = Object.fromEntries(r.campaigns.map((c) => [c.dir, c]));
+    expect(r.campaigns.some((c) => c.name === "alternate_campaign")).toBe(false);
+    expect(byDir[camp].found["map_regions.tga"]).toBe(path.join(base, "map_regions.tga"));
+    expect(byDir[subCamp].found["map_regions.tga"]).toBe(path.join(subBase, "map_regions.tga"));
+    expect(byDir[camp].rel).toBe(path.relative(repo, camp));
+    // both imperial_campaigns are listed, and the twin never borrows the submod's map
+    expect(r.campaigns.filter((c) => c.name === "imperial_campaign").length).toBe(2);
+    expect(byDir[twin].found["map_regions.tga"] || "").not.toBe(path.join(subBase, "map_regions.tga"));
+  });
+
   it("a folder with no campaign answers with an empty list, not an error", () => {
     root = fs.mkdtempSync(path.join(os.tmpdir(), "campscan-"));
     const r = scanFolderForCampaigns(root, opts().o);

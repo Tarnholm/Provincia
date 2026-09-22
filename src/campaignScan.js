@@ -22,6 +22,12 @@ const path = require("path");
 // map_heights.tga + map_ground_types.tga (2026-07-16): the Heights, Terrain and
 // Geography overlays sample these; dropping them from this list broke all three
 // on imported slots (v0.9.1301). The list is load-bearing — do not trim it.
+// Folders that hold copies, never the mod a user means to load. Picking a mod
+// repo root (C:/RIS) listed _resources/backups/alternate_campaign as a
+// campaign, and loading it filled the map with a months-old descr_strat
+// (user report 2026-09-22: a phantom "roman_senate" Marcus in Roma).
+const SKIP_DIRS = /^(_?backups?|_resources|_old|_?archive|\.git|node_modules|wiki|wiki-pages|wiki-notes)$/i;
+
 const CAMPAIGN_FILES = ["descr_regions.txt", "descr_strat.txt", "descr_win_conditions.txt", "map_regions.tga", "map_heights.tga", "map_ground_types.tga"];
 const SHARED_FILES = ["descr_sm_factions.txt"];
 
@@ -48,6 +54,7 @@ function scanFolderForCampaigns(dir, opts) {
           dirFiles.get(dirPath)[n] = path.join(dirPath, entry.name);
         }
       } else if (entry.isDirectory()) {
+        if (SKIP_DIRS.test(entry.name)) continue;
         scan(path.join(dirPath, entry.name), depth + 1);
       }
     }
@@ -66,18 +73,43 @@ function scanFolderForCampaigns(dir, opts) {
   }
 
   // Same folder name twice (a backup copy deeper in the tree) → keep the fullest.
+  // Two MODS may both ship imperial_campaign (RIS and RIS_Four_Romans): those
+  // are different campaigns and both are listed. Only same-named folders of
+  // one mod (a stray copy inside it) collapse. A standard campaign's mod is
+  // the data root four levels up (data/world/maps/campaign/<name>).
+  const modOf = (c) => (path.basename(path.dirname(c.dir)).toLowerCase() === "campaign"
+    ? path.resolve(c.dir, "..", "..", "..", "..").toLowerCase() : "");
   const byName = new Map();
   for (const c of found) {
-    const key = c.name.toLowerCase();
+    const key = c.name.toLowerCase() + "|" + modOf(c);
     const existing = byName.get(key);
     if (!existing || Object.keys(c.found).length > Object.keys(existing.found).length) byName.set(key, c);
   }
   const campaigns = [...byName.values()];
 
-  // RTW inheritance: a campaign dir takes what it lacks from base/.
+  // RTW inheritance: a campaign dir takes what it lacks from ITS OWN mod's
+  // base/ (…/data/world/maps/campaign/<name> → …/data/world/maps/base) and its
+  // own data root's shared files. `baseFound` is simply the last base/ the walk
+  // met, so with several mods under the picked folder (a repo root holding a
+  // main mod and its submods) it handed every campaign some other mod's
+  // descr_regions and map_regions. It stays as the fallback for a lone base/.
+  const own = (p) => dirFiles.get(path.resolve(p)) || dirFiles.get(p) || null;
   for (const c of campaigns) {
-    for (const f of CAMPAIGN_FILES) if (!c.found[f] && baseFound[f]) c.found[f] = baseFound[f];
-    for (const sf of SHARED_FILES) if (!c.found[sf] && sharedFound[sf]) c.found[sf] = sharedFound[sf];
+    const isStd = path.basename(path.dirname(c.dir)).toLowerCase() === "campaign";
+    const ownBase = isStd ? own(path.join(c.dir, "..", "..", "base")) : null;
+    const ownData = isStd ? own(path.join(c.dir, "..", "..", "..", "..")) : null;
+    for (const f of CAMPAIGN_FILES) if (!c.found[f]) {
+      if (ownBase && ownBase[f]) c.found[f] = ownBase[f];
+      // a standard campaign with no base/ of its own is a submod: leave the gap
+      // for fillCampaignFilesFromBase below, which finds ITS base mod
+      else if (!isStd && baseFound[f]) c.found[f] = baseFound[f];
+    }
+    for (const sf of SHARED_FILES) if (!c.found[sf]) {
+      if (ownData && ownData[sf]) c.found[sf] = ownData[sf];
+      else if (sharedFound[sf]) c.found[sf] = sharedFound[sf];
+    }
+    // where it came from, for the picker: two mods can both ship imperial_campaign
+    c.rel = path.relative(dir, c.dir) || path.basename(c.dir);
   }
 
   // Submod trees ship only the files they change (2026-08-06): inherit what is

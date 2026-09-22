@@ -22482,7 +22482,7 @@ Click for unit card`}
             const preferred = result.campaigns.find((c) => c.name === lastCampaign)
               || result.campaigns.find((c) => c.name === "imperial_campaign")
               || result.campaigns[0];
-            setImportPicker({ suffix: camp.suffix, campaigns: result.campaigns, camp, selected: preferred ? preferred.name : null });
+            setImportPicker({ suffix: camp.suffix, campaigns: result.campaigns, camp, selected: preferred ? (preferred.dir || preferred.name) : null });
           }
         };
 
@@ -22668,11 +22668,11 @@ Click for unit card`}
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
                         {importPicker.campaigns.map((c) => {
                           const fileCount = Object.keys(c.found).length;
-                          const on = importPicker.selected === c.name;
+                          const on = importPicker.selected === (c.dir || c.name);
                           return (
-                            <button key={c.name} aria-pressed={on}
-                              title="Click to choose, double-click to load straight away"
-                              onClick={() => setImportPicker((p) => (p ? { ...p, selected: c.name } : p))}
+                            <button key={c.dir || c.name} aria-pressed={on}
+                              title={`${c.dir || c.name}\nClick to choose, double-click to load straight away`}
+                              onClick={() => setImportPicker((p) => (p ? { ...p, selected: c.dir || c.name } : p))}
                               onDoubleClick={async () => {
                                 setImportPicker(null);
                                 await importCampaignFiles(c, importPicker.camp);
@@ -22680,7 +22680,9 @@ Click for unit card`}
                               padding: "5px 12px", borderRadius: 6, border: "1px solid #e8a030",
                               background: on ? "#e8a030" : "rgba(232,160,48,0.12)", color: on ? "#1a1a1a" : "#e8a030", fontWeight: 600,
                               cursor: "pointer", fontSize: "0.78rem",
-                            }}>{on ? "✓ " : ""}{formatCampaignName(c.name)} ({fileCount} files)</button>
+                            }}>{on ? "✓ " : ""}{formatCampaignName(c.name)} ({fileCount} files)
+                              {c.rel && c.rel !== c.name && <span style={{ display: "block", fontWeight: 400, fontSize: "0.68rem", opacity: 0.75 }}>{c.rel}</span>}
+                            </button>
                           );
                         })}
                       </div>
@@ -22698,7 +22700,7 @@ Click for unit card`}
                   }}>Cancel</button>
                 )}
                 {!fileImportDone && importPicker && (() => {
-                  const chosen = importPicker.campaigns.find((c) => c.name === importPicker.selected);
+                  const chosen = importPicker.campaigns.find((c) => (c.dir || c.name) === importPicker.selected);
                   return (
                     <button disabled={!chosen}
                       onClick={async () => {
