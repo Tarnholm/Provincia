@@ -22471,8 +22471,16 @@ Click for unit card`}
           if (result.campaigns.length === 1) {
             await importCampaignFiles(result.campaigns[0], camp);
           } else {
-            setStatus(camp.suffix, `Found ${result.campaigns.length} campaigns — pick one:`, "#e8a030");
-            setImportPicker({ suffix: camp.suffix, campaigns: result.campaigns, camp });
+            // First-run report: the campaign chips looked like labels and the
+            // footer showed only Cancel, so the dialog read as stuck. A choice
+            // is now pre-selected and the footer carries a Load button.
+            setStatus(camp.suffix, `This folder holds ${result.campaigns.length} campaigns — choose the one to load, then press Load.`, "#e8a030");
+            let lastCampaign = null;
+            try { lastCampaign = JSON.parse(localStorage.getItem("lastImport_" + camp.suffix) || "null")?.campaign || null; } catch {}
+            const preferred = result.campaigns.find((c) => c.name === lastCampaign)
+              || result.campaigns.find((c) => c.name === "imperial_campaign")
+              || result.campaigns[0];
+            setImportPicker({ suffix: camp.suffix, campaigns: result.campaigns, camp, selected: preferred ? preferred.name : null });
           }
         };
 
@@ -22612,7 +22620,9 @@ Click for unit card`}
                     </div>
                   ))}
                   <div style={{ fontSize: "0.7rem", color: "#779948", marginTop: 6 }}>
-                    Re-pick a folder below to update, or use the "Re-import from last folder" button if the source files changed on disk.
+                    {loadedImports.some((li) => li.suffix === "classic" || li.suffix === "imperial")
+                      ? `Re-pick a folder below to update, or use the "Re-import from last folder" button if the source files changed on disk.`
+                      : "Pick the campaign folder below to finish loading the mod."}
                   </div>
                 </div>
               )}
@@ -22656,15 +22666,19 @@ Click for unit card`}
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
                         {importPicker.campaigns.map((c) => {
                           const fileCount = Object.keys(c.found).length;
+                          const on = importPicker.selected === c.name;
                           return (
-                            <button key={c.name} onClick={async () => {
-                              setImportPicker(null);
-                              await importCampaignFiles(c, importPicker.camp);
-                            }} style={{
+                            <button key={c.name} aria-pressed={on}
+                              title="Click to choose, double-click to load straight away"
+                              onClick={() => setImportPicker((p) => (p ? { ...p, selected: c.name } : p))}
+                              onDoubleClick={async () => {
+                                setImportPicker(null);
+                                await importCampaignFiles(c, importPicker.camp);
+                              }} style={{
                               padding: "5px 12px", borderRadius: 6, border: "1px solid #e8a030",
-                              background: "rgba(232,160,48,0.12)", color: "#e8a030", fontWeight: 600,
+                              background: on ? "#e8a030" : "rgba(232,160,48,0.12)", color: on ? "#1a1a1a" : "#e8a030", fontWeight: 600,
                               cursor: "pointer", fontSize: "0.78rem",
-                            }}>{formatCampaignName(c.name)} ({fileCount} files)</button>
+                            }}>{on ? "✓ " : ""}{formatCampaignName(c.name)} ({fileCount} files)</button>
                           );
                         })}
                       </div>
@@ -22681,6 +22695,23 @@ Click for unit card`}
                     background: "#333", color: "#ccc", cursor: "pointer",
                   }}>Cancel</button>
                 )}
+                {!fileImportDone && importPicker && (() => {
+                  const chosen = importPicker.campaigns.find((c) => c.name === importPicker.selected);
+                  return (
+                    <button disabled={!chosen}
+                      onClick={async () => {
+                        if (!chosen) return;
+                        const target = importPicker.camp;
+                        setImportPicker(null);
+                        await importCampaignFiles(chosen, target);
+                      }}
+                      style={{
+                        padding: "6px 16px", borderRadius: 6, border: "1px solid #e8a030",
+                        background: chosen ? "#e8a030" : "#333", color: chosen ? "#1a1a1a" : "#777",
+                        cursor: chosen ? "pointer" : "default", fontWeight: 700,
+                      }}>{chosen ? `Load ${formatCampaignName(chosen.name)}` : "Choose a campaign"}</button>
+                  );
+                })()}
                 {!fileImportDone && isElectron && window.electronAPI?.scanFolder && (() => {
                   // Show a quick "Re-import from last folder" button if
                   // there's a saved last-import path. Lets the teammate
