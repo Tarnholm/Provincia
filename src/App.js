@@ -6809,7 +6809,11 @@ function App() {
   // picker to the live saves dir when one is active.
   const runTimelineScan = useCallback(async () => {
     const api = window.electronAPI;
-    if (!api || !api.scanSavesTimeline || !modDataDir) return;
+    // Say why rather than doing nothing: a button that answers a click with
+    // silence reads exactly like a broken one (which this was — see
+    // src/panelHandlerProps.test.js).
+    if (!api || !api.scanSavesTimeline) { pushToast("Save scanning is unavailable in this build.", "warning"); return; }
+    if (!modDataDir) { pushToast("Load a mod first — the scan reads each save against its campaign data.", "info", 6000); return; }
     let dir = null;
     if (api.selectFolder) {
       // selectFolder resolves to { dir, campaigns, ... } — use the path string.
@@ -23516,7 +23520,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           onToggleScheduleMarkers={() => setShowScheduleMarkers(prev => !prev)}
           timeline={campaignTimeline}
           scanning={timelineScanning}
-          runTimelineScan={runTimelineScan}
+          onScanTimeline={runTimelineScan}
           modDataDir={modDataDir}
         />
       )}
@@ -23594,7 +23598,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           modDataDir={modDataDir}
           timeline={campaignTimeline}
           scanning={timelineScanning}
-          runTimelineScan={runTimelineScan}
+          onScanTimeline={runTimelineScan}
           factionDisplayNames={factionDisplayNames}
           onClose={() => setShowCampaignAutopsy(false)}
         />
