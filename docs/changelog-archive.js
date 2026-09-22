@@ -5,6 +5,37 @@
 // greppable in the working tree. Full authoritative history is in git.
 const CHANGELOG_ARCHIVE = [
   {
+    version: "0.9.1506",
+    date: "2026-08-31",
+    items: [
+      { type: "feature", text: "**Crash Reporter v0.1.56: every report now ends with a verdict.** Until now a report listed the evidence and left the conclusion to whoever read it. It now states one, on its own line directly under the status, where it cannot be cut off. Four verdicts, and which one you get decides who picks the report up. **MOD-SIDE** means it is fixable in the mod's own data, and where the engine named a file and a line, the report quotes that line back from the copy the game actually loaded — a lookup only the tester's machine can do, since any other copy is a different branch or a different build. **ENGINE** means the game's own fault or a hard engine limit, like the 16-bit string ref-count that wraps on multi-hour sessions: mitigation only, nothing to fix on our side. **LOCAL** means one machine — a driver, an overlay, or the tester's own save. That bucket exists because the telemetry has a whole class that fits neither of the others: one crash address accounts for 15 sessions from a single tester on a single graphics card, and chasing it as a mod bug would burn time on something nobody else can reproduce. **CANNOT PIN DOWN** is the honest default, and it names the one piece of evidence that would settle it, so the report asks for the save while the tester still has it. The most common crash address in the whole channel stays in that last bucket on purpose — it is measured to death and still unexplained, and promoting it to a real verdict would be worse than staying quiet. Across the 450 sessions already in telemetry, of the 120 crashes about one in five now arrives already triaged. One limit worth knowing: the reporter on a tester's PC only ever sees that one PC, so everything it knows about the other testers is baked in when the build is made. An out-of-date reporter gives out-of-date verdicts." },
+    ],
+  },
+
+  {
+    version: "0.9.1505",
+    date: "2026-08-16",
+    items: [
+      { type: "fix", text: "**Crash Reporter v0.1.55: reports reach the channel again.** The report channel's Discord webhook was deleted at Discord's end, so for a while every crash report and every dump failed to upload — with the error landing on the tester's machine and nothing looking wrong from here. The reporter now carries a fresh webhook and, more usefully, repairs itself: your saved `crash_reporter.ini` keeps its settings across updates, so an ini pinned to a retired webhook used to stay broken forever. Such a webhook is now swapped for the current one and the ini rewritten, and a webhook that dies mid-run is retried on the current one instead of losing the report. Leaving `webhook_url` blank means use the one built into the reporter, which is what you want; set it to `none` to stop uploading." },
+    ],
+  },
+
+  {
+    version: "0.9.1504",
+    date: "2026-08-16",
+    items: [
+      { type: "feature", text: "**Crash Reporter v0.1.54: 3h+ sessions are marked.** A session that ran past three hours now says so on the report's Session line — ⚠ **3h+ session**, with the advice that matters: save and restart every ~2 h. The engine's string ref-count is 16 bits and wraps after hours of play, and until now the reporter only mentioned it once the assert had already fired — too late for that session. The telemetry listing carries the same mark, on older reports too, so long sessions are easy to pick out at a glance. Long sessions are not more crash-prone overall (20.1% vs 25.6% under 3 h across 1,971 sessions) — the mark is about that one CTD class and claims nothing more." },
+    ],
+  },
+
+  {
+    version: "0.9.1503",
+    date: "2026-08-12",
+    items: [
+      { type: "feature", text: "**Settlement Processor Suite 0.16.26: farm bump exceptions can be limited by settlement size.** New **Bump Exception Levels** set in Farms — the same Levels list Urban and Rural Exploits already have. Remove a level (e.g. `large_town`) and settlements of that size always take the full bump, with both the per-chain rules and the global fertility exception switched off for them. Default lists every level, so nothing changes until you prune it. On RIS, dropping `large_town` demotes 87 large_towns one level and takes the farm off 20 more." },
+    ],
+  },
+  {
     version: "0.9.1502",
     date: "2026-08-12",
     items: [
