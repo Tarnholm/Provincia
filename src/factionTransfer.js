@@ -300,4 +300,4 @@ function planFactionImport({ targetText, sourceText, faction, settlements = [], 
   return { text: lines.join(eol), summary, warnings, errors: [] };
 }
 
-module.exports = { readFactionRoster, settlementOwners, planFactionImport, factionBlocks, replaceCoords };
+module.exports = { readFactionRoster, settlementOwners, planFactionImport, factionBlocks, settlementExtent, replaceCoords };

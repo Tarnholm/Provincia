@@ -84,6 +84,7 @@ import CrashReporterPanel from "./panels/CrashReporterPanel";
 import TraitExplorerPanel from "./panels/TraitExplorerPanel";
 import ExtinctionWatchPanel from "./panels/ExtinctionWatchPanel";
 import FactionTransferPanel from "./panels/FactionTransferPanel";
+import NewFactionPanel from "./panels/NewFactionPanel";
 import CampaignAutopsyPanel from "./panels/CampaignAutopsyPanel";
 import BuildOrderPanel from "./panels/BuildOrderPanel";
 import DefinitionLocatorPanel from "./panels/DefinitionLocatorPanel";
@@ -12105,6 +12106,7 @@ function App() {
   const [showTraitExplorer, setShowTraitExplorer] = useState(false); // 🎭 trait browser (2026-07-17)
   const [showExtinctionWatch, setShowExtinctionWatch] = useState(false); // ☠ living adult males per faction (2026-09-21)
   const [showFactionTransfer, setShowFactionTransfer] = useState(false); // ☥ wake a dormant faction from the fuller mod (2026-09-22)
+  const [showNewFaction, setShowNewFaction] = useState(false); // ☥ create a faction the mod has never had (2026-09-22)
   const extinctionSettlementCount = useMemo(() => Object.fromEntries(Object.entries(factionRegionsMap || {}).map(([f, rs]) => [f, Array.isArray(rs) ? rs.length : 0])), [factionRegionsMap]);
   const [showCampaignAutopsy, setShowCampaignAutopsy] = useState(false); // ⚰ campaign post-mortem (2026-07-17)
   const [showBuildOrder, setShowBuildOrder] = useState(false); // 🔨 build-order payback ranking (2026-07-17)
@@ -15508,6 +15510,7 @@ function App() {
                       { icon: "🕊", label: "Diplomacy Heatmap", color: "#d8a0a0", desc: "NxN heatmap of the live diplomacy matrix — war blocs and alliance clusters at a glance.", open: () => setShowDiploHeatmap(true) },
                       { icon: "🎭", label: "Trait Explorer", color: "#c9b8e0", desc: "Browse every character trait — filter by effect (tax, law, command…), see levels/thresholds/effects, and in live mode who carries each.", open: () => setShowTraitExplorer(true) },
                       { icon: "☥", label: "Bring In a Faction", color: "#a8c8e0", desc: "Submods leave most factions dormant — RIS_Light 137 of 239, RIS_Classic 183. Wake one: pick its settlements on THIS map (suggested from what it holds in the fuller mod, with the current owner shown) and choose which of its characters, armies and family to copy over. Writes descr_strat with a backup.", open: () => setShowFactionTransfer(true) },
+                      { icon: "☥", label: "New Faction", color: "#a8c8e0", desc: "Create a faction the mod has never had. Pick one to build it from — it inherits that faction's culture, banners, strat models and AI, in the seven files the engine demands — then give it a token, a name, at least one settlement (handed over from its current owner) and the leader and heir without which the engine destroys it on turn one. Names come from the donor's name pool. Recruitment is yours to pick. Every file is backed up first.", open: () => setShowNewFaction(true) },
                       { icon: "☠", label: "Extinction Watch", color: "#e0a090", desc: "Which factions are one death from destruction — a faction dies with its last living male family member, however much land it holds. Living adult males per faction at campaign start, leader and heir, boys about to come of age, and lines that stand on a single tile.", open: () => setShowExtinctionWatch(true) },
                       { icon: "⚰", label: "Campaign Autopsy", color: "#cf8f6a", desc: "Post-mortem over a scanned saves timeline — each faction's settlement/treasury/army arc, when they peaked, declined or were wiped, and who won.", open: () => setShowCampaignAutopsy(true) },
                       { icon: "🔨", label: "Build-Order Optimizer", color: "#d8c088", desc: "For the selected settlement: rank its buildable structures by payback time (cost ÷ extra income per turn).", open: () => { if (lockedRegionInfo || regionInfo) setShowBuildOrder(true); else pushToast("Select a region first — the optimizer works on the selected settlement.", "info", 5000); } },
@@ -23606,6 +23609,15 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
           factionDisplayNames={factionDisplayNames}
           pushToast={pushToast}
           onClose={() => setShowFactionTransfer(false)}
+        />
+      )}
+      {showNewFaction && (
+        <NewFactionPanel
+          modDataDir={armyModDataDir}
+          campaign={importedCampaignName}
+          factionDisplayNames={factionDisplayNames}
+          pushToast={pushToast}
+          onClose={() => setShowNewFaction(false)}
         />
       )}
       {showExtinctionWatch && (

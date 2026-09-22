@@ -37,6 +37,9 @@
 // reads or writes a disk.
 "use strict";
 
+const { settlementOwners, settlementExtent } = require("./factionTransfer.js");
+const { REGION_LINE_RE } = require("./stratTokens.js");
+
 const TOKEN = /^[a-z][a-z0-9_]*$/;
 const strip = (l) => { const i = l.indexOf(";"); return i < 0 ? l : l.slice(0, i); };
 const eolOf = (t) => (t.includes("\r\n") ? "\r\n" : "\n");
@@ -46,6 +49,13 @@ const tokenRe = (id) => new RegExp("(^|[^A-Za-z0-9_])" + id + "(?![A-Za-z0-9_])"
 const swapToken = (line, from, to) => line.replace(tokenRe(from), (m, p) => p + to);
 
 // ── descr_sm_factions: the entry, from `\t"id":` to the next one ───────────
+// Every faction declared in descr_sm_factions, in file order. This is the
+// count that matters for the engine's ceiling, and the list of possible donors.
+function listFactions(smText) {
+  if (!smText) return [];
+  return linesOf(smText).map((l) => (strip(l).match(/^\t"(\w+)":\s*$/) || [])[1]).filter(Boolean);
+}
+
 function smEntry(text, id) {
   const lines = linesOf(text);
   const heads = [];
@@ -248,4 +258,184 @@ function planNewFaction({ files = {}, donor, newId, displayName, description, cu
   return { edits, artCopies: art, summary, warnings, errors: [] };
 }
 
-module.exports = { planNewFaction, smEntry, factionBlocks, cloneBlocks, pathRenamer, TOKEN };
+// ── the campaign side ───────────────────────────────────────────────────────
+// A faction in the scaffolding files still does not play: descr_strat has to
+// declare it, give it a town, and give it a FAMILY. RTW destroys a faction the
+// moment its last living male family member dies, so a leader and an heir are
+// the minimum for one that survives its first turn — the tool refuses without
+// them (user rule, 2026-09-22).
+//
+// Names are NOT minted. descr_sm_factions points the faction at a namelist pool
+// and those names are already registered everywhere the engine looks, so the
+// leader and heir are drawn from that pool; nothing has to be added to
+// names.txt, descr_names_lookup or descr_namelists.
+
+// A pool's names, following one level of "inherit".
+function readNamelist(namelistsText, pool, depth) {
+  if (!namelistsText || !pool) return [];
+  const re = new RegExp('"' + pool + '"\\s*:\\s*\\{', "g");
+  const m = re.exec(namelistsText);
+  if (!m) return [];
+  // the pool object, to its closing brace
+  let i = m.index + m[0].length, depthB = 1;
+  while (i < namelistsText.length && depthB > 0) {
+    const c = namelistsText[i];
+    if (c === "{") depthB++; else if (c === "}") depthB--;
+    i++;
+  }
+  const body = namelistsText.slice(m.index, i);
+  // only what is inside the "names" [ … ] array — "inherit" holds a POOL name,
+  // not a person, and reading it as one christened a leader "iranian_men".
+  const arr = body.match(/"names"\s*:?\s*\[([\s\S]*?)\]/);
+  const names = arr ? [...arr[1].matchAll(/"([^"]+)"/g)].map((x) => x[1]) : [];
+  const inherit = (body.match(/"inherit"\s*:\s*"([^"]+)"/) || [])[1];
+  const parent = inherit && (depth || 0) < 3 ? readNamelist(namelistsText, inherit, (depth || 0) + 1) : [];
+  const seen = new Set();
+  return [...names, ...parent].filter((n) => (seen.has(n) ? false : seen.add(n)));
+}
+
+/**
+ * Declare the new faction in a campaign and give it a home.
+ *
+ *   stratText     the campaign
+ *   newId         the new faction token
+ *   after         put its block after this faction's (keeps the file tidy)
+ *   aiLabel       e.g. "ai_east"
+ *   settlements   [region, …] on this map, handed over from their current owner
+ *   leader/heir   { name, age } — both required
+ *   at            { x, y } for the characters
+ *   playable      list it as playable rather than nonplayable
+ */
+function planFactionStratEntry({ stratText, newId, after, aiLabel = "ai_barbarian", settlements = [], leader = null, heir = null, at = null, denari = 5000, playable = false } = {}) {
+  const errors = [], warnings = [];
+  const fail = (m) => ({ text: stratText, summary: null, warnings, errors: [m] });
+  if (!stratText || !newId) return fail("a campaign and a faction id are required");
+  const id = String(newId).toLowerCase();
+  const eol = eolOf(stratText);
+  let lines = linesOf(stratText);
+
+  if (linesOf(stratText).some((l) => new RegExp("^faction\\s+" + id + "\\s*,").test(strip(l)))) return fail(`"${id}" already has a block in this campaign`);
+  if (!leader || !leader.name) return fail("a new faction needs a leader — without a family member it is destroyed on the first turn");
+  if (!heir || !heir.name) return fail("a new faction needs an heir as well as a leader");
+  if (!settlements.length) return fail("a new faction needs at least one settlement, or it is destroyed at once");
+  if (!at || at.x == null || at.y == null) return fail("no map position for the leader and heir");
+
+  // 1. take the settlements from whoever holds them
+  const owners = settlementOwners(stratText);
+  const taken = [];
+  for (const region of settlements) {
+    const o = owners[region];
+    if (!o) return fail(`no settlement in region "${region}" on this map`);
+    taken.push({ region, from: o.faction, level: o.level });
+    if (o.faction !== "slave") warnings.push(`${region} is taken from ${o.faction}, which loses a settlement`);
+  }
+  // Taking a faction's LAST town destroys it on turn one — the same rule that
+  // makes the leader and heir mandatory here. Worth saying out loud.
+  for (const f of new Set(taken.map((t) => t.from))) {
+    if (f === "slave") continue;
+    const held = Object.keys(owners).filter((k) => owners[k].faction === f);
+    if (held.every((k) => taken.some((t) => t.region === k))) warnings.push(`${f} is left with NO settlements and will be destroyed — leave it one, or expect it gone`);
+  }
+  const cuts = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (!/^settlement\b/.test(strip(lines[i]).trim())) continue;
+    const end = settlementExtent(lines, i);
+    const body = lines.slice(i, end).map(strip);
+    const rm = (body.find((l) => REGION_LINE_RE.test(l)) || "").match(REGION_LINE_RE);
+    if (rm && taken.some((t) => t.region === rm[1])) cuts.push({ region: rm[1], start: i, end, lines: lines.slice(i, end) });
+    i = end - 1;
+  }
+  for (const c of cuts.slice().sort((a, b) => b.start - a.start)) lines.splice(c.start, c.end - c.start);
+
+  // 2. declare it, next to the faction it was cloned from where possible
+  let declared = false;
+  const listName = playable ? "playable" : "nonplayable";
+  for (let i = 0; i < lines.length && !declared; i++) {
+    if (strip(lines[i]).trim() !== listName) continue;
+    let j = i + 1;
+    while (j < lines.length && strip(lines[j]).trim() !== "end") j++;
+    const near = after ? lines.slice(i + 1, j).findIndex((l) => strip(l).trim() === after) : -1;
+    const atIdx = near >= 0 ? i + 1 + near + 1 : j;
+    const sample = lines[i + 1] || "\t" + id;
+    const indent = (sample.match(/^\s*/) || [""])[0] || "\t";
+    lines.splice(atIdx, 0, indent + id);
+    declared = true;
+  }
+  if (!declared) return fail(`this campaign has no "${listName}" list to declare the faction in`);
+
+  // 3. the faction block, after the donor's
+  const blocks = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = strip(lines[i]).match(/^faction\s+([a-z_0-9]+)\s*,/i);
+    if (m) blocks.push({ faction: m[1].toLowerCase(), start: i });
+  }
+  if (!blocks.length) return fail("this campaign has no faction blocks");
+  for (let k = 0; k < blocks.length; k++) blocks[k].end = k + 1 < blocks.length ? blocks[k + 1].start : lines.length;
+  const host = blocks.find((b) => b.faction === String(after || "").toLowerCase()) || blocks[blocks.length - 1];
+
+  const body = [`faction\t${id}, ${aiLabel}`, `denari\t${denari}`];
+  for (const t of taken) body.push(...cuts.find((c) => c.region === t.region).lines);
+  body.push(`character\t${leader.name}, named character, leader, age ${leader.age || 40}, , x ${at.x}, y ${at.y}`);
+  body.push(`character\t${heir.name}, named character, heir, age ${heir.age || 20}, , x ${at.x}, y ${at.y}`);
+  body.push("");
+  lines.splice(host.end, 0, ...body);
+
+  return {
+    text: lines.join(eol),
+    summary: { faction: id, declaredAs: listName, settlements: taken, leader: leader.name, heir: heir.name, at, denari },
+    warnings, errors: [],
+  };
+}
+
+// ── recruitment ─────────────────────────────────────────────────────────────
+// A faction may only recruit and build what names it in export_descr_buildings.
+// Every `factions { … }` list that names the donor is an offer the new faction
+// can be added to; the user picks which (they asked to choose rather than take
+// the lot — one faction is named on ~260 lines of RIS's EDB).
+
+function listRecruitOptions(edbText, donor) {
+  if (!edbText || !donor) return [];
+  const lines = linesOf(edbText);
+  const out = [];
+  let building = null, level = null;
+  const has = tokenRe(donor);
+  for (let i = 0; i < lines.length; i++) {
+    const s = strip(lines[i]);
+    const b = s.match(/^building\s+(\w+)/); if (b) { building = b[1]; level = null; }
+    // the shared `alias <name>` chains sit outside any building and grant just
+    // as much, so they are named rather than left blank in the picker
+    const a = s.match(/^\s*alias\s+(\w+)/); if (a) { building = "alias " + a[1]; level = null; }
+    const r = s.match(/^\s*recruit(?:_pool)?\s+"([^"]+)"/);
+    const lv = !r && s.match(/^\s*(\w+)\s+requires\b/); if (lv) level = lv[1];
+    if (!/\bfactions\s*\{/.test(s)) continue;
+    // `requires not factions { … }` is an EXCLUSION: putting the new token in it
+    // would forbid the thing rather than grant it. A faction absent from such a
+    // list is already allowed, so there is nothing to offer.
+    if (/\bnot\s+factions\s*\{/.test(s)) continue;
+    has.lastIndex = 0;
+    if (!has.test(s)) continue;
+    out.push({ line: i, building, level, unit: r ? r[1] : null, kind: r ? "recruit" : "building", text: s.trim().slice(0, 160) });
+  }
+  return out;
+}
+
+function planRecruitment({ edbText, donor, newId, lines: picked = [] } = {}) {
+  if (!edbText || !donor || !newId) return { text: edbText, changed: 0, errors: ["edbText, donor and newId are required"] };
+  const id = String(newId).toLowerCase();
+  const eol = eolOf(edbText);
+  const lines = linesOf(edbText);
+  const want = new Set(picked);
+  let changed = 0;
+  for (const i of want) {
+    const l = lines[i];
+    if (l == null) continue;
+    const re = new RegExp("(factions\\s*\\{[^}]*?)(" + donor + ")(\\s*[,}])", "i");
+    if (/\bnot\s+factions\s*\{/.test(strip(l))) continue; // an exclusion — see listRecruitOptions
+    if (!re.test(strip(l))) continue;
+    lines[i] = l.replace(re, (m, a, d, z) => a + d + ", " + id + z);
+    changed++;
+  }
+  return { text: lines.join(eol), changed, errors: [] };
+}
+
+module.exports = { planNewFaction, listFactions, planFactionStratEntry, planRecruitment, listRecruitOptions, readNamelist, smEntry, factionBlocks, cloneBlocks, pathRenamer, TOKEN };

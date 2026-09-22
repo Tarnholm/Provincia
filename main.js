@@ -2214,6 +2214,17 @@ registerFactionTransferHandlers(ipcMain, {
   _writeLog: (s) => _writeLog(s),
 });
 
+// Create a faction the mod has never had, by cloning a donor across the seven
+// files the engine demands for every faction — see src/newFactionHandlers.js.
+const { registerNewFactionHandlers } = require("./src/newFactionHandlers.js");
+registerNewFactionHandlers(ipcMain, {
+  getActiveModDataDir: () => activeModDataDir,
+  getModExportDir: () => _modExportDir,
+  getBaseGameDataDir: () => getVanillaDataDir(),
+  modOut,
+  _writeLog: (s) => _writeLog(s),
+});
+
 registerModEditingHandlers(ipcMain, {
   getActiveModDataDir: () => activeModDataDir,
   getModExportDir: () => _modExportDir,
