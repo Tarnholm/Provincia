@@ -65,24 +65,35 @@ function smEntry(text, id) {
   }
   const k = heads.findIndex((h) => h.id === id);
   if (k < 0) return null;
-  const end = k + 1 < heads.length ? heads[k + 1].i : lines.length;
+  // The entry ends at its own closing `\t},` — not at the next entry, and above
+  // all not at end of file: the LAST entry (RIS: dummies) used to run on to
+  // the file's closing `],`, and the clone carried that bracket with it.
+  const limit = k + 1 < heads.length ? heads[k + 1].i : lines.length;
+  let end = -1;
+  for (let i = heads[k].i + 1; i < limit; i++) if (/^\t\}/.test(strip(lines[i]))) { end = i + 1; break; }
+  if (end < 0) return null;
   return { start: heads[k].i, end, lines: lines.slice(heads[k].i, end), all: heads.map((h) => h.id) };
 }
 
 // ── blocks that start with `faction <id>` and run to the next such line ────
-function factionBlocks(text, id, startRe) {
+// …or to a line matching `stopRe`. descr_character is split into `type <x>`
+// sections and `slave` is the last faction in each, so without a stop its
+// block ran on through `type general`, `actions …` and `wage_base` — the clone
+// copied the next section's header and landed inside that section.
+function factionBlocks(text, id, startRe, stopRe) {
   const lines = linesOf(text);
   const out = [];
   for (let i = 0; i < lines.length; i++) {
     const m = strip(lines[i]).match(startRe);
     if (!m) continue;
     let j = i + 1;
-    while (j < lines.length && !startRe.test(strip(lines[j]))) j++;
+    while (j < lines.length && !startRe.test(strip(lines[j])) && !(stopRe && stopRe.test(strip(lines[j])))) j++;
     if (m[1] === id) {
-      // trim trailing blank lines so the clone inserts tidily
+      // trim trailing blank and comment-only lines: they belong to whatever
+      // follows, and the clone goes in right after the donor's last real line
       let e = j;
       while (e > i + 1 && !strip(lines[e - 1]).trim()) e--;
-      out.push({ start: i, end: j, lines: lines.slice(i, e) });
+      out.push({ start: i, end: e, lines: lines.slice(i, e) });
     }
     i = j - 1;
   }
@@ -90,8 +101,8 @@ function factionBlocks(text, id, startRe) {
 }
 
 // Add a cloned block after the donor's last block of that kind.
-function cloneBlocks(text, donor, newId, startRe, renamePath) {
-  const blocks = factionBlocks(text, donor, startRe);
+function cloneBlocks(text, donor, newId, startRe, renamePath, stopRe) {
+  const blocks = factionBlocks(text, donor, startRe, stopRe);
   if (!blocks.length) return null;
   const eol = eolOf(text);
   const lines = linesOf(text);
@@ -105,7 +116,7 @@ function cloneBlocks(text, donor, newId, startRe, renamePath) {
       const withPaths = renamePath ? renamePath(l, copies) : l;
       return swapToken(withPaths, donor, newId);
     });
-    lines.splice(b.end, 0, ...clone, "");
+    lines.splice(b.end, 0, "", ...clone);
     added += clone.length;
   }
   return { text: lines.join(eol), blocks: blocks.length, added, copies };
@@ -178,6 +189,13 @@ function planNewFaction({ files = {}, donor, newId, displayName, description, cu
       }
       return out;
     });
+    // JSON-ish list: if the donor's closing brace carried no comma (last
+    // entry of a strict file), the donor now needs one and the clone ends as
+    // the donor did
+    const close = sm.end - 1;
+    if (!/,\s*$/.test(strip(lines[close]).replace(/\s+$/, ""))) {
+      lines[close] = lines[close].replace(/\}/, "},");
+    }
     lines.splice(sm.end, 0, ...clone);
     edits.smFactions = lines.join(eol);
     summary.files.smFactions = clone.length + " lines";
@@ -186,7 +204,7 @@ function planNewFaction({ files = {}, donor, newId, displayName, description, cu
   // 2. descr_banners / 3. descr_character — `faction <id>` blocks, art renamed
   for (const [key, label] of [["banners", "descr_banners.txt"], ["character", "descr_character.txt"]]) {
     if (!files[key]) { warnings.push(`${label} was not supplied — the faction may not display correctly`); continue; }
-    const r = cloneBlocks(files[key], donor, id, /^faction\s+(\w+)\s*$/, pathRenamer(donor, id));
+    const r = cloneBlocks(files[key], donor, id, /^faction\s+(\w+)\s*$/, pathRenamer(donor, id), /^\s*type\b/);
     if (!r) { errors.push(`"${donor}" has no block in ${label}`); continue; }
     edits[key] = r.text;
     artCopies.push(...r.copies);

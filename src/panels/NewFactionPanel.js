@@ -28,6 +28,8 @@ import { createPortal } from "react-dom";
 const GOLD = "#e8c873";
 const WARN = "#ff9d7a";
 const DIM = "#9ab";
+// 240th, not "240st" (same rule as newFactionHandlers.ordinal)
+const ordinal = (n) => (n % 100 >= 11 && n % 100 <= 13 ? n + "th" : n + ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th"));
 
 const label = (f, names) => (names && f && names[f]) || (f ? f.replace(/_/g, " ") : "—");
 const field = { background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "4px 8px", fontSize: "0.8rem" };
@@ -94,7 +96,8 @@ export default function NewFactionPanel({ modDataDir, campaign, factionDisplayNa
   const ready = !!donor && !!form.newId && !tokenBad && !taken && towns.size > 0 && !!leader.name && !!heir.name && leader.name !== heir.name;
 
   const choice = React.useMemo(() => ({
-    donor, campaign,
+    // the campaign the scan actually read (and the header names), not the prop
+    donor, campaign: (scan && !scan.error && scan.campaign) || campaign,
     newId: form.newId, displayName: form.displayName || form.newId, description: form.description,
     denari: Number(form.denari) || 0, playable: form.playable,
     aiLabel: info && info.aiLabel,
@@ -102,7 +105,7 @@ export default function NewFactionPanel({ modDataDir, campaign, factionDisplayNa
     leader: { name: leader.name, age: Number(leader.age) || 40 },
     heir: { name: heir.name, age: Number(heir.age) || 20 },
     recruitLines: [...recruit],
-  }), [donor, campaign, form, info, towns, leader, heir, recruit]);
+  }), [donor, campaign, scan, form, info, towns, leader, heir, recruit]);
 
   const run = async (dryRun) => {
     if (!api || !api.newFactionApply) return;
@@ -152,7 +155,7 @@ export default function NewFactionPanel({ modDataDir, campaign, factionDisplayNa
 
         {scan && !scan.error && (scan.atCap || scan.missingFiles.length > 0) && (
           <div style={{ padding: "10px 16px", color: WARN, fontSize: "0.78rem", lineHeight: 1.5, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-            {scan.atCap && <div>⚠ This mod already declares {scan.count} factions. {scan.cap} is as far as the engine is known to go — a {scan.count + 1}st may fail to load. You can still create one; test it before building on it.</div>}
+            {scan.atCap && <div>⚠ This mod already declares {scan.count} factions. {scan.cap} is as far as the engine is known to go — a {ordinal(scan.count + 1)} may fail to load. You can still create one; test it before building on it.</div>}
             {!!scan.missingFiles.length && <div>⚠ Missing from this mod: {scan.missingFiles.join(", ")}. The faction will be written to the files that are here, but may not load without the rest.</div>}
           </div>
         )}

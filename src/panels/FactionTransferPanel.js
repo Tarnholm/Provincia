@@ -92,7 +92,8 @@ export default function FactionTransferPanel({ modDataDir, campaign, factionDisp
     if (!api || !api.factionTransferApply || !faction) return;
     setBusy(true);
     try {
-      const r = await api.factionTransferApply(modDataDir, faction, { ...choice, dryRun }, campaign);
+      // the campaign the scan actually read (and the header names), not the prop
+      const r = await api.factionTransferApply(modDataDir, faction, { ...choice, dryRun }, (scan && scan.target && scan.target.campaign) || campaign);
       if (r && r.error) { pushToast && pushToast(`Could not bring in ${label(faction, factionDisplayNames)}: ${r.error}`, "error", 9000); setPreview(null); }
       else if (dryRun) setPreview(r);
       else {

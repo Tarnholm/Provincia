@@ -41,19 +41,29 @@ const REL = {
 };
 const ENC = { expandedText: "utf16le" };
 
+// 1st, 2nd, 3rd, 4th … 11th, 12th, 13th … 240th (the cap warning said "240st")
+function ordinal(n) {
+  const t = n % 100;
+  if (t >= 11 && t <= 13) return n + "th";
+  return n + ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th");
+}
+
 function readIf(file, enc) {
   try { return fs.existsSync(file) ? fs.readFileSync(file, enc || "latin1") : null; } catch { return null; }
 }
 
 // Every file the plan may touch, plus where each lives, for one mod + campaign.
-function gather(modDataDir, campaignStrat) {
+// `out` maps a live path to where an edit is written (export mode); each file
+// is read from there once that copy exists, so a second New Faction builds on
+// the first instead of rebuilding from the live files and dropping it.
+function gather(modDataDir, campaignStrat, out) {
   const paths = {};
   for (const [key, rel] of Object.entries(REL)) paths[key] = path.join(modDataDir, rel);
   paths.winConditions = path.join(path.dirname(campaignStrat), "descr_win_conditions.txt");
   paths.strat = campaignStrat;
   const files = {};
   for (const [key, p] of Object.entries(paths)) {
-    const text = readIf(p, ENC[key]);
+    const text = readIf(typeof out === "function" ? safeWrite.editBasePath(p, out(p)) : p, ENC[key]);
     if (text != null) files[key] = text;
   }
   return { paths, files };
@@ -76,11 +86,16 @@ function resolveArt(rel, roots) {
 function registerNewFactionHandlers(ipcMain, { getActiveModDataDir, getModExportDir, modOut, getBaseGameDataDir, _writeLog } = {}) {
   const log = typeof _writeLog === "function" ? _writeLog : () => { };
 
-  function resolve(modDataDir, campaign) {
+  const out = (p) => (typeof getModExportDir === "function" && getModExportDir() && typeof modOut === "function" ? modOut(p) : p);
+
+  // `strict` (apply): a named campaign that is not in this mod is an error,
+  // never a silent switch to the first one.
+  function resolve(modDataDir, campaign, strict) {
     const camps = campaignsIn(modDataDir);
     if (!camps.length) return { error: "no campaign with a descr_strat.txt in this mod" };
-    const target = (campaign && camps.find((c) => c.name === campaign)) || camps[0];
-    return { camps, target };
+    const named = campaign ? camps.find((c) => c.name === campaign) : null;
+    if (strict && campaign && !named) return { error: `this mod has no campaign "${campaign}" — reopen the panel` };
+    return { camps, target: named || camps[0] };
   }
 
   // ── what is here: donors, campaigns, and how close to the ceiling ────────
@@ -90,7 +105,7 @@ function registerNewFactionHandlers(ipcMain, { getActiveModDataDir, getModExport
       if (!dir) return { error: "no mod loaded" };
       const r = resolve(dir, campaign);
       if (r.error) return r;
-      const { paths, files } = gather(dir, r.target.strat);
+      const { paths, files } = gather(dir, r.target.strat, out);
       if (!files.smFactions) return { error: `no ${REL.smFactions} in this mod — nothing to clone a faction from` };
 
       const entries = nf.listFactions(files.smFactions).map((f) => ({ faction: f }));
@@ -141,7 +156,7 @@ function registerNewFactionHandlers(ipcMain, { getActiveModDataDir, getModExport
       if (!dir || !donor) return { error: "modDataDir and donor required" };
       const r = resolve(dir, campaign);
       if (r.error) return r;
-      const { files } = gather(dir, r.target.strat);
+      const { files } = gather(dir, r.target.strat, out);
       const entry = nf.smEntry(files.smFactions || "", donor);
       if (!entry) return { error: `${donor} has no entry in ${REL.smFactions}` };
       const body = entry.lines.join("\n");
@@ -180,9 +195,9 @@ function registerNewFactionHandlers(ipcMain, { getActiveModDataDir, getModExport
     try {
       const dir = modDataDir || getActiveModDataDir();
       if (!dir) return { error: "no mod loaded" };
-      const r = resolve(dir, choice.campaign);
+      const r = resolve(dir, choice.campaign, true);
       if (r.error) return r;
-      const { paths, files } = gather(dir, r.target.strat);
+      const { paths, files } = gather(dir, r.target.strat, out);
 
       // 1. the scaffolding: a clone of the donor in every mandatory file
       const plan = nf.planNewFaction({
@@ -197,7 +212,10 @@ function registerNewFactionHandlers(ipcMain, { getActiveModDataDir, getModExport
       const at = wanted.map((rg) => coords[rg]).find(Boolean) || null;
       const strat = nf.planFactionStratEntry({
         stratText: files.strat, newId: choice.newId, after: choice.donor,
-        aiLabel: choice.aiLabel, settlements: wanted,
+        // the personality cloned above is ai_<newId>; pointing the strat line
+        // at the donor's label (as the panel suggests) left that clone unused
+        aiLabel: plan.edits.aiPersonality ? "ai_" + String(choice.newId).toLowerCase() : choice.aiLabel,
+        settlements: wanted,
         leader: choice.leader, heir: choice.heir, at,
         denari: choice.denari ?? 5000, playable: !!choice.playable,
       });
@@ -211,7 +229,7 @@ function registerNewFactionHandlers(ipcMain, { getActiveModDataDir, getModExport
 
       const warnings = [...plan.warnings, ...strat.warnings];
       const count = nf.listFactions(files.smFactions).length;
-      if (count >= FACTION_CAP) warnings.unshift(`this mod already declares ${count} factions — ${FACTION_CAP} is as far as the engine is known to go, and a ${count + 1}st may not load`);
+      if (count >= FACTION_CAP) warnings.unshift(`this mod already declares ${count} factions — ${FACTION_CAP} is as far as the engine is known to go, and a ${ordinal(count + 1)} may not load`);
 
       // resolve art sources before anything is written, so a preview reports
       // the same missing files the write would hit
@@ -229,18 +247,18 @@ function registerNewFactionHandlers(ipcMain, { getActiveModDataDir, getModExport
       };
       if (choice.dryRun) return { ok: true, dryRun: true, summary, warnings, art };
 
-      // 4. write — every file through the one door, each with its own backup
-      const exportDir = typeof getModExportDir === "function" ? getModExportDir() : null;
-      const out = (p) => (exportDir && typeof modOut === "function" ? modOut(p) : p);
-      const written = [];
-      const edits = { ...plan.edits, strat: strat.text };
+      // 4. write — one safeWriteModFiles call: one backup stamp for the set,
+      // and a failure part-way puts back what was already written. Written one
+      // by one, a locked descr_character (game running) left descr_sm_factions
+      // holding the new id, and every retry then failed "already exists".
+      // descr_strat goes LAST: it is what makes the faction live.
+      const edits = { ...plan.edits };
       if (rec.changed) edits.edb = rec.text;
-      for (const [key, text] of Object.entries(edits)) {
-        const p = paths[key];
-        if (!p) continue;
-        const w = safeWrite.safeWriteModFile(p, text, ENC[key] || "latin1", { outPath: out(p) });
-        written.push({ key, path: w.path, exported: w.exported, backupStamp: w.backupStamp });
-      }
+      edits.strat = strat.text;
+      const batch = Object.entries(edits).filter(([key]) => paths[key])
+        .map(([key, text]) => ({ key, livePath: paths[key], outPath: out(paths[key]), data: text, encoding: ENC[key] || "latin1" }));
+      const res = safeWrite.safeWriteModFiles(batch);
+      const written = batch.map((b, i) => ({ key: b.key, path: res.results[i].path, exported: res.results[i].exported, backupStamp: res.results[i].backupStamp }));
 
       // 5. art, copied under the new faction's names (never overwriting)
       const copied = [];
@@ -264,4 +282,4 @@ function registerNewFactionHandlers(ipcMain, { getActiveModDataDir, getModExport
   });
 }
 
-module.exports = { registerNewFactionHandlers, gather, FACTION_CAP };
+module.exports = { registerNewFactionHandlers, gather, FACTION_CAP, ordinal };

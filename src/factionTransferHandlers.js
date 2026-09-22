@@ -98,12 +98,22 @@ function mapCoords(modDataDir) {
 function registerFactionTransferHandlers(ipcMain, { getActiveModDataDir, getModExportDir, modOut, _writeLog } = {}) {
   const log = typeof _writeLog === "function" ? _writeLog : () => { };
 
+  // In export mode edits land in the export copy, so that copy is what the
+  // next read must see — reading the live file made a second apply rebuild
+  // from the original and silently drop the first.
+  const exportOut = (p) => (typeof getModExportDir === "function" && getModExportDir() && typeof modOut === "function" ? modOut(p) : p);
+  const readTarget = (p) => fs.readFileSync(safeWrite.editBasePath(p, exportOut(p)), "latin1");
+
   // Resolve both campaigns for a mod dir. `campaign` picks one when a mod has
   // several (RIS_Light ships ris_light and ris_light_2).
-  function resolve(modDataDir, campaign) {
+  // `strict` (apply): a named campaign that is not in this mod is an error,
+  // never a silent switch to the first one.
+  function resolve(modDataDir, campaign, strict) {
     const camps = campaignsIn(modDataDir);
     if (!camps.length) return { error: "no campaign with a descr_strat.txt in this mod" };
-    const target = (campaign && camps.find((c) => c.name === campaign)) || camps[0];
+    const named = campaign ? camps.find((c) => c.name === campaign) : null;
+    if (strict && campaign && !named) return { error: `this mod has no campaign "${campaign}" — reopen the panel` };
+    const target = named || camps[0];
     return { camps, target, source: baseModOf(modDataDir, target.strat) };
   }
 
@@ -114,7 +124,7 @@ function registerFactionTransferHandlers(ipcMain, { getActiveModDataDir, getModE
       if (!dir) return { error: "no mod loaded" };
       const r = resolve(dir, campaign);
       if (r.error) return r;
-      const targetText = fs.readFileSync(r.target.strat, "latin1");
+      const targetText = readTarget(r.target.strat);
       const owners = ft.settlementOwners(targetText);
       const sourceText = r.source ? fs.readFileSync(r.source.strat, "latin1") : null;
 
@@ -152,7 +162,7 @@ function registerFactionTransferHandlers(ipcMain, { getActiveModDataDir, getModE
       if (r.error) return r;
       if (!r.source) return { error: "no base mod found to take a roster from — this campaign is not a submod of anything Provincia can see" };
 
-      const targetText = fs.readFileSync(r.target.strat, "latin1");
+      const targetText = readTarget(r.target.strat);
       const sourceText = fs.readFileSync(r.source.strat, "latin1");
       const here = ft.readFactionRoster(targetText, faction);
       const there = ft.readFactionRoster(sourceText, faction);
@@ -199,9 +209,9 @@ function registerFactionTransferHandlers(ipcMain, { getActiveModDataDir, getModE
     try {
       const dir = modDataDir || getActiveModDataDir();
       if (!dir || !faction) return { error: "modDataDir and faction required" };
-      const r = resolve(dir, campaign);
+      const r = resolve(dir, campaign, true);
       if (r.error) return r;
-      const targetText = fs.readFileSync(r.target.strat, "latin1");
+      const targetText = readTarget(r.target.strat);
       const sourceText = r.source ? fs.readFileSync(r.source.strat, "latin1") : null;
 
       // Characters land on the tile of the town the user chose for them, or of
@@ -226,9 +236,7 @@ function registerFactionTransferHandlers(ipcMain, { getActiveModDataDir, getModE
       if (plan.errors.length) return { error: plan.errors[0], warnings: plan.warnings };
       if (choice.dryRun) return { ok: true, dryRun: true, summary: plan.summary, warnings: plan.warnings };
 
-      const exportDir = typeof getModExportDir === "function" ? getModExportDir() : null;
-      const outPath = exportDir && typeof modOut === "function" ? modOut(r.target.strat) : r.target.strat;
-      const w = safeWrite.safeWriteModFile(r.target.strat, plan.text, "latin1", { outPath });
+      const w = safeWrite.safeWriteModFile(r.target.strat, plan.text, "latin1", { outPath: exportOut(r.target.strat) });
       log(`[faction-transfer] woke ${faction} in ${r.target.name}: ${plan.summary.settlements.length} settlement(s), ` +
         `${plan.summary.characters.length} character(s), ${plan.summary.family.length} family; ` +
         (w.exported ? `exported to ${w.path}` : `backup ${w.backupStamp}`));
