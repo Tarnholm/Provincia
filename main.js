@@ -3181,15 +3181,20 @@ async function reparseLatestSave() {
   if (!win) { _reparsing = false; clearTimeout(watchdog); return; }
   // Pinned save wins: user explicitly chose a specific file to follow.
   // Otherwise fall back to the newest .sav in the directory.
+  // The three early exits below come before the try/finally that clears
+  // `_reparsing`, so each must release it itself — otherwise a routine
+  // "same save, same mtime" skip left every later save queued behind the
+  // 120s watchdog.
+  const bail = () => { _reparsing = false; clearTimeout(watchdog); };
   const latestFile = activePinnedSave || findLatestSave(activeSaveDir);
-  if (!latestFile) return;
+  if (!latestFile) { bail(); return; }
   const full = path.join(activeSaveDir, latestFile);
   // Skip if same file at same mtime as last parse (avoids redundant work on multi-write bursts).
   try {
     const stat = fs.statSync(full);
-    if (latestFile === lastSaveFile && stat.mtimeMs === lastSaveMtime) return;
+    if (latestFile === lastSaveFile && stat.mtimeMs === lastSaveMtime) { bail(); return; }
     lastSaveMtime = stat.mtimeMs;
-  } catch { return; }
+  } catch { bail(); return; }
   try {
     emitSaveProgress("Reading save file", 5);
     await _yield();

@@ -20,6 +20,38 @@ let logPollInterval = null;
 // Current turn index for events (1-based). Increments on each "end round"
 // marker encountered while processing message_log lines.
 let logPollTurnIdx = 1;
+// Bumped by every log-watch-start / log-watch-stop. The backfill awaits disk
+// reads, so a stop (or a newer start) can land mid-backfill; the older start
+// then must not arm its poll interval.
+let _logWatchGen = 0;
+
+// Calls onLine for each line in the first `bytes` bytes of the file, reading
+// 16 MB at a time and yielding between chunks. The backfill used to
+// readFileSync the whole message_log on the main thread (it can run to
+// hundreds of MB: the window froze, and past V8's string limit it threw and
+// the backfill was silently skipped). Reading only up to `bytes` - the offset
+// the watcher starts from - keeps lines the game appends meanwhile from being
+// delivered twice.
+async function forEachLineUpTo(filePath, bytes, onLine, chunkSize = 16 * 1024 * 1024) {
+  const { StringDecoder } = require("string_decoder");
+  const fh = await fs.promises.open(filePath, "r");
+  try {
+    const buf = Buffer.alloc(Math.min(chunkSize, Math.max(1, bytes)));
+    const dec = new StringDecoder("utf8");
+    let pos = 0, carry = "";
+    while (pos < bytes) {
+      const { bytesRead } = await fh.read(buf, 0, Math.min(buf.length, bytes - pos), pos);
+      if (!bytesRead) break;
+      pos += bytesRead;
+      const lines = (carry + dec.write(buf.subarray(0, bytesRead))).split(/\r?\n/);
+      carry = lines.pop();
+      for (const line of lines) onLine(line);
+      await new Promise((r) => setImmediate(r));
+    }
+    const rest = carry + dec.end();
+    if (rest) onLine(rest);
+  } finally { await fh.close(); }
+}
 
 // Track army merges so the leader's MOVING_NORMAL events propagate to
 // passengers (lesser generals stacked into the leader's army).
@@ -249,6 +281,7 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
 
   if (!fs.existsSync(msgPath)) return { error: "message_log.txt not found in " + logDir };
   _lastWatchedLogDir = logDir;
+  const gen = ++_logWatchGen;
 
   // Start from current end of file (only watch new lines)
   try { logOffset = fs.statSync(msgPath).size; } catch { logOffset = 0; }
@@ -274,7 +307,6 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
   try {
     const win0 = BrowserWindow.getAllWindows()[0];
     if (fs.existsSync(msgPath) && win0) {
-      const fullText = fs.readFileSync(msgPath, "utf8");
       const moves = [];
       const deaths = [];
       // Tag each event with the turn it happened in. Count "end round"
@@ -282,13 +314,13 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
       // events when the user is viewing an older save (avoids showing
       // future positions).
       let backfillTurn = 1;
-      for (const line of fullText.split(/\r?\n/)) {
+      await forEachLineUpTo(msgPath, logOffset, (line) => {
         if (line.startsWith("=================")) {
           if (line.includes("end round")) backfillTurn++;
-          continue;
+          return;
         }
         const ev = parseLogLineV2(line);
-        if (!ev) continue;
+        if (!ev) return;
         if (ev.type === "character_move") {
           // Detect split: if this move's army_uuid differs from what we
           // had recorded, the character moved to a new army without
@@ -346,7 +378,8 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
         } else if (ev.type === "character_deleted") {
           deaths.push({ charUuid: ev.charUuid, turn: backfillTurn });
         }
-      }
+      });
+      if (gen !== _logWatchGen) return { ok: false, superseded: true };
       // Sync poll-side counter so subsequent delta reads continue from here.
       logPollTurnIdx = backfillTurn;
       if (moves.length > 0 || deaths.length > 0) {
@@ -365,6 +398,7 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
       if (flow.length > 0) win0.webContents.send("live-char-moves", { moves: [], unitFlow: flow });
     }
   } catch (e) { console.warn("[log-watch] backfill failed:", e.message); }
+  if (gen !== _logWatchGen) return { ok: false, superseded: true };
 
   // Poll every 2 seconds for new data
   logPollInterval = setInterval(() => {
@@ -472,6 +506,7 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
 });
 
 ipcMain.handle("log-watch-stop", async () => {
+  _logWatchGen++;
   if (logPollInterval) { clearInterval(logPollInterval); logPollInterval = null; }
   return { ok: true };
 });
@@ -519,4 +554,5 @@ module.exports = {
   clearPassengers,
   isLogWatchActive,
   reanchorLogOffsetsToEof,
+  forEachLineUpTo,
 };
