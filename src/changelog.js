@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1512",
+    date: "2026-09-22",
+    items: [
+      { type: "fix", text: "**Campaign Autopsy: \"Scan saves…\" now opens the folder picker.** It did nothing at all, which made the whole tool unreachable — the button was handed its action under the wrong name, so every click was quietly dropped. The Timeline section of Save Insights had the same dead button and is fixed with it. The scan itself was never broken; nothing could start it. If no mod is loaded the button now says so instead of going silent, which is what made it look broken rather than blocked." },
+    ],
+  },
+
+  {
     version: "0.9.1511",
     date: "2026-09-22",
     items: [
@@ -50,14 +58,6 @@ const CHANGELOG = [
       { type: "improvement", text: "**Scripts: your edited rules are kept, and Save back to mod checks its work.** Pipeline scripts are still refreshed at every launch, but one you had edited is first copied to a _user_edits folder and the Scripts window tells you where. Save back to mod refuses an output that is empty, under half the size of the file it replaces, or has no faction blocks — a step that died mid-run used to be copied over the live descr_strat. New guide for the team: docs/EDITING_RULE_SCRIPTS.md." },
       { type: "fix", text: "**Reload mod data reaches everything.** The map-mode metrics, faction relations, portrait and building-name caches never cleared, so a map repaint or a descr_strat edit could leave them stale until a restart. The folder picker and the silent re-import at launch now share one scanner, so a re-import always resolves the same campaign you picked." },
       { type: "change", text: "**Smaller installer.** It was carrying 58 MB of pipeline output from the build machine, plus Python caches; both are left out." },
-    ],
-  },
-
-  {
-    version: "0.9.1507",
-    date: "2026-09-17",
-    items: [
-      { type: "improvement", text: "**Crash Reporter v0.1.57: one address demoted, one claim narrowed.** Two corrections, both from reading the 107 sessions testers sent on v7.17 and v7.18. Twenty of those carried a crash dump the reporter could parse, and a single address took seven of the twenty — by a wide margin the largest cluster in the window, and exactly the sort of number that starts a hunt for a mod bug. All seven are the same tester on the same graphics card. Grouped that way it has the same shape as the address already filed as one machine's problem, so it now sits beside it, and a report landing there says as much instead of quietly implicating the mod. Only one address in the whole window turned up on two different testers on two different cards; that one keeps its standing. The second correction is an admission. When the engine can find no free tile beside any of a faction's settlements, a character coming of age is created at the map's origin with empty name strings, and drawing that character's card crashes the game on the spot. The reporter has been calling this a map problem — certain settlements in the mod are sealed in by construction, and those do produce it. But across these 107 sessions the fault was caught in the act exactly once, and the faction it happened to was not one of the sealed ones: an ordinary playable faction, with a real town and a field army. A faction can evidently be closed in during a campaign by whatever has gathered around it, and no edit to the map prevents that. So the reporter no longer promises a map fix closes this. It names the faction and calls the fix necessary rather than sufficient, because that name is what decides which of the two it was. What would settle it is the save from that session. The damage, meanwhile, is wider than the crash count suggests: 68 of the 107 saves already carry these broken characters, across thirteen testers, and nothing can clean them out of a save that has them. The mine is laid nearly everywhere and had simply not been trodden on." },
     ],
   },
 
