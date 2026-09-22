@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1511",
+    date: "2026-09-22",
+    items: [
+      { type: "change", text: "**Internal: the save parsers are under test again — nothing changes on screen.** The tests that read real save files had lost the saves they needed, so fifteen of them were skipping: the unit reader, the ownership recovery, the faction records and the campaign counters all went unchecked. They run again, driven by saves rebuilt from this machine. Because those saves are older than the mod, each one is measured against a record of what the parsers produced when it was accepted rather than against the current mod data, and the drift between the two is now asserted rather than assumed (two settlements out of 1,310). This release carries no user-facing change; it exists so the next parser mistake is caught by a test instead of by a wrong number in a panel." },
+    ],
+  },
+
+  {
     version: "0.9.1510",
     date: "2026-09-21",
     items: [
