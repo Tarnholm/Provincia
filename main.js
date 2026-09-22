@@ -2204,6 +2204,16 @@ ipcMain.handle("set-mod-export-dir", async (_event, dir) => {
 // touch live save data.
 // descr_strat / mod editing + backup IPC handlers — see src/modEditingHandlers.js.
 const { registerModEditingHandlers } = require("./src/modEditingHandlers.js");
+// Bring a dormant faction onto this campaign map (the roster comes from the
+// fuller mod this one sits on) — see src/factionTransferHandlers.js.
+const { registerFactionTransferHandlers } = require("./src/factionTransferHandlers.js");
+registerFactionTransferHandlers(ipcMain, {
+  getActiveModDataDir: () => activeModDataDir,
+  getModExportDir: () => _modExportDir,
+  modOut,
+  _writeLog: (s) => _writeLog(s),
+});
+
 registerModEditingHandlers(ipcMain, {
   getActiveModDataDir: () => activeModDataDir,
   getModExportDir: () => _modExportDir,

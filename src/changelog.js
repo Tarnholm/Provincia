@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1513",
+    date: "2026-09-22",
+    items: [
+      { type: "feature", text: "**Bring In a Faction (Tools menu): put a faction from the main mod onto a submod's map.** A submod declares the same factions as the mod it sits on but leaves most of them asleep — RIS_Light 137 of 239, RIS_Classic 183 — so adding one is really waking one. Pick a dormant faction and you get its roster from the main mod: every character with the units in its army, and its family, each with a tick. Settlements are picked on the submod's own map, since those maps are redrawn (Light has 422 regions against the main mod's 1,312, Classic 300) and a faction's old towns mostly do not exist there; the ones it holds in the main mod that DO exist here are suggested and pre-ticked. Every town names its current owner — the rebels in grey, a living faction in orange, because taking it costs them a settlement. Preview shows exactly what will move before anything is written, including the tile each character will stand on." },
+      { type: "change", text: "**Written carefully, and only where you point it.** Bringing a faction in rewrites that campaign's descr_strat with a timestamped backup beside it, and honours \"export instead of overwrite\". Characters keep their armies but get fresh coordinates on the new map — a main-mod position would drop them in the sea. A marriage or parent link only travels when everyone it names travels, and the panel warns you if what you have chosen would leave the faction without a town or without a leader, which kills it on the first turn." },
+    ],
+  },
+
+  {
     version: "0.9.1512",
     date: "2026-09-22",
     items: [
@@ -43,21 +52,6 @@ const CHANGELOG = [
     items: [
       { type: "fix", text: "**Resource icons: the hover and drag hitbox sits on the icon again.** It had been one tile above the icon since the June fix that moved resources onto their true map row — that change updated where icons are read and drawn, but not where the pointer looks for them. Hovering, clicking to filter, and picking a resource up to drag all use the icon's own centre now, and a dropped resource lands on the tile under the pointer." },
       { type: "fix", text: "**Saving resources no longer moves the ones you did not touch.** The same leftover was in the save path: every resource was written one row north of where it had been read, so a resource save would have shifted the whole map's resources by a tile (the one you had just dragged landed correctly, which hid it). Reading and writing now share one conversion, with a round-trip test. RIS's own descr_strat shows no such mass shift, so nothing needs repairing." },
-    ],
-  },
-
-  {
-    version: "0.9.1508",
-    date: "2026-09-21",
-    items: [
-      { type: "fix", text: "**Army Setup was showing every settlement an empty recruit pool.** Since v0.9.1207 the pool only lists units from building classes the settlement owns — but Army Setup handed it each building's level without its class, so the owned set was empty and so was every pool (Rome: 0 units, now 8). The same parser also cut hyphenated regions at the hyphen (Qart-Khadasht became Qart), which lost those settlements their hidden resources. Both fixed; one shared pattern now reads a region name everywhere." },
-      { type: "fix", text: "**Edits to your mod can no longer leave a half-written file.** Every write Provincia makes into a mod now goes to a temporary file and is swapped in whole, after a timestamped backup (descr_strat.txt.provincia-<time>.bak, newest ten kept, all restorable from the backups list). The old single .provincia-bak was overwritten by the second edit, so the original was gone after two changes; and if a backup cannot be made, nothing is written. Adding a general writes its name files first and descr_strat last, and puts everything back if any step fails." },
-      { type: "fix", text: "**Army Setup and Starting Populations now respect \"export instead of overwrite\".** They wrote straight into the live mod whatever that setting said. Export mode also keeps every edit now: each edit used to start again from the untouched live file, so the exported copy only ever held the last one. Accented characters in an ANSI descr_strat also survive an edit now, instead of turning into replacement marks for good." },
-      { type: "feature", text: "**Extinction Watch (Tools menu).** A faction is destroyed when its last living male family member dies, however much land it holds — or when its last settlement is taken, unless it can still horde. This lists every faction by its living adult males at campaign start — leader and heir, boys and when the eldest comes of age, lines where everyone is sixty or older, and lines standing on a single tile. On RIS, eight factions start with exactly one; the Mauryans have Ashoka and two boys. Factions down to one settlement are marked, with the horde-capable ones (read from descr_sm_factions) spared: on RIS 80 factions start with a single town and 5 of them can horde. Click a tier or \"last town\" to filter, double-click a faction to focus it on the map." },
-      { type: "improvement", text: "**Faster start and smoother panning.** The 2.9 MB captured road network is loaded when the road layer first needs it rather than at launch, which cuts the startup script from 4.2 MB to 1.3 MB. While you drag the map the legend is no longer rebuilt on every frame (in faction mode that meant re-sorting every faction's regions each time), the minimap reuses its downscaled image, and the culture stripes use the cheap filter until you let go." },
-      { type: "improvement", text: "**Scripts: your edited rules are kept, and Save back to mod checks its work.** Pipeline scripts are still refreshed at every launch, but one you had edited is first copied to a _user_edits folder and the Scripts window tells you where. Save back to mod refuses an output that is empty, under half the size of the file it replaces, or has no faction blocks — a step that died mid-run used to be copied over the live descr_strat. New guide for the team: docs/EDITING_RULE_SCRIPTS.md." },
-      { type: "fix", text: "**Reload mod data reaches everything.** The map-mode metrics, faction relations, portrait and building-name caches never cleared, so a map repaint or a descr_strat edit could leave them stale until a restart. The folder picker and the silent re-import at launch now share one scanner, so a re-import always resolves the same campaign you picked." },
-      { type: "change", text: "**Smaller installer.** It was carrying 58 MB of pipeline output from the build machine, plus Python caches; both are left out." },
     ],
   },
 

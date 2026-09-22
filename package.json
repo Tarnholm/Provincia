@@ -130,6 +130,7 @@
       "src/campaignScan.js",
       "src/characterFactionBlocks.js",
       "src/factionTransfer.js",
+      "src/factionTransferHandlers.js",
       "src/hordeFactions.js",
       "src/safeModWrite.js",
       "src/stratTokens.js",
