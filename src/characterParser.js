@@ -200,11 +200,22 @@ function tryParseAt(buf, i, nameLookup, traitNames, secUuidIndex = null) {
   const validLastA = lastA >= 50 && lastA < nameLookup.length
     && nameLookup[lastA] && nameLookup[lastA].length >= 3
     && nameLookup[lastA][0] >= "A" && nameLookup[lastA][0] <= "Z";
-  if (validLastA && matches(0)) {
+  // LAYOUT_B: byte +5 must be 0 (the would-be first byte of lastName in
+  // LAYOUT_A) to discriminate from LAYOUT_A records.
+  const aOk = validLastA && matches(0);
+  const bOk = buf[i + 5] === 0 && matches(-4);
+  if (aOk && bOk) {
+    // Both fit when a single-name record's next bytes happen to read as a
+    // valid surname index. Prefer the layout anchored by a real trait list
+    // over one that only passed the trait-less (tc = 0) gate — measured
+    // against the running game (2026-09-23): Azes, Skunkha (saka) and
+    // Aripharnes (arshi) read as LAYOUT_A with 0 traits, failed later checks
+    // and vanished; as LAYOUT_B they carry 25+ real traits.
+    const tcA = buf.readUInt16LE(i + 302), tcB = buf.readUInt16LE(i + 298);
+    layoutB = tcA === 0 && tcB > 0;
+  } else if (aOk) {
     layoutB = false;
-  } else if (buf[i + 5] === 0 && matches(-4)) {
-    // LAYOUT_B: byte +5 must be 0 (the would-be first byte of lastName
-    // in LAYOUT_A) to discriminate from LAYOUT_A records.
+  } else if (bOk) {
     layoutB = true;
   } else {
     return null;
