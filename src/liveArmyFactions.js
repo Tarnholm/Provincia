@@ -13,6 +13,7 @@
 // for a general standing in someone else's land, so it goes first.
 //
 // Order, per army:
+//   0. a rebel card marker ("<faction>_rebel") → slave   (factionSource "rebel")
 //   1. its commander's verified character label        (factionSource "character")
 //   2. a settlement governor → that settlement's owner  ("governor")
 //   3. the owner of the region its bodyguard is in       ("region")
@@ -52,6 +53,12 @@ function relabelLiveArmies(liveArmies, v1Chars, { ownerByCity, governorByCity, r
   }
   for (const army of liveArmies) {
     if (!army || army.armyClass === "navy") continue;
+    // Rebels: the captain_card marker of a rebel army is "<faction>_rebel"
+    // (e.g. "seleucid_rebels_rebel"). Measured after one AI turn: 179 of 179
+    // engine rebel armies, no false hit ("seleucid_rebels" without the suffix
+    // is a real faction). Region owner and faction blocks both miss them — a
+    // rebel stack stands in someone else's land by definition.
+    if (/_rebel$/i.test(army.faction || "")) { army.faction = "slave"; army.factionSource = "rebel"; counts.rebel = (counts.rebel || 0) + 1; continue; }
     const ids = [army.commanderUuid, army.primaryUuid].filter((u) => u != null).map((u) => u >>> 0);
     const label = ids.map((u) => byUuid.get(u)).find(Boolean);
     if (label) { army.faction = label; army.factionSource = "character"; counts.character++; continue; }
@@ -60,7 +67,10 @@ function relabelLiveArmies(liveArmies, v1Chars, { ownerByCity, governorByCity, r
     const region = army.units && army.units[0] && army.units[0].region;
     const city = region && ((regionToCity && regionToCity[region]) || region);
     const owner = city && own[city];
-    if (owner) { army.faction = owner; army.factionSource = "region"; counts.region++; continue; }
+    // Rebel-held land says nothing about a non-rebel army's own faction (rebels
+    // were caught above); there the marker is the better guess (measured: right
+    // for 2 of 4 generals in rebel land after one AI turn, the region for 0).
+    if (owner && owner !== "slave") { army.faction = owner; army.factionSource = "region"; counts.region++; continue; }
     army.factionSource = "marker"; counts.marker++;
   }
   return counts;

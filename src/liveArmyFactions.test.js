@@ -47,6 +47,13 @@ describe("relabelLiveArmies", () => {
     expect(records.every((c) => c.faction === "wrongmarker")).toBe(true);
   });
 
+  it("a rebel card marker makes the army a rebel (slave), before any other rule", () => {
+    const armies = [army(2, "Lydia", "seleucid_rebels_rebel"), army(99, "Lydia", "seleucid_rebels")];
+    relabelLiveArmies(armies, v1, ctx);
+    expect(armies[0]).toMatchObject({ faction: "slave", factionSource: "rebel" });
+    expect(armies[1].faction).not.toBe("slave"); // seleucid_rebels is a real faction, not the rebel card
+  });
+
   it("leaves fleets alone", () => {
     const fleet = { commanderUuid: 2, faction: "carthage", armyClass: "navy", units: [{ region: "the sea" }] };
     relabelLiveArmies([fleet], v1, ctx);

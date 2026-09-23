@@ -29,7 +29,7 @@ describe.skipIf(!have)("captain-led armies (engine-measured save)", () => {
     H.main.loadModCharacterData(MOD);
     land = H.main.parseCharactersAndUnits(fs.readFileSync(SAVE)).liveArmies.filter((a) => a.armyClass !== "navy");
     expect(land.length).toBeGreaterThan(0);
-  });
+  }, 120000); // a 38 MB save: ~8 s under full-suite load
 
   it("finds every land army the engine had", () => {
     expect(land.length).toBe(1214);
