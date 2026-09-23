@@ -66,8 +66,14 @@ const RX = {
   fleeTile: /^(.+?)\((?:([0-9a-f]+):([a-z_]+)|([a-z_]+):([0-9a-f]+))\)\s*army\(([0-9a-f]+)\) found flee tile\((\d+),(\d+)\)/,
   // Name(charUuid:faction:role):FLEEING:start(x,y):end(x,y)
   fleeing: /^(.+?)\(([a-z_]+):([a-z_ ]+)\):FLEEING:start\((\d+),(\d+)\):end\((\d+),(\d+)\)/,
-  // Name(charUuid) army(armyUuid) is fleeing to settlement SettName(x,y)
-  fleeingToSettlement: /^(.+?)\(([0-9a-f]+)\) army\(([0-9a-f]+)\) is fleeing to settlement (.+?)\((\d+),(\d+)\)/,
+  // A routed army's actual retreat. `found flee tile` above is only the tile
+  // the battle set aside in case it lost — winners log one too — while these
+  // are written when it really runs (every army found on its flee tile in the
+  // 97-turn log, 12 of 12, had one). Real shapes, no space before army(:
+  //   Admiral Assandros(c20c0cf0:macedon)army(c3551750) is fleeing to tile(17,38)
+  //   Captain Aristonous(d18c2400)army(1f3a5750) is fleeing to settlement Pella(7,49)
+  fleeingToTile: /^(.+?)\((?:([0-9a-f]+)(?::([a-z_]+))?|([a-z_]+):([0-9a-f]+))\)\s*army\(([0-9a-f]+)\) is fleeing to tile\((\d+),(\d+)\)/,
+  fleeingToSettlement: /^(.+?)\(([0-9a-f]+)(?::([a-z_]+))?\)\s*army\(([0-9a-f]+)\) is fleeing to settlement (.+?)\((\d+),(\d+)\)/,
   // transferring unit(unitUuid) from army(fromArmyUuid) to general(Name:charUuid):army(toArmyUuid)
   unitTransfer: /^transferring unit\(([0-9a-f]+)\) from army\(([0-9a-f]+)\) to general\((.+?):([0-9a-f]+)\):army\(([0-9a-f]+)\)/,
   // transferring general(MovedName:movedCharUuid) unit(unitUuid) from army(fromArmyUuid) to named general(DestName:destCharUuid):army(toArmyUuid)
@@ -221,12 +227,23 @@ function parseLine(line) {
       fromX: +m[4], fromY: +m[5], toX: +m[6], toY: +m[7],
     };
   }
+  if ((m = RX.fleeingToTile.exec(line))) {
+    return {
+      type: "fleeing_to_tile",
+      name: m[1].trim(),
+      charUuid: shortUuid(m[2] || m[5]),
+      faction: m[3] || m[4] || null,
+      armyUuid: shortUuid(m[6]),
+      x: +m[7], y: +m[8],
+    };
+  }
   if ((m = RX.fleeingToSettlement.exec(line))) {
     return {
       type: "fleeing_to_settlement",
       name: m[1].trim(), charUuid: shortUuid(m[2]),
-      armyUuid: shortUuid(m[3]),
-      settlement: m[4].trim(), x: +m[5], y: +m[6],
+      faction: m[3] || null,
+      armyUuid: shortUuid(m[4]),
+      settlement: m[5].trim(), x: +m[6], y: +m[7],
     };
   }
   if ((m = RX.unitTransfer.exec(line))) {

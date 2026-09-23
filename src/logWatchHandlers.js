@@ -42,6 +42,23 @@ function savedFile(line) {
 // the backfill was silently skipped). Reading only up to `bytes` - the offset
 // the watcher starts from - keeps lines the game appends meanwhile from being
 // delivered twice.
+// Byte offset just past the last complete line at or before `size`. The game
+// writes message_log in blocks that usually end mid-line; reading to the end
+// of the file split that line in two, and neither half parsed — a move line
+// caught at a block edge was lost for good. Callers stop here and pick the
+// rest of the line up on the next read.
+function completeLinesEnd(filePath, size) {
+  if (size <= 0) return 0;
+  const fd = fs.openSync(filePath, "r");
+  try {
+    const span = Math.min(size, 64 * 1024);
+    const buf = Buffer.alloc(span);
+    fs.readSync(fd, buf, 0, span, size - span);
+    const nl = buf.lastIndexOf(0x0a);
+    return nl < 0 ? (span === size ? 0 : size) : size - span + nl + 1;
+  } finally { fs.closeSync(fd); }
+}
+
 async function forEachLineUpTo(filePath, bytes, onLine, chunkSize = 16 * 1024 * 1024) {
   const { StringDecoder } = require("string_decoder");
   const fh = await fs.promises.open(filePath, "r");
@@ -243,7 +260,7 @@ function isLogWatchActive() {
 function reanchorLogOffsetsToEof() {
   if (!_lastWatchedLogDir) return;
   const lp = path.join(_lastWatchedLogDir, "message_log.txt");
-  if (fs.existsSync(lp)) logOffset = fs.statSync(lp).size;
+  if (fs.existsSync(lp)) logOffset = completeLinesEnd(lp, fs.statSync(lp).size);
   const ap = path.join(_lastWatchedLogDir, "campaign_ai_log.txt");
   if (fs.existsSync(ap)) logOffsetAI = fs.statSync(ap).size;
 }
@@ -268,7 +285,7 @@ ipcMain.handle("log-watch-reset", async () => {
     // set at watch-start (stored in module-scope `_lastWatchedLogDir`).
     if (_lastWatchedLogDir) {
       const p = path.join(_lastWatchedLogDir, "message_log.txt");
-      logOffset = fs.existsSync(p) ? fs.statSync(p).size : logOffset;
+      logOffset = fs.existsSync(p) ? completeLinesEnd(p, fs.statSync(p).size) : logOffset;
       const ap = path.join(_lastWatchedLogDir, "campaign_ai_log.txt");
       logOffsetAI = fs.existsSync(ap) ? fs.statSync(ap).size : logOffsetAI;
     }
@@ -296,7 +313,7 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
   const savesWritten = [];
 
   // Start from current end of file (only watch new lines)
-  try { logOffset = fs.statSync(msgPath).size; } catch { logOffset = 0; }
+  try { logOffset = completeLinesEnd(msgPath, fs.statSync(msgPath).size); } catch { logOffset = 0; }
   try { logOffsetAI = fs.statSync(aiPath).size; } catch { logOffsetAI = 0; }
 
   // Reset turn counter for this fresh watch cycle.
@@ -385,7 +402,10 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
           recordUnitTransfer(ev.fromArmyUuid, ev.toArmyUuid, ev.toCommanderUuid, null);
         } else if (ev.type === "fleeing") {
           moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: ev.toX, y: ev.toY, charUuid: null, turn: backfillTurn, seq: logSeq });
-        } else if (ev.type === "flee_tile" || ev.type === "fleeing_to_settlement") {
+        } else if (ev.type === "fleeing_to_tile" || ev.type === "fleeing_to_settlement") {
+          // Not `found flee tile`: that is only the tile set aside in case the
+          // army loses, logged for winners too (it put a reinforcing army that
+          // won at Rhegium 41 tiles away). See messageLogParser RX.fleeingToTile.
           moves.push({ name: ev.name, faction: ev.faction || null, x: ev.x, y: ev.y, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn: backfillTurn, seq: logSeq });
         } else if (ev.type === "army_created") {
           moves.push({ name: ev.name, faction: null, x: ev.x, y: ev.y, charUuid: ev.charUuid, turn: backfillTurn, seq: logSeq });
@@ -429,10 +449,13 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
       const stat = fs.statSync(msgPath);
       if (stat.size > logOffset) {
         const fd = fs.openSync(msgPath, "r");
-        const buf = Buffer.alloc(stat.size - logOffset);
-        fs.readSync(fd, buf, 0, buf.length, logOffset);
+        const read = Buffer.alloc(stat.size - logOffset);
+        fs.readSync(fd, read, 0, read.length, logOffset);
         fs.closeSync(fd);
-        logOffset = stat.size;
+        // Complete lines only; an unfinished last line waits for the next poll.
+        const nl = read.lastIndexOf(0x0a);
+        const buf = read.subarray(0, nl + 1);
+        logOffset += buf.length;
         const text = buf.toString("utf8");
         if (text.trim()) {
           win.webContents.send("log-lines", { source: "message", text });
@@ -474,7 +497,7 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
               recordUnitTransfer(ev.fromArmyUuid, ev.toArmyUuid, ev.toCommanderUuid, null);
             } else if (ev.type === "fleeing") {
               moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: ev.toX, y: ev.toY, charUuid: null, turn, seq: logSeq });
-            } else if (ev.type === "flee_tile" || ev.type === "fleeing_to_settlement") {
+            } else if (ev.type === "fleeing_to_tile" || ev.type === "fleeing_to_settlement") {
               moves.push({ name: ev.name, faction: ev.faction || null, x: ev.x, y: ev.y, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn, seq: logSeq });
             } else if (ev.type === "army_created") {
               moves.push({ name: ev.name, faction: null, x: ev.x, y: ev.y, charUuid: ev.charUuid, turn, seq: logSeq });
@@ -582,4 +605,5 @@ module.exports = {
   isLogWatchActive,
   reanchorLogOffsetsToEof,
   forEachLineUpTo,
+  completeLinesEnd,
 };
