@@ -5117,6 +5117,19 @@ function App() {
         .map((a) => `${a.character || a.firstName}|${a.faction}|(${a.x},${a.y})|${a.armyClass}|live=${a.liveTracked ? 1 : 0}|onTile=${settlementTiles.has(`${a.x},${a.y}`) ? 1 : 0}|units=${(a.units || []).length}`);
       console.log(`[army-dbg] ${liveSaveFile} — ${rows.length} land armies:\n` + rows.join("\n"));
     }
+    // Read-only snapshot of what the map draws, for the development parity
+    // check (C:\dev\RTWHook\parity.py reads it over the debug port and
+    // compares it with the running game). Exposes Provincia's own data only.
+    try {
+      window.__provinciaParity = {
+        save: liveSaveFile || null,
+        at: Date.now(),
+        armies: filtered.map((a) => ({
+          name: a.character || a.firstName || null, faction: a.faction || null,
+          x: a.x, y: a.y, cls: a.armyClass || null, live: !!a.liveTracked,
+        })),
+      };
+    } catch { /* never let a debug snapshot break the map */ }
     return filtered;
   }, [saveLiveArmies, armiesData, cityPixels, liveCharPositionsVersion, useLiveOverride, saveCurrentTurn, regions, imgSize, startingArmiesByRegion]);
 

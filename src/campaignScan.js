@@ -77,13 +77,28 @@ function scanFolderForCampaigns(dir, opts) {
   // are different campaigns and both are listed. Only same-named folders of
   // one mod (a stray copy inside it) collapse. A standard campaign's mod is
   // the data root four levels up (data/world/maps/campaign/<name>).
-  const modOf = (c) => (path.basename(path.dirname(c.dir)).toLowerCase() === "campaign"
-    ? path.resolve(c.dir, "..", "..", "..", "..").toLowerCase() : "");
+  // A campaign's mod is its nearest "data" folder: RTW Remastered keeps a copy
+  // of the campaign under data/original_overrides/resource_quantity/..., and
+  // that copy belongs to the same mod (four-levels-up made it a mod of its own,
+  // and a reload then picked the override copy over the real campaign).
+  const modOf = (c) => {
+    let d = path.resolve(c.dir);
+    for (let i = 0; i < 10; i++) {
+      if (path.basename(d).toLowerCase() === "data") return d.toLowerCase();
+      const up = path.dirname(d);
+      if (up === d) break;
+      d = up;
+    }
+    return "";
+  };
+  const isOverride = (c) => /[\\/]original_overrides[\\/]/i.test(c.dir);
   const byName = new Map();
   for (const c of found) {
     const key = c.name.toLowerCase() + "|" + modOf(c);
     const existing = byName.get(key);
-    if (!existing || Object.keys(c.found).length > Object.keys(existing.found).length) byName.set(key, c);
+    const nc = Object.keys(c.found).length, ne = existing ? Object.keys(existing.found).length : -1;
+    // fullest wins; on a tie the real campaign beats its override copy
+    if (!existing || nc > ne || (nc === ne && isOverride(existing) && !isOverride(c))) byName.set(key, c);
   }
   const campaigns = [...byName.values()];
 

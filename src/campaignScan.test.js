@@ -97,6 +97,19 @@ describe("scanFolderForCampaigns", () => {
     expect(byDir[twin].found["map_regions.tga"] || "").not.toBe(path.join(subBase, "map_regions.tga"));
   });
 
+  // RTW Remastered keeps a copy of the campaign under
+  // data/original_overrides/resource_quantity/world/maps/campaign/<name>. It is
+  // the SAME mod: one entry, and the real campaign wins (a reload once picked
+  // the override copy, 2026-09-23).
+  it("the original_overrides copy of a campaign is the same mod, and the real campaign wins", () => {
+    const { data, camp } = makeMod();
+    const ovr = path.join(data, "original_overrides", "resource_quantity", "world", "maps", "campaign", "imperial_campaign");
+    fs.mkdirSync(ovr, { recursive: true });
+    for (const f of ["descr_strat.txt", "descr_win_conditions.txt"]) fs.writeFileSync(path.join(ovr, f), "ovr:" + f);
+    const r = scanFolderForCampaigns(data, opts().o);
+    expect(r.campaigns.map((c) => c.dir)).toEqual([camp]);
+  });
+
   it("a folder with no campaign answers with an empty list, not an error", () => {
     root = fs.mkdtempSync(path.join(os.tmpdir(), "campscan-"));
     const r = scanFolderForCampaigns(root, opts().o);
