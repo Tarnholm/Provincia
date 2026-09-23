@@ -231,11 +231,7 @@ function findUnitRecords(buf) {
     // ship's fleetUuid via file-order proximity. We only attempt this for
     // naval-prefix names so non-naval units stay untouched. The caller
     // (main.js) does the file-order inheritance pass.
-    let fleetUuid = null;
-    if (/^naval\b/i.test(name) && i >= 20) {
-      const candidate = buf.readUInt32LE(i - 20);
-      if (candidate && candidate !== 0xffffffff) fleetUuid = candidate;
-    }
+    // (read below, after the passenger array — its length moves the id)
     // Passenger array on naval records (session 37 of save-cracker).
     // Schema: `[ship hash 4B][zeros 8B][u16 count][count × 4B passenger UUIDs]
     //          [u16 trailer][u16 nameLen]`. The trailer u16 immediately before
@@ -257,6 +253,19 @@ function findUnitRecords(buf) {
           arr.push(v);
         }
         if (valid) { passengerUuids = arr; break; }
+      }
+    }
+    // The fleet id moves back 4 bytes per boarded passenger: the passenger
+    // array sits between it and the name. Measured against the running game
+    // (2026-09-23): a fleet carrying an army or an agent read garbage at -20,
+    // its ships were lumped into the previous fleet, and Admiral Tereus (an
+    // army aboard) and Admiral Onasimos (a diplomat aboard) vanished.
+    let fleetUuid = null;
+    if (/^naval\b/i.test(name)) {
+      const at = i - 20 - 4 * (passengerUuids ? passengerUuids.length : 0);
+      if (at >= 0) {
+        const candidate = buf.readUInt32LE(at);
+        if (candidate && candidate !== 0xffffffff) fleetUuid = candidate;
       }
     }
     records.push({
