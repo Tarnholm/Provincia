@@ -13,6 +13,19 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1520",
+    date: "2026-09-24",
+    items: [
+      { type: "fix", text: "**Trade deals show.** A trade-rights deal on its own never appeared under a faction's trade partners — only alliances did, because Provincia took the alliance bond for trade. It now reads trade rights the way the game does (checked against the running game, pair by pair), so a deal like one the Sarsinates offer you shows from the next save, and factions that only trade no longer count as partners of factions at war with them." },
+      { type: "fix", text: "**Wars show the moment they start, and dead factions leave.** Diplomacy used to change only with the next save. A battle between two factions now puts them at war straight away — attacking a faction declares war — and ends their treaties, as in the game. A destroyed faction disappears from every war and treaty list (it was shown at war with its killer for ever, since the game keeps that entry), its region panel says it was destroyed, and characters it hands to the rebels — an admiral whose faction died — show under the rebels at once." },
+      { type: "fix", text: "**A town lists only the units you can train there.** A building still being built counted as finished: Ankon, with its colony under construction, offered four Roman units the game doesn't. Buildings in the queue unlock nothing until they're done, and compound building requirements (the RIS area-of-recruitment tiers) are now checked properly." },
+      { type: "fix", text: "**The build queue shows new buildings with their turns left.** A new building under construction was drawn as already built, with the queue pointing at the next level up at 0% and no turn count. It now shows in the queue with the turns the game has for that town — including its local speed-ups and slow-downs, which the save already carries — and not among the finished buildings. Repairs are labelled as repairs." },
+      { type: "fix", text: "**The unit recruitment queue shows.** It stayed empty in every RIS town; it now lists the units being trained. How many turns they have left isn't read yet." },
+      { type: "fix", text: "**Faction lists follow the live save.** A town taken before live mode started stayed with its old owner in the faction list and selection — Rome showed 26 provinces without Ankon, Asculum or Rhegium. And a rebel army was grouped under a heading like “saba rebel”; it now reads Free Peoples." },
+    ],
+  },
+
+  {
     version: "0.9.1519",
     date: "2026-09-24",
     items: [
@@ -49,19 +62,6 @@ const CHANGELOG = [
       { type: "fix", text: "**Picking a mod folder loads the right campaign with the right map.** Picking a folder that holds a whole mod project — the mod, its submods and a backups folder — listed the backups as campaigns too, and loading one filled the map with an old descr_strat: characters under the wrong faction, in places they no longer are. Backup, archive and wiki folders are no longer offered. Worse, every campaign found this way took its regions and map from whichever mod the search happened to reach last, so a campaign could load with a submod's map. Each campaign now uses its own mod's files, and a submod without its own map uses its parent mod's. Two mods that both ship an imperial_campaign are now both listed, each with the folder it comes from, instead of one silently hiding the other. If a character appears somewhere the game does not show him, re-import the campaign once." },
       { type: "fix", text: "**Live mode: a besieging army stands outside the town.** The game's log gives a siege's target town as the move's end point, and the army was drawn there — under the town's own icon, so the siege seemed to have no attacker. Besieging, storming, attacking, blockading and landing now leave the army on its own tile, and taking a town puts it inside — checked against where every army's next move started across a 97-turn campaign." },
       { type: "improvement", text: "**Choosing a campaign is clearer.** When a folder holds several campaigns, one is now picked for you (the last one you loaded, otherwise the imperial campaign), the choice is highlighted, and a Load button sits next to Cancel — before, the only button was Cancel and the campaign names looked like labels. Double-clicking a campaign still loads it straight away." },
-    ],
-  },
-
-  {
-    version: "0.9.1515",
-    date: "2026-09-22",
-    items: [
-      { type: "fix", text: "**New Faction: two donors no longer damage the mod's files.** Building from `dummies` — the last faction in descr_sm_factions — copied the file's closing bracket into the new entry and wrote it after the end of the list. Building from `slave` — the last faction in every section of descr_character — carried the next section's header along with it, so the new faction's character types landed in the wrong section. Each block now ends where it really ends, and the clone goes in right after its donor." },
-      { type: "fix", text: "**New Faction: the new faction uses its own AI, and a failed write no longer leaves it half-made.** It was given a copy of the donor's AI personality, but its campaign entry still pointed at the donor's, so the copy did nothing. And the files were written one at a time: if one could not be written (the game holding it open, say), the ones before it stayed changed, and every retry said the faction “already exists”. Now the files land together or not at all, under one backup, with descr_strat last. Bring In a Faction and New Faction also build on what you already exported, instead of starting again from the live mod and losing your first faction, and refuse to write into a campaign other than the one on screen." },
-      { type: "fix", text: "**Nothing is written to your mod when its backup fails.** Apply takes a backup of the campaign files before it writes, and the settlement, character and army edits after it rely on that backup — but a failed backup was only logged and the edits went through anyway. Apply now stops and says why. The same rule now holds for replacing a building icon (a failed backup used to be followed by the write, and “revert” then deleted the icon), and the Scripts window's “Save back to mod” now writes all its files together with the same timestamped backups that “Restore last backup” reads, descr_strat last." },
-      { type: "fix", text: "**The building-image auto-fix never overwrites art again.** It promised not to, but it checked whether an image already existed with the exact capitalisation, while Windows ignores it: a culture whose image was named `#ROMAN_temple.tga` had it replaced with another culture's temple. It now matches names the way Windows does, and refuses to replace any file." },
-      { type: "fix", text: "**Live mode keeps up with every save, and starts without freezing.** After a save that had already been read, the next one could wait up to two minutes before it showed — an early exit left the reader marked “busy” until a safety timer cleared it. And starting live mode read the whole message log in one go, which froze the window on long campaigns and, past a few hundred megabytes, silently skipped placing armies from the log. It is now read in pieces in the background." },
-      { type: "improvement", text: "**Smaller fixes.** Notices stay up for as long as they were meant to (every one closed after six seconds). The warning at the faction ceiling says “240th”. Renaming or deleting the mod folder while Provincia watches it no longer trips the crash handler, and two file operations that take a path from the window now check it properly." },
     ],
   },
 
