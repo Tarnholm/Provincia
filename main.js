@@ -1464,6 +1464,9 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
         worldObjectUuid: fleetUuid,
         commanderUuid: fleetUuid,
         primaryUuid: null,
+        // The admiral's character id — what message_log names him by, e.g. when
+        // his faction dies and he passes to the rebels mid-turn.
+        admiralUuid: admiral && admiral.primaryUuid != null ? admiral.primaryUuid : null,
       });
     }
   }

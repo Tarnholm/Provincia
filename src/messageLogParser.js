@@ -66,6 +66,12 @@ const RX = {
   fleeTile: /^(.+?)\((?:([0-9a-f]+):([a-z_]+)|([a-z_]+):([0-9a-f]+))\)\s*army\(([0-9a-f]+)\) found flee tile\((\d+),(\d+)\)/,
   // Name(charUuid:faction:role):FLEEING:start(x,y):end(x,y)
   fleeing: /^(.+?)\(([a-z_]+):([a-z_ ]+)\):FLEEING:start\((\d+),(\d+)\):end\((\d+),(\d+)\)/,
+  // When a faction dies its surviving characters pass to the rebels:
+  //   changing Admiral Herius(ea86930) from faction(picentes) to faction(slave)
+  factionChange: /^changing (.+?)\(([0-9a-f]+)\) from faction\(([a-z_0-9]+)\) to faction\(([a-z_0-9]+)\)/,
+  // FACTION::remove_from_game: "picentes faction is dead" /
+  // "egypt faction is dead until resurrected"
+  factionDead: /^([a-z_0-9]+) faction is dead( until resurrected)?\s*$/,
   // A routed army's actual retreat. `found flee tile` above is only the tile
   // the battle set aside in case it lost — winners log one too — while these
   // are written when it really runs (every army found on its flee tile in the
@@ -226,6 +232,16 @@ function parseLine(line) {
       name: m[1].trim(), faction: m[2], role: m[3].trim(),
       fromX: +m[4], fromY: +m[5], toX: +m[6], toY: +m[7],
     };
+  }
+  if ((m = RX.factionChange.exec(line))) {
+    return {
+      type: "faction_change",
+      name: m[1].trim(), charUuid: shortUuid(m[2]),
+      fromFaction: m[3], toFaction: m[4],
+    };
+  }
+  if ((m = RX.factionDead.exec(line))) {
+    return { type: "faction_dead", faction: m[1], untilResurrected: !!m[2] };
   }
   if ((m = RX.fleeingToTile.exec(line))) {
     return {
@@ -410,4 +426,22 @@ function restingTile(ev) {
   return { x: ev.fromX, y: ev.fromY };
 }
 
-module.exports = { parseLine, parseChunk, shortUuid, restingTile, STAYS_AT_START };
+// The two sides of a battle, as the game logs them while setting it up. The
+// lines are often glued to the one before, so these are searched anywhere:
+//   ***** Battle Setup Phase Started *****
+//   battle general created(…)adding main army(b0ea0090:romans_julii:0 alnce0) to battle
+//   battle general created(…)adding main army(276b1620:messapians:1 alnce1) to battle
+// Two factions on opposite sides are at war from then on: attacking a faction
+// declares war. Checked on a live campaign: 118 of 121 faction pairs that
+// fought were at war in the next save; the other 3 made peace (protectorate)
+// before it, or were two rebel placeholders.
+const BATTLE_SETUP_RE = /Battle Setup Phase Started/;
+const BATTLE_MAIN_ARMY_RE = /adding main army\([0-9a-f]+:([a-z_0-9]+):\d+ alnce(\d+)\)/g;
+function battleSetupStarts(line) { return BATTLE_SETUP_RE.test(line); }
+function battleMainArmies(line) {
+  const out = [];
+  for (const m of line.matchAll(BATTLE_MAIN_ARMY_RE)) out.push({ faction: m[1], alliance: +m[2] });
+  return out;
+}
+
+module.exports = { parseLine, parseChunk, shortUuid, restingTile, STAYS_AT_START, battleSetupStarts, battleMainArmies };

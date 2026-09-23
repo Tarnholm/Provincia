@@ -50,6 +50,8 @@ const logAppDiagnostics = diagnostics.logDiagnostics;
 // Shared non-live commander portrait resolver (CommonJS — see note above for
 // why we import the default object and pull the fns off it).
 import nonLiveCommanderResolver from "./nonLiveCommanderResolver";
+import liveDiplomacyMod from "./liveDiplomacy";
+const { applyLiveDiplomacy, liveFactionChanges } = liveDiplomacyMod;
 const buildNonLivePortraitMap = nonLiveCommanderResolver.buildNonLivePortraitMap;
 const resolveNonLiveCommanderInfoApp = nonLiveCommanderResolver.resolveNonLiveCommanderInfo;
 const lookupNonLivePortraitApp = nonLiveCommanderResolver.lookupNonLivePortrait;
@@ -3194,7 +3196,7 @@ function App() {
   // 0.9.546: NAMED live diplomacy from the N×N attitude matrix — { factionName:
   // { war:[names], allied:[names], hostile:[names] } } + _meta. The real
   // diplomacy source (war/ally per faction PAIR, partner recoverable).
-  const [diplomacyMatrix, setDiplomacyMatrix] = useState(() => _loadLS("diplomacyMatrix"));
+  const [diplomacyMatrixSave, setDiplomacyMatrix] = useState(() => _loadLS("diplomacyMatrix"));
   // 0.9.549: per-faction treasury-over-time (f13 checkpoint timeline) for the
   // wealth sparkline. { factionName: [t0, t1, ...] }.
   const [treasuryHistory, setTreasuryHistory] = useState(() => _loadLS("treasuryHistory"));
@@ -3208,7 +3210,7 @@ function App() {
   const [factionConfig, setFactionConfig] = useState(null);
   // 0.9.542: persist the faction-level save data so one sync survives restarts.
   useEffect(() => { try { if (allFactionDiplomacy) localStorage.setItem("allFactionDiplomacy", JSON.stringify(allFactionDiplomacy)); } catch {} }, [allFactionDiplomacy]);
-  useEffect(() => { try { if (diplomacyMatrix) localStorage.setItem("diplomacyMatrix", JSON.stringify(diplomacyMatrix)); } catch {} }, [diplomacyMatrix]);
+  useEffect(() => { try { if (diplomacyMatrixSave) localStorage.setItem("diplomacyMatrix", JSON.stringify(diplomacyMatrixSave)); } catch {} }, [diplomacyMatrixSave]);
   useEffect(() => { try { if (treasuryHistory) localStorage.setItem("treasuryHistory", JSON.stringify(treasuryHistory)); } catch {} }, [treasuryHistory]);
   useEffect(() => { try { if (factionRecordOwners) localStorage.setItem("factionRecordOwners", JSON.stringify(factionRecordOwners)); } catch {} }, [factionRecordOwners]);
   useEffect(() => { try { if (factionTreasuries) localStorage.setItem("factionTreasuries", JSON.stringify(factionTreasuries)); } catch {} }, [factionTreasuries]);
@@ -3238,6 +3240,22 @@ function App() {
   // Family Tree when no live save is loaded.
   const [modFamiliesByFaction, setModFamiliesByFaction] = useState(null);
   const [liveSaveFile, setLiveSaveFile] = useState(null); // filename of the .sav file currently reflected in saveBuildingsData/saveArmiesData
+  // save file name → log line (seq) of its 'Campaign saved' line; see armiesToRender
+  const liveSaveSeqRef = useRef(new Map());
+  // Diplomacy since the loaded save, from message_log (wars begun by battles,
+  // factions destroyed) and characters handed to another faction — see
+  // src/liveDiplomacy.js. The save's matrix is the start of the turn.
+  const liveDiploEventsRef = useRef([]);
+  const liveFactionChangesRef = useRef([]);
+  const [liveDiploVersion, setLiveDiploVersion] = useState(0);
+  const diplomacyMatrix = useMemo(() => {
+    const evs = liveDiploEventsRef.current;
+    if (!diplomacyMatrixSave || !liveSaveFile || evs.length === 0) return diplomacyMatrixSave;
+    const saveSeq = liveSaveSeqRef.current.get(liveSaveFile);
+    // A save written before this log began (not among its 'Campaign saved'
+    // lines) is older than every event in it.
+    return applyLiveDiplomacy(diplomacyMatrixSave, evs, saveSeq != null ? (e) => (e.seq || 0) > saveSeq : () => true);
+  }, [diplomacyMatrixSave, liveSaveFile, liveDiploVersion]);
   const [saveCharactersByRegion, setSaveCharactersByRegion] = useState(null); // { region: [character, ...] }
   // Per-faction assassin/spy census from the live save. Agents carry the
   // `AgentTraining` trait (the agent-defining marker, cracked 2026-06-06,
@@ -4618,8 +4636,6 @@ function App() {
   const [saveLiveArmies, setSaveLiveArmies] = useState(null); // [{faction, character, x, y, armyClass, units}] from save parser
   // Live-log character positions — authoritative for turn-by-turn moves.
   const liveCharPositions = useRef(new Map());
-  // save file name → log line (seq) of its 'Campaign saved' line; see armiesToRender
-  const liveSaveSeqRef = useRef(new Map());
   // settlement name (lower-case) → its world tile { x, y }, for log events that
   // name a settlement instead of a tile ("… in settlement(Perusia)").
   const settlementTileRef = useRef(new Map());
@@ -4725,6 +4741,13 @@ function App() {
     const inTurn = saveSeq != null
       ? (e) => (e.seq || 0) > saveSeq
       : (e) => (e.turn || 0) <= maxTurn;
+    // Characters the log moved to another faction since the save (a destroyed
+    // faction's admirals and generals pass to the rebels: "changing Admiral
+    // Herius(ea86930) from faction(picentes) to faction(slave)").
+    const factionNow = useLive
+      ? liveFactionChanges(liveFactionChangesRef.current, saveSeq != null ? (e) => (e.seq || 0) > saveSeq : () => true)
+      : new Map();
+    const hex8 = (u) => (u == null ? null : (typeof u === "number" ? u.toString(16) : String(u)).padStart(8, "0"));
     const result = src.map(a => {
       // Try to upgrade (x, y) from live log events. Key lookup tries
       // (firstName, lastNameStub, faction) then (firstName, "", faction).
@@ -4829,6 +4852,10 @@ function App() {
         // Only apply this flip when we have a live position (save-time
         // classifications are trusted as-is).
         armyClass = "field";
+      }
+      if (factionNow.size) {
+        const to = factionNow.get(hex8(a.primaryUuid)) || factionNow.get(hex8(a.commanderUuid)) || factionNow.get(hex8(a.admiralUuid));
+        if (to) return { ...a, faction: to, factionSource: "log-change", x, y, armyClass, liveTracked: !!liveEntry };
       }
       return { ...a, x, y, armyClass, liveTracked: !!liveEntry };
     });
@@ -6205,17 +6232,27 @@ function App() {
     // Listen for live character moves — authoritative positions from the
     // engine's own movement events, used to keep army markers pixel-
     // accurate between save snapshots.
-    const unsubMoves = api.onLiveCharMoves ? api.onLiveCharMoves(({ moves, deaths, reset, unitFlow, savesWritten }) => {
+    const unsubMoves = api.onLiveCharMoves ? api.onLiveCharMoves(({ moves, deaths, reset, unitFlow, savesWritten, diplo, factionChanges }) => {
       if (savesWritten && savesWritten.length) {
         for (const s of savesWritten) liveSaveSeqRef.current.set(s.file, s.seq);
         setLiveCharPositionsVersion(v => v + 1);
+        setLiveDiploVersion(v => v + 1);
       }
       if (reset) {
         liveCharPositions.current = new Map();
         liveSaveSeqRef.current = new Map();
         liveUnitFlow.current = [];
+        liveDiploEventsRef.current = [];
+        liveFactionChangesRef.current = [];
         setLiveCharPositionsVersion(v => v + 1);
+        setLiveDiploVersion(v => v + 1);
         return;
+      }
+      if ((diplo && diplo.length) || (factionChanges && factionChanges.length)) {
+        if (diplo && diplo.length) liveDiploEventsRef.current = liveDiploEventsRef.current.concat(diplo);
+        if (factionChanges && factionChanges.length) liveFactionChangesRef.current = liveFactionChangesRef.current.concat(factionChanges);
+        setLiveDiploVersion(v => v + 1);
+        setLiveCharPositionsVersion(v => v + 1);
       }
       if (unitFlow) {
         liveUnitFlow.current = unitFlow;

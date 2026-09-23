@@ -8,7 +8,7 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
-const { parseLine: parseLogLineV2, restingTile } = require("./messageLogParser.js");
+const { parseLine: parseLogLineV2, restingTile, battleSetupStarts, battleMainArmies } = require("./messageLogParser.js");
 
 // ── Live log watcher for Rome Remastered ──────────────────────────────────
 // Watches message_log.txt and campaign_ai_log.txt, tails new lines, sends to renderer.
@@ -42,6 +42,34 @@ function savedFile(line) {
 // the backfill was silently skipped). Reading only up to `bytes` - the offset
 // the watcher starts from - keeps lines the game appends meanwhile from being
 // delivered twice.
+// Diplomacy the save cannot know yet: wars begun by a battle, factions that
+// died, characters handed to another faction (a dead faction's admiral passes
+// to the rebels). Fed every line; pushes { type, …, seq } events into `out`.
+// `battle` holds the battle being set up: { sides: Map alliance -> Set(faction), pairs: Set }.
+let _battle = null;
+function collectDiplomacy(line, ev, seq, out) {
+  if (battleSetupStarts(line)) _battle = { sides: new Map(), pairs: new Set() };
+  if (_battle && line.includes("adding main army")) {
+    for (const { faction, alliance } of battleMainArmies(line)) {
+      if (!_battle.sides.has(alliance)) _battle.sides.set(alliance, new Set());
+      _battle.sides.get(alliance).add(faction);
+      for (const [al, facs] of _battle.sides) {
+        if (al === alliance) continue;
+        for (const other of facs) {
+          if (other === faction) continue;
+          const key = [faction, other].sort().join("~");
+          if (_battle.pairs.has(key)) continue;
+          _battle.pairs.add(key);
+          out.diplo.push({ type: "war", a: faction, b: other, seq });
+        }
+      }
+    }
+  }
+  if (!ev) return;
+  if (ev.type === "faction_dead") out.diplo.push({ type: "dead", faction: ev.faction, seq });
+  else if (ev.type === "faction_change") out.factionChanges.push({ name: ev.name, charUuid: ev.charUuid, from: ev.fromFaction, to: ev.toFaction, seq });
+}
+
 // Byte offset just past the last complete line at or before `size`. The game
 // writes message_log in blocks that usually end mid-line; reading to the end
 // of the file split that line in two, and neither half parsed — a move line
@@ -338,6 +366,8 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
     if (fs.existsSync(msgPath) && win0) {
       const moves = [];
       const deaths = [];
+      const live = { diplo: [], factionChanges: [] };
+      _battle = null;
       // Tag each event with the turn it happened in. Count "end round"
       // markers to delimit turns. The renderer uses `turn` to filter log
       // events when the user is viewing an older save (avoids showing
@@ -352,6 +382,7 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
           return;
         }
         const ev = parseLogLineV2(line);
+        collectDiplomacy(line, ev, logSeq, live);
         if (!ev) return;
         if (ev.type === "character_move") {
           // Detect split: if this move's army_uuid differs from what we
@@ -421,6 +452,7 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
       // Sync poll-side counter so subsequent delta reads continue from here.
       logPollTurnIdx = backfillTurn;
       if (savesWritten.length) win0.webContents.send("live-char-moves", { moves: [], savesWritten });
+      if (live.diplo.length || live.factionChanges.length) win0.webContents.send("live-char-moves", { moves: [], diplo: live.diplo, factionChanges: live.factionChanges });
       if (moves.length > 0 || deaths.length > 0) {
         // Chunk moves; send deaths separately (smaller).
         const CHUNK = 1000;
@@ -462,6 +494,7 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
           // Also extract character-move + death events for live tracking.
           const moves = [];
           const deaths = [];
+          const live = { diplo: [], factionChanges: [] };
           const savesWritten = [];
           for (const line of text.split(/\r?\n/)) {
             if (!line) continue;
@@ -473,6 +506,7 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
               continue;
             }
             const ev = parseLogLineV2(line);
+            collectDiplomacy(line, ev, logSeq, live);
             if (!ev) continue;
             const turn = logPollTurnIdx;
             if (ev.type === "character_move") {
@@ -521,8 +555,8 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
           // move/death batch — it's small and lets the renderer re-bucket
           // units on every live event.
           const flow = unitFlowSnapshot();
-          if (moves.length > 0 || deaths.length > 0 || flow.length > 0 || savesWritten.length > 0) {
-            win.webContents.send("live-char-moves", { moves, deaths, unitFlow: flow, savesWritten });
+          if (moves.length > 0 || deaths.length > 0 || flow.length > 0 || savesWritten.length > 0 || live.diplo.length > 0 || live.factionChanges.length > 0) {
+            win.webContents.send("live-char-moves", { moves, deaths, unitFlow: flow, savesWritten, diplo: live.diplo, factionChanges: live.factionChanges });
           }
         }
       } else if (stat.size < logOffset) {
