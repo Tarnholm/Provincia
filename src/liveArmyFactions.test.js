@@ -54,9 +54,11 @@ describe("relabelLiveArmies", () => {
     expect(armies[1].faction).not.toBe("slave"); // seleucid_rebels is a real faction, not the rebel card
   });
 
-  it("leaves fleets alone", () => {
+  it("leaves fleets alone — except pirates, which carry the rebel card", () => {
     const fleet = { commanderUuid: 2, faction: "carthage", armyClass: "navy", units: [{ region: "the sea" }] };
-    relabelLiveArmies([fleet], v1, ctx);
+    const pirates = { commanderUuid: 3, faction: "paeonia_rebel", armyClass: "navy", units: [{ region: "the sea" }] };
+    relabelLiveArmies([fleet, pirates], v1, ctx);
     expect(fleet.faction).toBe("carthage");
+    expect(pirates.faction).toBe("slave");
   });
 });

@@ -1418,9 +1418,15 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
       if (!pos) continue; // no type-4 record, skip
       const bodyguard = fleetUnits[0];
       const factionFromMarker = bodyguard?.offset != null ? factionAtOffset(bodyguard.offset) : null;
-      const factionLabel = factionFromMarker
-        ? `${factionFromMarker.replace(/_/g, " ")} fleet`
-        : "Fleet";
+      // The admiral: a character record whose commander id is the fleet's id
+      // (87 of 91 fleets at turn 3 of a RIS campaign, measured against the
+      // running game). The engine names him "Admiral <first name>".
+      const admiral = v1CharByCmdUuid.get(fleetUuid) || null;
+      const factionLabel = admiral && admiral.firstName
+        ? `Admiral ${admiral.firstName}`
+        : factionFromMarker
+          ? `${factionFromMarker.replace(/_/g, " ")} fleet`
+          : "Fleet";
       // Aggregate passenger UUID-prefixes from every ship in this fleet
       // (session 37: each ship records its own boarded passengers in the
       // 12-byte gap before its name string).

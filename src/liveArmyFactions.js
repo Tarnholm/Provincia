@@ -52,7 +52,13 @@ function relabelLiveArmies(liveArmies, v1Chars, { ownerByCity, governorByCity, r
     if (g && g.uuid != null && own[city]) governorOwner.set(g.uuid >>> 0, own[city]);
   }
   for (const army of liveArmies) {
-    if (!army || army.armyClass === "navy") continue;
+    if (!army) continue;
+    // Pirate fleets carry the same rebel card marker (12 of 91 fleets at turn
+    // 3); every other fleet's marker was already right, so fleets get only this.
+    if (army.armyClass === "navy") {
+      if (/_rebel$/i.test(army.faction || "")) { army.faction = "slave"; army.factionSource = "rebel"; counts.rebel = (counts.rebel || 0) + 1; }
+      continue;
+    }
     // Rebels: the captain_card marker of a rebel army is "<faction>_rebel"
     // (e.g. "seleucid_rebels_rebel"). Measured after one AI turn: 179 of 179
     // engine rebel armies, no false hit ("seleucid_rebels" without the suffix
