@@ -728,4 +728,4 @@ function crackSave(saveBuf, modDataDir, opts = {}) {
   };
 }
 
-module.exports = { crackSave };
+module.exports = { crackSave, readFactionOrderFromStrat };

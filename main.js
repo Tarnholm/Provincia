@@ -4,6 +4,21 @@ const path = require("path");
 const fs = require("fs");
 const { Worker } = require("worker_threads");
 const pathSafety = require("./src/pathSafety.js");
+
+// Army factions in live mode (src/liveArmyFactions.js). The labeller wants the
+// campaign's faction order; read it once per mod.
+const { relabelLiveArmies } = require("./src/liveArmyFactions.js");
+let _liveFactionOrder = { dir: null, order: [] };
+function liveFactionOrder() {
+  const dir = activeModDataDir || null;
+  if (_liveFactionOrder.dir !== dir) {
+    let order = [];
+    try { if (dir) order = require("./src/saveCracker.js").readFactionOrderFromStrat(dir) || []; } catch { order = []; }
+    _liveFactionOrder = { dir, order };
+  }
+  return _liveFactionOrder.order;
+}
+
 const {
   parseWorldObjectPositions,
   parseCharacterMetadataByUuid,
@@ -3361,57 +3376,15 @@ async function reparseLatestSave() {
         }
         newData.governorByCity = resolved;
       } catch (e) { console.warn("[save-watch] governor resolve failed:", e.message); }
-      // Re-attribute army factions using the region's current owner.
-      // The captain_card_<faction>.tga marker fallback in parseCharacters
-      // AndUnits gets EVERY rebel-faction army wrong: rebels (Picentes,
-      // Salentinians, etc.) don't have captain_card markers, so the most-
-      // recent marker before their unit block is some unrelated faction.
-      // The region's CURRENT owner (from currentOwnerByCity) is the
-      // authoritative answer for an army standing in its own territory.
+      // Army factions — src/liveArmyFactions.js: the verified character label
+      // first, then governor → city owner, then region owner (measured against the
+      // running game: 98.9% right vs ~88% for the old governor/region patch).
       try {
-        const own = newData.currentOwnerByCity || {};
-        // region → city → owner. modRegionToCity bridges from the save's
-        // region-tagged unit records to the city-keyed currentOwnerByCity.
-        if (newData.liveArmies && Object.keys(own).length > 0) {
-          // Build a fast lookup: governor uuid → city's owner. The
-          // captain_card_<faction>.tga marker fallback misattributes
-          // some governors (verified: Tarentum's Greek general gets
-          // marker captain_card_syracuse.tga but his governing faction
-          // is `taras`). When a v1 character IS a settlement governor,
-          // their faction should match the settlement owner regardless
-          // of which captain_card marker happens to precede them.
-          const governorOwnerByUuid = new Map();
-          if (newData.governorByCity) {
-            for (const [city, g] of Object.entries(newData.governorByCity)) {
-              if (!g || !g.uuid) continue;
-              const o = own[city];
-              if (o) governorOwnerByUuid.set(g.uuid, o);
-            }
-          }
-          for (const army of newData.liveArmies) {
-            // Re-attribute when the army's commander is a settlement
-            // governor — overrides the captain_card marker which can
-            // mis-attribute (e.g. the Tarentum governor's record
-            // happens to be preceded by `captain_card_syracuse.tga`
-            // but the governor's actual faction is `taras`).
-            const cmd = army.commanderUuid;
-            if (cmd && governorOwnerByUuid.has(cmd)) {
-              army.faction = governorOwnerByUuid.get(cmd);
-              continue;
-            }
-            // Existing rule for the OTHER case: identified v1
-            // characters have traits parsed from their record; their
-            // captain_card-derived faction is generally accurate for
-            // non-governor characters. Skip re-attribution to protect
-            // own-faction generals standing inside enemy territory.
-            if (army.traits && army.traits.length > 0) continue;
-            const region = army.units?.[0]?.region;
-            if (!region) continue;
-            const city = modRegionToCity?.[region];
-            const owner = (city && own[city]) || own[region];
-            if (owner) army.faction = owner;
-          }
-        }
+        const counts = relabelLiveArmies(newData.liveArmies, extras && extras.characters, {
+          ownerByCity: newData.currentOwnerByCity, governorByCity: newData.governorByCity,
+          regionToCity: modRegionToCity, factionOrder: liveFactionOrder(),
+        });
+        console.log(`[save-watch] army factions by source: ${JSON.stringify(counts)}`);
       } catch (e) { console.warn("[save-watch] army-faction re-attribution failed:", e.message); }
     }
     // Active sieges + turns-remaining (cracked 2026-05-30, src/siegeParser.js).
@@ -3636,41 +3609,15 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
           }
           lastSaveData.governorByCity = resolved;
         } catch (e) { console.warn("[save-watch] governor resolve failed:", e.message); }
-        // Re-attribute army factions using the region's current owner.
-        // Mirror the reparseLatestSave logic — without this on the
-        // initial load, captain_card_<faction>.tga marker fallbacks
-        // misattribute factions (e.g. Titus's bodyguard at offset
-        // 0x1ae4768 reads the most-recent marker `captain_card_massalia`
-        // even though he's the messapians faction leader, then the panel
-        // filter rejects him as foreign-faction in messapian-held
-        // Brundisium and the Garrison ends up empty).
+        // Army factions — src/liveArmyFactions.js: the verified character label
+        // first, then governor → city owner, then region owner (measured against the
+        // running game: 98.9% right vs ~88% for the old governor/region patch).
         try {
-          const own = lastSaveData.currentOwnerByCity || {};
-          if (lastSaveData.liveArmies && Object.keys(own).length > 0) {
-            const governorOwnerByUuid = new Map();
-            if (lastSaveData.governorByCity) {
-              for (const [city, g] of Object.entries(lastSaveData.governorByCity)) {
-                if (!g || !g.uuid) continue;
-                const o = own[city];
-                if (o) governorOwnerByUuid.set(g.uuid, o);
-              }
-            }
-            for (const army of lastSaveData.liveArmies) {
-              const cmd = army.commanderUuid;
-              if (cmd && governorOwnerByUuid.has(cmd)) {
-                army.faction = governorOwnerByUuid.get(cmd);
-                continue;
-              }
-              // Skip identified v1 characters — see reparseLatestSave
-              // version for the full rationale.
-              if (army.traits && army.traits.length > 0) continue;
-              const region = army.units?.[0]?.region;
-              if (!region) continue;
-              const city = modRegionToCity?.[region];
-              const owner = (city && own[city]) || own[region];
-              if (owner) army.faction = owner;
-            }
-          }
+          const counts = relabelLiveArmies(lastSaveData.liveArmies, initialExtras && initialExtras.characters, {
+            ownerByCity: lastSaveData.currentOwnerByCity, governorByCity: lastSaveData.governorByCity,
+            regionToCity: modRegionToCity, factionOrder: liveFactionOrder(),
+          });
+          console.log(`[save-watch] army factions by source: ${JSON.stringify(counts)}`);
         } catch (e) { console.warn("[save-watch] army-faction re-attribution failed:", e.message); }
       }
       // Sieges + per-settlement runtime fields on the INITIAL live load too
@@ -3974,39 +3921,15 @@ ipcMain.handle("characters-init", async (_event, modDataDir) => {
         }
         lastSaveData.governorByCity = resolved;
       } catch (e) { console.warn("[characters-init] governor resolve failed:", e.message); }
-      // Re-attribute army factions (mirrors reparseLatestSave + the
-      // initial saveWatchStart path). The captain_card marker fallback
-      // misattributes faction for characters whose bodyguard offset
-      // happens to follow another faction's captain_card_<faction>.tga
-      // path string in the file — without this re-run after mod-init
-      // the panel's faction-equality checks reject them as foreign.
+      // Army factions — src/liveArmyFactions.js: the verified character label
+      // first, then governor → city owner, then region owner (measured against the
+      // running game: 98.9% right vs ~88% for the old governor/region patch).
       try {
-        const own = lastSaveData.currentOwnerByCity || {};
-        if (lastSaveData.liveArmies && Object.keys(own).length > 0) {
-          const governorOwnerByUuid = new Map();
-          if (lastSaveData.governorByCity) {
-            for (const [city, g] of Object.entries(lastSaveData.governorByCity)) {
-              if (!g || !g.uuid) continue;
-              const o = own[city];
-              if (o) governorOwnerByUuid.set(g.uuid, o);
-            }
-          }
-          for (const army of lastSaveData.liveArmies) {
-            const cmd = army.commanderUuid;
-            if (cmd && governorOwnerByUuid.has(cmd)) {
-              army.faction = governorOwnerByUuid.get(cmd);
-              continue;
-            }
-            // Skip identified v1 characters — see reparseLatestSave
-            // version for the full rationale.
-            if (army.traits && army.traits.length > 0) continue;
-            const region = army.units?.[0]?.region;
-            if (!region) continue;
-            const city = modRegionToCity?.[region];
-            const owner = (city && own[city]) || own[region];
-            if (owner) army.faction = owner;
-          }
-        }
+        const counts = relabelLiveArmies(lastSaveData.liveArmies, extras && extras.characters, {
+          ownerByCity: lastSaveData.currentOwnerByCity, governorByCity: lastSaveData.governorByCity,
+          regionToCity: modRegionToCity, factionOrder: liveFactionOrder(),
+        });
+        console.log(`[characters-init] army factions by source: ${JSON.stringify(counts)}`);
       } catch (e) { console.warn("[characters-init] army-faction re-attribution failed:", e.message); }
       const win = BrowserWindow.getAllWindows()[0];
       if (win) win.webContents.send("save-snapshot", { file: lastSaveFile, data: lastSaveData });
