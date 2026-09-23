@@ -14,6 +14,13 @@ describe("restingTile", () => {
     expect(restingTile(ev)).toEqual({ x: 296, y: 419 });
   });
 
+  it("puts an army that WALKED into its siege beside the town (engine-measured)", () => {
+    // user report 2026-09-24: drawn at start(320,350); the running game had it at (319,349)
+    const ev = parseLine("Lucius Cornelius Scipio(6ca09970:army(942516a0):romans_julii:named character):BESIEGE:start(320,350):end(319,348):loco(MOVING_NORMAL)");
+    expect(ev.loco).toBe("MOVING_NORMAL");
+    expect(restingTile(ev)).toEqual({ x: 319, y: 349 });
+  });
+
   it("moves an ordinary march to its end tile", () => {
     const ev = parseLine("Marcus Ogulnius Gallus(5747adf0:army(a0ed5e20):romans_julii:named character):MOVING_NORMAL:start(295,421):end(296,420)");
     expect(restingTile(ev)).toEqual({ x: 296, y: 420 });

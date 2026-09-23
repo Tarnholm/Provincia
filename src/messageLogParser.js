@@ -370,10 +370,27 @@ function parseChunk(text) {
 // 12/12 and CAPTURE_TILE 57/58 started from `end`. Using `end` for a siege put
 // the besieging army under the town's own icon (user report 2026-09-22).
 const STAYS_AT_START = new Set(["ATTACK", "BESIEGE", "ASSAULT", "BLOCKADE", "DISEMBARK"]);
+// With a trailing loco(MOVING_NORMAL) the army WALKED as part of the order
+// and stopped beside the target — neither on start nor on end. The log does
+// not say which tile; stepping from start straight at the target (diagonal
+// first) and stopping when adjacent matches the engine: Lucius Cornelius
+// Scipio, BESIEGE start(320,350) end(319,348) loco(MOVING_NORMAL), stood at
+// (319,349) in the running game (2026-09-24). On the 97-turn log this step
+// predicts the next move's start for 20 of 32 walking sieges (start: 15) and
+// 19 of 33 walking attacks (start: 5); the next save has the exact tile.
+function stepBesideTarget(sx, sy, ex, ey) {
+  let x = sx, y = sy;
+  for (let guard = 0; guard < 64 && Math.max(Math.abs(ex - x), Math.abs(ey - y)) > 1; guard++) {
+    x += Math.sign(ex - x);
+    y += Math.sign(ey - y);
+  }
+  return { x, y };
+}
+
 function restingTile(ev) {
-  return STAYS_AT_START.has(ev.status || ev.action)
-    ? { x: ev.fromX, y: ev.fromY }
-    : { x: ev.toX, y: ev.toY };
+  if (!STAYS_AT_START.has(ev.status || ev.action)) return { x: ev.toX, y: ev.toY };
+  if (ev.loco) return stepBesideTarget(ev.fromX, ev.fromY, ev.toX, ev.toY);
+  return { x: ev.fromX, y: ev.fromY };
 }
 
 module.exports = { parseLine, parseChunk, shortUuid, restingTile, STAYS_AT_START };
