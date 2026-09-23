@@ -5,6 +5,13 @@
 // greppable in the working tree. Full authoritative history is in git.
 const CHANGELOG_ARCHIVE = [
   {
+    version: "0.9.1512",
+    date: "2026-09-22",
+    items: [
+      { type: "fix", text: "**Campaign Autopsy: \"Scan saves…\" now opens the folder picker.** It did nothing at all, which made the whole tool unreachable — the button was handed its action under the wrong name, so every click was quietly dropped. The Timeline section of Save Insights had the same dead button and is fixed with it. The scan itself was never broken; nothing could start it. If no mod is loaded the button now says so instead of going silent, which is what made it look broken rather than blocked." },
+    ],
+  },
+  {
     version: "0.9.1511",
     date: "2026-09-22",
     items: [

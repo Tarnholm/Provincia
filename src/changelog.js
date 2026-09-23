@@ -13,6 +13,19 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1517",
+    date: "2026-09-24",
+    items: [
+      { type: "fix", text: "**Live mode now shows every army, where it is, under the right banner.** Checked army by army against a running campaign over three turns, live mode matches the game: every land army and every fleet on its tile, with its faction and its commander's name. Before, after a single AI turn more than a quarter of the armies on the map were missing, duplicated or under the wrong faction." },
+      { type: "fix", text: "**Armies led by a captain appear.** When the AI marches troops out of a town under a captain, those armies were missing from the map entirely — their units were quietly added to whichever general happened to be stored before them, so a one-unit general would suddenly show ten. After one AI turn of RIS that was 262 armies. They are now their own armies, where the game has them." },
+      { type: "fix", text: "**The right faction for every army.** More than half of all armies used to take their faction from a guess, and generals away from home — or standing in rebel land — were often shown under the wrong banner. Factions now come from the character's own record, from the rebel marker the game gives rebel armies and pirate fleets, from the game's log (which names the faction of every army that moves), and only then from whose land it stands in." },
+      { type: "fix", text: "**No more ghost duplicates.** A general who had marched away could still be drawn a second time at his starting position. Gone." },
+      { type: "fix", text: "**The log never undoes a newer save.** The game writes a line in its log each time it saves; live mode now uses it to know exactly which moves the save already contains, so an older move from the log no longer puts an army back where it was. Everything that happens after the save — including a general who marries into the family mid-turn and takes his place in a town's garrison — still comes from the log." },
+      { type: "fix", text: "**Fleets carrying troops or agents appear, and carry their admiral's name.** A fleet with an army or a diplomat on board was lost from the map. Fleets now show as “Admiral Gaius” rather than “romans julii fleet”. Characters with a single name, such as Azes of the Saka, are no longer dropped by the save reader and shown as an unnamed captain." },
+    ],
+  },
+
+  {
     version: "0.9.1516",
     date: "2026-09-22",
     items: [
@@ -52,14 +65,6 @@ const CHANGELOG = [
     items: [
       { type: "feature", text: "**Bring In a Faction (Tools menu): put a faction from the main mod onto a submod's map.** A submod declares the same factions as the mod it sits on but leaves most of them asleep — RIS_Light 137 of 239, RIS_Classic 183 — so adding one is really waking one. Pick a dormant faction and you get its roster from the main mod: every character with the units in its army, and its family, each with a tick. Settlements are picked on the submod's own map, since those maps are redrawn (Light has 422 regions against the main mod's 1,312, Classic 300) and a faction's old towns mostly do not exist there; the ones it holds in the main mod that DO exist here are suggested and pre-ticked. Every town names its current owner — the rebels in grey, a living faction in orange, because taking it costs them a settlement. Preview shows exactly what will move before anything is written, including the tile each character will stand on." },
       { type: "change", text: "**Written carefully, and only where you point it.** Bringing a faction in rewrites that campaign's descr_strat with a timestamped backup beside it, and honours \"export instead of overwrite\". Characters keep their armies but get fresh coordinates on the new map — a main-mod position would drop them in the sea. A marriage or parent link only travels when everyone it names travels, and the panel warns you if what you have chosen would leave the faction without a town or without a leader, which kills it on the first turn." },
-    ],
-  },
-
-  {
-    version: "0.9.1512",
-    date: "2026-09-22",
-    items: [
-      { type: "fix", text: "**Campaign Autopsy: \"Scan saves…\" now opens the folder picker.** It did nothing at all, which made the whole tool unreachable — the button was handed its action under the wrong name, so every click was quietly dropped. The Timeline section of Save Insights had the same dead button and is fixed with it. The scan itself was never broken; nothing could start it. If no mod is loaded the button now says so instead of going silent, which is what made it look broken rather than blocked." },
     ],
   },
 
