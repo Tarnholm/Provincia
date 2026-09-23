@@ -3001,7 +3001,7 @@ function App() {
   const minZoom = 1,
     maxZoom = 100;
 
-  const [factionRegionsMap, setFactionRegionsMap] = useState({});
+  const [factionRegionsMapBase, setFactionRegionsMap] = useState({});
   // Dev mode: { regionName: targetFactionId } — settlement ownership moves
   // queued for export. patchDescrStrat consumes this and physically moves
   // each settlement block into the target faction's section in descr_strat.txt.
@@ -3783,6 +3783,29 @@ function App() {
   // compare against descr_regions field 3.
   const [initialCreatorByCity, setInitialCreatorByCity] = useState(null);
   const [currentOwnerByCity, setCurrentOwnerByCity] = useState(null); // { city: factionId } — current ownership decoded from save
+  // Faction → its regions, as the game has them NOW. The base map is the
+  // campaign start plus captures the log reported while watching; a live save's
+  // own ownership (currentOwnerByCity) is applied on top — the legend counts,
+  // faction selection and search read this. Before, a town taken before Live
+  // started (or during the log backfill) stayed with its old owner there:
+  // Rome listed 26 provinces without Ankon, Asculum or Rhegium (2026-09-24).
+  const factionRegionsMap = useMemo(() => {
+    if (!currentOwnerByCity || !regions || !factionRegionsMapBase) return factionRegionsMapBase;
+    const moves = [];
+    for (const r of Object.values(regions)) {
+      const owner = r && r.city ? currentOwnerByCity[r.city] : null;
+      if (owner && r.region) moves.push([owner, r.region, r.city]);
+    }
+    if (!moves.length) return factionRegionsMapBase;
+    const drop = new Set();
+    for (const [, reg, city] of moves) { drop.add(String(reg).toLowerCase()); drop.add(String(city).toLowerCase()); }
+    const out = {};
+    for (const [f, regs] of Object.entries(factionRegionsMapBase)) {
+      out[f] = (regs || []).filter((n) => !drop.has(String(n).toLowerCase()));
+    }
+    for (const [owner, reg] of moves) (out[owner] = out[owner] || []).push(reg);
+    return out;
+  }, [factionRegionsMapBase, currentOwnerByCity, regions]);
   // Authoritative rgbKey → owner-faction map, resolved the SAME way the map
   // coloring does: faction→region/city name match from factionRegionsMap, then
   // the live save override (currentOwnerByCity). Used by the fog victory-target
@@ -14901,7 +14924,7 @@ function App() {
       //   - Let the useEffects for log-watch and save-watch start from EOF
       //     / latest autosave and produce forward-only events.
       baseRegionsRef.current = JSON.parse(JSON.stringify(regions));
-      baseFactionMapRef.current = JSON.parse(JSON.stringify(factionRegionsMap));
+      baseFactionMapRef.current = JSON.parse(JSON.stringify(factionRegionsMapBase));
 
       currentTurnRef.current = 0;
       currentCampaignRef.current = null;

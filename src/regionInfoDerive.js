@@ -475,7 +475,9 @@ export function deriveFieldArmies(ctx) {
       // from unit ownership. Parmenion's hoplites can
       // be recruited by greek_cities, but Parmenion
       // himself is macedon — use macedon for him.
-      const commanderFaction = commander?.faction || null;
+      // A rebel commander's record carries the rebel card marker
+      // ("saba_rebel"): the rebels, as on the map (liveArmyFactions rule 0).
+      const commanderFaction = commander?.faction ? (/_rebel$/i.test(commander.faction) ? "slave" : commander.faction) : null;
       const factionGuess = commanderFaction || ownerFactionOfUnits(units);
       const isOwnFieldArmy = commanderFaction
         ? commanderFaction === ownerId
