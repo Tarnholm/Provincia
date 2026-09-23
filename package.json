@@ -129,6 +129,7 @@
       "src/modEditingHandlers.js",
       "src/campaignScan.js",
       "src/characterFactionBlocks.js",
+      "src/liveArmyFactions.js",
       "src/factionTransfer.js",
       "src/newFaction.js",
       "src/factionTransferHandlers.js",
