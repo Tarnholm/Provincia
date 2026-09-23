@@ -4868,6 +4868,13 @@ function App() {
       for (const [key, entry] of livePos) {
         if (matchedKeys.has(key)) continue;
         if (!inTurn(entry)) continue;
+        // A log entry from BEFORE the loaded save's turn is already in the
+        // save: if it matched no save army, that is a name/faction mismatch,
+        // not a new army — drawing it made a second marker (measured
+        // 2026-09-23 against the running game: Arsames, Ambiorix, Kotys…
+        // twice after one AI turn). Only moves at or after the save's turn
+        // can be armies the save has not seen yet.
+        if (Number.isFinite(maxTurn) && (entry.turn || 0) < maxTurn) continue;
         const posKey = (entry.faction || "") + "|" + entry.x + "," + entry.y;
         if (alreadyAtPos.has(posKey)) continue;
         if (!logOnlyByPos.has(posKey)) logOnlyByPos.set(posKey, []);
@@ -4989,12 +4996,14 @@ function App() {
           }
           if (conquered) continue;
         }
-        if (liveMovesActive) continue;
-        let armyClass = d.armyClass || "field";
-        if (armyClass === "field" && settlementTiles.has(key)) armyClass = "garrison";
-        const synth = { ...d, armyClass, descrStratOnly: true };
-        result.push(synth);
-        armyByPos.set(key, synth);
+        // No synthetic markers once a save is parsed (2026-09-23). Measured
+        // against the running game after one AI turn on RIS: the save reader
+        // finds every army the engine has (1,214 of 1,214, one miss), while
+        // this synthesis drew ~10-146 GHOSTS — a starting-position copy of a
+        // general whose save name/faction key no longer matched his
+        // descr_strat entry (region surnames, epithets, relabelled faction).
+        // The save is the authority for which armies exist.
+        void liveMovesActive;
       }
     }
     // Compute live region for each army from its (x, y). City tiles are
