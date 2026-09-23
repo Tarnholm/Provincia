@@ -10,6 +10,7 @@ import { getCachedUnitIcon, prefetchUnitIcons } from "./unitIcons";
 import { isGarrisonUnit } from "./garrisonClassify";
 import { tagOverlayGarrisonUnits } from "./garrisonUnits";
 import { displayFullName } from "./displayName";
+import { aliasesAllow } from "./edbAlias";
 
 // Evaluate strategic-`resource` recruit gates against a region's resource set
 // (from resources_*.json — e.g. elephants). Elephant units are gated on
@@ -786,6 +787,13 @@ export function deriveRecruitable(ctx) {
   if (!r || !buildingRecruits) return null;
   let builtList = null;
   try { builtList = getBuildings(r, true); } catch {}
+  // A save building record at health 0 is one still in the construction
+  // queue (Ankon: colony at health 0 and listed in the settlement's queue;
+  // hospital and garrison went 0 -> 100 once finished; an upgrade in progress
+  // keeps the old level's record at its real health). It satisfies no recruit
+  // requirement until built — counting it put four Roman units on Ankon's list
+  // that the game does not offer (user report 2026-09-24).
+  if (builtList) builtList = builtList.filter((b) => b.health !== 0);
   if (!builtList || builtList.length === 0) return null;
   const ownerId = (
     (currentOwnerByCity && currentOwnerByCity[r.city])
@@ -952,6 +960,12 @@ export function deriveRecruitable(ctx) {
             }
           }
           if (!ok) continue;
+          // 1b) Compound aliases (RIS aor_tier_1 = "gov_tier_1 and not
+          //     colony_tier_2"), judged from the alias's own expression.
+          if (!aliasesAllow(rec.requires, buildingRecruits.__aliasExprs, {
+            hasMinLevel, isPlayer: true,
+            hasTag: (t) => String(r.tags || "").toLowerCase().split(",").some((x) => x.trim() === t),
+          })) continue;
           // 2) Direct building_present_min_level clauses (with optional `not`).
           {
             const re = /(\bnot\s+)?\bbuilding_present_min_level\s+(\S+)\s+(\S+)/g;
@@ -1025,7 +1039,7 @@ export function deriveRecruitable(ctx) {
     String(r.tags || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean)
   );
   for (const chain of Object.keys(buildingRecruits)) {
-    if (chain === "__aliases") continue;
+    if (chain.startsWith("__")) continue;
     const lvls = buildingRecruits[chain];
     if (!lvls || typeof lvls !== "object") continue;
     for (const lvl of Object.keys(lvls)) {
@@ -1163,7 +1177,7 @@ export function deriveAorUnits(ctx) {
   if (![...tagSet].some(t => t.startsWith("aor_")) && resourceSet.size === 0) return [];
   const byUnit = new Map(); // unit → {unit, aors:Set, only:Set, except:Set}
   for (const chain of Object.keys(buildingRecruits)) {
-    if (chain === "__aliases") continue;
+    if (chain.startsWith("__")) continue;
     const lvls = buildingRecruits[chain];
     if (!lvls || typeof lvls !== "object") continue;
     for (const lvl of Object.keys(lvls)) {

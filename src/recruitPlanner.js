@@ -314,7 +314,7 @@ export function planRecruitUpgrades({
 
   if (includeUnbuilt) {
     for (const chain of Object.keys(buildingRecruits)) {
-      if (chain === "__aliases" || seenChains.has(chain)) continue;
+      if (chain.startsWith("__") || seenChains.has(chain)) continue;
       const order = (buildingLevelsLookup && buildingLevelsLookup[chain]) || null;
       if (!order || order.length === 0) continue; // first level indeterminable
       const firstLevel = order[0];

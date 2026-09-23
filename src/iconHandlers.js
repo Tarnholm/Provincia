@@ -223,6 +223,7 @@ ipcMain.handle("get-building-recruits", async (_event, modDataDir) => {
   // dropping recruits that mention them. Each alias maps to one or more
   // [chain, minLevel] clauses ORed together.
   const aliases = {};
+  const aliasExprs = {};
   // LAST-WINS per (chain, level): each source overwrites any recruit list
   // a prior source had for the same chain+level. Crucially this also
   // applies when the mod redefines a level with ZERO recruit lines (RIS
@@ -249,6 +250,9 @@ ipcMain.handle("get-building-recruits", async (_event, modDataDir) => {
             if (rm) curReq = rm[1].trim();
             if (r === "}") {
               if (curReq) {
+                // The whole expression too: compound aliases (RIS aor_tier_1 =
+                // "gov_tier_1 and not colony_tier_2") are evaluated from it.
+                aliasExprs[curAlias] = curReq;
                 // Split on `or` — each branch is one OR clause.
                 const branches = curReq.split(/\s+or\s+/);
                 const out2 = [];
@@ -314,6 +318,7 @@ ipcMain.handle("get-building-recruits", async (_event, modDataDir) => {
   // the same IPC. Using a non-conflicting key (chain names never start
   // with `__`).
   out.__aliases = aliases;
+  out.__aliasExprs = aliasExprs;
   _buildingRecruitsCache.set(cacheKey, out);
   return out;
 });

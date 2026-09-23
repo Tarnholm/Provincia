@@ -51,6 +51,7 @@ const logAppDiagnostics = diagnostics.logDiagnostics;
 // why we import the default object and pull the fns off it).
 import nonLiveCommanderResolver from "./nonLiveCommanderResolver";
 import liveDiplomacyMod from "./liveDiplomacy";
+import { aliasesAllow } from "./edbAlias";
 const { applyLiveDiplomacy, liveFactionChanges } = liveDiplomacyMod;
 const buildNonLivePortraitMap = nonLiveCommanderResolver.buildNonLivePortraitMap;
 const resolveNonLiveCommanderInfoApp = nonLiveCommanderResolver.resolveNonLiveCommanderInfo;
@@ -8109,6 +8110,8 @@ function App() {
     if (!reg || !buildingRecruits) return [];
     let builtList = null;
     try { builtList = getBuildings(reg, true); } catch {}
+    // Health 0 = still queued, not built (see regionInfoDerive).
+    if (builtList) builtList = builtList.filter((b) => b.health !== 0);
     if (!builtList || builtList.length === 0) return [];
     const recruitResourceList = (resourcesData && (resourcesData[reg.region] || resourcesData[reg.city])) || [];
     const regionResourceSet = new Set(recruitResourceList.map(x => String(x.type || "").toLowerCase()).filter(Boolean));
@@ -8178,6 +8181,8 @@ function App() {
               }
             }
             if (!ok) continue;
+            // Compound aliases (aor_tier_*), from the alias's own expression.
+            if (!aliasesAllow(rec.requires, buildingRecruits.__aliasExprs, { hasMinLevel, hasTag: (t) => tagSet.has(t), isPlayer: true })) continue;
             {
               const re = /(\bnot\s+)?\bbuilding_present_min_level\s+(\S+)\s+(\S+)/g;
               let m;
@@ -8541,7 +8546,7 @@ function App() {
     if (buildingRecruits) {
       const unitsByGate = new Map(); // "aor_x" | "res:<type>" → Set(unit)
       for (const chain of Object.keys(buildingRecruits)) {
-        if (chain === "__aliases") continue;
+        if (chain.startsWith("__")) continue;
         const lvls = buildingRecruits[chain];
         if (!lvls || typeof lvls !== "object") continue;
         for (const lvl of Object.keys(lvls)) {
@@ -23864,6 +23869,7 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
         if (!r) return null;
         let builtRaw = null;
         try { builtRaw = getBuildings(r, true); } catch { builtRaw = null; }
+        if (builtRaw) builtRaw = builtRaw.filter((b) => b.health !== 0); // health 0 = still queued
         const plannerOwner = ((currentOwnerByCity && currentOwnerByCity[r.city])
           || (initialOwnerByCity && initialOwnerByCity[r.city])
           || r.faction || "").toLowerCase();
