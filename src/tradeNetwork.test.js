@@ -64,12 +64,20 @@ describe("tradeNetwork buildTradeRights V2 — rel[]-based gate (state!=war AND 
     expect(tr.stats.matrixUsed).toBe(true);
   });
 
-  test("allied STATE (att==0) admits even with bond==6 (rel199 robustness branch)", () => {
+  // The +20 field is treaty bits; trade rights is bit 32 alone, as the engine's
+  // DIPLOMACY_MANAGER::has_trade_rights tests it (decoded 2026-09-24).
+  test("an allied state without the trade-rights bit does not trade", () => {
     const diplo = { a: { rel: [{ to: "b", att: 0, bond: 6 }] } };
     const tr = buildTradeRights(diplo, null);
+    expect(tr("a", "b")).toBe(false);
+  });
+
+  test("a trade-rights pact alone (46) admits; 10 and 14 carry no treaty", () => {
+    const diplo = { a: { rel: [{ to: "b", att: 200, bond: 46 }, { to: "c", att: 200, bond: 10 }, { to: "d", att: 200, bond: 14 }] } };
+    const tr = buildTradeRights(diplo, null);
     expect(tr("a", "b")).toBe(true);
-    expect(tr.stats.allied).toBe(1);
-    expect(tr.stats.bond54).toBe(0);
+    expect(tr("a", "c")).toBe(false);
+    expect(tr("a", "d")).toBe(false);
   });
 
   test("partial bond (6<bond<54) on a NEUTRAL state admits (trade-rights pact)", () => {

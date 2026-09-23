@@ -8,7 +8,7 @@
 //       war:           [partnerIds],   // attitude 600+ — formal war (ground truth)
 //       allied:        [partnerIds],   // attitude 0
 //       hostile:       [partnerIds],   // attitude 400..599 — AI drift, NOT formal war
-//       trade:         [partnerIds],   // military bond >= 54 (ally OR protectorate bond)
+//       trade:         [partnerIds],   // trade rights (treaty bit 32; every ally/protectorate has it)
 //       protectorates: [partnerIds],   // partners that are THIS faction's clients
 //       suzerains:     [partnerIds],   // partners that are THIS faction's suzerain
 //       rel: [{ to, att, bond, agg, turnsAllied, turnsAtWar }], // raw non-neutral cells

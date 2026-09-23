@@ -451,6 +451,13 @@ function settlementFlags(settlements) {
 //
 // Returns a gate function with a `.stats` property recording how many directed
 // pairs each branch admitted (for [trade]-tagged diagnostics).
+// SUPERSEDED 2026-09-24: the +20 field is a set of treaty bits, and trade
+// rights is exactly bit 32 — decoded against the running engine, whose
+// DIPLOMACY_MANAGER::has_trade_rights tests the same flag (see
+// saveCrackerExtras.parseDiplomacyMatrix). "bond > 6" also admitted 10 and 14,
+// which carry no treaty and occur between factions at WAR; an allied state
+// without the bit does not trade either. The branches below only label stats.
+const TRADE_RIGHTS_BIT = 32;
 const TRADE_BOND_ALLY = 54;     // CONFIRMED: military alliance/client bond floor
 const TRADE_BOND_NONE = 6;      // CONFIRMED: "no bond" default; >6 == a real bond
 const TRADE_STATE_WAR = 600;    // CONFIRMED: att>=600 == at war (rel 201)
@@ -475,11 +482,13 @@ function buildTradeRights(diplomacy, stratRelationships) {
           stats.rel++;
           const att = +e.att, bond = +e.bond;
           if (Number.isFinite(att) && att >= TRADE_STATE_WAR) { stats.warExcluded++; continue; } // WAR: never
-          let admit = false;
-          if (Number.isFinite(bond) && bond >= TRADE_BOND_ALLY) { admit = true; stats.bond54++; }      // military bond
-          else if (att === 0) { admit = true; stats.allied++; }                                        // allied state (rel199)
-          else if (Number.isFinite(bond) && bond > TRADE_BOND_NONE) { admit = true; stats.partialBond++; } // partial bond pact
-          if (admit) add(a, e.to);
+          // The engine's own test is one bit (see TRADE_RIGHTS_BIT above).
+          if (Number.isFinite(bond) && (bond & TRADE_RIGHTS_BIT)) {
+            add(a, e.to);
+            if (bond >= TRADE_BOND_ALLY) stats.bond54++;
+            else if (att === 0) stats.allied++;
+            else stats.partialBond++;
+          }
         }
       } else {
         // FALLBACK (matrix didn't lock for this faction): precomputed lists.

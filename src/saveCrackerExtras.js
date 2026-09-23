@@ -973,6 +973,10 @@ function locateDiplomacyMatrix(buf, N) {
 // Returns { factionName: { war:[names], allied:[names], hostile:[names] },
 //   _meta:{base,stride,key,C,N,symmetry,warPairs} } or null if not found.
 // `factionOrder` = descr_sm_factions declaration order (modFactionOrder).
+// Treaty bits of a diplomacy cell's +20 field (see parseDiplomacyMatrix).
+const DIPLO_TRADE_RIGHTS = 32;
+const DIPLO_PROTECTED = 1;
+
 function parseDiplomacyMatrix(buf, factionOrder) {
   if (!Array.isArray(factionOrder) || factionOrder.length < 2) return null;
   const N = factionOrder.length;
@@ -1034,22 +1038,27 @@ function parseDiplomacyMatrix(buf, factionOrder) {
       if (!isDiplomaticFaction(bName)) continue;
       if (s === "allied") rec.allied.push(bName);
       else if (s === "hostile") rec.hostile.push(bName);
-      // Military bond at cell +20 (reader bond): 6=none, 54=ally-or-client side,
-      // 55=SUZERAIN side. DEEP-DECODE 2026-05-31 (probes/diplo-deep): a 54/55
-      // ASYMMETRIC pair is a PROTECTORATE — the 55-holder is the suzerain, the
-      // 54-holder its client. 54/54 symmetric = plain alliance. cellAt(A,B) is A's
-      // view toward B, so A holding 55 ⇒ A is B's suzerain (B is A's protectorate).
-      if (c.bond >= 54) rec.trade.push(bName);       // any military bond (ally|protectorate)
-      // Protectorate orientation in THIS reader (verified via makeDiplomacyPairReader):
-      // cellAt(A,B).bond===55 means A is the CLIENT and B is A's SUZERAIN
-      // (reader(gades,carthage)=55, reader(samnites,romans_julii)=55). So:
-      //   A holds 55 ⇒ B is A's suzerain (A is B's protectorate)
-      //   A holds 54 with B holding 55 ⇒ B is A's protectorate
-      //   54/54 symmetric ⇒ plain alliance (no protectorate either way)
-      if (c.bond === 55) rec.suzerains.push(bName); // B is A's suzerain
-      else if (c.bond === 54) {
+      // Cell +20 (reader `bond`) is a set of treaty BITS, not a bond level
+      // (decoded 2026-09-24 against the running engine, RTWHook probe_diplo_map:
+      // every one of 717 pairs maps save value -> engine flag byte one-to-one).
+      // The engine keeps the flags at +0xc of its 0x90-byte per-pair record;
+      // DIPLOMACY_MANAGER::has_trade_rights reads engine bit 0 and
+      // apply_proposition asserts does_faction_a_have_military_access_to_
+      // faction_b on engine bit 2. The save stores them as:
+      //   32 trade rights   16 military access   1 protected (client) side
+      //   8/4/2 carry no treaty (set on pairs at war too); 6 is the plain default.
+      // So 46 = trade rights alone, 54 = trade + access (every alliance has
+      // both), 62 = both plus bit 8. Reading ">= 54" as "trade" missed every
+      // trade-rights-only pact (a Sarsinate trade deal, user report 2026-09-24),
+      // and "=== 55" missed protectorates that also trade (63).
+      if (c.bond & DIPLO_TRADE_RIGHTS) rec.trade.push(bName);
+      // Protectorate orientation (verified via makeDiplomacyPairReader):
+      // the PROTECTED bit in cellAt(A,B) means A is the CLIENT and B its
+      // SUZERAIN (reader(gades,carthage)=55, reader(samnites,romans_julii)=55).
+      if (c.bond & DIPLO_PROTECTED) rec.suzerains.push(bName); // B is A's suzerain
+      else {
         const back = cellAt(B, A);
-        if (back && back.bond === 55) rec.protectorates.push(bName); // B is A's protectorate
+        if (back && (back.bond & DIPLO_PROTECTED)) rec.protectorates.push(bName); // B is A's protectorate
       }
       if (v !== 200 || c.bond !== 6) rec.rel.push({ to: bName, att: v, bond: c.bond, agg: c.agg, turnsAllied: c.turnsAllied, turnsAtWar: c.turnsAtWar });
     }

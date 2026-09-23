@@ -632,8 +632,9 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       liveWar = foldWarTargets(mtxRow.war || []);
       liveAllied = (mtxRow.allied || []).filter(isRealFaction).map(entryOf);
       liveHostile = (mtxRow.hostile || []).filter(isRealFaction).map(entryOf);
-      // Trade = the alliance bond (descr_strat's 199 = "Ally/Trade" + scripted
-      // protectorates). Decoded from the matrix bond field. Includes protectorates.
+      // Trade = factions holding trade rights with this one: bit 32 of the
+      // matrix cell's treaty bits (saveCrackerExtras.parseDiplomacyMatrix).
+      // Every alliance and protectorate carries it; a plain trade deal does too.
       liveTrade = (mtxRow.trade || []).filter(isRealFaction).map(entryOf);
     }
     let atWarWithAll = false;
@@ -2278,7 +2279,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                   Raw diplomacy numbers — {factionLabel(ownerFactionId) || ownerFactionId}
                 </div>
                 <div style={{ color: "#8a93a8", fontSize: "0.62rem", marginBottom: 8 }}>
-                  core_attitudes: -10 Locked Allied · 0 Allied · 100 Suspicious · 200 Neutral · 400 Hostile · 600 At War · 850 Total War · 1000 Crazy. bond: 6 normal / 54 protectorate-ally / 55 special. agg = faction_aggression (recalc/turn). Pairs not listed are Neutral 200. {diplomacyMatrix._meta ? `[matrix base 0x${(diplomacyMatrix._meta.base||0).toString(16)} stride ${diplomacyMatrix._meta.stride} C ${diplomacyMatrix._meta.C} sym ${Math.round((diplomacyMatrix._meta.symmetry||0)*100)}%]` : ""} — click anywhere to close.
+                  core_attitudes: -10 Locked Allied · 0 Allied · 100 Suspicious · 200 Neutral · 400 Hostile · 600 At War · 850 Total War · 1000 Crazy. bond = treaty bits: 32 trade rights, 16 military access, 1 protected side (6 = none, 46 = trade only, 54 = trade + access, as every alliance). agg = faction_aggression (recalc/turn). Pairs not listed are Neutral 200. {diplomacyMatrix._meta ? `[matrix base 0x${(diplomacyMatrix._meta.base||0).toString(16)} stride ${diplomacyMatrix._meta.stride} C ${diplomacyMatrix._meta.C} sym ${Math.round((diplomacyMatrix._meta.symmetry||0)*100)}%]` : ""} — click anywhere to close.
                 </div>
                 {rows.length === 0 ? <div style={{ color: "#888" }}>All-neutral (no non-default relations).</div> : (
                   <table style={{ borderCollapse: "collapse", width: "100%" }}>
