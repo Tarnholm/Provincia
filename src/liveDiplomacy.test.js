@@ -35,7 +35,7 @@ describe("applyLiveDiplomacy", () => {
     const out = applyLiveDiplomacy(matrix(), [{ type: "dead", faction: "picentes", seq: 5 }]);
     expect(out.romans_julii.war).toEqual(["slave"]);
     expect(out.picentes).toBeUndefined();
-    expect(out._meta).toEqual({ N: 4 });
+    expect(out._meta).toEqual({ N: 4, dead: ["picentes"] });
   });
 
   it("only events after the loaded save apply", () => {

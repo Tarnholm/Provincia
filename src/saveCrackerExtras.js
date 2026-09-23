@@ -1023,7 +1023,14 @@ function dropDeadFactions(diplomacy, status) {
   const gone = (n) => status[String(n).toLowerCase()] > 0;
   const out = {};
   for (const [name, rec] of Object.entries(diplomacy)) {
-    if (name === "_meta") { out._meta = rec; continue; }
+    if (name === "_meta") {
+      out._meta = {
+        ...rec,
+        dead: Object.keys(status).filter((n) => status[n] === 2),     // destroyed
+        dormant: Object.keys(status).filter((n) => status[n] === 3),  // dead until resurrected
+      };
+      continue;
+    }
     if (gone(name) || !rec) continue;
     const r = {};
     for (const [k, v] of Object.entries(rec)) {

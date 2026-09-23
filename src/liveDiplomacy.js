@@ -41,6 +41,8 @@ export function applyLiveDiplomacy(matrix, events, isNew = () => true) {
     } else if (e.type === "dead") {
       const d = String(e.faction).toLowerCase();
       delete out[d];
+      const meta = out._meta || {};
+      if (!(meta.dead || []).includes(d)) out._meta = { ...meta, dead: [...(meta.dead || []), d] };
       for (const [k, r] of Object.entries(out)) {
         if (k === "_meta" || !r) continue;
         if (Object.values(r).some((v) => Array.isArray(v) && v.some((x) => String(x && typeof x === "object" ? x.to : x).toLowerCase() === d))) {

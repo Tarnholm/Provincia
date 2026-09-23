@@ -728,8 +728,12 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
     const owner = idx >= 0 ? factionRecordOwners[idx] : null;
     const treasury = rec ? rec.treasury : (startWealth != null ? startWealth : null);
     const hasLiveNamed = liveWar.length > 0 || liveAllied.length > 0 || liveTrade.length > 0;
+    // Destroyed in the live game (the save's FACTION state, or the log's
+    // "X faction is dead" since): no diplomacy at all, as in the game.
+    const destroyed = !!(liveActive && diplomacyMatrix && diplomacyMatrix._meta
+      && Array.isArray(diplomacyMatrix._meta.dead) && diplomacyMatrix._meta.dead.includes(fidLower));
     // If nothing at all to show, signal noData.
-    if (treasury == null && !liveDiplo && !hasLiveNamed && startAllies.length === 0 && startWars.length === 0
+    if (!destroyed && treasury == null && !liveDiplo && !hasLiveNamed && startAllies.length === 0 && startWars.length === 0
         && startProtects.length === 0 && startProtectedBy.length === 0) {
       return { noData: true };
     }
@@ -747,10 +751,10 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
       ceasefires: liveDiplo ? liveDiplo.ceasefires : 0,
       locked: liveDiplo ? liveDiplo.locked : 0,
       // 0.9.546: NAMED live diplomacy from the attitude matrix.
-      hasLiveNamed, liveWar, liveAllied, liveHostile, liveTrade, atWarWithAll, isPlaceholderFaction,
+      hasLiveNamed, liveWar, liveAllied, liveHostile, liveTrade, atWarWithAll, isPlaceholderFaction, destroyed,
       startAllies, startWars, startProtects, startProtectedBy, startTrade, startWarsDisplay,
     };
-  }, [ownerFactionId, factionRecordOwners, factionTreasuries, allFactionDiplomacy, diplomacyMatrix, factionWealth, factionRelationships, factionDisplayNames]);
+  }, [ownerFactionId, factionRecordOwners, factionTreasuries, allFactionDiplomacy, diplomacyMatrix, factionWealth, factionRelationships, factionDisplayNames, liveActive]);
 
   // 0.9.769: colour a faction-group header (Field armies UI12) by how that
   // faction relates to the REGION OWNER. Same palette as the Diplomacy section:
@@ -2439,7 +2443,11 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
                     protectorate distinction comes from the campaign-start data,
                     shown as a supplement. Falls back to campaign-start named
                     diplomacy (descr_strat + script) when no save is synced. */}
-                {factionState.isPlaceholderFaction ? (
+                {factionState.destroyed ? (
+                  <div style={{ color: "#c99", fontSize: "0.68rem", fontStyle: "italic" }}>
+                    Destroyed — no longer in the game, so no diplomacy.
+                  </div>
+                ) : factionState.isPlaceholderFaction ? (
                   <div style={{ color: "#888", fontSize: "0.68rem", fontStyle: "italic" }}>
                     Engine placeholder faction — no diplomacy.
                   </div>
