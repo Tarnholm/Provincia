@@ -188,6 +188,35 @@ function readQueueAtDefaultSet(buf, defaultSetOff, engine) {
   if (engine === undefined) engine = detectEngine(buf);
   if (engine === "alex") return readQueueAtDefaultSetAlexander(buf, defaultSetOff);
   const chainUuid = buf.readUInt32LE(bodyStart + 4);
+  // RIS imperial (2026-09-24): the next chain's preamble size is not always
+  // 0x0c — 0x07..0x0b in a live RIS campaign (Asculum's block ends at 0x0b), so
+  // the strict search found no queue in ANY settlement and the unit queue was
+  // always empty. Bound the block with the validated (self-pointer + lowercase
+  // chain name) preamble instead; a block holding a build item AND recruits
+  // runs past the old 120-byte window. Build items are read by
+  // buildingParser (with their kind and the settlement's own turns), so only
+  // recruits are collected here — every one, not just the first:
+  //   [u8 0][u32 settlement uuid][u16 len][unit name\0] 00 00 01 00 00 ff …
+  // (Asculum T6: "picentine swordsmen"). Retrains store a unit hash instead of
+  // a name and are not listed. Recruit turns are not decoded yet.
+  {
+    const end = findNextChainPreambleAlex(buf, bodyStart + 40, ALEX_BLOCK_SCAN);
+    if (end >= 0) {
+      const recruiting = [];
+      for (let i = bodyStart + QUEUE_SCAN_FROM; i + 8 <= end; i++) {
+        if (chainUuid === 0 || buf.readUInt32LE(i) !== chainUuid) continue;
+        const nameLen = buf.readUInt16LE(i + 4);
+        if (nameLen < 4 || nameLen > 64) continue;
+        const nameStart = i + 6, nameEnd = nameStart + nameLen - 1;
+        if (nameEnd >= end || buf[nameEnd] !== 0) continue;
+        const unit = buf.slice(nameStart, nameEnd).toString("latin1");
+        if (!/^[a-z][a-z0-9 _'-]*$/.test(unit)) continue;
+        recruiting.push({ unit });
+        i = nameEnd;
+      }
+      return recruiting.length ? { type: "ris", recruiting } : null;
+    }
+  }
   // Tightly bound the queue search using the next chain's preamble.
   const preambleOff = findNextChainPreamble(buf, bodyStart + 40, QUEUE_SCAN_TO);
   if (preambleOff < 0) return null;
@@ -299,7 +328,10 @@ function parseQueuesForSettlements(buf, settlementMarkers) {
     if (!owner) continue;
     if (!byCity.has(owner)) byCity.set(owner, { recruiting: [], building: [] });
     const bucket = byCity.get(owner);
-    if (q.type === "alex") {
+    if (q.type === "ris") {
+      bucket.recruiting.push(...q.recruiting);
+    }
+    else if (q.type === "alex") {
       // Alexander/RR: recruit names + build PROGRESS (no building name — identity
       // isn't stored; turns-remaining derived from build-points).
       if (q.recruiting && q.recruiting.length) bucket.recruiting.push(...q.recruiting);

@@ -8056,14 +8056,20 @@ function App() {
           const chainName = typeof entry === "string" ? entry : entry.name;
           const percent = typeof entry === "object" && entry && typeof entry.percent === "number" ? entry.percent : null;
           const turnsRemaining = typeof entry === "object" && entry && typeof entry.turnsRemaining === "number" ? entry.turnsRemaining : null;
+          const kind = typeof entry === "object" && entry ? entry.kind : null;
           const chainLevels = buildingLevelsLookup?.[chainName] || null;
           const rowIdx = resolved.findIndex((b) => b.type === chainName);
           const currLevel = rowIdx >= 0 ? resolved[rowIdx].level : null;
           let targetLevelName = null;
           let targetTier = null;
           if (chainLevels) {
+            // A NEW building (save record at health 0) is built at its own
+            // level — Ankon's queued colony is colony_1, not the step above.
+            // A repair restores the level it has.
             const currIdx = currLevel ? chainLevels.indexOf(currLevel) : -1;
-            const nextIdx = currIdx + 1;
+            const nextIdx = kind === "new"
+              ? (typeof entry.level === "number" ? entry.level : currIdx)
+              : kind === "repair" ? currIdx : currIdx + 1;
             if (nextIdx >= 0 && nextIdx < chainLevels.length) {
               targetLevelName = chainLevels[nextIdx];
               targetTier = nextIdx + 1;
@@ -8077,6 +8083,7 @@ function App() {
             else if (gameDisplayNames[targetLevelName]) tLabel = gameDisplayNames[targetLevelName];
           }
           if (!tLabel) tLabel = targetLevelName.replace(/_/g, " ");
+          if (kind === "repair") tLabel = `Repair ${tLabel}`;
           const tIcon = getCachedBuildingIcon(modDataDir, culture, targetLevelName);
           queuedUpgrades.push({
             type: chainName,
@@ -8088,10 +8095,20 @@ function App() {
             progress: percent != null ? percent / 100 : 0,
             percent,
             turnsRemaining,
-            fromLabel: rowIdx >= 0 ? (resolved[rowIdx].label || resolved[rowIdx].level) : null,
+            fromLabel: kind === "upgrade" || kind == null ? (rowIdx >= 0 ? (resolved[rowIdx].label || resolved[rowIdx].level) : null) : null,
+            kind: kind || "upgrade",
             culture,
           });
         }
+      }
+      // A building still being built isn't in the settlement yet: keep it off
+      // the Buildings list (it shows in the build queue above). Its save record
+      // is the health-0 one.
+      const underConstruction = new Set((queuedChains || []).filter((e) => e && typeof e === "object" && e.kind === "new").map((e) => e.name));
+      if (underConstruction.size) {
+        const shown = resolved.filter((b) => !(underConstruction.has(b.type) && b.health === 0));
+        shown.queuedUpgrades = queuedUpgrades;
+        return shown;
       }
       resolved.queuedUpgrades = queuedUpgrades;
       return resolved;

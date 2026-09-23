@@ -171,6 +171,31 @@ function parseSettlements(buf, validChainNames, chainMaxLevels) {
         buildings.push({ name: c.name, level: c.level, health: c.health });
         // Hash is at offset: record_start + 2(len) + name.length + 1(null).
         const hashOff = c.offset + 2 + c.name.length + 1;
+        // A record at health 0 is a NEW building still being built (the
+        // settlement doesn't have the chain yet). Its progress is in the
+        // record itself, relative to the hash position (2026-09-24, RIS saves;
+        // percent == floor(100 * elapsed / total) on every such record):
+        //   +12 cost  +20 turns total  +24 turns elapsed  +28 percent
+        //   +37 the EDB's base turns
+        // The stored total already carries the settlement's modifiers
+        // (Rhegium colony: base 6, stored 7 — its mountains tag is
+        // construction_time_bonus_other -20), so it is shown as stored.
+        // Its "hash" is the settlement's id, never a queue key.
+        if (c.health === 0 && hashOff + 41 <= buf.length) {
+          if (!seenQueued.has(c.name)) {
+            seenQueued.add(c.name);
+            const tot = buf.readUInt32LE(hashOff + 20), ela = buf.readUInt32LE(hashOff + 24), pct = buf.readUInt32LE(hashOff + 28);
+            const ok = tot > 0 && tot < 1000 && ela <= tot && pct <= 100;
+            queued.push({
+              name: c.name, kind: "new", level: c.level,
+              percent: ok ? pct : null,
+              turnsTotal: ok ? tot : null,
+              turnsElapsed: ok ? ela : null,
+              turnsRemaining: ok ? tot - ela : null,
+            });
+          }
+          continue;
+        }
         if (hashOff + 4 <= buf.length) {
           const h = buf.slice(hashOff, hashOff + 4).toString("hex");
           hashToChain.set(h, c.name);
@@ -195,6 +220,14 @@ function parseSettlements(buf, validChainNames, chainMaxLevels) {
       if (!name) continue;
       if (seenQueued.has(name)) continue;
       seenQueued.add(name);
+      // The item's kind is the u32 just before the hash: 0 upgrade, 2 repair
+      // (Ankon T2: its damaged defenses; a repair carries no build turns).
+      const kind = p >= 4 ? buf.readUInt32LE(p - 4) : 0;
+      if (kind === 2) {
+        queued.push({ name, kind: "repair", percent: null, turnsTotal: null, turnsElapsed: null, turnsRemaining: null });
+        p += 35;
+        continue;
+      }
       // Read the progress fields if they fit within the scan window.
       //   +24 u32 total turns, +28 u32 elapsed turns, +32 u32 percent (0..100)
       let percent = null, turnsTotal = null, turnsElapsed = null, turnsRemaining = null;
@@ -209,7 +242,7 @@ function parseSettlements(buf, validChainNames, chainMaxLevels) {
           turnsRemaining = Math.max(0, turnsTotal - turnsElapsed);
         }
       }
-      queued.push({ name, percent, turnsTotal, turnsElapsed, turnsRemaining });
+      queued.push({ name, kind: "upgrade", percent, turnsTotal, turnsElapsed, turnsRemaining });
       // Skip past this 36-byte queue record to avoid matching inside it.
       p += 35;
     }
