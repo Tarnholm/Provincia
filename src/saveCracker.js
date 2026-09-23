@@ -236,7 +236,8 @@ function crackSave(saveBuf, modDataDir, opts = {}) {
     }
   } catch (e) { /* whitelist optional — parse degrades to unfiltered */ }
   const settlements   = parseSettlements(saveBuf, edbChainSet, edbChainMax); // returns { settlements: [...], ... }
-  const diplomacy     = economyOnly ? null : x.parseDiplomacyMatrix(saveBuf, diploOrder);
+  const factionStatus = economyOnly ? null : x.parseFactionStatus(saveBuf, diploOrder);
+  const diplomacy     = economyOnly ? null : x.dropDeadFactions(x.parseDiplomacyMatrix(saveBuf, diploOrder), factionStatus);
   const v2Chars       = skipHeavy ? [] : x.parseCharacterExtras(saveBuf);
   // Attach extX/extY to v2 records so role-string agents (if any) can be named
   // by tile-coord join against v1. Cheap; no-op on saves smaller than the
@@ -696,6 +697,7 @@ function crackSave(saveBuf, modDataDir, opts = {}) {
       roleBreakdown,            // {role: count} from the <culture> <role> bodyguard-description anchor (general/captain confirmed)
     },
     diplomacy,                  // { factionName: {war, allied, hostile, trade}, _meta }
+    factionStatus,              // { factionName: 0 alive | 2 dead | 3 dead until resurrected } (FACTION+0x2b4)
     sieges,                     // [{ besiegerArmyUuid, siegeId, turnsRemaining, turnsUnderSiege, siegeWindow, targetSettlement }]
     events,                     // end-of-turn event log [{ type, faction, subject, title, body }]
     settlementFields,           // { city: { populationGrowth, income, publicOrder, governorUuid, ... } }

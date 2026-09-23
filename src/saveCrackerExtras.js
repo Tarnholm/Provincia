@@ -973,6 +973,67 @@ function locateDiplomacyMatrix(buf, N) {
 // Returns { factionName: { war:[names], allied:[names], hostile:[names] },
 //   _meta:{base,stride,key,C,N,symmetry,warPairs} } or null if not found.
 // `factionOrder` = descr_sm_factions declaration order (modFactionOrder).
+// Each faction's life state, as FACTION::load_faction reads it back (decompiled
+// 2026-09-24). The engine keeps it at FACTION+0x2b4: 0 alive, 2 dead (set by
+// FACTION::remove_from_game, "%s faction is dead"), 3 dead until resurrected
+// (descr_strat's dead_until_resurrected). A destroyed faction keeps its row in
+// the diplomacy matrix — at war with its killer for good — so without this the
+// game's dead factions stayed on every war list.
+//
+// Every faction record ends with three checkpointed lists and the state:
+//   [self][u16 n][n x u32]  x3,  [self][u32][u32 STATE]
+// where [self] is a u32 equal to its own file offset (INPUT_BUFFER checkpoint,
+// FUN_140bbeb00). The records are saved in faction order, so the first N such
+// tails are the N factions. Verified on three saves of one RIS campaign
+// against the running engine: 239/239 each, including two factions dying
+// between them. Returns { name: 0|2|3 } or null when the layout isn't found.
+function parseFactionStatus(buf, factionOrder) {
+  if (!Array.isArray(factionOrder) || factionOrder.length < 2) return null;
+  const N = factionOrder.length;
+  const self = (p) => p + 4 <= buf.length && buf.readUInt32LE(p) === p;
+  const listEnd = (p) => {
+    if (!self(p) || p + 6 > buf.length) return -1;
+    const n = buf.readUInt16LE(p + 4);
+    return n > 5000 ? -1 : p + 6 + 4 * n;
+  };
+  const states = [];
+  for (let p = 0; p + 16 < buf.length && states.length < N; p++) {
+    if (buf.readUInt32LE(p) !== p) continue;
+    let q = p;
+    for (let k = 0; k < 3 && q >= 0; k++) q = listEnd(q);
+    if (q < 0 || !self(q) || q + 12 > buf.length) continue;
+    const st = buf.readUInt32LE(q + 8);
+    if (st !== 0 && st !== 2 && st !== 3) continue;
+    states.push(st);
+    p = q + 11; // the next record starts after this one
+  }
+  if (states.length < N) return null;
+  // A wrong lock would scatter non-zero values; most factions are alive.
+  if (states.filter((v) => v === 0).length < N / 2) return null;
+  const out = {};
+  for (let i = 0; i < N; i++) out[String(factionOrder[i]).toLowerCase()] = states[i];
+  return out;
+}
+
+// The game lists no treaty or war with a faction that is not alive: drop dead
+// (2) and not-yet-resurrected (3) factions from every diplomacy list, and their
+// own rows. `status` is parseFactionStatus's output; null leaves it unchanged.
+function dropDeadFactions(diplomacy, status) {
+  if (!diplomacy || !status) return diplomacy;
+  const gone = (n) => status[String(n).toLowerCase()] > 0;
+  const out = {};
+  for (const [name, rec] of Object.entries(diplomacy)) {
+    if (name === "_meta") { out._meta = rec; continue; }
+    if (gone(name) || !rec) continue;
+    const r = {};
+    for (const [k, v] of Object.entries(rec)) {
+      r[k] = !Array.isArray(v) ? v : v.filter((e) => !gone(e && typeof e === "object" ? e.to : e));
+    }
+    out[name] = r;
+  }
+  return out;
+}
+
 // Treaty bits of a diplomacy cell's +20 field (see parseDiplomacyMatrix).
 const DIPLO_TRADE_RIGHTS = 32;
 const DIPLO_PROTECTED = 1;
@@ -1569,6 +1630,8 @@ module.exports = {
   parseFactionDiplomacy,
   parseAllFactionDiplomacy,
   parseDiplomacyMatrix,
+  parseFactionStatus,
+  dropDeadFactions,
   makeDiplomacyPairReader,
   isDiplomaticFaction,
   findRegionRecords,

@@ -16,7 +16,7 @@ const {
   parseFactionTreasuries: cxParseTreasuries, parseFactionTreasuryHistory: cxParseTreasuryHistory,
   identifyFactionRecordOwners: cxIdentifyRecordOwners, identifyPlayerFactionFromSave: cxIdentifyPlayerFromSave,
   parseFactionDiplomacy: cxParseDiplomacy, parseAllFactionDiplomacy: cxParseAllDiplomacy,
-  parseDiplomacyMatrix: cxParseDiplomacyMatrix, buildFamilyTreeMaps: cxBuildFamilyMaps,
+  parseDiplomacyMatrix: cxParseDiplomacyMatrix, parseFactionStatus: cxParseFactionStatus, dropDeadFactions: cxDropDeadFactions, buildFamilyTreeMaps: cxBuildFamilyMaps,
   parseReligionByCity: cxParseReligion, deriveEngineFactionOrder: cxDeriveEngineOrder,
   countEngineCharacters,
 } = require("./saveCrackerExtras.js");
@@ -774,7 +774,9 @@ function makeParseSaveData({ KNOWN_BUILDINGS, getModAiByFaction, getModAiPersona
   try {
     // RAW getModFactionOrder() (NOT engineOrder) — the matrix is descr_sm-indexed and
     // self-calibrates C; the derived engine order would mislabel every pair.
-    diplomacyMatrix = cxParseDiplomacyMatrix(data, getModFactionOrder());
+    // Dead factions keep their matrix rows (at war with their killer for good);
+    // the game lists none of them. FACTION state from the save, see parseFactionStatus.
+    diplomacyMatrix = cxDropDeadFactions(cxParseDiplomacyMatrix(data, getModFactionOrder()), cxParseFactionStatus(data, getModFactionOrder()));
     if (diplomacyMatrix && diplomacyMatrix._meta) {
       const mt = diplomacyMatrix._meta;
       console.log(`[diplo-matrix] located base=0x${mt.base.toString(16)} stride=${mt.stride} N=${mt.N} C=${mt.C} symmetry=${(mt.symmetry*100).toFixed(0)}% warPairs=${mt.warPairs}`);

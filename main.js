@@ -318,7 +318,7 @@ const {
   identifyPlayerFactionFromSave: cxIdentifyPlayerFromSave,
   parseFactionDiplomacy: cxParseDiplomacy,
   parseAllFactionDiplomacy: cxParseAllDiplomacy,
-  parseDiplomacyMatrix: cxParseDiplomacyMatrix,
+  parseDiplomacyMatrix: cxParseDiplomacyMatrix, parseFactionStatus: cxParseFactionStatus, dropDeadFactions: cxDropDeadFactions,
   buildFamilyTreeMaps: cxBuildFamilyMaps,
   parseReligionByCity: cxParseReligion,
   deriveEngineFactionOrder: cxDeriveEngineOrder,
@@ -2809,7 +2809,9 @@ ipcMain.handle("calibrate-from-save", async (_event, savePath) => {
       // Passing the derived order double-applies the rebel-slot shift and
       // mislabels every pair (Macedon decoded as war:none/allied:galatians
       // instead of war:epirus,galatians). Verified vs Macedon T0 ground truth.
-      diplomacyMatrix = cxParseDiplomacyMatrix(saveBuf, modFactionOrder);
+      // Dead factions keep their matrix rows (at war with their killer for good);
+      // the game lists none of them. FACTION state from the save, see parseFactionStatus.
+      diplomacyMatrix = cxDropDeadFactions(cxParseDiplomacyMatrix(saveBuf, modFactionOrder), cxParseFactionStatus(saveBuf, modFactionOrder));
       if (diplomacyMatrix && diplomacyMatrix._meta) {
         const mt = diplomacyMatrix._meta;
         console.log(`[diplo-matrix] calibrate: located base=0x${mt.base.toString(16)} stride=${mt.stride} N=${mt.N} C=${mt.C} symmetry=${(mt.symmetry*100).toFixed(0)}% warPairs=${mt.warPairs}`);
