@@ -4620,6 +4620,9 @@ function App() {
   const liveCharPositions = useRef(new Map());
   // save file name → log line (seq) of its 'Campaign saved' line; see armiesToRender
   const liveSaveSeqRef = useRef(new Map());
+  // settlement name (lower-case) → its world tile { x, y }, for log events that
+  // name a settlement instead of a tile ("… in settlement(Perusia)").
+  const settlementTileRef = useRef(new Map());
   // charUuids that the live log has reported as dead (DYING / death_type
   // events). Used to hide their save-derived army markers immediately
   // instead of waiting for the next save snapshot to write the death.
@@ -4882,6 +4885,26 @@ function App() {
       for (const [key, entry] of livePos) {
         if (matchedKeys.has(key)) continue;
         if (!inTurn(entry)) continue;
+        // A general put into a settlement ("… in settlement(Perusia)") takes
+        // the settlement's owner; if an army of that faction already stands
+        // there he joined it — a passenger, as the game stacks him (a
+        // married-in general the save of that turn does not know yet).
+        let entryFaction = entry.faction;
+        if (!entryFaction && entry.settlement && currentOwnerByCity) {
+          const cityKey = Object.keys(currentOwnerByCity).find((k) => k.toLowerCase() === String(entry.settlement).toLowerCase());
+          if (cityKey) entryFaction = currentOwnerByCity[cityKey];
+        }
+        if (entry.settlement && entryFaction) {
+          const host = result.find((a) => a.x === entry.x && a.y === entry.y && (a.faction || "").toLowerCase() === String(entryFaction).toLowerCase());
+          if (host) {
+            const first = (entry.name || "").split(/\s+/)[0];
+            const hostFirst = (host.firstName || String(host.character || "").split(/\s+/)[0] || "");
+            const already = hostFirst === first || (host.passengers || []).some((p) => (p.firstName || "") === first);
+            if (!already) host.passengers = [...(host.passengers || []), { firstName: first, name: entry.name, fromLog: true }];
+            matchedKeys.add(key);
+            continue;
+          }
+        }
         const posKey = (entry.faction || "") + "|" + entry.x + "," + entry.y;
         if (alreadyAtPos.has(posKey)) continue;
         // A faction-less log army (the log's "Brigands"/"Pirates" spawns) on a
@@ -5148,11 +5171,12 @@ function App() {
           name: a.character || a.firstName || null, faction: a.faction || null,
           x: a.x, y: a.y, cls: a.armyClass || null, live: !!a.liveTracked,
           src: a.factionSource || (a.logOnly ? "log" : null),
+          passengers: (a.passengers || []).map((p) => p.name || [p.firstName, p.lastName].filter(Boolean).join(" ")),
         })),
       };
     } catch { /* never let a debug snapshot break the map */ }
     return filtered;
-  }, [saveLiveArmies, armiesData, cityPixels, liveCharPositionsVersion, useLiveOverride, saveCurrentTurn, regions, imgSize, startingArmiesByRegion]);
+  }, [saveLiveArmies, armiesData, cityPixels, liveCharPositionsVersion, useLiveOverride, saveCurrentTurn, regions, imgSize, startingArmiesByRegion, currentOwnerByCity, liveSaveFile]);
 
   // Live-aware unitsByRegion: re-bucket save-tagged units using the
   // commander's CURRENT region from armiesToRender, so the side panel
@@ -6184,12 +6208,17 @@ function App() {
       let changed = false;
       if (moves) {
         for (const m of moves) {
+          if ((m.x == null || m.y == null) && m.settlement) {
+            const st = settlementTileRef.current.get(String(m.settlement).toLowerCase());
+            if (st) { m.x = st.x; m.y = st.y; }
+          }
           if (m.x == null || m.y == null || !m.name) continue;
           if (m.x < 0 || m.x > 1100 || m.y < 0 || m.y > 800) continue; // raised 2026-05-09 for RIS imperial 1020x700 map
           const key = keyFromName(m.name, m.faction);
           liveCharPositions.current.set(key, {
             x: m.x, y: m.y, name: m.name, faction: m.faction, role: m.role || null,
             charUuid: m.charUuid || null, turn: m.turn || 0, seq: m.seq || 0,
+            settlement: m.settlement || null,
           });
           changed = true;
         }
@@ -8980,6 +9009,14 @@ function App() {
       for (const w of whites) w.region = classifyPort(w.x, w.y);
       setRegionCentroids(centroids);
       setCityPixels(cities);
+      try {
+        const byCity = new Map();
+        for (const c of cities) {
+          const r = regions[c.rgbKey];
+          if (r && r.city) byCity.set(String(r.city).toLowerCase(), { x: c.x, y: (imgSize.height - 1) - c.y });
+        }
+        settlementTileRef.current = byCity;
+      } catch { /* lookup is best-effort */ }
       setPortPixels(whites); // {x,y,region} — each lane end binds to the nearest port OF ITS OWN region
     });
   }, [regions, imgSize, offscreen]);

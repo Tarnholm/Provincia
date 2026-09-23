@@ -378,6 +378,8 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
           recordCharName(ev.movedCharUuid, ev.movedCharName);
           recordCharName(ev.toCommanderUuid, ev.toCommanderName);
           recordUnitTransfer(ev.fromArmyUuid, ev.toArmyUuid, ev.toCommanderUuid, ev.movedCharUuid);
+        } else if (ev.type === "general_to_settlement") {
+          moves.push({ name: ev.name, faction: null, role: "named character", x: null, y: null, settlement: ev.settlement, charUuid: ev.charUuid, turn: backfillTurn, seq: logSeq });
         } else if (ev.type === "unit_transfer") {
           recordCharName(ev.toCommanderUuid, ev.toCommanderName);
           recordUnitTransfer(ev.fromArmyUuid, ev.toArmyUuid, ev.toCommanderUuid, null);
@@ -460,6 +462,8 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
                   moves.push({ name: p.name, faction: p.faction || ev.faction, role: ev.role, x: at.x, y: at.y, armyUuid: ev.armyUuid, charUuid: p.charUuid, turn, seq: logSeq });
                 }
               }
+            } else if (ev.type === "general_to_settlement") {
+              moves.push({ name: ev.name, faction: null, role: "named character", x: null, y: null, settlement: ev.settlement, charUuid: ev.charUuid, turn, seq: logSeq });
             } else if (ev.type === "general_transfer") {
               setPassenger(ev.movedCharUuid, ev.toCommanderUuid, ev.toCommanderName, null);
               if (ev.movedCharUuid && ev.toArmyUuid) {

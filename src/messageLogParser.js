@@ -28,6 +28,11 @@
 
 // Regexes anchored on the strictest distinguishing tokens first.
 const RX = {
+  // A general (new, or leaving an army) put into a settlement's garrison:
+  // transferring general(Numerius Seius Corvinus:7ddb2480) unit(9fac1b30) from army(5d8ee8b0) to army(f39f8d20) in settlement(Perusia)
+  // The game writes it when a married-in general gets his bodyguard — the save
+  // written earlier that turn does not know him yet (2026-09-23).
+  generalToSettlement: /^transferring general\((.+?):([0-9a-f]+)\) unit\(([0-9a-f]+)\) from army\(([0-9a-f]+)\) to army\(([0-9a-f]+)\) in settlement\((.+?)\)\s*$/,
   // Captain Cambyses(a638fee0:army(a5bb19e0):parthia:general):MOVING_NORMAL:start(94,28):end(88,26)[:multi-turns left(2)]
   // The trailing loco(...) variant (EXCHANGE) is optional. Some lines
   // have an additional "seige_scroll scroll closed" suffix appended by
@@ -127,6 +132,14 @@ function parseLine(line) {
   if (!((c >= 65 && c <= 90) || (c >= 97 && c <= 122))) return null;
 
   let m;
+  if (line.charCodeAt(0) === 116 /* 't' */ && (m = RX.generalToSettlement.exec(line))) {
+    return {
+      type: "general_to_settlement",
+      name: m[1].trim(), charUuid: shortUuid(m[2]),
+      fromArmyUuid: shortUuid(m[4]), toArmyUuid: shortUuid(m[5]),
+      settlement: m[6].trim(),
+    };
+  }
   if ((m = RX.move.exec(line))) {
     return {
       type: "character_move",
