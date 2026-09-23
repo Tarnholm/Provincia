@@ -1070,6 +1070,41 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
     // alone (their region differs from any general's region anyway, or
     // there's no preceding general in their region).
   }
+  // World-object positions (built before Pass 2, which needs the type-5 ids).
+  const positions = (function() {
+    const m = new Map();
+    // Includes type=4 (navy), type=5 (captain land army), type=6 (bodyguard).
+    for (let N = 24; N < saveBuf.length - 8; N++) {
+      if (saveBuf.readUInt32LE(N - 4) !== N - 4) continue;
+      const type = saveBuf.readUInt32LE(N - 12);
+      if (type !== 6 && type !== 5 && type !== 4) continue;
+      const x = saveBuf.readUInt32LE(N);
+      // Bounds raised 2026-05-09 — see parseWorldObjectPositions above.
+      if (x < 0 || x > 1100) continue;
+      const y = saveBuf.readUInt32LE(N + 4);
+      if (y < 0 || y > 800) continue;
+      const uuid = saveBuf.readUInt32LE(N - 8);
+      if (!uuid) continue;
+      // Moved-this-turn flag — save-cracker session 4 CONFIRMED across two
+      // independent move-pair diffs. Bit 7 of the byte at N+9 (relative
+      // to the x coord) flips from 0 to 1 when the character moves
+      // this turn. Lets us mark armies "has moved" / "still has actions"
+      // without waiting for the next save snapshot.
+      const movedFlag = N + 9 < saveBuf.length ? (saveBuf[N + 9] & 0x80) !== 0 : false;
+      if (type === 6 || !m.has(uuid)) m.set(uuid, { x, y, moved: movedFlag, type });
+    }
+    return m;
+  })();
+  // Captain-led land armies (a type-5 position record, no named general):
+  // the army's id sits 20 bytes before its FIRST unit record, and each
+  // following unit of the same army has 0xffffffff there; their units carry
+  // commander 0. Measured against the running game 2026-09-23: after one AI
+  // turn on RIS, 262 captain armies (254 marched out of towns) were missing
+  // from the live map, and Pass 2 below had piled their units into whatever
+  // general preceded them in the file (Captain Yahua's 10 infantry went to an
+  // unrelated general). Same header convention as the navy pass (type 4).
+  const captainArmyIds = new Set();
+  for (const [uuid, p] of positions) if (p.type === 5) captainArmyIds.add(uuid);
   // Pass 2: file-order foot-unit attribution.
   //
   // RTW writes each army's units contiguously in the save (bodyguard
@@ -1101,10 +1136,28 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
   {
     const ordered = units.slice().sort((a, b) => a.offset - b.offset);
     let lastCmd = null;
+    let lastGeneralCmd = null;
+    let inCaptainArmy = false;
     for (const u of ordered) {
       if (u.commanderUuid) {
-        lastCmd = u.commanderUuid;
+        lastCmd = lastGeneralCmd = u.commanderUuid;
+        inCaptainArmy = false;
         continue;
+      }
+      const header = u.offset >= 20 ? saveBuf.readUInt32LE(u.offset - 20) : 0;
+      if (captainArmyIds.has(header)) {
+        // first unit of a captain army: it heads its own stack
+        lastCmd = header;
+        inCaptainArmy = true;
+        if (!unitsByCommander.has(header)) unitsByCommander.set(header, []);
+        u.inferredCmd = header;
+        unitsByCommander.get(header).push(u);
+        continue;
+      }
+      if (inCaptainArmy && header !== 0xffffffff) {
+        // the captain's run is over: back to the general-in-file-order rule
+        inCaptainArmy = false;
+        lastCmd = lastGeneralCmd;
       }
       if (!lastCmd) continue;
       // Skip naval units — they're anonymous fleets handled by the
@@ -1205,30 +1258,6 @@ function parseCharactersAndUnits(saveBuf, precomputedChars = null) {
   // character matched its commanderUuid. For unmatched ones, place the
   // army at its bodyguard unit's inferred position (via type-6 lookup on
   // commanderUuid). Leader is labeled by faction + region.
-  const positions = (function() {
-    const m = new Map();
-    // Includes type=4 (navy), type=5 (captain land army), type=6 (bodyguard).
-    for (let N = 24; N < saveBuf.length - 8; N++) {
-      if (saveBuf.readUInt32LE(N - 4) !== N - 4) continue;
-      const type = saveBuf.readUInt32LE(N - 12);
-      if (type !== 6 && type !== 5 && type !== 4) continue;
-      const x = saveBuf.readUInt32LE(N);
-      // Bounds raised 2026-05-09 — see parseWorldObjectPositions above.
-      if (x < 0 || x > 1100) continue;
-      const y = saveBuf.readUInt32LE(N + 4);
-      if (y < 0 || y > 800) continue;
-      const uuid = saveBuf.readUInt32LE(N - 8);
-      if (!uuid) continue;
-      // Moved-this-turn flag — save-cracker session 4 CONFIRMED across two
-      // independent move-pair diffs. Bit 7 of the byte at N+9 (relative
-      // to the x coord) flips from 0 to 1 when the character moves
-      // this turn. Lets us mark armies "has moved" / "still has actions"
-      // without waiting for the next save snapshot.
-      const movedFlag = N + 9 < saveBuf.length ? (saveBuf[N + 9] & 0x80) !== 0 : false;
-      if (type === 6 || !m.has(uuid)) m.set(uuid, { x, y, moved: movedFlag });
-    }
-    return m;
-  })();
   // Index v1 characters by their commander UUID (secondaryUuid). On RIS
   // imperial — where charsV2 is empty — this is the ONLY way to put a
   // real name on an army. Without this, every one of the ~1100 RIS armies
