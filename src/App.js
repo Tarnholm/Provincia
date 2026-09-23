@@ -4618,6 +4618,8 @@ function App() {
   const [saveLiveArmies, setSaveLiveArmies] = useState(null); // [{faction, character, x, y, armyClass, units}] from save parser
   // Live-log character positions — authoritative for turn-by-turn moves.
   const liveCharPositions = useRef(new Map());
+  // save file name → log line (seq) of its 'Campaign saved' line; see armiesToRender
+  const liveSaveSeqRef = useRef(new Map());
   // charUuids that the live log has reported as dead (DYING / death_type
   // events). Used to hide their save-derived army markers immediately
   // instead of waiting for the next save snapshot to write the death.
@@ -4709,7 +4711,17 @@ function App() {
     // positions leaking into a historical save view. saveCurrentTurn is
     // null until the save is loaded — in that case no filter is applied.
     const maxTurn = (saveCurrentTurn != null) ? saveCurrentTurn : Infinity;
-    const inTurn = (e) => (e.turn || 0) <= maxTurn;
+    // Exact cut (2026-09-23): the log says when each save was written
+    // ('Campaign saved: "…"'), and every log event carries its line number
+    // (seq). Events before the loaded save's line are already IN the save —
+    // letting them override it put armies back where they were before the
+    // save (measured against the running game: Orontes, Eukritos one tile
+    // off after an AI turn). Only events after it are newer than the save.
+    // Without that line (a save from an earlier session) the turn rule stays.
+    const saveSeq = liveSaveFile ? liveSaveSeqRef.current.get(liveSaveFile) : undefined;
+    const inTurn = saveSeq != null
+      ? (e) => (e.seq || 0) > saveSeq
+      : (e) => (e.turn || 0) <= maxTurn;
     const result = src.map(a => {
       // Try to upgrade (x, y) from live log events. Key lookup tries
       // (firstName, lastNameStub, faction) then (firstName, "", faction).
@@ -4859,24 +4871,23 @@ function App() {
     // captains, brigands, rebels). Now built AFTER the proximity
     // fix-up so save armies that drifted on stale data already moved.
     const alreadyAtPos = new Set();
+    const anyArmyAt = new Set();
     for (const a of result) {
       if (typeof a.x !== "number" || typeof a.y !== "number") continue;
       alreadyAtPos.add((a.faction || "") + "|" + a.x + "," + a.y);
+      anyArmyAt.add(a.x + "," + a.y);
     }
     const logOnlyByPos = new Map(); // "faction|x,y" → [entries]
     if (useLive) {
       for (const [key, entry] of livePos) {
         if (matchedKeys.has(key)) continue;
         if (!inTurn(entry)) continue;
-        // A log entry from BEFORE the loaded save's turn is already in the
-        // save: if it matched no save army, that is a name/faction mismatch,
-        // not a new army — drawing it made a second marker (measured
-        // 2026-09-23 against the running game: Arsames, Ambiorix, Kotys…
-        // twice after one AI turn). Only moves at or after the save's turn
-        // can be armies the save has not seen yet.
-        if (Number.isFinite(maxTurn) && (entry.turn || 0) < maxTurn) continue;
         const posKey = (entry.faction || "") + "|" + entry.x + "," + entry.y;
         if (alreadyAtPos.has(posKey)) continue;
+        // A faction-less log army (the log's "Brigands"/"Pirates" spawns) on a
+        // tile where a save army already stands is that army, drawn twice
+        // (measured: "Brigands" on top of the rebel army Aberkios).
+        if (!entry.faction && anyArmyAt.has(entry.x + "," + entry.y)) continue;
         if (!logOnlyByPos.has(posKey)) logOnlyByPos.set(posKey, []);
         logOnlyByPos.get(posKey).push(entry);
       }
@@ -5136,6 +5147,7 @@ function App() {
         armies: filtered.map((a) => ({
           name: a.character || a.firstName || null, faction: a.faction || null,
           x: a.x, y: a.y, cls: a.armyClass || null, live: !!a.liveTracked,
+          src: a.factionSource || (a.logOnly ? "log" : null),
         })),
       };
     } catch { /* never let a debug snapshot break the map */ }
@@ -6128,9 +6140,14 @@ function App() {
     // Listen for live character moves — authoritative positions from the
     // engine's own movement events, used to keep army markers pixel-
     // accurate between save snapshots.
-    const unsubMoves = api.onLiveCharMoves ? api.onLiveCharMoves(({ moves, deaths, reset, unitFlow }) => {
+    const unsubMoves = api.onLiveCharMoves ? api.onLiveCharMoves(({ moves, deaths, reset, unitFlow, savesWritten }) => {
+      if (savesWritten && savesWritten.length) {
+        for (const s of savesWritten) liveSaveSeqRef.current.set(s.file, s.seq);
+        setLiveCharPositionsVersion(v => v + 1);
+      }
       if (reset) {
         liveCharPositions.current = new Map();
+        liveSaveSeqRef.current = new Map();
         liveUnitFlow.current = [];
         setLiveCharPositionsVersion(v => v + 1);
         return;
@@ -6172,7 +6189,7 @@ function App() {
           const key = keyFromName(m.name, m.faction);
           liveCharPositions.current.set(key, {
             x: m.x, y: m.y, name: m.name, faction: m.faction, role: m.role || null,
-            charUuid: m.charUuid || null, turn: m.turn || 0,
+            charUuid: m.charUuid || null, turn: m.turn || 0, seq: m.seq || 0,
           });
           changed = true;
         }

@@ -24,6 +24,16 @@ let logPollTurnIdx = 1;
 // reads, so a stop (or a newer start) can land mid-backfill; the older start
 // then must not arm its poll interval.
 let _logWatchGen = 0;
+// Running line number of message_log since the watch started. Every move and
+// death carries it as `seq`, and every "Campaign saved:" line is reported with
+// its seq — so the renderer knows exactly which log events a loaded save
+// already contains (those before its save line) and which are newer.
+let logSeq = 0;
+const SAVED_RE = /^Campaign saved:\s*"([^"]+)"/;
+function savedFile(line) {
+  const m = SAVED_RE.exec(line);
+  return m ? m[1].split(/[\\/]/).pop() : null;
+}
 
 // Calls onLine for each line in the first `bytes` bytes of the file, reading
 // 16 MB at a time and yielding between chunks. The backfill used to
@@ -282,6 +292,8 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
   if (!fs.existsSync(msgPath)) return { error: "message_log.txt not found in " + logDir };
   _lastWatchedLogDir = logDir;
   const gen = ++_logWatchGen;
+  logSeq = 0;
+  const savesWritten = [];
 
   // Start from current end of file (only watch new lines)
   try { logOffset = fs.statSync(msgPath).size; } catch { logOffset = 0; }
@@ -315,6 +327,9 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
       // future positions).
       let backfillTurn = 1;
       await forEachLineUpTo(msgPath, logOffset, (line) => {
+        logSeq++;
+        const saved = savedFile(line);
+        if (saved) { savesWritten.push({ file: saved, seq: logSeq }); return; }
         if (line.startsWith("=================")) {
           if (line.includes("end round")) backfillTurn++;
           return;
@@ -328,14 +343,14 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
           // below doesn't fire for ex-passengers.
           detectAndApplySplit(ev.charUuid, ev.armyUuid);
           const at = restingTile(ev); // a siege's end(x,y) is the town, not where the army stands
-          moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: at.x, y: at.y, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn: backfillTurn });
+          moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: at.x, y: at.y, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn: backfillTurn, seq: logSeq });
           // Propagate to passengers: the leader is the one emitting
           // MOVING_NORMAL; lesser generals folded into this stack don't
           // emit their own move event, so synthesize one per passenger.
           const passengers = ev.charUuid ? armyPassengers.get(ev.charUuid) : null;
           if (passengers) {
             for (const p of passengers) {
-              moves.push({ name: p.name, faction: p.faction || ev.faction, role: ev.role, x: at.x, y: at.y, armyUuid: ev.armyUuid, charUuid: p.charUuid, turn: backfillTurn });
+              moves.push({ name: p.name, faction: p.faction || ev.faction, role: ev.role, x: at.x, y: at.y, armyUuid: ev.armyUuid, charUuid: p.charUuid, turn: backfillTurn, seq: logSeq });
             }
           }
         } else if (ev.type === "general_transfer") {
@@ -367,22 +382,23 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
           recordCharName(ev.toCommanderUuid, ev.toCommanderName);
           recordUnitTransfer(ev.fromArmyUuid, ev.toArmyUuid, ev.toCommanderUuid, null);
         } else if (ev.type === "fleeing") {
-          moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: ev.toX, y: ev.toY, charUuid: null, turn: backfillTurn });
+          moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: ev.toX, y: ev.toY, charUuid: null, turn: backfillTurn, seq: logSeq });
         } else if (ev.type === "flee_tile" || ev.type === "fleeing_to_settlement") {
-          moves.push({ name: ev.name, faction: ev.faction || null, x: ev.x, y: ev.y, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn: backfillTurn });
+          moves.push({ name: ev.name, faction: ev.faction || null, x: ev.x, y: ev.y, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn: backfillTurn, seq: logSeq });
         } else if (ev.type === "army_created") {
-          moves.push({ name: ev.name, faction: null, x: ev.x, y: ev.y, charUuid: ev.charUuid, turn: backfillTurn });
+          moves.push({ name: ev.name, faction: null, x: ev.x, y: ev.y, charUuid: ev.charUuid, turn: backfillTurn, seq: logSeq });
         } else if (ev.type === "army_dead") {
-          deaths.push({ name: ev.commanderName, faction: ev.faction, turn: backfillTurn });
+          deaths.push({ name: ev.commanderName, faction: ev.faction, turn: backfillTurn, seq: logSeq });
         } else if ((ev.type === "char_death" || ev.type === "char_dying") && !ev.alive) {
-          deaths.push({ name: ev.name, faction: ev.faction, turn: backfillTurn });
+          deaths.push({ name: ev.name, faction: ev.faction, turn: backfillTurn, seq: logSeq });
         } else if (ev.type === "character_deleted") {
-          deaths.push({ charUuid: ev.charUuid, turn: backfillTurn });
+          deaths.push({ charUuid: ev.charUuid, turn: backfillTurn, seq: logSeq });
         }
       });
       if (gen !== _logWatchGen) return { ok: false, superseded: true };
       // Sync poll-side counter so subsequent delta reads continue from here.
       logPollTurnIdx = backfillTurn;
+      if (savesWritten.length) win0.webContents.send("live-char-moves", { moves: [], savesWritten });
       if (moves.length > 0 || deaths.length > 0) {
         // Chunk moves; send deaths separately (smaller).
         const CHUNK = 1000;
@@ -421,7 +437,12 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
           // Also extract character-move + death events for live tracking.
           const moves = [];
           const deaths = [];
+          const savesWritten = [];
           for (const line of text.split(/\r?\n/)) {
+            if (!line) continue;
+            logSeq++;
+            const saved = savedFile(line);
+            if (saved) { savesWritten.push({ file: saved, seq: logSeq }); continue; }
             if (line.startsWith("=================")) {
               if (line.includes("end round")) logPollTurnIdx++;
               continue;
@@ -432,11 +453,11 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
             if (ev.type === "character_move") {
               detectAndApplySplit(ev.charUuid, ev.armyUuid);
               const at = restingTile(ev);
-              moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: at.x, y: at.y, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn });
+              moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: at.x, y: at.y, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn, seq: logSeq });
               const passengers = ev.charUuid ? armyPassengers.get(ev.charUuid) : null;
               if (passengers) {
                 for (const p of passengers) {
-                  moves.push({ name: p.name, faction: p.faction || ev.faction, role: ev.role, x: at.x, y: at.y, armyUuid: ev.armyUuid, charUuid: p.charUuid, turn });
+                  moves.push({ name: p.name, faction: p.faction || ev.faction, role: ev.role, x: at.x, y: at.y, armyUuid: ev.armyUuid, charUuid: p.charUuid, turn, seq: logSeq });
                 }
               }
             } else if (ev.type === "general_transfer") {
@@ -448,13 +469,13 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
             } else if (ev.type === "unit_transfer") {
               recordUnitTransfer(ev.fromArmyUuid, ev.toArmyUuid, ev.toCommanderUuid, null);
             } else if (ev.type === "fleeing") {
-              moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: ev.toX, y: ev.toY, charUuid: null, turn });
+              moves.push({ name: ev.name, faction: ev.faction, role: ev.role, x: ev.toX, y: ev.toY, charUuid: null, turn, seq: logSeq });
             } else if (ev.type === "flee_tile" || ev.type === "fleeing_to_settlement") {
-              moves.push({ name: ev.name, faction: ev.faction || null, x: ev.x, y: ev.y, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn });
+              moves.push({ name: ev.name, faction: ev.faction || null, x: ev.x, y: ev.y, armyUuid: ev.armyUuid, charUuid: ev.charUuid, turn, seq: logSeq });
             } else if (ev.type === "army_created") {
-              moves.push({ name: ev.name, faction: null, x: ev.x, y: ev.y, charUuid: ev.charUuid, turn });
+              moves.push({ name: ev.name, faction: null, x: ev.x, y: ev.y, charUuid: ev.charUuid, turn, seq: logSeq });
             } else if (ev.type === "army_dead") {
-              deaths.push({ name: ev.commanderName, faction: ev.faction, turn });
+              deaths.push({ name: ev.commanderName, faction: ev.faction, turn, seq: logSeq });
             } else if (ev.type === "char_death" || ev.type === "char_dying") {
               // Treat DYING events as "remove from map" regardless of
               // the death_type flag. DET_ALIVE means the character
@@ -464,17 +485,17 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
               // capturing Brundisium and seeing Titus's marker linger
               // (DET_ALIVE was being filtered out, so the marker stuck
               // until the next save snapshot dropped him).
-              deaths.push({ name: ev.name, faction: ev.faction, charUuid: ev.charUuid, turn });
+              deaths.push({ name: ev.name, faction: ev.faction, charUuid: ev.charUuid, turn, seq: logSeq });
             } else if (ev.type === "character_deleted") {
-              deaths.push({ charUuid: ev.charUuid, turn });
+              deaths.push({ charUuid: ev.charUuid, turn, seq: logSeq });
             }
           }
           // Always include the latest unit-flow snapshot alongside any
           // move/death batch — it's small and lets the renderer re-bucket
           // units on every live event.
           const flow = unitFlowSnapshot();
-          if (moves.length > 0 || deaths.length > 0 || flow.length > 0) {
-            win.webContents.send("live-char-moves", { moves, deaths, unitFlow: flow });
+          if (moves.length > 0 || deaths.length > 0 || flow.length > 0 || savesWritten.length > 0) {
+            win.webContents.send("live-char-moves", { moves, deaths, unitFlow: flow, savesWritten });
           }
         }
       } else if (stat.size < logOffset) {
