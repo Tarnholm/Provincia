@@ -5040,6 +5040,47 @@ function App() {
         void liveMovesActive;
       }
     }
+    // A guessed faction (region owner / marker) yields to descr_strat when the
+    // army still stands on its starting tile under the same first name: an
+    // army does not change sides standing still. Measured against the running
+    // game (2026-09-23): the off-map placeholders of the re-emergent factions
+    // (Decimus/Decius at (1017,4)/(1015,3), roman_rebels_1/2) read as
+    // romans_julii from their marker.
+    if (Array.isArray(armiesData) && armiesData.length) {
+      const startAt = new Map();
+      for (const d of armiesData) {
+        if (typeof d.x !== "number" || typeof d.y !== "number" || !d.faction) continue;
+        const first = String(d.character || d.name || "").split(/\s+/)[0].toLowerCase();
+        if (first) startAt.set(`${d.x},${d.y}|${first}`, d.faction);
+      }
+      for (const a of result) {
+        if (a.factionSource !== "region" && a.factionSource !== "marker") continue;
+        const first = String(a.firstName || a.character || "").split(/\s+/)[0].toLowerCase();
+        const f = startAt.get(`${a.x},${a.y}|${first}`);
+        if (f && f !== a.faction) { a.faction = f; a.factionSource = "start"; }
+      }
+    }
+    // The log names every mover's faction ("Horsa(…:army(…):cimbri:named
+    // character):MOVING_NORMAL…"). A guessed faction yields to the log's last
+    // move of the same first name that ended on the army's tile — before or
+    // after the loaded save, a character's side does not change with a save.
+    // Measured against the running game (2026-09-23): Horsa (cimbri), Times
+    // (dardania) and Attalos (pergamon), generals abroad with no character
+    // label, read as chios / cyzicus / seleucid.
+    {
+      const logFaction = new Map();
+      for (const e of livePos.values()) {
+        if (!e || !e.faction || typeof e.x !== "number") continue;
+        const first = String(e.name || "").replace(/^(Captain|Admiral|General)\s+/, "").split(/\s+/)[0].toLowerCase();
+        if (first) logFaction.set(`${e.x},${e.y}|${first}`, e.faction);
+      }
+      for (const a of result) {
+        if (a.factionSource !== "region" && a.factionSource !== "marker") continue;
+        const first = String(a.firstName || a.character || "").split(/\s+/)[0].toLowerCase();
+        const f = logFaction.get(`${a.x},${a.y}|${first}`);
+        if (f && f !== a.faction) { a.faction = f; a.factionSource = "log"; }
+      }
+    }
     // Compute live region for each army from its (x, y). City tiles are
     // BLACK on the regions TGA so a raw pixel lookup fails for armies
     // sitting on a settlement (0,0,0 isn't a region key) — we fall back
