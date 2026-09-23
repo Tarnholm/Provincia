@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1519",
+    date: "2026-09-24",
+    items: [
+      { type: "fix", text: "**Live mode: an army that wins a battle stays where it fought.** Before every battle the game notes, for each army, the tile it would retreat to if it lost — and live mode moved the army there, win or lose. A general who reinforced an assault and won could vanish from beside the town and turn up far inland. Only a real retreat moves an army now, and routed armies — which were not moved at all before — are drawn where they fled to." },
+      { type: "fix", text: "**Live mode no longer misses a move now and then.** The game writes its log in blocks that usually end partway through a line, and live mode read each line as soon as any part of it appeared: a move that straddled two blocks was split in half and lost. Lines are now read once they are complete." },
+    ],
+  },
+
+  {
     version: "0.9.1518",
     date: "2026-09-24",
     items: [
@@ -53,17 +62,6 @@ const CHANGELOG = [
       { type: "fix", text: "**The building-image auto-fix never overwrites art again.** It promised not to, but it checked whether an image already existed with the exact capitalisation, while Windows ignores it: a culture whose image was named `#ROMAN_temple.tga` had it replaced with another culture's temple. It now matches names the way Windows does, and refuses to replace any file." },
       { type: "fix", text: "**Live mode keeps up with every save, and starts without freezing.** After a save that had already been read, the next one could wait up to two minutes before it showed — an early exit left the reader marked “busy” until a safety timer cleared it. And starting live mode read the whole message log in one go, which froze the window on long campaigns and, past a few hundred megabytes, silently skipped placing armies from the log. It is now read in pieces in the background." },
       { type: "improvement", text: "**Smaller fixes.** Notices stay up for as long as they were meant to (every one closed after six seconds). The warning at the faction ceiling says “240th”. Renaming or deleting the mod folder while Provincia watches it no longer trips the crash handler, and two file operations that take a path from the window now check it properly." },
-    ],
-  },
-
-  {
-    version: "0.9.1514",
-    date: "2026-09-22",
-    items: [
-      { type: "feature", text: "**New Faction (Tools menu): create a faction the mod has never had.** Not the same job as waking a sleeping one \u2014 a new faction has to be registered from nothing, in every file the engine demands, and it is unforgiving about which. Which files those are was settled by measuring the mod rather than guessing: for each candidate, does every one of RIS\u2019s 239 declared factions appear in it? Seven do, and all seven are written \u2014 the faction entry, the character types, the strat models, the banners, the AI personality, the win conditions and the campaign itself. So you start by choosing a faction to build it FROM: there is no such thing as a faction without a culture, a banner, a strat model and an AI, and yours inherits all of it, then takes its own token, name, description, treasury and colours." },
-      { type: "feature", text: "**A leader and an heir, from names the game already knows.** A faction with no living male family member is destroyed on its first turn, so the panel will not create one without both, and will not let them be the same man. The names come out of the donor\u2019s name pool \u2014 descr_namelists holds 85 pools serving all 239 factions, so nothing has to be invented or registered; pick from the list and set their ages. A settlement is required for the same reason, and is handed over from whoever holds it now, with the current owner named beside every town. If the hand-over would leave the old owner with nothing, you are told it will be destroyed." },
-      { type: "feature", text: "**Recruitment is yours to pick.** Every building and unit the donor faction may have is listed \u2014 250 lines of RIS\u2019s export_descr_buildings name a single faction \u2014 and each one you tick lets the new faction have it too. Tick none and the faction still exists and still plays: four RIS factions ship with no recruitment entry at all, which is why this is a choice and not a step. Exclusion lists are never offered, because adding a faction to one of those would forbid the thing rather than grant it. Art is copied under the new faction\u2019s names, so replacing its banner or icon later is a matter of overwriting a file." },
-      { type: "change", text: "**Warned, not walled, at the engine\u2019s ceiling.** 239 factions is as far as any mod is known to go, and RIS is already there, so creating a 240th says so plainly before you do it and then lets you \u2014 this is not a RIS-only tool and the limit is the engine\u2019s, not Provincia\u2019s. Preview runs the whole creation and writes nothing, so what you approve is what lands. Every file gets a timestamped backup first, and \u201Cexport instead of overwrite\u201D is honoured throughout." },
     ],
   },
 
