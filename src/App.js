@@ -50,9 +50,8 @@ const logAppDiagnostics = diagnostics.logDiagnostics;
 // Shared non-live commander portrait resolver (CommonJS — see note above for
 // why we import the default object and pull the fns off it).
 import nonLiveCommanderResolver from "./nonLiveCommanderResolver";
-import liveDiplomacyMod from "./liveDiplomacy";
+import { applyLiveDiplomacy, liveFactionChanges } from "./liveDiplomacy";
 import { aliasesAllow } from "./edbAlias";
-const { applyLiveDiplomacy, liveFactionChanges } = liveDiplomacyMod;
 const buildNonLivePortraitMap = nonLiveCommanderResolver.buildNonLivePortraitMap;
 const resolveNonLiveCommanderInfoApp = nonLiveCommanderResolver.resolveNonLiveCommanderInfo;
 const lookupNonLivePortraitApp = nonLiveCommanderResolver.lookupNonLivePortrait;

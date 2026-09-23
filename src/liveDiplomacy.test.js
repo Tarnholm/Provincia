@@ -6,9 +6,9 @@ import { describe, it, expect, afterEach } from "vitest";
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import path from "node:path";
+import { applyLiveDiplomacy, liveFactionChanges } from "./liveDiplomacy.js";
 
 const require = createRequire(import.meta.url);
-const { applyLiveDiplomacy, liveFactionChanges } = require("./liveDiplomacy.js");
 const { parseLine, battleMainArmies, battleSetupStarts } = require("./messageLogParser.js");
 const lw = require("./logWatchHandlers.js");
 

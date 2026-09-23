@@ -11,7 +11,7 @@
 // older battle can never undo a peace the save already holds.
 const TREATY_LISTS = ["allied", "trade", "protectorates", "suzerains", "hostile"];
 
-function applyLiveDiplomacy(matrix, events, isNew = () => true) {
+export function applyLiveDiplomacy(matrix, events, isNew = () => true) {
   if (!matrix || !Array.isArray(events) || events.length === 0) return matrix;
   const todo = events.filter((e) => e && isNew(e)).sort((x, y) => (x.seq || 0) - (y.seq || 0));
   if (todo.length === 0) return matrix;
@@ -55,7 +55,7 @@ function applyLiveDiplomacy(matrix, events, isNew = () => true) {
 
 // Characters the log moved to another faction after the save, as
 // { charUuid(8-hex) -> toFaction }, last change wins.
-function liveFactionChanges(changes, isNew = () => true) {
+export function liveFactionChanges(changes, isNew = () => true) {
   const out = new Map();
   for (const c of (changes || []).filter((x) => x && isNew(x)).sort((x, y) => (x.seq || 0) - (y.seq || 0))) {
     if (c.charUuid) out.set(String(c.charUuid).padStart(8, "0"), c.to);
@@ -63,4 +63,3 @@ function liveFactionChanges(changes, isNew = () => true) {
   return out;
 }
 
-module.exports = { applyLiveDiplomacy, liveFactionChanges };
