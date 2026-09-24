@@ -909,6 +909,7 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
   <div class="right">
     <button id="theme" type="button" title="Switch theme">theme</button>
     <a href="${editHref(rel)}" title="${/^\/?team\//.test(String(rel)) ? "Edit this page on the wiki (team members only)" : "Add a team note to this page on the wiki (team members only)"}">edit</a>
+    <a href="${WIKI_URL}/_new" title="Write a new page on the wiki (team members only); it appears under Team pages">new page</a>
   </div>
   </div>
   ${jumpStrip(toc)}
