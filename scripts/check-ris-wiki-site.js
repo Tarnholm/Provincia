@@ -111,7 +111,8 @@ for (const page of scanned) {
     }
     const hash = raw.indexOf("#");
     const frag = hash >= 0 ? raw.slice(hash + 1) : "";
-    const bare = hash >= 0 ? raw.slice(0, hash) : raw;
+    // A query string (the ?v= cache-buster on wiki.css / wiki.js) is not part of the file name.
+    const bare = (hash >= 0 ? raw.slice(0, hash) : raw).replace(/\?.*$/, "");
     if (!bare) {                       // same-page anchor
       if (!frag) continue;
       frags++;
