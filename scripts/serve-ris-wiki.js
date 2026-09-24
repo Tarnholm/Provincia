@@ -888,7 +888,10 @@ function jumpStrip(toc) {
   const level = toc.some((t) => t.level === 2) ? 2 : 3;
   const items = toc.filter((t) => t.level === level);
   if (items.length < 2) return "";     // a strip pointing at one place is furniture, not a tool
-  const short = (s) => String(s).split("·")[0].replace(/<[^>]*>/g, "").trim() || s;
+  // Heading text arrives already rendered (tags, &amp;); strip and DECODE before esc(), or
+  // "Coding & Gameplay" shows as "Coding &amp;amp; Gameplay" in the strip.
+  const unent = (x) => x.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+  const short = (s) => unent(String(s).split("·")[0].replace(/<[^>]*>/g, "").trim()) || s;
   return `<div class="jump">${items.map((t) => `<a href="#${t.id}">${esc(short(t.text))}</a>`).join("")}</div>`;
 }
 
