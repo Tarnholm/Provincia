@@ -256,6 +256,8 @@ note(`images: ${images.toLocaleString("en-US")} checked, ${badImages} broken`);
     // reference (142 of 145 exist as art anywhere; three are missing from mod and base game
     // alike). Floors sit below both so mod changes pass and an empty run fails.
     ancillaries: 20, "ancillary-icons": 100,
+    // reforms/ is one page per reform plus index.json — 81 entries as RIS ships.
+    reforms: 50,
   };
   for (const [dir, min] of Object.entries(floors)) {
     const n = count(dir);

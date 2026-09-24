@@ -696,6 +696,26 @@ const buildingPages = (() => {
   try { return new Set(fs.readdirSync(path.join(OUT, "buildings")).filter((f) => f.endsWith(".md")).map((f) => f.replace(/\.md$/, ""))); }
   catch { return new Set(); }
 })();
+// Reforms, from gen-ris-reform-pages.js (which runs before this). A reform declared for
+// "all" applies to every faction and is listed after the faction's own.
+const REFORM_INDEX = (() => {
+  try { return JSON.parse(fs.readFileSync(path.join(OUT, "reforms", "index.json"), "utf8")).reforms || {}; }
+  catch { return {}; }
+})();
+function reformSection(f) {
+  const own = [], all = [];
+  for (const [name, r] of Object.entries(REFORM_INDEX)) {
+    if ((r.factions || []).includes(f)) own.push([name, r]);
+    else if ((r.factions || []).includes("all")) all.push([name, r]);
+  }
+  if (!own.length && !all.length) return "";
+  const link = ([name, r]) => `[${cell(r.title)}](../reforms/${name}.md)`;
+  return `## Reforms
+
+${own.length ? own.map((x) => `- ${link(x)}`).join("\n") : "_No reform is made for this faction alone._"}
+${all.length ? `\nFor every faction: ${all.map(link).join(", ")}.\n` : ""}
+`;
+}
 const buildingLink = (b) => {
   const label = bName(b.level) || `\`${b.level}\``;
   return b.chain && buildingPages.has(String(b.chain)) ? `[${label}](../buildings/${b.chain}.md)` : label;
@@ -826,7 +846,7 @@ ${cs.length ? `| Name | Role | Age |
 |---|---|---:|
 ${cs.map((c) => `| ${displayName(c.name)} | ${c.role} | ${c.age != null ? c.age : "?"} |`).join("\n")}` : "_No starting characters are defined for this faction._"}
 
-## Units you can recruit
+${reformSection(f)}## Units you can recruit
 
 ${units.total ? `${units.total} unit type${units.total === 1 ? "" : "s"} are available to ${display}: ${units.core.length} faction unit${units.core.length === 1 ? "" : "s"} and ${units.aor.length} regional. The requirement column is what the mod states for the easiest route to that unit.
 

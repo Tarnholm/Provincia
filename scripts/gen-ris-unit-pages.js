@@ -603,6 +603,23 @@ const factionLink = (f) => {
   return factionPages.has(f) ? `[${label}](../factions/${f}.md)` : label;
 };
 
+// Reforms that open, close or convert a unit, from gen-ris-reform-pages.js (which runs first).
+const REFORMS_BY_UNIT = (() => {
+  try { return JSON.parse(fs.readFileSync(path.join(OUT, "reforms", "index.json"), "utf8")).units || {}; }
+  catch { return {}; }
+})();
+function reformLine(slugKey) {
+  const refs = REFORMS_BY_UNIT[slugKey] || [];
+  if (!refs.length) return "";
+  const KIND = { unlocks: "Unlocked by", upgrades: "Older units become this one with", retires: "No longer recruitable after", upgraded: "Becomes a newer unit with" };
+  const parts = [];
+  for (const kind of ["unlocks", "upgrades", "retires", "upgraded"]) {
+    const list = refs.filter((r) => r.kind === kind);
+    if (list.length) parts.push(`${KIND[kind]} ${list.map((r) => `[${cell(r.title)}](../reforms/${r.reform}.md)`).join(", ")}`);
+  }
+  return `\n\n**Reforms:** ${parts.join(" · ")}`;
+}
+
 // ── build ────────────────────────────────────────────────────────────────────
 const edu = rd("export_descr_unit.txt");
 if (!edu) { console.error("export_descr_unit.txt not found"); process.exit(2); }
@@ -976,7 +993,7 @@ it**, so there is nowhere on the campaign map to hire it as the mod ships today.
 
 [← all units](../units.md) · [wiki index](../README.md)
 
-${cardMarkup(u)}${u.hasName ? "" : "> _This unit has no display name in the mod yet._\n\n"}${u.merc === "all" ? `> **Mercenary.** Hired from a regional pool, not recruited from a building.\n\n` : ""}${u.merc === "mixed" ? `> **Reachable both ways.** Some entries for this unit are mercenary (\`merc …\`) and some are\n> not, so it can be hired from a pool *or* raised from a building.\n\n` : ""}**Class:** ${u.cls || "unknown"} · **Category:** ${u.category || "unknown"}${s.men != null ? ` · **Men per unit:** ${s.men}` : ""}
+${cardMarkup(u)}${u.hasName ? "" : "> _This unit has no display name in the mod yet._\n\n"}${u.merc === "all" ? `> **Mercenary.** Hired from a regional pool, not recruited from a building.\n\n` : ""}${u.merc === "mixed" ? `> **Reachable both ways.** Some entries for this unit are mercenary (\`merc …\`) and some are\n> not, so it can be hired from a pool *or* raised from a building.\n\n` : ""}**Class:** ${u.cls || "unknown"} · **Category:** ${u.category || "unknown"}${s.men != null ? ` · **Men per unit:** ${s.men}` : ""}${reformLine(u.slug)}
 
 ## Stats
 
