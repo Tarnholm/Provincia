@@ -4,31 +4,27 @@
  "written": "2026-09-24",
  "prose": {
   "title": "The Roman Civil Wars",
-  "summary": "When a human plays Rome and the Republic grows very large, it can tear itself apart in two civil wars. In the first, from turn 122 (240 BC) at the earliest, Rome loses its settlements in five legion recruiting areas to the Roman Rebels (the Optimates), and you may choose which side to lead. Once one side has crushed the other, a second, four-way war can follow, in which the winner splits into the loser of the first war, a second Roman Rebels faction and The Roman Senate.",
-  "breaks_away_from": "Rome in the first war; in the second, whichever of Rome or the first Roman Rebels faction won the first war",
-  "who_it_can_happen_to": "Only in a campaign where a human plays Rome; with a computer-run Rome the first civil war never breaks out, so neither war happens.",
+  "summary": "Two civil wars that can tear the Roman Republic apart, but only when a human plays Rome. In the first, the provinces of five legions break away to the Roman Rebels. In the second, whoever won the first war splits four ways.",
+  "breaks_away_from": "Rome in the first war; in the second, whichever side won the first",
+  "who_it_can_happen_to": "Only when a human plays Rome. With a computer-run Rome neither war happens.",
   "what_sets_it_off": [
-   "First civil war: From turn 122 (240 BC), at the start of Rome's turn, Rome must hold more than 150 settlements, and the Italic revolt must already have happened and be over.",
-   "First civil war: Rome must also hold 5 or more regions in each of at least 5 legion recruiting areas; the city of Rome's own region counts as an area on its own.",
-   "First civil war: The split then comes at the end of a Roman turn on which Rome has a family general standing outside a settlement and holds 5 or more regions in at least one of the five disloyal areas: Germanica, Gallica, Cyrenaica, Parthica or Alaudae.",
-   "Second civil war: It can only follow once the first war is decided, meaning the side you play has cut the other side down to a single settlement, and 2 turns have passed with the loser still on that one settlement.",
-   "Second civil war: The winner of the first war must hold more than 200 settlements, the loser must still hold exactly one, and the winner must hold 5 or more regions in at least 6 of the 10 legion recruiting areas (the city of Rome's region does not count here).",
-   "Second civil war: While all of that is true, there is a 35% chance at the start of each of the winner's turns that the war is set in motion. The provinces rise at the end of the winner's third turn, counting the turn it was set in motion."
+   "First civil war: It is turn 122 (240 BC) or later and Rome holds more than 150 settlements.",
+   "First civil war: The Italic revolt has already happened and is over.",
+   "First civil war: Rome holds 5 or more regions in each of at least 5 legion recruiting areas.",
+   "First civil war: It breaks out at the end of a Roman turn in which a Roman family general is out in the field.",
+   "Second civil war: The first war has been decided (the losing side is down to its last settlement) and 2 more turns have passed.",
+   "Second civil war: The winner holds more than 200 settlements and 5 or more regions in at least 6 of the 10 legion recruiting areas.",
+   "Second civil war: From then on there is a 35% chance at the start of each of the winner's turns. Once it succeeds, the provinces rise 3 turns later."
   ],
   "what_happens": [
-   "First civil war: A pop-up, 'A Divided Republic', asks whether you want to switch to the Optimates (the first Roman Rebels faction) or remain with the Populares (Rome). Whatever you choose, the revolt goes ahead.",
-   "First civil war: Every settlement Rome holds in the Germanica, Gallica, Cyrenaica, Parthica or Alaudae areas, wherever Rome has 5 or more regions in that area, rebels and joins the Roman Rebels at the start of the next turn. The Ferrata, Paterna, Hispana, Equestris and Gemina areas and the city of Rome stay loyal.",
-   "First civil war: The breakaway settlements are held by garrisons of Leves Armaturae and Legionary Cohort units with a strength multiplier of 3.5.",
-   "First civil war: Rome and the Roman Rebels are at war. Every turn, all the Roman factions on the map (Rome, both Roman Rebels factions and The Roman Senate) are kept at war with each other.",
-   "First civil war, if you stay with Rome: all Roman family members except the faction leader are marked as proscribed, and the Roman Rebels leader stays on their small island in the corner of the map, unable to move or die.",
-   "First civil war, if you switch sides: the Roman Rebels receive 30000, one of Rome's generals out in the field is sent to the far corner of the map by the island, where he cannot move or die, and the rebel characters other than their leader are marked as proscribed. On the next turn the Roman Rebels leader is moved from the island to a free landing spot in central Italy with extra movement points, the island passes to Rome, and you take control of the Roman Rebels.",
-   "First civil war: The war counts as decided when your side has cut the other side down to one settlement, normally the island.",
-   "Second civil war: The winner's largest legion recruiting area where it holds 5 or more regions breaks away to the loser of the first war: to the first Roman Rebels faction if you won as Rome, or to Rome if you won as the rebels.",
-   "Second civil war: The next largest such area breaks away to the second Roman Rebels faction.",
-   "Second civil war: The city of Rome's region breaks away to The Roman Senate, which appears for the first time. All four Roman factions are at war with each other.",
-   "Both civil wars: While you play any Roman faction and have taken at least 2 settlements from another Roman faction you are at war with, and it is down to fewer than 6 settlements, there is a 20% chance each turn that it offers to surrender (for The Roman Senate, fewer than 12 but more than 6). Accepting hands you all its settlements except its island and destroys its armies; refusing lets the war go on. Rome and the first Roman Rebels can each offer this once in each war; the second Roman Rebels and the Senate once.",
-   "Second civil war: Once the offers to switch sides have been answered, any computer-run Roman faction left with only its island settlement loses it to the Free Peoples and drops out."
+   "First civil war: A message, 'A Divided Republic', asks whether you stay with Rome (the Populares) or switch to the Roman Rebels (the Optimates). The war happens either way.",
+   "First civil war: Rome's settlements in the Germanica, Gallica, Cyrenaica, Parthica and Alaudae legion areas join the Roman Rebels. The other legion areas and the city of Rome stay loyal.",
+   "First civil war: The rebel cities are held by strong garrisons of Leves Armaturae and Legionary Cohorts.",
+   "First civil war: If you switch sides, the Roman Rebels receive 30000 and you take them over on the next turn, when their leader lands in central Italy.",
+   "Second civil war: The winner's largest legion area breaks away to the loser of the first war, the next largest to a second Roman Rebels faction, and the region of Rome itself to The Roman Senate.",
+   "Second civil war: All four Roman factions are at war with each other.",
+   "Both wars: A beaten Roman faction may offer to surrender to you: a 20% chance each turn once you have taken at least 2 of its settlements and it is down to fewer than 6 (for The Roman Senate, between 6 and 12). Accepting hands you all its settlements."
   ],
-  "playing_as_the_rebels": "Yes, if you play Rome. In the first war the 'A Divided Republic' pop-up lets you switch to the Optimates (the first Roman Rebels faction); you take control of them on the next turn, once their leader has landed in central Italy, and they receive 30000. In the second war, once all three breakaway factions are on the map, you get a chain of offers, each made only once: first to play the loser of the first war ('Defenders of the Old Order' for the first Roman Rebels if you are Rome, or 'Champions of the People' for Rome if you are the rebels), then 'A New Power Arises' for the second Roman Rebels faction, then 'The Will of the Senate' for The Roman Senate. Declining one moves you on to the next, and accepting ends the chain. If you pick Rome or a Roman Rebels faction, its leader is first brought to a landing spot in central Italy with extra movement, its island is handed to the Free Peoples, and you take control on the next turn; switching to the Senate happens at once. If you decline every offer, you keep playing your current faction."
+  "playing_as_the_rebels": "In the first war, the 'A Divided Republic' message lets you switch to the Roman Rebels. In the second, you are offered one after another the loser of the first war, the second Roman Rebels faction and The Roman Senate; turning one down moves on to the next. Turn them all down and you carry on as you were."
  }
 }

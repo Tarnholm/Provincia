@@ -1,5 +1,5 @@
 {
- "hash": "10b88e7ec2edfb59",
+ "hash": "96a95648c39041a5",
  "model": "claude-opus-5-5 (Claude Code session)",
  "written": "2026-09-24",
  "prose": {
@@ -9,7 +9,7 @@
   "who_it_can_happen_to": "It can happen in any campaign; when a human plays the Egyptians it always happens at the start, and otherwise it depends on the Ptolemaic Empire's reforms and chance.",
   "what_sets_it_off": [
    "Once the Ptolemaic Empire has passed its first reform, there is a 5% chance at the start of each Ptolemaic turn that the revolt breaks out, whether the Ptolemaic Empire is played by a human or the AI.",
-   "If a human starts a campaign as the Egyptians, the uprising is set off at turn 2 (270 BC) and takes place at the start of turn 4 (270 BC)."
+   "If a human starts a campaign as the Egyptians, the uprising happens right at the start of the campaign (270 BC)."
   ],
   "what_happens": [
    "In a normal campaign, Syene-Elephantine, Thebes-Megale Diospolis, Mikra Apollonos Polis, Panos Polis and Megale Apollonos Polis rebel at the start of the next turn, whoever owns them, and pass to the Egyptians.",

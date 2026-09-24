@@ -267,7 +267,9 @@ function turnTable(text) {
   for (const m of text.matchAll(/I_TurnNumber\s*(>=|>|<=|<|==|=)\s*(\d+)/g)) {
     for (const n of [parseInt(m[2], 10), parseInt(m[2], 10) + 1]) {
       const y = START_YEAR + Math.floor(n / 2);
-      out[n] = `turn ${2 * n + 2} (${y < 0 ? `${-y} BC` : `AD ${y}`})`;
+      // Turn 0 is the campaign's first turn(s). The mod's "(I_TurnNumber*2)+2" converts its own
+      // thresholds and means nothing at 0 - it turned "at the start" into "turn 2 ... turn 4".
+      out[n] = n === 0 ? `the start of the campaign (${y < 0 ? `${-y} BC` : `AD ${y}`})` : `turn ${2 * n + 2} (${y < 0 ? `${-y} BC` : `AD ${y}`})`;
     }
   }
   return out;
@@ -331,8 +333,8 @@ const TASK = `Write the wiki page for this revolt: what it is, what sets it off,
     if (picFile) md.push('<div class="reform-banner">', "", `![${cell(p.title)}](${picFile})`, "", "</div>", "");
     md.push(`**Breaks away:** ${andList(r.factions.map((f) => factionLink(f)))} from ${p.breaks_away_from}`, "");
     md.push(p.summary, "", `_${p.who_it_can_happen_to}_`, "");
-    md.push("## What sets it off", "", ...p.what_sets_it_off.map((x) => `- ${x}`), "");
-    md.push("## What happens", "", ...p.what_happens.map((x) => `- ${x}`), "");
+    md.push("## What sets it off", "", ...grouped(p.what_sets_it_off), "");
+    md.push("## What happens", "", ...grouped(p.what_happens), "");
     const named = facts.settlements_named_in_the_code;
     const provoked = [...new Set([...r.text.matchAll(/provoke_rebellion\s+(\S+)/g)].map((m) => m[1]).filter((x) => x !== "local"))];
     if (provoked.length) {
@@ -390,6 +392,25 @@ ${rows.join("\n")}
   if (stats.missing.length) { say(`  NO PAGE YET (${stats.missing.length}):`); for (const m of stats.missing) say(`    ${m}`); }
   say("next: gen-ris-faction-pages.js (reads revolts/index.json)");
 })().catch((e) => { console.error(e); process.exit(1); });
+
+// A list whose items share "Label: ..." prefixes (the civil wars: "First civil war: ...") is
+// grouped under ### Label headings instead of one long run of bullets.
+function grouped(items) {
+  const pre = (x) => { const m = /^([A-Z][^:.]{2,40}):\s+(.+)$/s.exec(x); return m ? m : null; };
+  const labelled = items.map(pre);
+  const counts = {};
+  labelled.forEach((m) => { if (m) counts[m[1]] = (counts[m[1]] || 0) + 1; });
+  if (Object.values(counts).filter((n) => n >= 2).length < 1 || labelled.filter(Boolean).length < items.length * 0.6) return items.map((x) => `- ${x}`);
+  const out = [];
+  let cur = null;
+  items.forEach((x, i) => {
+    const m = labelled[i];
+    const label = m ? m[1] : null;
+    if (label !== cur) { if (label) out.push("", `### ${label}`, ""); cur = label; }
+    out.push(`- ${m ? m[2].charAt(0).toUpperCase() + m[2].slice(1) : x}`);
+  });
+  return out;
+}
 
 // The prompt's picture (ui/<culture>/eventpics/<name>.tga), as a banner PNG.
 function eventpic(name) {
