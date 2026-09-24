@@ -421,6 +421,15 @@ function clauseLabel(c) {
   const body = c.replace(/^not\s+/i, "").trim();
   return (neg ? "not " : "") + clauseBody(body);
 }
+// A reform named in a requirement links to its page (gen-ris-reform-pages.js runs first).
+const REFORM_TITLES = (() => {
+  try { return JSON.parse(fs.readFileSync(path.join(OUT, "reforms", "index.json"), "utf8")).reforms || {}; }
+  catch { return {}; }
+})();
+const reformRef = (tok) => {
+  const r = REFORM_TITLES[tok];
+  return r ? `[${String(r.title).replace(/\|/g, "\\|")}](../reforms/${tok}.md)` : humaniseTok(tok);
+};
 function clauseBody(b) {
   if (/\bor\b/i.test(b)) {
     return b.split(/\bor\b/i).map((s) => clauseBody(s.trim())).filter(Boolean).join(" or ");
@@ -430,7 +439,8 @@ function clauseBody(b) {
   if (m) return DECLARED_RESOURCES.has(m[1].toLowerCase()) ? humaniseTok(m[1]) : `\`${m[1]}\``;
   m = /^building_present_min_level\s+\S+\s+(\S+)$/i.exec(b); if (m) return bName(m[1]) || `\`${m[1]}\``;
   m = /^building_present\s+(\S+)$/i.exec(b); if (m) return bName(m[1]) || `\`${m[1]}\``;
-  m = /^(?:major_event|event_counter)\s+"?([A-Za-z0-9_]+)"?/i.exec(b); if (m) return humaniseTok(m[1]);
+  m = /^major_event\s+"?([A-Za-z0-9_]+)"?/i.exec(b); if (m) return reformRef(m[1]);
+  m = /^event_counter\s+"?([A-Za-z0-9_]+)"?/i.exec(b); if (m) return humaniseTok(m[1]);
   const k = b.toLowerCase();
   return ALIAS_TEXT[k] || bName(k) || KEYWORD_TEXT[k] || `\`${b}\``;
 }
@@ -598,7 +608,7 @@ const factionLink = (f) => {
   const label = factionName(f);
   if (NON_PLAYABLE.has(f)) {
     const tag = NP_NAME_SHARED[label] > 1 ? ` \`${f}\`` : "";
-    return `[${label}${tag}](${NON_PLAYABLE_PAGE}) _(not playable)_`;
+    return `[${label}${tag}](${NON_PLAYABLE_PAGE})`;
   }
   return factionPages.has(f) ? `[${label}](../factions/${f}.md)` : label;
 };

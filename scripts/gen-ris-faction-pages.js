@@ -267,6 +267,15 @@ function clauseLabel(c) {
   const body = c.replace(/^not\s+/i, "").trim();
   return (neg ? "not " : "") + clauseBody(body);
 }
+// A reform named in a requirement links to its page (gen-ris-reform-pages.js runs first).
+const REFORM_TITLES = (() => {
+  try { return JSON.parse(fs.readFileSync(path.join(OUT, "reforms", "index.json"), "utf8")).reforms || {}; }
+  catch { return {}; }
+})();
+const reformRef = (tok) => {
+  const r = REFORM_TITLES[tok];
+  return r ? `[${String(r.title).replace(/\|/g, "\\|")}](../reforms/${tok}.md)` : humaniseTok(tok);
+};
 function clauseBody(b) {
   if (/\bor\b/i.test(b)) {
     return b.split(/\bor\b/i).map((s) => clauseBody(s.trim())).filter(Boolean).join(" or ");
@@ -280,7 +289,8 @@ function clauseBody(b) {
   if (m) return DECLARED_RESOURCES.has(m[1].toLowerCase()) ? humaniseTok(m[1]) : `\`${m[1]}\``;
   m = /^building_present_min_level\s+\S+\s+(\S+)$/i.exec(b); if (m) return bName(m[1]) || condLabel(m[1]);
   m = /^building_present\s+(\S+)$/i.exec(b); if (m) return bName(m[1]) || condLabel(m[1]);
-  m = /^(?:major_event|event_counter)\s+"?([A-Za-z0-9_]+)"?/i.exec(b); if (m) return humaniseTok(m[1]);
+  m = /^major_event\s+"?([A-Za-z0-9_]+)"?/i.exec(b); if (m) return reformRef(m[1]);
+  m = /^event_counter\s+"?([A-Za-z0-9_]+)"?/i.exec(b); if (m) return humaniseTok(m[1]);
   return condLabel(b);
 }
 // A requirement may contain a pipe — the mod writes several of them that way ("Any Government

@@ -926,12 +926,16 @@ function recruitableAt(r, held) {
   return { now: [...now.values()], later: [...later.values()], build: [...build.values()] };
 }
 
+const REFORM_LINKS = (() => {
+  try { return JSON.parse(fs.readFileSync(path.join(OUT, "reforms", "index.json"), "utf8")).reforms || {}; }
+  catch { return {}; }
+})();
 /** The condition a conditional unit is still waiting on, in words. */
 function whyText(e) {
   const parts = [];
   for (const w of e.why) {
     const m = /^major_event\s+"([^"]+)"$/.exec(w);
-    if (m) { parts.push(`the ${eventName(m[1])}`); continue; }
+    if (m) { parts.push(REFORM_LINKS[m[1]] ? `the [${REFORM_LINKS[m[1]].title}](../reforms/${m[1]}.md)` : `the ${eventName(m[1])}`); continue; }
     parts.push(`\`${w}\``);
   }
   if (e.ambiguous) parts.push("a condition whose bracketing the mod does not state");

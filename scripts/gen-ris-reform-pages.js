@@ -78,10 +78,26 @@ const DECLARED_FACTIONS = new Set([...(fs.existsSync(path.join(RIS, "descr_sm_fa
 const isFaction = (f) => !DECLARED_FACTIONS.size || DECLARED_FACTIONS.has(String(f).toLowerCase());
 const NO_SUCH_FACTION = new Set();
 const SETTLEMENT_PAGES = pagesIn("settlements");
+// roman_rebels_1 and roman_rebels_2 are both "Roman Rebels" in every text file the mod ships.
+// Where a name is shared, the faction key goes with it so the two stay two - the same label
+// the non-playable page gives them as headings, which is also where the link lands.
+const NAME_USES = (() => {
+  const n = {};
+  for (const k of Object.keys(FACTION_NAMES)) if (/^[a-z0-9_]+$/.test(k) && !/_(descr|title)$/.test(k)) n[FACTION_NAMES[k]] = (n[FACTION_NAMES[k]] || 0) + 1;
+  return n;
+})();
 const factionLink = (f, pre = "../") => {
   const k = String(f).toLowerCase();
   if (FACTION_PAGES.has(k)) return `[${factionName(k)}](${pre}factions/${k}.md)`;
-  if (FACTION_PAGES.has("non-playable") && FACTION_NAMES[k]) return `[${factionName(k)}](${pre}factions/non-playable.md)`;
+  if (FACTION_PAGES.has("non-playable") && FACTION_NAMES[k]) {
+    const name = factionName(k);
+    if (NAME_USES[name] > 1) {
+      const label = `${name} (\`${k}\`)`;
+      const anchor = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      return `[${label}](${pre}factions/non-playable.md#${anchor})`;
+    }
+    return `[${name}](${pre}factions/non-playable.md)`;
+  }
   return factionName(k);
 };
 const PLACE_NAMES = lut16("imperial_campaign_regions_and_settlement_names.txt");
