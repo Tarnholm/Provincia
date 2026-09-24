@@ -6,20 +6,18 @@
   "title": "The Cilician Pirate Revolt",
   "summary": "The rough coast of Cilicia rises and Nagidos and Korakesion become the Cilician Pirates. Both start the campaign in the hands of the Ptolemaic Empire. The revolt can break out whenever one of the two rebels on its own, and it happens by itself at turn 102 (245 BC) at the latest.",
   "breaks_away_from": "Whoever holds Nagidos and Korakesion (at the start, the Ptolemaic Empire)",
-  "who_it_can_happen_to": "It can happen in any campaign except one where a human plays the Cilician Pirates from the start, who instead begin with their own rising.",
+  "who_it_can_happen_to": "It can happen in any campaign. If you choose the Cilician Pirates when starting a campaign, the game plays forward until they rise and then hands them to you.",
   "what_sets_it_off": [
    "Each time Nagidos or Korakesion rebels on its own through unrest, there are three chances in four that the Cilician revolt breaks out; it breaks out for certain if either city is already in rebel hands.",
-   "If it has not happened by turn 102 (245 BC), the revolt breaks out automatically at the start of that turn.",
-   "If a human chooses to play the Cilician Pirates, Nagidos and Isaura rise right at the start of the campaign (270 BC) instead."
+   "If it has not happened by turn 102 (245 BC), the revolt breaks out automatically at the start of that turn."
   ],
   "what_happens": [
    "Nagidos and Korakesion both rebel at the start of the next turn, whoever owns them.",
    "Both pass to the Cilician Pirates, a faction that does not exist at the start of the campaign.",
    "Each city gets a garrison 3.5 times normal strength, drawn from Cilician Brigands, Kietaian Hillmen, Cilician Neocretan Archers, Cilician Pirates, Cilician Spearmen, Cilician Renowned Pirates and Cilician Cavalry.",
    "The Cilician Pirates receive 10000 denarii when Nagidos joins them.",
-   "In a campaign where a human plays the Cilician Pirates, Nagidos and Isaura become theirs at the start instead of Korakesion. At the end of that first turn the Pirates pay 15000 denarii, Nagidos gains a government building and one other building, and Isaura gains a smaller government building.",
    "The revolt happens only once per campaign."
   ],
-  "playing_as_the_rebels": "If the revolt breaks out after a city rises on its own, a message offers a human player the chance to take over the Cilician Pirates, provided that player is playing the Seleucid Empire or the Ptolemaic Empire, or owns Nagidos or Korakesion. If you accept, you switch to playing the Cilician Pirates and a government building is added in Nagidos and Korakesion; declining changes nothing. No offer is made when the revolt breaks out automatically at turn 102 (245 BC). The Cilician Pirates can also be chosen at the start of a new campaign."
+  "playing_as_the_rebels": "If the revolt breaks out after a city rises on its own, a message offers a human player the chance to take over the Cilician Pirates, provided that player is playing the Seleucid Empire or the Ptolemaic Empire, or owns Nagidos or Korakesion. If you accept, you switch to playing the Cilician Pirates and a government building is added in Nagidos and Korakesion; declining changes nothing. No offer is made when the revolt breaks out automatically at turn 102 (245 BC). The Cilician Pirates can also be chosen at the start of a new campaign: the game plays forward until they rise, and you take over from there."
  }
 }
