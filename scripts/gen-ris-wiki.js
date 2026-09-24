@@ -29,7 +29,7 @@ const DRY = argv.includes("--dry");
 const RIS = valOf("--ris", "C:/RIS/RIS/data");
 const VAN = valOf("--vanilla",
   "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data");
-const OUT = valOf("--out", "C:/RIS/wiki");
+const OUT = valOf("--out", "C:/RIS/_wiki");
 
 // Counted off disk rather than written as a literal, so the figure in the README cannot
 // drift from the wiki it describes. Returns 0 on a fresh output directory, and the README

@@ -23,7 +23,7 @@ const path = require("path");
 
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
-const ROOT = path.resolve(valOf("--out", "C:/RIS/wiki"));
+const ROOT = path.resolve(valOf("--out", "C:/RIS/_wiki"));
 const PORT = parseInt(valOf("--port", "8099"), 10);
 
 if (!fs.existsSync(ROOT)) { console.error(`wiki not found: ${ROOT}`); process.exit(2); }

@@ -50,7 +50,7 @@ const path = require("path");
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const QUIET = argv.includes("--quiet");
-const WIKI = path.resolve(valOf("--wiki", "C:/RIS/wiki"));
+const WIKI = path.resolve(valOf("--wiki", "C:/RIS/_wiki"));
 const SITE = path.resolve(valOf("--site", "C:/dev/ris-wiki-site"));
 // Top-level asset directories to leave out, for a build small enough to send. Named rather
 // than inferred: `--without cards` drops the 104 MB of unit cards and nothing else.
@@ -88,7 +88,7 @@ let notesMerged = 0;
 // Two kinds of team writing reach this build from the GitHub wiki, both pulled in by
 // scripts/pull-github-wiki-notes.js: NOTES, appended under the marker on a generated page and
 // merged into it in the render loop below; and PAGES the team created, which no generator owns
-// and which therefore have no place in C:/RIS/wiki at all. Those are rendered here into
+// and which therefore have no place in C:/RIS/_wiki at all. Those are rendered here into
 // team/, through the same shell as everything else, so a contributor's article reads as part
 // of the wiki rather than as an attachment to it.
 //
@@ -443,7 +443,7 @@ for (const rel of mdPages) {
   let md = fs.readFileSync(path.join(WIKI, rel), "utf8");
 
   // Team notes written by the team in the GitHub wiki, pulled into the notes store by
-  // scripts/pull-github-wiki-notes.js. They live outside C:/RIS/wiki because the
+  // scripts/pull-github-wiki-notes.js. They live outside C:/RIS/_wiki because the
   // generators rewrite that wholesale; merging them here is what puts them on the site.
   const note = readNote(rel, NOTES);
   if (note) { md = md.trimEnd() + NOTE_SEP + note + "\n"; notesMerged++; }

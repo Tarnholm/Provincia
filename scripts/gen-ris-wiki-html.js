@@ -17,7 +17,7 @@ const path = require("path");
 
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
-const OUT = valOf("--out", "C:/RIS/wiki");
+const OUT = valOf("--out", "C:/RIS/_wiki");
 
 const esc = (s) => String(s == null ? "" : s)
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

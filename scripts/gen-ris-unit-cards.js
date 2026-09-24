@@ -23,7 +23,7 @@ const zlib = require("zlib");
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const RIS = valOf("--ris", "C:/RIS/RIS/data");
-const OUT = valOf("--out", "C:/RIS/wiki");
+const OUT = valOf("--out", "C:/RIS/_wiki");
 const SCALE = Math.max(1, parseInt(valOf("--scale", "2"), 10));
 const LIMIT = parseInt(valOf("--limit", "0"), 10) || 0;
 

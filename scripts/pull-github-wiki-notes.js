@@ -4,9 +4,9 @@
 // lose it. Two kinds of team writing, two stores:
 //
 //   Team notes   appended under the TEAM-NOTES marker on a GENERATED page
-//                -> C:/RIS/wiki-notes/<page>.md   (the note only)
+//                -> C:/RIS/_wiki-notes/<page>.md   (the note only)
 //   Team pages   a page the team CREATED, which no generator owns
-//                -> C:/RIS/wiki-pages/<page>.md   (the whole page)
+//                -> C:/RIS/_wiki-pages/<page>.md   (the whole page)
 //
 //   node scripts/pull-github-wiki-notes.js <wiki-clone> [notes-dir] [--pages <dir>] [--prune]
 //

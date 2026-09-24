@@ -108,7 +108,7 @@ For teammates who tune the Settlement Processor rules:
 
 ## The RIS wiki
 
-The wiki markdown lives in the mod repo at `C:/RIS/wiki`; the tools that generate,
+The wiki markdown lives in the mod repo at `C:/RIS/_wiki`; the tools that generate,
 serve and export it live here.
 
 ```sh
