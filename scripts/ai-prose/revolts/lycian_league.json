@@ -1,0 +1,24 @@
+{
+ "hash": "2b79aff5619ea94f",
+ "model": "claude-opus-5-5 (Claude Code session)",
+ "written": "2026-09-24",
+ "prose": {
+  "title": "The Lycian Revolt",
+  "summary": "The six Lycian cities of Patara, Xanthos, Tlos, Limyra, Myra and Telmessos break away from whoever holds them, at the start of the campaign the Ptolemaic Empire, and form the Lycian League. It can happen early when one of the cities rebels while Lycia is under Rhodian or foreign rule, and it happens anyway at turn 102 (245 BC).",
+  "breaks_away_from": "The Ptolemaic Empire, or whoever holds the Lycian cities at the time",
+  "who_it_can_happen_to": "Every campaign, whoever holds the Lycian cities, human or AI.",
+  "what_sets_it_off": [
+   "If one of the six Lycian cities rebels by itself through unrest, and Rhodes has held 3 or more of the six cities for more than 10 rounds in total (not necessarily in a row), the whole of Lycia revolts.",
+   "From turn 72 (253 BC), if one of the six Lycian cities rebels by itself through unrest while 4 or more of the six are held by factions other than the Ptolemaic Empire, the Seleucid Empire and Rhodes, the whole of Lycia revolts.",
+   "If neither of these has happened, the revolt happens at turn 102 (245 BC), no matter who holds the cities."
+  ],
+  "what_happens": [
+   "At the start of the next turn Patara, Xanthos, Tlos, Limyra, Myra and Telmessos all rebel against whoever holds them.",
+   "All six cities pass to the Lycian League, which did not exist until now.",
+   "Each city gets a strong garrison, 3.5 times normal strength, drawn from Akontistai, Greek Slingers, Lycian Archers, Lycian Marines, Lycian Hoplites, Lycian Drepanophoroi, Prodromoi and Xystophoroi.",
+   "When Patara revolts, the Lycian League receives 10000 denarii.",
+   "The revolt happens only once per campaign."
+  ],
+  "playing_as_the_rebels": "If you, the human player, held at least one of the six Lycian cities when the revolt began, a message titled 'The Lycian League declares its independence!' appears a turn or so later and offers to let you play as the Lycian League. If you accept, you switch to playing the Lycian League and a government building is placed in Patara, Xanthos, Tlos, Limyra and Myra. No offer is made if you held none of the six cities."
+ }
+}

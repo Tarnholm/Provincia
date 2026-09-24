@@ -27,13 +27,14 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
-const { writeProse, haveCredentials, MODEL } = require("./lib/aiProse.js");
+const { writeProse, storeProse, buildInput, SYSTEM, haveCredentials, MODEL } = require("./lib/aiProse.js");
 
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const RIS = valOf("--ris", "C:/RIS/RIS/data");
 const OUT = valOf("--out", "C:/RIS/_wiki");
 const DRY = argv.includes("--dry-run");
+const IMPORT = valOf("--import", null);   // folder of <key>.json answers written outside the build
 const say = (s) => console.log(s);
 
 const rd = (...f) => { try { return fs.readFileSync(path.join(RIS, ...f), "latin1"); } catch { return null; } };
@@ -299,10 +300,18 @@ const TASK = `Write the wiki page for this revolt: what it is, what sets it off,
     const code = `(${r.section.num}. ${r.section.title}, RIS_Campaign_Script.txt)\n${excerpt(r.live)}${r.extra.length ? `\n\n(The same factions in section ${EMERGENTS.num}, "${EMERGENTS.title}")\n${r.extra.map((b) => excerpt(liveLines(b.a, b.b))).join("\n\n")}` : ""}${r.factions.map((f) => SPAWN[f] ? `\n\n(spawn script for ${factionLabel(f)}: ${SPAWN[f].file})\n${(rd("world", "maps", "campaign", "imperial_campaign", ...SPAWN[f].file.split("/")) || "").split(/\r?\n/).map((t, i) => ({ n: i + 1, t })).filter((x) => uncomment(x.t).trim()).map((x) => `${x.n}: ${x.t}`).join("\n")}` : "").join("")}`;
     const facts = factsFor(r);
     const turns = turnTable(lines.map((x) => uncomment(x.t)).join("\n"));
+    if (IMPORT) {
+      const f = path.join(IMPORT, `${key}.json`);
+      if (fs.existsSync(f)) {
+        const r2 = storeProse({ kind: "revolts", key, task: TASK, facts, code, turns, schema: SCHEMA }, JSON.parse(fs.readFileSync(f, "utf8")), "claude-opus-5-5 (Claude Code session)");
+        say(`  import ${key}: ${r2.ok ? "stored" : `REJECTED - ${r2.note}`}`);
+      }
+    }
     if (DRY) {
-      const dir = path.join(require("os").tmpdir(), "ris-wiki-ai-inputs", "revolts");
+      const dir = valOf("--dry-run-dir", path.join(require("os").tmpdir(), "ris-wiki-ai-inputs", "revolts"));
       fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(path.join(dir, `${key}.txt`), `FACTS\n${JSON.stringify(facts, null, 1)}\n\nTURNS\n${JSON.stringify(turns)}\n\nCODE\n${code}\n`, "utf8");
+      // Exactly what the model would get: system prompt, input, and the answer's JSON schema.
+      fs.writeFileSync(path.join(dir, `${key}.txt`), `SYSTEM\n${SYSTEM}\n\n${buildInput({ task: TASK, facts, code, turns })}\n\nANSWER SCHEMA\n${JSON.stringify(SCHEMA, null, 1)}\n`, "utf8");
       say(`  dry-run ${key}: ${lines.length} code lines, ~${Math.round((code.length + JSON.stringify(facts).length) / 3.5 / 1000)}k tokens`);
       continue;
     }
@@ -311,7 +320,8 @@ const TASK = `Write the wiki page for this revolt: what it is, what sets it off,
     catch (e) { res = { prose: null, note: `API error: ${e.message}` }; }
     if (!res.prose) { stats.missing.push(`${key}: ${res.note}`); continue; }
     stats[res.source]++;
-    const p = res.prose;
+    const sep = (v) => (typeof v === "string" ? v.replace(/\b\d{4,}\b/g, (n) => num(n)) : Array.isArray(v) ? v.map(sep) : v);
+    const p = Object.fromEntries(Object.entries(res.prose).map(([k, v]) => [k, sep(v)]));
 
     // page
     const md = [];
@@ -331,14 +341,19 @@ const TASK = `Write the wiki page for this revolt: what it is, what sets it off,
     }
     for (const f of r.factions) {
       const em = EMERGENCE[f];
-      if (em && em.units.length) md.push(`**${factionName(f)} garrisons each settlement it takes with:** ${andList(em.units.map(unitLink))}.`, "");
       for (const a of (SPAWN[f] ? SPAWN[f].armies : [])) {
         const counts = {}; for (const u of a.units) counts[u] = (counts[u] || 0) + 1;
         md.push(`**Army raised when ${placeName(a.settlement || "")} revolts**${a.general ? ` (general ${a.general})` : ""}:`, "", "| Unit | Number |", "|---|---:|", ...Object.entries(counts).map(([u, n]) => `| ${unitLink(u)} | ${n} |`), "");
       }
     }
     md.push("## Playing as the rebels", "", p.playing_as_the_rebels, "");
-    for (const pr of facts.player_prompts) if (pr.text) md.push(`> **${pr.title}**`, ">", ...pr.text.split("\n").filter((l) => l.trim()).map((l) => `> ${l}`), "");
+    // The message in full (the model's facts carry a shortened copy), folded - they run long.
+    for (const m of r.text.matchAll(/title\s+(\S+)[\s\S]*?body\s+(\S+)/g)) {
+      const full = (EXPANDED[m[2]] || "").replace(/\\n/g, "\n");
+      if (!full.trim()) continue;
+      md.push("<details>", `<summary>The in-game message: ${cell(EXPANDED[m[1]] || m[1])}</summary>`, "",
+        ...full.split("\n").filter((l) => l.trim()).map((l) => `> ${l}\n>`), "", "</details>", "");
+    }
     const reformsDir = path.join(OUT, "reforms");
     const refs = facts.reforms_it_depends_on.filter((x) => fs.existsSync(path.join(reformsDir, `${x}.md`)));
     if (refs.length) {

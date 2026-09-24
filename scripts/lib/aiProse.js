@@ -113,6 +113,34 @@ async function ask(input, schema, feedback) {
  *   schema   JSON schema for the answer  (all objects additionalProperties:false, all keys required)
  * Returns { prose, source: "cache" | "model" | null, note }
  */
+function buildInput({ task, facts, code, turns }) {
+  return [
+    `TASK\n${task}`,
+    `FACTS\n${JSON.stringify(facts, null, 1)}`,
+    `TURNS (script turn number -> what the player sees)\n${Object.entries(turns || {}).map(([k, v]) => `${k} -> ${v}`).join("\n") || "(none)"}`,
+    `CODE\n${code}`,
+  ].join("\n\n");
+}
+const hashOf = (schema, input) => crypto.createHash("sha256").update(JSON.stringify({ v: PROMPT_VERSION, model: MODEL, system: SYSTEM, schema, input })).digest("hex").slice(0, 16);
+
+/**
+ * Prose written outside the build (in a Claude Code session, from the same SYSTEM, TASK and
+ * input): run through the same numbers check and stored in the same cache, keyed by the same
+ * hash, so the build cannot tell it from a model call - and a later change to the code behind
+ * the page still invalidates it.
+ */
+function storeProse({ kind, key, task, facts, code, turns, schema }, prose, writtenBy) {
+  const input = buildInput({ task, facts, code, turns });
+  const bad = inventedNumbers(prose, input);
+  if (bad.length) return { ok: false, note: `numbers not in the input: ${bad.join(", ")}` };
+  const missing = (schema.required || []).filter((k) => !(k in prose));
+  if (missing.length) return { ok: false, note: `missing fields: ${missing.join(", ")}` };
+  const file = path.join(CACHE_ROOT, kind, `${key}.json`);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify({ hash: hashOf(schema, input), model: writtenBy || MODEL, written: new Date().toISOString().slice(0, 10), prose }, null, 1) + "\n", "utf8");
+  return { ok: true };
+}
+
 async function writeProse({ kind, key, task, facts, code, turns, schema }) {
   const input = [
     `TASK\n${task}`,
@@ -120,7 +148,7 @@ async function writeProse({ kind, key, task, facts, code, turns, schema }) {
     `TURNS (script turn number -> what the player sees)\n${Object.entries(turns || {}).map(([k, v]) => `${k} -> ${v}`).join("\n") || "(none)"}`,
     `CODE\n${code}`,
   ].join("\n\n");
-  const hash = crypto.createHash("sha256").update(JSON.stringify({ v: PROMPT_VERSION, model: MODEL, system: SYSTEM, schema, input })).digest("hex").slice(0, 16);
+  const hash = hashOf(schema, input);
   const file = path.join(CACHE_ROOT, kind, `${key}.json`);
   try {
     const cached = JSON.parse(fs.readFileSync(file, "utf8"));
@@ -145,4 +173,4 @@ async function writeProse({ kind, key, task, facts, code, turns, schema }) {
   return { prose: json, source: "model", note: usage ? `${usage.input_tokens} in / ${usage.output_tokens} out` : "" };
 }
 
-module.exports = { writeProse, MODEL, haveCredentials };
+module.exports = { writeProse, storeProse, buildInput, SYSTEM, MODEL, haveCredentials };

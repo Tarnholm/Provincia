@@ -1,0 +1,25 @@
+{
+ "hash": "935cb4e148cfa1f3",
+ "model": "claude-opus-5-5 (Claude Code session)",
+ "written": "2026-09-24",
+ "prose": {
+  "title": "The Seleucid Revolts",
+  "summary": "When a weak new king takes the Seleucid throne, the Seleucid Empire's western and eastern provinces break away at once. Its settlements in Asia Minor join the Seleucid Rebels already on the map, and those in the Upper Satrapies form a second Seleucid Rebels faction.",
+  "breaks_away_from": "the Seleucid Empire",
+  "who_it_can_happen_to": "It can happen in any campaign, whether the Seleucid Empire is played by a human or the AI.",
+  "what_sets_it_off": [
+   "A weak new king (low influence and command) succeeds to the Seleucid throne; the revolt breaks out at the start of his next turn."
+  ],
+  "what_happens": [
+   "Every Seleucid Empire settlement in Asia Minor rebels at the start of the next turn and passes to the Seleucid Rebels, the faction that already holds 4 regions there from the start of the campaign.",
+   "When Sardis goes over, these Seleucid Rebels receive 10000 denarii.",
+   "Every Seleucid Empire settlement in the Upper Satrapies rebels at the start of the next turn and passes to a second Seleucid Rebels faction, which comes into being through this revolt.",
+   "When Ekbatana goes over, the second Seleucid Rebels faction receives 10000 denarii.",
+   "The towns that go over to either rebel faction receive garrisons of Seleucid Chalkaspides, Thureophoroi, Greek Hoplites, Greek Peltasts, Greek Archers, Seleucid Xystophoroi, Prodromoi and Neocretan Archers.",
+   "If any Upper Satrapies settlement rebels, the Parni surrender all their regions, unless a human is playing the Parni.",
+   "Both Seleucid Rebels factions are always at war with the Seleucid Empire: if either is ever at peace with it, it declares war again at the start of its turn.",
+   "The revolt happens only once per campaign."
+  ],
+  "playing_as_the_rebels": "No offer is made. Neither Seleucid Rebels faction can be played; both are always run by the AI."
+ }
+}

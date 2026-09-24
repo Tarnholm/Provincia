@@ -1,0 +1,23 @@
+{
+ "hash": "224243c0c6f11678",
+ "model": "claude-opus-5-5 (Claude Code session)",
+ "written": "2026-09-24",
+ "prose": {
+  "title": "The Thessalian Revolt",
+  "summary": "The four Thessalian cities of Larissa, Pharsalos, Pherai and Trikka can break away from the Antigonid Kingdom and form the Thessalian League. It can only happen when a new Antigonid faction leader takes over, and only while the Antigonid Kingdom holds all four cities. The chance is much higher from turn 76 (252 BC), or once the Antigonid Kingdom has shrunk to 14 settlements or fewer.",
+  "breaks_away_from": "The Antigonid Kingdom",
+  "who_it_can_happen_to": "Any campaign in which the Antigonid Kingdom holds Larissa, Pharsalos, Pherai and Trikka, whether it is played by a human or by the AI.",
+  "what_sets_it_off": [
+   "Each time a new Antigonid faction leader takes over, from turn 76 (252 BC) onwards, or at any time once the Antigonid Kingdom holds 14 settlements or fewer, there is a 25% chance of the revolt, as long as the Antigonid Kingdom holds all four Thessalian cities.",
+   "Each time a new Antigonid faction leader takes over at any point in the campaign, and the chance above does not apply or fails, there is a further 5% chance of the revolt, again only if the Antigonid Kingdom holds all four Thessalian cities."
+  ],
+  "what_happens": [
+   "At the start of the next turn Larissa, Pharsalos, Pherai and Trikka all rebel against the Antigonid Kingdom.",
+   "All four cities pass to the Thessalian League, which did not exist until now.",
+   "Each city gets a strong garrison of Thessalian League troops, 3.5 times normal strength, drawn from Akontistai, Greek Slingers, Greek Archers, Thessalian Peltasts, Greek Hoplites, Thureophoroi, Prodromoi, Perrhaibian Cavalry, Xystophoroi and Thessalian Cavalry.",
+   "When Larissa revolts, Taras receives 10000 denarii.",
+   "The revolt happens only once per campaign."
+  ],
+  "playing_as_the_rebels": "Only a human playing the Antigonid Kingdom is offered the rebels, because the revolt needs all four cities in Antigonid hands. After the revolt, at the end of an Antigonid turn, a message titled 'The Thessalian League Declares its Independence from Macedon!' offers to let you play as the Thessalian League. If you accept, you switch to playing the Thessalian League and a government building is placed in Larissa, Pharsalos, Pherai and Trikka."
+ }
+}

@@ -1,0 +1,25 @@
+{
+ "hash": "10b88e7ec2edfb59",
+ "model": "claude-opus-5-5 (Claude Code session)",
+ "written": "2026-09-24",
+ "prose": {
+  "title": "The Great Egyptian Revolt",
+  "summary": "The native Egyptians of Upper Egypt rise against the Ptolemaic Empire and form their own faction, the Egyptians. In a normal campaign it can only happen after the first Ptolemaic reform. If a human chooses to play the Egyptians, the revolt happens at the very start of the campaign instead.",
+  "breaks_away_from": "the Ptolemaic Empire",
+  "who_it_can_happen_to": "It can happen in any campaign; when a human plays the Egyptians it always happens at the start, and otherwise it depends on the Ptolemaic Empire's reforms and chance.",
+  "what_sets_it_off": [
+   "Once the Ptolemaic Empire has passed its first reform, there is a 5% chance at the start of each Ptolemaic turn that the revolt breaks out, whether the Ptolemaic Empire is played by a human or the AI.",
+   "If a human starts a campaign as the Egyptians, the uprising is set off at turn 2 (270 BC) and takes place at the start of turn 4 (270 BC)."
+  ],
+  "what_happens": [
+   "In a normal campaign, Syene-Elephantine, Thebes-Megale Diospolis, Mikra Apollonos Polis, Panos Polis and Megale Apollonos Polis rebel at the start of the next turn, whoever owns them, and pass to the Egyptians.",
+   "In a campaign where a human plays the Egyptians, Syene-Elephantine, Thebes-Megale Diospolis, Mikra Apollonos Polis, Panos Polis and Sais rise and pass to the Egyptians, and a government building is then added in each of them.",
+   "The towns that go over to the Egyptians receive strong garrisons of Egyptian Skirmishers, Egyptian Slingers, Machimoi Archers, Ptolemaic Machairophoroi, Egyptian Longspearmen, Machimoi Phalangites, Machimoi Cavalry and Machairophoroi Cavalry.",
+   "When Thebes-Megale Diospolis goes over, the Egyptians receive 10000 denarii.",
+   "At the same time an army led by the general Ahmose appears near Thebes-Megale Diospolis: Machimoi Cavalry, two Machimoi Phalangites, two Egyptian Longspearmen, two Machimoi Swordsmen, two Egyptian Skirmishers, two Machimoi Archers and two Egyptian Slingers. It is placed on the first of 3 set spots that no character is standing on; if all 3 are occupied, no army appears.",
+   "The Egyptians are always at war with the Ptolemaic Empire: if they are ever at peace, they declare war again at the start of their turn.",
+   "The revolt happens only once per campaign."
+  ],
+  "playing_as_the_rebels": "If a human is playing the Ptolemaic Empire when the revolt breaks out, a pop-up titled 'The Great Egyptian Revolt' asks whether they want to leave their campaign and play the Egyptians. Accepting switches the player to the Egyptians and adds a government building in Syene-Elephantine, Thebes-Megale Diospolis, Mikra Apollonos Polis, Megale Apollonos Polis and Panos Polis. The Egyptians can also be chosen at the start of a new campaign, in which case the revolt happens straight away."
+ }
+}

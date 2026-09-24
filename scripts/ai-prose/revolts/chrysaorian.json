@@ -1,0 +1,24 @@
+{
+ "hash": "a5f448f2dac3652d",
+ "model": "claude-opus-5-5 (Claude Code session)",
+ "written": "2026-09-24",
+ "prose": {
+  "title": "The Chrysaorian Revolt",
+  "summary": "The Karian cities of Kaunos, Antiocheia-Alabanda and Stratonikeia break away and form the Chrysaorian League. At the start of the campaign Kaunos belongs to the Ptolemaic Empire and the other two to the Seleucid Empire. The revolt can break out early if one of the cities rises on its own, and it happens by itself at turn 102 (245 BC) at the latest.",
+  "breaks_away_from": "Whoever holds Kaunos, Antiocheia-Alabanda and Stratonikeia (at the start, the Ptolemaic Empire and the Seleucid Empire)",
+  "who_it_can_happen_to": "It can happen in any campaign, whether the three cities are held by the AI or by a human player.",
+  "what_sets_it_off": [
+   "One of the three cities rebels on its own through unrest, after Rhodes has held at least two of the three cities at the start of more than 10 turns in total (they need not be in a row).",
+   "From turn 72 (253 BC), one of the three cities rebels on its own through unrest while at least two of the three are held by someone other than the Ptolemaic Empire, the Seleucid Empire or Rhodes.",
+   "If none of this has happened by turn 102 (245 BC), the revolt breaks out automatically at the start of that turn."
+  ],
+  "what_happens": [
+   "Kaunos, Antiocheia-Alabanda and Stratonikeia all rebel at the start of the next turn, whoever owns them.",
+   "All three cities pass to the Chrysaorian League, a faction that does not exist at the start of the campaign.",
+   "Each city gets a garrison 3.5 times normal strength, drawn from Akontistai, Greek Slingers, Greek Archers, Greek Peltasts, Karian Hoplites, Karian Thureophoroi, Karian Leukaspides Swordsmen, Karian Light Infantry, Karian Heavy Infantry, Prodromoi and Xystophoroi.",
+   "The Chrysaorian League receives 10000 denarii when Kaunos joins it.",
+   "The revolt happens only once per campaign."
+  ],
+  "playing_as_the_rebels": "The Chrysaorian League cannot be chosen at the start of a campaign. If you, the human player, held at least one of the three cities at the start of the turn in which the revolt broke out, a message then offers you the chance to take over the Chrysaorian League. If you accept, you switch to playing the League and a government building is added in Stratonikeia, Kaunos and Antiocheia-Alabanda. If you do not own any of the three cities, no offer is made."
+ }
+}

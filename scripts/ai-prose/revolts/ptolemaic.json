@@ -1,0 +1,23 @@
+{
+ "hash": "5bf0f8f93231501b",
+ "model": "claude-opus-5-5 (Claude Code session)",
+ "written": "2026-09-24",
+ "prose": {
+  "title": "The Ptolemaic Revolt",
+  "summary": "After the Egyptian revolt has broken out, a weak new Ptolemaic king can cause the Ptolemaic Empire's outer lands to break away. Every settlement the Ptolemaic Empire then holds in the Levant and Cyrenaica rebels and joins the Ptolemaic Rebels, who stay at war with the Ptolemaic Empire.",
+  "breaks_away_from": "The Ptolemaic Empire",
+  "who_it_can_happen_to": "It can happen in any campaign where the Ptolemaic Empire is still alive, whether it is played by the AI or by a human player.",
+  "what_sets_it_off": [
+   "Once the Egyptian revolt has broken out, the revolt starts at the start of a Ptolemaic turn if the Ptolemaic Empire has a weak new king (low influence and command)."
+  ],
+  "what_happens": [
+   "Every settlement the Ptolemaic Empire holds at that moment in the Levant and in Cyrenaica rebels at the start of the next turn.",
+   "The Levant covers 44 regions, of which 24 belong to the Ptolemaic Empire at the start of the campaign. Cyrenaica covers 6 regions, which at the start belong to Cyrene (5) and the Free Peoples (1), so they only rebel if the Ptolemaic Empire has taken them by then.",
+   "These settlements pass to the Ptolemaic Rebels, a faction that does not exist at the start of the campaign, with a normal-strength garrison drawn from Akontistai, Greek Slingers, Greek Archers, Greek Peltasts, Greek Hoplites, Thureophoroi, Ptolemaic Machairophoroi, Ptolemaic Klerouchoi Phalangites, Ptolemaic Klerouchoi Agema, Ptolemaic Basilikon Agema, Prodromoi, Ptolemaic Xystophoroi and Ptolemaic Agema Cavalry.",
+   "The Ptolemaic Rebels receive 10000 denarii if Philadelpheia is among the settlements that join them.",
+   "At the start of each of their turns, the Ptolemaic Rebels declare war on the Ptolemaic Empire if they are not already at war, so any peace does not last.",
+   "The revolt happens only once per campaign."
+  ],
+  "playing_as_the_rebels": "No offer is made. The Ptolemaic Rebels cannot be played; they are always run by the AI."
+ }
+}

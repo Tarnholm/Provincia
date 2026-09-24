@@ -1,0 +1,24 @@
+{
+ "hash": "808030a51fa35cef",
+ "model": "claude-opus-5-5 (Claude Code session)",
+ "written": "2026-09-24",
+ "prose": {
+  "title": "The Revolt of Miletos",
+  "summary": "The city of Miletos breaks away from whoever holds it, at the start of the campaign the Ptolemaic Empire, and becomes the independent faction of Miletus. It can happen early if the city is unhappy, and it always happens by turn 16 (267 BC) at the latest.",
+  "breaks_away_from": "The Ptolemaic Empire, or whoever holds Miletos at the time",
+  "who_it_can_happen_to": "Every campaign, whoever holds Miletos, human or AI.",
+  "what_sets_it_off": [
+   "If Miletos rebels by itself through unrest at any time, it goes over to Miletus.",
+   "From turn 10 (268 BC), at the end of each of its owner's turns, there is a 25% chance of the revolt if Miletos is disillusioned or unhappier.",
+   "If none of the above has happened, Miletos revolts at the end of its owner's turn on turn 16 (267 BC), whatever its mood."
+  ],
+  "what_happens": [
+   "At the start of the next turn Miletos rebels against its owner.",
+   "The city passes to Miletus, which did not exist until now.",
+   "Miletos gets a strong garrison, 3.5 times normal strength, drawn from Akontistai, Greek Slingers, Greek Archers, Greek Peltasts, Milesian Horophylakes, Milesian Hoplites, Thureophoroi, Prodromoi and Xystophoroi.",
+   "Miletus receives 10000 denarii.",
+   "The revolt happens only once per campaign."
+  ],
+  "playing_as_the_rebels": "If you, the human player, held Miletos when the revolt began, a message titled 'Miletos regains its autonomy!' appears at the end of a turn after the revolt and offers to let you play as Miletus. If you accept, you switch to playing Miletus and a government building is placed in Miletos. No offer is made if an AI faction held the city."
+ }
+}

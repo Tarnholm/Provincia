@@ -1,0 +1,23 @@
+{
+ "hash": "a6c8574112a613fc",
+ "model": "claude-opus-5-5 (Claude Code session)",
+ "written": "2026-09-24",
+ "prose": {
+  "title": "The Italic Revolt",
+  "summary": "Eight towns of central and southern Italy rise up and form a new faction, the Italics. It can only happen from turn 120 (241 BC), after the Gracchan reform, once Italy is dotted with colonies. The Italics are at war with Rome from the moment they appear.",
+  "breaks_away_from": "Rome, or whoever holds the eight towns at the time",
+  "who_it_can_happen_to": "It can happen in any campaign, whoever the player is.",
+  "what_sets_it_off": [
+   "From turn 120 (241 BC) onwards, once the Gracchan reform has taken place, the game counts the colony buildings (of either level) in the 41 regions of Italy that matter for this revolt, whoever owns them; if there are at least 20, there is a 35% chance of the revolt, rolled at the end of every faction's turn."
+  ],
+  "what_happens": [
+   "Corfinium, Teate, Asculum, Bovianum, Venusia, Canusium, Grumentum and Larinum rebel at the start of the next turn, whoever owns them.",
+   "All eight pass to the new Italics faction, each with a strong garrison of Italic Skirmishers, Italic Cohort and Italic Equites.",
+   "When Corfinium goes over, the Italics receive 10000 denarii.",
+   "At the start of the next round the Italics declare war on Rome and on the Roman factions that can break away from it in its civil wars.",
+   "The Italics stay at war with all of these: if they are ever at peace with one of them, they declare war again at the start of their turn.",
+   "The revolt happens only once per campaign."
+  ],
+  "playing_as_the_rebels": "No offer is made. The Italics cannot be played; they are always run by the AI."
+ }
+}
