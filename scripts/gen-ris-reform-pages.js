@@ -1128,28 +1128,22 @@ for (const r of REFORMS) {
   if (file == null) req.push("_The trigger script this reform names is not in the mod folder, so what fires it is **not determined**._");
   else {
     const complexCounters = new Map();
-    const { routes, texts } = renderRoutes(tree, r, complexCounters);
+    // Every script in the trigger file counts (Sparta's file holds two; the mod team confirms
+    // the second is the one that fires). A route that can never be met - an old placeholder
+    // testing a resource nothing places - is left off, unless no route can ever be met.
+    const main = renderRoutes(tree, r, complexCounters);
+    const more = extra ? renderRoutes(parseScript(extra), r, complexCounters) : { routes: [], texts: [] };
+    const allRoutes = [...main.routes, ...more.routes], allTexts = [...main.texts, ...more.texts];
+    const dead = allTexts.map((t) => /can never happen/.test(t));
+    const never = allRoutes.length > 0 && dead.every(Boolean);
+    const keep = allRoutes.map((_, i) => never || !dead[i]);
+    const routes = allRoutes.filter((_, i) => keep[i]);
+    const texts = allTexts.filter((_, i) => keep[i]);
     stats.routes += routes.length;
-    const extraTexts = extra ? mergeRoutes(renderRoutes(parseScript(extra), r, complexCounters).texts) : [];
-    if (false) for (const route of routes) {
-      const conds = route.conds.slice();
-      // Counters routesOf could not phrase come back null from describeCounter: spell them out.
-      let t;
-      if (route.loop) {
-        const who = route.loop.faction ? factionLink(route.loop.faction) : null;
-        const lead = route.loop.what === "settlement" ? (who ? `a settlement held by ${who}` : "a settlement anywhere on the map") : (who ? `a unit of ${who}` : "a unit");
-        const outer = conds.slice(0, route.loop.depth || 0), inner = conds.slice(route.loop.depth || 0);
-        // "it is a huge city or larger" reads as "a settlement held by X is a huge city or larger"
-        const loopText = `${lead} ${joinAnd(inner.map((x, i) => (i === 0 ? x.replace(/^it /, "") : x))) || "exists"}`;
-        t = joinAnd([...outer, loopText]);
-      } else t = joinAnd(conds);
-      texts.push(t || "nothing — it fires on the first check");
-    }
-    const complexNotesAll = [...complexCounters.entries()].map(([c, v]) => { stats.complex++; return { c, ...v, lines: complexCounterText(c) }; });
-    const complexNotes = complexNotesAll;
+    if (dead.some(Boolean) && !never) stats.deadRoutes = (stats.deadRoutes || 0) + dead.filter(Boolean).length;
+    const complexNotes = [...complexCounters.entries()].map(([c, v]) => { stats.complex++; return { c, ...v, lines: complexCounterText(c) }; });
     if (!routes.length) { stats.noRoute.push(r.name); req.push("_Nothing in its trigger script ever returns true, so this reform never fires on its own._"); }
     else {
-      const never = !extraTexts.length && texts.every((t) => /can never happen/.test(t));
       if (never) stats.never.push(r.name);
       for (let i = 0; i < texts.length; i++) texts[i] = texts[i].replace(/the conditions below are met(?:(?:,| and) the conditions below are met)+/g, "the conditions below are met");
       req.push(...playerAiSections(routes, texts));
@@ -1162,7 +1156,6 @@ for (const r of REFORMS) {
       const detail = `**\`${cn.c}\`**${gloss} is kept by the campaign script${summary ? "" : ` and must be ${cn.word} ${num(cn.n)}`}. It changes:\n\n${cn.lines.map((l) => `- ${l}`).join("\n") || "- _where it is set is **not determined**_"}`;
       req.push(summary ? `<details>\n<summary>The script, step by step</summary>\n\n${detail}\n\n</details>` : detail);
     }
-    if (extra) req.push(`The trigger file holds a second script after this one. Whether the game runs it as well is **not determined**; if it does, the reform also fires when ${extraTexts.length ? orList(extraTexts) : "— nothing: that script never returns true"}.`);
     req.push("The game checks this at the end of every round.");
   }
 
@@ -1236,6 +1229,7 @@ say(`  pages ${stats.pages} · requirement routes ${stats.routes} · counters sp
 say(`  units referenced ${Object.keys(INDEX.units).length} · reforms that open units ${OPENS.size} · close units ${CLOSES.size}`);
 if (stats.never.length) say(`  CANNOT FIRE before the campaign ends: ${stats.never.join(", ")}`);
 say(`  pictures: ${IMAGE_STATS.written} reforms illustrated · ${IMAGE_STATS.stock} of them with a stock picture${IMAGE_STATS.missing.length ? ` · NO FILE IN THE MOD (stock picture shown): ${IMAGE_STATS.missing.join(", ")}` : ""}`);
+if (stats.deadRoutes) say(`  routes left off because they can never be met: ${stats.deadRoutes} (placeholder conditions)`);
 if (NO_SUCH_FACTION.size) say(`  scripts loop over factions that do not exist: ${[...NO_SUCH_FACTION].join(", ")}`);
 if (NEVER_RESOURCES.size) say(`  tested resources that no region carries and no script places: ${[...NEVER_RESOURCES].join(", ")}`);
 if (stats.noRoute.length) say(`  NO ROUTE returns true: ${stats.noRoute.join(", ")}`);
