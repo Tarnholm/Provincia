@@ -257,9 +257,9 @@ const reformLink = (n, pre = "") => (REFORM_BY_NAME[n] ? `[${titleOf(REFORM_BY_N
 // ── event pictures ──────────────────────────────────────────────────────────
 // Each reform names an "image"; the file is ui/<culture>/eventpics/<image>.tga. The engine
 // looks in the culture of the faction it is showing the message to, so the first affected
-// faction's culture is tried first, then ui/generic, then any culture that has it. Three
-// names are the engine's stock status pictures, reused by many events; those are left off.
-const STOCK_IMAGES = new Set(["player_faction_strongest", "faction_strongest", "faction_defeated"]);
+// faction's culture is tried first, then ui/generic, then any culture that has it. A reform
+// that names a picture the mod does not ship shows the stock one most reforms use instead.
+const FALLBACK_IMAGE = "player_faction_strongest";
 const FACTION_CULTURE = (() => {
   const out = {};
   const src = rd("descr_sm_factions.txt") || "";
@@ -282,20 +282,31 @@ const eventpicIn = (culture, image) => {
   const hit = files.find((f) => f.toLowerCase() === `${image.toLowerCase()}.tga`);
   return hit ? path.join(dir, hit) : null;
 };
-function resolveEventpic(r) {
-  if (!r.image || STOCK_IMAGES.has(r.image.toLowerCase())) return null;
+function resolveEventpic(r, image = r.image) {
+  if (!image) return null;
   const order = [...new Set([...r.affects.map((f) => FACTION_CULTURE[f.toLowerCase()]).filter(Boolean), "generic", ...EVENTPIC_DIRS])];
-  for (const c of order) { const f = eventpicIn(c, r.image); if (f) return f; }
+  for (const c of order) { const f = eventpicIn(c, image); if (f) return { file: f, culture: c }; }
   return undefined; // named, but no file in the mod
 }
 const IMAGE_STATS = { written: 0, stock: 0, missing: [] };
 const dgTga = require(path.join(__dirname, "..", "src", "descrStratGeneral.js"));
 const { convert: tgaToPng } = require(path.join(__dirname, "lib", "tgaPng.js"));
 function reformImage(r) {
-  const file = resolveEventpic(r);
-  if (file === null) { if (r.image) IMAGE_STATS.stock++; return null; }
-  if (file === undefined) { IMAGE_STATS.missing.push(`${r.name} -> ${r.image}`); return null; }
-  const out = path.join(OUT, "reform-images", `${slug(r.image)}.png`);
+  let hit = resolveEventpic(r);
+  if (hit === null) return null;
+  let image = r.image;
+  if (hit === undefined) {
+    IMAGE_STATS.missing.push(`${r.name} -> ${r.image}`);
+    image = FALLBACK_IMAGE;
+    hit = resolveEventpic(r, image);
+    if (!hit) return null;
+  }
+  // Stock pictures differ by culture, so the culture is part of the file name.
+  const stock = /^(player_faction_strongest|faction_strongest|faction_defeated)$/i.test(image);
+  if (stock) IMAGE_STATS.stock++;
+  const name = stock ? `${slug(image)}_${slug(hit.culture)}` : slug(image);
+  const file = hit.file;
+  const out = path.join(OUT, "reform-images", `${name}.png`);
   if (!fs.existsSync(out) || fs.statSync(out).mtimeMs < fs.statSync(file).mtimeMs) {
     const p = tgaToPng(dgTga, file, 1);
     if (!p) { IMAGE_STATS.missing.push(`${r.name} -> ${r.image} (unreadable)`); return null; }
@@ -303,7 +314,7 @@ function reformImage(r) {
     fs.writeFileSync(out, p.buf);
   }
   IMAGE_STATS.written++;
-  return `../reform-images/${slug(r.image)}.png`;
+  return `../reform-images/${name}.png`;
 }
 
 // ── the script language ─────────────────────────────────────────────────────
@@ -953,7 +964,19 @@ for (const r of REFORMS) {
   const counters = [...txt.matchAll(/I_CompareCounter\s+(\S+)/g)].map((m) => m[1]);
   const direct = [...txt.matchAll(/MajorEventActive\s+"?([A-Za-z0-9_]+)"?/g)].map((m) => m[1]);
   // A counter the campaign script only sets once another reform has happened (Gracchi -> Polybian).
-  for (const c of counters) for (const s of COUNTER_SITES.get(c) || []) for (const cond of s.ifs) for (const m of cond.join(" ").matchAll(/MajorEventActive\s+"?([A-Za-z0-9_]+)"?/g)) direct.push(m[1]);
+  // Two levels: Late Republican waits on italic_cw1_gate, which only rises once
+  // italic_revolt_done is set, which needs the Gracchan Reforms.
+  const seen = new Set();
+  const scan = (c, depth) => {
+    if (seen.has(c) || depth > 2) return;
+    seen.add(c);
+    for (const s of COUNTER_SITES.get(c) || []) {
+      const text = [...(s.monitor ? s.monitor.cond : []), ...s.ifs.flat()].join(" ");
+      for (const m of text.matchAll(/MajorEventActive\s+"?([A-Za-z0-9_]+)"?/g)) direct.push(m[1]);
+      for (const m of text.matchAll(/I_CompareCounter\s+(\S+)/g)) scan(m[1], depth + 1);
+    }
+  };
+  for (const c of counters) scan(c, 1);
   const deps = [...new Set(direct)].filter((d) => d !== r.name && REFORM_BY_NAME[d]);
   NEEDS.set(r.name, deps);
   for (const d of deps) { if (!LEADS.has(d)) LEADS.set(d, []); LEADS.get(d).push(r.name); }
@@ -1048,7 +1071,10 @@ for (const r of REFORMS) {
   if (needs.length) lines.push(`Comes after: ${needs.map((n) => reformLink(n)).join(", ")}.`, "");
   if (leads.length) lines.push(`Opens the way to: ${leads.map((n) => reformLink(n)).join(", ")}.`, "");
   lines.push("## What it unlocks", "");
-  if (!opens.size && !closes.size && !r.switches.length) lines.push("_No recruitment line tests this reform and it converts no units: it changes nothing a player can recruit._", "");
+  if (!opens.size && !closes.size && !r.switches.length) {
+    lines.push("**Message only.** It unlocks, retires and converts no units.", "");
+    if (leads.length) lines.push(`Its only effect is that ${joinAnd(leads.map((n) => reformLink(n)))} ${leads.length === 1 ? "waits" : "wait"} for it.`, "");
+  }
   if (opens.size) lines.push(`**${plural(opens.size, "unit")} can be recruited once it fires:**`, "", unitTable(opens, r.name, "unlocks"), "");
   if (r.switches.length) {
     for (const [from, to] of r.switches) { addUnitRef(to, r.name, "upgrades"); addUnitRef(from, r.name, "upgraded"); }
@@ -1098,7 +1124,7 @@ say(`reforms: ${REFORMS.length} of ${EVENTS.length} major events (left out: ${EV
 say(`  pages ${stats.pages} · requirement routes ${stats.routes} · counters spelled out from the campaign script ${stats.complex}`);
 say(`  units referenced ${Object.keys(INDEX.units).length} · reforms that open units ${OPENS.size} · close units ${CLOSES.size}`);
 if (stats.never.length) say(`  CANNOT FIRE before the campaign ends: ${stats.never.join(", ")}`);
-say(`  pictures: ${IMAGE_STATS.written} written to reform-images/ · ${IMAGE_STATS.stock} use a stock status picture (left off)${IMAGE_STATS.missing.length ? ` · NO FILE IN THE MOD: ${IMAGE_STATS.missing.join(", ")}` : ""}`);
+say(`  pictures: ${IMAGE_STATS.written} reforms illustrated · ${IMAGE_STATS.stock} of them with a stock picture${IMAGE_STATS.missing.length ? ` · NO FILE IN THE MOD (stock picture shown): ${IMAGE_STATS.missing.join(", ")}` : ""}`);
 if (NO_SUCH_FACTION.size) say(`  scripts loop over factions that do not exist: ${[...NO_SUCH_FACTION].join(", ")}`);
 if (NEVER_RESOURCES.size) say(`  tested resources that no region carries and no script places: ${[...NEVER_RESOURCES].join(", ")}`);
 if (stats.noRoute.length) say(`  NO ROUTE returns true: ${stats.noRoute.join(", ")}`);
