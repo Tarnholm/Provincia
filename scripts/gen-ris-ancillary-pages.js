@@ -380,7 +380,7 @@ const ancRef = (token) => {
 function acquisitionFold(a) {
   const feeds = TRIGGERS_FOR.get(a.name) || [];
   if (!feeds.length) {
-    return "_No trigger in the file grants this — it comes from the campaign script or an event, and is listed here because the game still shows it when it arrives._";
+    return "_No trigger grants this — it comes from the campaign script or an event._";
   }
   const events = uniq(feeds.map((f) => eventPhrase(f.trigger.when))).slice(0, 4);
   const rows = feeds.slice(0, 40).map((f) => {

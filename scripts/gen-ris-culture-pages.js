@@ -691,7 +691,7 @@ function culturePage(f, all) {
   if (sm) {
     artLines.push(`This culture has its own strategy-map buildings: **${smSizes.length}** of the ${LADDER.length} rungs have a block, with **${wallCount}** wall models between them${modelFamilies.length ? `, drawn from the \`${modelFamilies.join("`, `")}\` model set${modelFamilies.length === 1 ? "" : "s"}` : ""}.`);
     if (smMissing.length) {
-      artLines.push(`**How far this culture's ladder goes is stated two ways, and this page does not pick one.** It is given \`max settlement level: ${c.max || "not stated"}\`, which reaches ${sizeNameOf(c.max || LADDER[LADDER.length - 1])}, but there is no strategy-map block at ${smMissing.map(sizeNameOf).join(" or ")} — so no model and no card for ${smMissing.length === 1 ? "that rung" : "those rungs"}. Which of the two the engine obeys is **not determined**.`);
+      artLines.push(`**How far this culture's ladder goes is stated two ways.** It is given \`max settlement level: ${c.max || "not stated"}\`, which reaches ${sizeNameOf(c.max || LADDER[LADDER.length - 1])}, but there is no strategy-map block at ${smMissing.map(sizeNameOf).join(" or ")} — so no model and no card for ${smMissing.length === 1 ? "that rung" : "those rungs"}. Which of the two the engine obeys is **not determined**.`);
     } else {
       artLines.push(`Every rung of the ladder has a block, so nothing is missing between the two files for this culture.`);
     }
@@ -894,8 +894,6 @@ Culture is the game's own grouping of its ${num(Object.keys(FACTIONS).length)} f
 settlement is drawn with, how far the mod lets it grow, which government levels can be
 installed there and a slice of what can be raised. **${CULTURES.length}** of them exist.
 
-${renameNote}
-
 ## The ${CULTURES.length} cultures
 
 **Provinces** is what the culture's factions hold at turn 0, out of the ${num(heldTotal)} settlements the
@@ -929,7 +927,7 @@ ${biggestHolder && biggestHolder.n / heldTotal > 0.2
     byTop.get(top).push(cultureName(t) || t);
   }
   const clauses = [...byTop.entries()].map(([top, list]) => `${list.join(" and ")} declare${list.length === 1 ? "s" : ""} nothing above ${top}`);
-  return `${clauses.join("; ")}, while all ${CULTURES.length} cultures have a \`max settlement level\` of ${sizeNameOf(LADDER[LADDER.length - 1])}. **The two contradict each other and this wiki does not resolve it** — which one the engine obeys is not stated anywhere in the mod.`;
+  return `${clauses.join("; ")}, while all ${CULTURES.length} cultures have a \`max settlement level\` of ${sizeNameOf(LADDER[LADDER.length - 1])}. **The two contradict each other** — which one the engine obeys is not stated anywhere in the mod.`;
 })()}
 - **Culture does not fix belief.** ${(() => {
   const spread = FACTS.map((f) => uniq(f.facs.map((x) => (FACTIONS[x] || {}).religion).filter(Boolean)).length);

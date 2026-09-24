@@ -935,7 +935,7 @@ ${units.aor.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map((
 
 \`${f}\` · culture ${cultureRef(CULTURE[f], "../") || `\`${CULTURE[f] || "not determined"}\``} · believes ${religionRef(FACTION_RELIGION[f], "../") || `\`${FACTION_RELIGION[f] || "not determined"}\``}${b ? ` · ${b}` : ""}
 
-${own ? `The mod's own text for this faction, verbatim:\n\n> ${own.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n` : `_The mod ships no campaign description for this faction._\n`}
+${own ? `> ${own.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n` : `_The mod ships no campaign description for this faction._\n`}
 ${spawn ? `Placed on the map by the campaign script, not chosen: \`${spawn.join("`, `")}\` in \`spawn_scripts/\` names it.\n` : `_No spawn script in \`spawn_scripts/\` names it._\n`}
 ${held.length ? `**Holds ${held.length} region${held.length === 1 ? "" : "s"} at the campaign start.**
 

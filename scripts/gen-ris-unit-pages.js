@@ -837,12 +837,9 @@ for (const u of list) {
     + (attrNamed.length ? `**In battle:** ${[...new Set(attrNamed)].join(" · ")}\n\n` : "")
     + [
       "<details>",
-      `<summary>The full attribute list, as the unit file writes it (${attrRaw.length})</summary>`,
+      `<summary>The full attribute list (${attrRaw.length})</summary>`,
       "",
       attrRaw.map((a) => `\`${a}\``).join(", "),
-      "",
-      "The names above are the game's own wording for these flags. A flag the mod's text never",
-      "puts into words is left as the file writes it rather than given a meaning it never states.",
       "",
       "</details>",
       "",
@@ -979,7 +976,7 @@ it**, so there is nowhere on the campaign map to hire it as the mod ships today.
 
 [← all units](../units.md) · [wiki index](../README.md)
 
-${cardMarkup(u)}${u.hasName ? "" : "> _This unit has no display name in the text files, so its internal name is shown._\n\n"}${u.merc === "all" ? `> **Mercenary.** Hired from a regional pool, not recruited from a building.${u.hasName && ALREADY_MERC.test(u.rawName) ? " The mod already names it as one." : ` The mod calls it "${u.rawName || u.type}"; this wiki prefixes "Mercenary" so the roster reads unambiguously.`}\n\n` : ""}${u.merc === "mixed" ? `> **Reachable both ways.** Some entries for this unit are mercenary (\`merc …\`) and some are\n> not, so it can be hired from a pool *or* raised from a building. It is not prefixed\n> "Mercenary", because calling it a mercenary outright would be wrong.\n\n` : ""}**Class:** ${u.cls || "unknown"} · **Category:** ${u.category || "unknown"}${s.men != null ? ` · **Men per unit:** ${s.men}` : ""}
+${cardMarkup(u)}${u.hasName ? "" : "> _This unit has no display name in the mod yet._\n\n"}${u.merc === "all" ? `> **Mercenary.** Hired from a regional pool, not recruited from a building.\n\n` : ""}${u.merc === "mixed" ? `> **Reachable both ways.** Some entries for this unit are mercenary (\`merc …\`) and some are\n> not, so it can be hired from a pool *or* raised from a building.\n\n` : ""}**Class:** ${u.cls || "unknown"} · **Category:** ${u.category || "unknown"}${s.men != null ? ` · **Men per unit:** ${s.men}` : ""}
 
 ## Stats
 

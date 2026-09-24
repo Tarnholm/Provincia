@@ -866,7 +866,6 @@ for (const c of list) {
       ? `${rows.length} levels, each replacing the one before it — you upgrade in place rather than building alongside.\n\n**${pathLine}**`
       : "A single-level building: there is nothing to upgrade it into.",
     "",
-    "Pictures are the game's own building art. Where a culture ships none of its own, the game falls back to another culture's, and that is what is shown here.",
     "",   // a blank line before the first `## `, or a single-level page runs the two together
   ].join("\n");
 
@@ -970,8 +969,6 @@ Costs in denarii, build time in turns.
   const glossarySection = glossary.length ? `
 <details>
 <summary>What the shorthands in those conditions stand for (${glossary.length})</summary>
-
-These are the mod's own, quoted from the game files unchanged.
 
 | Shorthand | Stands for |
 |---|---|

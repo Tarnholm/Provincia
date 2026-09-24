@@ -429,7 +429,7 @@ function traitRef(token) {
 function triggerFold(t) {
   const feeds = TRIGGERS_FOR.get(t.name) || [];
   if (!feeds.length) {
-    return "_No trigger in the file grants this trait. It comes from the campaign script, from birth, or from inheritance — the trait file itself does not say which._";
+    return "_No trigger grants this trait. It comes from the campaign script, from birth, or from inheritance._";
   }
   const gains = feeds.filter((f) => !f.lose), losses = feeds.filter((f) => f.lose);
   const events = uniq(feeds.map((f) => eventPhrase(f.trigger.whenToTest))).slice(0, 4);
