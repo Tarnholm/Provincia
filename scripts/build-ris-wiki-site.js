@@ -414,9 +414,15 @@ fs.mkdirSync(SITE, { recursive: true });
 // `url(/art/ris-rule.png)` in it, which under file:// asks for C:\art\ris-rule.png — so every
 // page in the wiki lost the mod's rule under its title and nothing else looked wrong. A real
 // browser found that; no amount of reading the HTML would have, because the HTML was correct.
-fs.writeFileSync(wrote(path.join(SITE, "wiki.css")), rewriteHtml(CSS, "wiki.css"));
-fs.writeFileSync(wrote(path.join(SITE, "wiki.js")),
-  SHELL_SCRIPT.replace(/^<script>|<\/script>$/g, "") + EXTRA_JS);
+const CSS_OUT = rewriteHtml(CSS, "wiki.css");
+const JS_OUT = SHELL_SCRIPT.replace(/^<script>|<\/script>$/g, "") + EXTRA_JS;
+fs.writeFileSync(wrote(path.join(SITE, "wiki.css")), CSS_OUT);
+fs.writeFileSync(wrote(path.join(SITE, "wiki.js")), JS_OUT);
+// Pages link the two with a content hash (?v=...). Without it a browser keeps its cached copy
+// after a style change: the reform banner shipped, the HTML updated, and pages kept floating
+// the picture under the old stylesheet until a hard refresh.
+const VER = (t) => require("crypto").createHash("sha1").update(t).digest("hex").slice(0, 10);
+const CSS_V = VER(CSS_OUT), JS_V = VER(JS_OUT);
 
 const writeOut = (rel, text) => {
   const abs = path.join(SITE, rel);
@@ -432,8 +438,8 @@ function finish(html, fromRel) {
   // so it is matched here in its rewritten form.
   const rewrittenStyle = `<style>${rewriteHtml(CSS, fromRel)}</style>`;
   out = out.replace(rewrittenStyle,
-    `<link rel="stylesheet" href="${depth}wiki.css">\n<script>window.RIS_BASE=${JSON.stringify(depth)}</script>`);
-  out = out.replace(SHELL_SCRIPT, `${STORAGE_SHIM}\n<script src="${depth}wiki.js"></script>`);
+    `<link rel="stylesheet" href="${depth}wiki.css?v=${CSS_V}">\n<script>window.RIS_BASE=${JSON.stringify(depth)}</script>`);
+  out = out.replace(SHELL_SCRIPT, `${STORAGE_SHIM}\n<script src="${depth}wiki.js?v=${JS_V}"></script>`);
   return out;
 }
 

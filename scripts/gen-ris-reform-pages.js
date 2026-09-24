@@ -413,7 +413,7 @@ const COUNTER_SITES = (() => {
       else if (n.kind === "if") {
         walk(n, { ...ctx, ifs: [...ctx.ifs, n.cond] });
         if (n.else) walk(n.else, { ...ctx, ifs: [...ctx.ifs, ["not (" + n.cond.join(" ") + ")"]] });
-      } else if (n.kind === "for") walk(n, { ...ctx, fors: [...ctx.fors, n] });
+      } else if (n.kind === "for") walk(n, { ...ctx, fors: [...ctx.fors, { ...n, ifDepth: ctx.ifs.length }] });
       else if (n.kind === "set_counter" || n.kind === "inc_counter") {
         if (!out.has(n.counter)) out.set(n.counter, []);
         out.get(n.counter).push({ ...ctx, op: n.kind, n: n.n, from: n.from || null });
@@ -462,7 +462,7 @@ function renderClause(text, ctx) {
       const d = describeCounter(c, word, n, ctx);
       if (d) return d;
       if (ctx.complex) ctx.complex.set(c, { word, n });
-      return `the campaign counter \`${c}\` is ${word} ${num(n)} (see below)`;
+      return "the conditions below are met";
     }
     if (local) {
       const pl = (x) => (n === 1 ? x.replace(/^it /, "")
@@ -876,7 +876,8 @@ function complexCounterText(c, depth = 0) {
     const when = d ? eventPhrase(d) : "When the script starts";
     const monConds = s.monitor && s.monitor.event !== "SettlementTurnEnd" ? s.monitor.cond.flatMap((x) => counterCond(x)).filter((x) => !d || !d.who || !/^the faction is /.test(x)) : [];
     const ifConds = s.ifs.flatMap((cond) => cond.flatMap((x) => counterCond(x)));
-    const all = [...new Set([...monConds, ...ifConds])].filter((x) => !/^the faction is /.test(x) || !d || !d.who);
+    const seenC = new Set();
+    const all = [...monConds, ...ifConds].filter((x) => /% roll/.test(x) || (!seenC.has(x) && seenC.add(x))).filter((x) => !/^the faction is /.test(x) || !d || !d.who);
     const f = s.fors[s.fors.length - 1];
     let loop = "";
     if (f) {
@@ -904,7 +905,7 @@ function complexCounterText(c, depth = 0) {
       const items = incs.map((x) => renderCond(x.ifs[x.ifs.length - 1], { locals: new Map() })).filter(Boolean).map((t) => t.replace(/^it has (an? )?/, ""));
       const over = f && !isFaction(f) ? `every settlement of \`${f}\` — **no faction is called \`${f}\`, so this counts nothing**` : f ? `every settlement held by ${factionLink(f)}` : "every settlement on the map";
       if (!isFaction(f)) NO_SUCH_FACTION.add(f);
-      return [`Recounted over ${over}: 1 for each settlement with ${orList(items)}`];
+      return [`Recounted over ${over}: 1 for each of these buildings standing in one — ${orList(items)}`];
     }
   }
   const out = [...new Set(lines)];
@@ -913,6 +914,85 @@ function complexCounterText(c, depth = 0) {
     if (sub.length) out.push(`\`${k}\`${deadCounter(k) ? " — **never rises, so any test that needs it above 0 fails**" : ""}:\n${sub.map((l) => `  - ${l}`).join("\n")}`);
   }
   return out;
+}
+/**
+ * The short version of a campaign-script counter, for the top of the page: one bullet per
+ * gate, in the order the script tests them. Only for a counter the script SETS to the value
+ * the trigger wants (Gracchi); a counter that counts up turn by turn keeps just the detail.
+ * A tally tested inside it ("gracchi_farms >= 5") is spelled out as what has to be built,
+ * and each random roll stays its own bullet — two 35% rolls are two chances, not one.
+ */
+function tallyPhrase(k, op, v) {
+  const ks = (COUNTER_SITES.get(k) || []).filter((x) => x.op === "inc_counter");
+  if (!ks.length || !ks.every((x) => x.fors.length && x.ifs.length)) return null;
+  const f = (ks[0].fors[ks[0].fors.length - 1] || {}).faction || "";
+  const items = ks.map((x) => renderCond(x.ifs[x.ifs.length - 1], { locals: new Map() })).filter(Boolean).map((t) => t.replace(/^it has (an? )?/, ""));
+  const { word, n } = atLeast(op, parseInt(v, 10));
+  // Conditions between the loop and the building test narrow WHERE ("HasResource aor_camillan").
+  const lp = ks[0].fors[ks[0].fors.length - 1];
+  const narrow = [...new Set(ks[0].ifs.slice(lp.ifDepth || 0, -1).map((cnd) => renderCond(cnd, { locals: new Map() })).filter(Boolean))].map((x) => x.replace(/^it /, ""));
+  const where = !f ? (narrow.length ? `in settlements that ${joinAnd(narrow).replace(/^lies /, "lie ")}` : "anywhere on the map") : isFaction(f) ? `in settlements held by ${factionLink(f)}` : `in settlements of \`${f}\` — **no faction is called \`${f}\`, so this is never met**`;
+  return `${word} ${num(n)} of these buildings stand ${where}: ${orList(items)}`;
+}
+/** The gates of one set/inc site as bullets; nested set-counters become indented sub-lists. */
+function siteBullets(c, site, depth) {
+  const d = site.monitor ? describeMonitor(site.monitor) : null;
+  const raw = [...(site.monitor ? site.monitor.cond : []), ...site.ifs.flat()].flatMap((line) => clauses([line]));
+  const bullets = [];
+  let rolls = 0;
+  for (const q of raw) {
+    const t = q.text.trim();
+    let m;
+    if ((m = /^I_CompareCounter\s+(\S+)\s*(>=|>|<=|<|==|=|!=)\s*(-?\d+)$/i.exec(t))) {
+      if (m[1] === c) continue; // the site's own guard ("has not happened yet" / "not yet counted")
+      const tp = tallyPhrase(m[1], m[2], m[3]);
+      if (tp) { bullets.push(tp); continue; }
+      const { word, n } = atLeast(m[2], parseInt(m[3], 10));
+      const sub = depth < 2 ? summarizeCounter(m[1], word, n, depth + 1) : null;
+      const note = COUNTER_NOTES[m[1]];
+      bullets.push(sub
+        ? `\`${m[1]}\` has been set${note ? ` (“${note}”)` : ""} — ${sub.replace(/\n\n/g, "\n").replace(/\n- /g, "\n  - ")}`
+        : counterCond(t).join(""));
+      continue;
+    }
+    if ((m = /^RandomPercent\s*<\s*(\d+)$/i.exec(t))) { bullets.push(rolls++ ? `then a further ${m[1]}% chance` : `a ${m[1]}% chance each time it is checked`); continue; }
+    const r = renderClause(t, { locals: new Map() });
+    if (r && !(d && d.who && /^the faction is /.test(r))) bullets.push(r);
+  }
+  return { d, bullets };
+}
+function whenOf(d) {
+  return d ? eventPhrase(d).replace(/^At /, "at ").replace(/^After /, "after ").replace(/^When /, "when ").replace(/^On /, "on ") : "when the script starts";
+}
+function summarizeCounter(c, word, n, depth = 0) {
+  const all = COUNTER_SITES.get(c) || [];
+  // Copied from a tally at the end of a faction's turn (Carthage's Italian and Sicilian cities).
+  const copies = all.filter((x) => x.op === "set_counter" && x.from);
+  if (copies.length === 1 && all.every((x) => x === copies[0] || (x.op === "set_counter" && x.n === 0))) {
+    const src = (COUNTER_SITES.get(copies[0].from) || []).filter((x) => x.op === "inc_counter");
+    const d = copies[0].monitor ? describeMonitor(copies[0].monitor) : null;
+    if (src.length === 1 && src[0].monitor && src[0].monitor.event === "SettlementTurnEnd" && d && d.who) {
+      const cond = describeMonitor(src[0].monitor).quals.map((q) => renderClause(q.text, { locals: new Map() })).filter(Boolean).map((x) => x.replace(/^it /, ""));
+      return `${word} ${plural(n, "settlement")}${cond.length ? ` that ${joinAnd(cond).replace(/^lies /, n === 1 ? "lies " : "lie ")}` : ""} ${n === 1 ? "is" : "are"} held by ${d.who} (counted at the end of its turn)`;
+    }
+  }
+  // Counted up once per turn while its conditions hold (Late Republican: two turns after the revolt).
+  const incs = all.filter((x) => x.op === "inc_counter");
+  if (incs.length === 1 && incs[0].n === 1 && incs[0].monitor && /^(NewTurnStart|FactionTurnStart)$/.test(incs[0].monitor.event)
+      && all.every((x) => x.op === "inc_counter" || x.n === 0) && word === "at least") {
+    const { d, bullets } = siteBullets(c, incs[0], depth);
+    if (bullets.length) return `for ${plural(n, "turn")}, counted ${whenOf(d)}, all of these hold:\n\n${bullets.map((x) => `- ${x}`).join("\n")}`;
+  }
+  const sites = all.filter((x) => x.op === "set_counter" && x.n != null && x.n !== 0 && !x.from
+    && (word === "at least" ? x.n >= n : word === "exactly" ? x.n === n : true));
+  if (!sites.length || sites.length > 3) return null;
+  const blocks = [];
+  for (const site of sites) {
+    const { d, bullets } = siteBullets(c, site, depth);
+    if (bullets.length) blocks.push({ when: whenOf(d), bullets });
+  }
+  if (!blocks.length) return null;
+  return blocks.map((b) => `checked ${b.when}, all of these hold:\n\n${b.bullets.map((x) => `- ${x}`).join("\n")}`).join("\n\n");
 }
 function eventPhrase(d) {
   switch (d.event) {
@@ -1045,12 +1125,16 @@ for (const r of REFORMS) {
     else {
       const never = !extraTexts.length && texts.every((t) => /can never happen/.test(t));
       if (never) stats.never.push(r.name);
+      for (let i = 0; i < texts.length; i++) texts[i] = texts[i].replace(/the conditions below are met(?:(?:,| and) the conditions below are met)+/g, "the conditions below are met");
       req.push(...playerAiSections(routes, texts));
       if (never) req.push("**In practice this reform cannot happen in a campaign as the mod ships it.**");
     }
     for (const cn of complexNotes) {
       const gloss = COUNTER_NOTES[cn.c] ? ` (“${COUNTER_NOTES[cn.c]}”)` : "";
-      req.push(`**\`${cn.c}\`**${gloss} is kept by the campaign script. It changes:\n\n${cn.lines.map((l) => `- ${l}`).join("\n") || "- _where it is set is **not determined**_"}`);
+      const summary = summarizeCounter(cn.c, cn.word, cn.n);
+      if (summary) req.push(summary.charAt(0).toUpperCase() + summary.slice(1) + (/\n- /.test(summary) ? "" : "."));
+      const detail = `**\`${cn.c}\`**${gloss} is kept by the campaign script${summary ? "" : ` and must be ${cn.word} ${num(cn.n)}`}. It changes:\n\n${cn.lines.map((l) => `- ${l}`).join("\n") || "- _where it is set is **not determined**_"}`;
+      req.push(summary ? `<details>\n<summary>The script, step by step</summary>\n\n${detail}\n\n</details>` : detail);
     }
     if (extra) req.push(`The trigger file holds a second script after this one. Whether the game runs it as well is **not determined**; if it does, the reform also fires when ${extraTexts.length ? orList(extraTexts) : "— nothing: that script never returns true"}.`);
     req.push("The game checks this at the end of every round.");
