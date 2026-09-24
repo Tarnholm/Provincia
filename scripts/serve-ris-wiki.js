@@ -814,6 +814,25 @@ const NAV = [
     ["/factions.html", "Factions"]]],
 ];
 
+// "edit" opens the page's own editor on the GitHub wiki (GitHub lets only collaborators save).
+// A generated page's wiki name comes from page-map.json (flat names: "regions-Akarnania"); a
+// team page is named for itself; anything unmapped falls back to the wiki's front page.
+const WIKI_URL = "https://github.com/Tarnholm/ris-wiki/wiki";
+const WIKI_NAME_OF = (() => {
+  try {
+    const { PAGES_DIR } = require("./ris-wiki-notes.js");
+    const map = JSON.parse(fs.readFileSync(path.join(PAGES_DIR, "page-map.json"), "utf8"));
+    const inv = {};
+    for (const [name, p] of Object.entries(map)) inv[p] = name;
+    return inv;
+  } catch { return {}; }
+})();
+function editHref(rel) {
+  const p = String(rel || "").replace(/^\//, "").replace(/\.md$/i, "");
+  if (/^team\//.test(p)) return `${WIKI_URL}/${encodeURIComponent(p.slice(5))}/_edit`;
+  const name = WIKI_NAME_OF[p] || (p === "README" ? "README" : null);
+  return name ? `${WIKI_URL}/${encodeURIComponent(name)}/_edit` : WIKI_URL;
+}
 function navHtml(rel) {
   const parts = [];
   for (const [heading, items] of NAV) {
@@ -886,7 +905,7 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
   </form>
   <div class="right">
     <button id="theme" type="button" title="Switch theme">theme</button>
-    <a href="https://github.com/Tarnholm/ris-wiki/wiki" title="Add a note to this wiki">edit</a>
+    <a href="${editHref(rel)}" title="${/^\/?team\//.test(String(rel)) ? "Edit this page on the wiki (team members only)" : "Add a team note to this page on the wiki (team members only)"}">edit</a>
   </div>
   </div>
   ${jumpStrip(toc)}

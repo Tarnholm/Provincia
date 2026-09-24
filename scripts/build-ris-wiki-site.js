@@ -349,11 +349,23 @@ const EXTRA_JS = `
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (idx) {
         if (!idx || !idx[key]) return null;
-        return fetch(base + "wiki-notes/" + encodeURIComponent(idx[key]) + ".html", { cache: "no-cache" });
+        return fetch(base + "wiki-notes/" + String(idx[key]).split("/").map(encodeURIComponent).join("/") + ".html", { cache: "no-cache" });
       })
       .then(function (r) { return r && r.ok ? r.text() : null; })
       .then(function (html) {
         if (!html) return;
+        // A team page: the fragment IS the page, as last saved on the wiki. Keep the trail,
+        // replace the rest.
+        if (key.indexOf("team/") === 0) {
+          var crumb = main.querySelector(".crumb");
+          main.innerHTML = "";
+          if (crumb) main.appendChild(crumb);
+          var body = document.createElement("div");
+          body.className = "lede";
+          body.innerHTML = html;
+          main.appendChild(body);
+          return;
+        }
         var sec = document.createElement("section");
         sec.className = "sec";
         sec.innerHTML = '<h2 id="team-notes">Team notes</h2>' + html;

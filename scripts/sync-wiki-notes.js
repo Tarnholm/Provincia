@@ -50,11 +50,30 @@ for (const f of fs.readdirSync(WIKI)) {
   if (!f.endsWith('.md') || f.startsWith('_')) continue;
   const page = f.slice(0, -3);
   if (page === 'Home') continue;                 // Home mirrors README; notes belong on README
-  const note = extractNotes(fs.readFileSync(path.join(WIKI, f), 'utf8'));
+  const raw = fs.readFileSync(path.join(WIKI, f), 'utf8');
+
+  // A page no generator writes is a TEAM page: publish the whole of it, so an edit on the wiki
+  // shows on the site within minutes instead of waiting for a full local rebuild. The site's
+  // team/<page>.html swaps its body for this fragment when it loads.
+  if (!PAGE_MAP[page]) {
+    const body = raw.replace(/\r\n/g, '\n').trim();
+    if (!body) continue;
+    const key = 'team/' + page;
+    index[key] = key;
+    fs.mkdirSync(path.join(OUT, 'team'), { recursive: true });
+    const mdPath = path.join(OUT, key + '.md');
+    const prev = fs.existsSync(mdPath) ? fs.readFileSync(mdPath, 'utf8').trim() : null;
+    if (prev === body) { unchanged++; continue; }
+    fs.writeFileSync(mdPath, body + '\n');
+    fs.writeFileSync(path.join(OUT, key + '.html'), renderMarkdown(body, []));
+    written++;
+    console.log((prev ? 'updated ' : 'new     ') + key + '  (team page)');
+    continue;
+  }
+  const note = extractNotes(raw);
   if (!note) continue;
 
   const target = PAGE_MAP[page];
-  if (!target) { unmapped.push(page); continue; }
 
   index[target] = page;
   const mdPath = path.join(OUT, page + '.md');
