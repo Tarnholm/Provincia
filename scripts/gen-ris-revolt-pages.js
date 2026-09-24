@@ -224,8 +224,12 @@ for (const s of SECTIONS) {
   const factions = [...new Set(resources.flatMap((r) => [...(RESOURCE_FACTION[r] || [])]))];
   if (!factions.length) { SKIPPED.push(`${s.num}. ${s.title} (no spawn script takes its settlements)`); continue; }
   // Section 34 blocks for these factions, only where the faction is playable (else unreachable).
+  // Section 34 ("Playable emergents") is NOT fed to the writer: its turn-0 blocks do not
+  // matter when you start as the faction - the game plays forward to the faction's normal
+  // emergence (mod team, 2026-09-25). Kept as a switch in case that changes.
+  const INCLUDE_EMERGENT_BLOCKS = false;
   const extra = [];
-  if (EMERGENTS) for (const bl of topBlocks(EMERGENTS.line, EMERGENTS.end)) {
+  if (EMERGENTS && INCLUDE_EMERGENT_BLOCKS) for (const bl of topBlocks(EMERGENTS.line, EMERGENTS.end)) {
     const t = liveLines(bl.a, bl.b).map((x) => uncomment(x.t)).join("\n");
     const who = [...t.matchAll(/I_LocalFaction\s+([a-z0-9_]+)/g)].map((m) => m[1]);
     if (who.some((f) => factions.includes(f) && PLAYABLE.has(f))) extra.push(bl);
