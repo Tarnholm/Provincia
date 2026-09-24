@@ -349,12 +349,25 @@ const TASK = `Write the wiki page for this revolt: what it is, what sets it off,
       }
     }
     md.push("## Playing as the rebels", "", p.playing_as_the_rebels, "");
-    // The message in full (the model's facts carry a shortened copy), folded - they run long.
+    // The messages in full (the model's facts carry a shortened copy). Each ONCE: the civil
+    // wars raise the same message from several code paths (per player faction, per war), and
+    // listing every call site put 24 folds on the page for 10 messages. One fold if there is
+    // one message; otherwise one fold holding them all, each under its own title.
+    const msgs = [];
+    const seenMsg = new Set();
     for (const m of r.text.matchAll(/title\s+(\S+)[\s\S]*?body\s+(\S+)/g)) {
       const full = (EXPANDED[m[2]] || "").replace(/\\n/g, "\n");
-      if (!full.trim()) continue;
-      md.push("<details>", `<summary>The in-game message: ${cell(EXPANDED[m[1]] || m[1])}</summary>`, "",
-        ...full.split("\n").filter((l) => l.trim()).map((l) => `> ${l}\n>`), "", "</details>", "");
+      const title = EXPANDED[m[1]] || m[1];
+      if (!full.trim() || seenMsg.has(m[1] + "|" + m[2])) continue;
+      seenMsg.add(m[1] + "|" + m[2]);
+      msgs.push({ title, lines: full.split("\n").filter((l) => l.trim()) });
+    }
+    if (msgs.length === 1) {
+      md.push("<details>", `<summary>The in-game message: ${cell(msgs[0].title)}</summary>`, "", ...msgs[0].lines.map((l) => `> ${l}\n>`), "", "</details>", "");
+    } else if (msgs.length > 1) {
+      md.push("<details>", `<summary>The in-game messages (${msgs.length})</summary>`, "");
+      for (const x of msgs) md.push(`#### ${x.title}`, "", ...x.lines.map((l) => `> ${l}\n>`), "");
+      md.push("</details>", "");
     }
     const reformsDir = path.join(OUT, "reforms");
     const refs = facts.reforms_it_depends_on.filter((x) => fs.existsSync(path.join(reformsDir, `${x}.md`)));
