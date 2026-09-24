@@ -717,6 +717,14 @@ const REVOLT_INDEX = (() => {
   try { return JSON.parse(fs.readFileSync(path.join(OUT, "revolts", "index.json"), "utf8")); }
   catch { return { revolts: {}, factions: {} }; }
 })();
+/** A faction that only exists once a revolt creates it says so at the top of its page. */
+function emergeNote(f) {
+  const e = (REVOLT_INDEX.emerging || {})[f];
+  if (!e || !e.starts_dead) return "";
+  const links = e.revolts.map((k) => { const r = REVOLT_INDEX.revolts[k]; return r ? `[${cell(r.title)}](../revolts/${k}.md)` : null; }).filter(Boolean);
+  if (!links.length) return "";
+  return `> **This faction does not exist at the start of the campaign.** It only comes to life through ${links.join(" or ")}.\n\n`;
+}
 function revoltSection(f) {
   const keys = (REVOLT_INDEX.factions || {})[f] || [];
   if (!keys.length) return "";
@@ -844,7 +852,7 @@ for (const f of factions) {
 
 [← all factions](../factions.md) · [wiki index](../README.md)
 
-${mapLine || `${glance}\n\n`}${intro.descr ? `## The campaign brief\n\n> ${intro.descr.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n\n` : `> _The main-menu text for this faction was not found._\n\n`}## Starting settlements
+${mapLine || `${glance}\n\n`}${emergeNote(f)}${intro.descr ? `## The campaign brief\n\n> ${intro.descr.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n\n` : `> _The main-menu text for this faction was not found._\n\n`}## Starting settlements
 
 ${setts.length ? `${display} begins with **${setts.length} settlement${setts.length === 1 ? "" : "s"}** and **${totalPop.toLocaleString("en-US")}** people.
 

@@ -459,6 +459,9 @@ const TASK = `Write the wiki page for this revolt: what it is, what sets it off,
     fs.writeFileSync(path.join(OUT, "revolts", `${key}.md`), md.join("\n").replace(/\n{3,}/g, "\n\n"), "utf8");
     index.revolts[key] = { page: `${key}.md`, title: p.title, factions: r.factions, from: p.breaks_away_from, summary: p.summary, needs_reforms: links.needs, leads_to_reforms: links.follows };
     for (const f of r.factions) (index.factions[f] = index.factions[f] || []).push(key);
+    // Factions this revolt creates, and whether they exist before it (faction pages say so).
+    index.emerging = index.emerging || {};
+    for (const f of r.factions) { const e = (index.emerging[f] = index.emerging[f] || { revolts: [], starts_dead: STARTS_DEAD.has(f) }); e.revolts.push(key); }
     for (const s of provoked) { const o = ownerOfSettlement(s); if (o) (index.factions[o] = index.factions[o] || []).includes(key) || index.factions[o].push(key); }
   }
   if (DRY) { say(`revolts: ${REVOLTS.length} live sections (dry run, nothing written). Skipped: ${SKIPPED.join("; ")}`); return; }
