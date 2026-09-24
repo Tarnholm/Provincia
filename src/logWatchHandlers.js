@@ -47,7 +47,7 @@ function savedFile(line) {
 // to the rebels). Fed every line; pushes { type, …, seq } events into `out`.
 // `battle` holds the battle being set up: { sides: Map alliance -> Set(faction), pairs: Set }.
 let _battle = null;
-function collectDiplomacy(line, ev, seq, out) {
+function collectDiplomacy(line, ev, seq, out, savedName = null) {
   if (battleSetupStarts(line)) _battle = { sides: new Map(), pairs: new Set() };
   if (_battle && line.includes("adding main army")) {
     for (const { faction, alliance } of battleMainArmies(line)) {
@@ -65,10 +65,70 @@ function collectDiplomacy(line, ev, seq, out) {
       }
     }
   }
+  // Whose turn it is. The log brackets the AI phase with the 'Turn N End'
+  // autosave and '====end round===='; the player's turn starts at
+  // '****new round start turn(<player>)****'. In between, the AI factions act
+  // one after another in a fixed order, each in one block of lines (checked on
+  // 7 AI phases: ~210 blocks for ~210 factions), and every move / recruit line
+  // names its faction — so the faction of the latest such line is the one
+  // moving now.
+  let m;
+  if ((m = line.match(/new round start turn\(([a-z_0-9]+)\)/))) {
+    _live.player = m[1];
+    _live.aiPhase = false;
+    out.aiTurn = { faction: null, seq };
+  } else if (/end round/.test(line)) {
+    _live.aiPhase = false;
+    out.aiTurn = { faction: null, seq };
+  } else if (savedName && /Turn \d+ End\.sav$/.test(savedName)) {
+    _live.aiPhase = true;
+    _live.aiFaction = null;
+  }
+  // A deal the player accepted: the diplomacy screen opens on an AI offer
+  // (the game notes "proposer != local player … RECIPIENT: <them>"), and
+  // "Proposition applied." appears only if it was accepted (7 of 7 in two
+  // sessions). What the deal contained isn't logged — the next save has it.
+  if (line.includes("diplomacy_scroll scroll opened")) _live.deal = { with: null, applied: false };
+  if (_live.deal) {
+    for (const r of line.matchAll(/RECIPIENT: ([a-z][a-z0-9_]*?)(?=RECIPIENT\b|[^a-z0-9_]|$)/g)) {
+      if (!_live.deal.with && r[1] !== _live.player) _live.deal.with = r[1];
+    }
+    if (line.includes("Proposition applied")) _live.deal.applied = true;
+    if (line.includes("diplomacy_scroll scroll closed")) {
+      if (_live.deal.applied && _live.deal.with) out.diplo.push({ type: "deal", with: _live.deal.with, seq });
+      _live.deal = null;
+    }
+  }
+  // AI recruitment orders: "(saka) recruits unit(sarmatian archers) at Sakon
+  // Taphai(ce8d3910)". Written when the AI places the order (the player's own
+  // orders are never logged; units finish at the start of the player's turn,
+  // which the Turn Start autosave already holds).
+  const rec = line.match(/^\(([a-z_0-9]+)\) recruits unit\((.+?)\) at (.+?)\([0-9a-f]+\)/);
+  if (rec) out.recruitOrders.push({ faction: rec[1], unit: rec[2], settlement: rec[3], seq });
+  if (_live.aiPhase) {
+    const f = (ev && ev.type === "character_move" && ev.faction) || (rec && rec[1]) || null;
+    if (f && f !== _live.aiFaction && f !== _live.player) {
+      _live.aiFaction = f;
+      out.aiTurn = { faction: f, seq };
+    }
+  }
+  const lost = !ev && line.match(/^(.+?)\([0-9a-f]+\) has lost a trait\(([^)]+)\)/);
+  if (lost) out.traits.push({ name: lost[1].trim(), kind: "lose", trait: lost[2], level: null, seq });
   if (!ev) return;
   if (ev.type === "faction_dead") out.diplo.push({ type: "dead", faction: ev.faction, seq });
   else if (ev.type === "faction_change") out.factionChanges.push({ name: ev.name, charUuid: ev.charUuid, from: ev.fromFaction, to: ev.toFaction, seq });
+  // Traits and ancillaries a character gained or lost since the save (the
+  // character cards show them until the next save has them).
+  else if (ev.type === "trait_gain") out.traits.push({ name: ev.name, kind: "gain", trait: ev.trait, level: ev.level, seq });
+  else if (ev.type === "trait_level") out.traits.push({ name: ev.name, kind: "level", trait: ev.trait, level: (ev.levelName || "").trim() || null, seq });
+  else if (ev.type === "trait_lose") out.traits.push({ name: ev.name, kind: "down", trait: ev.trait, level: null, seq });
+  else if (ev.type === "ancillary_gain") out.traits.push({ name: ev.name, kind: "ancillary", trait: ev.ancillary, level: null, seq });
 }
+// Watcher-wide state for collectDiplomacy (reset with each watch).
+let _live = { player: null, aiPhase: false, aiFaction: null, deal: null };
+function newLiveBatch() { return { diplo: [], factionChanges: [], recruitOrders: [], traits: [], aiTurn: null }; }
+function liveBatchHasData(b) { return !!(b.diplo.length || b.factionChanges.length || b.recruitOrders.length || b.traits.length || b.aiTurn); }
+function liveBatchPayload(b) { return { diplo: b.diplo, factionChanges: b.factionChanges, recruitOrders: b.recruitOrders, traits: b.traits, aiTurn: b.aiTurn }; }
 
 // Byte offset just past the last complete line at or before `size`. The game
 // writes message_log in blocks that usually end mid-line; reading to the end
@@ -366,8 +426,9 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
     if (fs.existsSync(msgPath) && win0) {
       const moves = [];
       const deaths = [];
-      const live = { diplo: [], factionChanges: [] };
+      const live = newLiveBatch();
       _battle = null;
+      _live = { player: null, aiPhase: false, aiFaction: null, deal: null };
       // Tag each event with the turn it happened in. Count "end round"
       // markers to delimit turns. The renderer uses `turn` to filter log
       // events when the user is viewing an older save (avoids showing
@@ -376,9 +437,16 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
       await forEachLineUpTo(msgPath, logOffset, (line) => {
         logSeq++;
         const saved = savedFile(line);
-        if (saved) { savesWritten.push({ file: saved, seq: logSeq }); return; }
+        if (saved) {
+          savesWritten.push({ file: saved, seq: logSeq });
+          // Only what happened after the newest save can still be news.
+          live.traits = []; live.recruitOrders = [];
+          collectDiplomacy(line, null, logSeq, live, saved);
+          return;
+        }
         if (line.startsWith("=================")) {
           if (line.includes("end round")) backfillTurn++;
+          collectDiplomacy(line, null, logSeq, live);
           return;
         }
         const ev = parseLogLineV2(line);
@@ -452,7 +520,7 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
       // Sync poll-side counter so subsequent delta reads continue from here.
       logPollTurnIdx = backfillTurn;
       if (savesWritten.length) win0.webContents.send("live-char-moves", { moves: [], savesWritten });
-      if (live.diplo.length || live.factionChanges.length) win0.webContents.send("live-char-moves", { moves: [], diplo: live.diplo, factionChanges: live.factionChanges });
+      if (liveBatchHasData(live)) win0.webContents.send("live-char-moves", { moves: [], ...liveBatchPayload(live) });
       if (moves.length > 0 || deaths.length > 0) {
         // Chunk moves; send deaths separately (smaller).
         const CHUNK = 1000;
@@ -494,15 +562,16 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
           // Also extract character-move + death events for live tracking.
           const moves = [];
           const deaths = [];
-          const live = { diplo: [], factionChanges: [] };
+          const live = newLiveBatch();
           const savesWritten = [];
           for (const line of text.split(/\r?\n/)) {
             if (!line) continue;
             logSeq++;
             const saved = savedFile(line);
-            if (saved) { savesWritten.push({ file: saved, seq: logSeq }); continue; }
+            if (saved) { savesWritten.push({ file: saved, seq: logSeq }); collectDiplomacy(line, null, logSeq, live, saved); continue; }
             if (line.startsWith("=================")) {
               if (line.includes("end round")) logPollTurnIdx++;
+              collectDiplomacy(line, null, logSeq, live);
               continue;
             }
             const ev = parseLogLineV2(line);
@@ -555,8 +624,8 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
           // move/death batch — it's small and lets the renderer re-bucket
           // units on every live event.
           const flow = unitFlowSnapshot();
-          if (moves.length > 0 || deaths.length > 0 || flow.length > 0 || savesWritten.length > 0 || live.diplo.length > 0 || live.factionChanges.length > 0) {
-            win.webContents.send("live-char-moves", { moves, deaths, unitFlow: flow, savesWritten, diplo: live.diplo, factionChanges: live.factionChanges });
+          if (moves.length > 0 || deaths.length > 0 || flow.length > 0 || savesWritten.length > 0 || liveBatchHasData(live)) {
+            win.webContents.send("live-char-moves", { moves, deaths, unitFlow: flow, savesWritten, ...liveBatchPayload(live) });
           }
         }
       } else if (stat.size < logOffset) {

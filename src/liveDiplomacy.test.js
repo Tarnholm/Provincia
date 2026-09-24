@@ -84,5 +84,17 @@ describe.skipIf(!fs.existsSync(LOG))("the watcher on the real session log", () =
     expect(war("romans_julii", "messapians").seq).toBeGreaterThan(t6.seq); // started in turn 6
     expect(diplo.filter((e) => e.type === "dead").map((e) => e.faction)).toEqual(["dummies", "picentes", "messapians"]);
     expect(changes).toContainEqual(expect.objectContaining({ name: "Admiral Herius", charUuid: "ea86930", from: "picentes", to: "slave" }));
+    // Deals the player accepted (AI offers, 'Proposition applied'): 5 that session.
+    expect(diplo.filter((e) => e.type === "deal").map((e) => e.with)).toEqual(["sarsinates", "messapians", "acragas", "cisalpine_boii", "syracuse"]);
+    // The log ends inside an AI phase: the last faction seen moving.
+    expect(sent.map((p) => p.aiTurn).filter(Boolean).pop()).toMatchObject({ faction: "sardinians" });
+    // Only what came after the newest save (Turn 8 End) is sent.
+    const t8e = saves.find((s) => /Turn 8 End/.test(s.file));
+    const orders = sent.flatMap((p) => p.recruitOrders || []);
+    const traits = sent.flatMap((p) => p.traits || []);
+    expect(orders[0]).toMatchObject({ faction: "carthage", unit: "sacred band of baal", settlement: "Aleria" });
+    expect(orders.every((o) => o.seq > t8e.seq)).toBe(true);
+    expect(traits.every((t) => t.seq > t8e.seq)).toBe(true);
+    expect(traits).toContainEqual(expect.objectContaining({ name: "Quintus Ogulnius Gallus", kind: "level", trait: "Consul_Term", level: "Turn 2 Consul" }));
   });
 });

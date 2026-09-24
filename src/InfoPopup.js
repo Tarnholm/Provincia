@@ -895,7 +895,7 @@ function UnitInfoBody({ title, factionLabel, unitStats, description, imgUrl, img
   );
 }
 
-export default function InfoPopup({ payload, modDataDir, factionDisplayNames, onClose, devMode, traitData, onStageTraits, onStageAncillaries, pendingTraits, pendingAncils, pendingCharFields, onStageCharFields }) {
+export default function InfoPopup({ payload, modDataDir, factionDisplayNames, onClose, devMode, traitData, onStageTraits, onStageAncillaries, pendingTraits, pendingAncils, pendingCharFields, onStageCharFields, liveTraitsByName }) {
   const [imgUrl, setImgUrl] = useState(null);
   const [status, setStatus] = useState("loading");
   const [unitStats, setUnitStats] = useState(null);
@@ -1258,6 +1258,29 @@ export default function InfoPopup({ payload, modDataDir, factionDisplayNames, on
                   )}
                 </div>
               )}
+              {(() => {
+                // Traits and ancillaries gained or lost since the save, from the
+                // game's log (live mode) — the next save carries them.
+                if (!liveTraitsByName) return null;
+                const key = `${c.firstName || ""} ${c.originalLastName || c.lastName || ""}`.toLowerCase().replace(/[_\s]+/g, " ").trim();
+                const evs = (liveTraitsByName.get(key) || []).filter((e) => devMode || e.kind === "ancillary" || !hiddenMap[e.trait]);
+                if (!evs.length) return null;
+                const label = (e) => (e.level && !/^\d+$/.test(e.level) ? e.level : humanizeName(e.trait));
+                const row = (e) => e.kind === "gain" ? ["+", label(e), "#9ed09e"]
+                  : e.kind === "level" ? ["↑", label(e), "#9ed09e"]
+                  : e.kind === "down" ? ["↓", humanizeName(e.trait), "#e0a080"]
+                  : e.kind === "lose" ? ["−", humanizeName(e.trait), "#e8a0a0"]
+                  : ["+", `${humanizeName(e.trait)} (retinue)`, "#cfc08a"];
+                return (
+                  <div style={{ marginTop: 4, padding: "6px 10px", background: "rgba(40,90,50,0.25)", borderRadius: 6, fontSize: "0.76rem", color: "#ddd" }}
+                    title="From the game's log since the last save; the next save has them in the list below.">
+                    <div style={{ color: "#9ab", marginBottom: 2 }}>Since the last save <span style={{ color: "#4a8" }}>(live)</span></div>
+                    {evs.map((e, i) => { const [sym, text, col] = row(e); return (
+                      <div key={i} style={{ color: col }}>{sym} {text}</div>
+                    ); })}
+                  </div>
+                );
+              })()}
               {(traits.length > 0 || devMode) && (
                 <TraitsSection
                   traits={traits}

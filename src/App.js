@@ -3240,6 +3240,8 @@ function App() {
   // Family Tree when no live save is loaded.
   const [modFamiliesByFaction, setModFamiliesByFaction] = useState(null);
   const [liveSaveFile, setLiveSaveFile] = useState(null); // filename of the .sav file currently reflected in saveBuildingsData/saveArmiesData
+  const liveSaveFileRef = useRef(null);
+  useEffect(() => { liveSaveFileRef.current = liveSaveFile; }, [liveSaveFile]);
   // save file name → log line (seq) of its 'Campaign saved' line; see armiesToRender
   const liveSaveSeqRef = useRef(new Map());
   // Diplomacy since the loaded save, from message_log (wars begun by battles,
@@ -3247,6 +3249,11 @@ function App() {
   // src/liveDiplomacy.js. The save's matrix is the start of the turn.
   const liveDiploEventsRef = useRef([]);
   const liveFactionChangesRef = useRef([]);
+  // AI recruitment orders and character trait/ancillary lines since the save
+  // (logWatchHandlers.collectDiplomacy), and which AI faction is moving now.
+  const liveRecruitOrdersRef = useRef([]);
+  const liveTraitsRef = useRef([]);
+  const [liveAiTurn, setLiveAiTurn] = useState(null); // { faction, seq } | null
   const [liveDiploVersion, setLiveDiploVersion] = useState(0);
   const diplomacyMatrix = useMemo(() => {
     const evs = liveDiploEventsRef.current;
@@ -3256,6 +3263,35 @@ function App() {
     // lines) is older than every event in it.
     return applyLiveDiplomacy(diplomacyMatrixSave, evs, saveSeq != null ? (e) => (e.seq || 0) > saveSeq : () => true);
   }, [diplomacyMatrixSave, liveSaveFile, liveDiploVersion]);
+  // Log events newer than the loaded save (all of them when the save predates
+  // this log).
+  const isAfterSave = useCallback((e) => {
+    const saveSeq = liveSaveFile ? liveSaveSeqRef.current.get(liveSaveFile) : undefined;
+    return saveSeq == null || (e.seq || 0) > saveSeq;
+  }, [liveSaveFile, liveDiploVersion]);
+  const normTown = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  // AI recruitment orders placed since the save, by town (normalised name).
+  const liveRecruitOrdersByTown = useMemo(() => {
+    const out = new Map();
+    for (const o of liveRecruitOrdersRef.current) {
+      if (!isAfterSave(o)) continue;
+      const k = normTown(o.settlement);
+      if (!out.has(k)) out.set(k, []);
+      out.get(k).push({ unit: o.unit, ordered: true });
+    }
+    return out;
+  }, [isAfterSave, liveDiploVersion]);
+  // Trait / ancillary changes since the save, by character full name.
+  const liveTraitsByName = useMemo(() => {
+    const out = new Map();
+    for (const t of liveTraitsRef.current) {
+      if (!isAfterSave(t)) continue;
+      const k = String(t.name || "").toLowerCase().replace(/[_\s]+/g, " ").trim();
+      if (!out.has(k)) out.set(k, []);
+      out.get(k).push(t);
+    }
+    return out;
+  }, [isAfterSave, liveDiploVersion]);
   const [saveCharactersByRegion, setSaveCharactersByRegion] = useState(null); // { region: [character, ...] }
   // Per-faction assassin/spy census from the live save. Agents carry the
   // `AgentTraining` trait (the agent-defining marker, cracked 2026-06-06,
@@ -6255,7 +6291,7 @@ function App() {
     // Listen for live character moves — authoritative positions from the
     // engine's own movement events, used to keep army markers pixel-
     // accurate between save snapshots.
-    const unsubMoves = api.onLiveCharMoves ? api.onLiveCharMoves(({ moves, deaths, reset, unitFlow, savesWritten, diplo, factionChanges }) => {
+    const unsubMoves = api.onLiveCharMoves ? api.onLiveCharMoves(({ moves, deaths, reset, unitFlow, savesWritten, diplo, factionChanges, recruitOrders, traits, aiTurn }) => {
       if (savesWritten && savesWritten.length) {
         for (const s of savesWritten) liveSaveSeqRef.current.set(s.file, s.seq);
         setLiveCharPositionsVersion(v => v + 1);
@@ -6267,9 +6303,28 @@ function App() {
         liveUnitFlow.current = [];
         liveDiploEventsRef.current = [];
         liveFactionChangesRef.current = [];
+        liveRecruitOrdersRef.current = [];
+        liveTraitsRef.current = [];
+        setLiveAiTurn(null);
         setLiveCharPositionsVersion(v => v + 1);
         setLiveDiploVersion(v => v + 1);
         return;
+      }
+      if (aiTurn) setLiveAiTurn(aiTurn.faction ? aiTurn : null);
+      if ((recruitOrders && recruitOrders.length) || (traits && traits.length)) {
+        // Keep only what can still be newer than a save the user may load.
+        const cap = (arr, add) => { const all = arr.concat(add); return all.length > 20000 ? all.slice(-20000) : all; };
+        if (recruitOrders && recruitOrders.length) liveRecruitOrdersRef.current = cap(liveRecruitOrdersRef.current, recruitOrders);
+        if (traits && traits.length) liveTraitsRef.current = cap(liveTraitsRef.current, traits);
+        setLiveDiploVersion(v => v + 1);
+      }
+      // The event feed: deals the player agreed and factions destroyed, as they
+      // happen (older ones are already in the save the feed started from).
+      if (diplo && diplo.length) {
+        const saveSeqNow = liveSaveFileRef.current ? liveSaveSeqRef.current.get(liveSaveFileRef.current) : undefined;
+        const feed = diplo.filter((d) => (d.type === "deal" || d.type === "dead") && (saveSeqNow == null || (d.seq || 0) > saveSeqNow))
+          .map((d) => ({ type: d.type === "deal" ? "deal" : "faction_dead", faction: d.with || d.faction, _turn: currentTurnRef.current, seq: d.seq }));
+        if (feed.length) setLiveLogEvents((prev) => [...prev, ...feed].slice(-200));
       }
       if ((diplo && diplo.length) || (factionChanges && factionChanges.length)) {
         if (diplo && diplo.length) liveDiploEventsRef.current = liveDiploEventsRef.current.concat(diplo);
@@ -16360,7 +16415,9 @@ function App() {
                   {liveSliderTurn != null ? `Turn ${displayTurn}` : "Live"}{turnInfo ? ` (${Math.abs(turnInfo.year)} ${turnInfo.year < 0 ? "BC" : "AD"}, ${turnInfo.season})` : ""}
                 </span>
                 <span style={{ fontSize: "0.6rem", color: livePlayback ? "#fa4" : liveSliderTurn != null ? "#fa4" : "#4f8", marginLeft: 8 }}>
-                  {livePlayback ? "playing" : liveSliderTurn != null ? "rewound" : "watching"}
+                  {livePlayback ? "playing" : liveSliderTurn != null ? "rewound"
+                    : liveAiTurn ? `AI turn: ${factionDisplayNames?.[liveAiTurn.faction] || String(liveAiTurn.faction).replace(/_/g, " ")}`
+                    : "watching"}
                 </span>
               </div>
               {/* Turn slider */}
@@ -16434,6 +16491,8 @@ function App() {
                     {ev.type === "army_changed" && <span style={{ color: "#aaf" }}>{ev.region}: army changed ({ev.prevUnits}&rarr;{ev.units} units, {ev.soldiers} men)</span>}
                     {ev.type === "settlement_damaged" && <span style={{ color: "#f66" }}>{ev.settlement}: {ev.cause} ({ev.deaths} dead)</span>}
                     {ev.type === "battle_outcome" && <span style={{ color: "#fc8" }}>{ev.winner} defeated {ev.loser}</span>}
+                    {ev.type === "deal" && <span style={{ color: "#8fc9d6" }}>Deal agreed with {factionDisplayNames?.[ev.faction] || String(ev.faction).replace(/_/g, " ")} — terms at the next save</span>}
+                    {ev.type === "faction_dead" && <span style={{ color: "#f66" }}>{factionDisplayNames?.[ev.faction] || String(ev.faction).replace(/_/g, " ")} destroyed</span>}
                   </div>
                 ))}
               </div>
@@ -21629,8 +21688,11 @@ Click for unit card`}
                       })()}
                       recruitingNow={(() => {
                         const r = lockedRegionInfo || regionInfo;
-                        if (!r || !r.city || !recruitingByCity) return null;
-                        return recruitingByCity[r.city] || null;
+                        if (!r || !r.city) return null;
+                        const saved = (recruitingByCity && recruitingByCity[r.city]) || [];
+                        const ordered = liveRecruitOrdersByTown.get(String(r.city).toLowerCase().replace(/[^a-z0-9]/g, "")) || [];
+                        const all = [...saved, ...ordered];
+                        return all.length ? all : null;
                       })()}
                       buildingQueue={(() => {
                         const r = lockedRegionInfo || regionInfo;
@@ -22986,6 +23048,7 @@ Click for unit card`}
       {infoPopup && (
         <InfoPopup
           payload={infoPopup}
+          liveTraitsByName={liveLogActive ? liveTraitsByName : null}
           modDataDir={modDataDir}
           factionDisplayNames={factionDisplayNames}
           devMode={devMode}
