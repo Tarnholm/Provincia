@@ -44,6 +44,23 @@ describe.skipIf(!have)("recruitment queue on a real RIS campaign", () => {
   it("reads the units being trained", () => {
     const buf = fs.readFileSync(file("rome_t6_start.sav"));
     const byCity = qp.parseQueuesForSettlements(buf, bp.findAllSettlementMarkers(buf));
-    expect(byCity.get("Asculum").recruiting).toEqual([{ unit: "picentine swordsmen" }]);
+    expect(byCity.get("Asculum").recruiting).toEqual([{ unit: "picentine swordsmen", turnsTotal: 2, turnsElapsed: 0, turnsRemaining: 2, percent: 0 }]);
+  });
+});
+
+// A unit the user queued in Arretium ("takes 2 turns"), 2026-09-24: ordered
+// before Turn 4 End, one turn in at Turn 5 End, trained by Turn 6 Start.
+const RD = path.join(DIR, "recruit");
+const haveR = ["t4_end.sav", "t5_end.sav", "t6_start.sav"].every((n) => fs.existsSync(path.join(RD, n)));
+describe.skipIf(!haveR)("recruitment turns left", () => {
+  const arretium = (n) => {
+    const buf = fs.readFileSync(path.join(RD, n));
+    const q = qp.parseQueuesForSettlements(buf, bp.findAllSettlementMarkers(buf)).get("Arretium");
+    return q ? q.recruiting : [];
+  };
+  it("counts down as the game does", () => {
+    expect(arretium("t4_end.sav")).toContainEqual({ unit: "aor etruscan spearmen", turnsTotal: 2, turnsElapsed: 0, turnsRemaining: 2, percent: 0 });
+    expect(arretium("t5_end.sav")).toContainEqual({ unit: "aor etruscan spearmen", turnsTotal: 2, turnsElapsed: 1, turnsRemaining: 1, percent: 50 });
+    expect(arretium("t6_start.sav").map((r) => r.unit)).not.toContain("aor etruscan spearmen");
   });
 });

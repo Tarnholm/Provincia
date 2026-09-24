@@ -2615,9 +2615,11 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             {recruitingNow.map((r, i) => (
               <span key={i} style={{ color: "#cde" }}>
                 {i > 0 ? ", " : ""}{(r.unit || "?").replace(/_/g, " ")}
-                {Number.isFinite(r.turns) && r.turns > 0 && r.turns < 1000
-                  ? ` — ${r.turns} turn${r.turns === 1 ? "" : "s"}`
-                  : ""}
+                {Number.isFinite(r.turnsRemaining) && r.turnsRemaining > 0
+                  ? ` — ${r.turnsRemaining} turn${r.turnsRemaining === 1 ? "" : "s"} left`
+                  : Number.isFinite(r.turns) && r.turns > 0 && r.turns < 1000
+                    ? ` — ${r.turns} turn${r.turns === 1 ? "" : "s"}`
+                    : ""}
               </span>
             ))}
           </div>

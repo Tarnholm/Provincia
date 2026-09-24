@@ -87,11 +87,13 @@ const ALEX_SIG = Buffer.from([0x47, 0xbd, 0x6f, 0x87, 0x10, 0x41, 0x40, 0xd0]);
 // Next-chain preamble for the Alexander layout: like findNextChainPreamble but
 // accepts size 0x0b (RR) as well as 0x0c, and validates the ASCII chain name so
 // a stray 0x0b inside the queue body can't be mistaken for the boundary.
-function findNextChainPreambleAlex(buf, fromOff, maxScan) {
+// anySize: RIS imperial writes other sizes too (0x07..0x0d seen in one
+// campaign); the self-pointer + lowercase chain name is what identifies it.
+function findNextChainPreambleAlex(buf, fromOff, maxScan, anySize = false) {
   const end = Math.min(fromOff + maxScan, buf.length - 12);
   for (let i = fromOff; i < end; i++) {
     const sz = buf.readUInt32LE(i);
-    if (sz !== 0x0b && sz !== 0x0c) continue;
+    if (anySize ? (sz < 1 || sz > 0xff) : (sz !== 0x0b && sz !== 0x0c)) continue;
     if (buf.readUInt32LE(i + 4) !== i + 4) continue;
     const nameLen = buf.readUInt16LE(i + 8);
     if (nameLen < 4 || nameLen > 64) continue;
@@ -189,7 +191,7 @@ function readQueueAtDefaultSet(buf, defaultSetOff, engine) {
   if (engine === "alex") return readQueueAtDefaultSetAlexander(buf, defaultSetOff);
   const chainUuid = buf.readUInt32LE(bodyStart + 4);
   // RIS imperial (2026-09-24): the next chain's preamble size is not always
-  // 0x0c — 0x07..0x0b in a live RIS campaign (Asculum's block ends at 0x0b), so
+  // 0x0c — 0x07..0x0d in a live RIS campaign (Asculum's block ends at 0x0b, Arretium's at 0x0d), so
   // the strict search found no queue in ANY settlement and the unit queue was
   // always empty. Bound the block with the validated (self-pointer + lowercase
   // chain name) preamble instead; a block holding a build item AND recruits
@@ -198,9 +200,9 @@ function readQueueAtDefaultSet(buf, defaultSetOff, engine) {
   // recruits are collected here — every one, not just the first:
   //   [u8 0][u32 settlement uuid][u16 len][unit name\0] 00 00 01 00 00 ff …
   // (Asculum T6: "picentine swordsmen"). Retrains store a unit hash instead of
-  // a name and are not listed. Recruit turns are not decoded yet.
+  // a name and are not listed.
   {
-    const end = findNextChainPreambleAlex(buf, bodyStart + 40, ALEX_BLOCK_SCAN);
+    const end = findNextChainPreambleAlex(buf, bodyStart + 40, ALEX_BLOCK_SCAN, true);
     if (end >= 0) {
       const recruiting = [];
       for (let i = bodyStart + QUEUE_SCAN_FROM; i + 8 <= end; i++) {
@@ -211,7 +213,17 @@ function readQueueAtDefaultSet(buf, defaultSetOff, engine) {
         if (nameEnd >= end || buf[nameEnd] !== 0) continue;
         const unit = buf.slice(nameStart, nameEnd).toString("latin1");
         if (!/^[a-z][a-z0-9 _'-]*$/.test(unit)) continue;
-        recruiting.push({ unit });
+        // Progress, after the name's NUL: +5 0xff, +6 turns elapsed,
+        // +7 percent, +8 turns total. Decoded 2026-09-24 from a unit the user
+        // queued ("takes 2 turns"): Arretium's aor etruscan spearmen read
+        // 0/2 0% at Turn 4 End, 1/2 50% at Turn 5 End, and was trained by
+        // Turn 6 Start. percent == floor(100*elapsed/total) on all 22 recruit
+        // entries in seven saves.
+        const ff = buf[nameEnd + 5], el = buf[nameEnd + 6], pct = buf[nameEnd + 7], tot = buf[nameEnd + 8];
+        const ok = ff === 0xff && tot > 0 && el <= tot && pct === Math.floor((100 * el) / tot);
+        recruiting.push(ok
+          ? { unit, turnsTotal: tot, turnsElapsed: el, turnsRemaining: tot - el, percent: pct }
+          : { unit });
         i = nameEnd;
       }
       return recruiting.length ? { type: "ris", recruiting } : null;
