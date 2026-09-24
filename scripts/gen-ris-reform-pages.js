@@ -700,7 +700,7 @@ function routesOf(tree, reform, complexCounters) {
         if (incs.length && !hasReturn) {
           for (const inc of incs) {
             const scope = { forFaction: n.faction, locals };
-            const where = inc.ifs.flatMap((c) => clauses(c).map((cl) => renderClause(cl.text, scope))).filter(Boolean);
+            const where = inc.ifs.flatMap((c) => (clauses(c).some((cl) => cl.op === "or") ? [renderCond(c, scope)] : clauses(c).map((cl) => renderClause(cl.text, scope)))).filter(Boolean);
             const prev = locals.get(inc.counter);
             const owner = n.faction ? (isCultureKey(n.faction) ? `any ${cultureLink(n.faction.toLowerCase())}-culture faction` : factionLink(n.faction)) : null;
             if (n.what === "settlement") {
@@ -821,7 +821,16 @@ function playerAiSections(routes, texts) {
 /** A parsed trigger script as its routes and one sentence per route. */
 function renderRoutes(tree, reform, complexCounters) {
   const { routes } = routesOf(tree, reform, complexCounters);
-  const texts = routes.map((route) => {
+  // The script runs once per affected faction; "not Carthage" in a Carthage-and-Gades reform
+  // is the route for Gades, and a reader should not have to work that out.
+  const whoIs = (t) => t.replace(/the faction is (not )?\[([^\]]+)\]\(\.\.\/factions\/([a-z0-9_]+)\.md\)/g, (all, not, name, tok) => {
+    const aff = reform.affects.map((f) => f.toLowerCase());
+    if (!aff.includes(tok) || aff.includes("all")) return all;
+    const rest = aff.filter((f) => f !== tok);
+    if (!not) return `the faction is ${factionLink(tok)}`;
+    return rest.length ? `the faction is ${orList(rest.map((f) => factionLink(f)))} (not ${factionLink(tok)})` : all;
+  });
+  const texts0 = routes.map((route) => {
     const conds = route.conds.slice();
     let t;
     if (route.loop) {
@@ -834,6 +843,7 @@ function renderRoutes(tree, reform, complexCounters) {
     } else t = joinAnd(conds);
     return t || "nothing — it fires on the first check";
   });
+  const texts = texts0.map(whoIs);
   return { routes, texts };
 }
 function joinOwners(list) {
@@ -989,6 +999,11 @@ function summarizeCounter(c, word, n, depth = 0) {
   }
   // Counted up once per turn while its conditions hold (Late Republican: two turns after the revolt).
   const incs = all.filter((x) => x.op === "inc_counter");
+  // Several turn monitors (one per player case, Named Legions): the mod's own note says what
+  // is being counted, and the per-case conditions stay in the step-by-step detail.
+  if (incs.length > 1 && COUNTER_NOTES[c] && incs.every((x) => x.n === 1 && x.monitor && /^(NewTurnStart|FactionTurnStart)$/.test(x.monitor.event)) && word === "at least") {
+    return `the campaign script has counted ${plural(n, "turn")} on \`${c}\` (“${COUNTER_NOTES[c]}”)`;
+  }
   if (incs.length === 1 && incs[0].n === 1 && incs[0].monitor && /^(NewTurnStart|FactionTurnStart)$/.test(incs[0].monitor.event)
       && all.every((x) => x.op === "inc_counter" || x.n === 0) && word === "at least") {
     const { d, bullets } = siteBullets(c, incs[0], depth);
