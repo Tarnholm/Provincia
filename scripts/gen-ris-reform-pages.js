@@ -808,7 +808,7 @@ function playerAiSections(routes, texts) {
     if (chance) return `once ${chance[1]}, it has a ${chance[2]}% chance to fire each round.`;
     return u.length === 1 ? `it fires when ${u[0]}.` : `it fires when **any one** of these holds:\n\n${u.map((x) => `- ${x}`).join("\n")}`;
   };
-  if (!player.size && !ai.length) return [list(any).replace(/^it/, "It")];
+  if (!player.size && !ai.length) return [list(any).replace(/^./, (x) => x.toUpperCase())];
   const out = [];
   // Routes identical apart from which faction you play fold into one heading.
   const byText = new Map();
