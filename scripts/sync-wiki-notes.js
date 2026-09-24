@@ -39,6 +39,53 @@ if (!fs.existsSync(mapFile)) {
 }
 const PAGE_MAP = JSON.parse(fs.readFileSync(mapFile, 'utf8'));
 
+// ── team pages on the site itself ───────────────────────────────────────────
+// A team page's HTML is written here too, not only its fragment: an edit then shows without
+// the page first flashing its old text, and a NEW page exists at all. A new page is cut from
+// an existing team page (same shell, stylesheet, menu, scripts): its <title>, and everything in
+// <main> after the breadcrumb, are replaced. The "Team pages" list and the index's count are
+// brought up to date. Needs team/ and team.html checked out (see the workflow).
+const TEAM_DIR = path.join(SITE, 'team');
+const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const titleOf = (page, body) => { const m = /^#\s+(.+)$/m.exec(body); return m ? m[1].trim() : page.replace(/-/g, ' '); };
+function writeTeamPage(page, body, html) {
+  if (!fs.existsSync(TEAM_DIR)) return null;               // site files not checked out: fragment only
+  const file = path.join(TEAM_DIR, page + '.html');
+  const isNew = !fs.existsSync(file);
+  const tplName = isNew ? fs.readdirSync(TEAM_DIR).find((f) => f.endsWith('.html')) : page + '.html';
+  if (!tplName) return null;
+  const tpl = fs.readFileSync(path.join(TEAM_DIR, tplName), 'utf8');
+  const main = /<main>(<div class="crumb">[\s\S]*?<\/div>)[\s\S]*?<\/main>/.exec(tpl);
+  if (!main) return null;
+  const title = titleOf(page, body);
+  let out = tpl.replace(main[0], '<main>' + main[1] + '<div class="lede">' + html + '</div></main>');
+  out = out.replace(/<title>[\s\S]*?<\/title>/, () => '<title>' + esc(title) + ' — RTR: Imperium Surrectum</title>');
+  out = out.replace(/href="https:\/\/github\.com\/Tarnholm\/ris-wiki\/wiki\/[^"]*\/_edit"/, () => 'href="https://github.com/Tarnholm/ris-wiki/wiki/' + encodeURIComponent(page) + '/_edit"');
+  out = out.replace(/<div class="jump">[\s\S]*?<\/div>\n?/, '');   // the template's section links are not this page's
+  fs.writeFileSync(file, out);
+  return isNew ? 'page created' : 'page rewritten';
+}
+function updateTeamLists() {
+  const hub = path.join(SITE, 'team.html');
+  if (!fs.existsSync(hub) || !fs.existsSync(TEAM_DIR)) return;
+  const pages = fs.readdirSync(TEAM_DIR).filter((f) => f.endsWith('.html')).map((f) => f.slice(0, -5)).sort((a, b) => a.localeCompare(b));
+  const title = (p) => {
+    const md = path.join(WIKI, p + '.md');
+    return fs.existsSync(md) ? titleOf(p, fs.readFileSync(md, 'utf8')) : p.replace(/-/g, ' ');
+  };
+  const list = '<ul>' + pages.map((p) => '<li><a href="team/' + encodeURIComponent(p) + '.html">' + esc(title(p)) + '</a></li>').join('') + '</ul>';
+  const t = fs.readFileSync(hub, 'utf8');
+  const u = t.replace(/(<h1 id="team-pages">[\s\S]*?<\/p>\n?)<ul>[\s\S]*?<\/ul>/, (m, head) => head + list);
+  if (u !== t) { fs.writeFileSync(hub, u); console.log('team.html list: ' + pages.length + ' pages'); }
+  for (const f of ['README.html', 'index.html']) {
+    const p = path.join(SITE, f);
+    if (!fs.existsSync(p)) continue;
+    const r = fs.readFileSync(p, 'utf8');
+    const v = r.replace(/(<a href="team\.html">Team pages<\/a>[^0-9<]*)\d+ pages? written by the team/, (m, a) => a + pages.length + (pages.length === 1 ? ' page' : ' pages') + ' written by the team');
+    if (v !== r) fs.writeFileSync(p, v);
+  }
+}
+
 const OUT = path.join(SITE, 'wiki-notes');
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -64,10 +111,12 @@ for (const f of fs.readdirSync(WIKI)) {
     const mdPath = path.join(OUT, key + '.md');
     const prev = fs.existsSync(mdPath) ? fs.readFileSync(mdPath, 'utf8').trim() : null;
     if (prev === body) { unchanged++; continue; }
+    const html = renderMarkdown(body, []);
     fs.writeFileSync(mdPath, body + '\n');
-    fs.writeFileSync(path.join(OUT, key + '.html'), renderMarkdown(body, []));
+    fs.writeFileSync(path.join(OUT, key + '.html'), html);
+    const made = writeTeamPage(page, body, html);
     written++;
-    console.log((prev ? 'updated ' : 'new     ') + key + '  (team page)');
+    console.log((prev ? 'updated ' : 'new     ') + key + '  (team page' + (made ? ', ' + made : '') + ')');
     continue;
   }
   const note = extractNotes(raw);
@@ -106,6 +155,7 @@ for (const page of before) {
 }
 
 fs.writeFileSync(path.join(OUT, 'index.json'), JSON.stringify(index));
+updateTeamLists();
 
 console.log('');
 console.log('notes written:   ' + written);
