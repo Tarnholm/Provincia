@@ -119,7 +119,9 @@ const headingsOf = (() => {
       for (const m of fs.readFileSync(file, "utf8").matchAll(/^#{1,6}\s+(.+?)\s*$/gm)) {
         // The heading text as rendered: strip the markdown emphasis and link syntax first,
         // since `## **Name**` and `## [Name](x)` both slug from the visible words.
-        const text = m[1].replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[*_`]/g, "");
+        // Underscores are NOT stripped: the site's slugId turns them into hyphens like any other
+        // non-alphanumeric, so "Roman Rebels (`roman_rebels_2`)" is #roman-rebels-roman-rebels-2.
+        const text = m[1].replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[*`]/g, "");
         set.add(slugId(text));
       }
     } catch { /* unreadable target */ }
