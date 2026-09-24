@@ -8,7 +8,7 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
-const { parseLine: parseLogLineV2, restingTile, battleSetupStarts, battleMainArmies } = require("./messageLogParser.js");
+const { parseLine: parseLogLineV2, restingTile, agentRestingTile, battleSetupStarts, battleMainArmies } = require("./messageLogParser.js");
 
 // ── Live log watcher for Rome Remastered ──────────────────────────────────
 // Watches message_log.txt and campaign_ai_log.txt, tails new lines, sends to renderer.
@@ -112,9 +112,36 @@ function collectDiplomacy(line, ev, seq, out, savedName = null) {
       out.aiTurn = { faction: f, seq };
     }
   }
+  // A new agent: "New Character - Faction(brigantes) spy(Matugenus)" then
+  // "new agent Matugenus(63b78940:spy) recruited and place in Brigantium(31ba2350)".
+  let nc;
+  if ((nc = line.match(/^New Character - Faction\(([a-z_0-9]+)\) (diplomat|spy|assassin|merchant)\((.+)\)\s*$/))) {
+    _live.newAgent = { faction: nc[1], role: nc[2], name: nc[3].trim() };
+  } else if ((nc = line.match(/^new agent (.+?)\([0-9a-f]+:(diplomat|spy|assassin|merchant)\) recruited and place in (.+?)\([0-9a-f]+\)/))) {
+    const pre = _live.newAgent && _live.newAgent.name === nc[1].trim() ? _live.newAgent : null;
+    if (pre) out.agentMoves.push({ name: pre.name, faction: pre.faction, role: nc[2], action: "NEW", settlement: nc[3].trim(), fromX: null, fromY: null, x: null, y: null, seq });
+    _live.newAgent = null;
+  }
   const lost = !ev && line.match(/^(.+?)\([0-9a-f]+\) has lost a trait\(([^)]+)\)/);
   if (lost) out.traits.push({ name: lost[1].trim(), kind: "lose", trait: lost[2], level: null, seq });
   if (!ev) return;
+  const AGENT_ROLE = /^(diplomat|spy|assassin|merchant)$/;
+  // An agent fleeing an army: "Vindomorucius(helvetii:diplomat):FLEEING:start(284,505):end(283,505)"
+  if (ev.type === "fleeing" && AGENT_ROLE.test(ev.role || "")) {
+    out.agentMoves.push({ name: ev.name, faction: ev.faction, role: ev.role, action: "FLEEING", fromX: ev.fromX, fromY: ev.fromY, x: ev.toX, y: ev.toY, seq });
+    return;
+  }
+  // An agent killed outright: "Giles(cappadocia:spy)(d7ecd330):death_type(DET_EXECUTED)"
+  if (ev.type === "char_death" && !ev.alive && AGENT_ROLE.test(ev.role || "")) {
+    out.agentMoves.push({ name: ev.name, faction: ev.faction, role: ev.role, action: "DEAD", fromX: null, fromY: null, x: null, y: null, seq });
+    return;
+  }
+  if (ev.type === "agent_move") {
+    // DYING (…:spy):DYING:…): the agent leaves the map (x/y null).
+    const at = ev.action === "DYING" ? { x: null, y: null } : agentRestingTile(ev);
+    out.agentMoves.push({ name: ev.name, faction: ev.faction, role: ev.role, action: ev.action, fromX: ev.fromX, fromY: ev.fromY, x: at.x, y: at.y, seq });
+    return;
+  }
   if (ev.type === "faction_dead") out.diplo.push({ type: "dead", faction: ev.faction, seq });
   else if (ev.type === "faction_change") out.factionChanges.push({ name: ev.name, charUuid: ev.charUuid, from: ev.fromFaction, to: ev.toFaction, seq });
   // Traits and ancillaries a character gained or lost since the save (the
@@ -126,9 +153,9 @@ function collectDiplomacy(line, ev, seq, out, savedName = null) {
 }
 // Watcher-wide state for collectDiplomacy (reset with each watch).
 let _live = { player: null, aiPhase: false, aiFaction: null, deal: null };
-function newLiveBatch() { return { diplo: [], factionChanges: [], recruitOrders: [], traits: [], aiTurn: null }; }
-function liveBatchHasData(b) { return !!(b.diplo.length || b.factionChanges.length || b.recruitOrders.length || b.traits.length || b.aiTurn); }
-function liveBatchPayload(b) { return { diplo: b.diplo, factionChanges: b.factionChanges, recruitOrders: b.recruitOrders, traits: b.traits, aiTurn: b.aiTurn }; }
+function newLiveBatch() { return { diplo: [], factionChanges: [], recruitOrders: [], traits: [], agentMoves: [], aiTurn: null }; }
+function liveBatchHasData(b) { return !!(b.diplo.length || b.factionChanges.length || b.recruitOrders.length || b.traits.length || b.agentMoves.length || b.aiTurn); }
+function liveBatchPayload(b) { return { diplo: b.diplo, factionChanges: b.factionChanges, recruitOrders: b.recruitOrders, traits: b.traits, agentMoves: b.agentMoves, aiTurn: b.aiTurn }; }
 
 // Byte offset just past the last complete line at or before `size`. The game
 // writes message_log in blocks that usually end mid-line; reading to the end
@@ -440,7 +467,7 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
         if (saved) {
           savesWritten.push({ file: saved, seq: logSeq });
           // Only what happened after the newest save can still be news.
-          live.traits = []; live.recruitOrders = [];
+          live.traits = []; live.recruitOrders = []; live.agentMoves = [];
           collectDiplomacy(line, null, logSeq, live, saved);
           return;
         }

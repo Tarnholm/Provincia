@@ -50,7 +50,7 @@ const logAppDiagnostics = diagnostics.logDiagnostics;
 // Shared non-live commander portrait resolver (CommonJS — see note above for
 // why we import the default object and pull the fns off it).
 import nonLiveCommanderResolver from "./nonLiveCommanderResolver";
-import { applyLiveDiplomacy, liveFactionChanges } from "./liveDiplomacy";
+import { applyLiveDiplomacy, liveFactionChanges, applyAgentMoves } from "./liveDiplomacy";
 import { aliasesAllow } from "./edbAlias";
 const buildNonLivePortraitMap = nonLiveCommanderResolver.buildNonLivePortraitMap;
 const resolveNonLiveCommanderInfoApp = nonLiveCommanderResolver.resolveNonLiveCommanderInfo;
@@ -3253,6 +3253,7 @@ function App() {
   // (logWatchHandlers.collectDiplomacy), and which AI faction is moving now.
   const liveRecruitOrdersRef = useRef([]);
   const liveTraitsRef = useRef([]);
+  const liveAgentMovesRef = useRef([]);
   const [liveAiTurn, setLiveAiTurn] = useState(null); // { faction, seq } | null
   const [liveDiploVersion, setLiveDiploVersion] = useState(0);
   const diplomacyMatrix = useMemo(() => {
@@ -3265,6 +3266,10 @@ function App() {
   }, [diplomacyMatrixSave, liveSaveFile, liveDiploVersion]);
   // Log events newer than the loaded save (all of them when the save predates
   // this log).
+  // Agents from the live save (saveCrackerExtras.parseAgents): [{ name, faction, type, x, y }]
+  const [saveAgents, setSaveAgents] = useState(null);
+  // settlement name (lower-case) → its world tile { x, y } (filled from the map's city pixels).
+  const settlementTileRef = useRef(new Map());
   const isAfterSave = useCallback((e) => {
     const saveSeq = liveSaveFile ? liveSaveSeqRef.current.get(liveSaveFile) : undefined;
     return saveSeq == null || (e.seq || 0) > saveSeq;
@@ -3281,6 +3286,18 @@ function App() {
     }
     return out;
   }, [isAfterSave, liveDiploVersion]);
+  // Agents as they stand now: the save's, moved by the log's actions since it.
+  // An action line names the agent's faction and name and where it started,
+  // so it moves the agent of that faction and first name standing on that
+  // tile (the log's id is a runtime address the save doesn't hold).
+  const agentsToRender = useMemo(() => {
+    // New agents are placed in a town the log names with spaces ("Castrum
+    // Caledoniorum"); settlement names elsewhere use underscores.
+    const byNorm = new Map();
+    for (const [k, v] of settlementTileRef.current || []) byNorm.set(String(k).toLowerCase().replace(/[^a-z0-9]/g, ""), v);
+    return applyAgentMoves(saveAgents, liveAgentMovesRef.current, isAfterSave,
+      (town) => byNorm.get(String(town || "").toLowerCase().replace(/[^a-z0-9]/g, "")) || null);
+  }, [saveAgents, isAfterSave, liveDiploVersion, cityPixels]); // the town-tile map is filled with cityPixels
   // Trait / ancillary changes since the save, by character full name.
   const liveTraitsByName = useMemo(() => {
     const out = new Map();
@@ -4695,9 +4712,6 @@ function App() {
   const [saveLiveArmies, setSaveLiveArmies] = useState(null); // [{faction, character, x, y, armyClass, units}] from save parser
   // Live-log character positions — authoritative for turn-by-turn moves.
   const liveCharPositions = useRef(new Map());
-  // settlement name (lower-case) → its world tile { x, y }, for log events that
-  // name a settlement instead of a tile ("… in settlement(Perusia)").
-  const settlementTileRef = useRef(new Map());
   // charUuids that the live log has reported as dead (DYING / death_type
   // events). Used to hide their save-derived army markers immediately
   // instead of waiting for the next save snapshot to write the death.
@@ -5620,7 +5634,9 @@ function App() {
   const [showGarrisons, setShowGarrisons] = useState(true);
   const [showFieldArmies, setShowFieldArmies] = useState(true);
   const [showNavies, setShowNavies] = useState(true);
+  const [showAgents, setShowAgents] = useState(true);
   const [hoveredArmy, setHoveredArmy] = useState(null); // { army, screenX, screenY }
+  const [hoveredAgent, setHoveredAgent] = useState(null); // { agent, screenX, screenY }
   const [hoveredResource, setHoveredResource] = useState(null); // { type, amount, screenX, screenY }
   const [legendFilter, setLegendFilter] = useState(null); // culture/religion name to highlight
   const [pinnedRegions, setPinnedRegions] = useState(
@@ -6291,7 +6307,7 @@ function App() {
     // Listen for live character moves — authoritative positions from the
     // engine's own movement events, used to keep army markers pixel-
     // accurate between save snapshots.
-    const unsubMoves = api.onLiveCharMoves ? api.onLiveCharMoves(({ moves, deaths, reset, unitFlow, savesWritten, diplo, factionChanges, recruitOrders, traits, aiTurn }) => {
+    const unsubMoves = api.onLiveCharMoves ? api.onLiveCharMoves(({ moves, deaths, reset, unitFlow, savesWritten, diplo, factionChanges, recruitOrders, traits, agentMoves, aiTurn }) => {
       if (savesWritten && savesWritten.length) {
         for (const s of savesWritten) liveSaveSeqRef.current.set(s.file, s.seq);
         setLiveCharPositionsVersion(v => v + 1);
@@ -6305,12 +6321,17 @@ function App() {
         liveFactionChangesRef.current = [];
         liveRecruitOrdersRef.current = [];
         liveTraitsRef.current = [];
+        liveAgentMovesRef.current = [];
         setLiveAiTurn(null);
         setLiveCharPositionsVersion(v => v + 1);
         setLiveDiploVersion(v => v + 1);
         return;
       }
       if (aiTurn) setLiveAiTurn(aiTurn.faction ? aiTurn : null);
+      if (agentMoves && agentMoves.length) {
+        liveAgentMovesRef.current = liveAgentMovesRef.current.concat(agentMoves).slice(-20000);
+        setLiveDiploVersion(v => v + 1);
+      }
       if ((recruitOrders && recruitOrders.length) || (traits && traits.length)) {
         // Keep only what can still be newer than a save the user may load.
         const cap = (arr, add) => { const all = arr.concat(add); return all.length > 20000 ? all.slice(-20000) : all; };
@@ -6711,6 +6732,7 @@ function App() {
       if (data && data.luaCounters) setSaveLuaCounters(data.luaCounters);
       if (data && data.governorByCity) setSaveGovernorByCity(data.governorByCity);
       if (data && data.liveArmies) setSaveLiveArmies(data.liveArmies);
+      if (data && "agents" in data) setSaveAgents(Array.isArray(data.agents) ? data.agents : null);
       if (data && data.navyDiag) console.log("[navy-diag]", data.navyDiag);
       if (data && data.builtBuildingsByCity) setBuiltBuildingsByCity(data.builtBuildingsByCity);
       if (data && data.queuedBuildingsByCity) setQueuedBuildingsByCity(data.queuedBuildingsByCity);
@@ -11759,6 +11781,35 @@ function App() {
       }
     }
 
+    // Agents: a small glyph per agent (diplomat / spy / assassin / merchant),
+    // ringed in its faction's colour. Drawn with the Armies overlay.
+    if (showArmies && showAgents && agentsToRender.length > 0) {
+      const GLYPH = { diplomat: "✉", spy: "👁", assassin: "🗡", merchant: "⚖" };
+      const fontPx = Math.max(3.2 / totalScale, 0.8);
+      ctx.save();
+      ctx.font = `${fontPx}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      for (const ag of agentsToRender) {
+        if (_fogGate && !fogShowsTile(ag.x, ag.y)) continue;
+        const drawX = ag.x + 0.5, drawMapY = (imgSize.height - 1) - ag.y + 0.5;
+        const sx = drawX * totalScale + baseOffsetX + offset.x;
+        const sy = drawMapY * totalScale + baseOffsetY + offset.y;
+        if (sx < -20 || sx > canvasSize.width + 20 || sy < -20 || sy > canvasSize.height + 20) continue;
+        const fc = factionColors[(ag.faction || "").toLowerCase()];
+        ctx.beginPath();
+        ctx.arc(drawX, drawMapY, fontPx * 0.62, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(245,240,225,0.9)";
+        ctx.fill();
+        ctx.strokeStyle = fc && fc.primary ? `rgb(${fc.primary[0]},${fc.primary[1]},${fc.primary[2]})` : "rgba(0,0,0,0.85)";
+        ctx.lineWidth = Math.max(1 / totalScale, 0.25);
+        ctx.stroke();
+        ctx.fillStyle = "#222";
+        ctx.fillText(GLYPH[ag.type] || "•", drawX, drawMapY);
+      }
+      ctx.restore();
+    }
+
     // Staged "Add General" markers — a draggable green "+" pin at each pending
     // general's spawn tile (dev mode). Drawn on top of army markers so they're
     // easy to grab; follows the cursor while being dragged.
@@ -12028,6 +12079,8 @@ function App() {
     showGarrisons,
     showFieldArmies,
     showNavies,
+    showAgents,
+    agentsToRender,
     factionColors,
     showScheduleMarkers,
     saveEventSchedule,
@@ -13291,8 +13344,18 @@ function App() {
           }
         }
         setHoveredArmy(foundArmy);
+        let foundAgent = null;
+        if (!foundArmy && showAgents) {
+          for (const ag of agentsToRender) {
+            const sx = (ag.x + 0.5) * ts + bx + offset.x;
+            const sy = ((imgSize.height - 1) - ag.y + 0.5) * ts + by + offset.y;
+            if (Math.abs(mouseScreenX - sx) <= hitPx && Math.abs(mouseScreenY - sy) <= hitPx) { foundAgent = { agent: ag, screenX: mouseScreenX, screenY: mouseScreenY }; break; }
+          }
+        }
+        setHoveredAgent(foundAgent);
       } else {
         setHoveredArmy(null);
+        setHoveredAgent(null);
       }
 
       // City label hover detection (Labels view mode) — triggers on any pixel in the province
@@ -20131,7 +20194,7 @@ Click for unit card`}
                             <span>Live-log override</span>
                           </div>
                           {(() => {
-                            const counts = { garrison: 0, field: 0, navy: 0 };
+                            const counts = { garrison: 0, field: 0, navy: 0, agent: agentsToRender.length };
                             for (const a of armiesToRender) {
                               if (counts[a.armyClass] != null) counts[a.armyClass]++;
                             }
@@ -20139,6 +20202,7 @@ Click for unit card`}
                               { key: 'garrison',  label: '🏰 Garrisons', color: '#dca040', get: showGarrisons,   set: setShowGarrisons },
                               { key: 'field',     label: '⚔ Armies',       color: '#b42828', get: showFieldArmies, set: setShowFieldArmies },
                               { key: 'navy',      label: '⚓ Navies',      color: '#2872d2', get: showNavies,      set: setShowNavies },
+                              { key: 'agent',     label: '✉ Agents',      color: '#e8e0c8', get: showAgents,      set: setShowAgents },
                             ].map(({ key, label, color, get, set }) => (
                               <div key={key} onClick={() => set(s => !s)}
                                 style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", opacity: get ? 1 : 0.4 }}>
@@ -20344,6 +20408,18 @@ Click for unit card`}
                 })()}
 
                 {/* Army hover tooltip */}
+                {hoveredAgent && !hoveredArmy && (() => {
+                  const ag = hoveredAgent.agent;
+                  const vw = window.innerWidth;
+                  let left = hoveredAgent.screenX + 14;
+                  if (left + 240 > vw - 8) left = Math.max(8, hoveredAgent.screenX - 254);
+                  return (
+                    <div style={{ position: "absolute", left, top: Math.max(8, hoveredAgent.screenY - 10), background: "rgba(20,20,20,0.92)", color: "#f7f7f7", padding: "6px 10px", borderRadius: 6, fontSize: "0.82rem", pointerEvents: "none", zIndex: 11, border: "1px solid #555", maxWidth: 240 }}>
+                      <div style={{ fontWeight: 700 }}>{ag.name || "Agent"}</div>
+                      <div style={{ color: "#bbb" }}>{(factionDisplayNames && factionDisplayNames[ag.faction]) || String(ag.faction).replace(/_/g, " ")} — {ag.type}{ag.live ? <span style={{ color: "#4a8" }}> (live)</span> : null}</div>
+                    </div>
+                  );
+                })()}
                 {hoveredArmy && (() => {
                   // Clamp the tooltip inside the viewport. A long traits
                   // line (e.g. Lucius Valerius_Flaccus with 3 listed

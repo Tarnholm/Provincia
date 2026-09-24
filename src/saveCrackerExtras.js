@@ -987,31 +987,84 @@ function locateDiplomacyMatrix(buf, N) {
 // tails are the N factions. Verified on three saves of one RIS campaign
 // against the running engine: 239/239 each, including two factions dying
 // between them. Returns { name: 0|2|3 } or null when the layout isn't found.
-function parseFactionStatus(buf, factionOrder) {
-  if (!Array.isArray(factionOrder) || factionOrder.length < 2) return null;
-  const N = factionOrder.length;
+// The faction-record tails (see parseFactionStatus): [{ state, end }] for the
+// first N, where `end` is the offset just past that faction's record. null
+// when fewer than N are found.
+function scanFactionTails(buf, N) {
   const self = (p) => p + 4 <= buf.length && buf.readUInt32LE(p) === p;
   const listEnd = (p) => {
     if (!self(p) || p + 6 > buf.length) return -1;
     const n = buf.readUInt16LE(p + 4);
     return n > 5000 ? -1 : p + 6 + 4 * n;
   };
-  const states = [];
-  for (let p = 0; p + 16 < buf.length && states.length < N; p++) {
+  const tails = [];
+  for (let p = 0; p + 16 < buf.length && tails.length < N; p++) {
     if (buf.readUInt32LE(p) !== p) continue;
     let q = p;
     for (let k = 0; k < 3 && q >= 0; k++) q = listEnd(q);
     if (q < 0 || !self(q) || q + 12 > buf.length) continue;
     const st = buf.readUInt32LE(q + 8);
     if (st !== 0 && st !== 2 && st !== 3) continue;
-    states.push(st);
+    tails.push({ state: st, end: q + 12 });
     p = q + 11; // the next record starts after this one
   }
-  if (states.length < N) return null;
+  return tails.length < N ? null : tails;
+}
+
+function parseFactionStatus(buf, factionOrder) {
+  if (!Array.isArray(factionOrder) || factionOrder.length < 2) return null;
+  const N = factionOrder.length;
+  const tails = scanFactionTails(buf, N);
+  if (!tails) return null;
+  const states = tails.map((t) => t.state);
   // A wrong lock would scatter non-zero values; most factions are alive.
   if (states.filter((v) => v === 0).length < N / 2) return null;
   const out = {};
   for (let i = 0; i < N; i++) out[String(factionOrder[i]).toLowerCase()] = states[i];
+  return out;
+}
+
+// Every agent (spy / assassin / diplomat / merchant) with its name, faction and
+// tile. Decoded 2026-09-24 against the running engine on a RIS campaign:
+// 303/303 agents (144 spies, 156 diplomats, 3 assassins) on tile, type, name
+// and faction. Each character has a world-object record, x at N:
+//   N-16 self-pointer, N-12 u32 character type, N-8 u32 uuid, N-4 self-pointer,
+//   N / N+4 x, y, and N+16 / N+20 both 0 (this pair separates characters from
+//   other objects that share the layout — 240 non-spy objects carry type 0).
+// Type follows the character types: 0 spy, 1 assassin, 2 diplomat, 3 merchant
+// (none in that campaign, so 3 is unverified), 4 admiral, 5 captain, 6 named.
+// Name: the v1 character record whose secondaryUuid is this uuid (303/303).
+// Faction: the faction whose record the object sits in — faction records are
+// saved in descr_sm order, each ending at its tail (303/303; the v1 faction
+// field was right for 3 of 293 agents).
+const AGENT_TYPES = ["spy", "assassin", "diplomat", "merchant"];
+function parseAgents(buf, v1Chars, factionOrder) {
+  if (!Array.isArray(factionOrder) || factionOrder.length < 2) return null;
+  const tails = scanFactionTails(buf, factionOrder.length);
+  if (!tails) return null;
+  const ends = tails.map((t) => t.end);
+  const bySec = new Map();
+  for (const c of v1Chars || []) if (c && c.secondaryUuid) bySec.set(c.secondaryUuid >>> 0, c);
+  const u = (o) => buf.readUInt32LE(o);
+  const out = [];
+  let fi = 0;
+  for (let N = 20; N + 24 <= buf.length; N++) {
+    if (u(N - 4) !== N - 4 || u(N - 16) !== N - 16) continue;
+    const type = u(N - 12);
+    if (type > 3) continue;
+    const x = u(N), y = u(N + 4);
+    if (x > 1100 || y > 800) continue;
+    if (u(N + 16) !== 0 || u(N + 20) !== 0) continue;
+    while (fi < ends.length && N >= ends[fi]) fi++;
+    if (fi >= ends.length) continue;
+    const uuid = u(N - 8);
+    const v = bySec.get(uuid);
+    out.push({
+      name: v ? [v.firstName, v.lastName].filter(Boolean).join(" ").replace(/_/g, " ") : null,
+      faction: String(factionOrder[fi]).toLowerCase(),
+      type: AGENT_TYPES[type], x, y, uuid,
+    });
+  }
   return out;
 }
 
@@ -1638,6 +1691,7 @@ module.exports = {
   parseAllFactionDiplomacy,
   parseDiplomacyMatrix,
   parseFactionStatus,
+  parseAgents,
   dropDeadFactions,
   makeDiplomacyPairReader,
   isDiplomaticFaction,

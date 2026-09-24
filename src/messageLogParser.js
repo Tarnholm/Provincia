@@ -66,6 +66,8 @@ const RX = {
   fleeTile: /^(.+?)\((?:([0-9a-f]+):([a-z_]+)|([a-z_]+):([0-9a-f]+))\)\s*army\(([0-9a-f]+)\) found flee tile\((\d+),(\d+)\)/,
   // Name(charUuid:faction:role):FLEEING:start(x,y):end(x,y)
   fleeing: /^(.+?)\(([a-z_]+):([a-z_ ]+)\):FLEEING:start\((\d+),(\d+)\):end\((\d+),(\d+)\)/,
+  // An agent's action (no army): Zimrida(ea80aa0:massylii:diplomat):DIPLOMACY:start(243,330):end(244,331)
+  agentMove: /^(.+?)\(([0-9a-f]+):([a-z_0-9]+):(diplomat|spy|assassin|merchant)\):([A-Z_]+):start\((\d+),(\d+)\):end\((\d+),(\d+)\)/,
   // When a faction dies its surviving characters pass to the rebels:
   //   changing Admiral Herius(ea86930) from faction(picentes) to faction(slave)
   factionChange: /^changing (.+?)\(([0-9a-f]+)\) from faction\(([a-z_0-9]+)\) to faction\(([a-z_0-9]+)\)/,
@@ -231,6 +233,13 @@ function parseLine(line) {
       type: "fleeing",
       name: m[1].trim(), faction: m[2], role: m[3].trim(),
       fromX: +m[4], fromY: +m[5], toX: +m[6], toY: +m[7],
+    };
+  }
+  if ((m = RX.agentMove.exec(line))) {
+    return {
+      type: "agent_move",
+      name: m[1].trim(), charUuid: shortUuid(m[2]), faction: m[3], role: m[4], action: m[5],
+      fromX: +m[6], fromY: +m[7], toX: +m[8], toY: +m[9],
     };
   }
   if ((m = RX.factionChange.exec(line))) {
@@ -444,4 +453,15 @@ function battleMainArmies(line) {
   return out;
 }
 
-module.exports = { parseLine, parseChunk, shortUuid, restingTile, STAYS_AT_START, battleSetupStarts, battleMainArmies };
+// Where an agent stands after its action, measured on a RIS session (the tile
+// its next action starts from): on `end` after MOVING_NORMAL 785/785, SPYING
+// 186/186 (the spy goes into the target), EXCHANGE 3/3; on `start` after
+// DIPLOMACY 245/245, BRIBE 8/8, ASSASSINATE 1/1. Others: a move ends on `end`,
+// anything else stays.
+const AGENT_STAYS = new Set(["DIPLOMACY", "BRIBE", "ASSASSINATE"]);
+function agentRestingTile(ev) {
+  if (AGENT_STAYS.has(ev.action) || !/^(MOVING|SPYING|EXCHANGE)/.test(ev.action)) return { x: ev.fromX, y: ev.fromY };
+  return { x: ev.toX, y: ev.toY };
+}
+
+module.exports = { parseLine, parseChunk, shortUuid, restingTile, agentRestingTile, STAYS_AT_START, battleSetupStarts, battleMainArmies };

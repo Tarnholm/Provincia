@@ -318,7 +318,7 @@ const {
   identifyPlayerFactionFromSave: cxIdentifyPlayerFromSave,
   parseFactionDiplomacy: cxParseDiplomacy,
   parseAllFactionDiplomacy: cxParseAllDiplomacy,
-  parseDiplomacyMatrix: cxParseDiplomacyMatrix, parseFactionStatus: cxParseFactionStatus, dropDeadFactions: cxDropDeadFactions,
+  parseDiplomacyMatrix: cxParseDiplomacyMatrix, parseFactionStatus: cxParseFactionStatus, dropDeadFactions: cxDropDeadFactions, parseAgents: cxParseAgents,
   buildFamilyTreeMaps: cxBuildFamilyMaps,
   parseReligionByCity: cxParseReligion,
   deriveEngineFactionOrder: cxDeriveEngineOrder,
@@ -3309,6 +3309,11 @@ async function reparseLatestSave() {
       newData.currentYear = extras.currentYear;
       newData.currentTurn = extras.currentTurn;
       newData.liveArmies = extras.liveArmies;
+      // Agents (spies, diplomats, assassins, merchants) with name, faction and
+      // tile — see saveCrackerExtras.parseAgents (303/303 vs the engine).
+      try { newData.agents = modFactionOrder ? cxParseAgents(saveBuf, extras.characters, modFactionOrder) : null; }
+      catch (e) { console.warn("[agents] parse failed:", e && e.message); newData.agents = null; }
+      if (newData.agents) console.log(`[agents] ${newData.agents.length} on the map`);
       newData.aliveCount = extras.aliveCount;
       newData.deadCount = extras.deadCount;
       newData.inPlaceDeadCount = extras.inPlaceDeadCount;
@@ -3584,6 +3589,7 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
           lastSaveData.currentYear = initialExtras.currentYear;
           lastSaveData.currentTurn = initialExtras.currentTurn;
           lastSaveData.liveArmies = initialExtras.liveArmies;
+          try { lastSaveData.agents = modFactionOrder ? cxParseAgents(saveBuf, initialExtras.characters, modFactionOrder) : null; } catch { lastSaveData.agents = null; }
           lastSaveData.aliveCount = initialExtras.aliveCount;
           lastSaveData.deadCount = initialExtras.deadCount;
           lastSaveData.inPlaceDeadCount = initialExtras.inPlaceDeadCount;
@@ -3893,6 +3899,7 @@ ipcMain.handle("characters-init", async (_event, modDataDir) => {
         lastSaveData.currentYear = extras.currentYear;
         lastSaveData.currentTurn = extras.currentTurn;
         lastSaveData.liveArmies = extras.liveArmies;
+        try { lastSaveData.agents = modFactionOrder ? cxParseAgents(saveBuf, extras.characters, modFactionOrder) : null; } catch { lastSaveData.agents = null; }
         lastSaveData.aliveCount = extras.aliveCount;
         lastSaveData.deadCount = extras.deadCount;
         lastSaveData.inPlaceDeadCount = extras.inPlaceDeadCount;

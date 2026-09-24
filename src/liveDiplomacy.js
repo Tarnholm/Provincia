@@ -65,3 +65,34 @@ export function liveFactionChanges(changes, isNew = () => true) {
   return out;
 }
 
+
+// Agents as they stand now: the save's agents, moved by the log's agent actions
+// since it. An action line names the agent's faction and name and the tile it
+// started from, so it moves the agent of that faction and first name standing
+// on that tile (the log's id is a runtime address the save doesn't hold); when
+// the tile doesn't match, a faction + first name that is unique still does.
+// A move with x == null (DYING) removes the agent.
+// A NEW agent (recruited, placed in a town) is added at settlementTile(name).
+export function applyAgentMoves(saveAgents, moves, isNew = () => true, settlementTile = () => null) {
+  if (!Array.isArray(saveAgents)) return [];
+  const list = saveAgents.map((a) => ({ ...a }));
+  const first = (n) => String(n || "").toLowerCase().split(/\s+/)[0];
+  for (const m of moves || []) {
+    if (!m || !isNew(m)) continue;
+    const f = String(m.faction || "").toLowerCase(), fn = first(m.name);
+    if (m.action === "NEW") {
+      const t = settlementTile(m.settlement);
+      if (t) list.push({ name: m.name, faction: f, type: m.role, x: t.x, y: t.y, live: true });
+      continue;
+    }
+    let i = list.findIndex((a) => a && a.faction === f && first(a.name) === fn && a.x === m.fromX && a.y === m.fromY);
+    if (i < 0) {
+      const same = list.filter((a) => a && a.faction === f && first(a.name) === fn);
+      if (same.length === 1) i = list.indexOf(same[0]);
+    }
+    if (i < 0) continue;
+    if (m.x == null) { list[i] = null; continue; }
+    list[i] = { ...list[i], x: m.x, y: m.y, live: true };
+  }
+  return list.filter(Boolean);
+}
