@@ -319,12 +319,61 @@ const LINK_TARGETS = (() => {
   }
   return out.sort((a, b) => b.len - a.len);
 })();
-function makeLinker() {
+// Building levels -> their chain page and the level's anchor there.
+const BUILDING_LEVELS = (() => {
+  const out = {};
+  const names = Object.fromEntries(Object.entries(lut16("export_buildings.txt")).map(([k, v]) => [k.toLowerCase(), v]));
+  let chain = null;
+  for (const raw of (rd("export_descr_buildings.txt") || "").split(/\r?\n/)) {
+    const t = uncomment(raw).trim();
+    let m;
+    if ((m = /^building\s+(\S+)/.exec(t))) { chain = m[1]; continue; }
+    if ((m = /^levels\s+(.+)$/.exec(t)) && chain) for (const lv of m[1].split(/\s+/).filter(Boolean)) {
+      const name = names[lv.toLowerCase()];
+      if (name) out[lv.toLowerCase()] = { chain, name, anchor: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") };
+    }
+  }
+  return out;
+})();
+const BUILDING_PAGES = pagesIn("buildings");
+/**
+ * Link targets that belong to ONE revolt: the settlements its code names, the units of its
+ * garrisons and spawned armies, and the buildings it tests (level name, and the chain in
+ * plain words - "colony", "colonies"). Only this revolt's own, so a common word elsewhere is
+ * never linked by accident.
+ */
+function pageTargets(r) {
+  const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const out = [];
+  const add = (name, href, id) => { if (name && name.length >= 4) out.push({ re: new RegExp(`\\b${esc(name)}\\b`), href, len: name.length, id }); };
+  const setts = new Set();
+  for (const m of r.text.matchAll(/provoke_rebellion\s+(\S+)/g)) if (m[1] !== "local") setts.add(m[1]);
+  for (const m of r.text.matchAll(/add_hidden_resource\s+(\S+)\s+\S+/g)) if (REGION_SETTLEMENT[m[1]]) setts.add(REGION_SETTLEMENT[m[1]]);
+  for (const m of r.text.matchAll(/SettlementName\s+(\S+)/g)) if (SETTLEMENT_REGION[m[1]]) setts.add(m[1]);
+  for (const s of setts) if (SETTLEMENT_PAGES.has(s)) add(placeName(s), `../settlements/${encodeURIComponent(s)}.md`, `s:${s}`);
+  const units = new Set();
+  for (const f of r.factions) {
+    for (const u of (EMERGENCE[f] || { units: [] }).units) units.add(u);
+    for (const a of (SPAWN[f] ? SPAWN[f].armies : [])) for (const u of a.units) units.add(u);
+  }
+  for (const u of units) { const d = TYPE_DICT[u.toLowerCase()]; if (d) add(unitName(u), `../units/${slug(d)}.md`, `u:${d}`); }
+  for (const m of r.text.matchAll(/SettlementBuildingExists\s*(?:>=|=)?\s*(\S+)/g)) {
+    const b = BUILDING_LEVELS[m[1].toLowerCase()];
+    if (!b || !BUILDING_PAGES.has(b.chain)) continue;
+    add(b.name, `../buildings/${b.chain}.md#${b.anchor}`, `b:${m[1]}`);
+    const word = b.chain.replace(/_/g, " ");
+    const plural = word.endsWith("y") ? word.slice(0, -1) + "ies" : word + "s";
+    for (const w of [plural, word]) out.push({ re: new RegExp(`\\b${esc(w)}\\b`, "i"), href: `../buildings/${b.chain}.md`, len: w.length, id: `c:${b.chain}` });
+  }
+  return out;
+}
+function makeLinker(extra = []) {
   const done = new Set();
+  const targets = [...LINK_TARGETS, ...extra].sort((a, b) => b.len - a.len);
   const one = (s) => {
     // Split around existing links so they are never nested.
     const parts = s.split(/(\[[^\]]*\]\([^)]*\))/);
-    for (const t of LINK_TARGETS) {
+    for (const t of targets) {
       if (done.has(t.id)) continue;
       for (let i = 0; i < parts.length; i += 2) {
         const m = t.re.exec(parts[i]);
@@ -337,7 +386,9 @@ function makeLinker() {
     }
     return parts.join("");
   };
-  return (v) => (Array.isArray(v) ? v.map(one) : typeof v === "string" ? one(v) : v);
+  // First mention per SECTION (each field is one: summary, what sets it off, ...): a reader who
+  // jumps to "What sets it off" still gets the colony link there.
+  return (v) => { done.clear(); return Array.isArray(v) ? v.map(one) : typeof v === "string" ? one(v) : v; };
 }
 
 const revoltKey = (r) => slug(r.section.title.replace(/\b(revolts?|rebellion|disturbance)\b/gi, "").replace(/\bin\b.*$/i, "").trim() || r.section.title) || `section_${r.section.num}`;
@@ -445,7 +496,7 @@ const TASK = `Write the wiki page for this revolt: what it is, what sets it off,
     if (!res.prose) { stats.missing.push(`${key}: ${res.note}`); continue; }
     stats[res.source]++;
     const sep = (v) => (typeof v === "string" ? v.replace(/\b\d{4,}\b/g, (n) => num(n)) : Array.isArray(v) ? v.map(sep) : v);
-    const linker = makeLinker();
+    const linker = makeLinker(pageTargets(r));
     // Linked in the order the fields appear on the page, so the FIRST visible mention is the link.
     const ORDER = ["breaks_away_from", "summary", "who_it_can_happen_to", "what_sets_it_off", "what_happens", "playing_as_the_rebels"];
     const p = { title: sep(res.prose.title) };
