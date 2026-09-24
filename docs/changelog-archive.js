@@ -5,6 +5,15 @@
 // greppable in the working tree. Full authoritative history is in git.
 const CHANGELOG_ARCHIVE = [
   {
+    version: "0.9.1516",
+    date: "2026-09-22",
+    items: [
+      { type: "fix", text: "**Picking a mod folder loads the right campaign with the right map.** Picking a folder that holds a whole mod project — the mod, its submods and a backups folder — listed the backups as campaigns too, and loading one filled the map with an old descr_strat: characters under the wrong faction, in places they no longer are. Backup, archive and wiki folders are no longer offered. Worse, every campaign found this way took its regions and map from whichever mod the search happened to reach last, so a campaign could load with a submod's map. Each campaign now uses its own mod's files, and a submod without its own map uses its parent mod's. Two mods that both ship an imperial_campaign are now both listed, each with the folder it comes from, instead of one silently hiding the other. If a character appears somewhere the game does not show him, re-import the campaign once." },
+      { type: "fix", text: "**Live mode: a besieging army stands outside the town.** The game's log gives a siege's target town as the move's end point, and the army was drawn there — under the town's own icon, so the siege seemed to have no attacker. Besieging, storming, attacking, blockading and landing now leave the army on its own tile, and taking a town puts it inside — checked against where every army's next move started across a 97-turn campaign." },
+      { type: "improvement", text: "**Choosing a campaign is clearer.** When a folder holds several campaigns, one is now picked for you (the last one you loaded, otherwise the imperial campaign), the choice is highlighted, and a Load button sits next to Cancel — before, the only button was Cancel and the campaign names looked like labels. Double-clicking a campaign still loads it straight away." },
+    ],
+  },
+  {
     version: "0.9.1515",
     date: "2026-09-22",
     items: [

@@ -13,6 +13,19 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1521",
+    date: "2026-09-24",
+    items: [
+      { type: "feature", text: "**Agents on the map.** Every diplomat, spy and assassin is drawn where it stands, in its faction's colour, with a hover card showing its name, faction and type — read from the save and checked against the running game (all 303 agents of a campaign, on the right tile). In live mode they move as the game reports it, new ones appear in the town that recruited them, and those caught or killed disappear. Toggle them under Army Types." },
+      { type: "feature", text: "**Units being trained show their turns left.** The recruitment queue now reads “aor etruscan spearmen — 1 turn left”, counted down the way the game does. It was missing in some towns before, too." },
+      { type: "feature", text: "**Live: whose turn it is during the AI's turn.** The live feed says which faction is moving right now." },
+      { type: "feature", text: "**Live: deals and destroyed factions in the feed.** When you accept a deal the feed says so straight away — what it contains arrives with the next save — and factions destroyed are listed as it happens." },
+      { type: "feature", text: "**Live: characters' new traits right away.** A character's card lists the traits and retinue he gained or lost since the last save, so a general who just won a battle shows it before the next save." },
+      { type: "feature", text: "**Live: AI recruitment orders in their towns' queues.** When an AI faction orders units during its turn, the town's recruitment queue shows them." },
+    ],
+  },
+
+  {
     version: "0.9.1520",
     date: "2026-09-24",
     items: [
@@ -52,16 +65,6 @@ const CHANGELOG = [
       { type: "fix", text: "**No more ghost duplicates.** A general who had marched away could still be drawn a second time at his starting position. Gone." },
       { type: "fix", text: "**The log never undoes a newer save.** The game writes a line in its log each time it saves; live mode now uses it to know exactly which moves the save already contains, so an older move from the log no longer puts an army back where it was. Everything that happens after the save — including a general who marries into the family mid-turn and takes his place in a town's garrison — still comes from the log." },
       { type: "fix", text: "**Fleets carrying troops or agents appear, and carry their admiral's name.** A fleet with an army or a diplomat on board was lost from the map. Fleets now show as “Admiral Gaius” rather than “romans julii fleet”. Characters with a single name, such as Azes of the Saka, are no longer dropped by the save reader and shown as an unnamed captain." },
-    ],
-  },
-
-  {
-    version: "0.9.1516",
-    date: "2026-09-22",
-    items: [
-      { type: "fix", text: "**Picking a mod folder loads the right campaign with the right map.** Picking a folder that holds a whole mod project — the mod, its submods and a backups folder — listed the backups as campaigns too, and loading one filled the map with an old descr_strat: characters under the wrong faction, in places they no longer are. Backup, archive and wiki folders are no longer offered. Worse, every campaign found this way took its regions and map from whichever mod the search happened to reach last, so a campaign could load with a submod's map. Each campaign now uses its own mod's files, and a submod without its own map uses its parent mod's. Two mods that both ship an imperial_campaign are now both listed, each with the folder it comes from, instead of one silently hiding the other. If a character appears somewhere the game does not show him, re-import the campaign once." },
-      { type: "fix", text: "**Live mode: a besieging army stands outside the town.** The game's log gives a siege's target town as the move's end point, and the army was drawn there — under the town's own icon, so the siege seemed to have no attacker. Besieging, storming, attacking, blockading and landing now leave the army on its own tile, and taking a town puts it inside — checked against where every army's next move started across a 97-turn campaign." },
-      { type: "improvement", text: "**Choosing a campaign is clearer.** When a folder holds several campaigns, one is now picked for you (the last one you loaded, otherwise the imperial campaign), the choice is highlighted, and a Load button sits next to Cancel — before, the only button was Cancel and the campaign names looked like labels. Double-clicking a campaign still loads it straight away." },
     ],
   },
 
