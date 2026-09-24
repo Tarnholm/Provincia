@@ -237,6 +237,80 @@ for (const s of SECTIONS) {
   REVOLTS.push({ section: s, live, text, resources, factions, extra });
 }
 
+// ── reforms: which a revolt needs, and which follow from it ─────────────────
+// Computed here (this generator runs BEFORE the reform generator, which reads the result from
+// revolts/index.json to link back). A revolt NEEDS a reform its code tests with
+// MajorEventActive. A reform FOLLOWS a revolt when its trigger - or a campaign-script counter
+// or resource the trigger tests, two levels deep - uses something the revolt creates: its
+// region marker, its emerging faction, or a counter its section sets.
+const REFORM_CATALOG = (() => {
+  const out = {};
+  const src = (rd("descr_sm_major_events.txt") || "").replace(/;[^\n]*/g, "");
+  const MAJOR_TEXT = lut16("major_events.txt");
+  const EDB = rd("export_descr_buildings.txt") || "";
+  const tested = new Set([...EDB.matchAll(/major_event\s+"([A-Za-z0-9_]+)"/g)].map((m) => m[1]));
+  for (const m of src.matchAll(/"([A-Za-z0-9_]+)":\s*\{\s*"affects"[\s\S]*?"trigger conditions":\s*"([^"]+)"[\s\S]*?"title":\s*"([^"]+)"/g)) {
+    const [, name, trig, titleKey] = m;
+    if (/^(winter|summer|spring|autumn|empire_size\d+)$/i.test(name)) continue;
+    if (!/reform/i.test(name) && !tested.has(name)) continue;
+    if (name in out) continue;
+    out[name] = { title: MAJOR_TEXT[titleKey] || prettyTok(name), trigger: rd(...trig.split("/")) || "" };
+  }
+  return out;
+})();
+const CS_TEXT = CS_LINES.map(uncomment).join("\n");
+const WHOLE_BLOCKS = topBlocks(1, CS_LINES.length).map((b) => ({ ...b, text: liveLines(b.a, b.b).map((x) => uncomment(x.t)).join("\n") }));
+/** The trigger plus every script block that sets a counter or places a resource it tests, 2 deep. */
+function reformDependencyText(name) {
+  const seen = new Set();
+  let text = REFORM_CATALOG[name].trigger;
+  let frontier = [text];
+  for (let depth = 0; depth < 2; depth++) {
+    const next = [];
+    for (const t of frontier) {
+      const keys = [...t.matchAll(/I_CompareCounter\s+(\S+)/g), ...t.matchAll(/HasResource\s+(\S+)/g)].map((m) => m[1]);
+      for (const k of keys) {
+        if (seen.has(k)) continue;
+        seen.add(k);
+        const re = new RegExp(`\\b(set_counter|inc_counter)\\s+${k}\\b|add_hidden_resource\\s+\\S+\\s+${k}\\b`);
+        for (const b of WHOLE_BLOCKS) if (re.test(b.text)) { next.push(b.text); text += "\n" + b.text; }
+      }
+    }
+    frontier = next;
+  }
+  return text;
+}
+function reformLinks(r) {
+  const needs = [...new Set([...r.text.matchAll(/MajorEventActive\s+"([^"]+)"/g)].map((m) => m[1]))].filter((x) => REFORM_CATALOG[x]);
+  const counters = [...new Set([...r.text.matchAll(/(?:set_counter|inc_counter)\s+(\S+)/g)].map((m) => m[1]))];
+  const tokens = [...r.resources, ...counters];
+  // A faction counts only where the reform needs it to EXIST (FactionIsAlive / FactionType):
+  // Polybian merely counts the Roman Rebels' settlements, which does not make it follow the
+  // civil wars.
+  const factionRe = r.factions.map((f) => new RegExp(`\\b(FactionIsAlive|FactionType)\\s+${f}\\b`));
+  const follows = Object.keys(REFORM_CATALOG).filter((name) => {
+    if (needs.includes(name)) return false;
+    const t = reformDependencyText(name);
+    return tokens.some((k) => new RegExp(`\\b${k.replace(/[^A-Za-z0-9_]/g, "")}\\b`).test(t)) || factionRe.some((re) => re.test(t));
+  });
+  return { needs, follows };
+}
+
+const revoltKey = (r) => slug(r.section.title.replace(/\b(revolts?|rebellion|disturbance)\b/gi, "").replace(/\bin\b.*$/i, "").trim() || r.section.title) || `section_${r.section.num}`;
+/** The page title another revolt's cached text gave it (links are written before that page is). */
+const revoltTitle = (r) => {
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, "ai-prose", "revolts", `${revoltKey(r)}.json`), "utf8")).prose.title; }
+  catch { return prettyTok(r.section.title.toLowerCase()); }
+};
+/** Revolt b follows revolt a when b's code tests a counter or region marker a's section sets. */
+function revoltFollows(b, a) {
+  const setByA = new Set([...a.text.matchAll(/(?:set_counter|inc_counter)\s+(\S+)/g)].map((m) => m[1]));
+  const testedByB = new Set([...b.text.matchAll(/I_CompareCounter\s+(\S+)/g)].map((m) => m[1]));
+  const setByB = new Set([...b.text.matchAll(/(?:set_counter|inc_counter)\s+(\S+)/g)].map((m) => m[1]));
+  if ([...testedByB].some((c) => setByA.has(c) && !setByB.has(c))) return true;
+  return a.resources.some((x) => new RegExp(`HasResource\\s+${x}\\b`).test(b.text));
+}
+
 function factsFor(r) {
   const named = new Set();
   for (const m of r.text.matchAll(/provoke_rebellion\s+(\S+)/g)) if (m[1] !== "local") named.add(m[1]);
@@ -301,7 +375,7 @@ const TASK = `Write the wiki page for this revolt: what it is, what sets it off,
   const index = { revolts: {}, factions: {} };
   const stats = { cache: 0, model: 0, missing: [] };
   for (const r of REVOLTS) {
-    const key = slug(r.section.title.replace(/\b(revolts?|rebellion|disturbance)\b/gi, "").replace(/\bin\b.*$/i, "").trim() || r.section.title) || `section_${r.section.num}`;
+    const key = revoltKey(r);
     const lines = [...r.live, ...r.extra.flatMap((b) => liveLines(b.a, b.b))];
     const code = `(${r.section.num}. ${r.section.title}, RIS_Campaign_Script.txt)\n${excerpt(r.live)}${r.extra.length ? `\n\n(The same factions in section ${EMERGENTS.num}, "${EMERGENTS.title}")\n${r.extra.map((b) => excerpt(liveLines(b.a, b.b))).join("\n\n")}` : ""}${r.factions.map((f) => SPAWN[f] ? `\n\n(spawn script for ${factionLabel(f)}: ${SPAWN[f].file})\n${(rd("world", "maps", "campaign", "imperial_campaign", ...SPAWN[f].file.split("/")) || "").split(/\r?\n/).map((t, i) => ({ n: i + 1, t })).filter((x) => uncomment(x.t).trim()).map((x) => `${x.n}: ${x.t}`).join("\n")}` : "").join("")}`;
     const facts = factsFor(r);
@@ -373,14 +447,17 @@ const TASK = `Write the wiki page for this revolt: what it is, what sets it off,
       for (const x of msgs) md.push(`#### ${x.title}`, "", ...x.lines.map((l) => `> ${l}\n>`), "");
       md.push("</details>", "");
     }
-    const reformsDir = path.join(OUT, "reforms");
-    const refs = facts.reforms_it_depends_on.filter((x) => fs.existsSync(path.join(reformsDir, `${x}.md`)));
-    if (refs.length) {
-      const idx = (() => { try { return JSON.parse(fs.readFileSync(path.join(reformsDir, "index.json"), "utf8")).reforms || {}; } catch { return {}; } })();
-      md.push(`Related reforms: ${refs.map((x) => `[${cell((idx[x] || {}).title || x)}](../reforms/${x}.md)`).join(", ")}.`, "");
-    }
+    const links = reformLinks(r);
+    const rl = (x) => `[${cell(REFORM_CATALOG[x].title)}](../reforms/${x}.md)`;
+    const vl = (o) => `[${cell(revoltTitle(o))}](${revoltKey(o)}.md)`;
+    const afterRevolts = REVOLTS.filter((o) => o !== r && revoltFollows(r, o));
+    const opensRevolts = REVOLTS.filter((o) => o !== r && revoltFollows(o, r));
+    const afterAll = [...links.needs.map(rl), ...afterRevolts.map(vl)];
+    const opensAll = [...links.follows.map(rl), ...opensRevolts.map(vl)];
+    if (afterAll.length) md.push(`**Comes after:** ${afterAll.join(", ")}.`, "");
+    if (opensAll.length) md.push(`**Opens the way to:** ${opensAll.join(", ")}.`, "");
     fs.writeFileSync(path.join(OUT, "revolts", `${key}.md`), md.join("\n").replace(/\n{3,}/g, "\n\n"), "utf8");
-    index.revolts[key] = { page: `${key}.md`, title: p.title, factions: r.factions, from: p.breaks_away_from, summary: p.summary };
+    index.revolts[key] = { page: `${key}.md`, title: p.title, factions: r.factions, from: p.breaks_away_from, summary: p.summary, needs_reforms: links.needs, leads_to_reforms: links.follows };
     for (const f of r.factions) (index.factions[f] = index.factions[f] || []).push(key);
     for (const s of provoked) { const o = ownerOfSettlement(s); if (o) (index.factions[o] = index.factions[o] || []).includes(key) || index.factions[o].push(key); }
   }

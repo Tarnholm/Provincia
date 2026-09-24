@@ -1128,6 +1128,7 @@ for (const r of REFORMS) {
 }
 
 const INDEX = { reforms: {}, units: {} };
+const REVOLTS = (() => { try { return JSON.parse(fs.readFileSync(path.join(OUT, "revolts", "index.json"), "utf8")); } catch { return {}; } })();
 const OFF = new Set();   // reforms that can never fire as the mod ships (Marian)
 const addUnitRef = (type, reform, kind) => {
   const s = unitSlug(type);
@@ -1211,6 +1212,11 @@ for (const r of REFORMS) {
 
   const needs = NEEDS.get(r.name) || [];
   const leads = LEADS.get(r.name) || [];
+  // Revolts, from revolts/index.json (gen-ris-revolt-pages.js runs first): a revolt this reform
+  // comes after, and revolts that need this reform.
+  const revAfter = Object.entries(REVOLTS.revolts || {}).filter(([, v]) => (v.leads_to_reforms || []).includes(r.name));
+  const revOpens = Object.entries(REVOLTS.revolts || {}).filter(([, v]) => (v.needs_reforms || []).includes(r.name));
+  const revLink = ([k, v]) => `[${cell(v.title)}](../revolts/${k}.md)`;
   const opens = OPENS.get(r.name) || new Map();
   const closes = CLOSES.get(r.name) || new Map();
 
@@ -1222,12 +1228,14 @@ for (const r of REFORMS) {
   lines.push(`**Who gets it:** ${affects}${r.global ? " — once it fires it applies to all of them at once" : ""}`, "");
   if (body) lines.push(body.split("\n").map((l) => `> ${l}`).join("\n"), "");
   lines.push("## How to get it", "", ...req.map((x) => x + "\n"));
-  if (needs.length) lines.push(`Comes after: ${needs.map((n) => reformLink(n)).join(", ")}.`, "");
-  if (leads.length) lines.push(`Opens the way to: ${leads.map((n) => reformLink(n)).join(", ")}.`, "");
+  const afterLinks = [...needs.map((n) => reformLink(n)), ...revAfter.map(revLink)];
+  const opensLinks = [...leads.map((n) => reformLink(n)), ...revOpens.map(revLink)];
+  if (afterLinks.length) lines.push(`Comes after: ${afterLinks.join(", ")}.`, "");
+  if (opensLinks.length) lines.push(`Opens the way to: ${opensLinks.join(", ")}.`, "");
   lines.push("## What it unlocks", "");
   if (!opens.size && !closes.size && !r.switches.length) {
     lines.push("**Message only.** It unlocks, retires and converts no units.", "");
-    if (leads.length) lines.push(`Its only effect is that ${joinAnd(leads.map((n) => reformLink(n)))} ${leads.length === 1 ? "waits" : "wait"} for it.`, "");
+    if (opensLinks.length) lines.push(`Its only effect is that ${joinAnd(opensLinks)} ${opensLinks.length === 1 ? "waits" : "wait"} for it.`, "");
   }
   if (opens.size) lines.push(`**${plural(opens.size, "unit")} can be recruited once it fires:**`, "", unitTable(opens, r.name, "unlocks"), "");
   if (r.switches.length) {
