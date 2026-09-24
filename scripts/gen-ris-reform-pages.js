@@ -220,6 +220,7 @@ const EVENTS = (() => {
       trigger: g("trigger conditions"),
       title: g("title"),
       body: g("body"),
+      image: g("image"),
       switches,
     });
   }
@@ -252,6 +253,58 @@ const TEXT = lut16("major_events.txt");
 const textOf = (k) => (k && TEXT[k] != null ? TEXT[k] : null);
 const titleOf = (r) => textOf(r.title) || prettyTok(r.name);
 const reformLink = (n, pre = "") => (REFORM_BY_NAME[n] ? `[${titleOf(REFORM_BY_NAME[n])}](${pre}${n}.md)` : `\`${n}\``);
+
+// ── event pictures ──────────────────────────────────────────────────────────
+// Each reform names an "image"; the file is ui/<culture>/eventpics/<image>.tga. The engine
+// looks in the culture of the faction it is showing the message to, so the first affected
+// faction's culture is tried first, then ui/generic, then any culture that has it. Three
+// names are the engine's stock status pictures, reused by many events; those are left off.
+const STOCK_IMAGES = new Set(["player_faction_strongest", "faction_strongest", "faction_defeated"]);
+const FACTION_CULTURE = (() => {
+  const out = {};
+  const src = rd("descr_sm_factions.txt") || "";
+  const re = /^\s*"([a-z0-9_]+)":\s*(?:;[^\n]*)?\n([\s\S]*?)(?=^\s*"[a-z0-9_]+":\s*(?:;[^\n]*)?\n\s*\{|(?![\s\S]))/gim;
+  let m;
+  while ((m = re.exec(src))) {
+    const c = /"culture":\s*"([^"]+)"/.exec(m[2]);
+    if (c && !(m[1] in out)) out[m[1].toLowerCase()] = c[1];
+  }
+  return out;
+})();
+const EVENTPIC_DIRS = (() => {
+  try { return fs.readdirSync(path.join(RIS, "ui"), { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name); }
+  catch { return []; }
+})();
+const eventpicIn = (culture, image) => {
+  const dir = path.join(RIS, "ui", culture, "eventpics");
+  let files;
+  try { files = fs.readdirSync(dir); } catch { return null; }
+  const hit = files.find((f) => f.toLowerCase() === `${image.toLowerCase()}.tga`);
+  return hit ? path.join(dir, hit) : null;
+};
+function resolveEventpic(r) {
+  if (!r.image || STOCK_IMAGES.has(r.image.toLowerCase())) return null;
+  const order = [...new Set([...r.affects.map((f) => FACTION_CULTURE[f.toLowerCase()]).filter(Boolean), "generic", ...EVENTPIC_DIRS])];
+  for (const c of order) { const f = eventpicIn(c, r.image); if (f) return f; }
+  return undefined; // named, but no file in the mod
+}
+const IMAGE_STATS = { written: 0, stock: 0, missing: [] };
+const dgTga = require(path.join(__dirname, "..", "src", "descrStratGeneral.js"));
+const { convert: tgaToPng } = require(path.join(__dirname, "lib", "tgaPng.js"));
+function reformImage(r) {
+  const file = resolveEventpic(r);
+  if (file === null) { if (r.image) IMAGE_STATS.stock++; return null; }
+  if (file === undefined) { IMAGE_STATS.missing.push(`${r.name} -> ${r.image}`); return null; }
+  const out = path.join(OUT, "reform-images", `${slug(r.image)}.png`);
+  if (!fs.existsSync(out) || fs.statSync(out).mtimeMs < fs.statSync(file).mtimeMs) {
+    const p = tgaToPng(dgTga, file, 1);
+    if (!p) { IMAGE_STATS.missing.push(`${r.name} -> ${r.image} (unreadable)`); return null; }
+    fs.mkdirSync(path.dirname(out), { recursive: true });
+    fs.writeFileSync(out, p.buf);
+  }
+  IMAGE_STATS.written++;
+  return `../reform-images/${slug(r.image)}.png`;
+}
 
 // ── the script language ─────────────────────────────────────────────────────
 // Lines -> tree. Conditions are kept as their token lists; an `if` holds the whole
@@ -987,6 +1040,8 @@ for (const r of REFORMS) {
 
   const lines = [];
   lines.push(`# ${title}`, "");
+  const pic = reformImage(r);
+  if (pic) lines.push(`![${cell(title)}](${pic})`, "");
   lines.push(`**Who gets it:** ${affects}${r.global ? " — once it fires it applies to all of them at once" : ""}`, "");
   if (body) lines.push(body.split("\n").map((l) => `> ${l}`).join("\n"), "");
   lines.push("## How to get it", "", ...req.map((x) => x + "\n"));
@@ -1043,6 +1098,7 @@ say(`reforms: ${REFORMS.length} of ${EVENTS.length} major events (left out: ${EV
 say(`  pages ${stats.pages} · requirement routes ${stats.routes} · counters spelled out from the campaign script ${stats.complex}`);
 say(`  units referenced ${Object.keys(INDEX.units).length} · reforms that open units ${OPENS.size} · close units ${CLOSES.size}`);
 if (stats.never.length) say(`  CANNOT FIRE before the campaign ends: ${stats.never.join(", ")}`);
+say(`  pictures: ${IMAGE_STATS.written} written to reform-images/ · ${IMAGE_STATS.stock} use a stock status picture (left off)${IMAGE_STATS.missing.length ? ` · NO FILE IN THE MOD: ${IMAGE_STATS.missing.join(", ")}` : ""}`);
 if (NO_SUCH_FACTION.size) say(`  scripts loop over factions that do not exist: ${[...NO_SUCH_FACTION].join(", ")}`);
 if (NEVER_RESOURCES.size) say(`  tested resources that no region carries and no script places: ${[...NEVER_RESOURCES].join(", ")}`);
 if (stats.noRoute.length) say(`  NO ROUTE returns true: ${stats.noRoute.join(", ")}`);

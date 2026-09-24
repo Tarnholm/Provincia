@@ -260,6 +260,8 @@ note(`images: ${images.toLocaleString("en-US")} checked, ${badImages} broken`);
     ancillaries: 20, "ancillary-icons": 100,
     // reforms/ is one page per reform plus index.json — 81 entries as RIS ships.
     reforms: 50,
+    // reform-images/ is one PNG per distinct custom event picture a reform names (38 as RIS ships).
+    "reform-images": 20,
   };
   for (const [dir, min] of Object.entries(floors)) {
     const n = count(dir);
