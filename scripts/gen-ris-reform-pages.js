@@ -83,7 +83,7 @@ const DECLARED_CULTURES = () => new Set(Object.values(FACTION_CULTURE).map((c) =
 const isCultureKey = (f) => !isFactionKey(f) && DECLARED_CULTURES().has(String(f).toLowerCase());
 const isFaction = (f) => isFactionKey(f) || isCultureKey(f);
 /** "held by Rome" / "held by any Roman-culture faction, AI factions included". */
-const heldBy = (f) => (isCultureKey(f) ? `held by any ${cultureLink(String(f).toLowerCase())}-culture faction, AI factions included` : `held by ${factionLink(f)}`);
+const heldBy = (f) => (isCultureKey(f) ? `held by any ${cultureLink(String(f).toLowerCase())}-culture faction (AI factions included)` : `held by ${factionLink(f)}`);
 const NO_SUCH_FACTION = new Set();
 const SETTLEMENT_PAGES = pagesIn("settlements");
 // roman_rebels_1 and roman_rebels_2 are both "Roman Rebels" in every text file the mod ships.
@@ -650,6 +650,9 @@ function describeCounter(c, word, n, ctx0) {
     const gs = [...groups.values()];
     if (gs.length === 1 && gs[0].step === 1) {
       const g = gs[0];
+      // HireMercenaries fires once per hiring ("A General has hired some mercenaries"), not
+      // once per unit - so the count is of hirings.
+      if (g.verb === "hired") return `mercenaries have been hired by ${orList([...g.who])} ${word} ${plural(n, "time")}${tailOf(g)} (each hiring counts once, however many units it takes on)`;
       return `${word} ${plural(n, g.noun, g.nouns)} ${n === 1 ? "has" : "have"} been ${g.verb} by ${orList([...g.who])}${tailOf(g)}`;
     }
     // Weighted tallies (Miletus counts a Cretan archer unit as 2): points.
