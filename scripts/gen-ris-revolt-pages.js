@@ -296,6 +296,50 @@ function reformLinks(r) {
   return { needs, follows };
 }
 
+// ── links inside the written text ───────────────────────────────────────────
+// The first mention on a page of a reform or of a faction with a page becomes a link. Reforms
+// are matched loosely ("the Gracchan reform" for "The Gracchan Reforms"): title with and
+// without "The", and singular/plural "Reform(s)". Longest names first; text already inside a
+// link is left alone.
+const LINK_TARGETS = (() => {
+  const out = [];
+  const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  for (const [name, r] of Object.entries(REFORM_CATALOG)) {
+    const t = String(r.title).trim();
+    const bare = t.replace(/^the\s+/i, "");
+    // Without a leading "The", so the link reads "the [Gracchan reform]", not "[the Gracchan reform]".
+    const forms = new Set([bare, bare.replace(/\bReforms\b/i, "Reform"), bare.replace(/\bReform\b(?!s)/i, "Reforms")]);
+    for (const f of forms) if (f.length >= 6) out.push({ re: new RegExp(`\\b${esc(f)}\\b`, "i"), href: `../reforms/${name}.md`, len: f.length, id: `r:${name}` });
+  }
+  for (const f of FACTION_PAGES) {
+    if (f === "non-playable") continue;
+    const n = factionName(f);
+    if (NAME_USES[n] > 1 || n.length < 4) continue;
+    out.push({ re: new RegExp(`\\b${esc(n)}\\b`), href: `../factions/${f}.md`, len: n.length, id: `f:${f}` });
+  }
+  return out.sort((a, b) => b.len - a.len);
+})();
+function makeLinker() {
+  const done = new Set();
+  const one = (s) => {
+    // Split around existing links so they are never nested.
+    const parts = s.split(/(\[[^\]]*\]\([^)]*\))/);
+    for (const t of LINK_TARGETS) {
+      if (done.has(t.id)) continue;
+      for (let i = 0; i < parts.length; i += 2) {
+        const m = t.re.exec(parts[i]);
+        if (!m) continue;
+        const before = parts[i].slice(0, m.index), after = parts[i].slice(m.index + m[0].length);
+        parts.splice(i, 1, before, `[${m[0]}](${t.href})`, after);
+        done.add(t.id);
+        break;
+      }
+    }
+    return parts.join("");
+  };
+  return (v) => (Array.isArray(v) ? v.map(one) : typeof v === "string" ? one(v) : v);
+}
+
 const revoltKey = (r) => slug(r.section.title.replace(/\b(revolts?|rebellion|disturbance)\b/gi, "").replace(/\bin\b.*$/i, "").trim() || r.section.title) || `section_${r.section.num}`;
 /** The page title another revolt's cached text gave it (links are written before that page is). */
 const revoltTitle = (r) => {
@@ -401,7 +445,11 @@ const TASK = `Write the wiki page for this revolt: what it is, what sets it off,
     if (!res.prose) { stats.missing.push(`${key}: ${res.note}`); continue; }
     stats[res.source]++;
     const sep = (v) => (typeof v === "string" ? v.replace(/\b\d{4,}\b/g, (n) => num(n)) : Array.isArray(v) ? v.map(sep) : v);
-    const p = Object.fromEntries(Object.entries(res.prose).map(([k, v]) => [k, sep(v)]));
+    const linker = makeLinker();
+    // Linked in the order the fields appear on the page, so the FIRST visible mention is the link.
+    const ORDER = ["breaks_away_from", "summary", "who_it_can_happen_to", "what_sets_it_off", "what_happens", "playing_as_the_rebels"];
+    const p = { title: sep(res.prose.title) };
+    for (const k of ORDER) p[k] = linker(sep(res.prose[k]));
 
     // page
     const md = [];
@@ -457,7 +505,7 @@ const TASK = `Write the wiki page for this revolt: what it is, what sets it off,
     if (afterAll.length) md.push(`**Comes after:** ${afterAll.join(", ")}.`, "");
     if (opensAll.length) md.push(`**Opens the way to:** ${opensAll.join(", ")}.`, "");
     fs.writeFileSync(path.join(OUT, "revolts", `${key}.md`), md.join("\n").replace(/\n{3,}/g, "\n\n"), "utf8");
-    index.revolts[key] = { page: `${key}.md`, title: p.title, factions: r.factions, from: p.breaks_away_from, summary: p.summary, needs_reforms: links.needs, leads_to_reforms: links.follows };
+    index.revolts[key] = { page: `${key}.md`, title: p.title, factions: r.factions, from: sep(res.prose.breaks_away_from), summary: sep(res.prose.summary), needs_reforms: links.needs, leads_to_reforms: links.follows };
     for (const f of r.factions) (index.factions[f] = index.factions[f] || []).push(key);
     // Factions this revolt creates, and whether they exist before it (faction pages say so).
     index.emerging = index.emerging || {};
