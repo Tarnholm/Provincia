@@ -887,9 +887,11 @@ const COUNTER_GLOSS = {
     since: "Rome's first civil war was decided",
     // cw2_wait_done is set at cw2_wait > 49 (the AI fuse), which the second war's cw2_armed
     // monitors require - so 25 turns is halfway to the earliest second civil war.
-    how: "The first civil war counts as decided once the losing side — Rome or the Roman Rebels — is down to its last settlement. 25 turns is roughly halfway to the second civil war, which cannot begin until the same count reaches 50.",
-    from: ["cw2_wait", "cw1_resolved"],
-    sig: "1907beebe949",
+    how: "The first civil war counts as decided once the losing side — Rome or the Roman Rebels — is down to its last settlement. 25 turns is roughly halfway to the second civil war, which cannot begin until the same count passes 50.",
+    // cw2_wait_done too: the fuse length lives in ITS setter ("cw2_wait > 50"), and a testing
+    // value there (2, shipped until 2026-09-24) silently stopped the count below 25.
+    from: ["cw2_wait", "cw1_resolved", "cw2_wait_done"],
+    sig: "a8a061851cd0",
   },
 };
 function counterSig(names) {
