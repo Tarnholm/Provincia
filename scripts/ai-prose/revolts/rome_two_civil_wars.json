@@ -23,7 +23,7 @@
    "First civil war: If you switch sides, the Roman Rebels receive 30000 and you take them over on the next turn, when their leader lands in central Italy.",
    "Second civil war: The winner's largest legion area breaks away to the loser of the first war, the next largest to a second Roman Rebels faction, and the region of Rome itself to The Roman Senate.",
    "Second civil war: All four Roman factions are at war with each other.",
-   "Both wars: A beaten Roman faction may offer to surrender to you: a 20% chance each turn once you have taken at least 2 of its settlements and it is down to fewer than 6 (for The Roman Senate, between 6 and 12). Accepting hands you all its settlements."
+   "Both wars: From turn 102 (245 BC), a beaten Roman faction may offer to surrender to you: a 20% chance each turn once you have taken at least 2 of its settlements and it is down to fewer than 6 (for The Roman Senate, between 6 and 12). Accepting hands you all its settlements."
   ],
   "playing_as_the_rebels": "In the first war, the 'A Divided Republic' message lets you switch to the Roman Rebels. In the second, you are offered one after another the loser of the first war, the second Roman Rebels faction and The Roman Senate; turning one down moves on to the next. Turn them all down and you carry on as you were."
  }
