@@ -432,6 +432,7 @@ function renderClause(text, ctx) {
   if ((m = /^I_SettlementOwnerCulture\s+local\s*(==|=)\s*(\S+)$/i.exec(t))) return N({ yes: `its owner is of ${cultureLink(m[2])} culture`, no: `its owner is not of ${cultureLink(m[2])} culture` });
   if ((m = /^SettlementName\s+(\S+)$/i.exec(t))) return N({ yes: `it is ${settlementLink(m[1])}`, no: `it is not ${settlementLink(m[1])}` });
   if ((m = /^SettlementBuildingExists\s*(>=|=)?\s*(\S+)$/i.exec(t))) { const b = buildingName(m[2]); return N({ yes: `it has ${aOr(b)} ${b}`, no: `it has no ${b}` }); }
+  if ((m = /^I_LocalFaction\s+(\S+)$/i.exec(t)) && ctx.who) { (neg ? ctx.who.not : ctx.who.play).push(m[1].toLowerCase()); return null; }
   if ((m = /^I_LocalFaction\s+(\S+)$/i.exec(t))) return N({ yes: `you are playing ${factionLink(m[1])}`, no: `you are not playing ${factionLink(m[1])}` });
   if ((m = /^FactionIsLocal$/i.exec(t))) return N({ yes: "it is your faction", no: "it is not your faction" });
   if ((m = /^RandomPercent\s*<\s*(\d+)$/i.exec(t))) return `a ${m[1]}% roll succeeds`;
@@ -607,7 +608,7 @@ function routesOf(tree, reform, complexCounters) {
   const complex = [];
   const guards = []; // conditions that ended in `return false` earlier at this level
 
-  const walk = (node, conds, fors) => {
+  const walk = (node, conds, fors, who = { play: [], not: [] }) => {
     for (const n of node.body) {
       if (n.kind === "for") {
         n.depth = conds.length;
@@ -646,16 +647,17 @@ function routesOf(tree, reform, complexCounters) {
           }
           continue;
         }
-        walk(n, conds, [...fors, n]);
+        walk(n, conds, [...fors, n], who);
         continue;
       }
       if (n.kind === "if") {
-        const ctx = { forFaction: (fors[fors.length - 1] || {}).faction, locals, complex: complexCounters };
+        const ctx = { forFaction: (fors[fors.length - 1] || {}).faction, locals, complex: complexCounters, who: { play: [], not: [] } };
         const r = renderCond(n.cond, ctx);
+        const who2 = { play: [...who.play, ...ctx.who.play], not: [...who.not, ...ctx.who.not] };
         const endsFalse = n.body.length && n.body[n.body.length - 1].kind === "return" && !n.body[n.body.length - 1].value
           && !JSON.stringify(n.body).includes('"value":true');
-        walk(n, r ? [...conds, r] : conds, fors);
-        if (n.else) walk(n.else, r ? [...conds, `not (${r})`] : conds, fors);
+        walk(n, r ? [...conds, r] : conds, fors, who2);
+        if (n.else) walk(n.else, r ? [...conds, `not (${r})`] : conds, fors, who);
         // An if whose body returns (true or false) and never falls through narrows what comes
         // after it: the rest of the script only runs when this condition failed.
         const last = n.body[n.body.length - 1];
@@ -665,7 +667,7 @@ function routesOf(tree, reform, complexCounters) {
       if (n.kind === "return" && n.value) {
         const inLoop = fors[fors.length - 1];
         const g = guards.filter((x) => x.after <= routes.length);
-        routes.push({ conds: [...conds], loop: inLoop || null, guardsBefore: g.map((x) => x.r) });
+        routes.push({ conds: [...conds], loop: inLoop || null, guardsBefore: g.map((x) => x.r), who });
         continue;
       }
       if (n.kind === "stmt") unknown(n.text);
@@ -704,6 +706,43 @@ function mergeRoutes(texts) {
   });
 }
 const orList = (a, w = "or") => (a.length <= 1 ? a.join("") : `${a.slice(0, -1).join(", ")} ${w} ${a[a.length - 1]}`);
+/**
+ * Routes split by who is at the keyboard. A trigger that tests I_LocalFaction is written
+ * twice over: one test for when you play the faction, another for when the AI does (the
+ * Polybian reform fires for a human Rome at 71 settlements, and for an AI Rome at turn 72 or
+ * when it is down to 14). Phrasing both as one list read as if all of them applied to you.
+ * The faction tests are lifted out of the sentences and become the section headings.
+ */
+function playerAiSections(routes, texts) {
+  const names = (toks) => orList([...new Set(toks.map((f) => factionLink(f)))]);
+  const player = new Map(), ai = [], any = [];
+  const aiWho = new Set();
+  routes.forEach((r, i) => {
+    const t = texts[i];
+    if (r.who.play.length) {
+      if (!player.has(t)) player.set(t, new Set());
+      for (const f of r.who.play) player.get(t).add(f);
+    } else if (r.who.not.length) { ai.push(t); for (const f of r.who.not) aiWho.add(f); }
+    else any.push(t);
+  });
+  const list = (ts) => {
+    const u = [...new Set(ts)];
+    return u.length === 1 ? `it fires when ${u[0]}.` : `it fires when **any one** of these holds:\n\n${u.map((x) => `- ${x}`).join("\n")}`;
+  };
+  if (!player.size && !ai.length) return [list(any).replace(/^it/, "It")];
+  const out = [];
+  // Routes identical apart from which faction you play fold into one heading.
+  const byText = new Map();
+  for (const [t, fs] of player) {
+    const key = [...fs].sort().join(",");
+    if (!byText.has(key)) byText.set(key, { fs: [...fs], ts: [] });
+    byText.get(key).ts.push(t);
+  }
+  for (const { fs, ts } of byText.values()) out.push(`**If you are playing ${names(fs)}:** ${list(ts)}`);
+  if (ai.length) out.push(`**If nobody is playing ${names([...aiWho])}** (the AI runs them): ${list(ai)}`);
+  if (any.length) out.push(`**In any campaign:** ${list(any)}`);
+  return out;
+}
 /** A parsed trigger script as its routes and one sentence per route. */
 function renderRoutes(tree, reform, complexCounters) {
   const { routes } = routesOf(tree, reform, complexCounters);
@@ -930,10 +969,7 @@ for (const r of REFORMS) {
     else {
       const never = !extraTexts.length && texts.every((t) => /can never happen/.test(t));
       if (never) stats.never.push(r.name);
-      const merged = mergeRoutes(texts);
-      texts.length = 0; texts.push(...merged);
-      if (texts.length === 1) req.push(`It fires when ${texts[0]}.`);
-      else req.push(`It fires when **any one** of these holds:\n\n${texts.map((t) => `- ${t}`).join("\n")}`);
+      req.push(...playerAiSections(routes, texts));
       if (never) req.push("**In practice this reform cannot happen in a campaign as the mod ships it.**");
     }
     for (const cn of complexNotes) {
