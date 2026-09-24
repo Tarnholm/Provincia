@@ -1089,10 +1089,11 @@ for (const r of REFORMS) {
 }
 
 const INDEX = { reforms: {}, units: {} };
+const OFF = new Set();   // reforms that can never fire as the mod ships (Marian)
 const addUnitRef = (type, reform, kind) => {
   const s = unitSlug(type);
   if (!INDEX.units[s]) INDEX.units[s] = [];
-  if (!INDEX.units[s].some((x) => x.reform === reform && x.kind === kind)) INDEX.units[s].push({ reform, title: titleOf(REFORM_BY_NAME[reform]), kind });
+  if (!INDEX.units[s].some((x) => x.reform === reform && x.kind === kind)) INDEX.units[s].push({ reform, title: titleOf(REFORM_BY_NAME[reform]), kind, ...(OFF.has(reform) ? { off: true } : {}) });
 };
 
 const stats = { pages: 0, routes: 0, noRoute: [], never: [], complex: 0 };
@@ -1146,8 +1147,17 @@ for (const r of REFORMS) {
     else {
       if (never) stats.never.push(r.name);
       for (let i = 0; i < texts.length; i++) texts[i] = texts[i].replace(/the conditions below are met(?:(?:,| and) the conditions below are met)+/g, "the conditions below are met");
-      req.push(...playerAiSections(routes, texts));
-      if (never) req.push("**In practice this reform cannot happen in a campaign as the mod ships it.**");
+      const pastEnd = never && texts.every((t) => /after the campaign ends/.test(t));
+      if (pastEnd) {
+        // The mod keeps the event declared but parks its trigger past the end of the campaign
+        // (Marian: turn 4,002) - that is how a reform is switched off.
+        OFF.add(r.name);
+        const m = /turn ([\d,]+) has been reached — which is after the campaign ends in ([^,]+),/.exec(texts[0]);
+        req.push(`**Switched off in this version of the mod.** Its trigger waits for ${m ? `turn ${m[1]}, long after the campaign ends in ${m[2]}` : "a turn after the campaign ends"}, so it never fires.`);
+      } else {
+        req.push(...playerAiSections(routes, texts));
+        if (never) { OFF.add(r.name); req.push("**In practice this reform cannot happen in a campaign as the mod ships it.**"); }
+      }
     }
     for (const cn of complexNotes) {
       const gloss = COUNTER_NOTES[cn.c] ? ` (“${COUNTER_NOTES[cn.c]}”)` : "";
@@ -1156,7 +1166,7 @@ for (const r of REFORMS) {
       const detail = `**\`${cn.c}\`**${gloss} is kept by the campaign script${summary ? "" : ` and must be ${cn.word} ${num(cn.n)}`}. It changes:\n\n${cn.lines.map((l) => `- ${l}`).join("\n") || "- _where it is set is **not determined**_"}`;
       req.push(summary ? `<details>\n<summary>The script, step by step</summary>\n\n${detail}\n\n</details>` : detail);
     }
-    req.push("The game checks this at the end of every round.");
+    if (!OFF.has(r.name)) req.push("The game checks this at the end of every round.");
   }
 
   const needs = NEEDS.get(r.name) || [];
@@ -1187,7 +1197,7 @@ for (const r of REFORMS) {
   if (closes.size) lines.push(`**${plural(closes.size, "unit")} can no longer be recruited:**`, "", unitTable(closes, r.name, "retires"), "");
   fs.writeFileSync(path.join(OUT, "reforms", `${r.name}.md`), lines.join("\n").replace(/\n{3,}/g, "\n\n"), "utf8");
   stats.pages++;
-  INDEX.reforms[r.name] = { page: `${r.name}.md`, title, factions: r.affects };
+  INDEX.reforms[r.name] = { page: `${r.name}.md`, title, factions: r.affects, ...(OFF.has(r.name) ? { off: true } : {}) };
 }
 
 // ── index page ──────────────────────────────────────────────────────────────
@@ -1204,7 +1214,7 @@ for (const r of REFORMS) {
     for (const r of list) {
       const o = (OPENS.get(r.name) || new Map()).size, c = (CLOSES.get(r.name) || new Map()).size;
       const who = r.affects.includes("all") ? "Every faction" : r.affects.map((f) => factionLink(f, "")).join(", ");
-      rows.push(`| [${cell(titleOf(r))}](reforms/${r.name}.md) | ${who} | ${o || "—"} | ${c || "—"} | ${r.switches.length || "—"} |`);
+      rows.push(`| [${cell(titleOf(r))}](reforms/${r.name}.md)${OFF.has(r.name) ? " _(switched off)_" : ""} | ${who} | ${o || "—"} | ${c || "—"} | ${r.switches.length || "—"} |`);
     }
   }
   const md = `# Reforms

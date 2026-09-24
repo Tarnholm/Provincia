@@ -719,7 +719,7 @@ function reformSection(f) {
     else if ((r.factions || []).includes("all")) all.push([name, r]);
   }
   if (!own.length && !all.length) return "";
-  const link = ([name, r]) => `[${cell(r.title)}](../reforms/${name}.md)`;
+  const link = ([name, r]) => `[${cell(r.title)}](../reforms/${name}.md)${r.off ? " _(switched off)_" : ""}`;
   return `## Reforms
 
 ${own.length ? own.map((x) => `- ${link(x)}`).join("\n") : "_No reform is made for this faction alone._"}

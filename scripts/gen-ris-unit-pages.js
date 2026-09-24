@@ -625,7 +625,7 @@ function reformLine(slugKey) {
   const parts = [];
   for (const kind of ["unlocks", "upgrades", "retires", "upgraded"]) {
     const list = refs.filter((r) => r.kind === kind);
-    if (list.length) parts.push(`${KIND[kind]} ${list.map((r) => `[${cell(r.title)}](../reforms/${r.reform}.md)`).join(", ")}`);
+    if (list.length) parts.push(`${KIND[kind]} ${list.map((r) => `[${cell(r.title)}](../reforms/${r.reform}.md)${r.off ? " _(switched off)_" : ""}`).join(", ")}`);
   }
   return `\n\n**Reforms:** ${parts.join(" · ")}`;
 }
