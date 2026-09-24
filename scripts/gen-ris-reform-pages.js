@@ -1064,7 +1064,8 @@ for (const r of REFORMS) {
   const lines = [];
   lines.push(`# ${title}`, "");
   const pic = reformImage(r);
-  if (pic) lines.push(`![${cell(title)}](${pic})`, "");
+  // A banner, not the floated lede picture: at 732px wide a float squeezes the text into a column.
+  if (pic) lines.push('<div class="reform-banner">', "", `![${cell(title)}](${pic})`, "", "</div>", "");
   lines.push(`**Who gets it:** ${affects}${r.global ? " — once it fires it applies to all of them at once" : ""}`, "");
   if (body) lines.push(body.split("\n").map((l) => `> ${l}`).join("\n"), "");
   lines.push("## How to get it", "", ...req.map((x) => x + "\n"));

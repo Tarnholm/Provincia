@@ -635,6 +635,9 @@ main{min-width:0;padding:1.6rem 1.6rem 5rem;width:100%}
    until the tall campaign brief beside it finished. */
 .lede{max-width:none}
 .lede img{float:left;margin:.2rem 1.8rem .8rem 0;max-width:min(42%,34rem);border-radius:8px}
+/* A reform's event picture is a banner across the top, not a floated lede image. */
+.lede .reform-banner p,.lede .reform-banner p.imgrow,.reform-banner p{float:none;display:block;max-width:none;margin:0}
+.lede .reform-banner img,.reform-banner img{float:none;display:block;width:100%;max-width:732px;height:auto;margin:.3rem 0 1.2rem;border-radius:8px}
 /* A row of pictures floats as ONE block, and the pictures centre against each other inside it.
    Floating them separately hangs both from the same top edge, which on a faction page pins the
    120px symbol level with the top quarter of the map. The map keeps the width it had; the
