@@ -470,6 +470,8 @@ function renderClause(text, ctx) {
       const d = describeCounter(c, word, n, ctx);
       if (d) return d;
       if (ctx.complex) ctx.complex.set(c, { word, n });
+      const g = glossFor(c);
+      if (g && word === "at least") return `${plural(n, "turn")}${aboutYears(n)} have passed since ${g.since}`;
       return "the conditions below are met";
     }
     if (local) {
@@ -507,7 +509,7 @@ function renderClause(text, ctx) {
   if ((m = /^I_LocalFaction\s+(\S+)$/i.exec(t)) && ctx.who) { (neg ? ctx.who.not : ctx.who.play).push(m[1].toLowerCase()); return null; }
   if ((m = /^I_LocalFaction\s+(\S+)$/i.exec(t))) return N({ yes: `you are playing ${factionLink(m[1])}`, no: `you are not playing ${factionLink(m[1])}` });
   if ((m = /^FactionIsLocal$/i.exec(t))) return N({ yes: "it is your faction", no: "it is not your faction" });
-  if ((m = /^RandomPercent\s*<\s*(\d+)$/i.exec(t))) return `a ${m[1]}% roll succeeds`;
+  if ((m = /^RandomPercent\s*<\s*(\d+)$/i.exec(t))) return `a ${m[1]}% chance each round`;
   if ((m = /^FactionIsAlive\s+(\S+)$/i.exec(t))) return N({ yes: `the faction ${factionLink(m[1])} is still alive`, no: `the faction ${factionLink(m[1])} has been destroyed` });
   if ((m = /^I_NumberOfSettlements\s+(\S+)\s*(>=|>|<=|<|==|=)\s*(\d+)$/i.exec(t))) {
     const { word, n } = atLeast(m[2], parseInt(m[3], 10));
@@ -802,6 +804,8 @@ function playerAiSections(routes, texts) {
   });
   const list = (ts) => {
     const u = [...new Set(ts)];
+    const chance = u.length === 1 && /^(.*?)(?:,| and) a (\d+)% chance each round$/.exec(u[0]);
+    if (chance) return `once ${chance[1]}, it has a ${chance[2]}% chance to fire each round.`;
     return u.length === 1 ? `it fires when ${u[0]}.` : `it fires when **any one** of these holds:\n\n${u.map((x) => `- ${x}`).join("\n")}`;
   };
   if (!player.size && !ai.length) return [list(any).replace(/^it/, "It")];
@@ -868,6 +872,39 @@ function routeText(route, reform) {
 // Counters too tangled for the tally/flag shapes: say which campaign-script counter it is and
 // render each place it is set, so the reader still sees the real conditions.
 // The mod's own one-line description of a counter, from the comment on its declaration.
+/**
+ * Plain words for campaign-script counters too tangled to translate clause by clause (the
+ * Roman civil war machinery). Each entry is written FROM the code: `from` names the counters
+ * whose monitors it describes, and `sig` fingerprints those monitors. If the mod changes any
+ * of them the fingerprint moves, the gloss is dropped (the page falls back to the generic
+ * text) and the console says which entry to re-check - a stale sentence is never published.
+ */
+const COUNTER_GLOSS = {
+  // RIS_Campaign_Script.txt: cw2_wait rises each turn once cw1_resolved = 1 (with the war-one
+  // flags set); cw1_resolved is set when the losing side is down to one settlement
+  // (I_NumberOfSettlements roman_rebels_1 = 1, or romans_julii = 1 when you play the rebels).
+  cw2_wait: {
+    since: "Rome's first civil war was decided",
+    // cw2_wait_done is set at cw2_wait > 49 (the AI fuse), which the second war's cw2_armed
+    // monitors require - so 25 turns is halfway to the earliest second civil war.
+    how: "The first civil war counts as decided once the losing side — Rome or the Roman Rebels — is down to its last settlement. 25 turns is roughly halfway to the second civil war, which cannot begin until the same count reaches 50.",
+    from: ["cw2_wait", "cw1_resolved"],
+    sig: "1907beebe949",
+  },
+};
+function counterSig(names) {
+  const parts = names.map((c) => (COUNTER_SITES.get(c) || []).map((x) => [x.monitor ? x.monitor.event : "", x.monitor ? x.monitor.cond.join(" ") : "", x.ifs.map((i) => i.join(" ")).join("|"), x.op, x.n, x.from || ""].join("#")).join("\n"));
+  return require("crypto").createHash("sha1").update(parts.join("\n--\n")).digest("hex").slice(0, 12);
+}
+const GLOSS_STALE = [];
+const glossFor = (c) => {
+  const g = COUNTER_GLOSS[c];
+  if (!g) return null;
+  const now = counterSig(g.from);
+  if (now !== g.sig) { if (!GLOSS_STALE.some((x) => x.c === c)) GLOSS_STALE.push({ c, now }); return null; }
+  return g;
+};
+const aboutYears = (turns) => { const y = turns / 4; return y < 1 ? "" : ` (about ${Math.round(y)} year${Math.round(y) === 1 ? "" : "s"})`; };
 const COUNTER_NOTES = (() => {
   const out = {};
   for (const m of CAMPAIGN.matchAll(/^\s*declare_(?:persistent_)?counter\s+(\S+)[ \t]*;+[ \t]*([^\r\n]+)/gim)) out[m[1]] = m[2].trim();
@@ -1161,7 +1198,8 @@ for (const r of REFORMS) {
     }
     for (const cn of complexNotes) {
       const gloss = COUNTER_NOTES[cn.c] ? ` (“${COUNTER_NOTES[cn.c]}”)` : "";
-      const summary = summarizeCounter(cn.c, cn.word, cn.n);
+      const g = glossFor(cn.c);
+      const summary = g ? g.how.replace(/^./, (x) => x.toLowerCase()).replace(/\.$/, "") : summarizeCounter(cn.c, cn.word, cn.n);
       if (summary) req.push(summary.charAt(0).toUpperCase() + summary.slice(1) + (/\n- /.test(summary) ? "" : "."));
       const detail = `**\`${cn.c}\`**${gloss} is kept by the campaign script${summary ? "" : ` and must be ${cn.word} ${num(cn.n)}`}. It changes:\n\n${cn.lines.map((l) => `- ${l}`).join("\n") || "- _where it is set is **not determined**_"}`;
       req.push(summary ? `<details>\n<summary>The script, step by step</summary>\n\n${detail}\n\n</details>` : detail);
@@ -1239,6 +1277,7 @@ say(`  pages ${stats.pages} · requirement routes ${stats.routes} · counters sp
 say(`  units referenced ${Object.keys(INDEX.units).length} · reforms that open units ${OPENS.size} · close units ${CLOSES.size}`);
 if (stats.never.length) say(`  CANNOT FIRE before the campaign ends: ${stats.never.join(", ")}`);
 say(`  pictures: ${IMAGE_STATS.written} reforms illustrated · ${IMAGE_STATS.stock} of them with a stock picture${IMAGE_STATS.missing.length ? ` · NO FILE IN THE MOD (stock picture shown): ${IMAGE_STATS.missing.join(", ")}` : ""}`);
+for (const g of GLOSS_STALE) say(`  COUNTER GLOSS STALE for ${g.c}: its monitors changed (fingerprint now ${g.now}) - re-check the wording in COUNTER_GLOSS, then update sig`);
 if (stats.deadRoutes) say(`  routes left off because they can never be met: ${stats.deadRoutes} (placeholder conditions)`);
 if (NO_SUCH_FACTION.size) say(`  scripts loop over factions that do not exist: ${[...NO_SUCH_FACTION].join(", ")}`);
 if (NEVER_RESOURCES.size) say(`  tested resources that no region carries and no script places: ${[...NEVER_RESOURCES].join(", ")}`);
