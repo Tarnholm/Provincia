@@ -75,7 +75,15 @@ const FACTION_PAGES = pagesIn("factions");
 // Every faction the game declares. A script that loops over a name not in this list loops
 // over nothing (the Gracchi farm count names "roman", and there is no such faction).
 const DECLARED_FACTIONS = new Set([...(fs.existsSync(path.join(RIS, "descr_sm_factions.txt")) ? fs.readFileSync(path.join(RIS, "descr_sm_factions.txt"), "latin1") : "").matchAll(/^\s*"([a-z0-9_]+)":/gim)].map((m) => m[1].toLowerCase()).filter((f) => f !== "factions"));
-const isFaction = (f) => !DECLARED_FACTIONS.size || DECLARED_FACTIONS.has(String(f).toLowerCase());
+const isFactionKey = (f) => !DECLARED_FACTIONS.size || DECLARED_FACTIONS.has(String(f).toLowerCase());
+// `for_each settlement in faction "roman"` names a CULTURE, and the engine matches it against
+// the owner's culture (confirmed by the mod team, 2026-09-24): the Gracchi farm count covers
+// every settlement held by any Roman-culture faction, AI factions included.
+const DECLARED_CULTURES = () => new Set(Object.values(FACTION_CULTURE).map((c) => String(c).toLowerCase()));
+const isCultureKey = (f) => !isFactionKey(f) && DECLARED_CULTURES().has(String(f).toLowerCase());
+const isFaction = (f) => isFactionKey(f) || isCultureKey(f);
+/** "held by Rome" / "held by any Roman-culture faction, AI factions included". */
+const heldBy = (f) => (isCultureKey(f) ? `held by any ${cultureLink(String(f).toLowerCase())}-culture faction, AI factions included` : `held by ${factionLink(f)}`);
 const NO_SUCH_FACTION = new Set();
 const SETTLEMENT_PAGES = pagesIn("settlements");
 // roman_rebels_1 and roman_rebels_2 are both "Roman Rebels" in every text file the mod ships.
@@ -691,7 +699,7 @@ function routesOf(tree, reform, complexCounters) {
             const scope = { forFaction: n.faction, locals };
             const where = inc.ifs.flatMap((c) => clauses(c).map((cl) => renderClause(cl.text, scope))).filter(Boolean);
             const prev = locals.get(inc.counter);
-            const owner = n.faction ? factionLink(n.faction) : null;
+            const owner = n.faction ? (isCultureKey(n.faction) ? `any ${cultureLink(n.faction.toLowerCase())}-culture faction` : factionLink(n.faction)) : null;
             if (n.what === "settlement") {
               const subjects = prev ? [...prev.owners, owner] : [owner];
               locals.set(inc.counter, {
@@ -882,7 +890,7 @@ function complexCounterText(c, depth = 0) {
     let loop = "";
     if (f) {
       if (f.faction && !isFaction(f.faction)) { NO_SUCH_FACTION.add(f.faction); loop = ` for each ${f.what} of \`${f.faction}\` — **no faction is called \`${f.faction}\`, so this loop counts nothing**`; }
-      else loop = f.faction ? ` for each ${f.what} held by ${factionLink(f.faction)}` : ` for each ${f.what} on the map`;
+      else loop = f.faction ? ` for each ${f.what} ${heldBy(f.faction)}` : ` for each ${f.what} on the map`;
     }
     const what = s.op === "inc_counter" ? `goes up by ${s.n}${loop}` : s.from ? `is set to \`${s.from}\`` : `is set to ${s.n}`;
     lines.push(`${when}${all.length ? `, if ${joinAnd(all)}` : ""}: ${what}`);
@@ -903,7 +911,7 @@ function complexCounterText(c, depth = 0) {
     if (incs.length > 1 && loops.length === 1 && incs.every((x) => x.fors.length && x.ifs.length)) {
       const f = loops[0];
       const items = incs.map((x) => renderCond(x.ifs[x.ifs.length - 1], { locals: new Map() })).filter(Boolean).map((t) => t.replace(/^it has (an? )?/, ""));
-      const over = f && !isFaction(f) ? `every settlement of \`${f}\` — **no faction is called \`${f}\`, so this counts nothing**` : f ? `every settlement held by ${factionLink(f)}` : "every settlement on the map";
+      const over = f && !isFaction(f) ? `every settlement of \`${f}\` — **no faction is called \`${f}\`, so this counts nothing**` : f ? `every settlement ${heldBy(f)}` : "every settlement on the map";
       if (!isFaction(f)) NO_SUCH_FACTION.add(f);
       return [`Recounted over ${over}: 1 for each of these buildings standing in one — ${orList(items)}`];
     }
@@ -931,7 +939,7 @@ function tallyPhrase(k, op, v) {
   // Conditions between the loop and the building test narrow WHERE ("HasResource aor_camillan").
   const lp = ks[0].fors[ks[0].fors.length - 1];
   const narrow = [...new Set(ks[0].ifs.slice(lp.ifDepth || 0, -1).map((cnd) => renderCond(cnd, { locals: new Map() })).filter(Boolean))].map((x) => x.replace(/^it /, ""));
-  const where = !f ? (narrow.length ? `in settlements that ${joinAnd(narrow).replace(/^lies /, "lie ")}` : "anywhere on the map") : isFaction(f) ? `in settlements held by ${factionLink(f)}` : `in settlements of \`${f}\` — **no faction is called \`${f}\`, so this is never met**`;
+  const where = !f ? (narrow.length ? `in settlements that ${joinAnd(narrow).replace(/^lies /, "lie ")}` : "anywhere on the map") : isFaction(f) ? `in settlements ${heldBy(f)}` : `in settlements of \`${f}\` — **no faction is called \`${f}\`, so this is never met**`;
   return `${word} ${num(n)} of these buildings stand ${where}: ${orList(items)}`;
 }
 /** The gates of one set/inc site as bullets; nested set-counters become indented sub-lists. */
