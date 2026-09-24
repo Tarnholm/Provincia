@@ -12,6 +12,7 @@ const path = require('path');
 const ORDER = [
   'gen-ris-region-pages.js',
   'gen-ris-reform-pages.js',   // before factions and units: both link back to it
+  'gen-ris-revolt-pages.js',   // after reforms (links them), before factions (which link back)
   'gen-ris-faction-pages.js',
   'gen-ris-unit-pages.js',
   'gen-ris-unit-cards.js',

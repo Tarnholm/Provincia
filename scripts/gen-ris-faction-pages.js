@@ -712,6 +712,16 @@ const REFORM_INDEX = (() => {
   try { return JSON.parse(fs.readFileSync(path.join(OUT, "reforms", "index.json"), "utf8")).reforms || {}; }
   catch { return {}; }
 })();
+// Revolts this faction breaks away in, or loses settlements to (gen-ris-revolt-pages.js).
+const REVOLT_INDEX = (() => {
+  try { return JSON.parse(fs.readFileSync(path.join(OUT, "revolts", "index.json"), "utf8")); }
+  catch { return { revolts: {}, factions: {} }; }
+})();
+function revoltSection(f) {
+  const keys = (REVOLT_INDEX.factions || {})[f] || [];
+  if (!keys.length) return "";
+  return `## Revolts\n\n${keys.map((k) => { const r = REVOLT_INDEX.revolts[k]; return r ? `- [${cell(r.title)}](../revolts/${k}.md)` : null; }).filter(Boolean).join("\n")}\n\n`;
+}
 function reformSection(f) {
   const own = [], all = [];
   for (const [name, r] of Object.entries(REFORM_INDEX)) {
@@ -856,7 +866,7 @@ ${cs.length ? `| Name | Role | Age |
 |---|---|---:|
 ${cs.map((c) => `| ${displayName(c.name)} | ${c.role} | ${c.age != null ? c.age : "?"} |`).join("\n")}` : "_No starting characters are defined for this faction._"}
 
-${reformSection(f)}## Units you can recruit
+${reformSection(f)}${revoltSection(f)}## Units you can recruit
 
 ${units.total ? `${units.total} unit type${units.total === 1 ? "" : "s"} are available to ${display}: ${units.core.length} faction unit${units.core.length === 1 ? "" : "s"} and ${units.aor.length} regional. The requirement column is what the mod states for the easiest route to that unit.
 

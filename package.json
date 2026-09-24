@@ -39,6 +39,7 @@
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
     "@vitejs/plugin-react": "^4.7.0",
     "electron": "^41.10.7",
     "electron-builder": "^26.8.1",

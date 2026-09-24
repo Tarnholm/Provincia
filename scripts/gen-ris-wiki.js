@@ -278,7 +278,8 @@ For anything you want to sort or search rather than read:
 | ${artStrip("belief-icons", 22)} [**Beliefs**](religions.md) | ${familyCount("religions").toLocaleString("en-US")} | Where each is on the map and at what strength, whose people it is, who follows it |
 | [**Character traits**](traits.md) | ${familyCount("traits").toLocaleString("en-US")} | Every visible trait: its levels, effects, how it is gained, and the traits that pull against it |
 | ${artStrip("ancillary-icons", 24)} [**Retinue**](ancillaries.md) | ${familyCount("ancillaries").toLocaleString("en-US")} | The followers, keepsakes and offices a character gathers, and the traits that attract them |
-| [**Reforms**](reforms.md) | ${familyCount("reforms").toLocaleString("en-US")} | What each army reform takes to happen, and the units it unlocks, retires and converts |
+| [**Reforms**](reforms.md) | ${familyCount("reforms").toLocaleString("en-US")} | What each army reform takes to happen, and the units it unlocks, retires and converts |${familyCount("revolts") ? `
+| [**Revolts**](revolts.md) | ${familyCount("revolts").toLocaleString("en-US")} | Breakaways and civil wars: what sets each off, what happens, and whether you can take over the rebels |` : ""}
 | [Factions overview](factions-overview.md) | — | How crowded the world is beside vanilla |
 
 ### What they build and field
