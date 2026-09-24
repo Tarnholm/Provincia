@@ -723,7 +723,9 @@ function emergeNote(f) {
   if (!e || !e.starts_dead) return "";
   const links = e.revolts.map((k) => { const r = REVOLT_INDEX.revolts[k]; return r ? `[${cell(r.title)}](../revolts/${k}.md)` : null; }).filter(Boolean);
   if (!links.length) return "";
-  return `> **This faction does not exist at the start of the campaign.** It only comes to life through ${links.join(" or ")}.\n\n`;
+  // A plain paragraph, not a quote box: the faction's emblem floats beside it, and a boxed
+  // background ran under half the emblem.
+  return `**This faction does not exist at the start of the campaign.** It only comes to life through ${links.join(" or ")}.\n\n`;
 }
 function revoltSection(f) {
   const keys = (REVOLT_INDEX.factions || {})[f] || [];
