@@ -321,6 +321,51 @@ const EXTRA_JS = `
   }
 })();
 
+// ── team menu, fetched at view time ──────────────────────────────────────────
+// wiki-notes/menu.json is written by the CI sync from the wiki page "Site-Menu": sections
+// and links the team adds without a rebuild. A section whose heading matches one already in
+// the menu gets the links appended; any other heading becomes a new section at the end.
+(function () {
+  try {
+    if (location.protocol === "file:" || typeof fetch !== "function") return;
+    var nav = document.querySelector("nav.side");
+    if (!nav) return;
+    var base = window.RIS_BASE || "";
+    var here = decodeURIComponent(location.pathname);
+    fetch(base + "wiki-notes/menu.json", { cache: "no-cache" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (menu) {
+        if (!menu || !menu.length) return;
+        var heads = Array.prototype.slice.call(nav.querySelectorAll("h4"));
+        menu.forEach(function (sec) {
+          var items = (sec.items || []).filter(function (it) { return it && it.href && it.label; });
+          var h = null;
+          heads.forEach(function (x) { if (x.textContent.trim().toLowerCase() === String(sec.heading).trim().toLowerCase()) h = x; });
+          var anchor = null;
+          if (!h) {
+            h = document.createElement("h4");
+            h.textContent = sec.heading;
+            nav.appendChild(h);
+            heads.push(h);
+          } else {
+            anchor = h.nextElementSibling;
+            while (anchor && anchor.tagName === "A") anchor = anchor.nextElementSibling;
+          }
+          items.forEach(function (it) {
+            var a = document.createElement("a");
+            var ext = String(it.href).toLowerCase().indexOf("http") === 0 && String(it.href).indexOf("://") > 0;
+            a.href = ext ? it.href : base + it.href.split("/").map(encodeURIComponent).join("/") + ".html";
+            a.textContent = it.label;
+            if (ext) { a.target = "_blank"; a.rel = "noopener"; }
+            else if (here.slice(-(it.href.length + 5)) === it.href + ".html") a.className = "on";
+            nav.insertBefore(a, anchor);
+          });
+        });
+      })
+      .catch(function () {});
+  } catch (e) { /* the menu is an extra; never break the page for it */ }
+})();
+
 // ── team notes, fetched at view time ─────────────────────────────────────────
 // A note written on the GitHub wiki reaches this site through a CI job that CANNOT rebuild
 // the site: the 222 MB of RIS source a rebuild needs lives on rtris.org, which a GitHub

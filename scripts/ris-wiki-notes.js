@@ -54,16 +54,20 @@ function readNote(rel, notesDir) {
 
 // A team-written page, as stored: the markdown exactly as the author left it in the wiki.
 // A missing store is simply "no team pages", not an error: it is created on the first pull.
+// The wiki page the team edits to add sections and links to the site's side menu. It is read
+// by sync-wiki-notes.js (-> wiki-notes/menu.json) and is not itself a page on the site.
+const MENU_PAGE = 'Site-Menu';
+
 function readTeamPages(pagesDir) {
   const dir = pagesDir || PAGES_DIR;
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir)
-    .filter((f) => f.endsWith('.md'))
+    .filter((f) => f.endsWith('.md') && f !== MENU_PAGE + '.md')
     .sort()
     .map((f) => ({ name: f.replace(/\.md$/, ''), md: fs.readFileSync(path.join(dir, f), 'utf8') }));
 }
 
 module.exports = {
-  NOTES_DIR, PAGES_DIR, MARK, PLACEHOLDER, HEADING, LF,
+  NOTES_DIR, PAGES_DIR, MARK, PLACEHOLDER, HEADING, LF, MENU_PAGE,
   pageName, extractNotes, readNote, readTeamPages,
 };

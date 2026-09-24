@@ -12,7 +12,7 @@
 // never a second markdown implementation, which would agree on the day it was
 // written and drift from then on.
 const fs = require('fs'), path = require('path');
-const { extractNotes } = require('./ris-wiki-notes.js');
+const { extractNotes, MENU_PAGE } = require('./ris-wiki-notes.js');
 
 // serve-ris-wiki.js resolves its wiki root from process.argv AT LOAD TIME and exits(2) if
 // that directory is missing — defaulting to C:/RIS/_wiki, which exists on the machine
@@ -97,6 +97,7 @@ for (const f of fs.readdirSync(WIKI)) {
   if (!f.endsWith('.md') || f.startsWith('_')) continue;
   const page = f.slice(0, -3);
   if (page === 'Home') continue;                 // Home mirrors README; notes belong on README
+  if (page === MENU_PAGE) continue;              // the side menu, handled below
   const raw = fs.readFileSync(path.join(WIKI, f), 'utf8');
 
   // A page no generator writes is a TEAM page: publish the whole of it, so an edit on the wiki
@@ -156,6 +157,51 @@ for (const page of before) {
 
 fs.writeFileSync(path.join(OUT, 'index.json'), JSON.stringify(index));
 updateTeamLists();
+writeMenu();
+
+/**
+ * The side menu's team-edited part. Site-Menu.md on the wiki:
+ *   ## Section heading          a section; one that matches an existing heading adds to it
+ *   - [Label](Page)             a link: a wiki page name (team or generated), a site path
+ *   - [[Page]] / [[Label|Page]]   like "factions/rome", or a full https:// address
+ * Written to wiki-notes/menu.json as [{heading, items:[{label, href}]}], href relative to
+ * the site root without ".html" (or absolute for an external link).
+ */
+function writeMenu() {
+  const f = path.join(WIKI, MENU_PAGE + '.md');
+  const out = path.join(OUT, 'menu.json');
+  if (!fs.existsSync(f)) { if (fs.existsSync(out)) fs.unlinkSync(out); return; }
+  const resolve = (target) => {
+    const t = target.trim().replace(/\.(md|html)$/i, '');
+    if (/^https?:\/\//i.test(t)) return t;
+    const flat = t.replace(/ /g, '-');
+    if (PAGE_MAP[flat]) return PAGE_MAP[flat];                              // generated page by wiki name
+    if (fs.existsSync(path.join(WIKI, flat + '.md'))) return 'team/' + flat; // team page by wiki name
+    return t.replace(/^\/+/, '');                                           // a site path as written
+  };
+  const sections = [];
+  let cur = null;
+  // The page's own instructions sit in an HTML comment; they are not menu entries.
+  for (const raw of fs.readFileSync(f, 'utf8').replace(/<!--[\s\S]*?-->/g, '').split(/\r?\n/)) {
+    const line = raw.trim();
+    let m;
+    if ((m = /^#{1,3}\s+(.+)$/.exec(line))) { cur = { heading: m[1].trim(), items: [] }; sections.push(cur); continue; }
+    if (!cur || !/^[-*]\s+/.test(line)) continue;
+    const item = line.replace(/^[-*]\s+/, '');
+    if ((m = /^\[([^\]]+)\]\(([^)]+)\)/.exec(item))) cur.items.push({ label: m[1].trim(), href: resolve(m[2]) });
+    else if ((m = /^\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/.exec(item))) {
+      // Gollum writes [[Label|Page]]; take whichever side names a page.
+      const a = m[1].trim(), b = (m[2] || '').trim();
+      const page = b && (PAGE_MAP[b.replace(/ /g, '-')] || fs.existsSync(path.join(WIKI, b.replace(/ /g, '-') + '.md'))) ? b : (b ? a : a);
+      const label = page === a ? (b || a) : a;
+      cur.items.push({ label, href: resolve(page) });
+    }
+  }
+  const menu = sections.filter((s) => s.items.length);
+  const prev = fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : null;
+  const next = JSON.stringify(menu);
+  if (prev !== next) { fs.writeFileSync(out, next); console.log('menu: ' + menu.length + ' section(s), ' + menu.reduce((n, s) => n + s.items.length, 0) + ' link(s)'); }
+}
 
 console.log('');
 console.log('notes written:   ' + written);
