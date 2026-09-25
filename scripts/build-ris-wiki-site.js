@@ -768,7 +768,8 @@ if (foreign.length) {
 
 // ── totals ───────────────────────────────────────────────────────────────────
 let files = 0, bytes = 0;
-walk(SITE, (p) => { files++; bytes += fs.statSync(p).size; });
+// .git is the repo history, not the published site (Pages counts only the site)
+walk(SITE, (p) => { if (path.relative(SITE, p).split(path.sep)[0] === ".git") return; files++; bytes += fs.statSync(p).size; });
 note(`\nsite: ${n(files)} files, ${(bytes / 1048576).toFixed(1)} MB at ${SITE}`);
 note(`open ${path.join(SITE, "index.html")}`);
 
