@@ -190,10 +190,42 @@ for n in open(lst, encoding="utf-8").read().split("\\n"):
   execFileSync("python", ["-c", py, ORIG, IMG_DIR, list, String(MAX_WIDTH)], { stdio: "inherit" });
 }
 
+// Some diaries paste links to images uploaded in another channel instead of attaching them.
+// The bare link 404s (Discord wants a signed URL), but the message's embed carries a signed
+// copy, valid for about a day after the fetch - so those are downloaded here and shown inline.
+const CDN_LINK = /https:\/\/(?:cdn\.discordapp\.com|media\.discordapp\.net)\/attachments\/\d+\/(\d+)\/([^\s?)>]+)(?:\?[^\s)>]*)?/g;
+function linkedImages(m) {
+  const out = new Map();
+  for (const em of m.embeds || []) {
+    const src = (em.image && em.image.url) || (em.thumbnail && em.thumbnail.url);
+    const k = /\/attachments\/\d+\/(\d+)\//.exec(em.url || "");
+    if (!k || !src || em.type !== "image") continue;
+    const file = decodeURIComponent((em.url.split("?")[0].split("/").pop()) || "image.png");
+    out.set(k[1], { name: `${k[1]}-${slug(file.replace(/\.[^.]+$/, ""))}${path.extname(file).toLowerCase() || ".png"}`, url: src });
+  }
+  return out;
+}
+// Pictures from other sites, pasted as a link: Discord's image proxy still serves them.
+// Keyed by every form the link can take in the text (the original or a proxy address).
+const EXT_LINK = /https:\/\/(?:images-ext-\d\.discordapp\.net\/external\/\S+|\S+\.(?:png|jpe?g|gif|webp))(?=[\s)>]|$)/gi;
+function externalImages(m) {
+  const out = new Map();
+  for (const em of m.embeds || []) {
+    const src = em.thumbnail && em.thumbnail.proxy_url;
+    if (em.type !== "image" || !src || /discordapp\.(com|net)\/attachments\//.test(em.url || "")) continue;
+    const tail = /\/https?\/(.+)$/.exec(src);
+    const job = { name: `ext-${slug(em.url)}${path.extname(em.url.split("?")[0]).toLowerCase() || ".jpg"}`, url: src };
+    for (const k of [em.url, src, tail && src.replace(/images-ext-\d/, "images-ext-2"), tail && src.replace(/images-ext-\d/, "images-ext-1")]) if (k) out.set(k, job);
+  }
+  return out;
+}
+
 // ── build ───────────────────────────────────────────────────────────────────
 (async () => {
   const jobs = [];
   for (const d of diaries) for (const m of d.msgs) for (const a of m.attachments || []) if (isImage(a)) jobs.push({ name: origName(a, m.id), url: a.url });
+  for (const d of diaries) for (const m of d.msgs) for (const li of linkedImages(m).values()) jobs.push(li);
+  for (const d of diaries) for (const m of d.msgs) for (const li of externalImages(m).values()) jobs.push(li);
   const fails = await downloadAll(jobs);
   resizeAll(jobs.map((j) => j.name));
 
@@ -204,7 +236,21 @@ for n in open(lst, encoding="utf-8").read().split("\\n"):
   for (const d of diaries) {
     const body = [];
     for (const m of d.msgs) {
-      const text = convert(m.content, m);
+      const linked = linkedImages(m);
+      const external = externalImages(m);
+      const text = convert(m.content, m).replace(CDN_LINK, (u, id) => {
+        const li = linked.get(id);
+        const web = li && li.name.replace(/\.[^.]+$/, ".webp");
+        if (!web || !fs.existsSync(path.join(IMG_DIR, web))) return ""; // a dead link helps no one
+        images++;
+        return `\n\n![Developer diary image](../diary-images/${web})\n\n`;
+      }).replace(EXT_LINK, (u) => {
+        const li = external.get(u);
+        const web = li && li.name.replace(/\.[^.]+$/, ".webp");
+        if (!web || !fs.existsSync(path.join(IMG_DIR, web))) return u;
+        images++;
+        return `\n\n![Developer diary image](../diary-images/${web})\n\n`;
+      }).replace(/\n{3,}/g, "\n\n").trim();
       if (text) body.push(text, "");
       for (const a of m.attachments || []) {
         if (!isImage(a)) continue;
