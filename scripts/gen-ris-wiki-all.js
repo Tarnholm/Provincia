@@ -25,6 +25,7 @@ const ORDER = [
   'gen-ris-trade-goods.js',
   'gen-ris-settlement-sizes.js',
   'gen-ris-tag-pages.js',
+  'gen-ris-diary-pages.js',   // from the local Discord cache (fetch-discord-diaries.js); skips if absent
   'gen-ris-wiki.js',
   'gen-ris-wiki-html.js',
 ];

@@ -290,7 +290,13 @@ For anything you want to sort or search rather than read:
 | ${artStrip("icons", 26)} [**All buildings**](buildings.md) | ${familyCount("buildings").toLocaleString("en-US")} | Every chain: what each level does, what it costs, what it upgrades into |
 | [Units overview](units-overview.md) | — | How the roster compares with vanilla |
 | [Buildings and economy](buildings-and-economy.md) | — | A wider, shallower tree than vanilla's |
+${familyCount("diaries") ? `
+### From the team
 
+| | Pages | What is on them |
+|---|---:|---|
+| [**Developer diaries**](diaries.md) | ${familyCount("diaries").toLocaleString("en-US")} | Every diary the team has posted on the RIS Discord, with its pictures, newest first |
+` : ""}
 `;
 
   pages["factions-overview.md"] = `# Factions

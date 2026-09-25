@@ -803,7 +803,8 @@ const NAV = [
     ["/regions.md", "All regions"], ["/settlements.md", "All settlements"],
     ["/units.md", "All units"], ["/buildings.md", "All buildings"], ["/trade-goods.md", "Trade goods"],
     ["/cultures.md", "Cultures"], ["/religions.md", "Beliefs"], ["/traits.md", "Character traits"],
-    ["/ancillaries.md", "Retinue"], ["/reforms.md", "Reforms"], ["/revolts.md", "Revolts"], ["/sizes.md", "Settlement sizes"]]],
+    ["/ancillaries.md", "Retinue"], ["/reforms.md", "Reforms"], ["/revolts.md", "Revolts"], ["/sizes.md", "Settlement sizes"],
+    ["/diaries.md", "Developer diaries"]]],
   ["Overviews", [["/factions-overview.md", "Factions vs vanilla"], ["/map-and-regions.md", "The map"],
     ["/units-overview.md", "Roster vs vanilla"]]],
   ["Region tags", [["/tags.md", "All reference tables"], ["/tags/terrain.md", "Terrain"],
@@ -866,7 +867,7 @@ function crumbs(rel) {
       factions: "/factions.md", regions: "/regions.md", settlements: "/settlements.md",
       units: "/units.md", buildings: "/buildings.md", tags: "/tags.md", goods: "/trade-goods.md",
       sizes: "/sizes.md", cultures: "/cultures.md", religions: "/religions.md",
-      traits: "/traits.md", ancillaries: "/ancillaries.md", reforms: "/reforms.md", revolts: "/revolts.md",
+      traits: "/traits.md", ancillaries: "/ancillaries.md", reforms: "/reforms.md", revolts: "/revolts.md", diaries: "/diaries.md",
     };
     const overview = INDEX_OF[section] || null;
     out.push(overview && fs.existsSync(path.join(ROOT, overview.slice(1)))
