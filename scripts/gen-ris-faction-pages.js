@@ -848,13 +848,20 @@ for (const f of factions) {
       mapLine = `<div class="fhead">\n\n![Starting territory of ${display}, with its neighbours](../maps/${f}.png)\n\n<div class="fmeta">\n\n${symImg ? `${symImg}\n\n` : ""}${glance}\n\n</div>\n\n</div>\n\n`;
     }
   }
-  if (!mapLine && symImg) mapLine = `${symImg}\n\n`;
+  // No starting map (factions that only emerge later): the same two-column head, emblem left,
+  // the emergence note and the glance line right. A bare floated emblem let the next block's
+  // background run under half of it.
+  const note = emergeNote(f);
+  if (!mapLine && symImg) mapLine = `<div class="fhead">\n\n${symImg}\n\n<div class="fmeta">\n\n${note}${glance}\n\n</div>\n\n</div>\n\n`;
+  else if (mapLine && note) mapLine = mapLine.replace('<div class="fmeta">\n\n', `<div class="fmeta">\n\n${note}`);
+  // The mod's own placeholder is not a brief: leave the section out.
+  const brief = intro.descr && !/^\s*(no description\.?|needs description\.?)\s*$/i.test(intro.descr) ? intro.descr : null;
 
   const body = `# ${display}
 
 [← all factions](../factions.md) · [wiki index](../README.md)
 
-${mapLine || `${glance}\n\n`}${emergeNote(f)}${intro.descr ? `## The campaign brief\n\n> ${intro.descr.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n\n` : `> _The main-menu text for this faction was not found._\n\n`}## Starting settlements
+${mapLine || `${note}${glance}\n\n`}${brief ? `## The campaign brief\n\n> ${brief.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n\n` : ""}## Starting settlements
 
 ${setts.length ? `${display} begins with **${setts.length} settlement${setts.length === 1 ? "" : "s"}** and **${totalPop.toLocaleString("en-US")}** people.
 
@@ -985,7 +992,7 @@ ${units.aor.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map((
 
 \`${f}\` · culture ${cultureRef(CULTURE[f], "../") || `\`${CULTURE[f] || "not determined"}\``} · believes ${religionRef(FACTION_RELIGION[f], "../") || `\`${FACTION_RELIGION[f] || "not determined"}\``}${b ? ` · ${b}` : ""}
 
-${own ? `> ${own.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n` : `_The mod ships no campaign description for this faction._\n`}
+${own && !/^\s*(no description\.?|needs description\.?)\s*$/i.test(own) ? `> ${own.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n` : ""}
 ${spawn ? `Placed on the map by the campaign script, not chosen: \`${spawn.join("`, `")}\` in \`spawn_scripts/\` names it.\n` : `_No spawn script in \`spawn_scripts/\` names it._\n`}
 ${held.length ? `**Holds ${held.length} region${held.length === 1 ? "" : "s"} at the campaign start.**
 
