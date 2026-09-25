@@ -852,7 +852,7 @@ for (const f of factions) {
   // the emergence note and the glance line right. A bare floated emblem let the next block's
   // background run under half of it.
   const note = emergeNote(f);
-  if (!mapLine && symImg) mapLine = `<div class="fhead">\n\n${symImg}\n\n<div class="fmeta">\n\n${note}${glance}\n\n</div>\n\n</div>\n\n`;
+  if (!mapLine && symImg) mapLine = `<div class="fhead femblem">\n\n${symImg}\n\n<div class="fmeta">\n\n${note}${glance}\n\n</div>\n\n</div>\n\n`;
   else if (mapLine && note) mapLine = mapLine.replace('<div class="fmeta">\n\n', `<div class="fmeta">\n\n${note}`);
   // The mod's own placeholder is not a brief: leave the section out.
   const brief = intro.descr && !/^\s*(no description\.?|needs description\.?)\s*$/i.test(intro.descr) ? intro.descr : null;

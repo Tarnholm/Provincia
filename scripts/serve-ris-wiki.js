@@ -654,6 +654,9 @@ main{min-width:0;padding:1.6rem 1.6rem 5rem;width:100%}
 .fhead > p{margin:0;flex:1 1 26rem;min-width:0}
 .fhead img{float:none;margin:0;max-width:100%;height:auto;border-radius:8px}
 .fmeta{flex:1 1 15rem;min-width:0;font-size:.95rem;line-height:1.75}
+/* No map, just the emblem: its column is the emblem's own width, not the map's 26rem. */
+.fhead.femblem{flex-wrap:nowrap;align-items:center}
+.fhead.femblem > p{flex:0 0 auto}
 .fmeta img{border-radius:6px;margin-bottom:.5rem}
 .lede em{display:block;clear:none;color:var(--dim);font-size:.85rem}
 .lede-flow{margin-bottom:1.5rem}
