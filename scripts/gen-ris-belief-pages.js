@@ -685,7 +685,7 @@ const groupSections = groups.map(({ g, list }) => {
 
 const indexBody = `# Beliefs
 
-[← all cultures](cultures.md) · [all regions](regions.md) · [all settlements](settlements.md) · [wiki index](README.md)
+[← all cultures](cultures.md) · [all regions and settlements](regions.md) · [wiki index](README.md)
 
 RIS replaces the base game's handful of religions with **${BELIEF_ORDER.length}** local beliefs — one per people, near
 enough — and spreads them across the map as a **strength tier** rather than a share. Every one

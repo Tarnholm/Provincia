@@ -800,7 +800,7 @@ hr{border:none;border-top:1px solid var(--line);margin:2rem 0}
 
 const NAV = [
   ["Start here", [["/README.md", "Wiki index"], ["/factions.md", "All factions"],
-    ["/regions.md", "All regions"], ["/settlements.md", "All settlements"],
+    ["/regions.md", "Regions and settlements"],
     ["/units.md", "All units"], ["/buildings.md", "All buildings"], ["/trade-goods.md", "Trade goods"],
     ["/cultures.md", "Cultures"], ["/religions.md", "Beliefs"], ["/traits.md", "Character traits"],
     ["/ancillaries.md", "Retinue"], ["/reforms.md", "Reforms"], ["/revolts.md", "Revolts"], ["/sizes.md", "Settlement sizes"],
@@ -864,7 +864,7 @@ function crumbs(rel) {
     // falls back to unlinked text — which is exactly why three of them (sizes, cultures,
     // religions) went unnoticed after being added: the way back up quietly stopped being a link.
     const INDEX_OF = {
-      factions: "/factions.md", regions: "/regions.md", settlements: "/settlements.md",
+      factions: "/factions.md", regions: "/regions.md", settlements: "/regions.md",
       units: "/units.md", buildings: "/buildings.md", tags: "/tags.md", goods: "/trade-goods.md",
       sizes: "/sizes.md", cultures: "/cultures.md", religions: "/religions.md",
       traits: "/traits.md", ancillaries: "/ancillaries.md", reforms: "/reforms.md", revolts: "/revolts.md", diaries: "/diaries.md",

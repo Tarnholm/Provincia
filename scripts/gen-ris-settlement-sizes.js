@@ -553,7 +553,7 @@ function artSection(size) {
 }
 
 // ── page assembly ────────────────────────────────────────────────────────────
-const HEAD = (title) => `# ${title}\n\n[← settlement sizes](../sizes.md) · [all settlements](../settlements.md) · [wiki index](../README.md)\n`;
+const HEAD = (title) => `# ${title}\n\n[← settlement sizes](../sizes.md) · [all regions and settlements](../regions.md) · [wiki index](../README.md)\n`;
 
 
 /** The population table for one size. */
@@ -767,7 +767,7 @@ const crossTab = (() => {
 
 const indexBody = `# Settlement sizes
 
-[← all settlements](settlements.md) · [all regions](regions.md) · [wiki index](README.md)
+[← all regions and settlements](regions.md) · [wiki index](README.md)
 
 Every settlement in RIS sits on a ladder of **${LADDER.length}** sizes. The rung it is on decides three
 things: what it can build, what it can raise, and how large it is allowed to grow before
@@ -882,4 +882,4 @@ say(`    building chain pages found: ${buildingPages.size} · unit pages ${unitP
 }
 say(`    display names: ${levelNameMisses} building levels with no text entry, ${unitNameMisses} units with no name`);
 say(`\n  pages written: ${PAGES.length} under sizes/, plus sizes.md and sizes/index.json`);
-say(`  NEXT: run gen-ris-region-pages.js so the 1,311 settlement pages and settlements.md link their Size value here`);
+say(`  NEXT: run gen-ris-region-pages.js so the 1,311 settlement pages and regions.md link their Size value here`);

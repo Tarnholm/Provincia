@@ -888,7 +888,7 @@ const biggestHolder = (() => {
 
 const indexBody = `# Cultures
 
-[← all factions](factions.md) · [all settlements](settlements.md) · [beliefs](religions.md) · [wiki index](README.md)
+[← all factions](factions.md) · [all regions and settlements](regions.md) · [beliefs](religions.md) · [wiki index](README.md)
 
 Culture is the game's own grouping of its ${num(Object.keys(FACTIONS).length)} factions, and it is not cosmetic. It settles what a
 settlement is drawn with, how far the mod lets it grow, which government levels can be

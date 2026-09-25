@@ -1228,7 +1228,7 @@ for (const r of list) {
 
   const body = `# ${placeName(r.region)}
 
-[← all regions](../regions.md) · [wiki index](../README.md)
+[← all regions and settlements](../regions.md) · [wiki index](../README.md)
 
 **Its settlement is [${settleName}](${settleHref})**${ownerPhrase ? `, held at the campaign start by ${ownerPhrase}` : ""}. That page has the town —
 its size, its population, what is built there and what it can raise. This one is the land.
@@ -1281,7 +1281,7 @@ ${gated.join("\n")}
   ].filter(Boolean).join(" · ");
   const townBody = `# ${settleName}
 
-[← all settlements](../settlements.md) · [all regions](../regions.md) · [wiki index](../README.md)
+[← all regions and settlements](../regions.md) · [wiki index](../README.md)
 
 The settlement of the region of **[${placeName(r.region)}](../regions/${encodeURIComponent(r.region)}.md)**${ownerPhrase ? `, held at the campaign start by ${ownerPhrase}` : ""}.
 ${townGlance ? `\n${townGlance}\n` : ""}${held ? "" : `\nNo faction holds it at the campaign start. If the region revolts, the rebels are ${r.rebels}.\n`}
@@ -1317,48 +1317,43 @@ ${recruitSection(rec, held)}
 // before the viewer will lay it two-up. Neither number is dropped: measured over the 1,311
 // rows, goods run 0–8 across 9 distinct values and buildings 0–17 across 18, so both vary,
 // unlike the faction index's regional-unit column that ran 424–443 and was a constant.
+// One index for both: every region has exactly one settlement, so a region list and a
+// settlement list were the same 1,312 rows split over two pages (asked for 2026-09-26). The
+// land columns (goods) and the town columns (size, population, capital star) sit side by side;
+// the table sorts on any column and search finds a place by either name.
 index.sort((a, b) => a.regionName.localeCompare(b.regionName));
 const ownerCell = (e) => (e.owner
   ? (hasPage(e.ownerTok) ? `[${e.owner}](factions/${e.ownerTok}.md)` : `[${npName(e.ownerTok)}](factions/non-playable.md)`)
   : "_independent_");
-const idx = `# All regions
+const townOf = new Map(settlementIndex.map((t) => [t.settlement, t]));
+const capitals = settlementIndex.filter((t) => t.capital).length;
+const idx = `# All regions and settlements
 
-[← wiki index](README.md) · [all settlements](settlements.md) · [region tag reference](tags.md) · [cultures](cultures.md) · [beliefs](religions.md)
+[← wiki index](README.md) · [settlement sizes](sizes.md) · [region tag reference](tags.md) · [cultures](cultures.md) · [beliefs](religions.md)
 
-${index.length.toLocaleString("en-US")} regions, one settlement each. ${withOwner.toLocaleString("en-US")} are held by a faction at the campaign
-start; the rest begin independent. A region is the land — terrain, fertility, trade goods; its
-settlement is the town, on its own page.
-
-| Region | Settlement | Held by | Goods | Buildings |
-|---|---|---|---:|---:|
-${index.map((e) => `| [${e.regionName}](regions/${encodeURIComponent(e.region)}.md) | [${e.settlementName}](settlements/${encodeURIComponent(e.settlement)}.md) | ${ownerCell(e)} | ${e.trade} | ${e.builds} |`).join("\n")}
-`;
-fs.writeFileSync(path.join(OUT, "regions.md"), idx, "utf8");
-
-// ── the settlement index ─────────────────────────────────────────────────────
-settlementIndex.sort((a, b) => a.name.localeCompare(b.name));
-const capitals = settlementIndex.filter((s) => s.capital).length;
-const sIdx = `# All settlements
-
-[← wiki index](README.md) · [all regions](regions.md) · [settlement sizes](sizes.md) · [cultures](cultures.md) · [beliefs](religions.md)
-
-${settlementIndex.length.toLocaleString("en-US")} settlements, one per region. ${capitals} of them are a faction's capital.
-Search finds a city by name here; the region it sits in is the land around it, with the terrain,
-fertility and trade goods.
+${index.length.toLocaleString("en-US")} regions, each with one settlement. ${withOwner.toLocaleString("en-US")} are held by a faction at the campaign
+start; the rest begin independent. ${capitals} settlements are a faction's capital, marked ★.
+The region is the land — terrain, fertility, trade goods; the settlement is the town — its size,
+population and buildings. Each has its own page.
 
 Size is a rung on a ladder of ${Object.keys(SIZE_INDEX).length || 6}, and it decides what a settlement can build and raise —
 each one links to [what that size does](sizes.md).
 
-| Settlement | Region | Held by | Size | Population | Buildings |
-|---|---|---|---|---:|---:|
-${settlementIndex.map((s) => `| [${s.name}](settlements/${encodeURIComponent(s.settlement)}.md)${s.capital ? " ★" : ""} | [${s.regionName}](regions/${encodeURIComponent(s.region)}.md) | ${s.owner ? (hasPage(s.ownerTok) ? `[${s.owner}](factions/${s.ownerTok}.md)` : `[${npName(s.ownerTok)}](factions/non-playable.md)`) : "_independent_"} | ${sizeRef(s.level, "") || "—"} | ${s.pop != null ? s.pop.toLocaleString("en-US") : "—"} | ${s.builds} |`).join("\n")}
+| Region | Settlement | Held by | Size | Population | Goods | Buildings |
+|---|---|---|---|---:|---:|---:|
+${index.map((e) => {
+  const t = townOf.get(e.settlement) || {};
+  return `| [${e.regionName}](regions/${encodeURIComponent(e.region)}.md) | [${e.settlementName}](settlements/${encodeURIComponent(e.settlement)}.md)${t.capital ? " ★" : ""} | ${ownerCell(e)} | ${sizeRef(t.level, "") || "—"} | ${t.pop != null ? t.pop.toLocaleString("en-US") : "—"} | ${e.trade} | ${e.builds} |`;
+}).join("\n")}
 
 ★ marks a faction capital.
 `;
-fs.writeFileSync(path.join(OUT, "settlements.md"), sIdx, "utf8");
+fs.writeFileSync(path.join(OUT, "regions.md"), idx, "utf8");
+// The old separate settlement list is now this page.
+fs.rmSync(path.join(OUT, "settlements.md"), { force: true });
 
 console.log(`${list.length} region pages written`);
-console.log(`  settlement pages written:   ${settlementIndex.length} (+ settlements.md) · distinct tokens ${settlementTokens.size}${settlementTokens.size === settlementIndex.length ? " — no collision" : " — COLLISION, a page was overwritten"}`);
+console.log(`  settlement pages written:   ${settlementIndex.length} (listed in regions.md) · distinct tokens ${settlementTokens.size}${settlementTokens.size === settlementIndex.length ? " — no collision" : " — COLLISION, a page was overwritten"}`);
 {
   const names = new Set(settlementIndex.map((s) => s.name.toLowerCase()));
   console.log(`  distinct settlement display names: ${names.size} of ${settlementIndex.length}${names.size === settlementIndex.length ? " — no two towns share a title" : " — TWO TOWNS SHARE A TITLE, search cannot tell them apart"}`);

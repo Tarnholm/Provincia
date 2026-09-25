@@ -262,8 +262,7 @@ For anything you want to sort or search rather than read:
 
 | | Pages | What is on them |
 |---|---:|---|
-| [**All regions**](regions.md) | ${familyCount("regions").toLocaleString("en-US")} | The land: terrain, climate, fertility, water, port, and the trade goods placed inside its borders |
-| [**All settlements**](settlements.md) | ${familyCount("settlements").toLocaleString("en-US")} | The cities: size, population, who holds them, what is built, what can be raised |
+| [**All regions and settlements**](regions.md) | ${familyCount("regions").toLocaleString("en-US")} | Every region with its town in one sortable table. A region page is the land: terrain, climate, fertility, water, port, trade goods. A settlement page is the town: size, population, who holds it, what is built, what can be raised |
 | [**Settlement sizes**](sizes.md) | ${familyCount("sizes").toLocaleString("en-US")} | Each rung of the ladder: the population it takes, what it first lets you build, how many start there |
 | ${artStrip("resource-icons", 24)} [**Trade goods**](trade-goods.md) | ${familyCount("goods").toLocaleString("en-US")} | What each good is worth, where on the map it is, who holds it, what it unlocks |
 | [**Region tag reference**](tags.md) | ${familyCount("tags").toLocaleString("en-US")} | What a region's terrain, climate, water, port, recruitment zone, homeland and fertility each decide |
