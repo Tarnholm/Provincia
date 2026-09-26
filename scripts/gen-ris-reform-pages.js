@@ -86,27 +86,17 @@ const isFaction = (f) => isFactionKey(f) || isCultureKey(f);
 const heldBy = (f) => (isCultureKey(f) ? `held by any ${cultureLink(String(f).toLowerCase())}-culture faction (AI factions included)` : `held by ${factionLink(f)}`);
 const NO_SUCH_FACTION = new Set();
 const SETTLEMENT_PAGES = pagesIn("settlements");
-// roman_rebels_1 and roman_rebels_2 are both "Roman Rebels" in every text file the mod ships.
-// Where a name is shared, the faction key goes with it so the two stay two - the same label
-// the non-playable page gives them as headings, which is also where the link lands.
-const NAME_USES = (() => {
-  const n = {};
-  for (const k of Object.keys(FACTION_NAMES)) if (/^[a-z0-9_]+$/.test(k) && !/_(descr|title)$/.test(k)) n[FACTION_NAMES[k]] = (n[FACTION_NAMES[k]] || 0) + 1;
-  return n;
-})();
+// roman_rebels_1 and roman_rebels_2 are both "Roman Rebels" in every text file the mod ships
+// (seleucid_rebels/2 likewise). The revolt generator, which runs first, works out what tells
+// them apart from the code ("first civil war", "Asia Minor") and publishes it; the same words
+// are used here so a player meets one name for each faction everywhere.
+const SHARED_LABELS = readJson("revolts", "index.json").labels || {};
+const shownName = (k) => SHARED_LABELS[k] || factionName(k);
 const factionLink = (f, pre = "../") => {
   const k = String(f).toLowerCase();
   if (FACTION_PAGES.has(k)) return `[${factionName(k)}](${pre}factions/${k}.md)`;
-  if (FACTION_PAGES.has("non-playable") && FACTION_NAMES[k]) {
-    const name = factionName(k);
-    if (NAME_USES[name] > 1) {
-      const label = `${name} (\`${k}\`)`;
-      const anchor = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-      return `[${label}](${pre}factions/non-playable.md#${anchor})`;
-    }
-    return `[${name}](${pre}factions/non-playable.md)`;
-  }
-  return factionName(k);
+  if (FACTION_PAGES.has("non-playable") && FACTION_NAMES[k]) return `[${shownName(k)}](${pre}factions/non-playable.md)`;
+  return shownName(k);
 };
 const PLACE_NAMES = lut16("imperial_campaign_regions_and_settlement_names.txt");
 const settlementLink = (tok) => {
@@ -492,7 +482,9 @@ function renderClause(text, ctx) {
     if (place) return N({ yes: `it lies in ${place}`, no: `it does not lie in ${place}` });
     if (RESOURCE_GRANTS.has(res)) {
       const where = [...RESOURCE_GRANTS.get(res)];
-      return N({ yes: `it has been marked \`${res}\` by the campaign script (it marks ${orList(where.slice(0, 8).map(regionLink))}${where.length > 8 ? ` and ${where.length - 8} more` : ""})`, no: `it has not been marked \`${res}\`` });
+      // The marker's name is a script variable; what a player can use is WHERE it goes.
+      const places = `${orList(where.slice(0, 8).map(regionLink))}${where.length > 8 ? ` or ${where.length - 8} more regions` : ""}`;
+      return N({ yes: `it is ${where.length > 1 ? "one of " : ""}${places} (once a campaign event has marked it)`, no: `it has not been marked by that campaign event` });
     }
     // Declared, but no region carries it and no script places it.
     NEVER_RESOURCES.add(res);
@@ -1009,10 +1001,11 @@ function siteBullets(c, site, depth) {
       if (tp) { bullets.push(tp); continue; }
       const { word, n } = atLeast(m[2], parseInt(m[3], 10));
       const sub = depth < 2 ? summarizeCounter(m[1], word, n, depth + 1) : null;
-      const note = COUNTER_NOTES[m[1]];
+      // A flag the script set earlier is named by what set it, not by its variable name.
       bullets.push(sub
-        ? `\`${m[1]}\` has been set${note ? ` (“${note}”)` : ""} — ${sub.replace(/\n\n/g, "\n").replace(/\n- /g, "\n  - ")}`
+        ? `at some point, ${sub.replace(/\n\n/g, "\n").replace(/\n- /g, "\n  - ")}`
         : counterCond(t).join(""));
+      if (!sub) stats.unsummarised = [...(stats.unsummarised || []), `nested:${m[1]}`];
       continue;
     }
     if ((m = /^RandomPercent\s*<\s*(\d+)$/i.exec(t))) { bullets.push(rolls++ ? `then a further ${m[1]}% chance` : `a ${m[1]}% chance each time it is checked`); continue; }
@@ -1206,9 +1199,12 @@ for (const r of REFORMS) {
       const gloss = COUNTER_NOTES[cn.c] ? ` (“${COUNTER_NOTES[cn.c]}”)` : "";
       const g = glossFor(cn.c);
       const summary = g ? g.how.replace(/^./, (x) => x.toLowerCase()).replace(/\.$/, "") : summarizeCounter(cn.c, cn.word, cn.n);
-      if (summary) req.push(summary.charAt(0).toUpperCase() + summary.slice(1) + (/\n- /.test(summary) ? "" : "."));
-      const detail = `**\`${cn.c}\`**${gloss} is kept by the campaign script${summary ? "" : ` and must be ${cn.word} ${num(cn.n)}`}. It changes:\n\n${cn.lines.map((l) => `- ${l}`).join("\n") || "- _where it is set is **not determined**_"}`;
-      req.push(summary ? `<details>\n<summary>The script, step by step</summary>\n\n${detail}\n\n</details>` : detail);
+      // The plain summary is the whole story for a player. The step-by-step fold under it quoted
+      // the campaign script's variable names (`italian_cities_owned`, `gracchi_farms`), which is
+      // modder detail, so it is only printed when there is no summary to stand in for it.
+      if (summary) { req.push(summary.charAt(0).toUpperCase() + summary.slice(1) + (/\n- /.test(summary) ? "" : ".")); continue; }
+      stats.unsummarised = [...(stats.unsummarised || []), `${r.name}:${cn.c}`];
+      req.push(`**\`${cn.c}\`**${gloss} is kept by the campaign script and must be ${cn.word} ${num(cn.n)}. It changes:\n\n${cn.lines.map((l) => `- ${l}`).join("\n") || "- _where it is set is **not determined**_"}`);
     }
     if (!OFF.has(r.name)) req.push("The game checks this at the end of every round.");
   }
@@ -1295,6 +1291,7 @@ if (stats.deadRoutes) say(`  routes left off because they can never be met: ${st
 if (NO_SUCH_FACTION.size) say(`  scripts loop over factions that do not exist: ${[...NO_SUCH_FACTION].join(", ")}`);
 if (NEVER_RESOURCES.size) say(`  tested resources that no region carries and no script places: ${[...NEVER_RESOURCES].join(", ")}`);
 if (stats.noRoute.length) say(`  NO ROUTE returns true: ${stats.noRoute.join(", ")}`);
+if (stats.unsummarised) say(`  COUNTERS WITH NO PLAIN SUMMARY (script detail printed instead): ${stats.unsummarised.join(", ")}`);
 const missingUnits = Object.keys(INDEX.units).filter((s) => !fs.existsSync(path.join(OUT, "units", `${s}.md`)));
 if (missingUnits.length) say(`  unit pages not (yet) written: ${missingUnits.length} — ${missingUnits.slice(0, 8).join(", ")}`);
 if (UNTRANSLATED.size) {

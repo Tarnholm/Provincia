@@ -276,7 +276,10 @@ const REGIONS_BY_TAG = (() => {
 const HOMELAND_MAPS = require(path.join(__dirname, "lib", "areaMaps.js")).areaMaps(OUT, "homeland-maps");
 function condLabel(tok) {
   const k = String(tok).toLowerCase();
-  if (ALIAS_TEXT[k]) return linkAlias(k, ALIAS_TEXT[k]);
+  // The pipe in "Any Government | Tier 2 Colony not built" joins two conditions that BOTH apply
+  // (the alias is `gov_tier_1 and not colony_tier_2`); escaped for the table it printed as "\|".
+  // Shown with the " · " the Requires cell already puts between separate conditions.
+  if (ALIAS_TEXT[k]) return linkAlias(k, ALIAS_TEXT[k]).replace(/\s*\|\s*/g, " · ");
   const named = bName(k) || KEYWORD_TEXT[k] || null;
   if (named) return named;
   if (CHAIN_NAMES[k]) {
@@ -371,6 +374,8 @@ const NON_PLAYER = new Set([
   "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
 ]);
 const NON_PLAYABLE_FILE = "non-playable.md";
+let NON_PLAYABLE_SHOWN = 0;   // how many that page lists, for the sentence on factions.md
+const numberWord = (n) => ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"][n] || String(n);
 const title = (s) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 // ── settlements ──────────────────────────────────────────────────────────────
@@ -509,6 +514,19 @@ function loadRecruitment() {
   return rows;
 }
 
+// Reforms the reform generator found switched off (it runs first and flags them `off`).
+const OFF_REFORMS = (() => {
+  try {
+    const r = JSON.parse(fs.readFileSync(path.join(OUT, "reforms", "index.json"), "utf8")).reforms || {};
+    return new Set(Object.keys(r).filter((k) => r[k].off));
+  } catch { return new Set(); }
+})();
+/** "needs" / "not" when a clause tests a switched-off reform, else null. */
+const offReform = (c) => {
+  const m = /^(not\s+)?major_event\s+"?([A-Za-z0-9_]+)"?\s*$/i.exec(String(c).trim());
+  return m && OFF_REFORMS.has(m[2]) ? (m[1] ? "not" : "needs") : null;
+};
+
 // Units this faction can raise, split into core and regional. A unit is regional only if
 // EVERY route open to THIS faction is hidden_resource-gated: if a faction has one ungated
 // route to a unit, that unit is core for them even where others need a resource for it.
@@ -545,14 +563,26 @@ function recruitableBy(rows, faction) {
         return !keys.has(`${s.level}|${key(partner)}`);
       }) }));
     }
+    // A switched-off reform never fires (Marian: its trigger waits for a turn after the campaign
+    // ends). So "not <that reform>" is always true and says nothing, and a route that NEEDS it
+    // can never be taken: the first clause is dropped, the second route is dropped, and a unit
+    // left with no route at all is shown as not available rather than as a reward to wait for.
+    sets = sets
+      .filter((s) => !s.c.some((c) => offReform(c) === "needs"))
+      .map((s) => ({ ...s, c: s.c.filter((c) => offReform(c) !== "not") }));
+    if (!sets.length) { out.set(unit, { conds: null, where: null, aor: e.aor }); continue; }
     sets.sort((a, b) => a.c.length - b.c.length);
     out.set(unit, { conds: sets[0].c, where: sets[0], aor: e.aor });
   }
   const all = [...out.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  // Counts are of units that can actually be raised; the not-available rows stay listed.
+  const ok = all.filter(([, v]) => v.conds != null);
   return {
     core: all.filter(([, v]) => !v.aor).map(([u, v]) => [u, v.conds, v.where]),
     aor: all.filter(([, v]) => v.aor).map(([u, v]) => [u, v.conds, v.where]),
-    total: all.length,
+    coreN: ok.filter(([, v]) => !v.aor).length,
+    aorN: ok.filter(([, v]) => v.aor).length,
+    total: ok.length,
   };
 }
 
@@ -604,6 +634,14 @@ function loadSymbolFiles() {
   return out;
 }
 const SYMBOL_FILE = loadSymbolFiles();
+
+// The difficulty the game shows when you pick a faction for a new campaign, from
+// descr_sm_factions_difficulty.json (0-3; -1 = not selectable). The words are the game's own
+// labels on that screen, which live in the executable rather than the mod's text files.
+const DIFFICULTY_WORD = ["Easy", "Medium", "Difficult", "Very Difficult"];
+const DIFFICULTY = (() => {
+  try { return JSON.parse((rd("descr_sm_factions_difficulty.json") || "{}").replace(/^﻿/, "")); } catch { return {}; }
+})();
 
 // Culture, from the same file, read the same way. This is the axis the game itself organises
 // factions on — culture picks the architecture a settlement is drawn with, the government
@@ -808,6 +846,8 @@ const unitCard = (type) => {
 // 1,299 of the 1,306 settlements start with and anyone can build, so naming it says nothing.
 const EVERYWHERE = new Set(["hinterland_region"]);
 const routeLabel = (conds, where) => {
+  // Every route needs a switched-off reform (see recruitableBy).
+  if (conds == null) return "_Not available in this version_";
   const lv = where && !EVERYWHERE.has(where.chain) && where.level;
   const name = lv ? (bName(lv) || lv.replace(/_/g, " ")) : null;
   const b = name ? `**${chainPage(where.chain) ? `[${name}](${chainPage(where.chain)})` : name}**` : null;
@@ -854,9 +894,11 @@ function reformSection(f) {
   }
   if (!own.length && !all.length) return "";
   const link = ([name, r]) => `[${cell(r.title)}](../reforms/${name}.md)${r.off ? " _(switched off)_" : ""}`;
+  // Only the universal reforms: one line, not an empty "none of its own" sentence above it.
+  if (!own.length) return `## Reforms\n\nOpen to every faction: ${all.map(link).join(", ")}.\n\n`;
   return `## Reforms
 
-${own.length ? own.map((x) => `- ${link(x)}`).join("\n") : "_No reform is made for this faction alone._"}
+${own.map((x) => `- ${link(x)}`).join("\n")}
 ${all.length ? `\nFor every faction: ${all.map(link).join(", ")}.\n` : ""}
 `;
 }
@@ -904,6 +946,7 @@ for (const f of factions) {
   const cultureCell = cultureRef(cultureTok, "../") || (cultureTok ? `\`${cultureTok}\`` : null);
   const religionCell = religionRef(religionTok, "../") || (religionTok ? `\`${religionTok}\`` : null);
   const glance = [
+    DIFFICULTY_WORD[DIFFICULTY[f]] ? `difficulty **${DIFFICULTY_WORD[DIFFICULTY[f]]}**` : null,
     cultureCell ? `**${cultureCell}** culture` : "culture _not determined_",
     religionCell ? `believes ${religionCell}` : "belief _not determined_",
     `**${setts.length}** settlement${setts.length === 1 ? "" : "s"}`,
@@ -911,8 +954,8 @@ for (const f of factions) {
     capital ? `capital **${SETTLEMENT_OF[capital.region] ? placeName(SETTLEMENT_OF[capital.region]) : placeName(capital.region)}**` : null,
     totalPop ? `**${totalPop.toLocaleString("en-US")}** people` : null,
     `**${cs.length}** character${cs.length === 1 ? "" : "s"}`,
-    `**${units.core.length}** faction unit${units.core.length === 1 ? "" : "s"}`,
-    units.aor.length ? `**${units.aor.length}** regional units` : null,
+    `**${units.coreN}** faction unit${units.coreN === 1 ? "" : "s"}`,
+    units.aorN ? `**${units.aorN}** regional units` : null,
   ].filter(Boolean);
 
   // The faction card beside the map: the emblem on top, the facts listed under it, in a panel
@@ -995,9 +1038,9 @@ ${homeRegions.map((r) => regionLink(r)).join(" · ")}
 
 [← all factions](../factions.md) · [wiki index](../README.md)
 
-${mapLine || `${note}${glance}\n\n`}${brief ? `## The campaign brief\n\n> ${brief.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n\n` : ""}## Starting settlements
+${mapLine || `${note}${glance}\n\n`}${brief ? `## The campaign brief\n\n> ${brief.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n\n` : ""}${setts.length ? `## Starting settlements
 
-${setts.length ? `${display} begins with **${setts.length} settlement${setts.length === 1 ? "" : "s"}** and **${totalPop.toLocaleString("en-US")}** people.
+${display} begins with **${setts.length} settlement${setts.length === 1 ? "" : "s"}** and **${totalPop.toLocaleString("en-US")}** people.
 
 | Settlement | Region | Size | Population | Already built |
 |---|---|---|---:|---|
@@ -1009,17 +1052,18 @@ ${setts.map((s) => `| ${settlementLink(s.region)}${s.capital ? " **(capital)**" 
 ${setts.map((s) => `**${settlementAndRegion(s.region)}** — ${(s.buildings || []).length ? (s.buildings || []).map((b) => buildingLink(b)).join(", ") : "_nothing built_"}`).join("\n\n")}
 
 </details>
-` : "_This faction holds no settlements at the campaign start._"}
 
-${homelandSection}## Starting characters
+` : ""}${homelandSection}${cs.length ? `## Starting characters
 
-${cs.length ? `| Name | Role | Age |
+| Name | Role | Age |
 |---|---|---:|
-${cs.map((c) => `| ${displayName(c.name)} | ${c.role} | ${c.age != null ? c.age : "?"} |`).join("\n")}` : "_No starting characters are defined for this faction._"}
+${cs.map((c) => `| ${displayName(c.name)} | ${c.role} | ${c.age != null ? c.age : "?"} |`).join("\n")}
 
-${reformSection(f)}${revoltSection(f)}## Units you can recruit
+` : ""}${reformSection(f)}${revoltSection(f)}## Units you can recruit
 
-${units.total ? `${units.total} unit type${units.total === 1 ? "" : "s"} are available to ${display}: ${units.core.length} faction unit${units.core.length === 1 ? "" : "s"} and ${units.aor.length} regional. The Requires column names the building the unit is raised in, then the other conditions of the easiest route to it; that building's own page says what it takes to build.
+${units.core.length + units.aor.length ? `${display} can recruit **${units.total}** unit type${units.total === 1 ? "" : "s"}: ${units.coreN} faction unit${units.coreN === 1 ? "" : "s"} and ${units.aorN} regional.
+
+What you need to recruit each unit.
 
 ### Faction units
 
@@ -1029,9 +1073,9 @@ ${units.core.length ? `<div class="rtab nodeal">
 |---|---|---|
 ${units.core.map(([u, conds, where]) => `| ${unitCard(u)} | ${unitLink(u)} | ${routeLabel(conds, where)} |`).join("\n")}
 
-</div>` : `_${display} has no ungated units: every unit on its roster needs a regional resource._`}
+</div>` : `_Every unit ${display} can raise is a regional unit._`}
 
-### Regional units (AOR)
+### Regional units
 
 ${units.aor.length ? `<details>
 <summary><strong>Show all ${units.aor.length} regional units</strong></summary>
@@ -1044,140 +1088,58 @@ ${units.aor.map(([u, conds, where]) => `| ${unitCard(u)} | ${unitLink(u)} | ${ro
 
 </div>
 
-</details>` : `_No area-of-recruitment units are open to ${display}._`}
-` : "_No recruitable units resolved for this faction._"}
+</details>` : `_No regional units are open to ${display}._`}
+` : `_${display} has no units to recruit._`}
 `;
 
   fs.writeFileSync(path.join(OUT, "factions", `${f}.md`), body, "utf8");
-  index.push({ f, display, setts: setts.length, chars: cs.length, units: units.total, aor: units.aor.length, hasIntro: !!intro.descr, culture: FACTION_CULTURE[f] || null, symbol: !!symImg });
+  index.push({ f, display, setts: setts.length, chars: cs.length, units: units.total, aor: units.aorN, hasIntro: !!intro.descr, culture: FACTION_CULTURE[f] || null, symbol: !!symImg });
 }
 
-// ── the nine that are not playable ───────────────────────────────────────────
-// One page for all of them. Everything on it is read from the mod: the display name the game
-// shows, the mod's OWN description verbatim where it wrote one, the culture from
-// descr_sm_factions, what it holds at the campaign start from descr_strat, and whether a
-// spawn script exists for it. Nothing about their purpose is inferred beyond what those files
-// say — where the mod is silent the page says so.
+// ── the factions you cannot play ─────────────────────────────────────────────
+// One page, one plain line each: what the faction is and when a player meets it. Read from the
+// mod: the name the game shows, the land it holds at the campaign start (descr_strat), and the
+// revolt that creates it (revolts/index.json, written by gen-ris-revolt-pages.js). The test
+// faction `dummies` is left off: no campaign ever shows it, so a player never needs its name.
 {
   const EXPANDED = loadDisplayNames("expanded_bi.txt");
-  // The faction-select blurb is "Name\nroster summary", the two joined by a literal \ and n.
-  const blurb = (f) => {
-    const v = EXPANDED[`${f}_descr`];
-    if (!v) return null;
-    const parts = v.replace(/\\n/g, "\n").split("\n").map((s) => s.trim()).filter(Boolean);
-    return parts.length > 1 ? parts.slice(1).join(" ") : parts[0] || null;
+  // The same distinguishing names the revolt and reform pages use for the two Roman and the two
+  // Seleucid rebel factions ("Roman Rebels (first civil war)").
+  const LABELS = REVOLT_INDEX.labels || {};
+  const npName = (f) => LABELS[f] || (intros[f] && intros[f].title) || EXPANDED[f] || title(f);
+  // A region named after the faction itself (Roman_Rebels_1_Region) is the off-map holding
+  // cell the civil-war code parks it in, not land a player ever sees, so it is not counted.
+  const heldBy = (f) => ((strat[f] && strat[f].settlements) || []).filter((s) => !String(s.region).toLowerCase().startsWith(`${f}_`));
+  const HIDDEN = new Set(["dummies"]);
+  const shown = [...NON_PLAYER].filter((f) => !HIDDEN.has(f)).sort((a, b) => npName(a).localeCompare(npName(b)));
+  const revoltLinks = (f) => ((REVOLT_INDEX.emerging || {})[f] || { revolts: [] }).revolts
+    .map((k) => { const r = REVOLT_INDEX.revolts[k]; return r ? `[${cell(r.title)}](../revolts/${k}.md)` : null; }).filter(Boolean);
+  const regions = (n) => `${n.toLocaleString("en-US")} region${n === 1 ? "" : "s"}`;
+  const line = (f) => {
+    const held = heldBy(f).length;
+    const rv = revoltLinks(f);
+    // `slave` is the game's own rebel faction: every settlement no faction holds is theirs.
+    if (f === "slave") return `Settlements that belong to no faction. They hold ${regions(held)} at the start of the campaign.`;
+    if (rv.length && held) return `Holds ${regions(held)} at the start of the campaign and gains more in ${rv.join(" or ")}.`;
+    if (rv.length) return `Appears in ${rv.join(" or ")}.`;
+    return held ? `Holds ${regions(held)} at the start of the campaign.` : "Holds no land at the start of the campaign, and no revolt creates it.";
   };
-  const npName = (f) => (intros[f] && intros[f].title) || EXPANDED[f] || title(f);
-
-  // Culture, from the file that assigns it.
-  const CULTURE = (() => {
-    const txt = rd("descr_sm_factions.txt") || "";
-    const out = {};
-    const marks = [...txt.matchAll(/^\t"([a-z0-9_]+)":/gm)];
-    for (let i = 0; i < marks.length; i++) {
-      const block = txt.slice(marks[i].index, i + 1 < marks.length ? marks[i + 1].index : txt.length);
-      const m = /"culture":\s*"([^"]+)"/.exec(block);
-      if (m) out[marks[i][1]] = m[1];
-    }
-    return out;
-  })();
-
-  // A spawn script is hard evidence that a faction is placed on the map by the campaign
-  // script rather than chosen — `seleucid_revolt1.txt` waits on a hidden resource and then
-  // funds seleucid_rebels. Read from the directory, not assumed from the name.
-  const SPAWN = (() => {
-    const dir = path.join(RIS, "world", "maps", "campaign", "imperial_campaign", "spawn_scripts");
-    const out = {};
-    let files = [];
-    try { files = fs.readdirSync(dir).filter((n) => /\.txt$/i.test(n)); } catch { return out; }
-    for (const n of files) {
-      let t = ""; try { t = fs.readFileSync(path.join(dir, n), "latin1"); } catch { continue; }
-      for (const f of NON_PLAYER) if (new RegExp(`\\b${f}\\b`).test(t)) (out[f] = out[f] || []).push(n);
-    }
-    return out;
-  })();
-
-  // How many UNIT TYPES name each of them in a recruitment gate — the reason their names leak
-  // onto unit pages in the first place. Counted as distinct units, not as `recruit` lines: one
-  // unit is offered by several building levels, so the line count is 5-10x higher and would
-  // read as far more of the roster than it is.
-  const gateUnits = {};
-  for (const r of recruitRows) for (const f of r.pos) if (NON_PLAYER.has(f)) (gateUnits[f] = gateUnits[f] || new Set()).add(r.unit.toLowerCase());
-  const gateCount = {};
-  for (const [f, s] of Object.entries(gateUnits)) gateCount[f] = s.size;
-
-  const nine = [...NON_PLAYER].sort((a, b) => npName(a).localeCompare(npName(b)));
-  // `seleucid_rebels` and `seleucid_rebels2` are both displayed "Seleucid Rebels", so the
-  // heading has to carry the token or the page has two sections with the same name.
-  const nameCount = {};
-  for (const f of nine) nameCount[npName(f)] = (nameCount[npName(f)] || 0) + 1;
-  const heading = (f) => (nameCount[npName(f)] > 1 ? `${npName(f)} (\`${f}\`)` : npName(f));
-  const heldBy = (f) => ((strat[f] && strat[f].settlements) || []);
-
-  const rowsMd = nine.map((f) => {
-    const held = heldBy(f);
-    const cu = cultureRef(CULTURE[f], "../") || (CULTURE[f] ? `\`${CULTURE[f]}\`` : "_not determined_");
-    const re = religionRef(FACTION_RELIGION[f], "../") || (FACTION_RELIGION[f] ? `\`${FACTION_RELIGION[f]}\`` : "_not determined_");
-    return `| **${npName(f)}** | \`${f}\` | ${cu} | ${re} | ${held.length ? `${held.length} region${held.length === 1 ? "" : "s"}` : "none" } | ${gateCount[f] ? `${gateCount[f]} unit type${gateCount[f] === 1 ? "" : "s"}` : "—"} |`;
-  }).join("\n");
-
-  const sections = nine.map((f) => {
-    const held = heldBy(f);
-    const own = intros[f] && intros[f].descr ? intros[f].descr : null;
-    const b = blurb(f);
-    const spawn = SPAWN[f];
-    // 502 links in one place is a lot; the region list is folded away and capped, with the
-    // remainder counted rather than dropped in silence.
-    const CAP = 60;
-    const list = held.map((s) => s.region);
-    return `### ${heading(f)}
-
-\`${f}\` · culture ${cultureRef(CULTURE[f], "../") || `\`${CULTURE[f] || "not determined"}\``} · believes ${religionRef(FACTION_RELIGION[f], "../") || `\`${FACTION_RELIGION[f] || "not determined"}\``}${b ? ` · ${b}` : ""}
-
-${own && !/^\s*(no description\.?|needs description\.?)\s*$/i.test(own) ? `> ${own.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n` : ""}
-${spawn ? `Placed on the map by the campaign script, not chosen: \`${spawn.join("`, `")}\` in \`spawn_scripts/\` names it.\n` : `_No spawn script in \`spawn_scripts/\` names it._\n`}
-${held.length ? `**Holds ${held.length} region${held.length === 1 ? "" : "s"} at the campaign start.**
-
-<details>
-<summary>Which regions</summary>
-
-${list.slice(0, CAP).map((r) => `${settlementAndRegion(r)}`).join(" · ")}${list.length > CAP ? `\n\n_…and ${list.length - CAP} more._` : ""}
-
-</details>
-` : `**Holds no territory at the campaign start.**
-`}${gateCount[f] ? `\n\`${f}\` is named in the recruitment gate of **${gateCount[f]} unit type${gateCount[f] === 1 ? "" : "s"}**, which is why its name turns up on unit pages.\n` : ""}`;
-  }).join("\n");
-
+  const sym = (f) => (fs.existsSync(path.join(OUT, "symbols", `${f}.png`))
+    ? `<img src="../symbols/${f}.png" alt="" width="24" height="24" style="vertical-align:middle"> ` : "");
   const npBody = `# Factions you cannot play
 
 [← all factions](../factions.md) · [wiki index](../README.md)
 
-> ## ⛔ None of these nine can be selected
->
-> They are not in the ${index.length} playable factions and are not counted among them anywhere
-> in this wiki. They exist because the engine needs somewhere to put rebels, the senate and
-> scripted breakaways, and they are documented here only because their names appear on region
-> and unit pages — a name with nowhere to go reads as a broken link.
+None of these can be picked when you start a campaign. The computer runs them; where a revolt
+lets you take over its rebels, the revolt's page says so.
 
-The nine below are excluded on what they are FOR, established from the mod's own text, its
-spawn scripts and what it gives them at the campaign start.
-
-| Faction | Internal token | Culture | Default belief | Holds at start | Named in recruitment |
-|---|---|---|---|---|---|
-${rowsMd}
-
-## What each one is
-
-${sections}
-## What still is not established
-
-The reason \`roman_senate\`, \`roman_rebels_1\` and \`roman_rebels_2\` are kept in the mod at all
-is **not determined** from the data files. They hold nothing, no spawn script places them, and
-the campaign script touches them only a few times. Their campaign text is inherited Roman
-history that says nothing about their role.
+| Faction | What it is |
+|---|---|
+${shown.map((f) => `| ${sym(f)}**${npName(f)}** | ${line(f)} |`).join("\n")}
 `;
   fs.writeFileSync(path.join(OUT, "factions", NON_PLAYABLE_FILE), npBody, "utf8");
-  console.log(`  non-playable reference page: ${nine.length} factions, ${nine.filter((f) => heldBy(f).length).length} of them holding territory at the start`);
+  console.log(`  non-playable reference page: ${shown.length} factions (${[...HIDDEN].join(", ")} left off), ${shown.filter((f) => heldBy(f).length).length} holding territory at the start`);
+  NON_PLAYABLE_SHOWN = shown.length;
 }
 
 // index page
@@ -1280,9 +1242,7 @@ const idx = `# All factions
 
 ${index.length} playable factions, each with its own page, in ${cultureGroups.filter((g) => g.tok).length} cultures.
 
-Nine further factions in the mod files are **not** playable and are not part of that ${index.length}
-— the rebel pool, the Roman senate, a test faction and the scripted breakaways. They hold
-territory and appear in recruitment gates, so they are documented together on
+${numberWord(NON_PLAYABLE_SHOWN)} more factions appear in a campaign but are not playable. They are listed on
 [factions you cannot play](factions/${NON_PLAYABLE_FILE}).
 
 Culture is the game's own grouping, and it is not cosmetic: it settles which architecture a

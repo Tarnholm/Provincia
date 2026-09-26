@@ -159,7 +159,11 @@ const NO_PAGE = new Set([
   "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
 ]);
 const npName = (f) => BI_NAMES[String(f).toLowerCase()] || String(f).replace(/_/g, " ");
-const facName = (f) => FACTION_NAMES[String(f).toLowerCase()] || npName(f);
+// The two Roman and two Seleucid rebel factions share a name ("Roman Rebels"; the faction-select
+// text even calls both Roman ones "Rome"). The revolt generator publishes what tells them apart,
+// and every page uses those words.
+const SHARED_LABELS = (() => { try { return JSON.parse(fs.readFileSync(path.join(OUT, "revolts", "index.json"), "utf8")).labels || {}; } catch { return {}; } })();
+const facName = (f) => SHARED_LABELS[String(f).toLowerCase()] || FACTION_NAMES[String(f).toLowerCase()] || npName(f);
 
 const dirNames = (sub, ext) => {
   try { return new Set(fs.readdirSync(path.join(OUT, sub)).filter((f) => f.endsWith(ext)).map((f) => f.slice(0, -ext.length))); }
@@ -172,7 +176,7 @@ const symbolFiles = dirNames("symbols", ".png");
 const cardFiles = dirNames("cards", ".png");
 
 const facLink = (f) => (NO_PAGE.has(String(f).toLowerCase())
-  ? `[${npName(f)}](../factions/non-playable.md)`
+  ? `[${facName(f)}](../factions/non-playable.md)`
   : factionPages.has(String(f)) ? `[${facName(f)}](../factions/${f}.md)` : `**${facName(f)}**`);
 
 // EDU `type` -> `dictionary`, the hop that gives both the display name and the page filename.
@@ -424,6 +428,43 @@ for (const f of EDB.effects) {
     (sign === "excludes" ? e.blockedEffects : e.effects).push({ ...f, sign });
   }
 }
+// ── "only this culture", proved rather than read off the list ────────────────
+// USAGE says a level or unit NAMES a culture in a faction list. That is not "only": the Great
+// Forum's list names 13 cultures, and the Cothon's warships name Carthaginian factions beside the
+// Romans. So each requirement is evaluated for every faction in the game (the three-valued
+// evaluator in lib/edbRecruit.js, as a player): exclusive means it is provably false for every
+// faction outside the culture, and not false for at least one inside it. Anything the evaluator
+// cannot decide (a region tag, a building elsewhere) counts as open, so a list can only be too
+// short, never wrong. The evaluator tests a faction list by faction key, so the culture tokens
+// in those lists are expanded to their factions first; `building_factions` (who BUILT it) is
+// left alone and stays undecided. The `dummies` test faction is not a faction any campaign has.
+const MEMBERS = new Map(CULTURE_TOKENS.map((t) => [t, Object.values(FACTIONS).filter((f) => f.culture === t).map((f) => f.faction)]));
+const expandLists = (expr) => String(expr || "").replace(/(^|[^A-Za-z_])factions\s*\{([^}]*)\}/gi, (all, pre, body) => {
+  const toks = body.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  return `${pre}factions { ${uniq(toks.flatMap((t) => MEMBERS.get(t) || [t])).join(", ")}, }`;
+});
+const EXP_ALIASES = Object.fromEntries(Object.entries(ALIASES).map(([k, v]) => [k, expandLists(v)]));
+const EVAL_FACTIONS = Object.keys(FACTIONS).filter((f) => f !== "dummies");
+const openTo = (expr, faction) => L.evaluate(expandLists(expr), { faction, isPlayer: true }, EXP_ALIASES).value !== false;
+/** True when `exprs` (one requirement, or every route to one thing) are open only to culture tok. */
+function onlyFor(tok, exprs) {
+  const inside = new Set(MEMBERS.get(tok) || []);
+  const list = [].concat(exprs);
+  if (!list.some((e) => [...inside].some((f) => openTo(e, f)))) return false;
+  return EVAL_FACTIONS.every((f) => inside.has(f) || list.every((e) => !openTo(e, f)));
+}
+/** True when every one of `exprs` is closed to every faction of culture tok. */
+const closedTo = (tok, exprs) => (MEMBERS.get(tok) || []).every((f) => [].concat(exprs).every((e) => !openTo(e, f)));
+const RECRUITS_BY_UNIT = new Map();   // unitKey -> every requires that recruits it, anywhere
+for (const r of EDB.recruits) {
+  const k = unitKey(r.unit);
+  if (!RECRUITS_BY_UNIT.has(k)) RECRUITS_BY_UNIT.set(k, []);
+  RECRUITS_BY_UNIT.get(k).push(r.requires || "");
+}
+const LEVEL_REQ = new Map();
+for (const c of EDB.chains) for (const l of Object.values(c.levels)) LEVEL_REQ.set(`${c.chain}|${l.level}`, l.requires || "");
+const exclusivity = { levels: 0, levelsDropped: 0, units: 0, unitsDropped: 0, effects: 0, effectsDropped: 0 };
+
 // The claim this whole section rests on, measured: every token that appears in a faction list
 // is either a faction, `all`, or one of the 22 cultures, and no culture is also a faction.
 const FACTION_TOKENS = new Set(Object.keys(FACTIONS));
@@ -601,20 +642,33 @@ function cultureFacts(c) {
   const u = USAGE.get(tok);
   const facs = factionsOf(tok);
   const held = facs.reduce((a, f) => a + (heldByFaction.get(f) || 0), 0);
-  const levels = uniq(u.levels.map((x) => `${x.chain}|${x.level}`)).map((s) => { const [chain, level] = s.split("|"); return { chain, level }; });
-  const blockedLevels = uniq(u.blockedLevels.map((x) => `${x.chain}|${x.level}`)).map((s) => { const [chain, level] = s.split("|"); return { chain, level }; });
-  const units = new Map();
+  // Only what the evaluator proves (see onlyFor): a level or unit that merely NAMES this culture
+  // beside others is left out, because these sections are headed "only <culture>".
+  const count = (kind, all, kept) => { exclusivity[kind] += kept; exclusivity[`${kind}Dropped`] += all - kept; };
+  const namedLevels = uniq(u.levels.map((x) => `${x.chain}|${x.level}`));
+  const levels = namedLevels.filter((s) => onlyFor(tok, LEVEL_REQ.get(s))).map((s) => { const [chain, level] = s.split("|"); return { chain, level }; });
+  count("levels", namedLevels.length, levels.length);
+  const blockedLevels = uniq(u.blockedLevels.map((x) => `${x.chain}|${x.level}`)).filter((s) => closedTo(tok, LEVEL_REQ.get(s))).map((s) => { const [chain, level] = s.split("|"); return { chain, level }; });
+  const named = new Map();
   for (const r of u.recruits) {
     const k = unitKey(r.unit);
-    if (!units.has(k)) units.set(k, { type: r.unit, at: new Set() });
-    units.get(k).at.add(`${r.chain}|${r.level}`);
+    if (!named.has(k)) named.set(k, { type: r.unit, at: new Set() });
+    named.get(k).at.add(`${r.chain}|${r.level}`);
   }
+  // A unit is this culture's only if EVERY line that recruits it anywhere is.
+  const units = new Map([...named].filter(([k]) => onlyFor(tok, RECRUITS_BY_UNIT.get(k) || [])));
+  count("units", named.size, units.size);
   const blockedUnits = new Map();
-  for (const r of u.blockedRecruits) blockedUnits.set(unitKey(r.unit), { type: r.unit });
+  for (const r of u.blockedRecruits) {
+    const k = unitKey(r.unit);
+    if (!blockedUnits.has(k) && closedTo(tok, RECRUITS_BY_UNIT.get(k) || [])) blockedUnits.set(k, { type: r.unit });
+  }
+  const effectsOnly = u.effects.filter((e) => onlyFor(tok, e.requires));
+  count("effects", u.effects.length, effectsOnly.length);
   return {
     tok, c, name: cultureName(tok), facs, held,
     levels, blockedLevels, units, blockedUnits,
-    effects: groupEffects(u.effects), blockedEffects: groupEffects(u.blockedEffects),
+    effects: groupEffects(effectsOnly), blockedEffects: groupEffects(u.blockedEffects.filter((e) => closedTo(tok, e.requires))),
     aliases: (aliasesNaming.get(tok) || []),
   };
 }
@@ -724,7 +778,7 @@ function culturePage(f, all) {
     `**${num(f.held)}** settlements at the start`,
     f.levels.length ? `**${f.levels.length}** building${f.levels.length === 1 ? "" : "s"} of its own` : null,
     f.units.size ? `**${f.units.size}** unit${f.units.size === 1 ? "" : "s"} of its own` : null,
-  ].join(" · ");
+  ].filter(Boolean).join(" · ");
 
   // Written for players (reworked 2026-09-26): what the culture means in a campaign. The file-
   // level detail it used to carry - model and card file names, the size ladder every culture
@@ -760,13 +814,13 @@ ${maybeFold(`The ${buildLevels.length} buildings`, buildLevels.length, ownLevelT
   if (f.blockedLevels.length) sections.push(`## Buildings ${name} factions cannot build
 
 ${f.blockedLevels.slice().sort((a, b) => levelName(a.level).localeCompare(levelName(b.level))).map((l) => levelLink(l.chain, l.level)).join(", ")}.`);
-  if (units.length || f.blockedUnits.size) sections.push(`## Units only ${name} factions can raise
+  if (units.length || f.blockedUnits.size) sections.push(`## ${units.length ? `Units only ${name} factions can raise` : `Units ${name} factions cannot raise`}
 
 ${units.length
-    ? `**${units.length}** ${units.length === 1 ? "unit is" : "units are"} open to a faction *because* it is ${name}. A faction's full roster, and the regional units it can raise where it holds the right province, are on its own page.
+    ? `**${units.length}** ${units.length === 1 ? "unit" : "units"} can be raised by ${name} factions and no others. A faction's full roster, and the regional units it can raise where it holds the right province, are on its own page.
 
 ${maybeFold(`The ${units.length} units`, units.length, unitTable)}`
-    : ""}${f.blockedUnits.size ? `\n\nBeing ${name} also rules out ${f.blockedUnits.size === 1 ? "this unit" : "these units"}: ${[...f.blockedUnits.values()].map((x) => unitLink(x.type)).join(", ")}.` : ""}`);
+    : ""}${f.blockedUnits.size ? `${units.length ? "\n\n" : ""}Being ${name} ${units.length ? "also " : ""}rules out ${f.blockedUnits.size === 1 ? "this unit" : "these units"}: ${[...f.blockedUnits.values()].map((x) => unitLink(x.type)).join(", ")}.` : ""}`);
   if (effRows.length || blockedEffRows.length) sections.push(`## Bonuses for being ${name}
 
 ${effRows.length
@@ -813,17 +867,22 @@ fs.writeFileSync(path.join(OUT, "cultures", "index.json"), JSON.stringify(INDEX,
 // shape become 22 windows stacked down the screen. With no H2 the content is left alone and
 // reads as one list with the culture name as a divider, which is what it is.
 const sorted = FACTS.slice().sort((a, b) => b.facs.length - a.facs.length || String(a.name).localeCompare(String(b.name)));
+// "Own" counts only what is proved exclusive (onlyFor). A column empty for every culture - no
+// culture has a unit of its own - is left out rather than printed as a column of dashes.
+const HAS_OWN_LEVELS = FACTS.some((f) => f.levels.length);
+const HAS_OWN_UNITS = FACTS.some((f) => f.units.size);
 const summary = [
   // No Token column. It is the word the files use for this culture, which a player has no use
   // for — they see the name. Where the token still matters to someone reading the files, it is
   // on the culture's own page.
-  "| Culture | Factions | Settlements | Own buildings | Own units | Beliefs |",
-  "|---|---:|---:|---:|---:|---:|",
+  `| Culture | Factions | Settlements |${HAS_OWN_LEVELS ? " Own buildings |" : ""}${HAS_OWN_UNITS ? " Own units |" : ""} Beliefs |`,
+  `|---|---:|---:|${HAS_OWN_LEVELS ? "---:|" : ""}${HAS_OWN_UNITS ? "---:|" : ""}---:|`,
   ...sorted.map((f) => {
     const beliefs = uniq(f.facs.map((x) => (FACTIONS[x] || {}).religion).filter(Boolean)).length;
-    return `| [${f.name || f.tok}](cultures/${f.tok}.md) | ${f.facs.length} | ${num(f.held)} | ${f.levels.length || "—"} | ${f.units.size || "—"} | ${beliefs || "—"} |`;
+    return `| [${f.name || f.tok}](cultures/${f.tok}.md) | ${f.facs.length} | ${num(f.held)} |${HAS_OWN_LEVELS ? ` ${f.levels.length || "—"} |` : ""}${HAS_OWN_UNITS ? ` ${f.units.size || "—"} |` : ""} ${beliefs || "—"} |`;
   }),
 ].join("\n");
+const ownCols = [HAS_OWN_LEVELS ? "**Own buildings**" : null, HAS_OWN_UNITS ? "**own units**" : null].filter(Boolean);
 
 // Measured, not asserted: a culture counts as renamed when the mod's own name for it is not
 // what knocking the underscores out of the token would have produced.
@@ -851,8 +910,7 @@ There are **${CULTURES.length}** cultures.
 
 ${summary}
 
-**Settlements** is what the culture's factions hold at the start of the campaign. **Own
-buildings** and **own units** are the ones only that culture's factions can have. **Beliefs**
+**Settlements** is what the culture's factions hold at the start of the campaign.${ownCols.length ? ` ${ownCols.join(" and ")} ${ownCols.length === 1 ? "counts what" : "count what"} only that culture's factions can have.` : ""} **Beliefs**
 is how many different religions its factions follow.
 ${biggestHolder && biggestHolder.n / heldTotal > 0.2
     ? `\nThe **${facName(biggestHolder.faction)}** — land no faction holds at the start — count as ${biggestHolder.culture.name ? `**${biggestHolder.culture.name}**` : biggestHolder.culture.tok}, which is why that row has ${num(biggestHolder.n)} settlements.\n`
@@ -885,6 +943,7 @@ say(`    factions{}/building_factions{} clauses read: ${num(listClauses)} · dis
 say(`      of those, faction tokens ${[...ALL_LIST_TOKENS].filter((t) => FACTION_TOKENS.has(t)).length}, "all" ${ALL_LIST_TOKENS.has("all") ? 1 : 0}, culture tokens ${CULTURES_IN_LISTS.length}, unclassified ${LIST_UNCLASSIFIED.length}${LIST_UNCLASSIFIED.length ? ` (${LIST_UNCLASSIFIED.join(", ")})` : ""}`);
 say(`      cultures that are ALSO faction tokens: ${CULTURES_ALSO_FACTIONS.length}${CULTURES_ALSO_FACTIONS.length ? ` (${CULTURES_ALSO_FACTIONS.join(", ")}) <- these would be ambiguous` : "  <- so no token is ambiguous"}`);
 say(`    aliases scanned for a culture one indirection away: ${Object.keys(ALIASES).length} · naming at least one: ${aliasesNaming.size ? [...aliasesNaming.values()].reduce((a, v) => a + v.length, 0) : 0} alias/culture pairs`);
+say(`    "only this culture", proved by evaluating each gate for all ${EVAL_FACTIONS.length} factions: levels ${exclusivity.levels} kept / ${exclusivity.levelsDropped} shared with others, units ${exclusivity.units} / ${exclusivity.unitsDropped}, bonuses ${exclusivity.effects} / ${exclusivity.effectsDropped}`);
 say(`    per culture, levels/blocked/units/effects/blocked-effects:`);
 for (const f of FACTS) {
   say(`      ${f.tok.padEnd(15)} ${String(f.levels.length).padStart(3)} ${String(f.blockedLevels.length).padStart(3)} ${String(f.units.size).padStart(4)} ${String(f.effects.length).padStart(4)} ${String(f.blockedEffects.length).padStart(4)}   ${f.facs.length} factions, ${num(f.held)} provinces`);

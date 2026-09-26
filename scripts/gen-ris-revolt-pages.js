@@ -68,17 +68,9 @@ const pagesIn = (dir) => { try { return new Set(fs.readdirSync(path.join(OUT, di
 const FACTION_PAGES = pagesIn("factions");
 const SETTLEMENT_PAGES = pagesIn("settlements");
 const NAME_USES = (() => { const n = {}; for (const [k, v] of Object.entries(FACTION_NAMES)) if (/^[a-z0-9_]+$/.test(k)) n[v] = (n[v] || 0) + 1; return n; })();
+// MODEL INPUT ONLY (facts and code headers): changing this label changes the input hash and
+// orphans the cached prose. Pages use displayLabel / factionLinkShown below.
 const factionLabel = (f) => { const n = factionName(f); return NAME_USES[n] > 1 ? `${n} (\`${f}\`)` : n; };
-const factionLink = (f, pre = "../") => {
-  const k = String(f).toLowerCase();
-  if (FACTION_PAGES.has(k)) return `[${factionName(k)}](${pre}factions/${k}.md)`;
-  if (FACTION_PAGES.has("non-playable") && FACTION_NAMES[k]) {
-    const label = factionLabel(k);
-    const anchor = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    return `[${label}](${pre}factions/non-playable.md${NAME_USES[factionName(k)] > 1 ? `#${anchor}` : ""})`;
-  }
-  return factionName(k);
-};
 const PLACE_NAMES = lut16("imperial_campaign_regions_and_settlement_names.txt");
 const placeName = (tok) => PLACE_NAMES[tok] || String(tok).replace(/_/g, " ");
 const settlementLink = (tok, pre = "../") => (SETTLEMENT_PAGES.has(tok) ? `[${placeName(tok)}](${pre}settlements/${encodeURIComponent(tok)}.md)` : placeName(tok));
@@ -260,6 +252,54 @@ const REFORM_CATALOG = (() => {
 })();
 const CS_TEXT = CS_LINES.map(uncomment).join("\n");
 const WHOLE_BLOCKS = topBlocks(1, CS_LINES.length).map((b) => ({ ...b, text: liveLines(b.a, b.b).map((x) => uncomment(x.t)).join("\n") }));
+// ── telling two factions with one name apart ────────────────────────────────
+// roman_rebels_1/_2 are both "Roman Rebels" and seleucid_rebels/2 both "Seleucid Rebels" in the
+// game's text. Pages printed the faction key beside the name to tell them apart; a player needs
+// words. What differs is read from the code that hands each faction its settlements: the civil
+// war whose cw1_/cw2_ counters surround the grant, else the region tag the grant is gated on
+// (`if HasResource asia_minor`). If neither separates them, "I" / "II" in key order.
+const SHARED_LABELS = (() => {
+  const out = {};
+  const ORD = ["first", "second", "third", "fourth"];
+  const groups = {};
+  for (const f of Object.keys(SPAWN)) { const n = factionName(f); if (NAME_USES[n] > 1) (groups[n] = groups[n] || []).push(f); }
+  for (const [name, facs] of Object.entries(groups)) {
+    if (facs.length < 2) continue;
+    const info = facs.map((f) => {
+      const res = SPAWN[f].resources, wars = [], areas = new Set();
+      CS_LINES.forEach((raw, i) => {
+        const m = /add_hidden_resource\s+\S+\s+(\S+)/.exec(uncomment(raw));
+        if (!m || !res.has(m[1])) return;
+        const blk = WHOLE_BLOCKS.find((b) => b.a <= i + 1 && i + 1 <= b.b);
+        const ws = blk ? [...blk.text.matchAll(/\bcw(\d)_/g)].map((x) => +x[1]) : [];
+        if (ws.length) wars.push(Math.max(...ws));
+        for (let k = i - 1; k >= Math.max(0, i - 3); k--) {
+          const h = /^\s*if\s+HasResource\s+(\S+)\s*$/.exec(uncomment(CS_LINES[k]));
+          if (h && RESOURCE_REGIONS[h[1]]) { areas.add(h[1]); break; }
+        }
+      });
+      return { f, war: wars.length ? Math.min(...wars) : null, area: areas.size === 1 ? [...areas][0] : null };
+    });
+    const distinct = (k) => info.every((x) => x[k] != null) && new Set(info.map((x) => x[k])).size === info.length;
+    const sorted = facs.slice().sort();
+    for (const x of info) {
+      out[x.f] = distinct("war") && ORD[x.war - 1] ? `${name} (${ORD[x.war - 1]} civil war)`
+        : distinct("area") ? `${name} (${prettyTok(x.area)})`
+        : `${name} ${["I", "II", "III", "IV"][sorted.indexOf(x.f)]}`;
+    }
+  }
+  return out;
+})();
+/** The name a player reads: the game's, with the distinguisher above where two share it. */
+const displayLabel = (f) => SHARED_LABELS[String(f).toLowerCase()] || factionName(f);
+// Links to the shared non-playable page carry no anchor: that page is one line per faction.
+const factionLinkShown = (f, pre = "../") => {
+  const k = String(f).toLowerCase();
+  if (FACTION_PAGES.has(k)) return `[${factionName(k)}](${pre}factions/${k}.md)`;
+  if (FACTION_PAGES.has("non-playable") && FACTION_NAMES[k]) return `[${displayLabel(k)}](${pre}factions/non-playable.md)`;
+  return displayLabel(k);
+};
+
 /** The trigger plus every script block that sets a counter or places a resource it tests, 2 deep. */
 function reformDependencyText(name) {
   const seen = new Set();
@@ -508,7 +548,7 @@ const TASK = `Write the wiki page for this revolt: what it is, what sets it off,
     const pic = (facts.player_prompts[0] || {}).picture;
     const picFile = pic ? eventpic(pic) : null;
     if (picFile) md.push('<div class="reform-banner">', "", `![${cell(p.title)}](${picFile})`, "", "</div>", "");
-    md.push(`**Breaks away:** ${andList(r.factions.map((f) => factionLink(f)))} from ${p.breaks_away_from}`, "");
+    md.push(`**Breaks away:** ${andList(r.factions.map((f) => factionLinkShown(f)))} from ${p.breaks_away_from}`, "");
     md.push(p.summary, "", `_${p.who_it_can_happen_to}_`, "");
     md.push("## What sets it off", "", ...grouped(p.what_sets_it_off), "");
     md.push("## What happens", "", ...grouped(p.what_happens), "");
@@ -516,7 +556,7 @@ const TASK = `Write the wiki page for this revolt: what it is, what sets it off,
     const provoked = [...new Set([...r.text.matchAll(/provoke_rebellion\s+(\S+)/g)].map((m) => m[1]).filter((x) => x !== "local"))];
     if (provoked.length) {
       md.push(`**The settlements that revolt** (${provoked.length}):`, "", "| Settlement | Held at the campaign start by |", "|---|---|",
-        ...provoked.map((s) => `| ${settlementLink(s)} | ${ownerOfSettlement(s) ? factionLink(ownerOfSettlement(s)) : "the rebels"} |`), "");
+        ...provoked.map((s) => `| ${settlementLink(s)} | ${ownerOfSettlement(s) ? factionLinkShown(ownerOfSettlement(s)) : "the rebels"} |`), "");
     }
     for (const f of r.factions) {
       const em = EMERGENCE[f];
@@ -577,16 +617,20 @@ const TASK = `Write the wiki page for this revolt: what it is, what sets it off,
     for (const m of stats.missing) say(`    ${m}`);
     return;
   }
-  const rows = Object.entries(index.revolts).map(([k, v]) => `| [${cell(v.title)}](revolts/${k}.md) | ${andList(v.factions.map((f) => factionLink(f, "")))} | ${cell(String(v.fromLinked || v.from).replace(/\]\(\.\.\//g, "]("))} |`);
+  const rows = Object.entries(index.revolts).map(([k, v]) => `| [${cell(v.title)}](revolts/${k}.md) | ${andList(v.factions.map((f) => factionLinkShown(f, "")))} | ${cell(String(v.fromLinked || v.from).replace(/\]\(\.\.\//g, "]("))} |`);
   fs.writeFileSync(path.join(OUT, "revolts.md"), `# Revolts
 
-Revolts, breakaways and civil wars the campaign script can set off. Each page says what starts it, what happens and whether you can take over the rebels.
+Revolts, breakaways and civil wars that can happen in a campaign. Each page says what starts it, what happens and whether you can take over the rebels.
 
 | Revolt | Who breaks away | From |
 |---|---|---|
 ${rows.join("\n")}
 `, "utf8");
+  // The distinguishing labels, published so the reform, faction and culture pages name the two
+  // Roman and two Seleucid rebel factions exactly as these pages do.
+  index.labels = SHARED_LABELS;
   fs.writeFileSync(path.join(OUT, "revolts", "index.json"), JSON.stringify(index, null, 1), "utf8");
+  say(`  shared names told apart: ${Object.entries(SHARED_LABELS).map(([f, l]) => `${f} -> ${l}`).join(", ") || "none"}`);
   say(`revolts: ${REVOLTS.length} live sections · pages ${Object.keys(index.revolts).length} (${stats.cache} from cache, ${stats.model} written by ${MODEL})`);
   if (SKIPPED.length) say(`  left out (not live): ${SKIPPED.join("; ")}`);
   if (stats.missing.length) { say(`  NO PAGE YET (${stats.missing.length}):`); for (const m of stats.missing) say(`    ${m}`); }

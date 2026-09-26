@@ -58,6 +58,7 @@
  */
 const fs = require("fs");
 const path = require("path");
+const { makeConditionReader } = require("./lib/risTriggerConditions.js");
 
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
@@ -337,6 +338,31 @@ const EVENT_PHRASE = {
   HordeMigrated: "when the horde migrates",
   UnitDisbanded: "on disbanding a unit",
   Birth: "at birth",
+  // events the fallback would otherwise print as split CamelCase
+  LesserGeneralOfferedForAdoption: "when offered for adoption as a man of the hour",
+  EnslavePopulation: "on enslaving a captured city",
+  ExterminatePopulation: "on exterminating a captured city",
+  CharacterSelected: "when selected",
+  DiplomacyMission: "on a diplomatic mission",
+  SpyMission: "on a spying mission",
+  AssassinationMission: "on an assassination mission",
+  BriberyMission: "on a bribery mission",
+  SabotageMission: "on a sabotage mission",
+  NewAdmiralCreated: "when the admiral is appointed",
+  GeneralDevastatesTile: "on devastating land",
+  AcceptBribe: "on accepting a bribe",
+  RefuseBribe: "on refusing a bribe",
+  SettlementTurnEnd: "at the end of the settlement's turn",
+  LeaderDestroyedFaction: "when his faction destroys another",
+  HireMercenaries: "on hiring mercenaries",
+  LeaderOrderedBribery: "when ordered to bribe",
+  BrotherAdopted: "when a brother is adopted",
+  CeasedFactionHeir: "on ceasing to be faction heir",
+  PreBattleWithdrawal: "on withdrawing before battle",
+  CapturedLegionaryEagle: "on capturing a legionary eagle",
+  BattleGeneralRouted: "when the general routs in battle",
+  GeneralCaptureWonder: "on capturing a wonder",
+  AgentCreated: "when the agent is trained",
 };
 const eventPhrase = (w) => EVENT_PHRASE[w] || (w ? w.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase() : "not stated");
 
@@ -426,38 +452,85 @@ function traitRef(token) {
   return `[${label}](${target.page}#${target.anchor})`;
 }
 
+// Trigger conditions in plain words (lib/risTriggerConditions.js, shared with the retinue
+// pages). A hidden trait gets no link and no name: the reader drops that clause and the row
+// says "(plus hidden conditions)" instead of leaking the bookkeeping token.
+const CR = makeConditionReader({
+  RIS, OUT,
+  traitRef: (tok) => {
+    const target = TRAIT_LINKS.get(tok);
+    return target ? `[${TRAITS[tok].display}](${target.page}#${target.anchor})` : null;
+  },
+  ancRef: (tok) => {
+    const e = ANCILLARY_INDEX[tok];
+    return e ? `[${e.name}](../ancillaries/${e.page}#${e.anchor})` : String(tok).replace(/_/g, " ");
+  },
+});
+let condRows = 0, condHiddenRows = 0, condUnknownRows = 0;
+const condUnknown = new Map();   // raw clause -> times seen, for the run report
+
+// One cell of the "How it is gained" table, plus the raw text of any clause the reader does
+// not know (shown behind a Technical fold, never on the open page).
+function conditionCell(conds) {
+  const lines = conds.flat();   // one array per Condition line and its continuations
+  if (!lines.length) return { text: "always", raw: null };
+  const r = CR.render(lines);
+  condRows++;
+  if (r.hidden) condHiddenRows++;
+  let text = r.text;
+  if (r.hidden) text = text ? `${text} (plus hidden conditions)` : "hidden conditions only";
+  if (r.unknown.length) {
+    condUnknownRows++;
+    for (const u of r.unknown) condUnknown.set(u, (condUnknown.get(u) || 0) + 1);
+    text = `${text ? `${text} · ` : ""}plus a condition listed under Technical`;
+  }
+  return { text, raw: r.unknown.length ? r.unknown.join(" · ") : null };
+}
+
 function triggerFold(t) {
   const feeds = TRIGGERS_FOR.get(t.name) || [];
-  if (!feeds.length) {
-    return "_No trigger grants this trait. It comes from the campaign script, from birth, or from inheritance._";
-  }
+  if (!feeds.length) return "_Granted by events, at birth or by inheritance._";
   const gains = feeds.filter((f) => !f.lose), losses = feeds.filter((f) => f.lose);
   const events = uniq(feeds.map((f) => eventPhrase(f.trigger.whenToTest))).slice(0, 4);
+  const raws = [];
   const rows = feeds.slice(0, 60).map((f) => {
-    const cond = f.trigger.conditions.map((c) => c.join(" ")).join(" · ");
-    return `| ${eventPhrase(f.trigger.whenToTest)} | ${f.lose ? "loses" : "+"}${Math.abs(f.amount)} | ${f.chance}% | ${cond ? `\`${cell(cond.slice(0, 220))}${cond.length > 220 ? "…" : ""}\`` : "always"} |`;
+    const c = conditionCell(f.trigger.conditions);
+    if (c.raw) raws.push(`- ${eventPhrase(f.trigger.whenToTest)}: \`${cell(c.raw)}\``);
+    return `| ${eventPhrase(f.trigger.whenToTest)} | ${f.lose ? "loses " : "+"}${Math.abs(f.amount)} | ${f.chance}% | ${cell(c.text)} |`;
   });
   const table = [
     `| When | Points | Chance | Conditions |`,
     `|---|---|---:|---|`,
     ...rows,
-    feeds.length > 60 ? `| _…and ${feeds.length - 60} more_ | | | |` : null,
+    feeds.length > 60 ? `| _…and ${feeds.length - 60} more ways_ | | | |` : null,
   ].filter(Boolean).join("\n");
+  const body = [table];
+  if (raws.length) body.push("", fold("Technical", raws));
   return fold(
-    `How it is ${losses.length && !gains.length ? "lost" : "gained"} — ${feeds.length} trigger${feeds.length === 1 ? "" : "s"}, ${events.join(", ")}${losses.length && gains.length ? ` (${losses.length} remove points)` : ""}`,
-    [table],
+    `How it is ${losses.length && !gains.length ? "lost" : gains.length && losses.length ? "gained and lost" : "gained"} — ${events.join(", ")}`,
+    body,
   );
 }
 
 function factsLine(t) {
   const bits = [`Appears on ${charName(t.characters)}`];
   if (t.levels.length > 1) bits.push(`**${t.levels.length}** levels`);
-  if (t.anti.length) bits.push(`pulls against ${t.anti.map(traitRef).join(", ")}`);
+  // Hidden anti-traits (CeasesAttunedGovernor, NegateWounded, …) are bookkeeping the player
+  // never sees: only visible ones are named.
+  const anti = t.anti.filter((a) => TRAIT_LINKS.has(a));
+  antiHiddenOrMissing += t.anti.length - anti.length;
+  if (anti.length) bits.push(`pulls against ${anti.map(traitRef).join(", ")}`);
   if (t.inheritChance != null) bits.push(`sons inherit it ${t.inheritChance}% of the time`);
   if (t.maxAllowed != null) bits.push(`at most **${t.maxAllowed}** character${t.maxAllowed === 1 ? "" : "s"} may hold it`);
-  if (t.noGoingBack != null && t.levels.length > 1) bits.push(`cannot fall back below level ${t.noGoingBack}`);
   if (t.excludeCultures.length) bits.push(`never on ${t.excludeCultures.length} of the cultures`);
-  return bits.join(" · ") + ".";
+  let line = bits.join(" · ") + ".";
+  // NoGoingBackLevel N: once the character reaches level N, the trait can no longer decrease
+  // below it. Most traits name one level past their last (5 on a 4-level trait), i.e. never
+  // one-way; those say nothing.
+  if (t.noGoingBack != null && t.noGoingBack >= 1 && t.noGoingBack <= t.levels.length) {
+    line += ` Once it reaches **${t.levels[t.noGoingBack - 1].display}** it cannot drop back.`;
+  }
+  return line;
 }
 
 function traitEntry(t) {
@@ -505,12 +578,12 @@ function traitEntry(t) {
 // is left to the game screen; everything mechanical is in the row.
 function traitRow(t) {
   const fxCol = t.levels.map((l) => (t.levels.length > 1 ? `**${cell(l.display)}:** ${cell(levelFx(l))}` : cell(levelFx(l)))).join(" · ");
-  const feeds = (TRIGGERS_FOR.get(t.name) || []).length;
-  return `| **${cell(t.heading)}** | ${fxCol} | ${feeds || "—"} |`;
+  return `| **${cell(t.heading)}** | ${fxCol} |`;
 }
 
 const HEAD = (title) => `# ${title}\n\n[← all traits](../traits.md) · [wiki index](../README.md)\n`;
 
+// No trigger-count column: how many rules feed a title is file bookkeeping, not play.
 function tablePage(page, title, intro) {
   const list = PAGES.get(page) || [];
   list.sort((a, b) => a.heading.localeCompare(b.heading));
@@ -519,14 +592,9 @@ function tablePage(page, title, intro) {
 ${intro(list)}
 
 ## The traits
-
-**Triggers** is how many rules in the file grant or remove the trait's points; a — means the
-campaign script or an office grants it directly. Each title's in-game description is its own
-per-city flavour text, read in game rather than reprinted ${num(list.length)} times here.
-${multi ? `${multi} of these carry more than one level; their effects are listed per level.` : ""}
-
-| Trait | Effects | Triggers |
-|---|---|---:|
+${multi ? `\nWhere a trait has more than one level, its effects are listed per level.\n` : ""}
+| Trait | Effects |
+|---|---|
 ${list.map(traitRow).join("\n")}
 `;
 }
@@ -540,8 +608,7 @@ const writePage = (file, body) => { fs.writeFileSync(path.join(OUT, "traits", fi
 writePage("governorships.md", tablePage("governorships", "City governorships",
   (list) => `One web of **${num(list.length)}** mutually exclusive city titles — Archon, Shophet, Strategos and
 their kin — one per governable city. Holding the office grants the title and its bonus;
-losing the city takes it away. Every one of them excludes every other through the shared
-\`Not_Archon\` anti-trait, which is how the file keeps one governor to one city.`));
+losing the city takes it away. A governor can hold only one city title.`));
 writePage("fears-and-hatreds.md", tablePage("fears-and-hatreds", "Fears and hatreds",
   (list) => `**${num(list.length)}** traits from the ethnic module: characters who campaign against a people long
 enough come to hate them — or fear them. Hatred sharpens combat against that people;
@@ -585,13 +652,10 @@ ${list.map(traitEntry).join("\n\n---\n\n")}
 }
 
 // ── the index page ───────────────────────────────────────────────────────────
-const epithetLevels = ALL_LEVELS.filter((l) => l.epithet).length;
-const attrCounts = {};
+const attrCounts = {};   // run report only
 for (const t of VISIBLE) for (const l of t.levels) for (const e of l.effects) attrCounts[e.attr] = (attrCounts[e.attr] || 0) + 1;
-const topAttrs = Object.entries(attrCounts).sort((a, b) => b[1] - a[1]).slice(0, 12);
 const charCounts = {};
 for (const t of VISIBLE) charCounts[t.characters || "(none)"] = (charCounts[t.characters || "(none)"] || 0) + 1;
-const inheritable = VISIBLE.filter((t) => t.inheritChance != null).length;
 const PAGE_ROWS = [
   ["governorships.md", "City governorships", "one web of mutually exclusive city titles"],
   ["fears-and-hatreds.md", "Fears and hatreds", "the ethnic module: hatred sharpens, fear blunts"],
@@ -604,23 +668,21 @@ const indexBody = `# Character traits
 
 [← wiki index](README.md) · [all factions](factions.md) · [all units](units.md)
 
-Characters in **RTR: Imperium Surrectum** are shaped by **${num(VISIBLE.length)}** visible traits — the virtues,
+Characters in **RTR: Imperium Surrectum** are shaped by **${num(VISIBLE.length)}** traits — the virtues,
 vices, offices, wounds, habits and reputations that appear on a general's, governor's or
-agent's scroll. Behind them the file also declares **${HIDDEN.length}** hidden bookkeeping traits the player
-never sees; they are counted here and excluded everywhere else.
+agent's scroll.
 
 ## How traits work
 
-- **A trait is a ladder of levels.** Points accumulate through triggers — battles fought,
-  turns idle, buildings raised — and each level shows once its points reach that level's
-  threshold. The ${num(VISIBLE.length)} visible traits carry ${num(VISIBLE.reduce((a, t) => a + t.levels.length, 0))} levels between them, fed by ${num(ALL_TRIGGERS.length)} triggers and
-  ${num(ALL_TRIGGERS.reduce((a, t) => a + t.affects.length, 0))} award rules.
-- **Traits pull against each other.** ${num(VISIBLE.filter((t) => t.anti.length).length)} of the visible traits name anti-traits: points in
-  one drain the other, so a character drifts toward drink or sobriety, courage or cowardice,
-  never both.
-- **${num(inheritable)}** traits can pass from father to son at birth.
-- **${num(epithetLevels)}** trait levels grant an epithet — the "the Great" and "the Mad" a name carries.
-- Some traits are one-way: past a \`NoGoingBackLevel\`, the ladder no longer goes down.
+- **A trait is a ladder of levels.** A character earns points in a trait from what he does
+  and where he is — battles fought, turns spent idle, buildings raised — and each new level
+  shows once he has enough points for it.
+- **Traits pull against each other.** Points in one drain its opposite, so a character drifts
+  toward drink or sobriety, courage or cowardice, never both.
+- **Some traits run in families.** Sons can inherit them from their father at birth.
+- **Some levels grant an epithet** — the "the Great" and "the Mad" a name carries.
+- **Some traits are one-way.** Once they reach a certain level they cannot drop back; each
+  trait's entry says so where it applies.
 
 ## Where to look
 
@@ -631,14 +693,6 @@ ${PAGE_ROWS.map(([f, title, what]) => `| [**${title}**](traits/${f}) | ${num((PA
 ### The dictionary — every other trait, by first letter
 
 ${LETTERS.map((L) => `- [**${L.toUpperCase()}**](traits/${L}.md) — ${PAGES.get(L).length} trait${PAGES.get(L).length === 1 ? "" : "s"}`).join("\n")}
-
-## What traits touch
-
-The twelve stats trait effects reach most often, across the ${num(VISIBLE.length)} visible traits:
-
-| Stat | Effect lines |
-|---|---:|
-${topAttrs.map(([a, n]) => `| ${attrName(a)} | ${num(n)} |`).join("\n")}
 
 Who the traits appear on: ${Object.entries(charCounts).sort((a, b) => b[1] - a[1]).map(([c, n]) => `**${num(n)}** on ${charName(c)}`).join(" · ")}.
 
@@ -666,7 +720,8 @@ say(`  partition: ${[...PAGES.entries()].filter(([p]) => !/^[a-z]$/.test(p)).map
   if (placed !== VISIBLE.length) process.exit(1);
 }
 say(`  effect attributes: ${Object.keys(attrCounts).length} distinct · ${attrResolved.size} Combat-vs tokens resolved via faction/culture names · ${attrMechanical.size} rendered from the token (engine UI strings, no mod text entry)`);
-say(`  anti-trait references: ${antiLinked} linked to their page · ${antiHiddenOrMissing} name hidden or undeclared traits (unlinked)`);
+say(`  anti-trait references: ${antiLinked} linked to their page · ${antiHiddenOrMissing} name hidden or undeclared traits (omitted)`);
+say(`  trigger conditions: ${num(condRows)} rows translated · ${num(condHiddenRows)} with hidden clauses dropped · ${condUnknownRows} with a clause kept raw under Technical${condUnknown.size ? `: ${[...condUnknown.keys()].join(" | ")}` : ""}`);
 say(`  cultures linked: ${cultureLinked} (${Object.keys(CULTURE_INDEX).length} in cultures/index.json)${Object.keys(CULTURE_INDEX).length ? "" : "  <- run gen-ris-culture-pages.js first, then this again"}`);
 say(`  beliefs linked: ${Object.keys(BELIEF_INDEX).length ? "religions/index.json present" : "religions/index.json MISSING — belief tokens printed bare"}`);
 say(`  retinue links: ${ancLinksPrinted} printed from ancillaries/index.json (${Object.keys(ANCILLARY_INDEX).length} entries)${Object.keys(ANCILLARY_INDEX).length ? "" : "  <- run gen-ris-ancillary-pages.js, then this generator again"}`);

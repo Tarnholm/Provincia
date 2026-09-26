@@ -213,7 +213,8 @@ function groupName(g) {
   const t = String(g).toLowerCase();
   if (BELIEFS[t] && beliefName(t)) { groupNamed.viaBelief.add(t); return beliefName(t); }
   groupNamed.token.add(t);
-  return t;
+  // Title-cased token ("hellenic" -> "Hellenic"), so a heading reads as a name like its peers.
+  return t.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 const BELIEF_ICON_PX = 16;
 const pip = (tok) => (beliefIcons.has(tok)
@@ -254,23 +255,30 @@ function loadRegions() {
   }
   return out;
 }
-const REGIONS = loadRegions();
-if (!REGIONS.length) { console.error("no regions parsed from descr_regions.txt"); process.exit(2); }
+const ALL_REGIONS = loadRegions();
+if (!ALL_REGIONS.length) { console.error("no regions parsed from descr_regions.txt"); process.exit(2); }
+// Only the regions a player can see: the holding regions have no page (gen-ris-region-pages.js
+// drops them), and counting them made "of 1,312 regions" here disagree with the 1,305 listed
+// everywhere else. Every region block is still walked for the tag-count cross-check below.
+const REGIONS = regionPages.size ? ALL_REGIONS.filter((r) => regionPages.has(r.region)) : ALL_REGIONS;
 
 const REL_TAG = /^rel_([a-z_]+)_(\d)$/i;
 const tierOf = new Map();          // belief -> Map(region -> tier)
 const peopleIn = new Map();        // belief -> [{region, pct}]
 let relTagsSeen = 0, oddRelTags = [];
-for (const r of REGIONS) {
+const KEEP = new Set(REGIONS.map((r) => r.region));
+for (const r of ALL_REGIONS) {
   for (const t of r.tags) {
     if (!/^rel_/i.test(t)) continue;
     relTagsSeen++;
+    if (!KEEP.has(r.region)) continue;
     const m = REL_TAG.exec(t);
     if (!m) { oddRelTags.push(`${r.region}: ${t}`); continue; }
     const b = m[1].toLowerCase();
     if (!tierOf.has(b)) tierOf.set(b, new Map());
     tierOf.get(b).set(r.region, parseInt(m[2], 10));
   }
+  if (!KEEP.has(r.region)) continue;
   for (const e of r.eth) {
     if (!peopleIn.has(e.name)) peopleIn.set(e.name, []);
     peopleIn.get(e.name).push({ region: r.region, pct: e.pct });
@@ -376,10 +384,8 @@ const cultureRef = (tok) => {
 const HEAD = (title) => `# ${title}\n\n[← all beliefs](../religions.md) · [all cultures](../cultures.md) · [all regions](../regions.md) · [wiki index](../README.md)\n`;
 
 
-const TIER_NOTE = "What matters is whether it is the **majority** belief in the settlement or a "
-  + "**minority** one. The file records a finer number behind that, and it is not a percentage — "
-  + "the one place it shows is how much `religious_belief` a building generates, which is the "
-  + "table further down.";
+const TIER_NOTE = "In some it is the **majority** belief; in the rest it is a **minority** "
+  + "held alongside a larger one.";
 
 const FOLD_AT = 12;
 const maybeFold = (summary, n, table) => (n > FOLD_AT ? fold(summary, [table]) : table);
@@ -496,7 +502,7 @@ function beliefPage(f, all) {
     .map(([chain, list]) => {
       const amounts = uniq(list.map((e) => e.amount)).sort((a, c) => a - c);
       const levels = uniq(list.map((e) => `${e.chain}|${e.level}`)).map((s) => { const [ch, lv] = s.split("|"); return levelLink(ch, lv); });
-      return `| ${levels.join(", ")} | ${list.length} | ${amounts.map((a) => `+${a}`).join(", ")} |`;
+      return `| ${levels.join(", ")} | ${amounts.map((a) => `+${a}`).join(", ")} |`;
     });
 
   // ── what it withholds ──
@@ -514,113 +520,97 @@ function beliefPage(f, all) {
     .map((e) => `| ${levelLink(e.chain, e.level)} | ${cell(`${e.subject ? bName(e.subject) : ""} belief +${e.amount}`.trim())} |`);
 
   const glance = [
-    `**${nRegions}** of ${num(REGIONS.length)} regions`,
-    f.people.length ? `named as a people in **${f.people.length}**` : null,
-    `**${f.facs.length}** faction${f.facs.length === 1 ? "" : "s"} default to it`,
+    `Held in **${nRegions}** of ${num(REGIONS.length)} regions`,
+    f.people.length ? `its people live in **${f.people.length}**` : null,
+    `the state belief of **${f.facs.length}** faction${f.facs.length === 1 ? "" : "s"}`,
   ].filter(Boolean).join(" · ");
 
   const unrestText = b.unrestKey ? BI_NAMES[b.unrestKey] : null;
+  // When every belief sets both unrest multipliers to 0 (true in RIS today) an unrest table of
+  // zeros tells a player nothing; one sentence says it. The table comes back if that changes.
+  const allCalm = all.every((o) => o.b.mult && o.b.mult.heretics === 0 && o.b.mult.heathens === 0);
 
   const body = `${HEAD(`${pip(tok)}${name}`)}
-Internal token \`${tok}\`${b.group ? `, in the ${groupName(b.group)} group` : ""}. ${glance}
+${b.group ? `Part of the ${groupName(b.group)} group. ` : ""}${glance}
 
 
 ## Where it is on the map
 
 ${nRegions
-    ? `**${nRegions}** of the ${num(REGIONS.length)} regions carry a \`rel_${tok}_…\` tag — **${((nRegions / REGIONS.length) * 100).toFixed(1)}%** of the map. ${TIER_NOTE}
+    ? `**${nRegions}** of the ${num(REGIONS.length)} regions hold this belief — **${((nRegions / REGIONS.length) * 100).toFixed(1)}%** of the map. ${TIER_NOTE}
 
 | Strength | Regions | Share of its regions |
 |---|---:|---:|
 ${tierRows.join("\n")}
 
 ${regionFolds.join("\n\n")}`
-    : `_No region on the map carries a \`rel_${tok}_…\` tag._`}
+    : `_No region on the map holds this belief at the campaign start._`}
 
 ## The people it belongs to
 
 ${f.people.length
-    ? `**${name}** is named as a people living in **${f.people.length}** ${f.people.length === 1 ? "region" : "regions"}, ${majority} of ${f.people.length === 1 ? "which" : "them"} as the majority. Those shares sum to 100 and are a different measurement from the strength tier above; the two are not comparable.
+    ? `**${name}** people live in **${f.people.length}** ${f.people.length === 1 ? "region" : "regions"}, and are the majority in ${majority} of ${f.people.length === 1 ? "it" : "them"}. The share is of each region's population.
 
 ${maybeFold(`Where its people live (${f.people.length})`, f.people.length,
       `| Region | Share |\n|---|---:|\n${f.people.slice().sort((a, c) => c.pct - a.pct || regionName(a.region).localeCompare(regionName(c.region))).map((p) => `| ${regionLink(p.region)} | ${p.pct}% |`).join("\n")}`)}
 
-${peopleNoTag.length || tagNoPeople.length
-      ? `The two vocabularies do not line up exactly. **${peopleNoTag.length}** ${peopleNoTag.length === 1 ? "region names this people but carries no belief tag for it" : "regions name this people but carry no belief tag for it"}${peopleNoTag.length ? ` — ${peopleNoTag.slice(0, 12).map(regionLink).join(", ")}${peopleNoTag.length > 12 ? `, and ${peopleNoTag.length - 12} more` : ""}` : ""}. **${tagNoPeople.length}** ${tagNoPeople.length === 1 ? "carries the tag without naming the people" : "carry the tag without naming the people"}${tagNoPeople.length ? ` — ${tagNoPeople.slice(0, 12).map(regionLink).join(", ")}${tagNoPeople.length > 12 ? `, and ${tagNoPeople.length - 12} more` : ""}` : ""}. Which of the two the mod means as authoritative is **not determined**.`
-      : "Every region that names this people also carries its belief tag, and every region that carries the tag names the people."}`
-    : `_No region's ancestry field names \`${tok}\` as a people.${nRegions ? ` Though ${nRegions} ${nRegions === 1 ? "region carries" : "regions carry"} the belief tag.` : ""}_`}
+${[
+      // Each direction only when it happens, in plain words: where the people live without the
+      // belief, and where the belief is held without the people.
+      peopleNoTag.length ? `${peopleNoTag.length === 1 ? "In **1** region" : `In **${peopleNoTag.length}** regions`} its people live but do not hold the belief — ${peopleNoTag.slice(0, 12).map(regionLink).join(", ")}${peopleNoTag.length > 12 ? `, and ${peopleNoTag.length - 12} more` : ""}.` : "",
+      tagNoPeople.length ? `${tagNoPeople.length === 1 ? "**1** region holds" : `**${tagNoPeople.length}** regions hold`} the belief without its people living there — ${tagNoPeople.slice(0, 12).map(regionLink).join(", ")}${tagNoPeople.length > 12 ? `, and ${tagNoPeople.length - 12} more` : ""}.` : "",
+    ].filter(Boolean).join(" ")}`
+    : `_No region lists ${name} people among its population.${nRegions ? ` The belief is still held in ${nRegions} ${nRegions === 1 ? "region" : "regions"}.` : ""}_`}
 
 ## Who follows it
 
 ${f.facs.length
-    ? `**${f.facs.length}** of the ${num(Object.keys(FACTIONS).length)} factions hold this as their state belief. Between them they hold **${num(heldByFollowers)}** of the ${num(heldTotal)} settlements the campaign file places.
+    ? `**${f.facs.length}** of the ${num(Object.keys(FACTIONS).length)} factions hold this as their state belief. Between them they hold **${num(heldByFollowers)}** settlements at the campaign start.
 
 ${maybeFold(`The ${f.facs.length} factions`, f.facs.length,
-      `| Faction | Culture | Provinces |\n|---|---|---:|\n${facRows.map((r) => `| ${symbolFiles.has(r.f) ? `<img src="../symbols/${r.f}.png" alt="" width="24" height="24" style="vertical-align:middle"> ` : ""}${facLink(r.f)} | ${r.culture ? cultureRef(r.culture) : "_not determined_"} | ${r.n || "—"} |`).join("\n")}`)}`
-    : `_No faction states this as its default religion._`}
-
-${f.alias
-    ? `The temples and government levels test a separate list, \`faction_religion_${tok}\`. It names **${f.alias.length}** ${f.alias.length === 1 ? "entry" : "entries"}${aliasCultures.length ? `, ${aliasCultures.length} of which ${aliasCultures.length === 1 ? "is a culture rather than a faction" : "are cultures rather than factions"} (${aliasCultures.map(cultureRef).join(", ")})` : ""}.
-
-${aliasOnly.length || defaultOnly.length
-      ? `**The two files disagree.**${aliasOnly.length ? ` The alias names ${aliasOnly.map((x) => facLink(x)).join(", ")}, ${aliasOnly.length === 1 ? "whose faction block gives a different default religion" : "whose faction blocks give a different default religion"}.` : ""}${defaultOnly.length ? ` ${defaultOnly.map((x) => facLink(x)).join(", ")} ${defaultOnly.length === 1 ? "declares" : "declare"} this as ${defaultOnly.length === 1 ? "its" : "their"} default religion but ${defaultOnly.length === 1 ? "is" : "are"} not in the alias, so the buildings file will not treat ${defaultOnly.length === 1 ? "it" : "them"} as ${name}.` : ""}`
-      : ""}`
-    : `_There is no \`faction_religion_${tok}\` list, so nothing a settlement builds can test for a faction being ${name}. ${Object.keys(ALIAS_FOLLOWERS).length} such lists exist for the ${BELIEF_ORDER.length} beliefs._`}
+      `| Faction | Culture | Provinces |\n|---|---|---:|\n${facRows.map((r) => `| ${symbolFiles.has(r.f) ? `<img src="../symbols/${r.f}.png" alt="" width="24" height="24" style="vertical-align:middle"> ` : ""}${facLink(r.f)} | ${r.culture ? cultureRef(r.culture) : "—"} | ${r.n || "—"} |`).join("\n")}`)}`
+    : `_No faction has this as its state belief._`}
 
 ## What builds it
 
 ${tierTable
-    ? `These building levels generate the belief in a region that already carries its tag, and the amount is what the tier decides. This is what the 1-4 tier is *for*.
+    ? `These buildings strengthen the belief where it is already held. How much they add depends on how strong it already is there: the columns run from a weak minority (**1**) to where it is the **majority**.
 
 ${tierTable}
 
-${withheldRows.length ? `\n${withheldRows.length} further ${withheldRows.length === 1 ? "grant is" : "grants are"} made only where the belief is **not** already present — that is the conversion path, and it stops once the belief is there.\n\n| Where | What |\n|---|---|\n${withheldRows.join("\n")}` : ""}`
-    : `_No building level scales anything on this belief's strength tier._`}
+${withheldRows.length ? `\n${withheldRows.length === 1 ? "This building adds" : "These buildings add"} the belief only where it is **not** held yet — that is how it spreads to new regions:\n\n| Where | What |\n|---|---|\n${withheldRows.join("\n")}` : ""}`
+    : `_No building strengthens it where it is already held._`}
 
 ${genOtherRows.length
-    ? `### Spread by conversion — ${genOther.length} lines
+    ? `### Other buildings that spread it
 
-Beyond the tier table, **${genOther.length}** further \`religious_belief ${tok}\` ${genOther.length === 1 ? "line grants" : "lines grant"} it on conditions that are not about the tier — who owns the settlement, what government it has, whether the belief is present at all. These are the conversion and temple rules.
+These also add the belief, depending on who owns the settlement, what government it has, or whether the belief is already there.
 
-| Where | Lines | Amounts |
-|---|---:|---|
+| Where | Amounts |
+|---|---|
 ${genOtherRows.join("\n")}`
-    : `### Spread by conversion — none
+    : `### Other buildings that spread it
 
-_Nothing outside the tier table grants this belief._`}
+_None._`}
 
-## What it gates
+## What it unlocks
 
-_**Nothing.** No building level and no recruitment line in the mod is conditioned on a belief. A
-belief is a number a settlement carries, not a key that opens anything._
-
-## Unrest and identity
+_**Nothing.** No building and no unit depends on a belief.${allCalm ? " Nor does any belief cause unrest against another in RIS, whether they share a group or not." : ""}_
+${allCalm ? "" : `
+## Unrest
 
 | | |
 |---|---|
-| Group | ${b.group ? `${groupName(b.group)} (\`${b.group}\`)${GROUP_ALIASES.includes(b.group) ? ` — the buildings file tests this group directly, with \`faction_religion_group_${b.group}\`` : ""}` : "_not determined_"} |
-| Character trait | ${b.trait ? `\`${b.trait}\`` : "_not determined_"} |
-| Unrest against its own group | ${b.mult && b.mult.heretics != null ? `**${b.mult.heretics}**` : "_not determined_"} |
-| Unrest against other groups | ${b.mult && b.mult.heathens != null ? `**${b.mult.heathens}**` : "_not determined_"} |
-| Hidden at zero presence | ${b.hideAtZero == null ? "_not determined_" : (b.hideAtZero ? "yes" : "no")} |
-| Unrest message | ${unrestText ? `“${unrestText}”` : (b.unrestKey ? `\`${b.unrestKey}\` — no entry in the mod's text files` : "_not determined_")} |
-
-${(() => {
-    const her = all.filter((o) => o.b.mult && o.b.mult.heretics === (b.mult || {}).heretics).length;
-    const hea = all.filter((o) => o.b.mult && o.b.mult.heathens === (b.mult || {}).heathens).length;
-    if (her === all.length && hea === all.length && (b.mult || {}).heretics === 0 && (b.mult || {}).heathens === 0) {
-      return `Every one of the ${all.length} beliefs RIS declares sets both multipliers to **0**. No belief in this mod creates unrest against another, whether they share a group or not — the religious tension of the base game is switched off across the board, and what the belief system is used for instead is the numbers above.`;
-    }
-    return `${her} of the ${all.length} beliefs share this heretic multiplier and ${hea} share this heathen one.`;
-  })()}
-
+| Unrest against its own group | ${b.mult && b.mult.heretics != null ? `**${b.mult.heretics}**` : "—"} |
+| Unrest against other groups | ${b.mult && b.mult.heathens != null ? `**${b.mult.heathens}**` : "—"} |
+${unrestText ? `| Unrest message | “${unrestText}” |\n` : ""}`}
 ## Its group
 
 ${f.group
     ? (siblings.length
-      ? `The **${groupName(f.group)}** group (\`${f.group}\`) holds **${siblings.length + 1}** beliefs. The others are ${siblings.slice().sort((a, c) => a.name.localeCompare(c.name)).map((o) => `${pip(o.tok)}[${o.name}](${o.tok}.md)`).join(", ")}.\n\nA group has no name of its own in the mod — the token \`${f.group}\` is all there is. ${BELIEFS[f.group] ? `The name above is the belief of that same token, which is the mod's own.` : `No belief carries that token either, so the token is printed as it stands.`}`
-      : `The **${groupName(f.group)}** group (\`${f.group}\`) holds this belief alone — no other belief names it.`)
-    : "_This belief declares no group._"}
+      ? `The **${groupName(f.group)}** group holds **${siblings.length + 1}** beliefs. The others are ${siblings.slice().sort((a, c) => a.name.localeCompare(c.name)).map((o) => `${pip(o.tok)}[${o.name}](${o.tok}.md)`).join(", ")}.`
+      : `The **${groupName(f.group)}** group holds this belief alone.`)
+    : "_This belief belongs to no group._"}
 `;
   fs.mkdirSync(path.join(OUT, "religions"), { recursive: true });
   fs.writeFileSync(path.join(OUT, "religions", `${tok}.md`), body, "utf8");
@@ -671,7 +661,7 @@ const groupSections = groups.map(({ g, list }) => {
   // inside a heading slug to.
   const head = g
     ? `### ${groupName(g)} group · ${list.length} belief${list.length === 1 ? "" : "s"} · ${list.reduce((a, f) => a + f.regions.size, 0)} regions`
-    : `### Group not determined · ${list.length} belief${list.length === 1 ? "" : "s"}`;
+    : `### Other beliefs · ${list.length} belief${list.length === 1 ? "" : "s"}`;
   // Majority and minority provinces, and nothing else that counts provinces. "Regions" was the
   // sum of these two and told a reader nothing the two do not; "People" counted a different
   // field — where that people is descended from — which is a question about ancestry, not about
@@ -694,24 +684,18 @@ const indexBody = `# Beliefs
 [← all cultures](cultures.md) · [all regions and settlements](regions.md) · [wiki index](README.md)
 
 RIS replaces the base game's handful of religions with **${FACTS.length}** local beliefs — one per people, near
-enough — and spreads them across the map as a **strength tier** rather than a share. Every one
-has its own page: where it is, who its people are, who follows it, and what the mod does with it.
+enough. In each region a belief is either the **majority** or a **minority** held alongside a
+larger one. Every belief has its own page: where it is, who its people are, who follows it, and
+what builds it.
 
-**${FACTS.filter((f) => f.regions.size).length}** of the ${FACTS.length} are on the map at the campaign start, carried between them by ${num(totalTagged)}
-region tags across ${num(REGIONS.length)} regions. ${onNoRegion.length ? `The other ${onNoRegion.length} — ${onNoRegion.map((f) => `**${f.name}**`).join(" and ")} — ${onNoRegion.length === 1 ? "is" : "are"} declared but on no region: ${onNoRegion.length === 1 ? "it is" : "they are"} the umbrella ${onNoRegion.length === 1 ? "entry" : "entries"} the finer-grained beliefs sit under.` : ""}
+**${FACTS.filter((f) => f.regions.size).length}** of the ${FACTS.length} are on the map at the campaign start, across ${num(REGIONS.length)} regions. ${onNoRegion.length ? `The other ${onNoRegion.length} — ${onNoRegion.map((f) => `**${f.name}**`).join(" and ")} — ${onNoRegion.length === 1 ? "is" : "are"} held by no region: ${onNoRegion.length === 1 ? "it is" : "they are"} the umbrella ${onNoRegion.length === 1 ? "belief" : "beliefs"} the local ones sit under.` : ""}
 
 ## What a belief does, and what it does not
 
-- **It is a number, not a key.** No building level and no recruitment line in the mod is
-  conditioned on a belief. All ${num(LEVEL_BLOCKS)} building level blocks and all ${num(EDB.recruits.length)} \`recruit\` lines were
-  checked against every \`rel_<belief>_<tier>\` token: **${gatedLevels}** levels and **${gatedRecruits}** recruit lines
-  came back. Nothing is unlocked by what a province believes.
-- **No belief creates unrest against another.** All ${FACTS.length} declare a heretic multiplier of
-  ${uniq(FACTS.map((f) => (f.b.mult || {}).heretics)).join("/")} and a heathen multiplier of ${uniq(FACTS.map((f) => (f.b.mult || {}).heathens)).join("/")}. The base game's religious
-  friction is switched off across the board.
-- **What the tier does decide** is how much \`religious_belief\` a settlement's own buildings
-  generate: the same level grants a different amount at each of the four tiers, and each page
-  prints that mapping for its own belief.
+${gatedLevels || gatedRecruits ? "" : "- **Beliefs do not unlock buildings or units.**\n"}${FACTS.every((f) => f.b.mult && f.b.mult.heretics === 0 && f.b.mult.heathens === 0)
+    ? "- **No belief creates unrest against another.** The base game's religious friction is switched\n  off across the board.\n" : ""}- **What a belief's strength does decide** is how much a settlement's own buildings add to it:
+  the same building adds a different amount where the belief is weak than where it is the
+  majority, and each page shows that for its own belief.
 - **Culture and belief are separate axes.** ${(() => {
   const spread = new Map();
   for (const f of Object.values(FACTIONS)) {
@@ -729,10 +713,6 @@ region tags across ${num(REGIONS.length)} regions. ${onNoRegion.length ? `The ot
 ones where it is held alongside a larger one. Together they are every province that holds it.
 **Factions** is not a count of provinces — it is how many factions have this as their state
 belief, so a faction with forty provinces counts once.
-
-A group has no name of its own in the mod: there is only a token. ${groupNamed.viaBelief.size} of the ${groupNamed.viaBelief.size + groupNamed.token.size} group tokens are also belief tokens and take that belief's own
-declared name; ${groupNamed.token.size === 1 ? `the one that is not — \`${[...groupNamed.token][0]}\` — is` : `the ${groupNamed.token.size} that are not are`} printed as ${groupNamed.token.size === 1 ? "it stands" : "they stand"}, in lower case, rather than
-given a name this wiki made up.
 
 ${groupSections}
 
@@ -754,7 +734,7 @@ say(`    ${BELIEF_ORDER.length === RAW_ICON_LINES && RAW_ICON_LINES === RAW_NAME
 // the pages read "not determined" 53 times without anything failing. These counts are what say
 // a field is genuinely absent rather than being dropped on the way in.
 {
-  const has = (k) => FACTS.filter((f) => f.b[k] != null).length;
+  const has = (k) => ALL_FACTS.filter((f) => f.b[k] != null).length;
   const raw = (re) => (BELIEF_TXT.match(re) || []).length;
   const rows = [
     ["religion icon", has("icon"), raw(/"religion icon"\s*:/g)],
@@ -764,8 +744,8 @@ say(`    ${BELIEF_ORDER.length === RAW_ICON_LINES && RAW_ICON_LINES === RAW_NAME
     ["unrest icon", has("unrestIcon"), raw(/"unrest icon"\s*:/g)],
     ["unrest tooltip", has("unrestKey"), raw(/"unrest tooltip"\s*:/g)],
     ["hide at zero", has("hideAtZero"), raw(/"hide at zero"\s*:/g)],
-    ["heretic multiplier", FACTS.filter((f) => f.b.mult && f.b.mult.heretics != null).length, raw(/"heretics"\s*:/g)],
-    ["heathen multiplier", FACTS.filter((f) => f.b.mult && f.b.mult.heathens != null).length, raw(/"heathens"\s*:/g)],
+    ["heretic multiplier", ALL_FACTS.filter((f) => f.b.mult && f.b.mult.heretics != null).length, raw(/"heretics"\s*:/g)],
+    ["heathen multiplier", ALL_FACTS.filter((f) => f.b.mult && f.b.mult.heathens != null).length, raw(/"heathens"\s*:/g)],
   ];
   say(`  fields read, parser vs a flat pattern over the file — the pair must match or a field is being dropped:`);
   for (const [k, n, r] of rows) say(`    ${k.padEnd(20)} ${String(n).padStart(3)} / ${String(r).padStart(3)}${n === r ? "" : "   <- MISMATCH"}`);

@@ -274,7 +274,23 @@ const otherConsumerHits = (tok) => {
 const TAG_PREFIXES = [
   [/^aor_/, ""], [/^homeland_/, ""], [/^base_port_level_/, "port level "], [/^farm/i, "farm level "],
 ];
+// Plain names for the values whose humanised token reads as a tag rather than a thing: "Port
+// level 0" does not tell a player that the coast has no harbour, and "Irrigation river" says the
+// category twice. Each is checked against what the value actually allows (the port grades against
+// the port_level_* aliases on the port chain: 1 = Trade Port, 2 = Shipwright, 3 = Dockyard; 0 =
+// only a Harbour Improvement). The heading, its anchor and tags/index.json all follow this name,
+// so the region pages print exactly the word they link to.
+const PLAIN_NAMES = {
+  base_port_level_0: "No natural harbour",
+  base_port_level_1: "Natural harbour up to Trade Port",
+  base_port_level_2: "Natural harbour up to Shipwright",
+  base_port_level_3: "Natural harbour up to Dockyard",
+  irrigation_river: "River", irrigation_lake: "Lake", irrigation_springs: "Springs",
+  irrigation_oasis: "Oasis", irrigation_aquifer: "Aquifer",
+  rivertrade: "Navigable river",
+};
 function humanise(tok) {
+  if (PLAIN_NAMES[String(tok).toLowerCase()]) return PLAIN_NAMES[String(tok).toLowerCase()];
   let s = String(tok);
   for (const [re, repl] of TAG_PREFIXES) if (re.test(s)) { s = s.replace(re, repl); break; }
   s = s.replace(/_+/g, " ").replace(/\s+/g, " ").trim();
@@ -362,8 +378,9 @@ function factsFor(tok) {
   return { tok, name: humanise(tok), regions, levels: lv, blockedLevels: bl, units, blockedUnits, effects: eff, blockedEffects: beff, aliases: u.aliases };
 }
 
-const NOTHING = "**No effect established in the mod files.** Nothing in the mod requires it, " +
-  "excludes it, or keys a number off it.";
+// One short line for a player. The proof (nothing requires it, excludes it or keys a number off
+// it) is what factsFor established; the page states the result, not the method.
+const NOTHING = "Has no effect in the current version.";
 
 /** The body of one `## <name>` entry, as a bullet list of established facts. */
 function entryBody(f, opts) {
@@ -423,13 +440,16 @@ function summaryTable(list, cols) {
 
 function simplePage(title, file, tokens, lede, opts) {
   opts = opts || {};
-  const list = tokens.map(factsFor);
-  const nothing = list.filter((f) => !f.levels.length && !f.blockedLevels.length && !f.effects.size
-    && !f.blockedEffects.size && !f.units.size && !f.blockedUnits.size);
+  const isInert = (f) => !f.levels.length && !f.blockedLevels.length && !f.effects.size
+    && !f.blockedEffects.size && !f.units.size && !f.blockedUnits.size;
+  // A value no region carries AND nothing reads (Tropical, the disaster tags) is not something a
+  // player can meet, so it gets no entry. Still counted in the run report below.
+  const all = tokens.map(factsFor);
+  const hidden = all.filter((f) => isInert(f) && !f.regions.length);
+  const list = all.filter((f) => !hidden.includes(f));
+  const nothing = all.filter(isInert);
   const body = `${HEAD(title)}
 ${lede}
-
-**${list.length}** values. ${list.length - nothing.length} have an effect established in the files; ${nothing.length} do not.
 
 ${summaryTable(list, [
     [opts.header || "Value", (f) => `[${f.name}](#${anchor(f.name)})`],
@@ -444,7 +464,7 @@ ${list.map((f) => `## ${f.name}\n\n${entryBody(f)}\n\n${regionsFold(f, opts.regi
 `;
   fs.mkdirSync(path.join(OUT, "tags"), { recursive: true });
   fs.writeFileSync(path.join(OUT, "tags", file), body, "utf8");
-  return { list, nothing };
+  return { list, nothing, hidden };
 }
 
 // ── recruitment zones ────────────────────────────────────────────────────────
@@ -468,18 +488,20 @@ function recruitmentPage(title, file, tokens, lede) {
     const zmap = f.regions.length ? ZONE_MAPS.add(f.regions, `Regions carrying ${f.name}`, "../") : "";
     if (zmap) parts.push("\n" + zmap);
     if (!f.units.size && !f.regions.length) {
-      parts.push(`\n${NOTHING} No region carries it either, so it is dead data in the mod.`);
+      parts.push(`\n${NOTHING}`);
     } else if (!f.units.size) {
-      const other = otherConsumerHits(f.tok);
-      parts.push(`\n**No unit is gated on this zone.** ${f.regions.length} ${f.regions.length === 1 ? "region carries" : "regions carry"} it, but nothing in the mod conditions a recruitment line on it, ${other.length ? `and the only files that name it at all are ${other.join(", ")}` : `nothing else that could read it — the campaign script, the mercenary pools, the rebel-faction blocks, the spawn scripts — mentions it either`}. So as the mod ships it unlocks nothing.`);
+      // Not "has no effect": some of these are named by the campaign script, so the safe, exact
+      // statement is about recruitment only. The file names stay in the run report.
+      parts.push(`\n**No unit is recruited through this zone** in the current version.`);
     } else if (!f.regions.length) {
-      parts.push(`\n**No region carries this zone**, so the ${f.units.size} ${f.units.size === 1 ? "unit" : "units"} below cannot be raised anywhere on the map as it ships.`);
+      // "At the start": a script may hand the zone out later, so "never" would be a guess.
+      parts.push(`\n**No region is in this zone at the start of the campaign**, so the ${f.units.size === 1 ? "unit below is" : "units below are"} not raisable anywhere then.`);
       parts.push("\n" + unitTable(f));
     } else {
       parts.push("\n" + unitTable(f));
     }
     const extra = [];
-    if (f.blockedUnits.size) extra.push(`- Carrying this zone **withholds ${f.blockedUnits.size}** ${f.blockedUnits.size === 1 ? "unit" : "units"} that a broader zone would otherwise give — that is how the generic rosters step aside for a local one.`);
+    if (f.blockedUnits.size && f.regions.length) extra.push(`- Carrying this zone **withholds ${f.blockedUnits.size}** ${f.blockedUnits.size === 1 ? "unit" : "units"} that a broader zone would otherwise give — that is how the generic rosters step aside for a local one.`);
     if (f.levels.length) extra.push(`- Also lets you build: ${uniq(f.levels.map(([c, l]) => levelLink(c, l))).join(", ")}`);
     if (extra.length) parts.push("\n" + extra.join("\n"));
     const rf = regionsFold(f, "Regions in this zone");
@@ -489,8 +511,6 @@ function recruitmentPage(title, file, tokens, lede) {
 
   const body = `${HEAD(title)}
 ${lede}
-
-**${list.length}** zones, covering **${allUnits.size}** distinct units. ${list.length - noUnits.length} unlock at least one unit; ${list.length - noRegions.length} cover at least one region.${noUnits.length ? ` **${noUnits.length}** unlock nothing: ${noUnits.map((f) => f.name).join(", ")}.` : ""}${noRegions.length ? ` **${noRegions.length}** ${noRegions.length === 1 ? "is" : "are"} on no region at all: ${noRegions.map((f) => f.name).join(", ")}.` : ""}${dead.length ? ` ${dead.length} ${dead.length === 1 ? "is" : "are"} both.` : ""}
 
 ${summaryTable([...list].sort((a, b) => b.units.size - a.units.size || a.name.localeCompare(b.name)), [
     ["Zone", (f) => `[${f.name}](#${anchor(f.name)})`],
@@ -531,34 +551,24 @@ function homelandPage() {
   const noRegion = list.filter((f) => !f.regions.length);
 
   const body = `${HEAD("Cultural homelands")}
-A homeland tag marks the region a faction comes from. **${list.length}** of them exist, one per
-faction with a homeland, and between them they cover **${list.reduce((a, f) => a + f.regions.length, 0).toLocaleString("en-US")}** of the
-${REGION_COUNT.toLocaleString("en-US")} regions on the map.
+A homeland is the land a faction comes from. Every homeland does the same thing:
 
-**They all do the same thing, and the effect is not per-tag.** Each one exists so the mod can
-write a paired condition — \`requires factions { massalia, } and hidden_resource
-homeland_massaliote\` — and all ${owner.size} of those pairs are or-ed together into one
-\`homeland\` condition. That condition is what has consequences:
-
-- **It is required by ${govLevels.length ? uniq(govLevels.map(([c, l]) => levelLink(c, l))).join(", ") : "the Homeland government level"}.** A faction can only install that government in its own homeland${gov4 ? `, and that level carries ${EDB.recruits.filter((r) => r.chain === "governmentD").length.toLocaleString("en-US")} recruit lines of its own` : ""}.
-- **It blocks ${blocked.length} other levels**: ${blocked.map(([c, l]) => levelLink(c, l)).join(", ")}. Your own homeland cannot be given a lesser government, made a colony, or given a local mint.
-- The tag only counts **for the faction it belongs to**. Anyone else holding the region gets nothing from it — the condition tests the owner as well as the tag.
+- **Only the faction the homeland belongs to benefits, and only it can install the ${govLevels.length ? uniq(govLevels.map(([c, l]) => levelLink(c, l))).join(", ") : "Homeland"} government there.** Anyone else holding the region gets nothing from it.
+- **In your own homeland you cannot build** ${blocked.map(([c, l]) => levelLink(c, l)).join(", ")}. It cannot be given a lesser government, made a colony, or given a local mint.
 
 ${summaryTable(list, [
     ["Homeland", (f) => `[${f.name}](#${anchor(f.name)})`],
-    ["Faction", (f) => (owner.get(f.tok) ? owner.get(f.tok).factions.map(facName).join(", ") : "_not determined_")],
+    ["Faction", (f) => (owner.get(f.tok) ? owner.get(f.tok).factions.map(facName).join(", ") : "—")],
     ["Regions", (f) => (f.regions.length || "—"), "r"],
   ])}
 
 ${list.map((f) => {
     const o = owner.get(f.tok);
     const lines = [`## ${f.name}`, ""];
-    lines.push(o
-      ? `The homeland of **${o.factions.map(facName).join(", ")}**.`
-      : "**Not determined which faction this belongs to** — no condition anywhere in the mod pairs it with a faction.");
+    if (o) lines.push(`The homeland of **${o.factions.map(facName).join(", ")}**.`);
     lines.push(f.regions.length
       ? `${f.regions.length === 1 ? "Region" : "Regions"}: ${[...f.regions].sort().map(regionLink).join(" · ")}`
-      : "**No region carries this tag**, so it can never be satisfied as the mod ships.");
+      : "No region is this homeland at the start of the campaign.");
     return lines.join("\n");
   }).join("\n\n")}
 `;
@@ -573,30 +583,30 @@ const terrain = simplePage("Terrain", "terrain.md", [...TERRAIN_TAGS].sort(),
   { header: "Terrain", regionsLabel: "Regions with this terrain" });
 
 const climate = simplePage("Climate", "climate.md", [...CLIMATE_TAGS].sort(),
-  `Climate sits alongside terrain: a region carries one of each. Where a climate does anything, it\nis usually through the farming level the rainfed farming chain grants, which is set higher in\ndry climates than wet ones — the tag chooses which of the two numbers a level gives.`,
+  `Climate sits alongside terrain: a region has one of each. Where a climate does anything, it\nis usually through the farming level the rainfed farming chain grants, which is higher in\ndry climates than wet ones.`,
   { header: "Climate", regionsLabel: "Regions with this climate" });
 
-const irrigation = simplePage("Irrigation", "irrigation.md", [...IRRIGATION_TAGS].sort(),
-  `A region's water source. Four of the five satisfy the mod's \`water\` condition, which is what\nthe irrigated farming chain and the larger colony need; the aquifer is the exception and feeds\nthe qanat chain instead. Having any of them also rules the rainfed farming chain out.`,
+const irrigation = simplePage("Water sources", "irrigation.md", [...IRRIGATION_TAGS].sort(),
+  `A region's water source. A river, lake, springs or oasis lets you build irrigated farming and\nthe Large Colony; an aquifer feeds the qanat chain instead. Having any of them rules the\nrainfed farming chain out.`,
   { header: "Water source", regionsLabel: "Regions with this water source" });
 
 const ports = simplePage("Ports", "ports.md", PORT_TAGS,
-  `How good a natural harbour the coast gives, before you build anything. The tag is what the port\nand harbour chains test, so it decides how far up those chains a settlement can go.`,
-  { header: "Port level", regionsLabel: "Regions at this port level" });
+  `How good a natural harbour the coast gives, before you build anything. It sets how far up the\nport chain a settlement can go: a coast with no natural harbour allows no port at all, and the\nothers allow up to a Trade Port, a Shipwright or a Dockyard. A\n[Harbour Improvement](../buildings/harbour.md) raises that limit by one level; the best harbours\ncannot take one, as they are already at the top.`,
+  { header: "Harbour", regionsLabel: "Regions with this harbour" });
 
-const hazards = simplePage("Hazards and river trade", "hazards-and-river-trade.md", HAZARD_TAGS,
-  `The leftovers of the region tag line: a navigable-river flag and the disaster tags. They are\ngrouped because that is how a region page groups them, not because they are alike.`,
-  { header: "Tag", regionsLabel: "Regions with this tag" });
+const hazards = simplePage("River trade", "hazards-and-river-trade.md", HAZARD_TAGS,
+  `Whether a region lies on a navigable river. Only such a region can build a river port.`,
+  { header: "River", regionsLabel: "Regions on a navigable river" });
 
 const fertility = simplePage("Fertility", "fertility.md", FARM_TAGS,
-  `A region's farmland quality, on a 1–14 scale, carried as a \`farm\` tag. This is the number the\nFertility row on a region page shows. Note what it does and does not do: the engine adds\n+0.5% population growth per fertility point, and the region-information building subtracts\nexactly that back again, so fertility describes the land without changing how fast it grows.`,
+  `How rich a region's farmland is, on a scale of 1 to 14: the Fertility row on a region page.\nIt describes the land but does not speed up population growth in RIS: the growth the game\ngives for each point of fertility is taken back by the Region Information Scroll.`,
   { header: "Fertility", regionsLabel: "Regions at this fertility" });
 
 const zones = recruitmentPage("Recruitment zones", "recruitment-zones.md", ZONE_TAGS,
-  `A recruitment zone is a region tag that unlocks local troops. Hold a region inside the zone,\nbuild the military building the unit needs, and you may raise it — whoever you are. This is how\nRIS lets an empire field the men of the places it has taken rather than only its own.\n\nZones overlap, and the broader one steps aside: a unit gated on \`Greek\` is usually also gated\non the region *not* being in a more specific Greek zone, so the generic hoplite appears where\nthere is no local speciality and the local speciality appears where there is.`);
+  `A recruitment zone is a region tag that unlocks local troops. Hold a region inside the zone,\nbuild the military building the unit needs, and you may raise it — whoever you are. This is how\nRIS lets an empire field the men of the places it has taken rather than only its own.\n\nZones overlap, and the broader one steps aside: a unit raised through the Greek zone is usually\nbarred from regions that are also in a more specific Greek zone, so the generic hoplite appears\nwhere there is no local speciality and the local speciality appears where there is.`);
 
 const specialty = recruitmentPage("Specialty recruitment", "specialty-recruitment.md", [...SPECIALTY_AOR].sort(),
-  `Five zones that mark a kind of soldier or a military era rather than a place. Provincia's own\nregion panel keeps them on a separate tab and the region pages give them their own row, so they\nget their own page here too. Mechanically they are ordinary recruitment zones.`);
+  `Five zones that mark a kind of soldier or a military era rather than a place. They work like\nany other recruitment zone.`);
 
 const homeland = homelandPage();
 
@@ -619,20 +629,21 @@ const OTHER_RECRUIT_TAGS = (() => {
   return [...out].sort();
 })();
 const otherTags = recruitmentPage("Other recruitment tags", "recruitment-other.md", OTHER_RECRUIT_TAGS,
-  `Region tags that recruitment tests but that are neither a recruitment zone nor a homeland. A unit\nrequirement "not in a Ptolemaic region" means the unit cannot be raised in the regions listed under\nthat tag here, whoever holds them.`);
+  `Region markers that recruitment checks but that are neither a recruitment zone nor a homeland. A\nunit requirement "not in a Ptolemaic region" means the unit cannot be raised in the regions listed\nunder that marker here, whoever holds them.`);
 
 // ── index page ───────────────────────────────────────────────────────────────
+// No count column: how many values a category has is an inventory, not something a player uses.
 const PAGES = [
-  ["Terrain", "tags/terrain.md", terrain.list.length, "which land-use chains a region allows"],
-  ["Climate", "tags/climate.md", climate.list.length, "the farming level rainfed farming gives"],
-  ["Irrigation", "tags/irrigation.md", irrigation.list.length, "the water source, and what it unlocks"],
-  ["Ports", "tags/ports.md", ports.list.length, "how far the port and harbour chains can go"],
-  ["Recruitment zones", "tags/recruitment-zones.md", zones.list.length, "local troops, per zone, with every region in it"],
-  ["Specialty recruitment", "tags/specialty-recruitment.md", specialty.list.length, "the five zones that mark a soldier, not a place"],
-  ["Other recruitment tags", "tags/recruitment-other.md", otherTags.list.length, "the other region tags recruitment tests (Ptolemaic, Seleucid)"],
-  ["Cultural homelands", "tags/cultural-homeland.md", homeland.list.length, "which region is whose, and what that permits"],
-  ["Hazards and river trade", "tags/hazards-and-river-trade.md", hazards.list.length, "the navigable-river flag and the disaster tags"],
-  ["Fertility", "tags/fertility.md", fertility.list.length, "farmland quality, 1–14, and what it does not do"],
+  ["Terrain", "tags/terrain.md", "which land-use chains a region allows"],
+  ["Climate", "tags/climate.md", "the farming level rainfed farming gives"],
+  ["Water sources", "tags/irrigation.md", "river, lake, springs, oasis or aquifer, and what each unlocks"],
+  ["Ports", "tags/ports.md", "how far up the port chain a coast lets you build"],
+  ["Recruitment zones", "tags/recruitment-zones.md", "local troops, per zone, with every region in it"],
+  ["Specialty recruitment", "tags/specialty-recruitment.md", "the five zones that mark a soldier, not a place"],
+  ["Other recruitment tags", "tags/recruitment-other.md", "the other region markers recruitment checks (Ptolemaic, Seleucid)"],
+  ["Cultural homelands", "tags/cultural-homeland.md", "which region is whose, and what that permits"],
+  ["River trade", "tags/hazards-and-river-trade.md", "which regions lie on a navigable river"],
+  ["Fertility", "tags/fertility.md", "farmland quality, 1–14"],
 ];
 // An anchor index, written for gen-ris-region-pages.js to link against. The region generator
 // humanises the same tokens with its own copy of the same rules, and if the two ever disagreed
@@ -657,13 +668,12 @@ const indexBody = `# Region tag reference
 
 [← all regions](regions.md) · [wiki index](README.md)
 
-A region page lists what the region *is* — its terrain, climate, water source, port, recruitment
-zones, homeland and fertility. These pages say what each of those values **does**, with every
-value in every category listed once.
+A region page lists what the region *is* — its terrain, climate, water source, harbour, recruitment
+zones, homeland and fertility. These pages say what each of those **does**.
 
-| Reference | Values | What it decides |
-|---|---:|---|
-${PAGES.map(([t, f, n, d]) => `| [${t}](${f}) | ${n} | ${d} |`).join("\n")}
+| Reference | What it decides |
+|---|---|
+${PAGES.map(([t, f, d]) => `| [${t}](${f}) | ${d} |`).join("\n")}
 `;
 fs.writeFileSync(path.join(OUT, "tags.md"), indexBody, "utf8");
 
@@ -675,7 +685,7 @@ say(`  export_descr_buildings: ${EDB.chains.length} chains, ${EDB.recruits.lengt
 say(`  hidden-resource tokens conditioned on anywhere: ${USAGE.size}`);
 for (const [label, r] of [["terrain", terrain], ["climate", climate], ["irrigation", irrigation],
   ["ports", ports], ["hazards", hazards], ["fertility", fertility]]) {
-  say(`  ${label.padEnd(10)} ${String(r.list.length).padStart(3)} values, ${r.list.length - r.nothing.length} with an effect established, ${r.nothing.length} without${r.nothing.length ? ` (${r.nothing.map((f) => f.tok).join(", ")})` : ""}`);
+  say(`  ${label.padEnd(10)} ${String(r.list.length + r.hidden.length).padStart(3)} values, ${r.list.length + r.hidden.length - r.nothing.length} with an effect established, ${r.nothing.length} without${r.nothing.length ? ` (${r.nothing.map((f) => f.tok).join(", ")})` : ""}${r.hidden.length ? `; not shown (no region, no effect): ${r.hidden.map((f) => f.tok).join(", ")}` : ""}`);
 }
 say(`  zones      ${String(zones.list.length).padStart(3)} values, ${zones.allUnits.size} distinct units unlocked`);
 say(`             ${zones.noUnits.length} unlock no unit: ${zones.noUnits.map((f) => f.tok).join(", ") || "none"}`);

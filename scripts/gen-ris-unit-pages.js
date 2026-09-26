@@ -43,8 +43,11 @@ const ONLY = (valOf("--only", "") || "").split(",").map((s) => s.trim().toLowerC
 const rd = (...f) => { try { return fs.readFileSync(path.join(RIS, ...f), "latin1"); } catch { return null; } };
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 
-// Text the mod ships as a stand-in for writing it later. Treated as absent.
-const PLACEHOLDER = /this unit needs a (long|short) description/i;
+// Text the mod ships as a stand-in for writing it later. Treated as absent. Three forms occur:
+// "This unit needs a long/short description." (165), "Needs description" (188) and "To Do" (8);
+// the last two are only placeholders when they are the whole text.
+const PLACEHOLDER = /this unit needs a (long|short) description|^(needs (a )?description|to do)\.?$/i;
+const isPlaceholder = (s) => PLACEHOLDER.test(String(s).replace(/\\n/g, " ").trim());
 
 // ── mercenaries ──────────────────────────────────────────────────────────────
 // The marker is the `merc ` prefix on the EDU `type`, for the reasons in the header comment.
@@ -88,8 +91,9 @@ const num = (v) => { const n = parseInt(v, 10); return Number.isFinite(n) ? n : 
 // Every field the unit file states, not just the headline ones.
 //
 // TWO FIELDS WERE BEING READ WRONG and both are fixed here:
-//   - the size field is `soldiers` (PLURAL) and its men count is index 0, not 1. Read as
-//     "soldier"[1] it resolved to nothing, so no unit page has ever shown its unit size.
+//   - the size field comes in TWO forms. `soldiers 12, 2, 0.97` (men first, the models in a
+//     block below) is on 1,173 entries; the vanilla `soldier <model>, 60, 0, 0.81` (men second)
+//     is on the other 569. Reading only one form left a third of the roster with no size.
 //   - stat_pri[8] is the SOUND type, not the weapon. Printed as "Weapon" it gave a bow-armed
 //     elephant "Weapon: none". The weapon class is [5], its damage type [7].
 function statsOf(b) {
@@ -99,7 +103,7 @@ function statsOf(b) {
   const secArm = csv(b, "stat_sec_armour");  // armour, defence skill, material
   const mental = csv(b, "stat_mental");      // morale, discipline, training
   const cost = csv(b, "stat_cost");          // turns, cost, upkeep, weapon upgrade, armour upgrade, total
-  const soldiers = csv(b, "soldiers");       // men, extras, mass
+  const soldiers = first(b, "soldiers") ? csv(b, "soldiers") : csv(b, "soldier").slice(1);   // men, extras, mass
   const health = csv(b, "stat_health");      // man hp, mount/animal hp
   const ground = csv(b, "stat_ground");      // scrub, sand, forest, snow
   const food = csv(b, "stat_food");
@@ -166,11 +170,13 @@ function statsOf(b) {
     foodHigh: num(food[1]),
 
     mount: first(b, "mount"),
+    animal: first(b, "animal"),
     mountEffect: first(b, "mount_effect"),
-    formClose: form[0] && form[1] ? `${form[0]} x ${form[1]}` : null,
-    formLoose: form[2] && form[3] ? `${form[2]} x ${form[3]}` : null,
+    formClose: form[0] && form[1] ? `${form[0]} × ${form[1]} m` : null,
+    formLoose: form[2] && form[3] ? `${form[2]} × ${form[3]} m` : null,
     ranks: num(form[4]),
-    formStyle: form[5] || null,
+    // "One or two of square, horde, schiltrom, shield_wall, phalanx, testudo or wedge".
+    formStyles: form.slice(5).filter(Boolean),
 
     turns: num(cost[0]),
     cost: num(cost[1]),
@@ -193,8 +199,32 @@ const EDB = rd("export_descr_buildings.txt") || "";
 // 28 neither. The AI's lines carry a far simpler gate (most require only `noisland`), so
 // printing those as "what it takes" would have told the reader that a unit needing a tier-3
 // military building needs no building at all.
+// Reforms, from gen-ris-reform-pages.js (which runs first). Loaded here, ahead of the recruit
+// lines, because a reform the mod switches off can never fire: a line that REQUIRES one is a
+// route nobody can take, and a `not <that reform>` clause is always true and says nothing.
+const REFORM_INDEX = (() => {
+  try { return JSON.parse(fs.readFileSync(path.join(OUT, "reforms", "index.json"), "utf8")); }
+  catch { return {}; }
+})();
+const OFF_REFORMS = new Set(Object.entries(REFORM_INDEX.reforms || {}).filter(([, r]) => r.off).map(([k]) => k.toLowerCase()));
+const offReformOf = (clause) => {
+  const m = /^major_event\s+"?([A-Za-z0-9_]+)"?\s*$/i.exec(clause.trim());
+  return m && OFF_REFORMS.has(m[1].toLowerCase()) ? m[1].toLowerCase() : null;
+};
+/** The switched-off reform a recruit line requires (a plain `and` clause, not one alternative of an `or`), or null. */
+const offReformNeeded = (expr) => {
+  for (const c of expr.replace(/(not\s+)?factions\s*\{[^}]*\}/gi, " ").split(/\band\b/i)) {
+    const r = offReformOf(c);
+    if (r) return r;
+  }
+  return null;
+};
+// unit -> the switched-off reforms its dropped lines needed, so its page can say why no route is left.
+const OFF_ONLY = new Map();
+
 function parseRecruitLines() {
   const out = [];
+  let dead = 0;
   let levels = [], level = null, orphan = 0;
   for (const raw of EDB.split(/\r?\n/)) {
     const t = raw.replace(/;.*$/, "").trim();
@@ -204,8 +234,14 @@ function parseRecruitLines() {
     if (m) { levels = m[1].trim().split(/\s+/).filter(Boolean); continue; }
     m = /^recruit\s+"([^"]+)"\s+\d+\s+requires\s+(.+)$/.exec(t);
     if (m) {
-      if (level) out.push({ unit: m[1].trim().toLowerCase(), level, expr: m[2].trim() });
-      else orphan++;
+      const off = offReformNeeded(m[2]);
+      if (!level) orphan++;
+      else if (off) {
+        dead++;
+        const u = m[1].trim().toLowerCase();
+        if (!OFF_ONLY.has(u)) OFF_ONLY.set(u, new Set());
+        OFF_ONLY.get(u).add(off);
+      } else out.push({ unit: m[1].trim().toLowerCase(), level, expr: m[2].trim() });
       continue;
     }
     // A level is `<name> requires <expr>` where <name> is on this chain's own `levels` line.
@@ -215,7 +251,7 @@ function parseRecruitLines() {
   }
   // Reported so a format change that stops the walk matching cannot pass for "this mod has no
   // recruitment requirements".
-  console.log(`recruit lines parsed: ${out.length.toLocaleString("en-US")}${orphan ? ` · OUTSIDE ANY BUILDING LEVEL: ${orphan}` : " · every one inside a building level"}`);
+  console.log(`recruit lines parsed: ${out.length.toLocaleString("en-US")}${orphan ? ` · OUTSIDE ANY BUILDING LEVEL: ${orphan}` : " · every one inside a building level"} · dropped as needing a switched-off reform (${[...OFF_REFORMS].join(", ") || "none off"}): ${dead}`);
   return out;
 }
 const RECRUIT_LINES = parseRecruitLines();
@@ -225,6 +261,27 @@ const RECRUIT_LINES = parseRecruitLines();
 // the question a reader on a unit page has. Split the same way, on the hidden_resource gate
 // the engine enforces: the core list is short and meaningful, while regional availability
 // is usually "everyone, if they take the right province" and so is reported as a count.
+// A `factions { … }` gate may name CULTURES as well as factions — the ship lines read
+// `factions { eastern, greek, roman, … }` — so each culture is expanded to the factions that
+// descr_sm_factions.txt gives it. Unexpanded, those units read as recruitable by nobody.
+const CULTURE_FACTIONS = (() => {
+  const by = new Map();
+  let cur = null;
+  for (const raw of (rd("descr_sm_factions.txt") || "").split(/\r?\n/)) {
+    const f = /^\t"([A-Za-z0-9_]+)"\s*:/.exec(raw);
+    if (f) { cur = f[1].toLowerCase(); continue; }
+    const c = /^\s*"culture"\s*:\s*"([^"]+)"/.exec(raw);
+    if (c && cur) {
+      const k = c[1].toLowerCase();
+      if (!by.has(k)) by.set(k, []);
+      by.get(k).push(cur);
+      cur = null;
+    }
+  }
+  return by;
+})();
+const expandFactions = (list) => list.flatMap((x) => CULTURE_FACTIONS.get(x) || [x]);
+
 function loadAvailability() {
   const byType = new Map();   // unit type -> { core:Set, aor:Set }
   for (const line of RECRUIT_LINES) {
@@ -233,21 +290,26 @@ function loadAvailability() {
     const hr = /hidden_resource/i.test(expr);
     const pos = [], neg = [];
     for (const fm of expr.matchAll(/(not\s+)?factions\s*\{([^}]*)\}/gi)) {
-      const list = fm[2].split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+      const list = expandFactions(fm[2].split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
       (fm[1] ? neg : pos).push(...list);
     }
     let e = byType.get(type);
     if (!e) { e = { core: new Set(), aor: new Set(), all: false, allCore: false, neg: new Set() }; byType.set(type, e); }
-    for (const n of neg) e.neg.add(n);
-    if (pos.includes("all")) { e.all = true; if (!hr) e.allCore = true; continue; }
-    for (const f of pos) (hr ? e.aor : e.core).add(f);
+    // An exclusion belongs to its own line. Pooled across lines it struck Athens off the
+    // biremes, which one line excludes (`not factions { athens, … }`) and the next grants.
+    if (pos.includes("all")) {
+      for (const n of neg) e.neg.add(n);
+      e.all = true; if (!hr) e.allCore = true; continue;
+    }
+    for (const f of pos) if (!neg.includes(f)) (hr ? e.aor : e.core).add(f);
   }
   return byType;
 }
 const availability = loadAvailability();
 
 // ── recruitment routes open to the player ────────────────────────────────────
-const isPlayerLine = (e) => /\bis_player\b/i.test(e) && !/\bnot\s+is_player\b/i.test(e);
+// A line with no `is_player` gate at all (28 of them) is open to everyone, the player included.
+const isPlayerLine = (e) => !/\bnot\s+is_player\b/i.test(e);
 const anyRecruitLine = new Set(RECRUIT_LINES.map((r) => r.unit));
 const playerRoutes = (() => {
   const by = new Map();
@@ -271,7 +333,9 @@ function clausesOf(expr) {
   return expr
     .replace(/(not\s+)?factions\s*\{[^}]*\}/gi, " ")
     .replace(/\bnot\s+is_player\b/gi, " ").replace(/\bis_player\b/gi, " ")
-    .split(/\band\b/i).map((s) => s.trim()).filter(Boolean);
+    .split(/\band\b/i).map((s) => s.trim()).filter(Boolean)
+    // `not <switched-off reform>` always holds, so it is no requirement at all.
+    .filter((c) => !/^not\s/i.test(c) || !offReformOf(c.replace(/^not\s+/i, "")));
 }
 
 /** Hidden resources a route REQUIRES (not the ones it excludes) — the areas of recruitment. */
@@ -361,6 +425,9 @@ const RL = require(path.join(__dirname, "lib", "reqLinks.js")).makeReqLinks({
   edb: rd("export_descr_buildings.txt") || "", OUT, bName,
 });
 const KEYWORD_TEXT = {
+  // An alias with no display string: `not_extreme_cold or not major_event "winter"`, where
+  // not_extreme_cold is "neither sub-arctic nor alpine climate".
+  disabling_in_winter: "not in winter in a sub-arctic or alpine region",
   is_player: "player-controlled only",
   factionwide: "anywhere in the faction",
   queued: "queued for construction",
@@ -424,13 +491,16 @@ const zoneLabel = (t) => /^aor_/.test(t) ? `${humaniseTok(t)} area of recruitmen
 function clauseLabel(c) {
   const neg = /^not\s+/i.test(c);
   const body = c.replace(/^not\s+/i, "").trim();
-  return (neg ? "not " : "") + clauseBody(body);
+  // The mod's display strings write "Any Government | Tier 2 Colony not built", and the pipe
+  // there is AND: the alias behind it is `gov_tier_1 and not colony_tier_2` (the same holds for
+  // all three such strings, aor_tier_1..3). A reader cannot know that, so it becomes the " · "
+  // the requirement cells already use between conditions — or a bracketed "and" when negated.
+  const parts = clauseBody(body).split(/\s*(?<!\\)\|\s*/);   // an escaped \| in a link title stays
+  if (parts.length > 1) return neg ? `not (${parts.join(" and ")})` : parts.join(" · ");
+  return (neg ? "not " : "") + parts[0];
 }
 // A reform named in a requirement links to its page (gen-ris-reform-pages.js runs first).
-const REFORM_TITLES = (() => {
-  try { return JSON.parse(fs.readFileSync(path.join(OUT, "reforms", "index.json"), "utf8")).reforms || {}; }
-  catch { return {}; }
-})();
+const REFORM_TITLES = REFORM_INDEX.reforms || {};
 const reformRef = (tok) => {
   const r = REFORM_TITLES[tok];
   return r ? `[${String(r.title).replace(/\|/g, "\\|")}](../reforms/${tok}.md)` : humaniseTok(tok);
@@ -611,20 +681,22 @@ const NP_NAME_SHARED = (() => {
   for (const f of NON_PLAYABLE) n[factionName(f)] = (n[factionName(f)] || 0) + 1;
   return n;
 })();
+const REBEL_LABELS = (() => {
+  try { return JSON.parse(fs.readFileSync(path.join(OUT, "revolts", "index.json"), "utf8")).labels || {}; } catch { return {}; }
+})();
 const factionLink = (f) => {
   const label = factionName(f);
   if (NON_PLAYABLE.has(f)) {
-    const tag = NP_NAME_SHARED[label] > 1 ? ` \`${f}\`` : "";
-    return `[${label}${tag}](${NON_PLAYABLE_PAGE})`;
+    // Two factions share each rebel name; the revolt generator publishes a plain distinguisher
+    // for them ("Roman Rebels (first civil war)"), used instead of printing the faction key.
+    if (REBEL_LABELS[f]) return `[${REBEL_LABELS[f]}](${NON_PLAYABLE_PAGE})`;
+    return `[${label}](${NON_PLAYABLE_PAGE})`;
   }
   return factionPages.has(f) ? `[${label}](../factions/${f}.md)` : label;
 };
 
 // Reforms that open, close or convert a unit, from gen-ris-reform-pages.js (which runs first).
-const REFORMS_BY_UNIT = (() => {
-  try { return JSON.parse(fs.readFileSync(path.join(OUT, "reforms", "index.json"), "utf8")).units || {}; }
-  catch { return {}; }
-})();
+const REFORMS_BY_UNIT = REFORM_INDEX.units || {};
 function reformLine(slugKey) {
   const refs = REFORMS_BY_UNIT[slugKey] || [];
   if (!refs.length) return "";
@@ -655,17 +727,19 @@ for (const b of blocks) {
   const shortD = dict ? T[dict + "_descr_short"] : null;
   const clean = (s) => {
     if (!s) return null;
-    if (PLACEHOLDER.test(s)) { return null; }
+    if (isPlaceholder(s)) { return null; }
     // The text files encode paragraph breaks as the literal two chars \ and n.
     return s.replace(/\\n/g, "\n").split("\n").map((l) => l.trim()).filter(Boolean).join("\n\n").trim() || null;
   };
-  const isPh = (s) => !!s && PLACEHOLDER.test(s);
+  const isPh = (s) => !!s && isPlaceholder(s);
   if (isPh(longD) || isPh(shortD)) placeholder++;
   const L = clean(longD), S = clean(shortD);
   if (L || S) described++;
 
   rows.push({
-    type: b.type, dict, name: name || b.type, rawName: name, hasName: !!name,
+    // No display name in the text files (one unit today, `legionary cohort legacy`): its
+    // internal type, title-cased, is the only name it has.
+    type: b.type, dict, name: name || b.type.replace(/\b[a-z]/g, (c) => c.toUpperCase()), rawName: name, hasName: !!name,
     isMercType: MERC_TYPE.test(b.type),
     category: first(b, "category"), cls: first(b, "class"),
     ownership: first(b, "ownership"),
@@ -739,6 +813,7 @@ let mercUnits = 0, mercAlreadyNamed = 0, mercPrefixed = 0, mixedDicts = [];
 let unitsWithBuilding = 0, unitsWithNamedBuilding = 0, unitsAiRouteOnly = 0;
 const zonesSeen = new Set(), zonesWithNoRegion = new Set();
 let zonesLinked = 0, zonesListed = 0;
+const noRoute = { none: 0, off: 0, other: [] };
 
 // ── maps of where a unit can be raised or hired ──────────────────────────────
 // One picture per distinct set of provinces (many units share an area of recruitment, and a
@@ -800,7 +875,37 @@ const dash = (v) => (v == null || v === "" || (typeof v === "number" && !Number.
 const dashList = (a) => (a && a.length ? a.join(" · ") : "—");
 
 
-function detailTables(s) {
+// ── weapon attributes, in words ───────────────────────────────────────────────
+// Every wording below is the engine's own documentation of the token, from the header of the
+// game's export_descr_unit.txt (Barbarian Invasion, the most complete of the three shipped),
+// shortened but not reinterpreted. A token not in this table is shown humanised, never guessed.
+const WEAPON_ATTR = {
+  ap: "armour-piercing (counts only half the target's armour)",
+  bp: "passes through men to hit those behind",
+  spear: "long spear (bonus against cavalry, penalty against infantry)",
+  light_spear: "light spear (braced against cavalry charges from the front)",
+  long_pike: "very long pike (phalanx)",
+  short_pike: "short pike",
+  prec: "used just before charging into combat",
+  thrown: "thrown",
+  launching: "may throw men into the air",
+  area: "hits an area, not just one man",
+};
+function weaponAttrText(tok) {
+  const t = String(tok).toLowerCase();
+  const sb = /^spear_bonus_(\d+)$/.exec(t);
+  if (sb) return `+${sb[1]} attack against cavalry`;
+  return WEAPON_ATTR[t] || t.replace(/_/g, " ");
+}
+const attrWords = (a) => {
+  if (!a || !a.length) return "—";
+  const s = a.map(weaponAttrText).join(" · ");
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
+// The header gives the minimum delay between attacks "in 1/10th of a second".
+const blowDelay = (v) => (v == null ? "—" : `${(v / 10).toLocaleString("en-US")} s`);
+
+function detailTables(s, u) {
   const hasSec = s.secAttack != null && s.secAttack > 0;
   const out = [];
 
@@ -818,12 +923,12 @@ function detailTables(s) {
   if (s.priProjectile || s.secProjectile) out.push(`| Projectile | ${dash(s.priProjectile)} | ${hasSec ? dash(s.secProjectile) : "—"} |`);
   if (s.priRange || s.secRange) out.push(`| Range | ${dash(s.priRange)} | ${hasSec ? dash(s.secRange) : "—"} |`);
   if (s.priAmmo || s.secAmmo) out.push(`| Ammunition | ${dash(s.priAmmo)} | ${hasSec ? dash(s.secAmmo) : "—"} |`);
-  out.push(`| Attributes | ${dashList(s.priAttr)} | ${hasSec ? dashList(s.secAttr) : "—"} |`);
-  out.push(`| Min delay between blows | ${dash(s.priDelay)} | ${hasSec ? dash(s.secDelay) : "—"} |`);
+  if (s.priAttr || (hasSec && s.secAttr)) out.push(`| Properties | ${attrWords(s.priAttr)} | ${hasSec ? attrWords(s.secAttr) : "—"} |`);
   out.push("");
 
   // stat_sec_armour is present on every unit, but on one with nothing to wear it it reads
-  // 0, 0 — that is the absence of a second body, not a second body with no armour.
+  // 0, 0 — that is the absence of a second body, not a second body with no armour. The
+  // material column is left out: the header documents it as the SOUND the man makes when hit.
   const hasSecArm = (s.secArmour || 0) > 0 || (s.secDefence || 0) > 0;
   out.push("### Defence", "");
   out.push("| | Primary | Secondary |", "|---|---|---|");
@@ -831,27 +936,34 @@ function detailTables(s) {
   out.push(`| Armour | ${dash(s.armour)} | ${hasSecArm ? dash(s.secArmour) : "—"} |`);
   out.push(`| Defence skill | ${dash(s.defence)} | ${hasSecArm ? dash(s.secDefence) : "—"} |`);
   out.push(`| Shield | ${dash(s.shield)} | — |`);
-  out.push(`| Material | ${dash(s.armourMat)} | ${hasSecArm ? dash(s.secArmourMat) : "—"} |`);
   out.push("");
 
-  out.push("### Condition, terrain and upkeep", "");
+  // The second stat_health figure is the mount's or attached animal's, and the header says
+  // ridden horses and camels have none of their own, so it is shown only for what has one.
+  const beast = s.animal || (s.mount && /elephant|chariot/i.test(s.mount) ? s.mount : null);
+  out.push("### Condition and terrain", "");
   out.push("| | |", "|---|---|");
-  out.push(`| Hit points | ${dash(s.hp)}${s.hpMount ? ` · mount ${s.hpMount}` : ""} |`);
+  out.push(`| Hit points | ${dash(s.hp)}${beast && s.hpMount ? ` · ${beast} ${s.hpMount}` : ""} |`);
   if (s.mount) out.push(`| Mount | ${s.mount} |`);
-  if (s.mountEffect) out.push(`| Bonus against mounts | ${s.mountEffect} |`);
+  if (s.mountEffect) out.push(`| Modifier against mounts | ${s.mountEffect.split(",").map((x) => x.trim()).filter(Boolean).join(" · ")} |`);
   out.push(`| Ground: scrub / sand / forest / snow | ${dash(s.gScrub)} / ${dash(s.gSand)} / ${dash(s.gForest)} / ${dash(s.gSnow)} |`);
-  out.push(`| Heat penalty | ${dash(s.heat)} |`);
   out.push(`| Charge distance | ${dash(s.chargeDist)} |`);
-  out.push(`| Fire delay | ${dash(s.fireDelay)} |`);
-  out.push(`| Food consumed (low / high) | ${dash(s.foodLow)} / ${dash(s.foodHigh)} |`);
-  if (s.mass != null) out.push(`| Mass per man | ${s.mass} |`);
-  out.push(`| Formation: close / loose | ${dash(s.formClose)} / ${dash(s.formLoose)}${s.ranks ? ` · ${s.ranks} ranks` : ""}${s.formStyle ? ` · ${s.formStyle}` : ""} |`);
-  out.push(`| Men per unit | ${dash(s.men)} as the unit file states — the game multiplies this by your unit size |`);
-  // stat_cost fields 4 and 5 are NOT printed. They are commonly documented as weapon and
-  // armour upgrade costs, but field 4 is 0 or 1 on 1,702 of the 1,731 units, which is a flag
-  // and not a price. Rather than publish a label the data contradicts, they are left out —
-  // the same rule the rest of this wiki follows for anything it cannot establish.
+  if (s.formStyles.length) out.push(`| Formations | ${s.formStyles.map((f) => f.charAt(0).toUpperCase() + f.slice(1).replace(/_/g, " ")).join(" · ")} |`);
   out.push("");
+
+  // Figures that tune the battle engine rather than tell units apart, kept but folded.
+  // stat_food is left out altogether (the header: "No longer used"), and so are stat_cost
+  // fields 4 and 5: commonly documented as upgrade costs, but field 4 is 0 or 1 on 1,702 of
+  // the 1,731 units, a flag and not a price.
+  const tech = [];
+  tech.push(`| Time between blows (primary / secondary) | ${blowDelay(s.priDelay)} / ${hasSec ? blowDelay(s.secDelay) : "—"} |`);
+  if (s.fireDelay) tech.push(`| Extra delay between volleys | ${s.fireDelay} |`);
+  if (s.heat != null) tech.push(`| Extra fatigue in hot climates | ${s.heat} |`);
+  // The header: "collision mass of the men. 1.0 is normal. [Only applies to infantry]".
+  if (s.mass != null && u.category === "infantry") tech.push(`| Collision mass per man (1.0 is normal) | ${s.mass} |`);
+  if (s.formClose || s.formLoose) tech.push(`| Spacing between men: close / loose | ${dash(s.formClose)} / ${dash(s.formLoose)} |`);
+  if (s.ranks) tech.push(`| Default ranks | ${s.ranks} |`);
+  out.push("<details>", "<summary>Technical stats</summary>", "", "| | |", "|---|---|", ...tech, "", "</details>", "");
 
   return out.join("\n");
 }
@@ -861,30 +973,16 @@ for (const u of list) {
   const stat = (label, v, suffix, key) => v == null ? "" :
     `| ${label} | ${v.toLocaleString("en-US")}${suffix || ""} | ${key ? bar(key, v) : ""} |\n`;
 
-  // What the unit does in a fight, said the way the game says it, with the flag list itself
-  // kept but folded. A reader wants "Can sap · Very good stamina", not four engine tokens
-  // three of which nearly every unit carries.
-  const attrNamed = [], attrRaw = [];
+  // What the unit does in a fight, said the way the game says it. Only the attributes the
+  // game's own text names are shown: the raw flag list is engine tokens (`sea_faring`,
+  // `hide_forest`) that nearly every unit carries, which is a modder's view, not a player's.
+  const attrNamed = [];
   for (const a of u.attributes) {
     const t = attributeText(a);
     if (t) { attrNamed.push(t); attrStats.resolved.set(a, (attrStats.resolved.get(a) || 0) + 1); }
     else attrStats.unresolved.set(a, (attrStats.unresolved.get(a) || 0) + 1);
-    attrRaw.push(a);
   }
-  // The <details> opening tag and its <summary> MUST be on separate lines with a blank line
-  // after the summary — the viewer only treats it as a block that way, and a one-line
-  // `<details><summary>…</summary>` prints as literal text on the page.
-  const attrBlock = !attrRaw.length ? "" : "\n"
-    + (attrNamed.length ? `**In battle:** ${[...new Set(attrNamed)].join(" · ")}\n\n` : "")
-    + [
-      "<details>",
-      `<summary>The full attribute list (${attrRaw.length})</summary>`,
-      "",
-      attrRaw.map((a) => `\`${a}\``).join(", "),
-      "",
-      "</details>",
-      "",
-    ].join("\n");
+  const attrBlock = attrNamed.length ? `\n**In battle:** ${[...new Set(attrNamed)].join(" · ")}\n\n` : "";
 
   // Availability, unioned across every variant of this unit: an AOR variant and its parent
   // are one page here, so the page must answer for all of them.
@@ -892,15 +990,18 @@ for (const u of list) {
   for (const v of u.variants) {
     const e = availability.get(String(v).toLowerCase());
     if (!e) continue;
-    for (const f of e.core) if (!e.neg.has(f)) avail.core.add(f);
-    for (const f of e.aor) if (!e.neg.has(f)) avail.aor.add(f);
+    // Named grants already had their own line's exclusions applied when they were read.
+    for (const f of e.core) avail.core.add(f);
+    for (const f of e.aor) avail.aor.add(f);
     if (e.all) avail.all = true;
     if (e.allCore) avail.allCore = true;
   }
   // A faction is listed if the wiki can take the reader somewhere for it: its own page, or
   // the shared non-playable page. Names sort by what the game calls them, not by the token.
   const known = (f) => factionPages.has(f) || NON_PLAYABLE.has(f);
-  const coreList = [...avail.core].filter(known).sort((a, b) => factionName(a).localeCompare(factionName(b)));
+  // `dummies` is the mod's AI-testing faction: a culture gate expanded into its members lists
+  // it, but no one ever plays or meets it, so it is not named to a player.
+  const coreList = [...avail.core].filter(known).filter((x) => x !== "dummies").sort((a, b) => factionName(a).localeCompare(factionName(b)));
   const aorCount = [...avail.aor].filter(known).length;
 
   // What it takes to raise it: the building level hosting each of the player's recruit lines
@@ -921,18 +1022,23 @@ for (const u of list) {
   }
   if (routes.size) { unitsWithBuilding++; if ([...routes.values()].every((r) => bName(r.level))) unitsWithNamedBuilding++; }
   else if (hasAnyLine) unitsAiRouteOnly++;
+  // `region_base` (the Region Information Scroll) is the building every settlement starts
+  // with — descr_strat places it in all but the off-map dummy regions and Napa — so a route
+  // hosted there needs no building of its own and is called what it is to a player.
+  const hostLabel = (lvl) => lvl.toLowerCase() === "region_base"
+    ? (RL.levelLink(lvl) || "").replace(/^\[[^\]]*\]/, "[Any settlement]") || "Any settlement"
+    : RL.levelLink(lvl) || `\`${lvl}\``;
   const reqRows = [...routes.values()].map((r) =>
-    `| ${cell(RL.levelLink(r.level) || `\`${r.level}\``)} | ${r.reqs.length ? r.reqs.map((c) => cell(clauseLabel(c))).join(" · ") : "—"} |`);
+    `| ${cell(hostLabel(r.level))} | ${r.reqs.length ? r.reqs.map((c) => cell(clauseLabel(c))).join(" · ") : "—"} |`);
   const reqTable = routes.size ? `| Building | Also requires |
 |---|---|
 ${reqRows.join("\n")}` : "";
   // Always folded, however short. The prose above it already answers the question a player
   // asks — who can raise this, and where — and the table answers a different one: the exact
-  // government-and-colony combination each recruit line tests, in the mod's own alias wording
-  // ("Any Government | Tier 2 Colony not built"). That is worth keeping and worth having to
-  // ask for.
+  // government-and-colony combination each recruit line tests, in the mod's own alias wording.
+  // That is worth keeping and worth having to ask for.
   const reqBlock = !routes.size
-    ? (hasAnyLine ? `_The mod states no player recruitment route for this unit._` : "")
+    ? (hasAnyLine ? `_Only computer-controlled factions can recruit this unit from buildings._` : "")
     : `<details>\n<summary>Exactly what a settlement must have, route by route (${reqRows.length})</summary>\n\n${reqTable}\n\n</details>`;
 
   // The provinces behind a regional gate, named rather than described. A zone can cover 263 of
@@ -996,12 +1102,8 @@ ${hire.restrict.size && hire.openToAll ? `\nSome pools additionally restrict it 
 
 ${hireRegions.slice(0, REGION_CAP).map((r) => `[${regionName(r)}](../regions/${encodeURIComponent(r)}.md)`).join(" · ")}${hireRegions.length > REGION_CAP ? `\n\n_…and ${hireRegions.length - REGION_CAP} more._` : ""}${hire.regions.size !== hireRegions.length ? `\n\n_${hire.regions.size - hireRegions.length} more region${hire.regions.size - hireRegions.length === 1 ? "" : "s"} the pool names ${hire.regions.size - hireRegions.length === 1 ? "is" : "are"} not on this map, so ${hire.regions.size - hireRegions.length === 1 ? "it has" : "they have"} no page here._` : ""}
 
-</details>
-
-> The **Recruitment cost** in the stats table above is the EDU figure the engine uses for
-> building-recruited units. What you actually pay for this unit is the pool price above.`
-  : `This unit is defined as a mercenary but **no mercenary pool anywhere on the map offers
-it**, so there is nowhere on the campaign map to hire it as the mod ships today.${coreList.length || avail.all ? " It is reachable only through the building route below." : ""}`}
+</details>`
+  : `**No mercenary pool on the campaign map offers this unit**, so it cannot be hired.${coreList.length || avail.all ? " It can only be recruited from a building, as below." : ""}`}
 
 `;
   // Every unit has two pieces of art: the roster card shown in the recruitment panel and
@@ -1025,19 +1127,36 @@ it**, so there is nowhere on the campaign map to hire it as the mod ships today.
   // and the numbers read better once you know that.
   const descBlock = u.long || u.short
     ? `## Description\n\n${sectionise(u.long || u.short)}\n\n`
-    : "> This unit has no written description in the mod yet.\n\n";
+    : "";
+  // The mental stats are engine words (`highly_trained`, `impetuous`), said here as words.
+  // The impetuous gloss is the unit file header's own: "Impetuous units may charge without orders".
+  const plain = (v) => { const t = String(v).replace(/_/g, " ").trim(); return t.charAt(0).toUpperCase() + t.slice(1); };
+  const disciplineText = (v) => /^impetuous$/i.test(v) ? "Impetuous (may charge without orders)" : plain(v);
+  // A mercenary hired from a pool pays the pool's price; the unit file's build cost and build
+  // time only apply where a building also recruits it.
+  const hiredOnly = u.merc === "all" && hire.pools.size > 0 && !routes.size;
+  // Why nothing can recruit it, where the files say: every line naming the unit needs a reform
+  // the mod switches off, or there is no line at all. Counted, so the third case (lines, but
+  // only for factions with no page) cannot hide behind the wording.
+  function noRouteText() {
+    const off = new Set(u.variants.flatMap((v) => [...(OFF_ONLY.get(String(v).toLowerCase()) || [])]));
+    if (!hasAnyLine && off.size) { noRoute.off++; return `No building recruits this unit: every route to it needs ${[...off].map(reformRef).join(" or ")}, a reform that is switched off in this version.`; }
+    if (!hasAnyLine) { noRoute.none++; return `This unit cannot be recruited from any building.`; }
+    noRoute.other.push(u.slug);
+    return `No faction covered by this wiki can recruit this unit from a building.`;
+  }
   const body = `# ${u.name}
 
 [← all units](../units.md) · [wiki index](../README.md)
 
-${cardMarkup(u)}${u.hasName ? "" : "> _This unit has no display name in the mod yet._\n\n"}${u.merc === "all" ? `> **Mercenary.** Hired from a regional pool, not recruited from a building.\n\n` : ""}${u.merc === "mixed" ? `> **Reachable both ways.** Some entries for this unit are mercenary (\`merc …\`) and some are\n> not, so it can be hired from a pool *or* raised from a building.\n\n` : ""}**Class:** ${u.cls || "unknown"} · **Category:** ${u.category || "unknown"}${s.men != null ? ` · **Men per unit:** ${s.men}` : ""}${reformLine(u.slug)}
+${cardMarkup(u)}${u.merc === "all" ? `> **Mercenary.** Hired from a regional pool, not recruited from a building.\n\n` : ""}${u.merc === "mixed" ? `> **Reachable both ways.** It can be hired from a mercenary pool *or* raised from a building.\n\n` : ""}**Class:** ${u.cls || "unknown"} · **Category:** ${u.category || "unknown"}${s.men != null ? ` · **Men per unit:** ${s.men}` : ""}${reformLine(u.slug)}
 
 ${descBlock}## Stats
 
 | | | Rank in roster |
 |---|---:|---|
-${stat("Men per unit", s.men, "", "men")}${stat("Attack", s.attack, "", "attack")}${stat("Charge bonus", s.charge, "", "charge")}${stat("Defence", s.defenceTotal, "", "defenceTotal")}${stat("  · armour", s.armour, "", "armour")}${stat("  · defence skill", s.defence, "", "defence")}${stat("  · shield", s.shield, "", "shield")}${stat("Morale", s.morale, "", "morale")}${s.discipline ? `| Discipline | ${s.discipline} | |\n` : ""}${s.training ? `| Training | ${s.training} | |\n` : ""}${stat("Recruitment cost", s.cost, " dn", "cost")}${stat("Upkeep per turn", s.upkeep, " dn", "upkeep")}${stat("Turns to recruit", s.turns)}
-${detailTables(s)}
+${stat("Men per unit", s.men, "", "men")}${stat("Attack", s.attack, "", "attack")}${stat("Charge bonus", s.charge, "", "charge")}${stat("Defence", s.defenceTotal, "", "defenceTotal")}${stat("  · armour", s.armour, "", "armour")}${stat("  · defence skill", s.defence, "", "defence")}${stat("  · shield", s.shield, "", "shield")}${stat("Morale", s.morale, "", "morale")}${s.discipline ? `| Discipline | ${disciplineText(s.discipline)} | |\n` : ""}${s.training ? `| Training | ${plain(s.training)} | |\n` : ""}${hiredOnly ? "" : stat("Recruitment cost", s.cost, " dn", "cost")}${stat("Upkeep per turn", s.upkeep, " dn", "upkeep")}${hiredOnly ? "" : stat("Turns to recruit", s.turns)}
+${detailTables(s, u)}
 ${attrBlock}${u.statsDiffer ? `\n> **The mod gives this unit more than one set of numbers.** The figures above are one of\n> them, so check in-game if the exact values matter.\n` : ""}
 ${hireSection}${
   // A mercenary with no building route at all has nothing to say here, and printing "no
@@ -1054,7 +1173,7 @@ ${avail.allCore
         : `A core roster unit for ${coreList.length} factions, each able to raise it anywhere they hold the right building:`}\n\n${coreList.slice(0, 40).map(factionLink).join(" · ")}${coreList.length > 40 ? `\n\n_…and ${coreList.length - 40} more._` : ""}`
     : avail.all || aorCount
       ? `No faction has this on its core roster: it can be raised only in the provinces below.`
-      : `_No recruitment route for this unit was found in the building files._`}
+      : noRouteText()}
 ${avail.all && !avail.allCore ? `\nAny faction holding one of the provinces below can field it.\n` : aorCount ? `\nA further ${aorCount} faction${aorCount === 1 ? "" : "s"} can raise it in the provinces below.\n` : ""}${reqBlock ? `\n${reqBlock}\n` : ""}${zoneBlocks.length ? `\n### Areas of recruitment\n\n${zoneBlocks.join("\n\n")}\n` : ""}
 `}`;
   fs.writeFileSync(path.join(OUT, "units", `${u.slug}.md`), body, "utf8");
@@ -1068,8 +1187,7 @@ const idx = `# Units
 
 [← wiki index](README.md)
 
-${merged.length.toLocaleString("en-US")} distinct units, against vanilla's 261. (The mod defines ${rows.length.toLocaleString("en-US")} entries; ${(rows.length - merged.length).toLocaleString("en-US")} of those are area-of-recruitment or horde variants of a unit already listed, merged here onto one page each.) ${named.toLocaleString("en-US")} have a
-display name in the text files; ${described.toLocaleString("en-US")} have a written description.
+${merged.length.toLocaleString("en-US")} units.
 
 ## Mercenaries
 
@@ -1085,9 +1203,8 @@ ${Object.entries(byClass).sort((a, b) => b[1].length - a[1].length).map(([c, v])
 ## Full roster
 
 **Defence** is the total the game shows — armour, defence skill and shield added together —
-not the defence skill on its own. **Men** is the count the unit file states; the game
-multiplies it by whichever unit size you play at, so treat it as a figure to compare units
-by rather than the number you will see on the field.
+not the defence skill on its own. **Men** is the base size; the game scales it by your
+unit-size setting.
 
 <div class="nodeal">
 
@@ -1114,6 +1231,7 @@ console.log(`  mercenary units with no pool offering them: ${merged.filter((u) =
 console.log(`  with a player recruitment route: ${unitsWithBuilding.toLocaleString("en-US")} of ${list.length.toLocaleString("en-US")} (every route's building level named: ${unitsWithNamedBuilding.toLocaleString("en-US")})`);
 console.log(`  with recruit lines but none for the player: ${unitsAiRouteOnly.toLocaleString("en-US")}`);
 console.log(`  with no recruit line at all: ${(list.length - unitsWithBuilding - unitsAiRouteOnly).toLocaleString("en-US")}`);
+console.log(`  pages saying nothing recruits it: ${noRoute.none} with no line · ${noRoute.off} only via a switched-off reform${noRoute.other.length ? ` · LINES ONLY FOR FACTIONS WITH NO PAGE: ${noRoute.other.length} (${noRoute.other.slice(0, 10).join(", ")})` : ""}`);
 console.log(`  areas of recruitment named: ${zonesSeen.size}${zonesWithNoRegion.size ? ` · WITH NO PROVINCE CARRYING THE TAG: ${zonesWithNoRegion.size} (${[...zonesWithNoRegion].join(", ")})` : " · every one has at least one province"}`);
 console.log(`  zone references: ${zonesLinked.toLocaleString("en-US")} linked to the region-tag reference · ${zonesListed.toLocaleString("en-US")} listed in full here`);
 
@@ -1130,6 +1248,6 @@ console.log(`  distinct classes:         ${Object.keys(byClass).length}`);
 {
   const fmt = (m) => [...m.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v.toLocaleString("en-US")}`).join(", ") || "none";
   console.log(`  attributes named from the mod's own text: ${attrStats.resolved.size} distinct — ${fmt(attrStats.resolved)}`);
-  console.log(`  attributes with no wording in text/, shown raw: ${attrStats.unresolved.size} distinct — ${fmt(attrStats.unresolved)}`);
+  console.log(`  attributes with no wording in text/, left off the page:${attrStats.unresolved.size} distinct — ${fmt(attrStats.unresolved)}`);
   if (attrStats.missingKey.size) console.log(`  MAPPED TO A TEXT KEY THAT NO LONGER EXISTS: ${[...attrStats.missingKey].join(", ")}`);
 }

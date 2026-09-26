@@ -583,6 +583,24 @@ function tagLabel(tok) {
   return nice.toLowerCase() === raw.toLowerCase() ? `\`${raw}\`` : nice;
 }
 
+// The geography flags a player can act on, in plain words. `qty_<metal>_<n>` is the size of a
+// deposit the mines chain pays out on (its income steps with n), so it reads "Iron (quantity 2)";
+// `has_mine_deposits` never appears without one, so it adds nothing on its own. The trade-centre
+// flags are named as the mod's own building text names them ("an important inland trade centre").
+const TRADE_CENTRES = { inland_trade_centre: "Inland trade centre", tin_trade_centre: "Tin trade centre", iron_trade_centre: "Iron trade centre" };
+function plainGeography(tags) {
+  const mines = [], centres = [];
+  let island = false;
+  for (const t of tags) {
+    const l = String(t).toLowerCase();
+    const m = /^qty_([a-z]+)_(\d+)$/.exec(l);
+    if (m) mines.push(`${resName(m[1]) || humanise(m[1])} (quantity ${m[2]})`);
+    else if (TRADE_CENTRES[l]) centres.push(TRADE_CENTRES[l]);
+    else if (l === "island_settlement") island = true;
+  }
+  return { mines, centres, island };
+}
+
 // ── links into the tag reference pages ───────────────────────────────────────
 // Every value on the "Resources and character" table used to be a dead end: a page said
 // `Terrain — River valley` and there was nowhere to go to find out what that decides.
@@ -1054,8 +1072,18 @@ fs.mkdirSync(path.join(OUT, "settlements"), { recursive: true });
 // nowhere (textiles, villages, shipwrecks, aqueduct) are referenced too. They are still all
 // written from here rather than from both generators: one owner per file is what keeps the
 // collision check in verify-ris-wiki.js meaningful.
-const NEEDED_GOODS = new Set(res.tradeable);
-for (const r of list) for (const tok of (MAP_RESOURCES.out.get(r.region) || new Map()).keys()) NEEDED_GOODS.add(tok);
+//
+// Except a declared good that is placed nowhere AND has no page: gen-ris-trade-goods.js drops
+// those (on no region, nothing keyed to them), so their icon would be an orphan file. Its page
+// set from the last run is the test — that generator runs after this one, and a good it keeps
+// always has a page there. The stale icon is removed so the folder matches.
+const PLACED_GOODS = new Set();
+for (const r of list) for (const tok of (MAP_RESOURCES.out.get(r.region) || new Map()).keys()) PLACED_GOODS.add(tok);
+const NEEDED_GOODS = new Set(PLACED_GOODS);
+for (const tok of res.tradeable) {
+  if (fs.existsSync(path.join(OUT, "goods", `${tok}.md`))) NEEDED_GOODS.add(tok);
+  else if (!PLACED_GOODS.has(tok)) fs.rmSync(path.join(OUT, "resource-icons", `${tok}.png`), { force: true });
+}
 const RES_ICONS = writeResourceIcons(NEEDED_GOODS);
 
 // Every people any region names, from the ancestry field and from the `rel_<belief>_<tier>`
@@ -1126,11 +1154,10 @@ for (const r of list) {
   // Two tables, not one. The first is the land: who lives here, how well it farms, what the
   // ground and the weather are, whether there is a harbour — things a reader looks at and
   // makes a decision about. The second is the gating tags: which areas of recruitment and
-  // cultural homelands this region counts as, and the geography flags the building file tests
-  // (`Asia minor, Has mine deposits, Qty coal 1`). Those decide real things, but only through
-  // a condition somewhere else, and read as a token dump beside "Terrain: Mountains". They are
-  // folded, with the count on the label, rather than dropped — every tag on the region is
-  // still on the page.
+  // cultural homelands this region counts as. Those decide real things, but only through a
+  // condition somewhere else, so they are folded, with the count on the label. The geography
+  // flags are not dumped at all any more: the readable ones (mine deposits, trade centres,
+  // island) join the first table, the rest were tokens a player cannot use.
   const rows = [], gated = [];
   const addRow = (label, arr, opts) => {
     if (!arr.length) return;
@@ -1222,18 +1249,29 @@ for (const r of list) {
   }
   addRow("Terrain", g.terrain, LINKED);
   addRow("Climate", g.climate, LINKED);
-  addRow("Irrigation", g.irrigation, LINKED);
+  // "Water source", not "Irrigation": the value now reads "River" or "Springs" (the tag page's
+  // own heading), and "Irrigation: River" would say the tag's name back to the reader.
+  addRow("Water source", g.irrigation, LINKED);
   addRow("Port", g.port, LINKED);
   // Religion is NOT a row here any more: humanised, `rel_egyptian_4` printed as "Egyptian 4",
   // which reads as a percentage and is a strength tier. It has its own column in "Who lives
   // here", next to the real percentages, with RELIGION_NOTE explaining the scale. Nothing is
   // dropped — every rel_ tag on the region appears there, including any that does not match
   // the `rel_<belief>_<tier>` shape.
-  addRow("Hazards and river trade", g.hazard, LINKED);
+  addRow("River trade", g.hazard, LINKED);
+  // The geography flags, reduced to what a player can read. Mine deposits and the trade-centre
+  // flags are facts about the land with a stated consequence (mines income, trade income, export
+  // without a local mine); the area words (`italy`, `levant`, "Asia minor") and the mercenary
+  // flags only feed conditions elsewhere and read as a token dump, so they are left off.
+  {
+    const geo = plainGeography(g.geography);
+    if (geo.mines.length) rows.push(`| Mine deposits | ${geo.mines.join(", ")} |`);
+    if (geo.centres.length) rows.push(`| Trade centre | ${geo.centres.join(", ")} |`);
+    if (geo.island) rows.push("| Location | Island settlement |");
+  }
   addRow("Recruitment zones", g.recruitment, GATE);
   addRow("Specialty recruitment", g.specialty, GATE);
   addRow("Cultural homeland", g.culture, GATE);
-  addRow("Geography and gating", g.geography, GATE_PLAIN);
   addRow("Other tags", g.other, GATE_PLAIN);
 
   const mapImg = `![Map of ${placeName(r.region)} and its neighbours](../region-maps/${encodeURIComponent(r.region)}.webp)`;
@@ -1271,9 +1309,7 @@ ${gated.length ? `
 <details>
 <summary>Which recruitment zones and homelands this region counts as (${gated.length})</summary>
 
-These are the tags the building and recruitment files test on this region. Each one is a
-condition somewhere else — a unit that can only be raised in these provinces, a building level
-a homeland unlocks, a mineral the mines chain needs.
+What this region counts as for recruitment, homelands and building.
 
 | | |
 |---|---|

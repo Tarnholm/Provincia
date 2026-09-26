@@ -25,7 +25,7 @@
  *      `aqueduct` carry `;"tier": 0,` — a semicolon comment in RTW syntax, so the game never
  *      sees it. A field regex run over the raw block text happily reads the 0 back and
  *      publishes a tier that is not declared. Comments are stripped line by line before any
- *      field is read, and those four are reported as **not declared** instead of as tier 0.
+ *      field is read, and those four get no Tier row instead of a tier 0.
  *
  * The text files are UTF-16LE, so grep finds nothing in them and they must be read with the
  * encoding stated. All 46 goods resolve both a name and a tooltip in text/resources.txt.
@@ -273,6 +273,21 @@ for (const g of GOODS) {
   if (g.regionsAgree) goodsAgreeing++;
   else goodsDisagreeing.push(`${g.tok}: ${viaTga.size} via the map, ${viaNote.size} via the line's own comment`);
 }
+// Only regions a player can see count. The holding regions have no page (gen-ris-region-pages.js
+// drops them), so a good placed there would otherwise be counted in a total — 1,312 — that
+// disagrees with the 1,305 regions the rest of the wiki lists. Filtered after the cross-check
+// above, which compares every placement line.
+{
+  let pages = new Set();
+  try { pages = new Set(fs.readdirSync(path.join(OUT, "regions")).filter((f) => f.endsWith(".md")).map((f) => f.slice(0, -3))); } catch { /* no region pages yet */ }
+  if (pages.size) {
+    for (const g of GOODS) {
+      g.byRegion = new Map([...g.byRegion].filter(([r]) => pages.has(r)));
+      g.markers = [...g.byRegion.values()].reduce((a, v) => a + v.markers, 0);
+      g.quantity = [...g.byRegion.values()].reduce((a, v) => a + v.quantity, 0);
+    }
+  }
+}
 
 // ── who holds it at the campaign start ───────────────────────────────────────
 // parseStrat returns faction -> { settlements: [ { region, … } ] }, so it must be inverted
@@ -287,19 +302,17 @@ const NO_PAGE = new Set([
   "roman_rebels_1", "roman_rebels_2", "hellenistic_rebels",
   "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
 ]);
-// `slave` is the rebel/unaligned pool and holds more regions than any real faction, so on a
-// per-good ownership table it is the first row almost every time. It has no
-// IMPERIAL_CAMPAIGN_…_TITLE, because it is not a campaign you can pick — but the game does
-// name it: text/shared.txt carries `{ST_SLAVES}Rebels`, which is the label RTW shows for it.
-// That is a declared string, not a gloss invented here.
-const SHARED_TEXT = loadText("shared.txt");
+// The non-playable factions take the name text/expanded_bi.txt gives them (`slave` is "Free
+// Peoples") and link the shared non-playable page — the same label and target every other
+// generator uses. The old "Rebels" came from shared.txt and appeared nowhere else in the wiki.
+const BI_NAMES = loadText("expanded_bi.txt");
 const facName = (f) => {
   const t = String(f).toLowerCase();
-  if (t === "slave" && SHARED_TEXT.st_slaves) return SHARED_TEXT.st_slaves;
+  if (NO_PAGE.has(t) && BI_NAMES[t]) return BI_NAMES[t];
   return FACTION_NAMES[t] || String(f).replace(/_/g, " ");
 };
 const facRef = (f) => (NO_PAGE.has(String(f).toLowerCase())
-  ? facName(f)
+  ? `[${facName(f)}](../factions/non-playable.md)`
   : `[${facName(f)}](../factions/${f}.md)`);
 
 // ── what each good does ──────────────────────────────────────────────────────
@@ -450,9 +463,9 @@ const iconImg = (tok, up, size) => (iconFiles.has(tok)
 
 // ── prose the pages share ────────────────────────────────────────────────────
 const SUBTYPE_WORDS = {
-  mineable: "**Mineable** — the mines chain can be built at the settlement that holds it.",
-  slaves: "**Slaves** — the engine's own slave resource, created when a settlement is enslaved.",
-  none: "**Ordinary trade good** — no special engine handling; it works through trade and through what the mod conditions on it.",
+  mineable: "**Mined** — a mine can be built at the settlement that holds it.",
+  slaves: "**Slaves** — taken by enslaving the people of a conquered settlement.",
+  none: "**Traded good**",
 };
 
 // "Nothing conditions on this good" is a strong enough claim that it is checked everywhere a
@@ -490,8 +503,7 @@ function otherConsumerHits(tok) {
   return out;
 }
 
-const NOTHING = "**No effect established in the mod files.** Nothing in the mod requires it, " +
-  "excludes it, or keys a number off it.";
+const NOTHING = "**Traded only.** No building or unit in RIS needs it; what it gives you is trade income.";
 
 // ── one good's page ──────────────────────────────────────────────────────────
 fs.mkdirSync(path.join(OUT, "goods"), { recursive: true });
@@ -510,11 +522,12 @@ function goodPage(g) {
 
   // ── identity ──
   const rows = [];
-  rows.push(`| Subtype | ${SUBTYPE_WORDS[g.subtype] || (g.subtype ? `\`${g.subtype}\`` : "_not declared_")} |`);
-  // Four goods comment their tier out, so the honest answer there is that it is not declared.
-  rows.push(`| Tier | ${g.tier == null ? "_not declared — the mod comments its tier line out_" : `**${g.tier}**`} |`);
-  rows.push(`| Trade value | ${g.tradeValue == null ? "_not declared_" : `**${g.tradeValue}**`} |`);
-  rows.push(`| Groups | ${g.tags.length ? g.tags.map((t) => `[${t.replace(/_/g, " ")}](../trade-goods.md#groups)`).join(", ") : "_none declared_"} |`);
+  rows.push(`| Kind | ${SUBTYPE_WORDS[g.subtype] || humanise(g.subtype || "traded")} |`);
+  // A good with no tier (its line is commented out) simply has no Tier row: an empty value is
+  // nothing a player can act on, and "not declared" is a note about the file.
+  if (g.tier != null) rows.push(`| Tier | **${g.tier}** |`);
+  if (g.tradeValue != null) rows.push(`| Trade value | **${g.tradeValue}** |`);
+  if (g.tags.length) rows.push(`| Groups | ${g.tags.map((t) => `[${t.replace(/_/g, " ")}](../trade-goods.md#groups)`).join(", ")} |`);
   if (g.depletable != null) rows.push(`| Depletable | ${g.depletable ? "yes" : "no"}${g.baseTurns != null ? `, exhausted after ${g.baseTurns} turns` : ""}${g.popImpact != null ? `, ${g.popImpact.toLocaleString("en-US")} population per unit` : ""} |`);
   if (g.mineTooltip) rows.push(`| When mined | ${g.mineTooltip} |`);
 
@@ -524,26 +537,25 @@ function goodPage(g) {
   if (f.levels.length) bullets.push(`**Lets you build** — ${f.levels.length} building ${f.levels.length === 1 ? "level" : "levels"}: ${levelList(f.levels)}`);
   if (f.blockedLevels.length) bullets.push(`**Blocks** — ${f.blockedLevels.length} building ${f.blockedLevels.length === 1 ? "level" : "levels"}: ${levelList(f.blockedLevels)}`);
   const effWords = (m) => uniq([...m.values()].map((e) => `${effectRange(e)} (${levelName(e.level)})`));
-  if (f.effects.size) bullets.push(`**Numeric effects where it is present** — ${effWords(f.effects).join("; ")}`);
-  if (f.blockedEffects.size) bullets.push(`**Numeric effects it withholds** — these are granted only where it is absent: ${effWords(f.blockedEffects).join("; ")}`);
-  if (f.blockedUnits.size) bullets.push(`**Withholds ${f.blockedUnits.size}** ${f.blockedUnits.size === 1 ? "unit" : "units"} that are gated on the region *not* having it`);
+  if (f.effects.size) bullets.push(`**Bonuses where it is present** — ${effWords(f.effects).join("; ")}`);
+  // Negated clauses: these apply only where the good is ABSENT (often a smaller version of a
+  // bonus above), so "lost where present" would overstate it.
+  if (f.blockedEffects.size) bullets.push(`**Bonuses only where it is absent** — ${effWords(f.blockedEffects).join("; ")}`);
+  if (f.blockedUnits.size) bullets.push(`**${f.blockedUnits.size}** ${f.blockedUnits.size === 1 ? "unit" : "units"} can only be raised where the region does *not* have it`);
 
   let doesBody;
   if (bullets.length) doesBody = bullets.map((b) => `- ${b}`).join("\n");
   else {
-    const other = otherConsumerHits(g.tok);
-    g.otherHits = other;
-    const elsewhere = other.clause.length
-      ? ` It is required by name in ${other.clause.join(", ")}, so look there.`
-      : other.plain.length
-        ? ` The name is mentioned in ${other.plain.join(", ")}, but never as a requirement.`
-        : ` Nothing else that could read a resource — the campaign script, the mercenary pools, the rebel-faction blocks, the spawn scripts — names it either.`;
-    // The slaves resource is the one case where "no mod rule" does not mean "no effect": its
-    // subtype is engine behaviour, and the fields it declares are what govern it.
-    const engine = g.subtype === "slaves"
-      ? " Its effect is the engine's, not the mod's: the game creates this resource when a settlement is enslaved, and the depletable, base-turns and population fields declared above are what govern it."
-      : "";
-    doesBody = NOTHING + elsewhere + engine;
+    // Still searched (the run report prints the result), but the file names stay out of the page.
+    g.otherHits = otherConsumerHits(g.tok);
+    if (g.subtype === "slaves") {
+      // Built from the fields the good declares, so the numbers follow the data file.
+      const turns = g.baseTurns != null ? `after **${g.baseTurns}** turns` : "after some turns";
+      doesBody = `Slaves come from enslaving the people of a settlement you capture. They are shared out `
+        + `across all your settlements that have a governor, and each lot is used up ${turns}`
+        + `${g.popImpact != null ? `; one lot stands for **${g.popImpact.toLocaleString("en-US")}** people` : ""}. `
+        + `No building or unit in RIS requires slaves.`;
+    } else doesBody = NOTHING;
   }
 
   // ── units, which are the long part where there are any ──
@@ -590,7 +602,7 @@ function goodPage(g) {
       ? `\n\nIt is on **every region on the map**, so its presence says nothing about a region — only a surplus does. `
         + `${above === 0 ? "No region has more than one" : `${above.toLocaleString("en-US")} ${above === 1 ? "region has" : "regions have"} more than one`}, and a region page lists it only where there is a surplus.`
       : "";
-    whereBody = `**${g.markers.toLocaleString("en-US")}** ${g.markers === 1 ? "marker" : "markers"} on the map, `
+    whereBody = `**${g.markers.toLocaleString("en-US")}** ${g.markers === 1 ? "site" : "sites"} on the map, `
       + `${g.quantity.toLocaleString("en-US")} in total quantity, across ${regionCount}.${everywhere}\n\n`
       + `<details>
 <summary>Who holds those regions at the campaign start (${byFaction.size} ${byFaction.size === 1 ? "faction" : "factions"})</summary>\n\n`
@@ -606,7 +618,8 @@ function goodPage(g) {
     // the head of a page it reads as a low-resolution picture rather than as an icon. Kept just
     // above the 24 used inline, so a good's own page still leads with its mark.
     iconImg(g.tok, "../", 28),
-    g.tooltipAdds ? `**In game:** ${g.tooltip}` : null,
+    // `%d` is the game's placeholder for the good's own turn count; filled from the same field.
+    g.tooltipAdds ? `**In game:** ${g.baseTurns != null ? g.tooltip.replace(/%d/g, String(g.baseTurns)) : g.tooltip}` : null,
   ].filter(Boolean).join("\n\n");
 
   const body = `# ${g.name}
@@ -633,6 +646,19 @@ ${whereBody}
   fs.writeFileSync(path.join(OUT, "goods", `${g.tok}.md`), body, "utf8");
 }
 
+// A good on no region of the map AND with nothing in the mod keyed to it never reaches a
+// player's campaign, so it gets no page and no row (asked for 2026-09-26) — the same rule the
+// belief pages apply. A stale page from an earlier run is removed so nothing can link to it.
+const hasAnyEffect = (g) => {
+  const f = g.facts;
+  return !!(f.levels.length || f.blockedLevels.length || f.effects.size || f.blockedEffects.size
+    || f.units.size || f.blockedUnits.size);
+};
+const HIDDEN = GOODS.filter((g) => !g.markers && !hasAnyEffect(g));
+for (const g of HIDDEN) {
+  fs.rmSync(path.join(OUT, "goods", `${g.tok}.md`), { force: true });
+  GOODS.splice(GOODS.indexOf(g), 1);
+}
 for (const g of GOODS) goodPage(g);
 
 // ── the index ────────────────────────────────────────────────────────────────
@@ -679,11 +705,7 @@ const noEffect = GOODS.filter((g) => {
 });
 
 const regionsWithAnything = new Set([].concat(...GOODS.map((g) => [...g.byRegion.keys()]))).size;
-const noTier = GOODS.filter((g) => g.tier == null);
-// A marker is placed at most once per region, with one exception in the whole file. Worth
-// stating rather than showing two near-identical columns: the number that actually varies is
-// the QUANTITY on the marker, which is what a region page prints as the amount.
-const dupRegions = GOODS.filter((g) => g.markers !== g.byRegion.size);
+const regionPagesCount = regionPages.size;
 
 const indexBody = `# Trade goods
 
@@ -693,19 +715,13 @@ A trade good is a resource placed on the campaign map at a fixed spot. Whoever h
 region around it has it, and it does three things: it is worth trade income, it may let the
 settlement build something, and it may let the region raise troops nobody else can.
 
-RIS declares **${GOODS.length}** of them. ${placedGoods} are placed on the map — ${PLACED.stats.lines.toLocaleString("en-US")} markers
-in total, and between them they reach **every one of the ${regionsWithAnything.toLocaleString("en-US")} regions**, because
-one of them is on all of them.${GOODS.length - placedGoods ? ` The other ${GOODS.length - placedGoods} are declared but placed nowhere at all.` : ""}
-
-${noEffect.length} ${noEffect.length === 1 ? "has" : "have"} nothing in the mod conditioned on
-${noEffect.length === 1 ? "it" : "them"}: ${noEffect.map((g) => `[${g.name}](goods/${g.tok}.md)`).join(", ")}. That is a finding, not a gap —
-each of those pages says which other files were searched before the claim was made.
-
-Reading the table: **tier** and **trade value** are the good's own declared numbers — tier its
-rank, trade value what a unit of it is worth in trade. ${noTier.length} goods have their tier line
-commented out in the mod file and show **—**, which means not declared, not zero. **Regions**
-is how many regions have it; **quantity** is those markers' amounts added up, which is the
-number that varies, since a good is placed at most once per region${dupRegions.length ? ` (the single exception in the whole file is ${dupRegions.map((g) => g.name).join(", ")}, which has one region carrying two markers)` : ""}.
+RIS has **${GOODS.length}** of them, on ${GOODS.reduce((a, g) => a + g.markers, 0).toLocaleString("en-US")} sites${regionsWithAnything >= (regionPagesCount || Infinity)
+    ? ` — between them they reach **every one of the ${regionsWithAnything.toLocaleString("en-US")} regions**, because one of them is on all of them`
+    : ` across ${regionsWithAnything.toLocaleString("en-US")} regions`}.${placedGoods < GOODS.length ? ` ${GOODS.length - placedGoods} ${GOODS.length - placedGoods === 1 ? "is" : "are"} on no region at the start but still matter to buildings or units.` : ""}
+${noEffect.length ? `\n${noEffect.map((g) => `[${g.name}](goods/${g.tok}.md)`).join(", ")} ${noEffect.length === 1 ? "is" : "are"} needed by no building or unit.\n` : ""}
+Reading the table: **tier** is the good's rank and **trade value** what one unit of it is worth
+in trade; **—** means the good has none. **Regions** is how many regions have it; **quantity**
+is the amounts on those sites added up.
 
 | | Good | Kind | Tier | Trade value | Regions | Quantity | Builds | Effects | Units |
 |:-:|---|---|---:|---:|---:|---:|---:|---:|---:|

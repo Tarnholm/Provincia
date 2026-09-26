@@ -112,7 +112,9 @@ function measure(dir) {
     const owning = all.filter((f) => (strat[f].settlements || []).length);
     o.factions = M(all.length);
     o.factionsOwning = M(owning.length);
-    o.settlements = M(owning.reduce((a, f) => a + strat[f].settlements.length, 0));
+    // DISTINCT regions with a settlement: RIS lists Napa under two factions, and summing per
+    // faction printed 1,306 beside 1,305 regions.
+    o.settlements = M(new Set(owning.flatMap((f) => strat[f].settlements.map((s) => s.region))).size);
     const excluded = NON_PLAYER_FACTIONS.filter((f) => all.includes(f));
     o.nonPlayerFound = excluded;
     o.playableByDesign = M(all.length - excluded.length);
@@ -175,10 +177,12 @@ function measure(dir) {
   if (edb) {
     o.buildingChains = M((edb.match(/^building\s+\S/gm) || []).length);
     // Levels are declared `levels a b c` on ONE line. Counting lines gave 0, which would
-    // have published "this mod has no buildings".
+    // have published "this mod has no buildings". Every token counts: a `[a-z_]` filter
+    // dropped names with digits or signs (gov1, colony_2, grain+1, grain-1) and printed 155
+    // for RIS's 274 — and 157 for vanilla's 165 — which made the two trees look equal.
     let lv = 0;
     for (const m of edb.matchAll(/^\s*levels\s+(.+)$/gm)) {
-      lv += m[1].split(/\s+/).filter((t) => /^[a-z_]+$/.test(t)).length;
+      lv += m[1].replace(/;.*$/, "").trim().split(/\s+/).filter(Boolean).length;
     }
     o.buildingLevels = M(lv);
   } else { o.buildingChains = o.buildingLevels = M(null); }
@@ -199,23 +203,40 @@ function measure(dir) {
 }
 
 // ── formatting ───────────────────────────────────────────────────────────────
-const NA = "not determined";
-const n = (m) => (m && m.value != null ? m.value.toLocaleString("en-US") : `_${NA}_`);
+// A value that could not be counted prints as a dash: the page is for players, and "not
+// determined" is a note about this script.
+const NA = "—";
+const n = (m) => (m && m.value != null ? m.value.toLocaleString("en-US") : NA);
 const times = (a, b) => {
-  if (!a || !b || a.value == null || b.value == null || !a.value) return `_${NA}_`;
+  if (!a || !b || a.value == null || b.value == null || !a.value) return NA;
   const r = b.value / a.value;
   return r >= 1 ? `${r.toFixed(1)}x` : `${r.toFixed(2)}x`;
 };
 const delta = (a, b) => {
-  if (!a || !b || a.value == null || b.value == null) return `_${NA}_`;
+  if (!a || !b || a.value == null || b.value == null) return NA;
   const d = b.value - a.value;
   return (d > 0 ? "+" : "") + d.toLocaleString("en-US");
 };
 const row = (label, a, b) => `| ${label} | ${n(a)} | ${n(b)} | ${delta(a, b)} | ${times(a, b)} |`;
 const per = (num, den) =>
   (num && den && num.value != null && den.value != null && den.value)
-    ? (num.value / den.value).toFixed(1) : `_${NA}_`;
-const code = (arr, join) => (arr && arr.length ? arr.map((x) => `\`${x}\``).join(join) : `_${NA}_`);
+    ? (num.value / den.value).toFixed(1) : NA;
+const ratio = (a, b) => (a && b && a.value && b.value != null ? b.value / a.value : null);
+const titleCase = (s) => String(s).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+// RIS culture display names, from the culture generator's index; empty when it has not run.
+const CULTURE_INDEX = (() => {
+  try { return JSON.parse(fs.readFileSync(path.join(OUT, "cultures", "index.json"), "utf8")); } catch { return {}; }
+})();
+
+// The building tree's shape, worded from the counts so the claim changes with the data: an
+// earlier version said "about the same number of levels" off a miscount (155 vs 157).
+function buildingShape(v, r) {
+  const rc = ratio(v.buildingChains, r.buildingChains), rl = ratio(v.buildingLevels, r.buildingLevels);
+  const pv = per(v.buildingLevels, v.buildingChains), pr = per(r.buildingLevels, r.buildingChains);
+  if (rc == null || rl == null || pv === NA || pr === NA) return "";
+  const shape = Number(pr) < Number(pv) ? "shorter" : Number(pr) > Number(pv) ? "longer" : "the same length";
+  return `: ${rc.toFixed(1)}x the chains but ${rl.toFixed(1)}x the levels, so a chain is ${shape} on average — ${pr} levels against vanilla's ${pv}`;
+}
 
 function build(v, r) {
   const pages = {};
@@ -239,23 +260,22 @@ ${row("Playable factions", v.playableListed, r.playableByDesign)}
 ${row("Factions in the game", v.factions, r.factions)}
 ${row("Regions on the map", v.regions, r.regions)}
 ${row("Settlements at campaign start", v.settlements, r.settlements)}
-${row("Unit types in the roster", v.units, r.units)}
+${row("Units in the roster", v.units, r.units)}
 ${row("Cultures", v.cultures, r.cultures)}
 ${row("Building chains", v.buildingChains, r.buildingChains)}
 ${row("Building levels (total)", v.buildingLevels, r.buildingLevels)}
 
-The short version: **RIS is roughly an order of magnitude larger than vanilla in almost
-every direction a player notices — but not uniformly.** The map and the unit roster grow
-enormously. The building tree does not: it grows *sideways* rather than deeper. Those two
-facts shape most of what plays differently.
+The short version: **RIS is far larger than vanilla in almost every direction a player
+notices — but not uniformly.** The map and the unit roster grow enormously. The building
+tree grows least${buildingShape(v, r)}.
 
 
 ## Sortable tables
 
 For anything you want to sort or search rather than read:
 
-- [Unit roster](units.html) — all 1,172 units, sortable by any stat
-- [Regions](regions.html) — all 1,311, sortable and searchable
+- [Unit roster](units.html) — all ${n(r.units)} units, sortable by any stat
+- [Regions](regions.html) — all ${n(r.regions)}, sortable and searchable
 - [Factions](factions.html) — sortable by what each starts with
 
 ### The world
@@ -325,18 +345,17 @@ averages **${per(r.settlements, r.factionsOwning)} settlements each**, against
 size — there are simply far more of them, and therefore far more neighbours.
 
 **More cultures means more distinct opponents.** Vanilla groups everyone into
-${n(v.cultures)} cultures — ${v.cultureNames.join(", ")}. RIS uses ${n(r.cultures)}.
-
+${n(v.cultures)} cultures — ${v.cultureNames.map(titleCase).join(", ")}. RIS uses ${n(r.cultures)}.
+${r.cultureNames.every((c) => CULTURE_INDEX[c]) ? `
 <details>
-<summary>The ${n(r.cultures)} cultures RIS divides the world into, as the mod names them</summary>
+<summary>The ${n(r.cultures)} cultures RIS divides the world into</summary>
 
-${r.cultureNames.map((c) => `- \`${c}\``).join("\n")}
+${r.cultureNames.map((c) => CULTURE_INDEX[c]).sort((a, b) => a.name.localeCompare(b.name)).map((e) => `- [${e.name}](cultures/${e.page})`).join("\n")}
 
-The [faction index](factions.md) groups every faction under these, using the name the game
-shows rather than the token.
+The [faction index](factions.md) groups every faction under these.
 
 </details>
-
+` : ""}
 Culture drives architecture, unit availability and how populations respond to you, so
 this is one of the changes you notice fastest — neighbouring regions look and fight
 differently in a way vanilla's broad groupings do not capture.
@@ -344,8 +363,8 @@ differently in a way vanilla's broad groupings do not capture.
 ## Who you can play
 
 **${n(r.playableByDesign)} of the ${n(r.factions)} defined factions are playable.** The
-rest are not real players: the rebel/slave pool, the Roman senate, a test faction, and the
-six rebel-style factions that exist to hold breakaway territory.
+rest are not real players: the Free Peoples, the Roman senate, a test faction, and the
+${r.rebelStyle.length} rebel factions that exist to hold breakaway territory.
 
 Every playable faction has its own page with its starting settlements, characters and
 roster — see [all factions](factions.md).
@@ -382,32 +401,27 @@ buildings — see [all regions](regions.md).
 
 | | Vanilla | RIS | Change | |
 |---|---:|---:|---:|---:|
-${row("Unit types in the roster", v.units, r.units)}
+${row("Units in the roster", v.units, r.units)}
 ${row("Cultures they are drawn from", v.cultures, r.cultures)}
 
 ## What this means to play
 
-**The roster is ${times(v.units, r.units)} the size of vanilla's** — ${n(v.units)} unit
-types become ${n(r.units)}.
+**The roster is ${times(v.units, r.units)} the size of vanilla's** — ${n(v.units)} units
+become ${n(r.units)}.
 
 What that buys is regional distinctiveness. Vanilla gives each culture a fairly short
-list, so two barbarian factions field broadly similar armies. With ${n(r.units)} types
+list, so two barbarian factions field broadly similar armies. With ${n(r.units)} units
 across ${n(r.cultures)} cultures, RIS can give neighbouring peoples genuinely different
 troops — which makes recruitment a local decision rather than a faction-wide one, and
 makes knowing your enemy worth the effort.
 
-> **A note on this number:** it counts the unit types the game *defines* — the roster you
-> can potentially recruit from. It is not the number of units on a map. A campaign in
-> progress typically has a few thousand individual units alive, which is a different
-> quantity entirely.
+> **A note on this number:** it counts the distinct units you can recruit from — a unit
+> raised in several regional versions counts once. It is not the number of units alive on
+> the map in a campaign.
 
 Every unit has its own page with its card, stats, description and which factions can
 recruit it — see [all units](units.md). Recruitment requirements are on each
 [faction's page](factions.md).
-
-> **Not determined:** stat comparisons against the individual vanilla units a RIS unit
-> replaces. The rosters do not line up one to one, so there is nothing to compare against
-> unit by unit.
 `;
 
   pages["buildings-and-economy.md"] = `# Buildings and economy
@@ -421,19 +435,16 @@ ${row("Building levels (total)", v.buildingLevels, r.buildingLevels)}
 
 ## What this means to play
 
-This is the one area where RIS did **not** simply get bigger, and the shape of the change
-matters more than its size. RIS has roughly twice as many building chains as vanilla but
-**about the same number of building levels in total**. The tree grew **sideways, not
-upward**: vanilla averages **${per(v.buildingLevels, v.buildingChains)} levels per
-chain**, RIS about **${per(r.buildingLevels, r.buildingChains)}**.
+This is the area where RIS grew least, and the shape of the change matters more than its
+size. RIS has **${times(v.buildingChains, r.buildingChains)}** as many building chains as
+vanilla and **${times(v.buildingLevels, r.buildingLevels)}** as many levels. Vanilla averages
+**${per(v.buildingLevels, v.buildingChains)} levels per chain**, RIS
+**${per(r.buildingLevels, r.buildingChains)}**.
 
 What that does to a settlement:
-
-- **More decisions, less laddering.** Vanilla development is largely a matter of climbing
-  a handful of deep chains in a familiar order. RIS gives many more distinct, shorter
-  chains, so the question shifts from *how far up* to *which ones at all*.
-- **Settlements specialise.** Short chains are cheaper to finish, so it is practical to
-  build a settlement toward a purpose rather than upgrading everything part-way.
+${Number(per(r.buildingLevels, r.buildingChains)) < Number(per(v.buildingLevels, v.buildingChains)) ? `
+- **More decisions, less laddering.** RIS gives many more distinct, shorter chains, so the
+  question shifts from *how far up* to *which ones at all*.` : ""}
 - **Local conditions matter more.** Many RIS chains are gated on what a region actually
   has — terrain, resources, culture — so two settlements of the same size can offer quite
   different options.
@@ -456,6 +467,12 @@ if (!fs.existsSync(VAN)) {
 
 const v = measure(VAN);
 const r = measure(RIS);
+// For RIS, units and regions are what a player can look up: one page per distinct unit (area
+// and horde variants merged) and one per region on the playable map (holding regions dropped).
+// Using the page counts keeps every overview in step with units.md, regions.md and the sortable
+// tables, instead of printing 1,742 and 1,312 beside their 1,193 and 1,305.
+if (familyCount("units")) r.units = M(familyCount("units"));
+if (familyCount("regions")) r.regions = M(familyCount("regions"));
 
 console.log("measured (vanilla -> RIS):");
 for (const k of ["playableListed", "playableByDesign", "blockPlayable", "blockNonplayable",

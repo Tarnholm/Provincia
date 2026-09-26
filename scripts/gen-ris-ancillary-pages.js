@@ -44,6 +44,7 @@
  */
 const fs = require("fs");
 const path = require("path");
+const { makeConditionReader } = require("./lib/risTriggerConditions.js");
 
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
@@ -300,6 +301,32 @@ const EVENT_PHRASE = {
   BecomesFactionLeader: "on becoming faction leader",
   BecomesFactionHeir: "on becoming faction heir",
   Birth: "at birth",
+  // events the fallback would otherwise print as split CamelCase
+  LesserGeneralOfferedForAdoption: "when offered for adoption as a man of the hour",
+  EnslavePopulation: "on enslaving a captured city",
+  ExterminatePopulation: "on exterminating a captured city",
+  CharacterSelected: "when selected",
+  DiplomacyMission: "on a diplomatic mission",
+  SpyMission: "on a spying mission",
+  AssassinationMission: "on an assassination mission",
+  BriberyMission: "on a bribery mission",
+  SabotageMission: "on a sabotage mission",
+  NewAdmiralCreated: "when the admiral is appointed",
+  GeneralDevastatesTile: "on devastating land",
+  AcceptBribe: "on accepting a bribe",
+  RefuseBribe: "on refusing a bribe",
+  SettlementTurnEnd: "at the end of the settlement's turn",
+  LeaderDestroyedFaction: "when his faction destroys another",
+  HireMercenaries: "on hiring mercenaries",
+  LeaderOrderedBribery: "when ordered to bribe",
+  BrotherAdopted: "when a brother is adopted",
+  CeasedFactionHeir: "on ceasing to be faction heir",
+  PreBattleWithdrawal: "on withdrawing before battle",
+  CapturedLegionaryEagle: "on capturing a legionary eagle",
+  BattleGeneralRouted: "when the general routs in battle",
+  GeneralCaptureWonder: "on capturing a wonder",
+  GovernorCityRiots: "when the governed city riots",
+  GovernorCityRebels: "when the governed city rebels",
 };
 const eventPhrase = (w) => EVENT_PHRASE[w] || (w ? w.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase() : "not stated");
 
@@ -377,23 +404,52 @@ const ancRef = (token) => {
 };
 
 // ── rendering ────────────────────────────────────────────────────────────────
+// Trigger conditions in plain words (lib/risTriggerConditions.js, shared with the trait
+// pages). A trait missing from traits/index.json is hidden: its clause is dropped and the row
+// says "(plus hidden conditions)" rather than printing the bookkeeping token.
+const CR = makeConditionReader({
+  RIS, OUT,
+  traitRef: (tok) => (TRAIT_INDEX[tok] ? traitRef(tok) : null),
+  ancRef: (tok) => ancRef(tok),
+});
+let condRows = 0, condHiddenRows = 0, condUnknownRows = 0;
+const condUnknown = new Map();
+function conditionCell(conds) {
+  const lines = conds.flat();
+  if (!lines.length) return { text: "always", raw: null };
+  const r = CR.render(lines);
+  condRows++;
+  if (r.hidden) condHiddenRows++;
+  let text = r.text;
+  if (r.hidden) text = text ? `${text} (plus hidden conditions)` : "hidden conditions only";
+  if (r.unknown.length) {
+    condUnknownRows++;
+    for (const u of r.unknown) condUnknown.set(u, (condUnknown.get(u) || 0) + 1);
+    text = `${text ? `${text} · ` : ""}plus a condition listed under Technical`;
+  }
+  return { text, raw: r.unknown.length ? r.unknown.join(" · ") : null };
+}
+
 function acquisitionFold(a) {
   const feeds = TRIGGERS_FOR.get(a.name) || [];
-  if (!feeds.length) {
-    return "_No trigger grants this — it comes from the campaign script or an event._";
-  }
+  // The campaign script hands these out (Hanno the Great, the Pet Elephant).
+  if (!feeds.length) return "_Granted by events._";
   const events = uniq(feeds.map((f) => eventPhrase(f.trigger.when))).slice(0, 4);
+  const raws = [];
   const rows = feeds.slice(0, 40).map((f) => {
-    const cond = f.trigger.conds.map((c) => c.join(" ")).join(" · ");
-    return `| ${eventPhrase(f.trigger.when)} | ${f.chance}% | ${cond ? `\`${cell(cond.slice(0, 220))}${cond.length > 220 ? "…" : ""}\`` : "always"} |`;
+    const c = conditionCell(f.trigger.conds);
+    if (c.raw) raws.push(`- ${eventPhrase(f.trigger.when)}: \`${cell(c.raw)}\``);
+    return `| ${eventPhrase(f.trigger.when)} | ${f.chance}% | ${cell(c.text)} |`;
   });
   const table = [
     "| When | Chance | Conditions |",
     "|---|---:|---|",
     ...rows,
-    feeds.length > 40 ? `| _…and ${feeds.length - 40} more_ | | |` : null,
+    feeds.length > 40 ? `| _…and ${feeds.length - 40} more ways_ | | |` : null,
   ].filter(Boolean).join("\n");
-  return fold(`How it is gained — ${feeds.length} trigger${feeds.length === 1 ? "" : "s"}, ${events.join(", ")}`, [table]);
+  const body = [table];
+  if (raws.length) body.push("", fold("Technical", raws));
+  return fold(`How it is gained — ${events.join(", ")}`, body);
 }
 
 function ancEntry(a) {
@@ -404,7 +460,9 @@ function ancEntry(a) {
   const partners = a.excluded.filter((x) => x !== a.name);
   if (partners.length) bits.push(`never alongside ${partners.map(ancRef).join(", ")}`);
   if (a.excludeCultures.length) bits.push(`never for ${a.excludeCultures.length} of the cultures`);
-  const traits = [...(TRAITS_FOR.get(a.name) || [])].sort();
+  // Hidden traits (NaturalIntelligence, …) are left out: the player never sees them, and the
+  // conditions table already says "(plus hidden conditions)" where they matter.
+  const traits = [...(TRAITS_FOR.get(a.name) || [])].filter((t) => TRAIT_INDEX[t]).sort();
   const lines = [`### ${a.heading}`, ""];
   lines.push(`${portrait(a)}${bits.length ? bits.join(" · ") + "." : ""}`);
   lines.push("");
@@ -437,17 +495,13 @@ const writePage = (file, body) => { fs.writeFileSync(path.join(OUT, "ancillaries
   const body = `${HEAD("Priesthoods")}
 **${num(list.length)}** of the retinue are priests and priestesses — one per cult and city, from the
 Priest of Amun to the Priestess of Vesta. Each joins a character through temple and
-belief conditions and carries a small bonus; the in-game description is per-cult flavour
-text, read in game rather than reprinted here.
+belief conditions and carries a small bonus.
 
 ## The priesthoods
 
-**Triggers** is how many rules in the file can bring one; a — means only the campaign
-script hands it out.
-
-| Priesthood | Effects | Triggers |
-|---|---|---:|
-${list.map((a) => `| **${cell(a.heading)}**${a.unique ? " · unique" : ""} | ${cell(ancFx(a))} | ${(TRIGGERS_FOR.get(a.name) || []).length || "—"} |`).join("\n")}
+| Priesthood | Effects |
+|---|---|
+${list.map((a) => `| **${cell(a.heading)}**${a.unique ? " · unique" : ""} | ${cell(ancFx(a))} |`).join("\n")}
 `;
   writePage("priesthoods.md", body);
 }
@@ -468,9 +522,7 @@ ${list.map(ancEntry).join("\n\n---\n\n")}
 // ── the index page ───────────────────────────────────────────────────────────
 const attrCounts = {};
 for (const a of ALL) for (const e of a.effects) attrCounts[e.attr] = (attrCounts[e.attr] || 0) + 1;
-const topAttrs = Object.entries(attrCounts).sort((x, y) => y[1] - x[1]).slice(0, 12);
 const withTraits = ALL.filter((a) => (TRAITS_FOR.get(a.name) || new Set()).size).length;
-const uniques = ALL.filter((a) => a.unique).length;
 
 const indexBody = `# Retinue
 
@@ -483,12 +535,14 @@ around him, and members can be traded between characters who meet.
 
 ## How retinue works
 
-- **A member arrives by trigger or by script.** ${num(TRIG_ALL.length)} triggers with ${num(TRIG_ALL.reduce((x, t) => x + t.acquires.length, 0))} grant rules bring
-  ${num(ALL.length - UNREACHABLE.length)} of the ${num(ALL.length)}; the other ${UNREACHABLE.length} come from the campaign script and events.
-- **${num(withTraits)}** members' acquisition is conditioned on the character's traits — the drunkard
-  attracts drinking companions, the scholar attracts philosophers. Those pages link both ways.
-- **${num(uniques)}** are unique: one in the world at a time.
-- **${num(ALL.filter((a) => a.excluded.length).length)}** exclude other members — rival followers who will not share a tent.
+- **Most members are earned in play.** They join a character when he does the right thing in
+  the right place — wins a battle, governs a city with a school, holds an office. A few are
+  granted only by events.
+- **Traits attract retinue.** What a character is shapes who seeks him out — the drunkard
+  attracts drinking companions, the scholar attracts philosophers. Trait and retinue pages
+  link both ways.
+- **Some members are unique:** only one exists in the world at a time.
+- **Some members exclude others** — rival followers who will not share a tent.
 
 ## Where to look
 
@@ -499,12 +553,6 @@ around him, and members can be traded between characters who meet.
 ### The dictionary — every other member, by first letter
 
 ${LETTERS.map((L) => `- [**${L.toUpperCase()}**](ancillaries/${L}.md) — ${PAGES.get(L).length} member${PAGES.get(L).length === 1 ? "" : "s"}`).join("\n")}
-
-## What retinue touches
-
-| Stat | Effect lines |
-|---|---:|
-${topAttrs.map(([a, n]) => `| ${attrName(a)} | ${num(n)} |`).join("\n")}
 
 `;
 fs.writeFileSync(path.join(OUT, "ancillaries.md"), indexBody, "utf8");
@@ -535,7 +583,8 @@ say(`  partition: priesthoods ${PAGES.get("priesthoods").length} · dictionary $
 }
 say(`  portraits: ${iconsWritten} of ${uniq(ALL.map((a) => a.image).filter(Boolean)).length} distinct images converted to ancillary-icons/ (${iconsFromVanilla} are base-game stock art, taken from the install)${iconsMissing.length ? ` · MISSING: ${iconsMissing.join(", ")}` : ""}`);
 say(`  effect attributes: ${Object.keys(attrCounts).length} distinct · ${attrResolved.size} Combat-vs resolved via faction/culture names · ${attrMechanical.size} rendered from the token`);
-say(`  trait cross-links: ${withTraits} entries tied to traits · ${traitLinked} links via traits/index.json · ${traitUnknown} trait tokens not in that index (hidden traits, printed unlinked)`);
+say(`  trait cross-links: ${withTraits} entries tied to traits · ${traitLinked} links via traits/index.json · ${traitUnknown} trait tokens not in that index (hidden traits, omitted)`);
+say(`  trigger conditions: ${num(condRows)} rows translated · ${num(condHiddenRows)} with hidden clauses dropped · ${condUnknownRows} with a clause kept raw under Technical${condUnknown.size ? `: ${[...condUnknown.keys()].join(" | ")}` : ""}`);
 say(`  exclusion links: ${exclLinked} linked · ${exclUnknown} name entries with no page (unlinked)`);
 say(`  cultures linked: ${cultureLinked} (${Object.keys(CULTURE_INDEX).length} in cultures/index.json)`);
 say(`  pages written: ${written.size} under ancillaries/, plus ancillaries.md and ancillaries/index.json`);
