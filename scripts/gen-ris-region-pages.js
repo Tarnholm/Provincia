@@ -1033,7 +1033,17 @@ function recruitSection(rec, held) {
   return out.join("\n\n");
 }
 
-const list = ONLY.length ? regions.filter((r) => ONLY.includes(r.region)) : regions;
+// A region no faction holds at the campaign start is one of the mod's holding regions ("Han
+// Region", "Seleucid Rebels Settlement"): a place kept off the playable map so a faction that
+// is not yet in play still exists. No player ever sees one, so they get no page and are not
+// counted - and "independent" is not a thing in RIS (every real region has an owner).
+const PLACEHOLDERS = regions.filter((r) => !byRegion[r.region]);
+const REAL = regions.filter((r) => byRegion[r.region]);
+for (const r of PLACEHOLDERS) {
+  fs.rmSync(path.join(OUT, "regions", `${r.region}.md`), { force: true });
+  if (r.settlement) fs.rmSync(path.join(OUT, "settlements", `${r.settlement}.md`), { force: true });
+}
+const list = ONLY.length ? REAL.filter((r) => ONLY.includes(r.region)) : REAL;
 fs.mkdirSync(path.join(OUT, "regions"), { recursive: true });
 fs.mkdirSync(path.join(OUT, "settlements"), { recursive: true });
 
@@ -1356,8 +1366,8 @@ const idx = `# All regions and settlements
 
 [← wiki index](README.md) · [settlement sizes](sizes.md) · [region tag reference](tags.md) · [cultures](cultures.md) · [beliefs](religions.md)
 
-${index.length.toLocaleString("en-US")} regions, each with one settlement. ${withOwner.toLocaleString("en-US")} are held by a faction at the campaign
-start; the rest begin independent. ${capitals} settlements are a faction's capital, marked ★.
+${index.length.toLocaleString("en-US")} regions, each with one settlement, every one held by a faction at the campaign start.
+${capitals} settlements are a faction's capital, marked ★.
 The region is the land — terrain, fertility, trade goods; the settlement is the town — its size,
 population and buildings. Each has its own page.
 

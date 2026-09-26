@@ -721,118 +721,73 @@ function culturePage(f, all) {
 
   const glance = [
     `**${facs.length}** faction${facs.length === 1 ? "" : "s"}`,
-    `**${num(f.held)}** of ${num(heldTotal)} provinces at the campaign start`,
-    `**${f.levels.length}** building level${f.levels.length === 1 ? "" : "s"}`,
-    `**${f.units.size}** unit${f.units.size === 1 ? "" : "s"}`,
+    `**${num(f.held)}** settlements at the start`,
+    f.levels.length ? `**${f.levels.length}** building${f.levels.length === 1 ? "" : "s"} of its own` : null,
+    f.units.size ? `**${f.units.size}** unit${f.units.size === 1 ? "" : "s"} of its own` : null,
   ].join(" · ");
 
-  const body = `${HEAD(name)}
-Internal token \`${tok}\`${c.string ? `, localised from \`${c.string}\`` : ""}. ${glance}
-
-
-## The factions in it
+  // Written for players (reworked 2026-09-26): what the culture means in a campaign. The file-
+  // level detail it used to carry - model and card file names, the size ladder every culture
+  // shares, portrait sets, the "civilised" flag, AI thresholds, empty sections - is gone.
+  const buildLevels = [...govLevels, ...otherLevels];
+  const ownLevelTable = (list) => `| | Building | Chain |\n|:-:|---|---|\n${list.map((l) => { const ic = iconFor(tok, l.level); return `| ${ic ? `<img src="../${ic}" alt="" width="64">` : ""} | ${levelLink(l.chain, l.level)} | ${chainLink(l.chain)} |`; }).join("\n")}`;
+  const agentName = { spy: "Spy", assassin: "Assassin", diplomat: "Diplomat", merchant: "Merchant", admiral: "Admiral" };
+  const costRows = [
+    ...Object.entries(c.agents).filter(([, v]) => v["recruitment cost"]).map(([a, v]) => `| ${agentName[a] || a} | ${num(v["recruitment cost"])} dn |`),
+    ...(c.fort && c.fort.cost ? [`| Fort | ${num(c.fort.cost)} dn |`] : []),
+    ...(c.watchtower && c.watchtower.cost ? [`| Watchtower | ${num(c.watchtower.cost)} dn |`] : []),
+  ];
+  const sections = [];
+  sections.push(`## Factions
 
 ${factionTable
-    ? `**${facs.length}** of the ${num(Object.keys(FACTIONS).length)} factions ${facs.length === 1 ? "is" : "are"} ${name}. ${facs.length === 1 ? "It holds" : "Between them they hold"} **${num(f.held)}** of the ${num(heldTotal)} settlements the campaign file places — **${share.toFixed(1)}%** of the map at turn 0.${facs.some((x) => NO_PAGE.has(x)) ? ` ${facs.filter((x) => NO_PAGE.has(x)).length} of them cannot be played and are documented together on [factions you cannot play](../factions/non-playable.md).` : ""}
+    ? `**${facs.length}** ${facs.length === 1 ? "faction is" : "factions are"} ${name}, holding **${num(f.held)}** settlements at the start of the campaign (${share.toFixed(1)}% of the map).${facs.some((x) => NO_PAGE.has(x)) ? ` ${facs.filter((x) => NO_PAGE.has(x)).length === 1 ? "One of them is" : `${facs.filter((x) => NO_PAGE.has(x)).length} of them are`} not playable; see [factions you cannot play](../factions/non-playable.md).` : ""}
 
 ${maybeFold(`The ${facs.length} factions`, facs.length, factionTable)}`
-    : `_No faction is of this culture._`}
+    : `_No faction is of this culture._`}`);
+  if (beliefRows.length) sections.push(`## What its factions believe
 
-## What its factions believe
-
-${beliefRows.length
-    ? `Every faction has a default belief. ${facs.length === 1
-      ? `The one ${name} faction carries the belief below.`
-      : byBelief.size === 1
-        ? `All ${facs.length} ${name} factions carry the same one.`
-        : `The ${facs.length} ${name} factions spread across **${byBelief.size}** of them.`} Culture and belief are separate axes in RIS: a culture does not fix a belief.
+${facs.length === 1 ? "Its faction follows this belief." : byBelief.size === 1 ? `All ${facs.length} of its factions follow the same belief.` : `Its factions follow **${byBelief.size}** different beliefs: a culture does not decide a faction's religion.`}
 
 | Belief | Factions | Who |
 |---|---:|---|
-${beliefRows.join("\n")}`
-    : "_No faction of this culture states a default religion._"}
+${beliefRows.join("\n")}`);
+  if (buildLevels.length) sections.push(`## Buildings only ${name} factions can build
 
-## What its settlements look like
+**${buildLevels.length}** building ${buildLevels.length === 1 ? "level is" : "levels are"} open only to ${name} factions${govLevels.length ? `, including ${govLevels.length} government ${govLevels.length === 1 ? "level" : "levels"}` : ""}.
 
-${artLines.join("\n\n")}
+${maybeFold(`The ${buildLevels.length} buildings`, buildLevels.length, ownLevelTable(buildLevels))}`);
+  if (f.blockedLevels.length) sections.push(`## Buildings ${name} factions cannot build
 
-## How far its settlements can grow
-
-${ladderDeclared.length
-    ? `This culture's ladder is ${ladderDeclared.map(sizeRef).join(" < ")}, topping out at **${sizeNameOf(c.max || ladderDeclared[ladderDeclared.length - 1])}**.
-${identical
-      ? `Every one of the ${CULTURES.length} cultures declares the same six rungs with the same population figures, so this is not something that tells one culture from another. The numbers are on the [settlement size pages](../sizes.md).`
-      : `**This culture's figures are not the same as every other culture's** — compare them on the [settlement size pages](../sizes.md).`}`
-    : "_This culture has no settlement upgrade levels._"}
-
-${c.unrest && Object.keys(c.unrest).length
-    ? `Its unrest factors are ${Object.entries(c.unrest).map(([k, v]) => `${k} **${v}**`).join(", ")}${all.every((o) => JSON.stringify(o.c.unrest) === JSON.stringify(c.unrest)) ? ", which is what all " + CULTURES.length + " cultures declare" : ", which differs from other cultures"}.`
-    : "_This culture has no unrest factors._"}
-
-## What it lets you build
-
-### Government levels — ${govLevels.length}
-
-${govLevels.length
-    ? `**${govLevels.length}** government ${govLevels.length === 1 ? "level names" : "levels name"} this culture in ${govLevels.length === 1 ? "its" : "their"} own requirement. Government is the chain that gates most of the rest of the tree, so this is where a culture bites hardest.
-
-${maybeFold(`The ${govLevels.length} government levels`, govLevels.length, `| | Level | Chain |\n|:-:|---|---|\n${govLevels.map((l) => { const ic = iconFor(tok, l.level); return `| ${ic ? `<img src="../${ic}" alt="" width="64">` : ""} | ${levelLink(l.chain, l.level)} | ${chainLink(l.chain)} |`; }).join("\n")}`)}`
-    : `_No government level names this culture._`}
-
-### Other building levels — ${otherLevels.length}
-
-${otherLevels.length
-    ? `${maybeFold(`The ${otherLevels.length} levels`, otherLevels.length, `| | Level | Chain |\n|:-:|---|---|\n${otherLevels.map((l) => { const ic = iconFor(tok, l.level); return `| ${ic ? `<img src="../${ic}" alt="" width="64">` : ""} | ${levelLink(l.chain, l.level)} | ${chainLink(l.chain)} |`; }).join("\n")}`)}`
-    : NOTHING_BUILD(EDB.chains.reduce((a, x) => a + Object.keys(x.levels).length, 0))}
-
-### What it blocks — ${f.blockedLevels.length}
-
-${f.blockedLevels.length
-    ? `**${f.blockedLevels.length}** building ${f.blockedLevels.length === 1 ? "level is" : "levels are"} written so that being ${name} rules ${f.blockedLevels.length === 1 ? "it" : "them"} out: ${f.blockedLevels.slice().sort((a, b) => levelName(a.level).localeCompare(levelName(b.level))).map((l) => levelLink(l.chain, l.level)).join(", ")}.`
-    : `_No building level in the mod excludes this culture._`}
-
-## What it lets you raise
+${f.blockedLevels.slice().sort((a, b) => levelName(a.level).localeCompare(levelName(b.level))).map((l) => levelLink(l.chain, l.level)).join(", ")}.`);
+  if (units.length || f.blockedUnits.size) sections.push(`## Units only ${name} factions can raise
 
 ${units.length
-    ? `**${units.length}** unit ${units.length === 1 ? "type names" : "types name"} this culture in a recruitment gate, out of the ${num(uniq(EDB.recruits.map((r) => unitKey(r.unit))).length)} distinct units the mod's ${num(EDB.recruits.length)} \`recruit\` lines name. These are the ones open to a ${name} faction *because* it is ${name} — a faction's own roster and the regional units it can raise where it holds the right province are on its own page.${withCards ? "" : `\n\nThe roster cards are left off this table on purpose: at ${units.length} rows they would be ${units.length} images on one page.`}
+    ? `**${units.length}** ${units.length === 1 ? "unit is" : "units are"} open to a faction *because* it is ${name}. A faction's full roster, and the regional units it can raise where it holds the right province, are on its own page.
 
 ${maybeFold(`The ${units.length} units`, units.length, unitTable)}`
-    : `_No recruitment line in the mod names this culture._`}
-
-${f.blockedUnits.size
-    ? `Carrying this culture also **withholds ${f.blockedUnits.size}** unit ${f.blockedUnits.size === 1 ? "type" : "types"} a broader gate would otherwise give: ${[...f.blockedUnits.values()].map((x) => unitLink(x.type)).join(", ")}.`
-    : ""}
-
-## Numbers keyed on it
+    : ""}${f.blockedUnits.size ? `\n\nBeing ${name} also rules out ${f.blockedUnits.size === 1 ? "this unit" : "these units"}: ${[...f.blockedUnits.values()].map((x) => unitLink(x.type)).join(", ")}.` : ""}`);
+  if (effRows.length || blockedEffRows.length) sections.push(`## Bonuses for being ${name}
 
 ${effRows.length
-    ? `**${effRows.length}** numeric ${effRows.length === 1 ? "effect is" : "effects are"} granted specifically because a settlement's owner is ${name}.
+    ? `These bonuses apply in a settlement only when its owner is ${name}.
 
-${maybeFold(`The ${effRows.length} effects`, effRows.length, `| Effect | Where |\n|---|---|\n${effRows.join("\n")}`)}`
-    : `_No numeric effect in the mod is conditioned on this culture.._`}
+${maybeFold(`The ${effRows.length} bonuses`, effRows.length, `| Effect | Where |\n|---|---|\n${effRows.join("\n")}`)}`
+    : ""}${blockedEffRows.length ? `\n\n${effRows.length ? "And these" : "These"} apply only when the owner is *not* ${name}:
 
-${blockedEffRows.length
-    ? `**${blockedEffRows.length}** further ${blockedEffRows.length === 1 ? "effect is" : "effects are"} granted only where the owner is *not* ${name}.
+${maybeFold(`The ${blockedEffRows.length} effects it misses out on`, blockedEffRows.length, `| Effect | Where |\n|---|---|\n${blockedEffRows.join("\n")}`)}` : ""}`);
+  if (costRows.length) sections.push(`## Agents and forts
 
-${maybeFold(`The ${blockedEffRows.length} effects it withholds`, blockedEffRows.length, `| Effect | Where |\n|---|---|\n${blockedEffRows.join("\n")}`)}`
-    : ""}
+What it costs a ${name} faction to recruit an agent or put up a fort.
 
-## Its own character in the files
+| | Cost |
+|---|---:|
+${costRows.join("\n")}`);
 
-| | |
-|---|---|
-| Portrait set | ${c.portrait ? `\`${c.portrait}\`` : "_not determined_"} |
-| Counted as civilised | ${c.civilised == null ? "_not determined_" : (c.civilised ? "yes" : "**no** — the engine's `InBarbarianLands` and `InUncivilisedLands` script tests are true in its lands, and its soldiers jump less when charging")} |
-| AI assist threshold | ${c.aiAssist == null ? "_not determined_" : c.aiAssist} |
-| Fort cost | ${c.fort && c.fort.cost ? num(c.fort.cost) : "_not determined_"} |
-| Watchtower cost | ${c.watchtower && c.watchtower.cost ? num(c.watchtower.cost) : "_not determined_"} |
-| Agents | ${Object.keys(c.agents).length ? Object.entries(c.agents).map(([a, v]) => `${a} ${v["recruitment cost"] ? num(v["recruitment cost"]) : "?"}`).join(", ") : "_not determined_"} |
+  const body = `${HEAD(name)}
+${glance}
 
-${(() => {
-    const sameCiv = all.filter((o) => o.c.civilised === c.civilised).length;
-    const samePortrait = all.filter((o) => o.c.portrait === c.portrait).length;
-    return `${sameCiv} of the ${CULTURES.length} cultures share this \`civilised\` setting and ${samePortrait} share this portrait set.`;
-  })()}
+${sections.join("\n\n")}
 `;
   fs.mkdirSync(path.join(OUT, "cultures"), { recursive: true });
   fs.writeFileSync(path.join(OUT, "cultures", `${tok}.md`), body, "utf8");
@@ -862,7 +817,7 @@ const summary = [
   // No Token column. It is the word the files use for this culture, which a player has no use
   // for — they see the name. Where the token still matters to someone reading the files, it is
   // on the culture's own page.
-  "| Culture | Factions | Provinces | Builds | Units | Beliefs |",
+  "| Culture | Factions | Settlements | Own buildings | Own units | Beliefs |",
   "|---|---:|---:|---:|---:|---:|",
   ...sorted.map((f) => {
     const beliefs = uniq(f.facs.map((x) => (FACTIONS[x] || {}).religion).filter(Boolean)).length;
@@ -890,57 +845,18 @@ const indexBody = `# Cultures
 
 [← all factions](factions.md) · [all regions and settlements](regions.md) · [beliefs](religions.md) · [wiki index](README.md)
 
-Culture is the game's own grouping of its ${num(Object.keys(FACTIONS).length)} factions, and it is not cosmetic. It settles what a
-settlement is drawn with, how far the mod lets it grow, which government levels can be
-installed there and a slice of what can be raised. **${CULTURES.length}** of them exist.
-
-## The ${CULTURES.length} cultures
-
-**Provinces** is what the culture's factions hold at turn 0, out of the ${num(heldTotal)} settlements the
-campaign file places. **Builds** and **units** are what the mod gates on being of this culture —
-what only its factions may put up, and only its factions may raise. **Beliefs** is how many
-different state beliefs its factions hold between them: a culture is not a religion here, and
-this is the column that shows how far the two come apart.
+Every faction belongs to a culture. On top of a faction's own roster, its culture decides some
+of the buildings it can put up and the units it can raise, and what its agents and forts cost.
+There are **${CULTURES.length}** cultures.
 
 ${summary}
 
+**Settlements** is what the culture's factions hold at the start of the campaign. **Own
+buildings** and **own units** are the ones only that culture's factions can have. **Beliefs**
+is how many different religions its factions follow.
 ${biggestHolder && biggestHolder.n / heldTotal > 0.2
-    ? `Read the Provinces column with care: **${facName(biggestHolder.faction)}** alone holds **${num(biggestHolder.n)}** settlements — ${((biggestHolder.n / heldTotal) * 100).toFixed(0)}% of the map — and that faction's culture is ${biggestHolder.culture.name ? `**${biggestHolder.culture.name}**` : `\`${biggestHolder.culture.tok}\``}, so every one of them counts on that row. It is unclaimed ground, not a people.`
-    : ""}
-
-## What the files agree and disagree on
-
-- **All ${CULTURES.length} declare the same six-rung ladder** with the same five population figures, and the
-  same unrest factors and agent costs. Those are not what tells one culture from another; the
-  numbers are on the [settlement size pages](sizes.md).
-- **${SM_SETTLEMENTS.size} of the ${CULTURES.length} have strategy-map buildings and walls of their own**. The other ${CULTURES.length - SM_SETTLEMENTS.size} have none, and what their
-  settlements are drawn with instead is **not determined**.
-- **${[...SM_SETTLEMENTS.entries()].filter(([, m]) => LADDER.some((s) => !m.has(s))).length} of those ${SM_SETTLEMENTS.size} stop short of the top rung.** ${(() => {
-  const short = [...SM_SETTLEMENTS.entries()].filter(([, m]) => LADDER.some((s) => !m.has(s)));
-  if (!short.length) return "None of them does.";
-  // Grouped by the rung they stop at, so two cultures that stop in the same place are one
-  // clause rather than the same sentence written twice.
-  const byTop = new Map();
-  for (const [t, m] of short) {
-    const top = sizeNameOf([...m.keys()].pop());
-    if (!byTop.has(top)) byTop.set(top, []);
-    byTop.get(top).push(cultureName(t) || t);
-  }
-  const clauses = [...byTop.entries()].map(([top, list]) => `${list.join(" and ")} declare${list.length === 1 ? "s" : ""} nothing above ${top}`);
-  return `${clauses.join("; ")}, while all ${CULTURES.length} cultures have a \`max settlement level\` of ${sizeNameOf(LADDER[LADDER.length - 1])}. **The two contradict each other** — which one the engine obeys is not stated anywhere in the mod.`;
-})()}
-- **Culture does not fix belief.** ${(() => {
-  const spread = FACTS.map((f) => uniq(f.facs.map((x) => (FACTIONS[x] || {}).religion).filter(Boolean)).length);
-  const one = spread.filter((n) => n === 1).length;
-  return `${one} of the ${CULTURES.length} cultures have all their factions on one belief; the rest spread across up to ${Math.max(...spread)}. The beliefs are on their [own pages](religions.md).`;
-})()}
-
-## Sections on every culture page
-
-Who is in it · what its factions believe · what its settlements look like · how far they can
-grow · what it lets you build, including government · what it lets you raise · the numbers keyed
-on it · its own character in the files.
-`;
+    ? `\nThe **${facName(biggestHolder.faction)}** — land no faction holds at the start — count as ${biggestHolder.culture.name ? `**${biggestHolder.culture.name}**` : biggestHolder.culture.tok}, which is why that row has ${num(biggestHolder.n)} settlements.\n`
+    : ""}`;
 fs.writeFileSync(path.join(OUT, "cultures.md"), indexBody, "utf8");
 
 // ── report ───────────────────────────────────────────────────────────────────

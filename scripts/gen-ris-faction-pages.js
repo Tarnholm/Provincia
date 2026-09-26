@@ -1263,7 +1263,16 @@ if (mapsWritten) {
   console.log(`  territory bigger than window: ${mapStat.overflowed.length}${mapStat.overflowed.length ? ` — ${mapStat.overflowed.join(", ")}` : ""}`);
   console.log(`  smallest subject:          ${mapStat.minSubject[0]} at ${mapStat.minSubject[1].toLocaleString("en-US")} px · largest ${mapStat.maxSubject[0]} at ${mapStat.maxSubject[1].toLocaleString("en-US")} px`);
 }
-console.log(`  symbols written:           ${symbolsWritten} of ${index.length} (${(symbolBytes / 1048576).toFixed(1)} MB)`);
+// Factions with no page of their own still own land (the Free Peoples, `slave`, hold 500
+// settlements), and the region list shows every owner's emblem, so theirs are written too.
+let extraSymbols = 0;
+for (const [f, file] of Object.entries(SYMBOL_FILE)) {
+  const out = path.join(OUT, "symbols", `${f}.png`);
+  if (fs.existsSync(out) && index.some((e) => e.f === f)) continue;
+  const s = tgaToPng(dg, file, ICON_SCALE);
+  if (s) { fs.writeFileSync(out, s.buf); extraSymbols++; }
+}
+console.log(`  symbols written:           ${symbolsWritten} of ${index.length} (${(symbolBytes / 1048576).toFixed(1)} MB), plus ${extraSymbols} for factions without a page`);
 if (noSymbol.length) console.log(`  WITHOUT a symbol:          ${noSymbol.length} — ${noSymbol.join(", ")}`);
 console.log(`  no settlements:            ${index.filter((e) => !e.setts).length}`);
 console.log(`  character name tokens: ${namesResolved.toLocaleString("en-US")} resolved via names.txt, ${namesRaw.toLocaleString("en-US")} had no entry`);
