@@ -272,13 +272,61 @@ const { ALIAS_CHAINS, CHAIN_WORDS } = (() => {
 const TAG_REFS = (() => {
   try { return JSON.parse(fs.readFileSync(path.join(OUT, "tags", "index.json"), "utf8")); } catch { return {}; }
 })();
+// What a reader calls a chain: its only level's name where it has one level (the four
+// government chains are all "Government" but their levels are Dependency, Indirect Rule, …).
+const chainLabel = (c) => {
+  const levels = (CHAIN_WORDS[c] || []).slice(1);
+  return levels.length === 1 ? levels[0] : (CHAIN_NAMES[c] || humaniseTok(c));
+};
 const chainPage = (c) => (c && buildingPages.has(String(c).toLowerCase()) ? `../buildings/${String(c).toLowerCase()}.md` : null);
 // An alias's display string links each part ("A or B | C not built") to the building it names,
 // matched by shared words, since the display string and the alias body need not name them in
 // the same order (the garrison alias tests the Military Industrial Complex first but says
 // "Garrison Building" first). A part that names no building stays plain; a label none of whose
 // parts can be matched links as a whole to its one building, or to the buildings index.
+// Names a sentence-style alias can mention, to their pages: every building level's display name
+// (to its chain) and every trade good that has a page. "Requires horses resource, if not
+// available locally you can build Fine Horse Exports to supply it" names both and linked neither.
+let PHRASES_CACHE = null;   // built on first use: buildingPages is declared further down
+const phrases = () => PHRASES_CACHE || (PHRASES_CACHE = (() => {
+  const out = new Map();   // exact text -> href
+  for (const [c, w] of Object.entries(CHAIN_WORDS)) {
+    if (!chainPage(c)) continue;
+    for (const name of w.slice(1)) if (name && name.length >= 5 && !/^[a-z0-9_]+$/.test(name) && !out.has(name)) out.set(name, chainPage(c));
+  }
+  try {
+    for (const f of fs.readdirSync(path.join(OUT, "goods")).filter((n) => n.endsWith(".md"))) {
+      const tok = f.slice(0, -3);
+      out.set(tok.replace(/_/g, " "), `../goods/${f}`);
+    }
+  } catch { /* no goods pages yet */ }
+  return [...out].sort((a, b) => b[0].length - a[0].length);
+})());
+function linkPhrases(label) {
+  const slots = [];
+  let s = label;
+  for (const [name, href] of phrases()) {
+    // Loose enough for how the mod's prose names its own buildings: the trailing "(Rural)" tag
+    // dropped and a plural optional ("Fine Horse Exports" is the level "Fine Horses Exports
+    // (Rural)"). Only for names of two or more words, so single words stay exact.
+    const core = name.replace(/\s*\([^)]*\)\s*$/, "").trim();
+    const multi = core.split(/\s+/).length >= 2;
+    const esc = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const body = multi ? core.split(/\s+/).map((w) => `${esc(w.replace(/s$/i, ""))}s?`).join("\\s+") : esc(name);
+    const re = new RegExp(`\\b${body}\\b`, "i");
+    const m = re.exec(s);
+    if (!m) continue;
+    slots.push(`[${m[0]}](${href})`);
+    s = s.slice(0, m.index) + `\u0000${slots.length - 1}\u0000` + s.slice(m.index + m[0].length);
+  }
+  return slots.length ? s.replace(/\u0000(\d+)\u0000/g, (x, i) => slots[+i]) : null;
+}
 function linkAlias(k, label) {
+  // A sentence (no "or"/"|" list shape) links the names inside it instead.
+  if (!/\s+or\s+|\|/i.test(label) && label.split(/\s+/).length > 6) {
+    const p = linkPhrases(label);
+    if (p) return p;
+  }
   const chains = (ALIAS_CHAINS[k] || []).filter((c) => chainPage(c));
   if (!chains.length || /\]\(/.test(label)) return label;
   const words = (s) => new Set(String(s).toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 2 && !["not", "built", "tier", "any", "building"].includes(w)));
@@ -287,17 +335,20 @@ function linkAlias(k, label) {
   const linked = bits.map((p, i) => {
     if (i % 2) return p;
     const pw = words(p);
-    let best = null, bestScore = 0, ties = 0;
+    let best = null, bestScore = 0, tied = [];
     for (const c of chains) {
       const cw = words(`${(CHAIN_WORDS[c] || [c]).join(" ")} ${CHAIN_NAMES[c] || ""}`);
       const score = [...pw].filter((w) => cw.has(w)).length;
-      if (score > bestScore) { bestScore = score; best = c; ties = 1; } else if (score && score === bestScore) ties++;
+      if (score > bestScore) { bestScore = score; best = c; tied = [c]; } else if (score && score === bestScore) tied.push(c);
     }
     if (!best) return p;
     hits++;
-    // "Government Building" matches all four government chains equally: it means any of them,
-    // so it goes to the buildings index rather than to whichever came first.
-    return `[${p.trim()}](${ties > 1 ? "../buildings.md" : chainPage(best)})`;
+    if (tied.length === 1) return `[${p.trim()}](${chainPage(best)})`;
+    // "Government Building" matches all four government chains equally because it means ANY of
+    // them, and the label alone left a reader asking which. So the buildings are spelled out:
+    // "Government Building (Dependency, Indirect Rule, Direct Rule or Homeland)".
+    const names = tied.map((c) => `[${chainLabel(c)}](${chainPage(c)})`);
+    return `${p.trim()} (${names.slice(0, -1).join(", ")} or ${names[names.length - 1]})`;
   });
   if (hits) return linked.join("");
   return chains.length === 1 ? `[${label}](${chainPage(chains[0])})` : `[${label}](../buildings.md)`;
@@ -363,6 +414,10 @@ function clauseBody(b) {
       const label = `${humaniseTok(t)} area of recruitment`;
       return ref && ref.page && ref.anchor ? `[${label}](../tags/${ref.page}#${ref.anchor})` : label;
     }
+    // Any other region tag the reference documents ("not Ptolemaic" read like a faction):
+    // "in a Ptolemaic region", linked to the tag's section.
+    const tref = TAG_REFS[t];
+    if (tref && tref.page && tref.anchor) return `in a [${tref.name || humaniseTok(t)} region](../tags/${tref.page}#${tref.anchor})`;
     return condLabel(t);
   }
   m = /^resource\s+(\S+)$/i.exec(b);

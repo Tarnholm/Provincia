@@ -600,6 +600,27 @@ const specialty = recruitmentPage("Specialty recruitment", "specialty-recruitmen
 
 const homeland = homelandPage();
 
+// Region tags a recruit line tests that no page above covers: `ptolemaic` (the Egyptian and Red
+// Sea regions by their creator faction, 54 lines) and `seleucid` (9). Neither is in any region's tag list at the campaign start, and the page says so rather than hiding them. A faction page printed "not Ptolemaic" for one of
+// them with nowhere to send the reader to find out what it meant. Found from the recruit lines
+// themselves, so a tag the mod adds later appears here without a list to maintain.
+const COVERED = new Set([...TERRAIN_TAGS, ...CLIMATE_TAGS, ...IRRIGATION_TAGS, ...PORT_TAGS, ...ZONE_TAGS,
+  ...SPECIALTY_AOR, ...HOMELAND_TAGS, ...FARM_TAGS, ...HAZARD_TAGS]);
+const OTHER_RECRUIT_TAGS = (() => {
+  const out = new Set();
+  const edb = rd("export_descr_buildings.txt") || "";
+  for (const line of edb.split(/\r?\n/)) {
+    if (!/^\s*recruit\s/.test(line)) continue;
+    for (const m of line.matchAll(/hidden_resource\s+([A-Za-z0-9_]+)/g)) {
+      const t = m[1].toLowerCase();
+      if (!COVERED.has(t) && (REGIONS_OF.has(t) || DECLARED_HIDDEN.has(t))) out.add(t);
+    }
+  }
+  return [...out].sort();
+})();
+const otherTags = recruitmentPage("Other recruitment tags", "recruitment-other.md", OTHER_RECRUIT_TAGS,
+  `Region tags that recruitment tests but that are neither a recruitment zone nor a homeland. A unit\nrequirement "not in a Ptolemaic region" means the unit cannot be raised in the regions listed under\nthat tag here, whoever holds them.`);
+
 // ── index page ───────────────────────────────────────────────────────────────
 const PAGES = [
   ["Terrain", "tags/terrain.md", terrain.list.length, "which land-use chains a region allows"],
@@ -608,6 +629,7 @@ const PAGES = [
   ["Ports", "tags/ports.md", ports.list.length, "how far the port and harbour chains can go"],
   ["Recruitment zones", "tags/recruitment-zones.md", zones.list.length, "local troops, per zone, with every region in it"],
   ["Specialty recruitment", "tags/specialty-recruitment.md", specialty.list.length, "the five zones that mark a soldier, not a place"],
+  ["Other recruitment tags", "tags/recruitment-other.md", otherTags.list.length, "the other region tags recruitment tests (Ptolemaic, Seleucid)"],
   ["Cultural homelands", "tags/cultural-homeland.md", homeland.list.length, "which region is whose, and what that permits"],
   ["Hazards and river trade", "tags/hazards-and-river-trade.md", hazards.list.length, "the navigable-river flag and the disaster tags"],
   ["Fertility", "tags/fertility.md", fertility.list.length, "farmland quality, 1–14, and what it does not do"],
@@ -627,6 +649,7 @@ record("hazards-and-river-trade.md", hazards.list);
 record("fertility.md", fertility.list);
 record("recruitment-zones.md", zones.list);
 record("specialty-recruitment.md", specialty.list);
+record("recruitment-other.md", otherTags.list);
 record("cultural-homeland.md", homeland.list);
 fs.writeFileSync(path.join(OUT, "tags", "index.json"), JSON.stringify(ANCHORS, null, 1), "utf8");
 

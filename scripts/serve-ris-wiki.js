@@ -852,6 +852,7 @@ const NAV = [
     ["/tags/climate.md", "Climate"], ["/tags/irrigation.md", "Irrigation"],
     ["/tags/ports.md", "Ports"], ["/tags/recruitment-zones.md", "Recruitment zones"],
     ["/tags/specialty-recruitment.md", "Specialty recruitment"],
+    ["/tags/recruitment-other.md", "Other recruitment tags"],
     ["/tags/cultural-homeland.md", "Cultural homelands"],
     ["/tags/hazards-and-river-trade.md", "Hazards and river trade"],
     ["/tags/fertility.md", "Fertility"]]],

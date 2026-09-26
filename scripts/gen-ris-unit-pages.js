@@ -1005,9 +1005,13 @@ it**, so there is nowhere on the campaign map to hire it as the mod ships today.
     const has = (n) => fs.existsSync(path.join(OUT, "cards", n));
     const card = `${u.slug}.png`, info = `${u.slug}_info.png`;
     if (!has(card)) return has(info) ? `<img src="../cards/${info}" alt="${u.name}" width="164" align="right">\n\n` : "";
-    const img = `<img src="../cards/${card}" alt="${u.name} unit card" width="164" align="right">`;
+    const img = `<img src="../cards/${card}" alt="${u.name} unit card" width="164" height="224" align="right">`;
     if (!has(info)) return `${img}\n\n`;
-    return `<a href="../cards/${info}" title="Click for the info card">${img}</a>\n\n`;
+    // Both cards shown side by side (asked for 2026-09-26; the info card used to be reachable
+    // only by clicking the roster card). Floated right, so the one written first sits at the far
+    // right: the info card first puts the roster card on the left, as the game orders them.
+    const infoImg = `<img src="../cards/${info}" alt="${u.name} info card" width="164" height="224" align="right" style="margin-left:8px">`;
+    return `${infoImg}${img}\n\n`;
   }
 
   const body = `# ${u.name}
