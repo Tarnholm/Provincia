@@ -412,7 +412,17 @@ function loadCharacters() {
 function loadRecruitment() {
   const edb = rd("export_descr_buildings.txt") || "";
   const rows = [];
-  for (const m of edb.matchAll(/^\s*recruit\s+"([^"]+)"\s+(\d+)\s+requires\s+([^\r\n]+)/gm)) {
+  // The building level each line sits in is followed as the file is read (`building <chain>` at
+  // the margin, `<level> requires …` two tabs in), so a route can name WHERE the unit is raised:
+  // "Government Building" alone left out the Smith's Workshop that Ballistas actually need.
+  let chain = null, level = null;
+  for (const lineRaw of edb.split(/\r?\n/)) {
+    const bm = /^building\s+(\S+)/.exec(lineRaw);
+    if (bm) { chain = bm[1]; level = null; continue; }
+    const lm = /^\t\t([A-Za-z0-9_]+)\s+requires\b/.exec(lineRaw);
+    if (lm) { level = lm[1]; continue; }
+    const m = /^\s*recruit\s+"([^"]+)"\s+(\d+)\s+requires\s+(.+)$/.exec(lineRaw);
+    if (!m) continue;
     const unit = m[1].trim();
     const expr = m[3].trim();
     // Positive gate: factions { a, b } — "all" means everyone.
@@ -436,7 +446,7 @@ function loadRecruitment() {
     // needing a tier-2 military building needs no building at all. The line is tagged rather
     // than dropped, so a unit the AI alone can raise still appears on the roster with the only
     // requirement the mod states for it.
-    rows.push({ unit, pos, neg, player: !/\bnot\s+is_player\b/i.test(expr), hr: /hidden_resource/i.test(expr), conds: [...new Set(conds)] });
+    rows.push({ unit, pos, neg, player: !/\bnot\s+is_player\b/i.test(expr), hr: /hidden_resource/i.test(expr), conds: [...new Set(conds)], chain, level });
   }
   return rows;
 }
@@ -454,7 +464,7 @@ function recruitableBy(rows, faction) {
     if (!allowed || r.neg.includes(faction)) continue;
     if (!routes.has(r.unit)) routes.set(r.unit, { sets: [], aor: true });
     const e = routes.get(r.unit);
-    e.sets.push(r.conds);
+    e.sets.push({ c: r.conds, chain: r.chain, level: r.level });
     // An ungated route anywhere makes the unit core.
     if (!r.hr) e.aor = false;
   }
@@ -465,23 +475,25 @@ function recruitableBy(rows, faction) {
   const key = (s) => [...s].sort().join(" & ");
   const out = new Map();
   for (const [unit, e] of routes) {
-    let sets = e.sets.map((s) => [...s]);
+    let sets = e.sets.map((s) => ({ ...s, c: [...s.c] }));
     for (let pass = 0; pass < 3; pass++) {
-      const keys = new Set(sets.map(key));
-      sets = sets.map((s) => s.filter((c) => {
-        const rest = s.filter((x) => x !== c);
+      // Pairs are looked for within one building level (both Ballistas lines are the Smith's
+      // Workshop's), so two different buildings never cancel each other's conditions.
+      const keys = new Set(sets.map((s) => `${s.level}|${key(s.c)}`));
+      sets = sets.map((s) => ({ ...s, c: s.c.filter((c) => {
+        const rest = s.c.filter((x) => x !== c);
         const m = /^not\s+(.+)$/i.exec(c);
         const partner = m ? [...rest, m[1]] : [...rest, `not ${c}`];
-        return !keys.has(key(partner));
-      }));
+        return !keys.has(`${s.level}|${key(partner)}`);
+      }) }));
     }
-    sets.sort((a, b) => a.length - b.length);
-    out.set(unit, { conds: sets[0], aor: e.aor });
+    sets.sort((a, b) => a.c.length - b.c.length);
+    out.set(unit, { conds: sets[0].c, where: sets[0], aor: e.aor });
   }
   const all = [...out.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   return {
-    core: all.filter(([, v]) => !v.aor).map(([u, v]) => [u, v.conds]),
-    aor: all.filter(([, v]) => v.aor).map(([u, v]) => [u, v.conds]),
+    core: all.filter(([, v]) => !v.aor).map(([u, v]) => [u, v.conds, v.where]),
+    aor: all.filter(([, v]) => v.aor).map(([u, v]) => [u, v.conds, v.where]),
     total: all.length,
   };
 }
@@ -731,6 +743,19 @@ const unitCard = (type) => {
   const img = `<img src="../cards/${s}.png" alt="" width="41" height="56" loading="lazy">`;
   return unitPages.has(s) ? `[${img}](../units/${s}.md)` : img;
 };
+// The Requires cell: the building level the unit is raised in comes first (linked to its chain),
+// then the conditions the recruit line adds. The level's own build requirements (market,
+// resources, settlement size) are on that building's page, one click away.
+// The Region Information Scroll (hinterland_region) is left unnamed: it is the core building
+// 1,299 of the 1,306 settlements start with and anyone can build, so naming it says nothing.
+const EVERYWHERE = new Set(["hinterland_region"]);
+const routeLabel = (conds, where) => {
+  const lv = where && !EVERYWHERE.has(where.chain) && where.level;
+  const name = lv ? (bName(lv) || lv.replace(/_/g, " ")) : null;
+  const b = name ? `**${where.chain && buildingPages.has(where.chain) ? `[${name}](../buildings/${where.chain}.md)` : name}**` : null;
+  const rest = conds.map((c) => cell(clauseLabel(c)));
+  return [b, ...rest].filter(Boolean).join(" · ") || "_no further requirement_";
+};
 // Building chain pages are named for the chain's internal token, so a built level links
 // through to the chain it belongs to — what it does, what it costs, what it upgrades into.
 const buildingPages = (() => {
@@ -921,7 +946,7 @@ ${cs.map((c) => `| ${displayName(c.name)} | ${c.role} | ${c.age != null ? c.age 
 
 ${reformSection(f)}${revoltSection(f)}## Units you can recruit
 
-${units.total ? `${units.total} unit type${units.total === 1 ? "" : "s"} are available to ${display}: ${units.core.length} faction unit${units.core.length === 1 ? "" : "s"} and ${units.aor.length} regional. The requirement column is what the mod states for the easiest route to that unit.
+${units.total ? `${units.total} unit type${units.total === 1 ? "" : "s"} are available to ${display}: ${units.core.length} faction unit${units.core.length === 1 ? "" : "s"} and ${units.aor.length} regional. The Requires column names the building the unit is raised in, then the other conditions of the easiest route to it; that building's own page says what it takes to build.
 
 ### Faction units
 
@@ -929,7 +954,7 @@ ${units.core.length ? `<div class="rtab nodeal">
 
 | | Unit | Requires |
 |---|---|---|
-${units.core.map(([u, conds]) => `| ${unitCard(u)} | ${unitLink(u)} | ${conds.length ? conds.map((c) => cell(clauseLabel(c))).join(" · ") : "_no further requirement_"} |`).join("\n")}
+${units.core.map(([u, conds, where]) => `| ${unitCard(u)} | ${unitLink(u)} | ${routeLabel(conds, where)} |`).join("\n")}
 
 </div>` : `_${display} has no ungated units: every unit on its roster needs a regional resource._`}
 
@@ -942,7 +967,7 @@ ${units.aor.length ? `<details>
 
 | | Unit | Requires |
 |---|---|---|
-${units.aor.map(([u, conds]) => `| ${unitCard(u)} | ${unitLink(u)} | ${conds.length ? conds.map((c) => cell(clauseLabel(c))).join(" · ") : "_no further requirement_"} |`).join("\n")}
+${units.aor.map(([u, conds, where]) => `| ${unitCard(u)} | ${unitLink(u)} | ${routeLabel(conds, where)} |`).join("\n")}
 
 </div>
 
