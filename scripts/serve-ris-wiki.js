@@ -279,6 +279,14 @@ function renderMarkdown(md, toc) {
   while (i < lines.length) {
     const line = lines[i];
 
+    // A YouTube link alone on its line (the developer diaries) plays in the page. The markdown
+    // keeps the plain link, which is what the GitHub wiki (no iframes there) shows instead.
+    const yt = /^\s*<?https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?(?:\S*&)?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})\S*?>?\s*$/.exec(line);
+    if (yt) {
+      out.push(`<div class="yt"><iframe src="https://www.youtube-nocookie.com/embed/${yt[1]}" title="YouTube video" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`);
+      i++; continue;
+    }
+
     if (RAW_BLOCK.test(line)) {
       // <summary> holds inline markdown worth rendering rather than dumping raw.
       const sm = /^\s*<summary([^>]*)>(.*)<\/summary>\s*$/i.exec(line);
@@ -656,6 +664,8 @@ main{min-width:0;padding:1.6rem 1.6rem 5rem;width:100%}
 .fmeta{flex:1 1 15rem;min-width:0;font-size:.95rem;line-height:1.75}
 /* No map, just the emblem: its column is the emblem's own width, not the map's 26rem. */
 .fhead.femblem{flex-wrap:nowrap;align-items:center}
+.yt{position:relative;width:100%;max-width:800px;aspect-ratio:16/9;margin:12px 0;border-radius:6px;overflow:hidden;background:#000}
+.yt iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .fhead.femblem > p{flex:0 0 auto}
 .fmeta img{border-radius:6px;margin-bottom:.5rem}
 .lede em{display:block;clear:none;color:var(--dim);font-size:.85rem}

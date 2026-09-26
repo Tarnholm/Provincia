@@ -147,7 +147,14 @@ if (LIST) {
 const ORIG = path.join(CACHE, "images");
 const IMG_DIR = path.join(OUT, "diary-images");
 const isImage = (a) => /^image\//.test(a.content_type || "") || /\.(png|jpe?g|gif|webp)$/i.test(a.filename || "");
-const origName = (a, msgId) => `${msgId}-${slug(a.filename.replace(/\.[^.]+$/, ""))}${path.extname(a.filename).toLowerCase()}`;
+const baseName = (a) => `${slug(a.filename.replace(/\.[^.]+$/, ""))}${path.extname(a.filename).toLowerCase()}`;
+// A post with several pastes calls every one "unknown.png": the post id alone made them one
+// file, and the first picture stood in for all of them (131 pictures in 44 posts). In such a
+// post every picture is named by its own attachment id; other posts keep their old names.
+const origName = (a, m) => {
+  const clash = (m.attachments || []).filter((b) => baseName(b) === baseName(a)).length > 1;
+  return clash ? `${m.id}-${a.id}-${baseName(a)}` : `${m.id}-${baseName(a)}`;
+};
 async function downloadAll(jobs) {
   let i = 0, fails = 0;
   const worker = async () => {
@@ -223,7 +230,7 @@ function externalImages(m) {
 // ── build ───────────────────────────────────────────────────────────────────
 (async () => {
   const jobs = [];
-  for (const d of diaries) for (const m of d.msgs) for (const a of m.attachments || []) if (isImage(a)) jobs.push({ name: origName(a, m.id), url: a.url });
+  for (const d of diaries) for (const m of d.msgs) for (const a of m.attachments || []) if (isImage(a)) jobs.push({ name: origName(a, m), url: a.url });
   for (const d of diaries) for (const m of d.msgs) for (const li of linkedImages(m).values()) jobs.push(li);
   for (const d of diaries) for (const m of d.msgs) for (const li of externalImages(m).values()) jobs.push(li);
   const fails = await downloadAll(jobs);
@@ -254,7 +261,7 @@ function externalImages(m) {
       if (text) body.push(text, "");
       for (const a of m.attachments || []) {
         if (!isImage(a)) continue;
-        const web = origName(a, m.id).replace(/\.[^.]+$/, ".webp");
+        const web = origName(a, m).replace(/\.[^.]+$/, ".webp");
         if (!fs.existsSync(path.join(IMG_DIR, web))) continue;
         body.push(`![${(a.description || "").replace(/[[\]]/g, "") || "Developer diary image"}](../diary-images/${web})`, "");
         images++;
@@ -271,8 +278,15 @@ function externalImages(m) {
     fs.writeFileSync(path.join(OUT, "diaries", `${key}.md`), `# ${title}\n\n_${date} · ${d.author}_\n\n${bodyNoTitle}\n`, "utf8");
     rows.push({ key, title, date, author: d.author });
   }
-  // Pages from an earlier run whose diary is no longer produced (a boundary moved) go.
+  // Pages from an earlier run whose diary is no longer produced (a boundary moved) go, and so do
+  // pictures no page shows any more (e.g. the ones named before a rename). Both are this
+  // generator's own output; the originals stay in the cache.
   for (const f of fs.readdirSync(path.join(OUT, "diaries"))) if (f.endsWith(".md") && !used.has(f.slice(0, -3))) fs.unlinkSync(path.join(OUT, "diaries", f));
+  const shown = new Set();
+  for (const f of fs.readdirSync(path.join(OUT, "diaries"))) for (const m of fs.readFileSync(path.join(OUT, "diaries", f), "utf8").matchAll(/diary-images\/([^)\s]+)/g)) shown.add(m[1]);
+  let pruned = 0;
+  for (const f of fs.readdirSync(IMG_DIR)) if (!shown.has(f)) { fs.unlinkSync(path.join(IMG_DIR, f)); pruned++; }
+  if (pruned) say(`  removed ${pruned} picture(s) no diary shows any more`);
   const cell = (s) => String(s).replace(/\|/g, "\\|");
   fs.writeFileSync(path.join(OUT, "diaries.md"), `# Developer diaries
 

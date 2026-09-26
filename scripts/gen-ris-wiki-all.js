@@ -22,6 +22,8 @@ const ORDER = [
   'gen-ris-belief-pages.js',
   'gen-ris-trait-pages.js',
   'gen-ris-ancillary-pages.js',
+  'gen-ris-trait-pages.js',     // again: traits and retinue read each other's index.json, so a retinue
+                                //   rename reaches the trait pages only on this second pass
   'gen-ris-trade-goods.js',
   'gen-ris-settlement-sizes.js',
   'gen-ris-tag-pages.js',
