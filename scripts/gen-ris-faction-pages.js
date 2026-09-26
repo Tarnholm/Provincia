@@ -487,8 +487,8 @@ const fmap = require(path.join(__dirname, "lib", "factionMap.js"));
 // a wiki page must not, because slave.tga is the rebel emblem and printing it under a
 // faction's name would be showing a symbol that is not theirs. A faction whose file is
 // missing gets no symbol and is named in the run output.
-const ICON_SCALE = 3;      // 360px source → 120px, exact; the four 512px files → 170px
-const SYMBOL_BOX = 120;    // displayed size, so one large source cannot dwarf the others
+const ICON_SCALE = 2;      // 360px source → 180px, exact; the four 512px files → 256px
+const SYMBOL_BOX = 150;    // displayed size in the faction card, so one large source cannot dwarf the others
 function loadSymbolFiles() {
   const txt = rd("descr_sm_factions.txt") || "";
   const out = {};
@@ -798,8 +798,13 @@ for (const f of factions) {
     totalPop ? `**${totalPop.toLocaleString("en-US")}** people` : null,
     `**${cs.length}** character${cs.length === 1 ? "" : "s"}`,
     `**${units.core.length}** faction unit${units.core.length === 1 ? "" : "s"}`,
-    units.aor.length ? `**${units.aor.length}** regional` : null,
-  ].filter(Boolean).join(" · ");
+    units.aor.length ? `**${units.aor.length}** regional units` : null,
+  ].filter(Boolean);
+
+  // The faction card beside the map: the emblem on top, the facts listed under it, in a panel
+  // (the old one-line glance floated loose in the space beside the map). The note is the
+  // "only comes to life through a revolt" line for factions with no starting territory.
+  const card = (note) => `<div class="fmeta fcard">\n\n${symImg ? `<div class="fcard-emb">\n\n${symImg}\n\n</div>\n\n` : ""}<div class="fcard-facts">\n\n${note}${glance.map((g) => `- ${g}`).join("\n")}\n\n</div>\n\n</div>`;
 
   // The symbol, converted from the mod's TGA. Width AND height are stated on the tag: an
   // <img> without them has no size until the bytes arrive, and 230 of those relaying their
@@ -845,15 +850,15 @@ for (const f of factions) {
       // paragraph on 215 pages, and what a reader needs from it — that every faction map is
       // drawn at one scale, so a small faction looks small — belongs on the index once, not
       // under every picture.
-      mapLine = `<div class="fhead">\n\n![Starting territory of ${display}, with its neighbours](../maps/${f}.png)\n\n<div class="fmeta">\n\n${symImg ? `${symImg}\n\n` : ""}${glance}\n\n</div>\n\n</div>\n\n`;
+      mapLine = `<div class="fhead">\n\n![Starting territory of ${display}, with its neighbours](../maps/${f}.png)\n\n${card("")}\n\n</div>\n\n`;
     }
   }
   // No starting map (factions that only emerge later): the same two-column head, emblem left,
   // the emergence note and the glance line right. A bare floated emblem let the next block's
   // background run under half of it.
   const note = emergeNote(f);
-  if (!mapLine && symImg) mapLine = `<div class="fhead femblem">\n\n${symImg}\n\n<div class="fmeta">\n\n${note}${glance}\n\n</div>\n\n</div>\n\n`;
-  else if (mapLine && note) mapLine = mapLine.replace('<div class="fmeta">\n\n', `<div class="fmeta">\n\n${note}`);
+  if (!mapLine && symImg) mapLine = `<div class="fhead">\n\n${card(note)}\n\n</div>\n\n`;
+  else if (mapLine && note) mapLine = mapLine.replace('<div class="fcard-facts">\n\n', `<div class="fcard-facts">\n\n${note}`);
   // The mod's own placeholder is not a brief: leave the section out.
   const brief = intro.descr && !/^\s*(no description\.?|needs description\.?)\s*$/i.test(intro.descr) ? intro.descr : null;
 

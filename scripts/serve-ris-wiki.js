@@ -675,6 +675,15 @@ main{min-width:0;padding:1.6rem 1.6rem 5rem;width:100%}
 .vid .vm{color:var(--dim);font-size:.85em}
 .fhead.femblem > p{flex:0 0 auto}
 .fmeta img{border-radius:6px;margin-bottom:.5rem}
+/* The faction card beside the map: a panel with the emblem centred on top and the facts listed. */
+.fhead .fcard{flex:0 1 20rem;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+ padding:1rem 1.2rem;box-shadow:var(--shadow);line-height:1.6}
+.fcard-emb{text-align:center;margin-bottom:.6rem}
+.fcard-emb img{width:150px;height:auto;margin:0;border-radius:0}
+.fcard-facts ul{margin:0;padding:0;list-style:none}
+.fcard-facts li{padding:.28rem 0;border-top:1px solid var(--line)}
+.fcard-facts li:first-child{border-top:none}
+.fcard-facts p{margin:0 0 .6rem}
 .lede em{display:block;clear:none;color:var(--dim);font-size:.85rem}
 .lede-flow{margin-bottom:1.5rem}
 .lede-flow>h2:first-child{margin-top:.2rem}
