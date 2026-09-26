@@ -243,12 +243,14 @@ function sectionise(html, rel) {
     const cut = lede.search(/<p>[^\n]*<img/i);
     const head = cut < 0 ? lede : lede.slice(0, cut).trim();
     const paneLede = cut < 0 ? "" : lede.slice(cut).trim();
-    const others = secs.filter((_, i) => i !== descAt).map((s) => secWrap(s, false)).join("");
+    // Asked for again on 2026-09-26: the description ABOVE the stats. The side column put it
+    // last whenever the two columns stacked (any narrow window), so it now leads, full width,
+    // right under the cards; the other sections follow in their usual layout.
+    const others = secs.filter((_, i) => i !== descAt);
     return (head ? `<div class="lede">${head}</div>` : "")
-      + `<div class="panes">`
-      + `<div class="pane">${paneLede ? `<div class="lede">${paneLede}</div>` : ""}${others}</div>`
-      + `<div class="pane">${secWrap(secs[descAt], false)}</div>`
-      + `</div>`;
+      + (paneLede ? `<div class="lede">${paneLede}</div>` : "")
+      + secWrap(secs[descAt], true)
+      + others.map((s) => secWrap(s, isWide(s))).join("");
   }
 
   const out = [];
