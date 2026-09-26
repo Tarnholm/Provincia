@@ -21,13 +21,19 @@ const TOKEN = (process.env.DISCORD_TOKEN || (TOKEN_FILE && fs.existsSync(TOKEN_F
 if (!TOKEN) { console.error("No token: set DISCORD_TOKEN or pass --token-file <path>"); process.exit(1); }
 
 // 📒developer-diaries: every diary is posted here (the old per-diary channels are not used).
-const CHANNELS = [
+const DIARY_CHANNELS = [
   ["894286297802362931", "developer-diaries"],
 ];
+// --channel <id or link> (repeatable): read other rooms instead, e.g. an old drafting room, to
+// recover pictures whose post in the diary channel was deleted. They are saved under <out>/extra/
+// and never become diary pages.
+const EXTRA = argv.flatMap((a, i) => (a === "--channel" ? [String(argv[i + 1] || "").split("/").filter(Boolean).pop()] : [])).filter((id) => /^\d+$/.test(id));
+const CHANNELS = EXTRA.length ? EXTRA.map((id) => [id, `extra-${id}`]) : DIARY_CHANNELS;
+const DEST = EXTRA.length ? path.join(OUT, "extra") : OUT;
 const H = { Authorization: `Bot ${TOKEN}`, "User-Agent": "RIS-wiki/1.0" };
 
 (async () => {
-  fs.mkdirSync(OUT, { recursive: true });
+  fs.mkdirSync(DEST, { recursive: true });
   const index = [];
   for (const [id, name] of CHANNELS) {
     const all = [];
@@ -46,9 +52,9 @@ const H = { Authorization: `Bot ${TOKEN}`, "User-Agent": "RIS-wiki/1.0" };
     const withText = all.filter((m) => m.content && m.content.trim()).length;
     console.log(`${name.padEnd(20)} ${status.padEnd(9)} ${String(all.length).padStart(4)} messages, ${withText} with text, ${all.reduce((n, m) => n + m.attachments.length, 0)} attachments`);
     if (all.length && !withText) console.log("   (every message has empty text: switch on the bot's Message Content intent)");
-    if (all.length) fs.writeFileSync(path.join(OUT, `${id}.json`), JSON.stringify(all, null, 1));
+    if (all.length) fs.writeFileSync(path.join(DEST, `${id}.json`), JSON.stringify(all, null, 1));
     index.push({ id, name, status, messages: all.length });
   }
-  fs.writeFileSync(path.join(OUT, "channels.json"), JSON.stringify(index, null, 1));
-  console.log(`\nsaved to ${OUT}. next: node scripts/gen-ris-diary-pages.js`);
+  if (!EXTRA.length) fs.writeFileSync(path.join(OUT, "channels.json"), JSON.stringify(index, null, 1));
+  console.log(`\nsaved to ${DEST}.${EXTRA.length ? "" : " next: node scripts/gen-ris-diary-pages.js"}`);
 })().catch((e) => { console.error(e); process.exit(1); });
