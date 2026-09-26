@@ -235,7 +235,7 @@ function buildingShape(v, r) {
   const pv = per(v.buildingLevels, v.buildingChains), pr = per(r.buildingLevels, r.buildingChains);
   if (rc == null || rl == null || pv === NA || pr === NA) return "";
   const shape = Number(pr) < Number(pv) ? "shorter" : Number(pr) > Number(pv) ? "longer" : "the same length";
-  return `: ${rc.toFixed(1)}x the chains but ${rl.toFixed(1)}x the levels, so a chain is ${shape} on average — ${pr} levels against vanilla's ${pv}`;
+  return `: ${rc.toFixed(1)}x the chains but ${rl.toFixed(1)}x the levels, so a chain is ${shape} on average: ${pr} levels against vanilla's ${pv}`;
 }
 
 function build(v, r) {
@@ -245,9 +245,9 @@ function build(v, r) {
   // template. Taken from C:/RIS/_resources/logos and separators, which is where the project
   // keeps its artwork; the file is copied into wiki/art by hand, not generated, because it is
   // an asset of the mod and not something this script has any business producing.
-  pages["README.md"] = `# RIS vs Vanilla — what is different
+  pages["README.md"] = `# RIS vs Vanilla: what is different
 
-<img src="art/ris-logo.png" alt="Rome: Total Realism — Imperium Surrectum" width="128" style="float:none;margin:.2rem 0 1rem">
+<img src="art/ris-logo.png" alt="Rome: Total Realism, Imperium Surrectum" width="128" style="float:none;margin:.2rem 0 1rem">
 
 A player's guide to how **RTR: Imperium Surrectum** differs from vanilla *Rome: Total
 War Remastered*.
@@ -266,7 +266,7 @@ ${row("Building chains", v.buildingChains, r.buildingChains)}
 ${row("Building levels (total)", v.buildingLevels, r.buildingLevels)}
 
 The short version: **RIS is far larger than vanilla in almost every direction a player
-notices — but not uniformly.** The map and the unit roster grow enormously. The building
+notices, but not uniformly.** The map and the unit roster grow enormously. The building
 tree grows least${buildingShape(v, r)}.
 
 
@@ -274,9 +274,9 @@ tree grows least${buildingShape(v, r)}.
 
 For anything you want to sort or search rather than read:
 
-- [Unit roster](units.html) — all ${n(r.units)} units, sortable by any stat
-- [Regions](regions.html) — all ${n(r.regions)}, sortable and searchable
-- [Factions](factions.html) — sortable by what each starts with
+- [Unit roster](units.html): all ${n(r.units)} units, sortable by any stat
+- [Regions](regions.html): all ${n(r.regions)}, sortable and searchable
+- [Factions](factions.html): sortable by what each starts with
 
 ### The world
 
@@ -342,10 +342,10 @@ ${n(r.factions)}, of which ${n(r.factionsOwning)} hold territory at the start. M
 small: ${n(r.settlements)} settlements shared between ${n(r.factionsOwning)} factions
 averages **${per(r.settlements, r.factionsOwning)} settlements each**, against
 **${per(v.settlements, v.factionsOwning)}** in vanilla. So the average state is a similar
-size — there are simply far more of them, and therefore far more neighbours.
+size. There are simply far more of them, and therefore far more neighbours.
 
 **More cultures means more distinct opponents.** Vanilla groups everyone into
-${n(v.cultures)} cultures — ${v.cultureNames.map(titleCase).join(", ")}. RIS uses ${n(r.cultures)}.
+${n(v.cultures)} cultures (${v.cultureNames.map(titleCase).join(", ")}). RIS uses ${n(r.cultures)}.
 ${r.cultureNames.every((c) => CULTURE_INDEX[c]) ? `
 <details>
 <summary>The ${n(r.cultures)} cultures RIS divides the world into</summary>
@@ -357,7 +357,7 @@ The [faction index](factions.md) groups every faction under these.
 </details>
 ` : ""}
 Culture drives architecture, unit availability and how populations respond to you, so
-this is one of the changes you notice fastest — neighbouring regions look and fight
+this is one of the changes you notice fastest: neighbouring regions look and fight
 differently in a way vanilla's broad groupings do not capture.
 
 ## Who you can play
@@ -367,16 +367,16 @@ rest are not real players: the Free Peoples, the Roman senate, a test faction, a
 ${r.rebelStyle.length} rebel factions that exist to hold breakaway territory.
 
 Every playable faction has its own page with its starting settlements, characters and
-roster — see [all factions](factions.md).
+roster. See [all factions](factions.md).
 `;
 
   pages["map-and-regions.md"] = `# The map
 
 [← back to index](README.md)
 
-${fs.existsSync(path.join(OUT, "world-map", "preview.webp")) ? `[![The campaign map — open the interactive map](world-map/preview.webp)](world-map.html)
+${fs.existsSync(path.join(OUT, "world-map", "preview.webp")) ? `<a href="world-map.html"><img src="world-map/preview.webp" alt="The campaign map: open the interactive map" width="1020" height="700" style="max-width:100%;height:auto;display:block;border-radius:8px"></a>
 
-**[Open the interactive map](world-map.html)** — drag, zoom, point at a region to see who holds it, click to open it.
+**[Open the interactive map](world-map.html)**: drag, zoom, point at a region to see who holds it, click to open it.
 ` : ""}
 | | Vanilla | RIS | Change | |
 |---|---:|---:|---:|---:|
@@ -396,7 +396,7 @@ single biggest structural difference in RIS, and it changes the pace of everythi
   ${n(r.factionsOwning)} territory-holding factions possible at all.
 
 Every region has its own page with its settlement, owner, trade goods and starting
-buildings — see [all regions](regions.md).
+buildings. See [all regions](regions.md).
 `;
 
   pages["units-overview.md"] = `# Units
@@ -410,21 +410,21 @@ ${row("Cultures they are drawn from", v.cultures, r.cultures)}
 
 ## What this means to play
 
-**The roster is ${times(v.units, r.units)} the size of vanilla's** — ${n(v.units)} units
+**The roster is ${times(v.units, r.units)} the size of vanilla's**: ${n(v.units)} units
 become ${n(r.units)}.
 
 What that buys is regional distinctiveness. Vanilla gives each culture a fairly short
 list, so two barbarian factions field broadly similar armies. With ${n(r.units)} units
 across ${n(r.cultures)} cultures, RIS can give neighbouring peoples genuinely different
-troops — which makes recruitment a local decision rather than a faction-wide one, and
+troops, which makes recruitment a local decision rather than a faction-wide one, and
 makes knowing your enemy worth the effort.
 
-> **A note on this number:** it counts the distinct units you can recruit from — a unit
+> **A note on this number:** it counts the distinct units you can recruit from: a unit
 > raised in several regional versions counts once. It is not the number of units alive on
 > the map in a campaign.
 
 Every unit has its own page with its card, stats, description and which factions can
-recruit it — see [all units](units.md). Recruitment requirements are on each
+recruit it. See [all units](units.md). Recruitment requirements are on each
 [faction's page](factions.md).
 `;
 
@@ -450,11 +450,11 @@ ${Number(per(r.buildingLevels, r.buildingChains)) < Number(per(v.buildingLevels,
 - **More decisions, less laddering.** RIS gives many more distinct, shorter chains, so the
   question shifts from *how far up* to *which ones at all*.` : ""}
 - **Local conditions matter more.** Many RIS chains are gated on what a region actually
-  has — terrain, resources, culture — so two settlements of the same size can offer quite
+  has (terrain, resources, culture), so two settlements of the same size can offer quite
   different options.
 
 Every chain has its own page with what each level does, its cost, its upgrade path and
-what it rules out — see [all buildings](buildings.md).
+what it rules out. See [all buildings](buildings.md).
 `;
 
   return pages;

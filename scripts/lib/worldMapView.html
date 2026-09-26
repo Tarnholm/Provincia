@@ -15,25 +15,28 @@
 .wm.owners .wm-in canvas{display:block}
 .wm-lab{position:absolute;transform:translate(6px,-50%);white-space:nowrap;color:#faf4e4;font-weight:600;font-size:var(--lf);
  text-shadow:0 0 3px #1c160f;pointer-events:none;display:none}
-.wm.names .wm-lab.on{display:block}
+.wm.names:not(.nonames) .wm-lab.on{display:block}
 .wm-tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;
  padding:.45rem .65rem;font-size:.88rem;line-height:1.45;box-shadow:var(--shadow);display:none;z-index:3;max-width:18rem}
 .wm-tip img{width:20px;height:20px;vertical-align:middle;margin-right:.3rem}
 .wm-tip b{color:var(--acc)}
 </style>
-<div class="wm-bar"><button type="button" id="wm-plus" title="Zoom in">+</button><button type="button" id="wm-minus" title="Zoom out">−</button><button type="button" id="wm-fit">Whole map</button><label><input type="checkbox" id="wm-own"> Faction colours</label><input type="search" id="wm-find" placeholder="Find a settlement or region…" list="wm-list" autocomplete="off"><datalist id="wm-list"></datalist></div>
+<div class="wm-bar"><button type="button" id="wm-plus" title="Zoom in">+</button><button type="button" id="wm-minus" title="Zoom out">−</button><button type="button" id="wm-fit">Whole map</button><label><input type="checkbox" id="wm-own"> Faction colours</label><label><input type="checkbox" id="wm-names" checked> Settlement names</label><input type="search" id="wm-find" placeholder="Find a settlement or region…" list="wm-list" autocomplete="off"><datalist id="wm-list"></datalist></div>
 <div class="wm" id="wm"><div class="wm-in" id="wm-in"><img src="world-map/world.webp" alt="The campaign map" width="4080" height="2800"><canvas id="wm-cv" width="1020" height="700"></canvas></div><div class="wm-tip" id="wm-tip"></div></div>
 <img id="wm-ids" src="world-map/ids.png" alt="" hidden>
 <script>
 (function(){
 var DATA = __DATA__;
 var WS = 4, MW = 1020, MH = 700;
+// Zoom cap: the terrain behind the picture has only two pixels per map pixel, so past about
+// 1.4 image pixels per screen pixel the browser only stretches it (reported as blurry).
+var MAXS = 1.4;
 var box = document.getElementById("wm"), inn = document.getElementById("wm-in"), tip = document.getElementById("wm-tip");
 var s = 1, x = 0, y = 0, minS = 0.1, ids = null, labs = [];
 function esc(t){ return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 function apply(){
   var w = box.clientWidth, h = box.clientHeight;
-  s = Math.max(minS, Math.min(3, s));
+  s = Math.max(minS, Math.min(MAXS, s));
   x = Math.min(0, Math.max(w - 4080 * s, x)); y = Math.min(0, Math.max(h - 2800 * s, y));
   if (4080 * s < w) x = (w - 4080 * s) / 2;
   if (2800 * s < h) y = (h - 2800 * s) / 2;
@@ -51,7 +54,7 @@ function apply(){
   }
 }
 function fit(){ minS = Math.min(box.clientWidth / 4080, box.clientHeight / 2800); s = minS; x = 0; y = 0; apply(); }
-function zoomAt(f, cx, cy){ var ns = Math.max(minS, Math.min(3, s * f)); x = cx - (cx - x) * ns / s; y = cy - (cy - y) * ns / s; s = ns; apply(); }
+function zoomAt(f, cx, cy){ var ns = Math.max(minS, Math.min(MAXS, s * f)); x = cx - (cx - x) * ns / s; y = cy - (cy - y) * ns / s; s = ns; apply(); }
 
 // Settlement names, placed on the map, shown once zoomed in.
 DATA.forEach(function(d){
@@ -133,6 +136,7 @@ document.getElementById("wm-plus").onclick = function(){ zoomAt(1.4, box.clientW
 document.getElementById("wm-minus").onclick = function(){ zoomAt(1 / 1.4, box.clientWidth / 2, box.clientHeight / 2); };
 document.getElementById("wm-fit").onclick = fit;
 document.getElementById("wm-own").onchange = function(){ box.classList.toggle("owners", this.checked); };
+document.getElementById("wm-names").onchange = function(){ box.classList.toggle("nonames", !this.checked); };
 
 // Find: pick a settlement or region from the list, and the map flies there.
 var dl = document.getElementById("wm-list"), opts = [];
