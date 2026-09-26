@@ -1036,7 +1036,7 @@ ${descBlock}## Stats
 
 | | | Rank in roster |
 |---|---:|---|
-${stat("Men per unit", s.men, "", "men")}${stat("Attack", s.attack, "", "attack")}${stat("Charge bonus", s.charge, "", "charge")}${stat("Defence", s.defenceTotal, "", "defenceTotal")}${stat("&nbsp;&nbsp;· armour", s.armour, "", "armour")}${stat("&nbsp;&nbsp;· defence skill", s.defence, "", "defence")}${stat("&nbsp;&nbsp;· shield", s.shield, "", "shield")}${stat("Morale", s.morale, "", "morale")}${s.discipline ? `| Discipline | ${s.discipline} | |\n` : ""}${s.training ? `| Training | ${s.training} | |\n` : ""}${stat("Recruitment cost", s.cost, " dn", "cost")}${stat("Upkeep per turn", s.upkeep, " dn", "upkeep")}${stat("Turns to recruit", s.turns)}
+${stat("Men per unit", s.men, "", "men")}${stat("Attack", s.attack, "", "attack")}${stat("Charge bonus", s.charge, "", "charge")}${stat("Defence", s.defenceTotal, "", "defenceTotal")}${stat("  · armour", s.armour, "", "armour")}${stat("  · defence skill", s.defence, "", "defence")}${stat("  · shield", s.shield, "", "shield")}${stat("Morale", s.morale, "", "morale")}${s.discipline ? `| Discipline | ${s.discipline} | |\n` : ""}${s.training ? `| Training | ${s.training} | |\n` : ""}${stat("Recruitment cost", s.cost, " dn", "cost")}${stat("Upkeep per turn", s.upkeep, " dn", "upkeep")}${stat("Turns to recruit", s.turns)}
 ${detailTables(s)}
 ${attrBlock}${u.statsDiffer ? `\n> **The mod gives this unit more than one set of numbers.** The figures above are one of\n> them, so check in-game if the exact values matter.\n` : ""}
 ${hireSection}${
