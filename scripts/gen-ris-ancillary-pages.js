@@ -552,7 +552,10 @@ around him, and members can be traded between characters who meet.
 
 ### The dictionary: every other member, by first letter
 
-${LETTERS.map((L) => `- [**${L.toUpperCase()}**](ancillaries/${L}.md): ${PAGES.get(L).length} member${PAGES.get(L).length === 1 ? "" : "s"}`).join("\n")}
+${/* Every member by name, a fold per letter, as on the trait index. */ ""}${LETTERS.map((L) => {
+  const list = PAGES.get(L).slice().sort((a, b) => a.display.localeCompare(b.display));
+  return `<details>\n<summary><b>${L.toUpperCase()}</b> · ${list.length} member${list.length === 1 ? "" : "s"}</summary>\n\n${list.map((a) => `[${a.display}](ancillaries/${L}.md#${ANC_LINKS.get(a.name).anchor})`).join(" · ")}\n\n[All of ${L.toUpperCase()} on one page](ancillaries/${L}.md)\n\n</details>`;
+}).join("\n\n")}
 
 `;
 fs.writeFileSync(path.join(OUT, "ancillaries.md"), indexBody, "utf8");

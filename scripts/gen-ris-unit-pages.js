@@ -968,6 +968,7 @@ function detailTables(s, u) {
   return out.join("\n");
 }
 
+const COMPARE = {};
 for (const u of list) {
   const s = u.st;
   const stat = (label, v, suffix, key) => v == null ? "" :
@@ -1177,7 +1178,25 @@ ${avail.allCore
 ${avail.all && !avail.allCore ? `\nAny faction holding one of the provinces below can field it.\n` : aorCount ? `\nA further ${aorCount} faction${aorCount === 1 ? "" : "s"} can raise it in the provinces below.\n` : ""}${reqBlock ? `\n${reqBlock}\n` : ""}${zoneBlocks.length ? `\n### Areas of recruitment\n\n${zoneBlocks.join("\n\n")}\n` : ""}
 `}`;
   fs.writeFileSync(path.join(OUT, "units", `${u.slug}.md`), body, "utf8");
+  // The same numbers for the compare box (asked for 2026-09-26: "click any 2 units and they are
+  // in a little comparison box"). units/compare.json, read by the site's wiki.js when a reader
+  // picks units to compare; only what this page itself states, in the page's own words.
+  const typeOf = (cls, tech, dmg) => [cls, tech && tech !== cls ? tech : null, dmg].filter(Boolean).join(" · ") || null;
+  COMPARE[u.slug] = {
+    n: u.name, cls: u.cls || null, cat: u.category || null,
+    men: s.men, attack: s.attack, charge: s.charge,
+    sec: s.secAttack > 0 ? s.secAttack : null, secCharge: s.secAttack > 0 ? s.secCharge : null,
+    type: typeOf(s.priClass, s.priTech, s.priDamage), range: s.priRange || null, ammo: s.priAmmo || null,
+    def: s.defenceTotal, armour: s.armour, skill: s.defence, shield: s.shield,
+    hp: s.hp, morale: s.morale,
+    disc: s.discipline ? disciplineText(s.discipline) : null, train: s.training ? plain(s.training) : null,
+    mount: s.mount || null, chargeDist: s.chargeDist || null,
+    cost: hiredOnly ? null : s.cost, upkeep: s.upkeep, turns: hiredOnly ? null : s.turns,
+    merc: u.merc === "all", abil: [...new Set(attrNamed)],
+  };
 }
+fs.writeFileSync(path.join(OUT, "units", "compare.json"), JSON.stringify(COMPARE), "utf8");
+console.log(`units/compare.json: ${Object.keys(COMPARE).length} units`);
 
 // ── index ────────────────────────────────────────────────────────────────────
 const byClass = {};

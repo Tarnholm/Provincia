@@ -627,6 +627,15 @@ const searchRows = INDEX.map((e) => {
 });
 fs.writeFileSync(wrote(path.join(SITE, "search-index.js")),
   `window.RIS_PAGES=${JSON.stringify(searchRows)};\n`);
+// The compare box's numbers (wiki.js fetches units/compare.json on the first pick). Nothing
+// links to it, so the asset copy would never pick it up.
+{
+  const src = path.join(WIKI, "units", "compare.json");
+  if (fs.existsSync(src)) {
+    fs.mkdirSync(path.join(SITE, "units"), { recursive: true });
+    fs.copyFileSync(src, wrote(path.join(SITE, "units", "compare.json")));
+  } else console.log("  no units/compare.json: the compare box will have no numbers (run gen-ris-unit-pages.js)");
+}
 // Full-text words (asked for 2026-09-26: "roman equites" found nothing, because the unit's page
 // is titled differently and the words are only in its text). An inverted index: every word of
 // three letters or more, with the pages it is on, as base-36 gaps between page numbers (the
