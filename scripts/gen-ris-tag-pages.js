@@ -460,7 +460,12 @@ ${summaryTable(list, [
     ["Units", (f) => (f.units.size || "—"), "r"],
   ])}
 
-${list.map((f) => `## ${f.name}\n\n${entryBody(f)}\n\n${regionsFold(f, opts.regionsLabel || "Regions") || ""}`).join("\n\n")}
+${list.map((f) => {
+    // A map of the regions with this value, under its heading (asked for 2026-09-26), drawn like
+    // the recruitment-zone maps and kept in the same folder.
+    const m = f.regions.length ? ZONE_MAPS.add(f.regions, `Regions: ${f.name}`, "../") : "";
+    return `## ${f.name}\n\n${m ? `${m}\n\n` : ""}${entryBody(f)}\n\n${regionsFold(f, opts.regionsLabel || "Regions") || ""}`;
+  }).join("\n\n")}
 `;
   fs.mkdirSync(path.join(OUT, "tags"), { recursive: true });
   fs.writeFileSync(path.join(OUT, "tags", file), body, "utf8");
