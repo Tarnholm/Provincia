@@ -240,6 +240,40 @@ const RL = require(path.join(__dirname, "lib", "reqLinks.js")).makeReqLinks({
   edb: rd("export_descr_buildings.txt") || "", OUT, bName, chainNames: CHAIN_NAMES,
 });
 const { TAG_REFS, chainPage, chainLabel, linkAlias } = RL;
+
+// ── homelands ────────────────────────────────────────────────────────────────
+// A faction's homeland is every region carrying its homeland tag. The pairing is the mod's own:
+// `factions { massalia, } and hidden_resource homeland_massaliote`, one per faction, or-ed into
+// the `homeland` condition that the Homeland government requires. The regions are read from
+// descr_regions' tag lines (the line after each region's three-number colour line).
+const HOMELAND_TAGS = (() => {
+  const out = new Map();   // faction -> Set(tag)
+  const edb = rd("export_descr_buildings.txt") || "";
+  for (const m of edb.matchAll(/factions\s*\{\s*([^}]*)\}\s*and\s+hidden_resource\s+(homeland_[A-Za-z0-9_]+)/g)) {
+    for (const f of m[1].split(",").map((x) => x.trim().toLowerCase()).filter(Boolean)) {
+      if (!out.has(f)) out.set(f, new Set());
+      out.get(f).add(m[2].toLowerCase());
+    }
+  }
+  return out;
+})();
+const REGIONS_BY_TAG = (() => {
+  const by = new Map();
+  const lines = (rd("world", "maps", "base", "descr_regions.txt") || "").split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    if (!/^[A-Za-z][A-Za-z0-9_'\- ]*\s*$/.test(lines[i])) continue;
+    const region = lines[i].trim();
+    let ci = -1;
+    for (let k = i + 1; k < Math.min(i + 8, lines.length); k++) if (/^\s*\d+\s+\d+\s+\d+\s*$/.test(lines[k])) { ci = k; break; }
+    if (ci < 0) continue;
+    for (const t of (lines[ci + 1] || "").split(",").map((x) => x.trim().toLowerCase()).filter(Boolean)) {
+      if (!by.has(t)) by.set(t, []);
+      by.get(t).push(region);
+    }
+  }
+  return by;
+})();
+const HOMELAND_MAPS = require(path.join(__dirname, "lib", "areaMaps.js")).areaMaps(OUT, "homeland-maps");
 function condLabel(tok) {
   const k = String(tok).toLowerCase();
   if (ALIAS_TEXT[k]) return linkAlias(k, ALIAS_TEXT[k]);
@@ -937,6 +971,21 @@ for (const f of factions) {
   // the emergence note and the glance line right. A bare floated emblem let the next block's
   // background run under half of it.
   const note = emergeNote(f);
+  // The homeland: a map of its regions, the regions named, and what holding them allows.
+  const homeTags = [...(HOMELAND_TAGS.get(f) || [])];
+  const homeRegions = [...new Set(homeTags.flatMap((t) => REGIONS_BY_TAG.get(t) || []))]
+    .filter((r) => regionPages.has(r)).sort((a, b) => placeName(a).localeCompare(placeName(b)));
+  const homeRef = homeTags.map((t) => TAG_REFS[t]).find((r) => r && r.page && r.anchor);
+  const homeMap = homeRegions.length ? HOMELAND_MAPS.add(homeRegions, `Homeland of ${display}`, "../") : "";
+  const homelandSection = homeRegions.length ? `## Homeland
+
+${display}'s homeland is **${homeRegions.length}** region${homeRegions.length === 1 ? "" : "s"}. Only there can it install the [Homeland](../buildings/governmentd.md) government${homeRef ? ` ([more on homelands](../tags/${homeRef.page}#${homeRef.anchor}))` : ""}.
+
+${homeMap}
+
+${homeRegions.map((r) => regionLink(r)).join(" · ")}
+
+` : "";
   if (!mapLine && symImg) mapLine = `<div class="fhead fwc">\n\n${card(note)}\n\n</div>\n\n`;
   else if (mapLine && note) mapLine = mapLine.replace('<div class="fcard-facts">\n\n', `<div class="fcard-facts">\n\n${note}`);
   // The mod's own placeholder is not a brief: leave the section out.
@@ -962,7 +1011,7 @@ ${setts.map((s) => `**${settlementAndRegion(s.region)}** — ${(s.buildings || [
 </details>
 ` : "_This faction holds no settlements at the campaign start._"}
 
-## Starting characters
+${homelandSection}## Starting characters
 
 ${cs.length ? `| Name | Role | Age |
 |---|---|---:|
@@ -1263,6 +1312,8 @@ if (mapsWritten) {
   console.log(`  territory bigger than window: ${mapStat.overflowed.length}${mapStat.overflowed.length ? ` — ${mapStat.overflowed.join(", ")}` : ""}`);
   console.log(`  smallest subject:          ${mapStat.minSubject[0]} at ${mapStat.minSubject[1].toLocaleString("en-US")} px · largest ${mapStat.maxSubject[0]} at ${mapStat.maxSubject[1].toLocaleString("en-US")} px`);
 }
+HOMELAND_MAPS.render();
+
 // Factions with no page of their own still own land (the Free Peoples, `slave`, hold 500
 // settlements), and the region list shows every owner's emblem, so theirs are written too.
 let extraSymbols = 0;
