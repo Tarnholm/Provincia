@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1522",
+    date: "2026-09-26",
+    items: [
+      { type: "fix", text: "**Crash reporter no longer hangs after long sessions.** After a multi-hour game the log files can reach several GB, and the reporter loaded a whole log into memory just to keep its last lines, so it sat using lots of RAM and CPU and never sent its report. It now reads only the end of each log, reads the live logs in small pieces, and shows what it is doing at every step after the game closes (bundled crash reporter v0.1.58)." },
+    ],
+  },
+
+  {
     version: "0.9.1521",
     date: "2026-09-24",
     items: [
