@@ -450,6 +450,10 @@ ${list.map((f) => `## ${f.name}\n\n${entryBody(f)}\n\n${regionsFold(f, opts.regi
 // ── recruitment zones ────────────────────────────────────────────────────────
 // The page this whole generator exists for. Per zone: every unit it unlocks and the building
 // level each is raised at, every region in the zone, and the two counts.
+// A map of every region carrying the zone, above its unit table (lib/areaMaps.js, same style as
+// the region pages). Own folder: the unit pages' area maps are pruned by their own generator.
+const ZONE_MAPS = require(path.join(__dirname, "lib", "areaMaps.js")).areaMaps(OUT, "zone-maps");
+
 function recruitmentPage(title, file, tokens, lede) {
   const list = tokens.map(factsFor);
   const noUnits = list.filter((f) => !f.units.size);
@@ -461,6 +465,8 @@ function recruitmentPage(title, file, tokens, lede) {
   const entry = (f) => {
     const head = `## ${f.name}\n\n**${f.regions.length}** ${f.regions.length === 1 ? "region" : "regions"} · **${f.units.size}** ${f.units.size === 1 ? "unit" : "units"}`;
     const parts = [head];
+    const zmap = f.regions.length ? ZONE_MAPS.add(f.regions, `Regions carrying ${f.name}`, "../") : "";
+    if (zmap) parts.push("\n" + zmap);
     if (!f.units.size && !f.regions.length) {
       parts.push(`\n${NOTHING} No region carries it either, so it is dead data in the mod.`);
     } else if (!f.units.size) {
@@ -661,3 +667,5 @@ say(`  other files scanned before claiming a tag unlocks nothing: ${OTHER_CONSUM
   say(`    of the ${zones.noUnits.length} zones with no unit, ${named.length} are named in one of those files${named.length ? ` (${named.map((f) => f.tok).join(", ")})` : ""}`);
 }
 if (unknownEffects.size) say(`  effect kinds with no wording (shown as the raw key): ${[...unknownEffects].join(", ")}`);
+
+ZONE_MAPS.render();

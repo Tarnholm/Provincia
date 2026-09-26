@@ -183,7 +183,7 @@ render();
   // and a hardcoded scale would peg every bar at full.
   const maxOf = (i) => rows.reduce((m, r) => (typeof r[i] === "number" && r[i] > m ? r[i] : m), 0);
   const columns = [
-    { label: "", thumb: true, width: "3.4rem" }, { label: "Unit", width: "16rem" }, { label: "Class", width: "7rem" },
+    { label: "", thumb: true, width: "3.4rem" }, { label: "Unit", width: "19rem" }, { label: "Class", width: "5.5rem" },
     { label: "Men", num: true }, { label: "Attack", num: true, bar: maxOf(4) },
     { label: "Defence", num: true, bar: maxOf(5) }, { label: "Morale", num: true, bar: maxOf(6) },
     { label: "Cost", num: true }, { label: "Upkeep", num: true },

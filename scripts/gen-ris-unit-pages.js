@@ -737,14 +737,8 @@ let zonesLinked = 0, zonesListed = 0;
 // One picture per distinct set of provinces (many units share an area of recruitment, and a
 // mercenary pool sells several units), drawn by lib/regionMaps.py in the same style as the
 // region pages: the provinces shaded and outlined in red, their settlements named.
-const AREAS = new Map();   // file -> sorted region list
-function areaMap(regs, alt) {
-  const list = [...new Set(regs)].filter((r) => regionPages.has(r)).sort();
-  if (!list.length) return "";
-  const file = "area-" + require("crypto").createHash("sha1").update(list.join(",")).digest("hex").slice(0, 12);
-  AREAS.set(file, list);
-  return `![${alt}](../area-maps/${file}.webp)`;
-}
+const AREA_MAPS = require(path.join(__dirname, "lib", "areaMaps.js")).areaMaps(OUT, "area-maps");
+const areaMap = (regs, alt) => AREA_MAPS.add([...regs].filter((r) => regionPages.has(r)), alt, "../");
 
 const list = ONLY.length
   ? merged.filter((r) => ONLY.includes(r.type.toLowerCase()) || ONLY.includes(r.dict))
@@ -1125,38 +1119,8 @@ console.log(`  with no recruit line at all: ${(list.length - unitsWithBuilding -
 console.log(`  areas of recruitment named: ${zonesSeen.size}${zonesWithNoRegion.size ? ` · WITH NO PROVINCE CARRYING THE TAG: ${zonesWithNoRegion.size} (${[...zonesWithNoRegion].join(", ")})` : " · every one has at least one province"}`);
 console.log(`  zone references: ${zonesLinked.toLocaleString("en-US")} linked to the region-tag reference · ${zonesListed.toLocaleString("en-US")} listed in full here`);
 
-// ── draw the area maps ───────────────────────────────────────────────────────
-// From the region list gen-ris-region-pages.js saves (it runs first in wiki:gen), so the area
-// maps name, colour and place everything exactly as the region maps do. Skipped when the
-// areas, that list and the renderer are all unchanged.
-{
-  const specFile = path.join(require("os").tmpdir(), "ris-region-maps.json");
-  const outDir = path.join(OUT, "area-maps");
-  if (!fs.existsSync(specFile)) {
-    console.error(`area maps: ${specFile} is missing - run gen-ris-region-pages.js first`);
-    process.exitCode = 2;
-  } else {
-    const spec = JSON.parse(fs.readFileSync(specFile, "utf8"));
-    spec.areas = [...AREAS].map(([file, regions]) => ({ file, regions }));
-    spec.areas_out = outDir;
-    spec.areas_only = true;
-    const sig = require("crypto").createHash("sha1").update(JSON.stringify(spec))
-      .update(fs.readFileSync(path.join(__dirname, "lib", "regionMaps.py"))).digest("hex");
-    const sigFile = path.join(outDir, ".sig");
-    const have = fs.existsSync(sigFile) && fs.readFileSync(sigFile, "utf8") === sig
-      && spec.areas.every((a) => fs.existsSync(path.join(outDir, `${a.file}.webp`)));
-    if (have) console.log(`  area maps: unchanged, ${spec.areas.length} kept`);
-    else {
-      fs.mkdirSync(outDir, { recursive: true });
-      const areaSpec = path.join(require("os").tmpdir(), "ris-area-maps.json");
-      fs.writeFileSync(areaSpec, JSON.stringify(spec));
-      require("child_process").execFileSync("python", [path.join(__dirname, "lib", "regionMaps.py"), areaSpec], { stdio: "inherit" });
-      const want = new Set(spec.areas.map((a) => `${a.file}.webp`));
-      for (const f of fs.readdirSync(outDir)) if (f.endsWith(".webp") && !want.has(f)) fs.unlinkSync(path.join(outDir, f));
-      fs.writeFileSync(sigFile, sig);
-    }
-  }
-}
+// ── draw the area maps (lib/areaMaps.js: skipped when nothing changed) ────────
+AREA_MAPS.render();
 console.log(`  with a display name:      ${named.toLocaleString("en-US")} of ${rows.length.toLocaleString("en-US")}`);
 console.log(`  with a real description:  ${described.toLocaleString("en-US")}`);
 console.log(`  still on placeholder text:${placeholder.toLocaleString("en-US")}`);
