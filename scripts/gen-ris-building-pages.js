@@ -970,6 +970,12 @@ Costs in denarii, build time in turns.
     // every effect is conditional (every port level, for one) looked as though it did nothing.
     if (eff.effects.length || eff.conditional.length) {
       parts.push("**What it does**", "");
+      // A mine value shows on the in-game card under the mod's relabelled engine string
+      // (SMT_CAPABILITY_MINE_RESOURCE, "True income is below | IGNORE:"). Players asked what it
+      // means, so the page says, on every level that has one.
+      if ((l.effects || []).some((e) => /^\s*mine_resource\b/i.test(String(e)))) {
+        parts.push(`> **"True income is below \\| IGNORE:" on the building card.** The number the game prints after that label is this level's mining value (listed below as *mining income*, or as a *mine resource* bonus added to the mine's), and it is a multiplier, not money. Each turn the settlement earns 5 × that value × the worth of the region's minerals (each mineral's trade value times how much of it the region holds). The mod labels the raw number IGNORE because the money you actually get is written out on the card lines underneath it: *Mining income from …: +N per turn*.`, "");
+      }
       if (eff.effects.length) parts.push(...eff.effects.map((e) => `- ${e}`), "");
       if (eff.conditional.length) {
         // Always folded, however few. Each line ends in the engine condition verbatim
