@@ -231,9 +231,81 @@ const humaniseTok = (t) => {
  * wiki needs. The token is still printed when there is no name for it, because then it is the
  * only identifier available — that is information, not clutter.
  */
+// Which building chains an alias tests, in the order it names them, so "Garrison Building or
+// Tier 1 Military Industrial Complex" can link each half to its building. Chains are matched to
+// page files lowercased (the game writes `governmentB`, the page is governmentb.md).
+// Aliases nest (`aor_tier_1` is `gov_tier_1 and not colony_tier_2`), so an alias's chains are
+// its own `building_present` chains plus those of every alias it names, followed through.
+const { ALIAS_CHAINS, CHAIN_WORDS } = (() => {
+  const edb = rd("export_descr_buildings.txt") || "";
+  const bodies = {};
+  for (const m of edb.matchAll(/^alias\s+([A-Za-z0-9_]+)[^\n]*\n\s*\{([\s\S]*?)\n\s*\}/gm)) {
+    bodies[m[1].toLowerCase()] = m[2].split(/\bdisplay_string\b/)[0];
+  }
+  const resolve = (k, seen = new Set()) => {
+    if (seen.has(k) || !bodies[k]) return [];
+    seen.add(k);
+    const out = [];
+    const body = bodies[k];
+    for (const b of body.matchAll(/building_present(?:_min_level)?\s+([A-Za-z0-9_]+)/g)) {
+      const c = b[1].toLowerCase(); if (!out.includes(c)) out.push(c);
+    }
+    for (const w of body.toLowerCase().split(/[^a-z0-9_]+/)) {
+      if (w !== k && bodies[w]) for (const c of resolve(w, seen)) if (!out.includes(c)) out.push(c);
+    }
+    return out;
+  };
+  const chains = {};
+  for (const k of Object.keys(bodies)) { const c = resolve(k); if (c.length) chains[k] = c; }
+  // A chain's words: its token, its display name and every level's name ("Dependency" is the
+  // name of governmentA's only level), so a label part can be matched to the building it names.
+  const words = {};
+  let cur = null;
+  for (const line of edb.split(/\r?\n/)) {
+    const bm = /^building\s+(\S+)/.exec(line);
+    if (bm) { cur = bm[1].toLowerCase(); words[cur] = [cur.replace(/_/g, " ")]; continue; }
+    const lm = /^\s*levels\s+(.+)$/.exec(line);
+    if (lm && cur) words[cur].push(...lm[1].trim().split(/\s+/).map((l) => bName(l) || l));
+  }
+  return { ALIAS_CHAINS: chains, CHAIN_WORDS: words };
+})();
+const TAG_REFS = (() => {
+  try { return JSON.parse(fs.readFileSync(path.join(OUT, "tags", "index.json"), "utf8")); } catch { return {}; }
+})();
+const chainPage = (c) => (c && buildingPages.has(String(c).toLowerCase()) ? `../buildings/${String(c).toLowerCase()}.md` : null);
+// An alias's display string links each part ("A or B | C not built") to the building it names,
+// matched by shared words, since the display string and the alias body need not name them in
+// the same order (the garrison alias tests the Military Industrial Complex first but says
+// "Garrison Building" first). A part that names no building stays plain; a label none of whose
+// parts can be matched links as a whole to its one building, or to the buildings index.
+function linkAlias(k, label) {
+  const chains = (ALIAS_CHAINS[k] || []).filter((c) => chainPage(c));
+  if (!chains.length || /\]\(/.test(label)) return label;
+  const words = (s) => new Set(String(s).toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 2 && !["not", "built", "tier", "any", "building"].includes(w)));
+  const bits = label.split(/(\s+or\s+|\s*\|\s*)/i);
+  let hits = 0;
+  const linked = bits.map((p, i) => {
+    if (i % 2) return p;
+    const pw = words(p);
+    let best = null, bestScore = 0, ties = 0;
+    for (const c of chains) {
+      const cw = words(`${(CHAIN_WORDS[c] || [c]).join(" ")} ${CHAIN_NAMES[c] || ""}`);
+      const score = [...pw].filter((w) => cw.has(w)).length;
+      if (score > bestScore) { bestScore = score; best = c; ties = 1; } else if (score && score === bestScore) ties++;
+    }
+    if (!best) return p;
+    hits++;
+    // "Government Building" matches all four government chains equally: it means any of them,
+    // so it goes to the buildings index rather than to whichever came first.
+    return `[${p.trim()}](${ties > 1 ? "../buildings.md" : chainPage(best)})`;
+  });
+  if (hits) return linked.join("");
+  return chains.length === 1 ? `[${label}](${chainPage(chains[0])})` : `[${label}](../buildings.md)`;
+}
 function condLabel(tok) {
   const k = String(tok).toLowerCase();
-  const named = ALIAS_TEXT[k] || bName(k) || KEYWORD_TEXT[k] || null;
+  if (ALIAS_TEXT[k]) return linkAlias(k, ALIAS_TEXT[k]);
+  const named = bName(k) || KEYWORD_TEXT[k] || null;
   if (named) return named;
   if (CHAIN_NAMES[k]) {
     const label = CHAIN_NAMES[k];
@@ -283,12 +355,22 @@ function clauseBody(b) {
   let m = /^hidden_resource\s+(\S+)$/i.exec(b);
   if (m) {
     const t = m[1].toLowerCase();
-    return /^aor_/.test(t) ? `${humaniseTok(t)} area of recruitment` : condLabel(t);
+    if (/^aor_/.test(t)) {
+      // Linked to the zone's section on the region-tag reference (map, units, every region in
+      // it). tags/index.json is written by gen-ris-tag-pages.js; a zone it does not cover stays
+      // plain text.
+      const ref = TAG_REFS[t];
+      const label = `${humaniseTok(t)} area of recruitment`;
+      return ref && ref.page && ref.anchor ? `[${label}](../tags/${ref.page}#${ref.anchor})` : label;
+    }
+    return condLabel(t);
   }
   m = /^resource\s+(\S+)$/i.exec(b);
   if (m) return DECLARED_RESOURCES.has(m[1].toLowerCase()) ? humaniseTok(m[1]) : `\`${m[1]}\``;
-  m = /^building_present_min_level\s+\S+\s+(\S+)$/i.exec(b); if (m) return bName(m[1]) || condLabel(m[1]);
-  m = /^building_present\s+(\S+)$/i.exec(b); if (m) return bName(m[1]) || condLabel(m[1]);
+  m = /^building_present_min_level\s+(\S+)\s+(\S+)$/i.exec(b);
+  if (m) { const n = bName(m[2]); return n && chainPage(m[1]) ? `[${n}](${chainPage(m[1])})` : n || condLabel(m[2]); }
+  m = /^building_present\s+(\S+)$/i.exec(b);
+  if (m) { const n = bName(m[1]); return n ? n : (chainPage(m[1]) ? `[${CHAIN_NAMES[m[1].toLowerCase()] || humaniseTok(m[1])}](${chainPage(m[1])})` : condLabel(m[1])); }
   m = /^major_event\s+"?([A-Za-z0-9_]+)"?/i.exec(b); if (m) return reformRef(m[1]);
   m = /^event_counter\s+"?([A-Za-z0-9_]+)"?/i.exec(b); if (m) return humaniseTok(m[1]);
   return condLabel(b);
@@ -752,7 +834,7 @@ const EVERYWHERE = new Set(["hinterland_region"]);
 const routeLabel = (conds, where) => {
   const lv = where && !EVERYWHERE.has(where.chain) && where.level;
   const name = lv ? (bName(lv) || lv.replace(/_/g, " ")) : null;
-  const b = name ? `**${where.chain && buildingPages.has(where.chain) ? `[${name}](../buildings/${where.chain}.md)` : name}**` : null;
+  const b = name ? `**${chainPage(where.chain) ? `[${name}](${chainPage(where.chain)})` : name}**` : null;
   const rest = conds.map((c) => cell(clauseLabel(c)));
   return [b, ...rest].filter(Boolean).join(" · ") || "_no further requirement_";
 };
