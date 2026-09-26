@@ -488,7 +488,7 @@ const fmap = require(path.join(__dirname, "lib", "factionMap.js"));
 // faction's name would be showing a symbol that is not theirs. A faction whose file is
 // missing gets no symbol and is named in the run output.
 const ICON_SCALE = 2;      // 360px source → 180px, exact; the four 512px files → 256px
-const SYMBOL_BOX = 150;    // displayed size in the faction card, so one large source cannot dwarf the others
+const SYMBOL_BOX = 170;    // displayed size in the faction card, so one large source cannot dwarf the others
 function loadSymbolFiles() {
   const txt = rd("descr_sm_factions.txt") || "";
   const out = {};
@@ -850,14 +850,14 @@ for (const f of factions) {
       // paragraph on 215 pages, and what a reader needs from it — that every faction map is
       // drawn at one scale, so a small faction looks small — belongs on the index once, not
       // under every picture.
-      mapLine = `<div class="fhead">\n\n![Starting territory of ${display}, with its neighbours](../maps/${f}.png)\n\n${card("")}\n\n</div>\n\n`;
+      mapLine = `<div class="fhead fwc">\n\n![Starting territory of ${display}, with its neighbours](../maps/${f}.png)\n\n${card("")}\n\n</div>\n\n`;
     }
   }
   // No starting map (factions that only emerge later): the same two-column head, emblem left,
   // the emergence note and the glance line right. A bare floated emblem let the next block's
   // background run under half of it.
   const note = emergeNote(f);
-  if (!mapLine && symImg) mapLine = `<div class="fhead">\n\n${card(note)}\n\n</div>\n\n`;
+  if (!mapLine && symImg) mapLine = `<div class="fhead fwc">\n\n${card(note)}\n\n</div>\n\n`;
   else if (mapLine && note) mapLine = mapLine.replace('<div class="fcard-facts">\n\n', `<div class="fcard-facts">\n\n${note}`);
   // The mod's own placeholder is not a brief: leave the section out.
   const brief = intro.descr && !/^\s*(no description\.?|needs description\.?)\s*$/i.test(intro.descr) ? intro.descr : null;
