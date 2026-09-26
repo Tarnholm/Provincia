@@ -1231,12 +1231,20 @@ for (const r of list) {
 
 [← all regions and settlements](../regions.md) · [wiki index](../README.md)
 
+<div class="fhead">
+
 ${mapImg}
+
+<div class="fmeta">
 
 **Its settlement is [${settleName}](${settleHref})**${ownerPhrase ? `, held at the campaign start by ${ownerPhrase}` : ""}. That page has the town —
 its size, its population, what is built there and what it can raise. This one is the land.
 
 ${[glance, held ? null : `This region begins **independent**. If it revolts, the rebels are ${r.rebels}.`].filter(Boolean).join("\n\n")}
+
+</div>
+
+</div>
 
 ## Trade goods
 
@@ -1286,10 +1294,18 @@ ${gated.join("\n")}
 
 [← all regions and settlements](../regions.md) · [wiki index](../README.md)
 
+<div class="fhead">
+
 ${mapImg}
+
+<div class="fmeta">
 
 The settlement of the region of **[${placeName(r.region)}](../regions/${encodeURIComponent(r.region)}.md)**${ownerPhrase ? `, held at the campaign start by ${ownerPhrase}` : ""}.
 ${townGlance ? `\n${townGlance}\n` : ""}${held ? "" : `\nNo faction holds it at the campaign start. If the region revolts, the rebels are ${r.rebels}.\n`}
+</div>
+
+</div>
+
 ## What is already built
 
 ${builtTable}
