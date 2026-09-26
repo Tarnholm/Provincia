@@ -1008,11 +1008,13 @@ const diplomacySection = (f, display) => {
     && !prot.includes(t) && t !== protector)
     .map(([t]) => t).sort(bySort);
   const allies = pick("ally"), war = pick("war");
-  // Trade has no line of its own in the setup. It comes with the alliance: descr_strat's notes
-  // say an alliance set there "gives Ally (and Trade agreement if possible)", and in every save
-  // Provincia has decoded each alliance and protectorate carries the trade-rights bit (bond 54 =
-  // trade + military access; see src/diplomacyTreatyBits.test.js). So the trade partners are the
-  // allies, the protectorates and the protector.
+  // Trade has no line of its own in the setup, and the campaign script sets none (checked
+  // 2026-09-26: its only diplomacy commands are the first-turn become_protector calls and
+  // event-time diplomatic_stance wars). It comes with the alliance: every faction allied at the
+  // start also starts with a trade agreement (confirmed by the mod author, 2026-09-26), and in
+  // every save Provincia has decoded each alliance and protectorate carries the trade-rights bit
+  // (bond 54 = trade + military access; see src/diplomacyTreatyBits.test.js). So the trade
+  // partners are the allies, the protectorates and the protector, stated without a hedge.
   const tradeWith = [...new Set([...(protector ? [protector] : []), ...prot, ...allies])].sort(bySort);
   // Every faction starts at war with the Free Peoples (slave), so listing them on every page
   // says nothing; one plain line under the lists says it instead.
