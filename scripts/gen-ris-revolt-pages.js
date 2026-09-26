@@ -556,7 +556,11 @@ const TASK = `Write the wiki page for this revolt: what it is, what sets it off,
     if (afterAll.length) md.push(`**Comes after:** ${afterAll.join(", ")}.`, "");
     if (opensAll.length) md.push(`**Opens the way to:** ${opensAll.join(", ")}.`, "");
     fs.writeFileSync(path.join(OUT, "revolts", `${key}.md`), md.join("\n").replace(/\n{3,}/g, "\n\n"), "utf8");
-    index.revolts[key] = { page: `${key}.md`, title: p.title, factions: r.factions, from: sep(res.prose.breaks_away_from), summary: sep(res.prose.summary), needs_reforms: links.needs, leads_to_reforms: links.follows };
+    // The index's "From" cell, with the factions and settlements it names linked the way the
+    // page's own prose is (a fresh linker, so its first mention links). Paths are written for
+    // the revolt pages (../factions/…); the index sits one level up and strips the "../".
+    const fromLinked = makeLinker(pageTargets(r))(sep(res.prose.breaks_away_from));
+    index.revolts[key] = { page: `${key}.md`, title: p.title, factions: r.factions, from: sep(res.prose.breaks_away_from), fromLinked, summary: sep(res.prose.summary), needs_reforms: links.needs, leads_to_reforms: links.follows };
     for (const f of r.factions) (index.factions[f] = index.factions[f] || []).push(key);
     // Factions this revolt creates, and whether they exist before it (faction pages say so).
     index.emerging = index.emerging || {};
@@ -573,7 +577,7 @@ const TASK = `Write the wiki page for this revolt: what it is, what sets it off,
     for (const m of stats.missing) say(`    ${m}`);
     return;
   }
-  const rows = Object.entries(index.revolts).map(([k, v]) => `| [${cell(v.title)}](revolts/${k}.md) | ${andList(v.factions.map((f) => factionLink(f, "")))} | ${cell(v.from)} |`);
+  const rows = Object.entries(index.revolts).map(([k, v]) => `| [${cell(v.title)}](revolts/${k}.md) | ${andList(v.factions.map((f) => factionLink(f, "")))} | ${cell(String(v.fromLinked || v.from).replace(/\]\(\.\.\//g, "]("))} |`);
   fs.writeFileSync(path.join(OUT, "revolts.md"), `# Revolts
 
 Revolts, breakaways and civil wars the campaign script can set off. Each page says what starts it, what happens and whether you can take over the rebels.

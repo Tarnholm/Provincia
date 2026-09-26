@@ -757,13 +757,25 @@ const crossTab = (() => {
   // repeats it twenty-two times while making the table wide enough to be clipped. Computed,
   // not hardcoded — if a release ever starts a settlement at village, the column comes back.
   const used = LADDER.filter((s) => (startBySize.get(s) || []).length > 0);
-  return [
+  // One table, not dealt into side-by-side copies: two copies of seven columns ran past the
+  // card's right edge and clipped the Total column (reported 2026-09-26).
+  return ["<div class=\"nodeal\">", "",
     `| Culture | ${used.map((s) => sizeName(s)).join(" | ")} | Total |`,
     `|---|${used.map(() => "---:").join("|")}|---:|`,
-    ...rows.map((r) => `| ${r.c} | ${used.map((s) => (r.counts.get(s) || 0) || "—").join(" | ")} | ${num(r.total)} |`),
+    ...rows.map((r) => `| ${cultureRef(r.c)} | ${used.map((s) => (r.counts.get(s) || 0) || "—").join(" | ")} | ${num(r.total)} |`),
     `| **All** | ${used.map((s) => num((startBySize.get(s) || []).length)).join(" | ")} | **${num(held.length)}** |`,
+    "", "</div>",
   ].join("\n");
 })();
+
+// A culture by its display name, linked to its page (cultures/index.json, written by
+// gen-ris-culture-pages.js, which runs first). The table printed the raw keys: libyan, e_hellenistic.
+var CULTURE_REFS = null;   // var, read on first use: the table below is built before this line runs
+function cultureRef(tok) {
+  if (!CULTURE_REFS) { try { CULTURE_REFS = JSON.parse(fs.readFileSync(path.join(OUT, "cultures", "index.json"), "utf8")); } catch { CULTURE_REFS = {}; } }
+  const c = CULTURE_REFS[String(tok)];
+  return c && c.page ? `[${c.name}](cultures/${c.page})` : String(tok);
+}
 
 const indexBody = `# Settlement sizes
 
@@ -837,7 +849,7 @@ ${(() => {
   if (!top) return "";
   const share = top[1] / held.length;
   if (share < 0.2) return "";
-  return `\nRead the largest row with care: **${facName(top[0])}** alone holds **${num(top[1])}** settlements — ${(share * 100).toFixed(0)}% of the map — and that faction's culture is \`${cultureOf(top[0]) || "not determined"}\`, so every one of them counts on that row. It is unclaimed ground, not a people.\n`;
+  return `\nRead the largest row with care: **${facName(top[0])}** alone holds **${num(top[1])}** settlements — ${(share * 100).toFixed(0)}% of the map — and that faction's culture is ${cultureOf(top[0]) ? cultureRef(cultureOf(top[0])) : "not determined"}, so every one of them counts on that row. It is unclaimed ground, not a people.\n`;
 })()}
 ${crossTab}
 
