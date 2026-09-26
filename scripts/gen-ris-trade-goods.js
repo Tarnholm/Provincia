@@ -659,10 +659,11 @@ for (const g of GOODS) for (const t of g.tags) {
   if (!FAMILIES.has(t)) FAMILIES.set(t, []);
   FAMILIES.get(t).push(g);
 }
-const familySections = [...FAMILIES.entries()]
-  .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
-  .map(([t, list]) => `### ${t.replace(/_/g, " ")}\n\n${list.map((g) => `[${g.name}](goods/${g.tok}.md)`).join(" · ")}`)
-  .join("\n\n");
+const groupName = (t) => t.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+const familySections = `| Group | Goods |\n|---|---|\n${[...FAMILIES.entries()]
+  .sort((a, b) => a[0].localeCompare(b[0]))
+  .map(([t, list]) => `| **${groupName(t)}** | ${list.map((g) => `[${g.name}](goods/${g.tok}.md)`).join(" · ")} |`)
+  .join("\n")}`;
 const untagged = GOODS.filter((g) => !g.tags.length);
 // Checked rather than asserted: is a GROUP ever the thing a condition names? A plain token
 // search over export_descr_buildings.txt, which can only over-report — so a zero here really
@@ -712,15 +713,7 @@ ${indexRows.join("\n")}
 
 ## Groups
 
-The mod puts some goods into **${FAMILIES.size}** named groups.
-${groupsUsedInEdb.length === 0
-    ? "None of those ${n} names is used as a condition anywhere — every condition in the mod names a single good — so a group is a classification the mod declares rather than a mechanic."
-      .replace("${n}", FAMILIES.size)
-    : `**${groupsUsedInEdb.length}** of them are used as a condition somewhere (${groupsUsedInEdb.join(", ")}), so those are worth following up; the rest are classification only.`}
-**${untagged.length}** of the ${GOODS.length} goods are in no group at all.${(() => {
-    const singles = [...FAMILIES.entries()].filter(([, l]) => l.length === 1);
-    return singles.length ? ` ${singles.length} of the groups contain exactly one good (${singles.map(([t]) => t.replace(/_/g, " ")).join(", ")}), which is a group that groups nothing.` : "";
-  })()}
+The mod sorts some goods into groups:
 
 ${familySections}
 

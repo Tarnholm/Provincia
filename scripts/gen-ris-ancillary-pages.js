@@ -498,14 +498,7 @@ around him, and members can be traded between characters who meet.
 
 ### The dictionary — every other member, by first letter
 
-| | | | | |
-|---|---|---|---|---|
-${(() => {
-    const cells = LETTERS.map((L) => `[**${L.toUpperCase()}**](ancillaries/${L}.md) · ${PAGES.get(L).length}`);
-    const rows = [];
-    for (let i = 0; i < cells.length; i += 5) rows.push(`| ${cells.slice(i, i + 5).join(" | ")} |`);
-    return rows.join("\n");
-  })()}
+${LETTERS.map((L) => `- [**${L.toUpperCase()}**](ancillaries/${L}.md) — ${PAGES.get(L).length} member${PAGES.get(L).length === 1 ? "" : "s"}`).join("\n")}
 
 ## What retinue touches
 

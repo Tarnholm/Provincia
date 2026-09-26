@@ -1080,9 +1080,15 @@ const chainRow = (e) => `| ${e.firstIcon ? `<img src="${e.firstIcon}" alt="" wid
 const chainSections = subOrder.map((sub) => [
   `## ${sub}`,
   "",
+  // One layout for every category (btab: full width, fixed columns, never dealt into copies),
+  // so a one-row section like Walls lines up with the rest instead of stretching oddly.
+  '<div class="btab nodeal">',
+  "",
   "| | Chain | Levels | Excl. | What it is |",
-  "|:-:|---|---:|---:|---|",
+  "|---|---|---:|---:|---|",
   bySub.get(sub).slice().sort((a, b) => BUILDINGS.chainOrder(a.chain) - BUILDINGS.chainOrder(b.chain)).map(chainRow).join("\n"),
+  "",
+  "</div>",
   "",
 ].join("\n")).join("\n");
 

@@ -630,14 +630,7 @@ ${PAGE_ROWS.map(([f, title, what]) => `| [**${title}**](traits/${f}) | ${num((PA
 
 ### The dictionary — every other trait, by first letter
 
-| | | | | |
-|---|---|---|---|---|
-${(() => {
-    const cells = LETTERS.map((L) => `[**${L.toUpperCase()}**](traits/${L}.md) · ${PAGES.get(L).length}`);
-    const rows = [];
-    for (let i = 0; i < cells.length; i += 5) rows.push(`| ${cells.slice(i, i + 5).join(" | ")} |`);
-    return rows.join("\n");
-  })()}
+${LETTERS.map((L) => `- [**${L.toUpperCase()}**](traits/${L}.md) — ${PAGES.get(L).length} trait${PAGES.get(L).length === 1 ? "" : "s"}`).join("\n")}
 
 ## What traits touch
 

@@ -702,6 +702,13 @@ main{min-width:0;padding:1.6rem 1.6rem 5rem;width:100%}
 .rtab th:nth-child(1){width:3.8rem}
 .rtab th:nth-child(2){width:16rem}
 .rtab td{max-width:none}
+/* The buildings index: every category table the same full width and column widths. */
+.btab .tw{width:100%}
+.btab table{width:100%;table-layout:fixed}
+.btab th:nth-child(1){width:4.2rem}
+.btab th:nth-child(2){width:17rem}
+.btab th:nth-child(3),.btab th:nth-child(4){width:5.2rem}
+.btab td{max-width:none}
 .lede em{display:block;clear:none;color:var(--dim);font-size:.85rem}
 .lede-flow{margin-bottom:1.5rem}
 .lede-flow>h2:first-child{margin-top:.2rem}

@@ -627,7 +627,13 @@ ${f.group
   return f;
 }
 
-const FACTS = BELIEF_ORDER.map(beliefFacts);
+// A belief on no region at the campaign start AND the state belief of no faction never appears
+// in a player's campaign, so it gets no page and is left out of every list (asked for
+// 2026-09-26). One that some faction holds stays, even with no region: faction pages name it.
+const ALL_FACTS = BELIEF_ORDER.map(beliefFacts);
+const FACTS = ALL_FACTS.filter((f) => f.regions.size || f.facs.length);
+const DROPPED = ALL_FACTS.filter((f) => !FACTS.includes(f));
+for (const f of DROPPED) fs.rmSync(path.join(OUT, "religions", `${f.tok}.md`), { force: true });
 FACTS.forEach((f) => beliefPage(f, FACTS));
 
 // ── the anchor index ─────────────────────────────────────────────────────────
@@ -687,11 +693,11 @@ const indexBody = `# Beliefs
 
 [← all cultures](cultures.md) · [all regions and settlements](regions.md) · [wiki index](README.md)
 
-RIS replaces the base game's handful of religions with **${BELIEF_ORDER.length}** local beliefs — one per people, near
+RIS replaces the base game's handful of religions with **${FACTS.length}** local beliefs — one per people, near
 enough — and spreads them across the map as a **strength tier** rather than a share. Every one
 has its own page: where it is, who its people are, who follows it, and what the mod does with it.
 
-**${FACTS.filter((f) => f.regions.size).length}** of the ${BELIEF_ORDER.length} are on the map at the campaign start, carried between them by ${num(totalTagged)}
+**${FACTS.filter((f) => f.regions.size).length}** of the ${FACTS.length} are on the map at the campaign start, carried between them by ${num(totalTagged)}
 region tags across ${num(REGIONS.length)} regions. ${onNoRegion.length ? `The other ${onNoRegion.length} — ${onNoRegion.map((f) => `**${f.name}**`).join(" and ")} — ${onNoRegion.length === 1 ? "is" : "are"} declared but on no region: ${onNoRegion.length === 1 ? "it is" : "they are"} the umbrella ${onNoRegion.length === 1 ? "entry" : "entries"} the finer-grained beliefs sit under.` : ""}
 
 ## What a belief does, and what it does not
@@ -700,7 +706,7 @@ region tags across ${num(REGIONS.length)} regions. ${onNoRegion.length ? `The ot
   conditioned on a belief. All ${num(LEVEL_BLOCKS)} building level blocks and all ${num(EDB.recruits.length)} \`recruit\` lines were
   checked against every \`rel_<belief>_<tier>\` token: **${gatedLevels}** levels and **${gatedRecruits}** recruit lines
   came back. Nothing is unlocked by what a province believes.
-- **No belief creates unrest against another.** All ${BELIEF_ORDER.length} declare a heretic multiplier of
+- **No belief creates unrest against another.** All ${FACTS.length} declare a heretic multiplier of
   ${uniq(FACTS.map((f) => (f.b.mult || {}).heretics)).join("/")} and a heathen multiplier of ${uniq(FACTS.map((f) => (f.b.mult || {}).heathens)).join("/")}. The base game's religious
   friction is switched off across the board.
 - **What the tier does decide** is how much \`religious_belief\` a settlement's own buildings
@@ -717,7 +723,7 @@ region tags across ${num(REGIONS.length)} regions. ${onNoRegion.length ? `The ot
   return `${multi} of the ${spread.size} cultures have factions on more than one belief. The cultures are on [their own pages](cultures.md).`;
 })()}
 
-## The ${BELIEF_ORDER.length} beliefs, by group
+## The ${FACTS.length} beliefs, by group
 
 **Majority** and **Minority** are provinces: the ones where this is the largest belief, and the
 ones where it is held alongside a larger one. Together they are every province that holds it.
@@ -730,7 +736,7 @@ given a name this wiki made up.
 
 ${groupSections}
 
-${onNoFaction.length ? `## Beliefs no faction defaults to\n\n**${onNoFaction.length}** of the ${BELIEF_ORDER.length} are the state belief of no faction: ${onNoFaction.map((f) => `${pipRel(f.tok, "")}[${f.name}](religions/${f.tok}.md)`).join(", ")}. ${onNoFaction.filter((f) => f.regions.size).length} of those ${onNoFaction.filter((f) => f.regions.size).length === 1 ? "is" : "are"} still on the map, held by provinces rather than by a state.\n` : ""}
+${onNoFaction.length ? `## Beliefs no faction defaults to\n\n**${onNoFaction.length}** of the ${FACTS.length} are the state belief of no faction: ${onNoFaction.map((f) => `${pipRel(f.tok, "")}[${f.name}](religions/${f.tok}.md)`).join(", ")}. ${onNoFaction.filter((f) => f.regions.size).length} of those ${onNoFaction.filter((f) => f.regions.size).length === 1 ? "is" : "are"} still on the map, held by provinces rather than by a state.\n` : ""}
 `;
 fs.writeFileSync(path.join(OUT, "religions.md"), indexBody, "utf8");
 
@@ -773,6 +779,7 @@ say(`\n  descr_regions.txt, counted twice:`);
 say(`    belief tags found by the block walk: ${num(relTagsSeen)} · by a flat pattern over the file: ${num(RAW_REL_TAGS)}`);
 say(`    ${relTagsSeen === RAW_REL_TAGS ? "the two counts AGREE" : "THE TWO COUNTS DISAGREE — a region block is being lost"}`);
 say(`    region blocks read: ${num(REGIONS.length)} · distinct beliefs tagged: ${tierOf.size} · tags not of the rel_<belief>_<tier> shape: ${oddRelTags.length}${oddRelTags.length ? ` (${oddRelTags.slice(0, 5).join("; ")})` : ""}`);
+say(`    dropped (no region, no faction): ${DROPPED.length}${DROPPED.length ? ` (${DROPPED.map((f) => f.tok).join(", ")})` : ""}`);
 say(`    beliefs declared but on no region: ${onNoRegion.length}${onNoRegion.length ? ` (${onNoRegion.map((f) => f.tok).join(", ")})` : ""}`);
 {
   const undeclared = [...tierOf.keys()].filter((t) => !BELIEFS[t]);

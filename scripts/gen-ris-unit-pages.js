@@ -1077,12 +1077,8 @@ ${placeholder ? `> **${placeholder.toLocaleString("en-US")} units still carry RI
 ## Mercenaries
 
 **${mercUnits.toLocaleString("en-US")} of these units are mercenaries** — hired from a regional pool on
-the map, not recruited from a building. Every one of them is named
-"Mercenary …" here so a roster cannot be misread, which groups them together in the table
-below. ${mercAlreadyNamed.toLocaleString("en-US")} were already named that way by the mod; the
-prefix was added to the other ${mercPrefixed.toLocaleString("en-US")}.
+the map, not recruited from a building.
 
-${mixedDicts.length ? `\n> **${mixedDicts.length} unit${mixedDicts.length === 1 ? " is" : "s are"} defined both ways** (some entries mercenary, some not) and\n> ${mixedDicts.length === 1 ? "is" : "are"} deliberately left unprefixed: ${mixedDicts.slice(0, 20).map((d) => `\`${d}\``).join(", ")}${mixedDicts.length > 20 ? `, and ${mixedDicts.length - 20} more` : ""}.\n` : ""}
 ## By class
 
 | Class | Units | of which mercenary |
