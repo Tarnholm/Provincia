@@ -1343,8 +1343,12 @@ ${recruitSection(rec, held)}
 // land columns (goods) and the town columns (size, population, capital star) sit side by side;
 // the table sorts on any column and search finds a place by either name.
 index.sort((a, b) => a.regionName.localeCompare(b.regionName));
+// The owner's emblem before its name (asked for 2026-09-26), inside the link so the sortable view
+// reads it too. Emblems are written by gen-ris-faction-pages.js; a faction without one is text.
+const symOf = (tok) => (tok && fs.existsSync(path.join(OUT, "symbols", `${tok}.png`))
+  ? `<img src="symbols/${tok}.png" alt="" width="20" height="20" style="vertical-align:middle"> ` : "");
 const ownerCell = (e) => (e.owner
-  ? (hasPage(e.ownerTok) ? `[${e.owner}](factions/${e.ownerTok}.md)` : `[${npName(e.ownerTok)}](factions/non-playable.md)`)
+  ? (hasPage(e.ownerTok) ? `[${symOf(e.ownerTok)}${e.owner}](factions/${e.ownerTok}.md)` : `[${symOf(e.ownerTok)}${npName(e.ownerTok)}](factions/non-playable.md)`)
   : "_independent_");
 const townOf = new Map(settlementIndex.map((t) => [t.settlement, t]));
 const capitals = settlementIndex.filter((t) => t.capital).length;

@@ -1071,9 +1071,6 @@ const idx = `# Units
 ${merged.length.toLocaleString("en-US")} distinct units, against vanilla's 261. (The mod defines ${rows.length.toLocaleString("en-US")} entries; ${(rows.length - merged.length).toLocaleString("en-US")} of those are area-of-recruitment or horde variants of a unit already listed, merged here onto one page each.) ${named.toLocaleString("en-US")} have a
 display name in the text files; ${described.toLocaleString("en-US")} have a written description.
 
-${placeholder ? `> **${placeholder.toLocaleString("en-US")} units still carry RIS's placeholder text** ("this unit needs a
-> description"). Those are shown as having no description rather than printing the
-> placeholder, since text that looks like content but is not is worse than an honest gap.\n` : ""}
 ## Mercenaries
 
 **${mercUnits.toLocaleString("en-US")} of these units are mercenaries** — hired from a regional pool on
@@ -1092,28 +1089,19 @@ not the defence skill on its own. **Men** is the count the unit file states; the
 multiplies it by whichever unit size you play at, so treat it as a figure to compare units
 by rather than the number you will see on the field.
 
-| Unit | Class | Men | Attack | Defence | Morale | Cost | Upkeep | Variants |
-|---|---|---:|---:|---:|---:|---:|---:|---:|
+<div class="nodeal">
+
+| | Unit | Class | Men | Attack | Defence | Morale | Cost | Upkeep | Variants |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|
 ${merged.slice().sort((a, b) => a.name.localeCompare(b.name)).map((u) => {
   const s = u.st;
   const n = (v) => (v == null ? "—" : v.toLocaleString("en-US"));
-  return `| [${u.name}](units/${u.slug}.md) | ${u.cls || "—"} | ${n(s.men)} | ${n(s.attack)} | ${n(s.defenceTotal)} | ${n(s.morale)} | ${n(s.cost)} | ${n(s.upkeep)} | ${u.variants.length > 1 ? u.variants.length : ""} |`;
+  const card = fs.existsSync(path.join(OUT, "cards", `${u.slug}.png`))
+    ? `[<img src="cards/${u.slug}.png" alt="" width="35" height="48" loading="lazy">](units/${u.slug}.md)` : "";
+  return `| ${card} | [${u.name}](units/${u.slug}.md) | ${u.cls || "—"} | ${n(s.men)} | ${n(s.attack)} | ${n(s.defenceTotal)} | ${n(s.morale)} | ${n(s.cost)} | ${n(s.upkeep)} | ${u.variants.length > 1 ? u.variants.length : ""} |`;
 }).join("\n")}
 
-## A note on the numbers
-
-RIS rescales unit stats well above vanilla, and unevenly. Measured across both games:
-attack median 8 -> 11, armour 3 -> 7, but **defence skill 3 -> 19** (p95 7 -> 30). So a
-defence figure near 20 is ordinary here, not exceptional - do not read these against
-vanilla intuition.
-
-## Not here yet
-
-**Unit cards** are on the pages where the mod ships one. 42 units have no card file
-(mostly legion variants); those pages simply omit it.
-
-**Stat comparisons against vanilla.** Worth doing, and the vanilla EDU is available to
-diff against.
+</div>
 `;
 fs.writeFileSync(path.join(OUT, "units.md"), idx, "utf8");
 

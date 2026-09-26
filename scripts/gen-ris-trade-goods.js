@@ -514,7 +514,7 @@ function goodPage(g) {
   // Four goods comment their tier out, so the honest answer there is that it is not declared.
   rows.push(`| Tier | ${g.tier == null ? "_not declared — the mod comments its tier line out_" : `**${g.tier}**`} |`);
   rows.push(`| Trade value | ${g.tradeValue == null ? "_not declared_" : `**${g.tradeValue}**`} |`);
-  rows.push(`| Groups | ${g.tags.length ? g.tags.map((t) => `[${t.replace(/_/g, " ")}](../trade-goods.md#${anchor(t.replace(/_/g, " "))})`).join(", ") : "_none declared_"} |`);
+  rows.push(`| Groups | ${g.tags.length ? g.tags.map((t) => `[${t.replace(/_/g, " ")}](../trade-goods.md#groups)`).join(", ") : "_none declared_"} |`);
   if (g.depletable != null) rows.push(`| Depletable | ${g.depletable ? "yes" : "no"}${g.baseTurns != null ? `, exhausted after ${g.baseTurns} turns` : ""}${g.popImpact != null ? `, ${g.popImpact.toLocaleString("en-US")} population per unit` : ""} |`);
   if (g.mineTooltip) rows.push(`| When mined | ${g.mineTooltip} |`);
 

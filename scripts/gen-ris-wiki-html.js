@@ -163,7 +163,8 @@ render();
 // ── units ────────────────────────────────────────────────────────────────────
 // units.md columns: Unit | Class | Men | Attack | Defence | Morale | Cost | Upkeep | Variants
 {
-  const raw = parseTable("units.md", 9).filter((c) => /^\[/.test(c[0]));
+  // units.md now leads each row with a card cell; the columns below are read after it.
+  const raw = parseTable("units.md", 9).map((c) => (/<img/.test(c[0]) || c[0] === "" ? c.slice(1) : c)).filter((c) => /^\[/.test(c[0]));
   const rows = raw.map((c) => {
     const u = linkText(c[0]);
     // The card sits beside the name so the roster is scannable by eye. Derived from the
@@ -210,7 +211,7 @@ render();
     return [
       { text: r.text, href: r.href },
       { text: s.text, href: s.href, mark: s.mark || "" },
-      owner.href ? { text: owner.text, href: owner.href } : owner.text.replace(/^_|_$/g, ""),
+      owner.href ? { text: owner.text, href: owner.href, sym: owner.sym } : owner.text.replace(/^_|_$/g, ""),
       size.href ? { text: size.text, href: size.href, key: SIZE_RANK[sizeTok] || 0 } : { text: "—", key: 0 },
       numOf(c[4]), numOf(c[5]), numOf(c[6]),
     ];
