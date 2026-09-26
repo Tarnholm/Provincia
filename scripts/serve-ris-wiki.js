@@ -277,6 +277,9 @@ function renderMarkdown(md, toc) {
   const lines = md.split(/\r?\n/);
   const out = [];
   let i = 0;
+  // A table right after a `<div class="… nodeal …">` is never dealt into side-by-side copies
+  // (the faction recruit tables, whose columns must line up with each other).
+  let noDealNext = false;
   while (i < lines.length) {
     const line = lines[i];
 
@@ -289,6 +292,7 @@ function renderMarkdown(md, toc) {
     }
 
     if (RAW_BLOCK.test(line)) {
+      if (/class="[^"]*nodeal/.test(line)) noDealNext = true;
       // <summary> holds inline markdown worth rendering rather than dumping raw.
       const sm = /^\s*<summary([^>]*)>(.*)<\/summary>\s*$/i.exec(line);
       out.push(sm ? `<summary${sm[1]}>${inline(sm[2])}</summary>` : line.trim());
@@ -409,7 +413,8 @@ function renderMarkdown(md, toc) {
       //
       // So a one-faction culture is dealt three across with two slots left empty, and looks like
       // its neighbours. Empty slots, not stretched content: the columns keep their widths.
-      const UP = Math.max(1, Math.min(4, fits, Math.floor(CONTENT_PX / (groupPx + GROUP_GAP_PX))));
+      const UP = noDealNext ? 1 : Math.max(1, Math.min(4, fits, Math.floor(CONTENT_PX / (groupPx + GROUP_GAP_PX))));
+      noDealNext = false;
 
       const cls = (k, first) => {
         const c = `${align[k] || ""}${first && k === 0 ? " grp" : ""}`.trim();
@@ -687,6 +692,13 @@ main{min-width:0;padding:1.6rem 1.6rem 5rem;width:100%}
 .fcard-facts li{padding:.28rem 0;border-top:1px solid var(--line)}
 .fcard-facts li:first-child{border-top:none}
 .fcard-facts p{margin:0 0 .6rem}
+/* The faction's two recruit tables (faction units, regional units) share one layout, so their
+   columns line up: full width, fixed card and unit columns, requirements take the rest. */
+.rtab .tw{width:100%}
+.rtab table{width:100%;table-layout:fixed}
+.rtab th:nth-child(1){width:3.8rem}
+.rtab th:nth-child(2){width:16rem}
+.rtab td{max-width:none}
 .lede em{display:block;clear:none;color:var(--dim);font-size:.85rem}
 .lede-flow{margin-bottom:1.5rem}
 .lede-flow>h2:first-child{margin-top:.2rem}
@@ -981,7 +993,7 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
   // interleaving a measurement with a rebuild per table would force 156 reflows; setting them
   // all flat, then reading all the widths, then rebuilding all, costs two.
   (function deal(){
-    var tws = [].slice.call(document.querySelectorAll(".tw[data-cols]"));
+    var tws = [].slice.call(document.querySelectorAll(".tw[data-cols]")).filter(function(t){ return !t.closest(".nodeal"); });
     if (!tws.length) return;
 
     function capture(tw){

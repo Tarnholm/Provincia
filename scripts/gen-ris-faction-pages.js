@@ -445,18 +445,38 @@ function loadRecruitment() {
 // EVERY route open to THIS faction is hidden_resource-gated: if a faction has one ungated
 // route to a unit, that unit is core for them even where others need a resource for it.
 function recruitableBy(rows, faction) {
-  const out = new Map();
+  // Players only: a `not is_player` line is the AI's roster and is skipped outright, so a unit
+  // only the AI can raise is not listed.
+  const routes = new Map();   // unit -> { sets: [conds[]], aor }
   for (const r of rows) {
+    if (!r.player) continue;
     const allowed = r.pos.includes("all") || r.pos.includes(faction);
     if (!allowed || r.neg.includes(faction)) continue;
-    const prev = out.get(r.unit);
-    if (!prev) { out.set(r.unit, { conds: r.conds, aor: r.hr, player: r.player }); continue; }
-    // Several buildings may offer the same unit; keep the shortest requirement set, which
-    // is the easiest route to it. An ungated route anywhere makes the unit core. A player
-    // route always beats an AI one, however long, because the AI's is not the reader's.
-    if (!r.hr) prev.aor = false;
-    if (r.player && !prev.player) { prev.conds = r.conds; prev.player = true; continue; }
-    if (r.player === prev.player && r.conds.length < prev.conds.length) prev.conds = r.conds;
+    if (!routes.has(r.unit)) routes.set(r.unit, { sets: [], aor: true });
+    const e = routes.get(r.unit);
+    e.sets.push(r.conds);
+    // An ungated route anywhere makes the unit core.
+    if (!r.hr) e.aor = false;
+  }
+  // Two routes that differ only by `X` and `not X` mean X does not decide WHETHER the unit can
+  // be raised, only something else about it: Ballistas come at experience 0 without Academies
+  // and 3 with them. Printed from one side, "not Academies" read as a ban. So the clause is
+  // dropped from both sides of such a pair. Then the shortest set is the easiest route.
+  const key = (s) => [...s].sort().join(" & ");
+  const out = new Map();
+  for (const [unit, e] of routes) {
+    let sets = e.sets.map((s) => [...s]);
+    for (let pass = 0; pass < 3; pass++) {
+      const keys = new Set(sets.map(key));
+      sets = sets.map((s) => s.filter((c) => {
+        const rest = s.filter((x) => x !== c);
+        const m = /^not\s+(.+)$/i.exec(c);
+        const partner = m ? [...rest, m[1]] : [...rest, `not ${c}`];
+        return !keys.has(key(partner));
+      }));
+    }
+    sets.sort((a, b) => a.length - b.length);
+    out.set(unit, { conds: sets[0], aor: e.aor });
   }
   const all = [...out.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   return {
@@ -905,18 +925,26 @@ ${units.total ? `${units.total} unit type${units.total === 1 ? "" : "s"} are ava
 
 ### Faction units
 
-${units.core.length ? `| | Unit | Requires |
-|:-:|---|---|
-${units.core.map(([u, conds]) => `| ${unitCard(u)} | ${unitLink(u)} | ${conds.length ? conds.map((c) => cell(clauseLabel(c))).join(" · ") : "_no further requirement_"} |`).join("\n")}` : `_${display} has no ungated units: every unit on its roster needs a regional resource._`}
+${units.core.length ? `<div class="rtab nodeal">
+
+| | Unit | Requires |
+|---|---|---|
+${units.core.map(([u, conds]) => `| ${unitCard(u)} | ${unitLink(u)} | ${conds.length ? conds.map((c) => cell(clauseLabel(c))).join(" · ") : "_no further requirement_"} |`).join("\n")}
+
+</div>` : `_${display} has no ungated units: every unit on its roster needs a regional resource._`}
 
 ### Regional units (AOR)
 
 ${units.aor.length ? `<details>
 <summary><strong>Show all ${units.aor.length} regional units</strong></summary>
 
+<div class="rtab nodeal">
+
 | | Unit | Requires |
-|:-:|---|---|
+|---|---|---|
 ${units.aor.map(([u, conds]) => `| ${unitCard(u)} | ${unitLink(u)} | ${conds.length ? conds.map((c) => cell(clauseLabel(c))).join(" · ") : "_no further requirement_"} |`).join("\n")}
+
+</div>
 
 </details>` : `_No area-of-recruitment units are open to ${display}._`}
 ` : "_No recruitable units resolved for this faction._"}
