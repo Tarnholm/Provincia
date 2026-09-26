@@ -9,11 +9,11 @@
 .wm-bar input[type=search]{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:.3rem .6rem;font:inherit;min-width:14rem}
 .wm{position:relative;height:74vh;min-height:420px;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:#1c3f66;cursor:grab;touch-action:none;user-select:none}
 .wm.drag{cursor:grabbing}
-.wm-in{position:absolute;left:0;top:0;transform-origin:0 0;width:4080px;height:2800px}
+.wm-in{position:absolute;left:0;top:0;transform-origin:0 0;width:4080px;height:2800px;will-change:transform;--lf:12px}
 .wm-in img,.wm-in canvas{position:absolute;left:0;top:0;width:4080px;height:2800px;max-width:none;pointer-events:none}
 .wm-in canvas{opacity:.55;display:none}
 .wm.owners .wm-in canvas{display:block}
-.wm-lab{position:absolute;transform:translate(8px,-50%);white-space:nowrap;color:#faf4e4;font-weight:600;
+.wm-lab{position:absolute;transform:translate(6px,-50%);white-space:nowrap;color:#faf4e4;font-weight:600;font-size:var(--lf);
  text-shadow:0 0 3px #1c160f,0 0 3px #1c160f,0 0 2px #1c160f;pointer-events:none;display:none}
 .wm.names .wm-lab{display:block}
 .wm-tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;
@@ -38,9 +38,11 @@ function apply(){
   if (4080 * s < w) x = (w - 4080 * s) / 2;
   if (2800 * s < h) y = (h - 2800 * s) / 2;
   inn.style.transform = "translate(" + x + "px," + y + "px) scale(" + s + ")";
-  var named = s >= 0.55;
-  box.classList.toggle("names", named);
-  if (named) { var fs = Math.round(13 / s) + "px"; labs.forEach(function(l){ l.style.fontSize = fs; }); }
+  // Names only once close enough to read them without piling up (one map pixel is 4 world
+  // pixels, so at 1.1 a settlement is ~4.4 screen pixels per map pixel). One style write
+  // sizes every label; setting 1,305 font sizes on each zoom step froze the page.
+  box.classList.toggle("names", s >= 1.1);
+  inn.style.setProperty("--lf", (12 / s).toFixed(1) + "px");
 }
 function fit(){ minS = Math.min(box.clientWidth / 4080, box.clientHeight / 2800); s = minS; x = 0; y = 0; apply(); }
 function zoomAt(f, cx, cy){ var ns = Math.max(minS, Math.min(3, s * f)); x = cx - (cx - x) * ns / s; y = cy - (cy - y) * ns / s; s = ns; apply(); }
