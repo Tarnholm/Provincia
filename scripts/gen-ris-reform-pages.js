@@ -1142,20 +1142,23 @@ const cleanBody = (s) => String(s || "").replace(/\\n/g, "\n").replace(/\u0013/g
 function unitTable(map, reformName, kind) {
   const rows = [];
   const bySlug = new Map();
+  // Players only: a recruit line that requires `not is_player` is the AI's roster, so a unit
+  // that only the AI gains or loses here is left off (and gets no back-link to this reform).
   for (const [type, e] of map) {
+    if (!e.player) continue;
     addUnitRef(type, reformName, kind);
     const s = unitSlug(type);
-    if (!bySlug.has(s)) bySlug.set(s, { type, factions: new Set(), player: false, ai: false });
+    if (!bySlug.has(s)) bySlug.set(s, { type, factions: new Set() });
     const b = bySlug.get(s);
     for (const f of e.factions) b.factions.add(f);
-    b.player = b.player || e.player; b.ai = b.ai || e.ai;
   }
   for (const b of [...bySlug.values()].sort((a, c) => unitName(a.type).localeCompare(unitName(c.type)))) {
     const f = [...b.factions];
     const who = f.includes("all") ? "any faction in its recruitment area" : [...new Set(f.map((x) => factionLink(x)))].join(", ");
-    rows.push(`| ${unitLink(b.type)} | ${who || "—"} |${b.player && !b.ai ? " player only" : !b.player && b.ai ? " AI only" : ""} |`);
+    rows.push(`| ${unitLink(b.type)} | ${who || "—"} |`);
   }
-  return `| Unit | Who can raise it | |\n|---|---|---|\n${rows.join("\n")}`;
+  if (!rows.length) return "_No unit a player can raise changes here._";
+  return `| Unit | Who can raise it |\n|---|---|\n${rows.join("\n")}`;
 }
 
 for (const r of REFORMS) {

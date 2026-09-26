@@ -337,7 +337,39 @@ const label = (name, n, signedShape) => {
  *   condition — effects that apply only under some other condition, condition intact
  *   raw       — anything this generator cannot parse, verbatim so it is visible not lost
  */
-function describeEffects(rawLines) {
+// The wiki is for players, and the EDB carries a second rulebook for the AI: anything that
+// requires `not is_player` never applies to a player, and `is_player` always does. So every
+// condition is reduced to what it means for a player BEFORE anything is printed: an `or`
+// alternative that needs `not is_player` is dropped, a bare `is_player` clause is dropped, and
+// a line with no alternative left is AI-only and is left off the page altogether (it used to
+// be printed with its raw condition, ~600 lines across 70 building pages). Conditions have no
+// brackets, so splitting on `or` then `and` is the whole grammar.
+function forPlayer(cond) {
+  const alts = String(cond).trim().split(/\s+or\s+/i);
+  const keep = [];
+  for (const a of alts) {
+    const clauses = a.split(/\s+and\s+/i).map((c) => c.trim()).filter(Boolean);
+    if (clauses.some((c) => /^not\s+is_player$/i.test(c))) continue;
+    const rest = clauses.filter((c) => !/^is_player$/i.test(c));
+    if (!rest.length) return "";          // an alternative that is always true for a player
+    keep.push(rest.join(" and "));
+  }
+  return keep.length ? keep.join(" or ") : null;
+}
+function playerLines(rawLines) {
+  const out = [];
+  for (const line of rawLines) {
+    const m = /^(.*?)\s+requires\s+(.+)$/i.exec(String(line).trim());
+    if (!m) { out.push(line); continue; }
+    const c = forPlayer(m[2]);
+    if (c === null) continue;
+    out.push(c ? `${m[1]} requires ${c}` : m[1]);
+  }
+  return out;
+}
+
+function describeEffects(rawLinesAll) {
+  const rawLines = playerLines(rawLinesAll);
   const out = [], conditional = [], raw = [];
   const recruits = new Map();   // display name -> {exp:Set, conditional:bool}
   const beliefs = new Map();    // religion -> values[]
@@ -800,7 +832,13 @@ function aliasesUsed(texts) {
   return [...found.entries()].sort((a, b) => a[0].localeCompare(b[0]));
 }
 /** A shorthand's definition, or an honest count when it is a list too long to quote. */
-function aliasBody(body) {
+function aliasBody(bodyAll) {
+  // The player's reading of the alias: `requires_gov` ends in `or not is_player`, which only
+  // says the AI never needs a government building. A player sees the alternatives open to them.
+  const reduced = forPlayer(bodyAll);
+  if (reduced === null) return "_applies to the AI only_";
+  const body = reduced || "_always true for a player_";
+  if (!reduced) return body;
   // A `factions { … }` body is quoted however long it is. It is a SINGLE condition — one list of
   // factions — and the count below would have called a 97-faction list "any one of 1
   // alternatives", which says nothing and is wrong about the one thing it does say. It is also
@@ -913,12 +951,19 @@ Costs in denarii, build time in turns.
     // Before "What it does", because a reader asks whether they CAN build it before they ask
     // what it would give them. The minimum settlement size is in the table above rather than
     // repeated here — it is a field of its own in the game files, not part of the condition.
-    const req = requirementLines(l.requires);
+    // Reduced to the player's condition first (forPlayer): the AI's alternative routes are not
+    // something a player can use, and a level whose every route needs `not is_player` is
+    // simply not buildable by a player.
+    const playerReq = l.requires ? forPlayer(l.requires) : l.requires;
+    if (l.requires && playerReq === null) {
+      parts.push(`**Requirements** — _only the AI can build this level; no route in the game files is open to a player._`, "");
+    }
+    const req = playerReq ? requirementLines(playerReq) : [];
     if (req.length) {
       parts.push(`**Requirements** — all of these must hold before this level can be built.`, "");
       parts.push(...req.map((r) => `- ${r}`), "");
-      parts.push(...fold("the condition as the game files write it",
-        [`\`${String(l.requires).replace(/\|/g, "\\|")}\``], 0));
+      parts.push(...fold("the condition as the game files write it (the player's part)",
+        [`\`${String(playerReq).replace(/\|/g, "\\|")}\``], 0));
     }
 
     // One "What it does" heading over both lists. Split into two labelled blocks, a level whose

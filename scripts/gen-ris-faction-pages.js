@@ -700,6 +700,17 @@ const unitLink = (type) => {
   const label = UNIT_NAMES[s] || type;
   return `[${label}](../units/${s}.md)`;
 };
+// The unit's roster card, small, beside its name in the recruit tables. The cards are written by
+// gen-ris-unit-cards.js, which runs after this generator, so this checks the files the last run
+// left; a card that is new this run appears on the next one (verify-ris-wiki.js catches a
+// card that has gone). Lazy, with both dimensions stated, because the regional list runs to
+// 400+ rows.
+const unitCard = (type) => {
+  const s = unitSlug.get(String(type).toLowerCase());
+  if (!s || !fs.existsSync(path.join(OUT, "cards", `${s}.png`))) return "";
+  const img = `<img src="../cards/${s}.png" alt="" width="41" height="56" loading="lazy">`;
+  return unitPages.has(s) ? `[${img}](../units/${s}.md)` : img;
+};
 // Building chain pages are named for the chain's internal token, so a built level links
 // through to the chain it belongs to — what it does, what it costs, what it upgrades into.
 const buildingPages = (() => {
@@ -894,18 +905,18 @@ ${units.total ? `${units.total} unit type${units.total === 1 ? "" : "s"} are ava
 
 ### Faction units
 
-${units.core.length ? `| Unit | Requires |
-|---|---|
-${units.core.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map((c) => cell(clauseLabel(c))).join(" · ") : "_no further requirement_"} |`).join("\n")}` : `_${display} has no ungated units: every unit on its roster needs a regional resource._`}
+${units.core.length ? `| | Unit | Requires |
+|:-:|---|---|
+${units.core.map(([u, conds]) => `| ${unitCard(u)} | ${unitLink(u)} | ${conds.length ? conds.map((c) => cell(clauseLabel(c))).join(" · ") : "_no further requirement_"} |`).join("\n")}` : `_${display} has no ungated units: every unit on its roster needs a regional resource._`}
 
 ### Regional units (AOR)
 
 ${units.aor.length ? `<details>
 <summary><strong>Show all ${units.aor.length} regional units</strong></summary>
 
-| Unit | Requires |
-|---|---|
-${units.aor.map(([u, conds]) => `| ${unitLink(u)} | ${conds.length ? conds.map((c) => cell(clauseLabel(c))).join(" · ") : "_no further requirement_"} |`).join("\n")}
+| | Unit | Requires |
+|:-:|---|---|
+${units.aor.map(([u, conds]) => `| ${unitCard(u)} | ${unitLink(u)} | ${conds.length ? conds.map((c) => cell(clauseLabel(c))).join(" · ") : "_no further requirement_"} |`).join("\n")}
 
 </details>` : `_No area-of-recruitment units are open to ${display}._`}
 ` : "_No recruitable units resolved for this faction._"}
