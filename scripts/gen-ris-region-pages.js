@@ -1400,7 +1400,7 @@ const townOf = new Map(settlementIndex.map((t) => [t.settlement, t]));
 const capitals = settlementIndex.filter((t) => t.capital).length;
 const idx = `# All regions and settlements
 
-[← wiki index](README.md) · [settlement sizes](sizes.md) · [region tag reference](tags.md) · [cultures](cultures.md) · [beliefs](religions.md)
+[← wiki index](README.md) · [settlement sizes](sizes.md) · [cultures](cultures.md) · [beliefs](religions.md)
 
 ${index.length.toLocaleString("en-US")} regions, each with one settlement, every one held by a faction at the campaign start.
 ${capitals} settlements are a faction's capital, marked ★.

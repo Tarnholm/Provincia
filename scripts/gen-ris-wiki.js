@@ -285,7 +285,7 @@ For anything you want to sort or search rather than read:
 | [**All regions and settlements**](regions.md) | ${familyCount("regions").toLocaleString("en-US")} | Every region with its town in one sortable table. A region page is the land: terrain, climate, fertility, water, port, trade goods. A settlement page is the town: size, population, who holds it, what is built, what can be raised |
 | [**Settlement sizes**](sizes.md) | ${familyCount("sizes").toLocaleString("en-US")} | Each rung of the ladder: the population it takes, what it first lets you build, how many start there |
 | ${artStrip("resource-icons", 24)} [**Trade goods**](trade-goods.md) | ${familyCount("goods").toLocaleString("en-US")} | What each good is worth, where on the map it is, who holds it, what it unlocks |
-| [**Region tag reference**](tags.md) | ${familyCount("tags").toLocaleString("en-US")} | What a region's terrain, climate, water, port, recruitment zone, homeland and fertility each decide |
+| **Region tags** | ${familyCount("tags").toLocaleString("en-US")} | What a region's [terrain](tags/terrain.md), [climate](tags/climate.md), [water source](tags/irrigation.md), [harbour](tags/ports.md), [recruitment zones](tags/recruitment-zones.md), [homeland](tags/cultural-homeland.md) and [fertility](tags/fertility.md) each decide |
 | [The map](map-and-regions.md) | — | How the density compares with vanilla |
 
 ### Who plays it

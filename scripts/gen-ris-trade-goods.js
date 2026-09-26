@@ -709,7 +709,7 @@ const regionPagesCount = regionPages.size;
 
 const indexBody = `# Trade goods
 
-[← all regions](regions.md) · [region tag reference](tags.md) · [wiki index](README.md)
+[← all regions](regions.md) · [wiki index](README.md)
 
 A trade good is a resource placed on the campaign map at a fixed spot. Whoever holds the
 region around it has it, and it does three things: it is worth trade income, it may let the

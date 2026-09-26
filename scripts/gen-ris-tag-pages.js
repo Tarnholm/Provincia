@@ -429,7 +429,7 @@ function regionsFold(f, what) {
 }
 
 // ── page assembly ────────────────────────────────────────────────────────────
-const HEAD = (title) => `# ${title}\n\n[← reference tables](../tags.md) · [all regions](../regions.md) · [wiki index](../README.md)\n`;
+const HEAD = (title) => `# ${title}\n\n[← all regions and settlements](../regions.md) · [wiki index](../README.md)\n`;
 
 
 function summaryTable(list, cols) {
@@ -675,7 +675,9 @@ zones, homeland and fertility. These pages say what each of those **does**.
 |---|---|
 ${PAGES.map(([t, f, d]) => `| [${t}](${f}) | ${d} |`).join("\n")}
 `;
-fs.writeFileSync(path.join(OUT, "tags.md"), indexBody, "utf8");
+// No tags.md: the menu lists every tag page, so an index of them only repeated it (dropped
+// 2026-09-26). The body above is still built for its checks; a stale file is removed.
+fs.rmSync(path.join(OUT, "tags.md"), { force: true });
 
 // ── report ───────────────────────────────────────────────────────────────────
 const say = (s) => console.log(s);

@@ -862,13 +862,13 @@ const NAV = [
     ["/diaries.md", "Developer diaries"], ["/community-videos.md", "Community videos"]]],
   ["Overviews", [["/factions-overview.md", "Factions vs vanilla"], ["/map-and-regions.md", "The map"],
     ["/units-overview.md", "Roster vs vanilla"]]],
-  ["Region tags", [["/tags.md", "All reference tables"], ["/tags/terrain.md", "Terrain"],
-    ["/tags/climate.md", "Climate"], ["/tags/irrigation.md", "Irrigation"],
+  ["Region tags", [["/tags/terrain.md", "Terrain"],
+    ["/tags/climate.md", "Climate"], ["/tags/irrigation.md", "Water sources"],
     ["/tags/ports.md", "Ports"], ["/tags/recruitment-zones.md", "Recruitment zones"],
     ["/tags/specialty-recruitment.md", "Specialty recruitment"],
     ["/tags/recruitment-other.md", "Other recruitment tags"],
     ["/tags/cultural-homeland.md", "Cultural homelands"],
-    ["/tags/hazards-and-river-trade.md", "Hazards and river trade"],
+    ["/tags/hazards-and-river-trade.md", "River trade"],
     ["/tags/fertility.md", "Fertility"]]],
   ["Sortable views", [["/units.html", "Unit roster"], ["/regions.html", "Regions"],
     ["/factions.html", "Factions"]]],
@@ -921,7 +921,7 @@ function crumbs(rel) {
     // religions) went unnoticed after being added: the way back up quietly stopped being a link.
     const INDEX_OF = {
       factions: "/factions.md", regions: "/regions.md", settlements: "/regions.md",
-      units: "/units.md", buildings: "/buildings.md", tags: "/tags.md", goods: "/trade-goods.md",
+      units: "/units.md", buildings: "/buildings.md", goods: "/trade-goods.md",
       sizes: "/sizes.md", cultures: "/cultures.md", religions: "/religions.md",
       traits: "/traits.md", ancillaries: "/ancillaries.md", reforms: "/reforms.md", revolts: "/revolts.md", diaries: "/diaries.md",
     };
