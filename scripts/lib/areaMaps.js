@@ -48,7 +48,7 @@ function areaMaps(OUT, dirName) {
     spec.areas_out = outDir;
     spec.areas_only = true;
     const sig = crypto.createHash("sha1").update(JSON.stringify(spec))
-      .update(fs.readFileSync(path.join(__dirname, "regionMaps.py"))).digest("hex");
+      .update(fs.readFileSync(path.join(__dirname, "regionMaps.py"), "utf8").replace(/\n    # WORLD-START[\s\S]*?    # WORLD-END\n/, "")).digest("hex");   // the world-map block does not affect area maps
     const sigFile = path.join(outDir, ".sig");
     const have = fs.existsSync(sigFile) && fs.readFileSync(sigFile, "utf8") === sig
       && spec.areas.every((a) => fs.existsSync(path.join(outDir, `${a.file}.webp`)));

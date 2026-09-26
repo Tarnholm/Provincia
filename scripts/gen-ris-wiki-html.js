@@ -270,3 +270,38 @@ render();
     process.exitCode = 1;
   }
 }
+
+// ── the world map ────────────────────────────────────────────────────────────
+// A pannable, zoomable map of the whole campaign (asked for 2026-09-26), in the wiki's shell.
+// world-map/world.webp and ids.png come from gen-ris-region-pages.js (lib/regionMaps.py);
+// ids.png holds each map pixel's region as index + 1, in the order of the region list the
+// region generator saves, which is the order of DATA below. Names, links and emblems are read
+// back from regions.md so they match the region index exactly.
+{
+  const specFile = path.join(require("os").tmpdir(), "ris-region-maps.json");
+  if (fs.existsSync(specFile) && fs.existsSync(path.join(OUT, "world-map", "world.webp"))) {
+    const spec = JSON.parse(fs.readFileSync(specFile, "utf8"));
+    const byTok = new Map();
+    for (const c of parseTable("regions.md", 7)) {
+      const r = linkText(c[0]);
+      if (!r.href) continue;
+      byTok.set(decodeURIComponent(r.href.replace(/^regions\//, "").replace(/\.md$/, "")), { r, s: linkText(c[1]), o: linkText(c[2]) });
+    }
+    const DATA = spec.regions.map((x) => {
+      const e = byTok.get(x.token);
+      if (!e) return null;
+      return {
+        n: e.r.text, href: e.r.href, s: e.s.text, cap: /★/.test(e.s.mark || ""),
+        o: e.o.text, sym: e.o.sym || null,
+        c: x.owner ? x.owner.map((v) => Math.round(v)) : null,
+        x: x.sx, y: x.sy,
+      };
+    });
+    const intro = "# The world map\n\n[← wiki index](README.md) · [all regions and settlements](regions.md)\n\n"
+      + "The campaign map at the start of the Unified Romans campaign. Drag to move, scroll or pinch to zoom, point at a region to see who holds it, click to open its page. Settlement names appear as you zoom in.\n";
+    const body = viewer.renderMarkdown(intro, []) + fs.readFileSync(path.join(__dirname, "lib", "worldMapView.html"), "utf8")
+      .replace("__DATA__", () => JSON.stringify(DATA));
+    fs.writeFileSync(path.join(OUT, "world-map.html"), viewer.SHELL("The world map", body, "/world-map.html", []), "utf8");
+    console.log(`world-map.html: ${DATA.filter(Boolean).length} regions`);
+  } else console.log("world-map.html: skipped (run gen-ris-region-pages.js first)");
+}

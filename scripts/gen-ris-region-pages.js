@@ -1449,7 +1449,7 @@ fs.rmSync(path.join(OUT, "settlements.md"), { force: true });
   const base = path.join(RIS, "world", "maps", "base");
   const sig = crypto.createHash("sha1").update(JSON.stringify(spec))
     .update(["map_regions.tga", "map_ground_types.tga", "map_heights.tga"].map((f) => fs.statSync(path.join(base, f)).size + ":" + fs.statSync(path.join(base, f)).mtimeMs).join("|"))
-    .update(fs.readFileSync(path.join(__dirname, "lib", "regionMaps.py"))).digest("hex");
+    .update(fs.readFileSync(path.join(__dirname, "lib", "regionMaps.py"), "utf8").replace(/\n    # WORLD-START[\s\S]*?    # WORLD-END\n/, "")).digest("hex");   // the world-map block only affects world-map/
   // Saved every run (not only when rendering): gen-ris-unit-pages.js draws its area-of-recruitment
   // maps from this same list, so both kinds of map agree on names, owners and positions.
   const specFile = path.join(require("os").tmpdir(), "ris-region-maps.json");
@@ -1464,6 +1464,20 @@ fs.rmSync(path.join(OUT, "settlements.md"), { force: true });
     const want = new Set(spec.regions.map((r) => `${r.token}.webp`));
     for (const f of fs.readdirSync(spec.out)) if (f.endsWith(".webp") && !want.has(f)) fs.unlinkSync(path.join(spec.out, f));
     fs.writeFileSync(sigFile, sig);
+  }
+  // The whole world for the interactive map page (world-map.html, from gen-ris-wiki-html.js):
+  // world.webp, ids.png (which region each map pixel is) and a small preview. Same inputs as the
+  // region maps, so the same signature decides; ~10 s when it does run.
+  const worldDir = path.join(OUT, "world-map");
+  const worldSig = path.join(worldDir, ".sig");
+  if (fs.existsSync(worldSig) && fs.readFileSync(worldSig, "utf8") === sig
+    && ["world.webp", "ids.png", "preview.webp"].every((f) => fs.existsSync(path.join(worldDir, f)))) {
+    console.log("  world map: unchanged");
+  } else {
+    const worldSpec = path.join(require("os").tmpdir(), "ris-world-map.json");
+    fs.writeFileSync(worldSpec, JSON.stringify({ ...spec, world_out: worldDir }));
+    require("child_process").execFileSync("python", [path.join(__dirname, "lib", "regionMaps.py"), worldSpec], { stdio: "inherit" });
+    fs.writeFileSync(worldSig, sig);
   }
 }
 

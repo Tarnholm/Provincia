@@ -140,6 +140,41 @@ def main(spec_path, only=None):
     base_img = Image.fromarray(np.clip(img, 0, 255).astype(np.uint8))
     sx2, sy2 = gW / W, gH / H
 
+    # WORLD-START (left out of the region/area map signatures: changing it redraws only the world)
+    # The whole world for the interactive map page: the same picture at twice the terrain
+    # resolution, region borders smoothed, a dot per settlement, no labels (the page adds names
+    # as you zoom). Plus ids.png: each map pixel's region as its list index + 1 in the red/green
+    # bytes (0 = sea), which the page reads to know what the pointer is over.
+    if spec.get("world_out"):
+        wd = spec["world_out"]
+        os.makedirs(wd, exist_ok=True)
+        WS = 4                                   # output pixels per region-map pixel
+        WW, WH = W * WS, H * WS
+        world = np.asarray(base_img.resize((WW, WH), Image.LANCZOS)).astype(float)
+        big = np.repeat(np.repeat(idx, WS, 0), WS, 1)
+        v = big + 1
+        enc = np.stack([(v >> 8) & 255, v & 255, np.zeros_like(v)], -1).astype(np.uint8)
+        dec = np.asarray(Image.fromarray(enc).filter(ImageFilter.ModeFilter(5))).astype(np.int32)
+        big = (dec[..., 0] << 8 | dec[..., 1]) - 1
+        edge = np.zeros(big.shape, bool)
+        edge[:, :-1] |= big[:, :-1] != big[:, 1:]
+        edge[:-1, :] |= big[:-1, :] != big[1:, :]
+        world[edge] *= 0.5
+        pic = Image.fromarray(np.clip(world, 0, 255).astype(np.uint8))
+        dr = ImageDraw.Draw(pic)
+        for k, r in enumerate(regions):
+            if r.get("sx") is None:
+                continue
+            px, py = (r["sx"] + 0.5) * WS, (r["sy"] + 0.5) * WS
+            dr.ellipse((px - 3, py - 3, px + 3, py + 3), fill=LABEL_FILL, outline=LABEL_STROKE, width=1)
+        pic.save(os.path.join(wd, "world.webp"), "WEBP", quality=80, method=5)
+        pic.resize((WW // 4, WH // 4), Image.LANCZOS).save(os.path.join(wd, "preview.webp"), "WEBP", quality=82, method=5)
+        ids = idx + 1
+        Image.fromarray(np.stack([(ids >> 8) & 255, ids & 255, np.zeros_like(ids)], -1).astype(np.uint8)).save(os.path.join(wd, "ids.png"))
+        print(f"world map: {WW}x{WH} and ids.png written to {wd}")
+        return
+    # WORLD-END
+
     # Inset: the whole map, small, once.
     inset_h = round(INSET_W * H / W)
     inset = base_img.resize((INSET_W, inset_h), Image.LANCZOS)

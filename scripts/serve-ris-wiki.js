@@ -855,7 +855,7 @@ hr{border:none;border-top:1px solid var(--line);margin:2rem 0}
 
 const NAV = [
   ["Start here", [["/README.md", "Wiki index"], ["/factions.md", "All factions"],
-    ["/regions.md", "Regions and settlements"],
+    ["/regions.md", "Regions and settlements"], ["/world-map.html", "World map"],
     ["/units.md", "All units"], ["/buildings.md", "All buildings"], ["/trade-goods.md", "Trade goods"],
     ["/cultures.md", "Cultures"], ["/religions.md", "Beliefs"], ["/traits.md", "Character traits"],
     ["/ancillaries.md", "Retinue"], ["/reforms.md", "Reforms"], ["/revolts.md", "Revolts"], ["/sizes.md", "Settlement sizes"],

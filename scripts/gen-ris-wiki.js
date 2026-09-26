@@ -374,6 +374,10 @@ roster — see [all factions](factions.md).
 
 [← back to index](README.md)
 
+${fs.existsSync(path.join(OUT, "world-map", "preview.webp")) ? `[![The campaign map — open the interactive map](world-map/preview.webp)](world-map.html)
+
+**[Open the interactive map](world-map.html)** — drag, zoom, point at a region to see who holds it, click to open it.
+` : ""}
 | | Vanilla | RIS | Change | |
 |---|---:|---:|---:|---:|
 ${row("Regions", v.regions, r.regions)}
