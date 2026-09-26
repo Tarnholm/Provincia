@@ -14,8 +14,8 @@
 .wm-in canvas{opacity:.55;display:none}
 .wm.owners .wm-in canvas{display:block}
 .wm-lab{position:absolute;transform:translate(6px,-50%);white-space:nowrap;color:#faf4e4;font-weight:600;font-size:var(--lf);
- text-shadow:0 0 3px #1c160f,0 0 3px #1c160f,0 0 2px #1c160f;pointer-events:none;display:none}
-.wm.names .wm-lab{display:block}
+ text-shadow:0 0 3px #1c160f;pointer-events:none;display:none}
+.wm.names .wm-lab.on{display:block}
 .wm-tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;
  padding:.45rem .65rem;font-size:.88rem;line-height:1.45;box-shadow:var(--shadow);display:none;z-index:3;max-width:18rem}
 .wm-tip img{width:20px;height:20px;vertical-align:middle;margin-right:.3rem}
@@ -43,6 +43,12 @@ function apply(){
   // sizes every label; setting 1,305 font sizes on each zoom step froze the page.
   box.classList.toggle("names", s >= 1.1);
   inn.style.setProperty("--lf", (12 / s).toFixed(1) + "px");
+  // Only the labels inside the view are drawn: 1,305 shadowed labels on a layer several
+  // thousand pixels wide stalled the page.
+  if (s >= 1.1) {
+    var x0 = -x / s, y0 = -y / s, x1 = x0 + w / s, y1 = y0 + h / s;
+    labs.forEach(function(l){ var on = l._x >= x0 - 50 && l._x <= x1 && l._y >= y0 - 20 && l._y <= y1 + 20; if (on !== l._on) { l._on = on; l.classList.toggle("on", on); } });
+  }
 }
 function fit(){ minS = Math.min(box.clientWidth / 4080, box.clientHeight / 2800); s = minS; x = 0; y = 0; apply(); }
 function zoomAt(f, cx, cy){ var ns = Math.max(minS, Math.min(3, s * f)); x = cx - (cx - x) * ns / s; y = cy - (cy - y) * ns / s; s = ns; apply(); }
@@ -52,7 +58,8 @@ DATA.forEach(function(d){
   if (!d || d.x == null) return;
   var l = document.createElement("div");
   l.className = "wm-lab"; l.textContent = d.s + (d.cap ? " ★" : "");
-  l.style.left = ((d.x + .5) * WS) + "px"; l.style.top = ((d.y + .5) * WS) + "px";
+  l._x = (d.x + .5) * WS; l._y = (d.y + .5) * WS; l._on = false;
+  l.style.left = l._x + "px"; l.style.top = l._y + "px";
   inn.appendChild(l); labs.push(l);
 });
 
@@ -132,7 +139,9 @@ var dl = document.getElementById("wm-list"), opts = [];
 DATA.forEach(function(d){ if (d && d.x != null) { opts.push([d.s, d]); if (d.n !== d.s) opts.push([d.n, d]); } });
 opts.sort(function(a, b){ return a[0].localeCompare(b[0]); });
 dl.innerHTML = opts.map(function(o){ return '<option value="' + esc(o[0]) + '">'; }).join("");
-document.getElementById("wm-find").addEventListener("change", function(){
+var findBox = document.getElementById("wm-find");
+findBox.addEventListener("keydown", function(e){ if (e.key === "Enter") findBox.dispatchEvent(new Event("change")); });
+findBox.addEventListener("change", function(){
   var v = this.value.toLowerCase();
   var hit = opts.find(function(o){ return o[0].toLowerCase() === v; }) || opts.find(function(o){ return o[0].toLowerCase().indexOf(v) === 0; });
   if (!hit) return;
