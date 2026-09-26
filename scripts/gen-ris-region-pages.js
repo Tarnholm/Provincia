@@ -1400,14 +1400,16 @@ fs.rmSync(path.join(OUT, "settlements.md"), { force: true });
   const sig = crypto.createHash("sha1").update(JSON.stringify(spec))
     .update(["map_regions.tga", "map_ground_types.tga", "map_heights.tga"].map((f) => fs.statSync(path.join(base, f)).size + ":" + fs.statSync(path.join(base, f)).mtimeMs).join("|"))
     .update(fs.readFileSync(path.join(__dirname, "lib", "regionMaps.py"))).digest("hex");
+  // Saved every run (not only when rendering): gen-ris-unit-pages.js draws its area-of-recruitment
+  // maps from this same list, so both kinds of map agree on names, owners and positions.
+  const specFile = path.join(require("os").tmpdir(), "ris-region-maps.json");
+  fs.writeFileSync(specFile, JSON.stringify(spec));
   const sigFile = path.join(spec.out, ".sig");
   const have = fs.existsSync(sigFile) && fs.readFileSync(sigFile, "utf8") === sig
     && spec.regions.every((r) => fs.existsSync(path.join(spec.out, `${r.token}.webp`)));
   if (have) console.log(`  region maps: unchanged, ${spec.regions.length} kept`);
   else {
     fs.mkdirSync(spec.out, { recursive: true });
-    const specFile = path.join(require("os").tmpdir(), "ris-region-maps.json");
-    fs.writeFileSync(specFile, JSON.stringify(spec));
     require("child_process").execFileSync("python", [path.join(__dirname, "lib", "regionMaps.py"), specFile], { stdio: "inherit" });
     const want = new Set(spec.regions.map((r) => `${r.token}.webp`));
     for (const f of fs.readdirSync(spec.out)) if (f.endsWith(".webp") && !want.has(f)) fs.unlinkSync(path.join(spec.out, f));

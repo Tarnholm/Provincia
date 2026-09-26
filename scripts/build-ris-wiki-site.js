@@ -585,11 +585,13 @@ fs.copyFileSync(path.join(SITE, "README.html"), wrote(path.join(SITE, "index.htm
 let embeddedRefs = 0;
 for (const rel of staticHtml) {
   let html = fs.readFileSync(path.join(WIKI, rel), "utf8");
-  html = html.replace(/"(href|img)":"([^"]+)"/g, (m, k, v) => {
+  html = html.replace(/"(href|img|sym)":"([^"]+)"/g, (m, k, v) => {
     embeddedRefs++;
     return `"${k}":"${mapUrl(rel, v)}"`;
   });
-  html = rewriteHtml(html, rel);
+  // The views are rendered in the wiki's own shell now, so they get the same treatment as a
+  // markdown page: shared wiki.css and wiki.js instead of the inline copies.
+  html = finish(html, rel);
   writeOut(outNameOf(rel), html);
 }
 note(`sortable views: ${n(staticHtml.length)} copied (${n(RENAMED.size)} renamed to avoid a page of the same name), ${n(embeddedRefs)} embedded row links rewritten`);

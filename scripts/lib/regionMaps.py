@@ -148,17 +148,29 @@ def main(spec_path, only=None):
     font_b = ImageFont.truetype(os.path.join(FONT_DIR, "palab.ttf"), 18)
 
     towns = [(k, r["sx"], r["sy"], r["settlement"]) for k, r in enumerate(regions) if r.get("sx") is not None]
-    written = 0
-    for k, r in enumerate(regions):
-        if only and r["token"] not in only:
-            continue
-        m = idx == k
+    tok_idx = {r["token"]: k for k, r in enumerate(regions)}
+
+    def grown(mask, n):
+        out = mask.copy()
+        for _ in range(n):
+            g = out.copy()
+            for s in (1, -1):
+                g |= np.roll(out, s, 0) | np.roll(out, s, 1)
+            out = g
+        return out
+
+    def draw(sel, home, fill, min_w, max_w, label_all, path):
+        """sel: region indices to highlight. home: the one whose settlement is the page's own
+        (bold, always named), or None. label_all: name every town in view, or only those in sel."""
+        m = np.isin(idx, list(sel))
         if not m.any():
-            continue
+            return False
         rows, cols = np.where(m)
         x0, x1, y0, y1 = cols.min(), cols.max() + 1, rows.min(), rows.max() + 1
-        ww = min(MAX_W, max(MIN_W, (x1 - x0) / FILL, (y1 - y0) / FILL * ASP))
+        ww = min(max_w, max(min_w, (x1 - x0) / fill, (y1 - y0) / fill * ASP))
         wh = ww / ASP
+        if wh > H:
+            wh, ww = H, H * ASP
         cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
         wx = min(max(0, cx - ww / 2), W - ww)
         wy = min(max(0, cy - wh / 2), H - wh)
@@ -183,20 +195,13 @@ def main(spec_path, only=None):
         edge = np.zeros(win.shape, bool)
         edge[:, :-1] |= win[:, :-1] != win[:, 1:]
         edge[:-1, :] |= win[:-1, :] != win[1:, :]
-        arr[edge] *= 0.45
+        # Zoomed far out, region borders are dense; draw them fainter so the area still reads.
+        arr[edge] *= 0.45 if scale > 2 else 0.72
 
-        subj = win == k
+        subj = np.isin(win, list(sel))
         arr[subj] = arr[subj] * 0.58 + SUBJECT * 0.42
-        # Outline: a 3-pixel red band just inside the subject, a 2-pixel pale ring just outside.
-        def grown(mask, n):
-            out = mask.copy()
-            for _ in range(n):
-                g = out.copy()
-                for s in (1, -1):
-                    g |= np.roll(out, s, 0) | np.roll(out, s, 1)
-                out = g
-            return out
-        inner = ~grown(~subj, 3)
+        # Outline round the whole selection: a red band just inside it, a pale ring just outside.
+        inner = ~grown(~subj, 3 if scale > 2 else 2)
         arr[subj & ~inner] = SUBJECT
         arr[grown(subj, 2) & ~subj] = HALO
 
@@ -204,9 +209,11 @@ def main(spec_path, only=None):
         dr = ImageDraw.Draw(pic)
 
         # Settlements in view. Every dot is drawn and reserved first, so no label can cover a
-        # town; then the labels are placed greedily, the subject's first, keeping clear of the
-        # dots, of each other and of the inset corner.
-        inset_box = (OUT_W - INSET_W - 12, OUT_H - inset_h - 12, OUT_W, OUT_H)
+        # town; then the labels are placed greedily, the page's own settlement first, keeping
+        # clear of the dots, of each other and of the inset corner. A view of most of the map
+        # needs no inset.
+        show_inset = ww < 0.6 * W
+        inset_box = (OUT_W - INSET_W - 12, OUT_H - inset_h - 12, OUT_W, OUT_H) if show_inset else (OUT_W, OUT_H, OUT_W, OUT_H)
         taken = [inset_box]
         def place(text, px, py, fnt, rad):
             w = dr.textlength(text, font=fnt)
@@ -226,8 +233,9 @@ def main(spec_path, only=None):
             return (tx + 0.5 - wx) * scale, (ty + 0.5 - wy) * scale
         def inside(px, py):
             return 4 <= px <= OUT_W - 4 and 4 <= py <= OUT_H - 4 and not (px >= inset_box[0] and py >= inset_box[1])
-        me = [t for t in towns if t[0] == k]
-        others = [(at(tx, ty), name) for kk, tx, ty, name in towns if kk != k and inside(*at(tx, ty))]
+        me = [t for t in towns if t[0] == home] if home is not None else []
+        others = [(at(tx, ty), name) for kk, tx, ty, name in towns
+                  if kk != home and (label_all or kk in sel) and inside(*at(tx, ty))]
         for (px, py), _name in others:
             dr.ellipse((px - 3.5, py - 3.5, px + 3.5, py + 3.5), fill=LABEL_FILL, outline=LABEL_STROKE, width=2)
             taken.append((px - 4, py - 4, px + 4, py + 4))
@@ -249,22 +257,45 @@ def main(spec_path, only=None):
         for (px, py), name in others:
             place(name, px, py, font, 4)
 
-        # Inset in the bottom-right corner, with the window drawn on it.
-        ins = inset.copy()
-        di = ImageDraw.Draw(ins)
-        fx = INSET_W / W
-        rx0, ry0, rx1, ry1 = wx * fx, wy * fx, (wx + ww) * fx, (wy + wh) * fx
-        if rx1 - rx0 < 6:
-            mx, my = (rx0 + rx1) / 2, (ry0 + ry1) / 2
-            rx0, rx1, ry0, ry1 = mx - 3, mx + 3, my - 2, my + 2
-        di.rectangle((rx0, ry0, rx1, ry1), outline=tuple(int(v) for v in SUBJECT), width=2)
-        ox0, oy0 = OUT_W - INSET_W - 8, OUT_H - inset_h - 8
-        dr.rectangle((ox0 - 2, oy0 - 2, ox0 + INSET_W + 1, oy0 + inset_h + 1), fill=LABEL_STROKE)
-        pic.paste(ins, (ox0, oy0))
+        if show_inset:
+            ins = inset.copy()
+            di = ImageDraw.Draw(ins)
+            fx = INSET_W / W
+            rx0, ry0, rx1, ry1 = wx * fx, wy * fx, (wx + ww) * fx, (wy + wh) * fx
+            if rx1 - rx0 < 6:
+                mx, my = (rx0 + rx1) / 2, (ry0 + ry1) / 2
+                rx0, rx1, ry0, ry1 = mx - 3, mx + 3, my - 2, my + 2
+            di.rectangle((rx0, ry0, rx1, ry1), outline=tuple(int(v) for v in SUBJECT), width=2)
+            ox0, oy0 = OUT_W - INSET_W - 8, OUT_H - inset_h - 8
+            dr.rectangle((ox0 - 2, oy0 - 2, ox0 + INSET_W + 1, oy0 + inset_h + 1), fill=LABEL_STROKE)
+            pic.paste(ins, (ox0, oy0))
 
-        pic.save(os.path.join(out_dir, r["token"] + ".webp"), "WEBP", quality=82, method=5)
-        written += 1
-    print(f"region maps: {written} written to {out_dir}")
+        pic.save(path, "WEBP", quality=82, method=5)
+        return True
+
+    written = 0
+    if not spec.get("areas_only"):
+        for k, r in enumerate(regions):
+            if only and r["token"] not in only:
+                continue
+            if draw({k}, k, FILL, MIN_W, MAX_W, True, os.path.join(out_dir, r["token"] + ".webp")):
+                written += 1
+        print(f"region maps: {written} written to {out_dir}")
+
+    # Areas: a set of regions on one map (a unit's area of recruitment). The whole area fills
+    # the picture; only the settlements inside it are named, since the question is "where".
+    areas = spec.get("areas") or []
+    if areas:
+        area_dir = spec["areas_out"]
+        os.makedirs(area_dir, exist_ok=True)
+        n = 0
+        for a in areas:
+            if only and a["file"] not in only:
+                continue
+            sel = {tok_idx[t] for t in a["regions"] if t in tok_idx}
+            if sel and draw(sel, None, 0.85, MIN_W, W, False, os.path.join(area_dir, a["file"] + ".webp")):
+                n += 1
+        print(f"area maps: {n} written to {area_dir}")
 
 
 if __name__ == "__main__":
