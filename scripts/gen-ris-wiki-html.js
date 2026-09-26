@@ -300,7 +300,7 @@ render();
     const intro = "# The world map\n\n[← wiki index](README.md) · [all regions and settlements](regions.md)\n\n"
       + "The campaign map at the start of the Unified Romans campaign. Drag to move, scroll or pinch to zoom, point at a region to see who holds it, click to open its page. Settlement names appear as you zoom in.\n";
     const body = viewer.renderMarkdown(intro, []) + fs.readFileSync(path.join(__dirname, "lib", "worldMapView.html"), "utf8")
-      .replace("__DATA__", () => JSON.stringify(DATA));
+      .replace("var DATA = __DATA__;", () => `var DATA = ${JSON.stringify(DATA)};`);
     fs.writeFileSync(path.join(OUT, "world-map.html"), viewer.SHELL("The world map", body, "/world-map.html", []), "utf8");
     console.log(`world-map.html: ${DATA.filter(Boolean).length} regions`);
   } else console.log("world-map.html: skipped (run gen-ris-region-pages.js first)");
