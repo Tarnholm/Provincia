@@ -591,6 +591,18 @@ for (const rel of staticHtml) {
   });
   // The views are rendered in the wiki's own shell now, so they get the same treatment as a
   // markdown page: shared wiki.css and wiki.js instead of the inline copies.
+  // The views are rendered by gen-ris-wiki-html.js, in a process that does not know the team's
+  // pages, so their menu lacked the Team section. The menu is swapped for the one this build
+  // renders for the same route, which has it.
+  const nav = /<nav class="side">[\s\S]*?<\/nav>/.exec(SHELL("", "", "/" + rel, []));
+  if (nav) html = html.replace(/<nav class="side">[\s\S]*?<\/nav>/, () => nav[0]);
+  // finish() swaps the shell's inline stylesheet and script for wiki.css/wiki.js by exact text,
+  // and a view generated before the last stylesheet change carries an older copy, so nothing was
+  // swapped and the page ran without wiki.js (no Team menu, no table dealing). The shell's
+  // blocks are put back in their current form first, found by position and by the script's
+  // own opening line, so the swap always matches.
+  html = html.replace(/<style>[\s\S]*?<\/style>/, () => `<style>${CSS}</style>`)
+    .replace(/<script>\s*\/\/ Theme choice persists[\s\S]*?<\/script>/, () => SHELL_SCRIPT);
   html = finish(html, rel);
   writeOut(outNameOf(rel), html);
 }

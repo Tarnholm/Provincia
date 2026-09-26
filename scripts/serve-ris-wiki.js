@@ -797,6 +797,10 @@ td.right,th.right{text-align:right;font-variant-numeric:tabular-nums}
 td.center,th.center{text-align:center}
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover{background:var(--acc-soft)}
+/* A table dealt into side-by-side groups holds several entries per row, so the row highlight
+   lit up every entry across it. There only the group under the pointer is lit (see the script). */
+.tw.multi tbody tr:hover{background:none}
+.tw.multi td.hl{background:var(--acc-soft)}
 img{max-width:100%;height:auto;vertical-align:middle}
 img[align="right"]{margin:0 0 1rem 1.4rem;border-radius:8px;box-shadow:var(--shadow)}
 a:has(img){display:inline-block}
@@ -982,6 +986,23 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
       e.preventDefault(); document.querySelector('.top input').focus();
     }
   });
+
+  // ── hover one entry, not the whole row, in a dealt table ───────────────────
+  // A group starts at a cell marked "grp" (or at the row's first cell), and runs to the next.
+  (function(){
+    var lit = [];
+    function clear(){ lit.forEach(function(c){ c.classList.remove("hl"); }); lit = []; }
+    document.addEventListener("mouseover", function(e){
+      var td = e.target.closest && e.target.closest(".tw.multi td");
+      clear();
+      if (!td) return;
+      var cells = Array.prototype.slice.call(td.parentNode.children);
+      var i = cells.indexOf(td), a = i, b = i;
+      while (a > 0 && !cells[a].classList.contains("grp")) a--;
+      while (b + 1 < cells.length && !cells[b + 1].classList.contains("grp")) b++;
+      for (var k = a; k <= b; k++) { cells[k].classList.add("hl"); lit.push(cells[k]); }
+    });
+  })();
 
   // ── deal the tables to the window that is actually open ────────────────────
   // The server decides how many copies of a narrow table fit across the page from an ESTIMATE of

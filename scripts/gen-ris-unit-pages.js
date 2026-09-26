@@ -355,6 +355,11 @@ const DECLARED_RESOURCES = (() => {
 })();
 
 // Kept literal. These say what the engine checks, not what it means for play.
+// Requirement links (aliases to their buildings, levels, region tags, supply sentences), shared
+// with the faction pages through lib/reqLinks.js so a condition links the same on both.
+const RL = require(path.join(__dirname, "lib", "reqLinks.js")).makeReqLinks({
+  edb: rd("export_descr_buildings.txt") || "", OUT, bName,
+});
 const KEYWORD_TEXT = {
   is_player: "player-controlled only",
   factionwide: "anywhere in the faction",
@@ -434,15 +439,17 @@ function clauseBody(b) {
   if (/\bor\b/i.test(b)) {
     return b.split(/\bor\b/i).map((s) => clauseBody(s.trim())).filter(Boolean).join(" or ");
   }
-  let m = /^hidden_resource\s+(\S+)$/i.exec(b); if (m) return zoneLabel(m[1].toLowerCase());
+  let m = /^hidden_resource\s+(\S+)$/i.exec(b); if (m) return RL.tagClause(m[1]) || zoneLabel(m[1].toLowerCase());
   m = /^resource\s+(\S+)$/i.exec(b);
   if (m) return DECLARED_RESOURCES.has(m[1].toLowerCase()) ? humaniseTok(m[1]) : `\`${m[1]}\``;
-  m = /^building_present_min_level\s+\S+\s+(\S+)$/i.exec(b); if (m) return bName(m[1]) || `\`${m[1]}\``;
-  m = /^building_present\s+(\S+)$/i.exec(b); if (m) return bName(m[1]) || `\`${m[1]}\``;
+  m = /^building_present_min_level\s+(\S+)\s+(\S+)$/i.exec(b); if (m) return RL.levelLink(m[2], m[1]) || `\`${m[2]}\``;
+  m = /^building_present\s+(\S+)$/i.exec(b);
+  if (m) return RL.levelLink(m[1]) || (RL.chainPage(m[1]) ? `[${RL.chainLabel(m[1].toLowerCase())}](${RL.chainPage(m[1])})` : `\`${m[1]}\``);
   m = /^major_event\s+"?([A-Za-z0-9_]+)"?/i.exec(b); if (m) return reformRef(m[1]);
   m = /^event_counter\s+"?([A-Za-z0-9_]+)"?/i.exec(b); if (m) return humaniseTok(m[1]);
   const k = b.toLowerCase();
-  return ALIAS_TEXT[k] || bName(k) || KEYWORD_TEXT[k] || `\`${b}\``;
+  if (ALIAS_TEXT[k]) return RL.linkAlias(k, ALIAS_TEXT[k]);
+  return RL.levelLink(k) || KEYWORD_TEXT[k] || `\`${b}\``;
 }
 // A requirement string may contain a pipe — the mod writes several of them that way ("Any
 // Government | Tier 2 Colony not built") — and an unescaped one splits a markdown table row
@@ -915,7 +922,7 @@ for (const u of list) {
   if (routes.size) { unitsWithBuilding++; if ([...routes.values()].every((r) => bName(r.level))) unitsWithNamedBuilding++; }
   else if (hasAnyLine) unitsAiRouteOnly++;
   const reqRows = [...routes.values()].map((r) =>
-    `| ${cell(bName(r.level) || `\`${r.level}\``)} | ${r.reqs.length ? r.reqs.map((c) => cell(clauseLabel(c))).join(" · ") : "—"} |`);
+    `| ${cell(RL.levelLink(r.level) || `\`${r.level}\``)} | ${r.reqs.length ? r.reqs.map((c) => cell(clauseLabel(c))).join(" · ") : "—"} |`);
   const reqTable = routes.size ? `| Building | Also requires |
 |---|---|
 ${reqRows.join("\n")}` : "";
@@ -1014,13 +1021,18 @@ it**, so there is nowhere on the campaign map to hire it as the mod ships today.
     return `${infoImg}${img}\n\n`;
   }
 
+  // The description leads, above the stats (asked for 2026-09-26): it says what the unit IS,
+  // and the numbers read better once you know that.
+  const descBlock = u.long || u.short
+    ? `## Description\n\n${sectionise(u.long || u.short)}\n\n`
+    : "> This unit has no written description in the mod yet.\n\n";
   const body = `# ${u.name}
 
 [← all units](../units.md) · [wiki index](../README.md)
 
 ${cardMarkup(u)}${u.hasName ? "" : "> _This unit has no display name in the mod yet._\n\n"}${u.merc === "all" ? `> **Mercenary.** Hired from a regional pool, not recruited from a building.\n\n` : ""}${u.merc === "mixed" ? `> **Reachable both ways.** Some entries for this unit are mercenary (\`merc …\`) and some are\n> not, so it can be hired from a pool *or* raised from a building.\n\n` : ""}**Class:** ${u.cls || "unknown"} · **Category:** ${u.category || "unknown"}${s.men != null ? ` · **Men per unit:** ${s.men}` : ""}${reformLine(u.slug)}
 
-## Stats
+${descBlock}## Stats
 
 | | | Rank in roster |
 |---|---:|---|
@@ -1044,9 +1056,7 @@ ${avail.allCore
       ? `No faction has this on its core roster: it can be raised only in the provinces below.`
       : `_No recruitment route for this unit was found in the building files._`}
 ${avail.all && !avail.allCore ? `\nAny faction holding one of the provinces below can field it.\n` : aorCount ? `\nA further ${aorCount} faction${aorCount === 1 ? "" : "s"} can raise it in the provinces below.\n` : ""}${reqBlock ? `\n${reqBlock}\n` : ""}${zoneBlocks.length ? `\n### Areas of recruitment\n\n${zoneBlocks.join("\n\n")}\n` : ""}
-`}${u.long || u.short
-  ? `## Description\n\n${sectionise(u.long || u.short)}\n\n`
-  : "> This unit has no written description in the mod yet.\n\n"}`;
+`}`;
   fs.writeFileSync(path.join(OUT, "units", `${u.slug}.md`), body, "utf8");
 }
 

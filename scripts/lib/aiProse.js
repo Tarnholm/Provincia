@@ -121,7 +121,14 @@ function buildInput({ task, facts, code, turns }) {
     `CODE\n${code}`,
   ].join("\n\n");
 }
-const hashOf = (schema, input) => crypto.createHash("sha256").update(JSON.stringify({ v: PROMPT_VERSION, model: MODEL, system: SYSTEM, schema, input })).digest("hex").slice(0, 16);
+// The CODE block quotes script lines with their line numbers, so four lines added at the top of
+// the campaign script (2026-09-26: a table-of-contents entry) re-hashed all ten revolts although
+// none of their code changed. The numbers are left out of the hash: the prose never cites them,
+// and the text they number is still hashed in full.
+const stripLineNumbers = (v) => (typeof v === "string" ? v.replace(/^\d+: /gm, "")
+  : Array.isArray(v) ? v.map(stripLineNumbers)
+  : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, stripLineNumbers(x)])) : v);
+const hashOf = (schema, input) => crypto.createHash("sha256").update(JSON.stringify({ v: PROMPT_VERSION, model: MODEL, system: SYSTEM, schema, input: stripLineNumbers(input) })).digest("hex").slice(0, 16);
 
 /**
  * Prose written outside the build (in a Claude Code session, from the same SYSTEM, TASK and
