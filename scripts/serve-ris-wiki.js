@@ -250,7 +250,8 @@ function sectionise(html, rel) {
     return (head ? `<div class="lede">${head}</div>` : "")
       + (paneLede ? `<div class="lede">${paneLede}</div>` : "")
       + secWrap(secs[descAt], true)
-      + others.map((s) => secWrap(s, isWide(s))).join("");
+      // …and the rest use the width too, balanced into two panes like every other page.
+      + paneGroup(others);
   }
 
   const out = [];
