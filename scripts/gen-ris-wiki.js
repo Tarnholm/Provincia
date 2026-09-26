@@ -295,7 +295,8 @@ ${familyCount("diaries") ? `
 | | Pages | What is on them |
 |---|---:|---|
 | [**Developer diaries**](diaries.md) | ${familyCount("diaries").toLocaleString("en-US")} | Every diary the team has posted on the RIS Discord, with its pictures, newest first |
-` : ""}
+${fs.existsSync(path.join(OUT, "community-videos.md")) ? `| [**Community videos**](community-videos.md) | ${(fs.readFileSync(path.join(OUT, "community-videos.md"), "utf8").match(/class="vid"/g) || []).length} | Roster previews, faction guides, deep dives and campaigns by players and YouTubers |
+` : ""}` : ""}
 `;
 
   pages["factions-overview.md"] = `# Factions

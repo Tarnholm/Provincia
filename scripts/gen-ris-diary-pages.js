@@ -288,13 +288,81 @@ function externalImages(m) {
   for (const f of fs.readdirSync(IMG_DIR)) if (!shown.has(f)) { fs.unlinkSync(path.join(IMG_DIR, f)); pruned++; }
   if (pruned) say(`  removed ${pruned} picture(s) no diary shows any more`);
   const cell = (s) => String(s).replace(/\|/g, "\\|");
+  const videoCount = await buildVideoPage();
   fs.writeFileSync(path.join(OUT, "diaries.md"), `# Developer diaries
 
-The RIS team's developer diaries, as posted on the RIS Discord, newest first.
+The RIS team's developer diaries, as posted on the RIS Discord, newest first.${videoCount ? `
+For videos about the mod made by players and YouTubers, see [community videos](community-videos.md).` : ""}
 
 | Diary | Date | By |
 |---|---|---|
 ${rows.slice().reverse().map((r) => `| [${cell(r.title)}](diaries/${r.key}.md) | ${r.date} | ${cell(r.author)} |`).join("\n")}
 `, "utf8");
   say(`diaries: ${rows.length} pages from ${diaries.length} groups (${empty} empty skipped) · ${images} images${fails ? ` · ${fails} downloads FAILED` : ""}`);
+  say(`community videos: ${videoCount}`);
 })().catch((e) => { console.error(e); process.exit(1); });
+
+// ── community videos ────────────────────────────────────────────────────────
+// Every YouTube video shared in the diary channel (mostly creators' roster guides, faction
+// guides and let's-plays, posted as shout-outs), on one page. Discord cuts titles to ~70
+// characters, so the full title and channel come from YouTube's public oEmbed, cached in
+// ai-prose/diaries/videos.json; a video YouTube no longer serves is left off. Thumbnails are
+// copied into community-video-thumbs/ so the page does not hotlink.
+async function buildVideoPage() {
+  const CACHE_FILE = path.join(__dirname, "ai-prose", "diaries", "videos.json");
+  let known = {};
+  try { known = JSON.parse(fs.readFileSync(CACHE_FILE, "utf8")); } catch {}
+  const idOf = (u) => (/(?:[?&]v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/.exec(u || "") || [])[1];
+  const shared = new Map(); // id -> first time it was shared
+  for (const c of CHANNELS) {
+    const f = path.join(CACHE, `${c.id}.json`);
+    if (!fs.existsSync(f)) continue;
+    for (const m of JSON.parse(fs.readFileSync(f, "utf8"))) {
+      const ids = new Set([...(m.embeds || []).map((e) => idOf(e.url)), ...String(m.content || "").split(/\s+/).map(idOf)].filter(Boolean));
+      for (const id of ids) if (!shared.has(id)) shared.set(id, Date.parse(m.timestamp));
+    }
+  }
+  for (const id of shared.keys()) {
+    if (known[id]) continue;
+    try {
+      const r = await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/watch?v=${id}`)}`);
+      known[id] = r.ok ? (({ title, author_name }) => ({ title, author: author_name }))(await r.json()) : { gone: r.status };
+    } catch { /* offline: try again next run */ }
+  }
+  fs.mkdirSync(path.dirname(CACHE_FILE), { recursive: true });
+  fs.writeFileSync(CACHE_FILE, JSON.stringify(known, null, 1) + "\n");
+
+  const THUMBS = path.join(OUT, "community-video-thumbs");
+  fs.mkdirSync(THUMBS, { recursive: true });
+  const list = [...shared].filter(([id]) => known[id] && known[id].title).map(([id, t]) => ({ id, t, ...known[id] })).sort((a, b) => b.t - a.t);
+  for (const v of list) {
+    const file = path.join(THUMBS, `${v.id}.jpg`);
+    if (fs.existsSync(file)) continue;
+    try { const r = await fetch(`https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`); if (r.ok) fs.writeFileSync(file, Buffer.from(await r.arrayBuffer())); } catch {}
+  }
+  for (const f of fs.readdirSync(THUMBS)) if (!list.some((v) => `${v.id}.jpg` === f)) fs.unlinkSync(path.join(THUMBS, f));
+  if (!list.length) { fs.rmSync(path.join(OUT, "community-videos.md"), { force: true }); return 0; }
+
+  // One card per video (thumbnail, title, channel, date), laid out as a grid by the site's .vids
+  // CSS. Each card is a single line of HTML so the page renderer passes it through whole.
+  const html = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const years = [...new Set(list.map((v) => new Date(v.t).getUTCFullYear()))];
+  const creators = new Set(list.map((v) => v.author));
+  const body = years.map((y) => `## ${y}
+
+<div class="vids">
+${list.filter((v) => new Date(v.t).getUTCFullYear() === y).map((v) => {
+    const thumb = fs.existsSync(path.join(THUMBS, `${v.id}.jpg`)) ? `<img src="community-video-thumbs/${v.id}.jpg" alt="" width="320" height="180" loading="lazy">` : "";
+    return `<a class="vid" href="https://www.youtube.com/watch?v=${v.id}" target="_blank" rel="noopener">${thumb}<span class="vt">${html(v.title)}</span><span class="vm">${html(v.author)} · ${new Date(v.t).toISOString().slice(0, 10)}</span></a>`;
+  }).join("\n")}
+</div>`).join("\n\n");
+  fs.writeFileSync(path.join(OUT, "community-videos.md"), `# Community videos
+
+[← developer diaries](diaries.md) · [wiki index](README.md)
+
+${list.length} videos about RIS by ${creators.size} channels, as shared on the RIS Discord's developer-diaries channel, newest first: roster previews, faction guides, deep dives, rankings and campaigns. The videos are their makers' own work; each one opens on YouTube.
+
+${body}
+`, "utf8");
+  return list.length;
+}

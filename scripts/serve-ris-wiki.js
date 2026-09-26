@@ -100,7 +100,8 @@ function inline(s) {
 // The third form is `<details><summary>…</summary>` all on ONE line. Without it that line is
 // not a block, so it goes through the paragraph path, gets escaped, and the reader sees the tags
 // as text — which is exactly what happened on 60 region pages before anyone noticed.
-const RAW_BLOCK = /^\s*(<\/?(?:details|summary|div|p|br|hr)\b[^>]*>|<summary[^>]*>.*<\/summary>|<details\b[^>]*><summary[^>]*>.*<\/summary>)\s*$/i;
+// `<a class="vid" ...>...</a>` is one card of the community-videos grid, one per line.
+const RAW_BLOCK = /^\s*(<a class="vid"[^>]*>.*<\/a>|<\/?(?:details|summary|div|p|br|hr)\b[^>]*>|<summary[^>]*>.*<\/summary>|<details\b[^>]*><summary[^>]*>.*<\/summary>)\s*$/i;
 
 function slugId(s) {
   return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -666,6 +667,12 @@ main{min-width:0;padding:1.6rem 1.6rem 5rem;width:100%}
 .fhead.femblem{flex-wrap:nowrap;align-items:center}
 .yt{position:relative;width:100%;max-width:800px;aspect-ratio:16/9;margin:12px 0;border-radius:6px;overflow:hidden;background:#000}
 .yt iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.vids{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin:10px 0 22px}
+.vid{display:flex;flex-direction:column;gap:5px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg);text-decoration:none}
+.vid:hover{background:var(--raised);border-color:var(--acc)}
+.vid img{width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;border-radius:5px;background:#000}
+.vid .vt{font-weight:600;line-height:1.3}
+.vid .vm{color:var(--dim);font-size:.85em}
 .fhead.femblem > p{flex:0 0 auto}
 .fmeta img{border-radius:6px;margin-bottom:.5rem}
 .lede em{display:block;clear:none;color:var(--dim);font-size:.85rem}
@@ -814,7 +821,7 @@ const NAV = [
     ["/units.md", "All units"], ["/buildings.md", "All buildings"], ["/trade-goods.md", "Trade goods"],
     ["/cultures.md", "Cultures"], ["/religions.md", "Beliefs"], ["/traits.md", "Character traits"],
     ["/ancillaries.md", "Retinue"], ["/reforms.md", "Reforms"], ["/revolts.md", "Revolts"], ["/sizes.md", "Settlement sizes"],
-    ["/diaries.md", "Developer diaries"]]],
+    ["/diaries.md", "Developer diaries"], ["/community-videos.md", "Community videos"]]],
   ["Overviews", [["/factions-overview.md", "Factions vs vanilla"], ["/map-and-regions.md", "The map"],
     ["/units-overview.md", "Roster vs vanilla"]]],
   ["Region tags", [["/tags.md", "All reference tables"], ["/tags/terrain.md", "Terrain"],
