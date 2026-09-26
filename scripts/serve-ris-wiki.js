@@ -562,27 +562,22 @@ body{margin:0;background:var(--bg);color:var(--fg);
    the sidebar and every sticky table heading having to be told about it separately. */
 :root{--topbar:3.1rem}
 body.has-jump{--topbar:5.35rem}
-/* Compare units: the box under the bar, and picked rows. */
-.cmp{position:fixed;top:calc(var(--topbar) + .5rem);left:50%;transform:translateX(-50%);z-index:19;
-  width:min(60rem, calc(100% - 2rem));max-height:70vh;display:flex;flex-direction:column;
-  background:var(--panel);border:1px solid var(--acc);border-radius:10px;box-shadow:var(--shadow);font-size:.9rem}
-.cmp[hidden]{display:none}
-.cmp-h{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;padding:.5rem .8rem;border-bottom:1px solid var(--line)}
-.cmp-h span{color:var(--dim)}
-.cmp-h button:first-of-type{margin-left:auto}
-.cmp button{background:transparent;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:.15rem .55rem;cursor:pointer;font:inherit}
-.cmp button:hover{border-color:var(--acc)}
-.cmp.folded .cmp-scroll{display:none}
-.cmp-scroll{overflow:auto}
-.cmp table{margin:0;width:100%;border-collapse:collapse}
-.cmp th,.cmp td{padding:.3rem .7rem;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
-.cmp thead th{position:sticky;top:0;background:var(--panel);z-index:1}
-.cmp thead img{vertical-align:middle;border-radius:3px}
-.cmp tbody th{color:var(--dim);font-weight:500;white-space:nowrap}
-.cmp td.cmp-best{color:var(--acc);font-weight:700}
-.cmp .cmp-x{padding:0 .4rem;margin-left:.3rem}
+/* Compare units: picked rows pinned at the top of the table (or a small table at the top of
+   the page), and the picked rows themselves marked where they sit. */
 tr[data-unit],td[data-unit]{cursor:pointer}
 tr.cmp-on>td,td.cmp-on{background:var(--acc-soft)}
+tr.cmp-pin>td{background:var(--raised);border-bottom:1px solid var(--line)}
+tr.cmp-pin:last-of-type>td{border-bottom:2px solid var(--acc)}
+tr.cmp-cap>td{background:var(--acc-soft);font-size:.88rem;padding:.35rem .7rem}
+tr.cmp-cap span{color:var(--dim);margin-left:.4rem}
+td.cmp-best{color:var(--acc);font-weight:700}
+.cmp-x,.cmp-clear{background:transparent;color:var(--fg);border:1px solid var(--line);border-radius:6px;cursor:pointer;font:inherit}
+.cmp-x{padding:0 .4rem;margin-left:.4rem;line-height:1.3}
+.cmp-clear{padding:.05rem .55rem;margin-left:.6rem}
+.cmp-x:hover,.cmp-clear:hover{border-color:var(--acc)}
+.cmp-panel{overflow-x:auto;margin:0 0 1rem;border:1px solid var(--line);border-radius:8px}
+.cmp-panel table{margin:0}
+.cmp-panel thead th{position:static;top:auto}
 .cmp-btn{display:inline-block;margin:0 0 .8rem;background:var(--panel);color:var(--fg);border:1px solid var(--acc);border-radius:6px;padding:.3rem .8rem;cursor:pointer;font:inherit}
 .cmp-hint{color:var(--dim);font-size:.85rem;margin:.2rem 0 .4rem}
 .top{position:sticky;top:0;z-index:20;background:var(--tyrian);border-bottom:1px solid var(--tyrian-deep);
@@ -1180,23 +1175,28 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
 })();
 
 // ── compare units ────────────────────────────────────────────────────────────
-// Asked for 2026-09-26: click any two units and see them side by side in a box at the top.
-// A click on a unit's row (anywhere but a link) picks it; a unit's own page has a button. The
-// picks live in localStorage, so one can come from the roster and one from a faction page. The
-// numbers are units/compare.json (gen-ris-unit-pages.js), fetched on the first pick. Written
-// without backticks, dollar-braces or backslashes: this script sits inside a template literal.
+// Asked for 2026-09-26; reworked the same night on the team's word ("at the top as an entry
+// instead of a popup"). Click a unit's row (anywhere but a link) to pick it. Picked units are
+// pinned as rows at the TOP of every stat table on the page, in that table's own columns, with
+// the better value in each column in gold. A page whose unit tables have no stat columns (a
+// faction's recruit tables, a unit's own page) gets the same rows in a small table at the top
+// of the page instead. Picks live in localStorage, so they follow the reader between pages; a
+// unit not in this table is built from units/compare.json (gen-ris-unit-pages.js).
+// Written without backticks, dollar-braces or backslashes: this script sits inside a template
+// literal.
 (function(){
-  var KEY = "ris-compare", MAX = 4, UNIT = /(^|[/])units[/]([a-z0-9_]+)[.](md|html)([#?]|$)/;
+  var KEY = "ris-compare", MAX = 6, UNIT = /(^|[/])units[/]([a-z0-9_]+)[.](md|html)([#?]|$)/;
   var js = document.querySelector('script[src*="wiki.js"]');
   var ROOT = js ? js.getAttribute("src").split("wiki.js")[0] : "/";
   var EXT = /[.]html$/.test(location.pathname) || location.protocol === "file:" ? ".html" : ".md";
+  var main = document.querySelector("main");
+  if (!main) return;
   var data = null, loading = null;
   function picks(){ try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } }
   function save(p){ try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) {} }
   function load(){
-    if (data || loading) return loading;
-    loading = fetch(ROOT + "units/compare.json").then(function(r){ return r.json(); }).then(function(d){ data = d; return d; })
-      .catch(function(){ data = {}; return data; });
+    if (!loading) loading = fetch(ROOT + "units/compare.json").then(function(r){ return r.json(); })
+      .then(function(d){ data = d; return d; }).catch(function(){ data = {}; return data; });
     return loading;
   }
   function esc(t){ return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
@@ -1205,89 +1205,152 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
     if (i >= 0) p.splice(i, 1); else { p.push(slug); if (p.length > MAX) p.shift(); }
     save(p); render();
   }
-  // Rows: [label, key, which way is better (1 higher, -1 lower, 0 neither), suffix]
-  var ROWS = [["Class", "cls", 0], ["Men", "men", 0], ["Attack", "attack", 1], ["Charge bonus", "charge", 1],
-    ["Secondary attack", "sec", 1], ["Weapon", "type", 0], ["Range", "range", 1], ["Ammunition", "ammo", 1],
-    ["Defence", "def", 1], ["Armour", "armour", 1], ["Defence skill", "skill", 1], ["Shield", "shield", 1],
-    ["Hit points", "hp", 1], ["Morale", "morale", 1], ["Discipline", "disc", 0], ["Training", "train", 0],
-    ["Mount", "mount", 0], ["Cost", "cost", -1, " dn"], ["Upkeep", "upkeep", -1, " dn"], ["Turns to recruit", "turns", -1],
-    ["In battle", "abil", 0]];
-  var box = document.createElement("div");
-  box.className = "cmp"; box.hidden = true;
-  document.body.appendChild(box);
-  function render(){
-    var p = picks();
-    document.querySelectorAll("main [data-unit]").forEach(function(el){ el.classList.toggle("cmp-on", p.indexOf(el.getAttribute("data-unit")) >= 0); });
-    var btn = document.querySelector(".cmp-btn");
-    if (btn) btn.textContent = p.indexOf(btn.getAttribute("data-unit")) >= 0 ? "Remove from comparison" : "Compare with another unit";
-    if (!p.length) { box.hidden = true; return; }
-    box.hidden = false;
-    if (!data) { box.innerHTML = '<div class="cmp-h">Loading…</div>'; load().then(render); return; }
-    var us = p.map(function(s){ return [s, data[s]]; }).filter(function(x){ return x[1]; });
-    var head = '<div class="cmp-h"><b>Comparing ' + us.length + ' unit' + (us.length === 1 ? "" : "s") + '</b>'
-      + (us.length < 2 ? ' <span>Click another unit’s row, or use the button on a unit’s page.</span>' : "")
-      + '<button type="button" class="cmp-min" title="Fold">' + (box.classList.contains("folded") ? "Show" : "Fold") + '</button>'
-      + '<button type="button" class="cmp-clear">Clear</button></div>';
-    var cols = us.map(function(x){
-      return '<th><a href="' + ROOT + 'units/' + x[0] + EXT + '"><img src="' + ROOT + 'cards/' + x[0] + '.png" alt="" width="35" height="48" onerror="this.remove()"> '
-        + esc(x[1].n) + '</a> <button type="button" class="cmp-x" data-unit="' + x[0] + '" title="Remove">×</button></th>';
-    }).join("");
-    var body = ROWS.map(function(r){
-      var vals = us.map(function(x){ var v = x[1][r[1]]; return Array.isArray(v) ? (v.length ? v.join(" · ") : null) : v; });
-      if (vals.every(function(v){ return v == null; })) return "";
-      var nums = vals.filter(function(v){ return typeof v === "number"; });
-      var best = r[2] && nums.length > 1 ? (r[2] > 0 ? Math.max.apply(null, nums) : Math.min.apply(null, nums)) : null;
-      var allSame = nums.length > 1 && nums.every(function(v){ return v === nums[0]; });
-      return '<tr><th>' + r[0] + '</th>' + vals.map(function(v){
-        var good = best != null && !allSame && v === best;
-        return '<td' + (good ? ' class="cmp-best"' : "") + '>' + (v == null ? "—" : esc(typeof v === "number" ? v.toLocaleString("en-US") + (r[3] || "") : v)) + '</td>';
-      }).join("") + '</tr>';
-    }).join("");
-    box.innerHTML = head + '<div class="cmp-scroll"><table><thead><tr><th></th>' + cols + '</tr></thead><tbody>' + body + '</tbody></table></div>';
-  }
-  box.addEventListener("click", function(e){
-    var t = e.target;
-    if (t.classList.contains("cmp-x")) toggle(t.getAttribute("data-unit"));
-    else if (t.classList.contains("cmp-clear")) { save([]); render(); }
-    else if (t.classList.contains("cmp-min")) { box.classList.toggle("folded"); t.textContent = box.classList.contains("folded") ? "Show" : "Fold"; }
-  });
-  // Every table row that leads to a unit page can be picked.
-  var any = false;
-  // A row holding several units side by side (a dealt table) is picked per cell: each cell
-  // belongs to the unit linked in it or in the nearest cell before it.
+  // Column heading -> [compare.json key, better: 1 higher, -1 lower, 0 neither, suffix]
+  var COLS = { "class": ["cls", 0], "men": ["men", 0], "attack": ["attack", 1], "charge": ["charge", 1],
+    "charge bonus": ["charge", 1], "defence": ["def", 1], "armour": ["armour", 1], "shield": ["shield", 1],
+    "morale": ["morale", 1], "hit points": ["hp", 1], "cost": ["cost", -1], "upkeep": ["upkeep", -1],
+    "range": ["range", 1], "ammunition": ["ammo", 1], "turns": ["turns", -1] };
+  // The columns the page-top table shows when a page has no stat table of its own.
+  var PANEL = [["", "card"], ["Unit", "unit"], ["Class", "class"], ["Men", "men"], ["Attack", "attack"], ["Charge", "charge"],
+    ["Defence", "defence"], ["Armour", "armour"], ["Shield", "shield"], ["Morale", "morale"], ["Hit points", "hit points"],
+    ["Range", "range"], ["Cost", "cost"], ["Upkeep", "upkeep"]];
+  function numOf(t){ var s = String(t).replace(/[^0-9.-]/g, ""); return s === "" || s === "-" ? null : parseFloat(s); }
+  function fmt(v, key){ return v == null ? "" : typeof v === "number" ? v.toLocaleString("en-US") + (key === "cost" || key === "upkeep" ? " dn" : "") : esc(v); }
+
+  // Tables: which rows are units, and which have stat columns to pin into.
   var slugIn = function(el){
     var links = el.querySelectorAll("a[href]");
     for (var i = 0; i < links.length; i++){ var m = UNIT.exec(links[i].getAttribute("href")); if (m) return m[2]; }
     return null;
   };
-  document.querySelectorAll("main table tbody tr").forEach(function(tr){
-    var cells = [].slice.call(tr.children), slugs = {};
-    cells.forEach(function(td){ var s = slugIn(td); if (s) slugs[s] = 1; });
-    var n = Object.keys(slugs).length;
-    if (!n) return;
-    any = true;
-    if (n === 1) { tr.setAttribute("data-unit", Object.keys(slugs)[0]); tr.title = "Click to compare"; return; }
-    var cur = null;
-    cells.forEach(function(td){ cur = slugIn(td) || cur; if (cur) { td.setAttribute("data-unit", cur); td.title = "Click to compare"; } });
+  var statTables = [], any = false;
+  main.querySelectorAll("table").forEach(function(tbl){
+    if (tbl.closest(".cmp-panel")) return;
+    var tb = tbl.tBodies[0];
+    if (!tb) return;
+    var perRow = 0;
+    [].slice.call(tb.rows).forEach(function(tr){
+      var cells = [].slice.call(tr.cells), slugs = {};
+      cells.forEach(function(td){ var s = slugIn(td); if (s) slugs[s] = 1; });
+      var n = Object.keys(slugs).length;
+      if (!n) return;
+      any = true;
+      if (n === 1) { tr.setAttribute("data-unit", Object.keys(slugs)[0]); tr.title = "Click to compare"; perRow++; return; }
+      // A row holding several units side by side (a dealt table) is picked per cell.
+      var cur = null;
+      cells.forEach(function(td){ cur = slugIn(td) || cur; if (cur) { td.setAttribute("data-unit", cur); td.title = "Click to compare"; } });
+    });
+    var head = tbl.tHead && tbl.tHead.rows[0];
+    if (!perRow || !head) return;
+    var heads = [].slice.call(head.cells).map(function(th){ return th.textContent.trim().toLowerCase(); });
+    if (heads.some(function(h){ return COLS[h] && COLS[h][1]; })) statTables.push({ tbl: tbl, heads: heads });
   });
+  if (!any && !UNIT.test(location.pathname)) return;
+
+  // One pinned row: the table's own row for the unit when it has one, else one built from
+  // compare.json in the table's columns. Cells are marked with the key they show.
+  function pinRow(slug, heads, own){
+    var d = data && data[slug], tr;
+    if (own) tr = own.cloneNode(true);
+    else {
+      tr = document.createElement("tr");
+      heads.forEach(function(h, i){
+        var td = document.createElement("td"), c = COLS[h];
+        if (h === "" && i === 0) td.innerHTML = '<a href="' + ROOT + "units/" + slug + EXT + '"><img src="' + ROOT + "cards/" + slug + '.png" alt="" width="35" height="48" onerror="this.remove()"></a>';
+        else if (h === "unit") td.innerHTML = '<a href="' + ROOT + "units/" + slug + EXT + '">' + esc(d ? d.n : slug) + "</a>";
+        else if (c && d) { td.innerHTML = fmt(d[c[0]], c[0]); if (typeof d[c[0]] === "number") td.className = "right"; }
+        tr.appendChild(td);
+      });
+    }
+    tr.removeAttribute("title");
+    tr.className = "cmp-pin";
+    tr.setAttribute("data-pin", slug);
+    tr.removeAttribute("data-unit");
+    [].slice.call(tr.cells).forEach(function(td){ td.removeAttribute("data-unit"); td.removeAttribute("title"); });
+    // The remove button goes after the unit's name.
+    var nameCell = [].slice.call(tr.cells).filter(function(td){ return slugIn(td) && !td.querySelector("img"); })[0] || tr.cells[1] || tr.cells[0];
+    var x = document.createElement("button");
+    x.type = "button"; x.className = "cmp-x"; x.title = "Stop comparing"; x.textContent = "×"; x.setAttribute("data-unit", slug);
+    nameCell.appendChild(x);
+    return tr;
+  }
+  // Gold for the best value in each column of the pinned rows.
+  function markBest(rows, heads){
+    heads.forEach(function(h, i){
+      var c = COLS[h];
+      if (!c || !c[1] || rows.length < 2) return;
+      var vals = rows.map(function(r){ return r.cells[i] ? numOf(r.cells[i].textContent) : null; });
+      var nums = vals.filter(function(v){ return v != null; });
+      if (nums.length < 2 || nums.every(function(v){ return v === nums[0]; })) return;
+      var best = c[1] > 0 ? Math.max.apply(null, nums) : Math.min.apply(null, nums);
+      rows.forEach(function(r, k){ if (vals[k] === best && r.cells[i]) r.cells[i].classList.add("cmp-best"); });
+    });
+  }
+  function capRow(n, cols){
+    var tr = document.createElement("tr");
+    tr.className = "cmp-pin cmp-cap";
+    tr.innerHTML = '<td colspan="' + cols + '"><b>Comparing ' + n + " unit" + (n === 1 ? "" : "s") + "</b>"
+      + (n < 2 ? " <span>Click another unit’s row to add it.</span>" : " <span>Gold is the better value.</span>")
+      + ' <button type="button" class="cmp-clear">Clear</button></td>';
+    return tr;
+  }
+  var panel = null;
+  function render(){
+    var p = picks();
+    main.querySelectorAll("[data-unit]").forEach(function(el){ if (!el.classList.contains("cmp-x")) el.classList.toggle("cmp-on", p.indexOf(el.getAttribute("data-unit")) >= 0); });
+    var btn = document.querySelector(".cmp-btn");
+    if (btn) btn.textContent = p.indexOf(btn.getAttribute("data-unit")) >= 0 ? "Stop comparing this unit" : "Compare with another unit";
+    main.querySelectorAll("tr.cmp-pin").forEach(function(tr){ tr.remove(); });
+    if (panel) { panel.remove(); panel = null; }
+    if (!p.length) return;
+    if (!data) { load().then(render); return; }
+    if (statTables.length) {
+      statTables.forEach(function(t){
+        var tb = t.tbl.tBodies[0], rows = [];
+        p.forEach(function(slug){
+          var own = tb.querySelector('tr[data-unit="' + slug + '"]');
+          if (own || data[slug]) rows.push(pinRow(slug, t.heads, own));
+        });
+        markBest(rows, t.heads);
+        var first = tb.firstChild;
+        tb.insertBefore(capRow(rows.length, t.heads.length), first);
+        rows.forEach(function(r){ tb.insertBefore(r, first); });
+      });
+      return;
+    }
+    // No stat table here: the same rows in a small table at the top of the page.
+    var heads = PANEL.map(function(c){ return c[1] === "card" ? "" : c[1]; });
+    var rows = p.filter(function(s){ return data[s]; }).map(function(s){ return pinRow(s, heads, null); });
+    markBest(rows, heads);
+    panel = document.createElement("div");
+    panel.className = "cmp-panel";
+    panel.innerHTML = '<table><thead><tr>' + PANEL.map(function(c){ return "<th>" + c[0] + "</th>"; }).join("") + "</tr></thead><tbody></tbody></table>";
+    var tb = panel.querySelector("tbody");
+    tb.appendChild(capRow(rows.length, PANEL.length));
+    rows.forEach(function(r){ tb.appendChild(r); });
+    var top = btn || main.querySelector("h1");
+    if (top) top.insertAdjacentElement("afterend", panel); else main.insertBefore(panel, main.firstChild);
+  }
   document.addEventListener("click", function(e){
-    var el = e.target.closest && e.target.closest("[data-unit]");
-    if (!el || el.closest(".cmp") || el.classList.contains("cmp-btn") || e.target.closest("a, button, input, select, summary")) return;
+    var t = e.target;
+    if (t.classList && t.classList.contains("cmp-x")) { e.preventDefault(); toggle(t.getAttribute("data-unit")); return; }
+    if (t.classList && t.classList.contains("cmp-clear")) { save([]); render(); return; }
+    var el = t.closest && t.closest("[data-unit]");
+    if (!el || el.closest(".cmp-pin") || el.classList.contains("cmp-btn") || t.closest("a, button, input, select, summary")) return;
     toggle(el.getAttribute("data-unit"));
   });
   // A unit's own page: a button under the title.
-  var own = UNIT.exec(location.pathname);
-  var h1 = document.querySelector("main h1");
-  if (own && h1 && own[2] !== "index") {
+  var own = UNIT.exec(location.pathname), h1 = main.querySelector("h1");
+  if (own && h1) {
     var b = document.createElement("button");
     b.type = "button"; b.className = "cmp-btn"; b.setAttribute("data-unit", own[2]);
     b.addEventListener("click", function(){ toggle(own[2]); });
     h1.insertAdjacentElement("afterend", b);
   }
   if (any && !picks().length) {
-    var t0 = document.querySelector("main table tbody [data-unit]");
+    var t0 = main.querySelector("table tbody [data-unit]");
     var hint = document.createElement("p");
-    hint.className = "cmp-hint"; hint.textContent = "Tip: click a unit’s row (not its name) to compare it with another.";
+    hint.className = "cmp-hint"; hint.textContent = "Tip: click a unit’s row (not its name) to pin it to the top of the table and compare it with others.";
     var tbl = t0 && t0.closest("table"), host = tbl && (tbl.closest(".tw") || tbl);
     if (host && host.parentNode) host.parentNode.insertBefore(hint, host);
   }
