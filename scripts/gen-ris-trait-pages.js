@@ -695,7 +695,7 @@ ${PAGE_ROWS.map(([f, title, what]) => `| [**${title}**](traits/${f}) | ${num((PA
 ${/* Every trait by name, a fold per letter (asked for 2026-09-26: the list itself, not a
    link per letter); the letter's own page stays one click away. */ ""}${LETTERS.map((L) => {
   const list = PAGES.get(L).slice().sort((a, b) => a.display.localeCompare(b.display));
-  return `<details>\n<summary><b>${L.toUpperCase()}</b> · ${list.length} trait${list.length === 1 ? "" : "s"}</summary>\n\n${list.map((t) => `[${t.display}](traits/${L}.md#${TRAIT_LINKS.get(t.name).anchor})`).join(" · ")}\n\n[All of ${L.toUpperCase()} on one page](traits/${L}.md)\n\n</details>`;
+  return `<details>\n<summary>${L.toUpperCase()} · ${list.length} trait${list.length === 1 ? "" : "s"}</summary>\n\n${list.map((t) => `[${t.display}](traits/${L}.md#${TRAIT_LINKS.get(t.name).anchor})`).join(" · ")}\n\n[All of ${L.toUpperCase()} on one page](traits/${L}.md)\n\n</details>`;
 }).join("\n\n")}
 
 Who the traits appear on: ${Object.entries(charCounts).sort((a, b) => b[1] - a[1]).map(([c, n]) => `**${num(n)}** on ${charName(c)}`).join(" · ")}.

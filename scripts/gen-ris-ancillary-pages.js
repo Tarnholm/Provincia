@@ -554,7 +554,7 @@ around him, and members can be traded between characters who meet.
 
 ${/* Every member by name, a fold per letter, as on the trait index. */ ""}${LETTERS.map((L) => {
   const list = PAGES.get(L).slice().sort((a, b) => a.display.localeCompare(b.display));
-  return `<details>\n<summary><b>${L.toUpperCase()}</b> · ${list.length} member${list.length === 1 ? "" : "s"}</summary>\n\n${list.map((a) => `[${a.display}](ancillaries/${L}.md#${ANC_LINKS.get(a.name).anchor})`).join(" · ")}\n\n[All of ${L.toUpperCase()} on one page](ancillaries/${L}.md)\n\n</details>`;
+  return `<details>\n<summary>${L.toUpperCase()} · ${list.length} member${list.length === 1 ? "" : "s"}</summary>\n\n${list.map((a) => `[${a.display}](ancillaries/${L}.md#${ANC_LINKS.get(a.name).anchor})`).join(" · ")}\n\n[All of ${L.toUpperCase()} on one page](ancillaries/${L}.md)\n\n</details>`;
 }).join("\n\n")}
 
 `;
