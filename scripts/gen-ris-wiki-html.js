@@ -183,7 +183,7 @@ render();
   // and a hardcoded scale would peg every bar at full.
   const maxOf = (i) => rows.reduce((m, r) => (typeof r[i] === "number" && r[i] > m ? r[i] : m), 0);
   const columns = [
-    { label: "", thumb: true }, { label: "Unit" }, { label: "Class" },
+    { label: "", thumb: true, width: "3.4rem" }, { label: "Unit", width: "16rem" }, { label: "Class", width: "7rem" },
     { label: "Men", num: true }, { label: "Attack", num: true, bar: maxOf(4) },
     { label: "Defence", num: true, bar: maxOf(5) }, { label: "Morale", num: true, bar: maxOf(6) },
     { label: "Cost", num: true }, { label: "Upkeep", num: true },
@@ -216,7 +216,7 @@ render();
     ];
   });
   const columns = [
-    { label: "Region" }, { label: "Settlement" }, { label: "Held by" }, { label: "Size" },
+    { label: "Region", width: "13rem" }, { label: "Settlement", width: "13rem" }, { label: "Held by", width: "13rem" }, { label: "Size", width: "7rem" },
     { label: "Population", num: true }, { label: "Goods", num: true }, { label: "Buildings", num: true },
   ];
   fs.writeFileSync(path.join(OUT, "regions.html"),
@@ -254,7 +254,7 @@ render();
     rows.push([{ text: f.text, href: f.href, sym: f.sym }, culture, numOf(c[1]), numOf(c[2]), numOf(c[3])]);
   }
   const columns = [
-    { label: "Faction" }, { label: "Culture" }, { label: "Provinces", num: true },
+    { label: "Faction", width: "16rem" }, { label: "Culture", width: "11rem" }, { label: "Provinces", num: true },
     { label: "Characters", num: true }, { label: "Units", num: true },
   ];
   fs.writeFileSync(path.join(OUT, "factions.html"),
