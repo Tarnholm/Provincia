@@ -225,6 +225,7 @@ function outNameOf(rootRel) {
   return RENAMED.get(rootRel) || rootRel;
 }
 
+const ASSET_FROM = new Map(); // first page and link text behind each asset, for the folder note
 const assetRefs = new Map();   // wiki-relative asset path -> reference count
 const missing = new Map();     // referenced path -> [pages that reference it]
 const notedMissing = (rootRel, fromRel) => {
@@ -245,11 +246,11 @@ function mapUrl(fromRel, raw) {
   const rootRel = toRootRel(fromRel, decodeURIComponent(bare));
   // Produced by this script rather than copied from the wiki, so their absence from the
   // source directory is not a missing reference.
-  const produced = ["search.html", "index.html", "search-index.js", "wiki.css", "wiki.js"].includes(rootRel)
+  const produced = ["search.html", "index.html", "search-index.js", "search-text.js", "wiki.css", "wiki.js"].includes(rootRel)
     || PRODUCED_HERE.has(rootRel);
   if (!produced && !fs.existsSync(path.join(WIKI, rootRel))) notedMissing(rootRel, fromRel);
   else if (!produced && !/\.(md|html)$/i.test(rootRel)) {
-    assetRefs.set(rootRel, (assetRefs.get(rootRel) || 0) + 1);
+    assetRefs.set(rootRel, (assetRefs.get(rootRel) || 0) + 1); if (!ASSET_FROM.has(rootRel)) ASSET_FROM.set(rootRel, `${fromRel}: ${raw}`);
   }
 
   const out = outNameOf(rootRel);
@@ -589,6 +590,13 @@ for (const rel of staticHtml) {
     embeddedRefs++;
     return `"${k}":"${mapUrl(rel, v)}"`;
   });
+  // The world map's key carries its links in plain arrays (["Arab","tags/recruitment-zones.md#arab",73]),
+  // with no key in front, and those still pointed at .md: a 404 on the site (2026-09-26).
+  // Only there: the sortable views carry other bare .md strings (script config) that are not links.
+  if (rel === "world-map.html") html = html.replace(/"((?:[\w%.-]+\/)+[\w%.-]+\.md(?:#[^"]*)?)"/g, (m, v) => {
+    embeddedRefs++;
+    return `"${mapUrl(rel, v)}"`;
+  });
   // The views are rendered in the wiki's own shell now, so they get the same treatment as a
   // markdown page: shared wiki.css and wiki.js instead of the inline copies.
   // The views are rendered by gen-ris-wiki-html.js, in a process that does not know the team's
@@ -619,28 +627,92 @@ const searchRows = INDEX.map((e) => {
 });
 fs.writeFileSync(wrote(path.join(SITE, "search-index.js")),
   `window.RIS_PAGES=${JSON.stringify(searchRows)};\n`);
+// Full-text words (asked for 2026-09-26: "roman equites" found nothing, because the unit's page
+// is titled differently and the words are only in its text). An inverted index: every word of
+// three letters or more, with the pages it is on, as base-36 gaps between page numbers (the
+// order of RIS_PAGES). Words on more than 30% of pages ("the", "units", "requires") carry no
+// signal and are listed apart, so a query can skip them instead of finding nothing. About
+// 1.8 MB raw, a third of that as served; loaded only by search.html, after the titles.
+{
+  const WORD = /[a-zÀ-ɏ0-9]{3,}/g;
+  const inv = new Map();
+  INDEX.forEach((e, i) => {
+    const rootRel = e.rel.replace(/^\//, "");
+    let md = e.md;
+    if (md == null) { try { md = fs.readFileSync(path.join(WIKI, rootRel), "utf8"); } catch { md = ""; } }
+    const text = `${e.title} ${md}`.replace(/<[^>]+>/g, " ").replace(/\]\([^)]*\)/g, "]").toLowerCase();
+    for (const w of new Set(text.match(WORD) || [])) {
+      if (!inv.has(w)) inv.set(w, []);
+      inv.get(w).push(i);
+    }
+  });
+  const common = [], parts = [];
+  for (const [w, list] of inv) {
+    if (list.length > INDEX.length * 0.3) { common.push(w); continue; }
+    let prev = 0;
+    parts.push(`${w}:${list.map((x) => { const d = x - prev; prev = x; return d.toString(36); }).join(",")}`);
+  }
+  fs.writeFileSync(wrote(path.join(SITE, "search-text.js")),
+    `window.RIS_WORDS=${JSON.stringify(parts.join(";"))};\nwindow.RIS_COMMON=${JSON.stringify(common)};\n`);
+  note(`search: full text over ${n(inv.size)} words (${n(common.length)} too common to index), search-text.js ${n(fs.statSync(path.join(SITE, "search-text.js")).size)} bytes`);
+}
 
 const SEARCH_BODY = `<h1>Search</h1>
 <p id="q-note">Type in the box above and press Enter.</p>
 <ul class="res" id="q-res"></ul>
 <script src="search-index.js"></script>
+<script src="search-text.js"></script>
 <script>
 (function(){
-  // Ranked the same way the server ranked: exact title, then prefix, then substring, then
-  // path. Same order in, same order out, so a reader who used the preview sees the same list.
+  // Titles first (exact, then prefix, then substring, then path), then pages whose TEXT has
+  // every word typed (search-text.js). A word may be the start of a longer one ("equit" finds
+  // "equites"); words on most pages are skipped rather than failing the search.
+  var WORDS = null, COMMON = {};
+  function words(){
+    if (WORDS || !window.RIS_WORDS) return WORDS;
+    WORDS = {};
+    window.RIS_WORDS.split(";").forEach(function(p){ var i = p.indexOf(":"); WORDS[p.slice(0, i)] = p.slice(i + 1); });
+    (window.RIS_COMMON || []).forEach(function(w){ COMMON[w] = 1; });
+    return WORDS;
+  }
+  function pagesOf(w){
+    var out = {}, W = words(), keys = W ? Object.keys(W) : [];
+    for (var k = 0; k < keys.length; k++){
+      if (keys[k].indexOf(w) !== 0) continue;
+      var prev = 0;
+      W[keys[k]].split(",").forEach(function(d){ prev += parseInt(d, 36); out[prev] = 1; });
+    }
+    return out;
+  }
   function search(q){
-    var needle = q.trim().toLowerCase(), hits = [];
+    var needle = q.trim().toLowerCase(), hits = [], seen = {};
     if (!needle) return hits;
+    var terms = needle.split(/[^a-z0-9À-ɏ]+/).filter(function(t){ return t.length >= 3 && !COMMON[t]; });
+    words();
+    terms = terms.filter(function(t){ return !COMMON[t]; });
     for (var i = 0; i < window.RIS_PAGES.length; i++){
       var e = window.RIS_PAGES[i], t = e[0].toLowerCase(), s = -1;
       if (t === needle) s = 0;
       else if (t.indexOf(needle) === 0) s = 1;
       else if (t.indexOf(needle) >= 0) s = 2;
-      else if (e[1].toLowerCase().indexOf(needle) >= 0) s = 3;
-      if (s >= 0) hits.push([s, e]);
+      else if (terms.length && terms.every(function(x){ return t.indexOf(x) >= 0; })) s = 3;
+      else if (e[1].toLowerCase().indexOf(needle) >= 0) s = 4;
+      if (s >= 0) { hits.push([s, e]); seen[i] = 1; }
+    }
+    if (terms.length && WORDS){
+      var sets = terms.map(pagesOf), first = sets[0];
+      Object.keys(first).forEach(function(id){
+        if (seen[id]) return;
+        if (!sets.every(function(set){ return set[id]; })) return;
+        // Pages whose title or address holds more of the words come first: "roman equites"
+        // puts units/roman_equites_early ("Equites (Early)") above the pages that only mention it.
+        var p = window.RIS_PAGES[id], where = (p[0] + " " + p[1]).toLowerCase();
+        var inName = terms.filter(function(x){ return where.indexOf(x) >= 0; }).length;
+        hits.push([6 - inName / terms.length, p]);
+      });
     }
     hits.sort(function(a,b){ return a[0]-b[0] || a[1][0].localeCompare(b[1][0]); });
-    return hits.slice(0, 200).map(function(h){ return h[1]; });
+    return hits.slice(0, 300).map(function(h){ return [h[1], h[0] >= 5]; });
   }
   function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
   function term(){
@@ -654,13 +726,14 @@ const SEARCH_BODY = `<h1>Search</h1>
     if (box) box.value = q;
     if (!q){ note.textContent = "Type in the box above and press Enter."; res.innerHTML = ""; return; }
     var hits = search(q);
-    document.title = "Search: " + q + " — RIS wiki";
+    document.title = "Search: " + q + " · RIS wiki";
     note.innerHTML = hits.length
-      ? hits.length + (hits.length === 200 ? "+" : "") + " page" + (hits.length === 1 ? "" : "s") + " matching <code>" + esc(q) + "</code>."
+      ? hits.length + (hits.length === 300 ? "+" : "") + " page" + (hits.length === 1 ? "" : "s") + " matching <code>" + esc(q) + "</code>."
       : "Nothing matches <code>" + esc(q) + "</code>.";
-    res.innerHTML = hits.map(function(h){
-      return '<li><a href="' + h[1] + '">' + esc(h[0]) + '</a> <span class="sec">' + esc(h[2]) + '</span></li>';
-    }).join("");
+    var li = function(h){ return '<li><a href="' + h[0][1] + '">' + esc(h[0][0]) + '</a> <span class="sec">' + esc(h[0][2]) + '</span></li>'; };
+    var byTitle = hits.filter(function(h){ return !h[1]; }), byText = hits.filter(function(h){ return h[1]; });
+    res.innerHTML = byTitle.map(li).join("")
+      + (byText.length ? '<li class="res-h"><b>' + (byTitle.length ? "Also in the text of" : "In the text of") + '</b></li>' + byText.map(li).join("") : "");
   }
   addEventListener("hashchange", run);
   run();
@@ -694,6 +767,8 @@ const realNameOf = (rootRel) => {
 for (const rootRel of assetRefs.keys()) {
   const top = rootRel.split("/")[0];
   const src = path.join(WIKI, rootRel);
+  // A folder is never an asset (a link to "regions/" means the index, not the directory).
+  if (fs.statSync(src).isDirectory()) { console.log(`  skipped a link to the folder ${rootRel}/ (from ${ASSET_FROM.get(rootRel) || "?"})`); continue; }
   const size = fs.statSync(src).size;
   if (!realNameOf(rootRel)) {
     caseMismatch++;

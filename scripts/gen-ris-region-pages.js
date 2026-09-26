@@ -699,7 +699,7 @@ const FARM_NOTE = "Fertility does not drive population growth in RIS. The engine
 // The `religion_present_<belief>` aliases near the top of the same file treat any of the four
 // tiers as "present", so the tier is about strength, not presence.
 const RELIGION_NOTE = "The number on a `rel_…` tag is a **1-4 strength tier, not a percentage**. " +
-  "RIS scales the `religious_belief` a region generates by it — `hinterland_region` grants 2/4/6/8 " +
+  "RIS scales the `religious_belief` a region generates by it: `hinterland_region` grants 2/4/6/8 " +
   "for tiers 1/2/3/4, and the government chains grant 4/8/12/16. " +
   "Any tier counts as the belief being present. The percentages on the People row are a " +
   "different thing entirely: they are the region's own ethnic shares and sum to 100.";
@@ -1021,9 +1021,9 @@ function recruitSection(rec, held) {
       byWhy.get(w).push(e);
     }
     const total = rec.later.length;
-    const inner = [`**${total} more ${total === 1 ? "unit is" : "units are"} raised here once something changes** — greyed out below, grouped by what each is waiting on.`]
+    const inner = [`**${total} more ${total === 1 ? "unit is" : "units are"} raised here once something changes**, greyed out below, grouped by what each is waiting on.`]
       .concat([...byWhy.entries()].sort((a, b) => b[1].length - a[1].length)
-        .map(([w, rows]) => `**Waiting on ${w}** — ${rows.length} ${rows.length === 1 ? "unit" : "units"}\n\n${unitTable(rows, true)}`))
+        .map(([w, rows]) => `**Waiting on ${w}** (${rows.length} ${rows.length === 1 ? "unit" : "units"})\n\n${unitTable(rows, true)}`))
       .join("\n\n");
     // Shown outright, not folded. This was a <details> whose opening tag and <summary> sat on
     // ONE line, which the local viewer does not recognise as a block, so "<details><summary>1
@@ -1044,7 +1044,7 @@ function recruitSection(rec, held) {
     const n = rec.build.length;
     const blocks = [...byAt.entries()].sort((a, b) => b[1].length - a[1].length)
       .map(([, rows]) => unitTable(rows, true));
-    out.push(`**${n} more ${n === 1 ? "unit" : "units"} once the building is up** — greyed out, with what each needs.\n\n`
+    out.push(`**${n} more ${n === 1 ? "unit" : "units"} once the building is up**, greyed out, with what each needs.\n\n`
       + maybeFold(`${n} ${n === 1 ? "unit" : "units"} this settlement raises once you build for them`,
         rec.build, blocks.join("\n\n")));
   }
@@ -1224,7 +1224,7 @@ for (const r of list) {
   // a fact and an invention.
   const ownerCulture = held ? cultureRef(FACTION_CULTURE[String(held.faction).toLowerCase()], "../") : null;
   const ownerPhrase = held
-    ? `${hasPage(held.faction) ? `[${facName(held.faction)}](../factions/${held.faction}.md)` : nonPlayableRef(held.faction)}${ownerCulture ? ` (${ownerCulture})` : ""}${held.capital ? " — **their capital**" : ""}`
+    ? `${hasPage(held.faction) ? `[${facName(held.faction)}](../factions/${held.faction}.md)` : nonPlayableRef(held.faction)}${ownerCulture ? ` (${ownerCulture})` : ""}${held.capital ? ", **their capital**" : ""}`
     : null;
 
   if (peopleLine) rows.push(`| People | ${peopleLine} |`);
@@ -1285,7 +1285,7 @@ ${mapImg}
 
 <div class="fmeta">
 
-**Its settlement is [${settleName}](${settleHref})**${ownerPhrase ? `, held at the campaign start by ${ownerPhrase}` : ""}. That page has the town —
+**Its settlement is [${settleName}](${settleHref})**${ownerPhrase ? `, held at the campaign start by ${ownerPhrase}` : ""}. That page has the town:
 its size, its population, what is built there and what it can raise. This one is the land.
 
 ${[glance, held ? null : `This region begins **independent**. If it revolts, the rebels are ${r.rebels}.`].filter(Boolean).join("\n\n")}
@@ -1404,10 +1404,10 @@ const idx = `# All regions and settlements
 
 ${index.length.toLocaleString("en-US")} regions, each with one settlement, every one held by a faction at the campaign start.
 ${capitals} settlements are a faction's capital, marked ★.
-The region is the land — terrain, fertility, trade goods; the settlement is the town — its size,
-population and buildings. Each has its own page.
+The region is the land (terrain, fertility, trade goods); the settlement is the town (its size,
+population and buildings). Each has its own page.
 
-Size is a rung on a ladder of ${Object.keys(SIZE_INDEX).length || 6}, and it decides what a settlement can build and raise —
+Size is a rung on a ladder of ${Object.keys(SIZE_INDEX).length || 6}, and it decides what a settlement can build and raise;
 each one links to [what that size does](sizes.md).
 
 | Region | Settlement | Held by | Size | Population | Goods | Buildings |

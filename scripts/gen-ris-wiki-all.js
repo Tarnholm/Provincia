@@ -14,6 +14,7 @@ const ORDER = [
   'gen-ris-revolt-pages.js',   // before reforms: reform pages link back to the revolts they follow or open
   'gen-ris-reform-pages.js',   // before factions and units: both link back to it
   'gen-ris-faction-pages.js',
+  'gen-ris-guides.js',         // after factions: reads their names; faction pages link to guides.md
   'gen-ris-unit-pages.js',
   'gen-ris-unit-cards.js',
   'gen-ris-building-pages.js',

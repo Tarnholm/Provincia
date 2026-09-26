@@ -13,6 +13,8 @@
 .wm-in img,.wm-in canvas{position:absolute;left:0;top:0;width:4080px;height:2800px;max-width:none;pointer-events:none}
 .wm-in canvas{opacity:.55;display:none}
 .wm.owners .wm-in canvas{display:block}
+.wm.iso .wm-in canvas{opacity:.75}
+.wm-leg .wm-note{flex-basis:100%}
 .wm-lab{position:absolute;transform:translate(6px,-50%);white-space:nowrap;color:#faf4e4;font-weight:600;font-size:var(--lf);
  text-shadow:0 0 3px #1c160f;pointer-events:none;display:none}
 .wm.names:not(.nonames) .wm-lab.on{display:block}
@@ -20,13 +22,24 @@
  padding:.45rem .65rem;font-size:.88rem;line-height:1.45;box-shadow:var(--shadow);display:none;z-index:3;max-width:18rem}
 .wm-tip img{width:20px;height:20px;vertical-align:middle;margin-right:.3rem}
 .wm-tip b{color:var(--acc)}
+.wm-bar select{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:.3rem .5rem;font:inherit}
+.wm-leg{display:flex;flex-wrap:wrap;gap:.3rem .45rem;margin:0 0 .6rem;font-size:.85rem;max-height:9.5rem;overflow:auto}
+.wm-leg button{display:flex;align-items:center;gap:.35rem;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:.15rem .5rem;cursor:pointer;font:inherit}
+.wm-leg button:hover{border-color:var(--acc)}
+.wm-leg button.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.wm-leg button.off{opacity:.45}
+.wm-leg i{display:inline-block;width:.9rem;height:.9rem;border-radius:3px;flex:none}
+.wm-leg small{color:var(--dim)}
+.wm-leg .wm-note{color:var(--dim);align-self:center}
 </style>
-<div class="wm-bar"><button type="button" id="wm-plus" title="Zoom in">+</button><button type="button" id="wm-minus" title="Zoom out">−</button><button type="button" id="wm-fit">Whole map</button><label><input type="checkbox" id="wm-own"> Faction colours</label><label><input type="checkbox" id="wm-names" checked> Settlement names</label><input type="search" id="wm-find" placeholder="Find a settlement or region…" list="wm-list" autocomplete="off"><datalist id="wm-list"></datalist></div>
+<div class="wm-bar"><button type="button" id="wm-plus" title="Zoom in">+</button><button type="button" id="wm-minus" title="Zoom out">−</button><button type="button" id="wm-fit">Whole map</button><label>Colour by <select id="wm-mode"><option value="">nothing</option><option value="faction">Faction</option></select></label><label><input type="checkbox" id="wm-names" checked> Settlement names</label><input type="search" id="wm-find" placeholder="Find a settlement or region…" list="wm-list" autocomplete="off"><datalist id="wm-list"></datalist></div>
+<div class="wm-leg" id="wm-leg" hidden></div>
 <div class="wm" id="wm"><div class="wm-in" id="wm-in"><img src="world-map/world.webp" alt="The campaign map" width="4080" height="2800"><canvas id="wm-cv" width="1020" height="700"></canvas></div><div class="wm-tip" id="wm-tip"></div></div>
 <img id="wm-ids" src="world-map/ids.png" alt="" hidden>
 <script>
 (function(){
 var DATA = __DATA__;
+var MODES = __MODES__;
 var WS = 4, MW = 1020, MH = 700;
 // Zoom cap: the terrain behind the picture has only two pixels per map pixel, so past about
 // 1.4 image pixels per screen pixel the browser only stretches it (reported as blurry).
@@ -75,18 +88,68 @@ function loadIds(){
     var p = g.getImageData(0, 0, MW, MH).data;
     ids = new Int16Array(MW * MH);
     for (var i = 0; i < MW * MH; i++) ids[i] = (p[i * 4] << 8 | p[i * 4 + 1]) - 1;
-    paintOwners();
+    paint();
   } catch (e) { ids = null; }
 }
 if (im.complete && im.naturalWidth) loadIds(); else im.addEventListener("load", loadIds);
-function paintOwners(){
+// Colour by: "faction" uses each holder's own colour; every other mode colours a region by its
+// value (its first, where it has several), and a click in the key shows one value alone.
+var mode = null, iso = -1, cols = [], HI = [235, 70, 30];
+function hsl(h, sa, l){ sa /= 100; l /= 100; var k = function(n){ return (n + h / 30) % 12; }, a = sa * Math.min(l, 1 - l);
+  return [0, 8, 4].map(function(n){ return Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)))); }); }
+function colours(m){
+  var c = [], n = m.order.length;
+  m.order.forEach(function(v, pos){
+    if (m.ord) { var t = n > 1 ? pos / (n - 1) : 1; c[v] = [Math.round(170 - 130 * t), Math.round(120 + 45 * t), Math.round(70 - 20 * t)]; }
+    else c[v] = hsl((pos * 137.508) % 360, 62, 52);
+  });
+  return c;
+}
+function colourOf(d){
+  if (!mode) return null;
+  if (mode === "faction") return d.c;
+  var v = d.m && d.m[mode.k];
+  if (!v || !v.length) return null;
+  // One value shown alone is painted in one strong colour, whatever its key colour, so a blue
+  // zone is not lost against the sea.
+  if (iso >= 0) return v.indexOf(iso) >= 0 ? HI : null;
+  return cols[v[0]];
+}
+function paint(){
+  box.classList.toggle("owners", !!mode); box.classList.toggle("iso", iso >= 0);
+  if (!ids || !mode) return;
   var cv = document.getElementById("wm-cv"), g = cv.getContext("2d"), o = g.createImageData(MW, MH);
+  var cache = DATA.map(function(d){ return d ? colourOf(d) : null; });
   for (var i = 0; i < MW * MH; i++) {
-    var d = ids[i] >= 0 ? DATA[ids[i]] : null;
-    if (d && d.c) { o.data[i * 4] = d.c[0]; o.data[i * 4 + 1] = d.c[1]; o.data[i * 4 + 2] = d.c[2]; o.data[i * 4 + 3] = 255; }
+    var c = ids[i] >= 0 ? cache[ids[i]] : null;
+    if (c) { o.data[i * 4] = c[0]; o.data[i * 4 + 1] = c[1]; o.data[i * 4 + 2] = c[2]; o.data[i * 4 + 3] = 255; }
   }
   g.putImageData(o, 0, 0);
 }
+var sel = document.getElementById("wm-mode"), leg = document.getElementById("wm-leg");
+MODES.forEach(function(m){ var op = document.createElement("option"); op.value = m.k; op.textContent = m.label; sel.appendChild(op); });
+function legend(){
+  if (!mode || mode === "faction") { leg.hidden = true; leg.innerHTML = ""; return; }
+  leg.hidden = false;
+  var note = iso >= 0 ? '<span class="wm-note">Showing only ' + esc(mode.vals[iso][0]) + (mode.vals[iso][1] ? ' (<a href="' + mode.vals[iso][1] + '">read about it</a>)' : "") + '. Click it again to show all.</span>'
+    : mode.multi ? '<span class="wm-note">A region with several is coloured by its first. Click a name to see all of it.</span>' : "";
+  leg.innerHTML = note + mode.order.map(function(v){
+    var c = iso === v ? HI : cols[v], val = mode.vals[v];
+    return '<button type="button" data-v="' + v + '" class="' + (iso === v ? "on" : iso >= 0 ? "off" : "") + '"><i style="background:rgb(' + c.join(",") + ')"></i>' + esc(val[0]) + ' <small>' + val[2] + '</small></button>';
+  }).join("");
+}
+leg.addEventListener("click", function(e){
+  var b = e.target.closest("button"); if (!b) return;
+  var v = +b.getAttribute("data-v"); iso = iso === v ? -1 : v; legend(); paint();
+});
+function setMode(k){
+  mode = k === "faction" ? "faction" : MODES.find(function(m){ return m.k === k; }) || null;
+  iso = -1; cols = mode && mode !== "faction" ? colours(mode) : [];
+  try { localStorage.setItem("ris-wm-mode", k); } catch (e) {}
+  legend(); paint();
+}
+sel.onchange = function(){ setMode(this.value); };
+try { var saved = localStorage.getItem("ris-wm-mode"); if (saved && [].some.call(sel.options, function(o){ return o.value === saved; })) { sel.value = saved; setMode(saved); } } catch (e) {}
 function regionAt(cx, cy){
   if (!ids) return null;
   var mx = Math.floor((cx - x) / s / WS), my = Math.floor((cy - y) / s / WS);
@@ -116,13 +179,18 @@ box.addEventListener("pointermove", function(e){
   }
   var d = regionAt(cx, cy);
   if (!d) { tip.style.display = "none"; box.style.cursor = ""; return; }
-  tip.innerHTML = "<b>" + esc(d.n) + "</b><br>" + esc(d.s) + (d.cap ? " ★ capital" : "") + "<br>" + (d.sym ? '<img src="' + d.sym + '" alt="">' : "") + esc(d.o);
+  tip.innerHTML = "<b>" + esc(d.n) + "</b><br>" + esc(d.s) + (d.cap ? " ★ capital" : "") + "<br>" + (d.sym ? '<img src="' + d.sym + '" alt="">' : "") + esc(d.o) + modeLine(d);
   tip.style.display = "block"; box.style.cursor = "pointer";
   var tx = cx + 16, ty = cy + 16;
   if (tx + tip.offsetWidth > box.clientWidth) tx = cx - tip.offsetWidth - 12;
   if (ty + tip.offsetHeight > box.clientHeight) ty = cy - tip.offsetHeight - 12;
   tip.style.left = tx + "px"; tip.style.top = ty + "px";
 });
+function modeLine(d){
+  if (!mode || mode === "faction") return "";
+  var v = d.m && d.m[mode.k];
+  return "<br><small>" + esc(mode.label) + ": " + (v && v.length ? v.map(function(i){ return esc(mode.vals[i][0]); }).join(", ") : "none") + "</small>";
+}
 function up(e){ delete pts[e.pointerId]; if (!Object.keys(pts).length) box.classList.remove("drag"); }
 box.addEventListener("pointerup", function(e){
   var r = box.getBoundingClientRect(), wasClick = moved < 6 && Object.keys(pts).length === 1;
@@ -135,7 +203,6 @@ box.addEventListener("wheel", function(e){ e.preventDefault(); var r = box.getBo
 document.getElementById("wm-plus").onclick = function(){ zoomAt(1.4, box.clientWidth / 2, box.clientHeight / 2); };
 document.getElementById("wm-minus").onclick = function(){ zoomAt(1 / 1.4, box.clientWidth / 2, box.clientHeight / 2); };
 document.getElementById("wm-fit").onclick = fit;
-document.getElementById("wm-own").onchange = function(){ box.classList.toggle("owners", this.checked); };
 document.getElementById("wm-names").onchange = function(){ box.classList.toggle("nonames", !this.checked); };
 
 // Find: pick a settlement or region from the list, and the map flies there.

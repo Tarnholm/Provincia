@@ -441,7 +441,7 @@ function beliefPage(f, all) {
   const regionFolds = [["Majority", majorityIn], ["Minority", minorityIn]]
     .filter(([, list]) => list.length)
     .map(([label, list]) => fold(
-      `${label} — ${list.length} ${list.length === 1 ? "region" : "regions"}`,
+      `${label}: ${list.length} ${list.length === 1 ? "region" : "regions"}`,
       [list.slice().sort((a, c) => regionName(a).localeCompare(regionName(c))).map(regionLink).join(" · ")]));
 
   // ── the people ──
@@ -537,7 +537,7 @@ ${b.group ? `Part of the ${groupName(b.group)} group. ` : ""}${glance}
 ## Where it is on the map
 
 ${nRegions
-    ? `**${nRegions}** of the ${num(REGIONS.length)} regions hold this belief — **${((nRegions / REGIONS.length) * 100).toFixed(1)}%** of the map. ${TIER_NOTE}
+    ? `**${nRegions}** of the ${num(REGIONS.length)} regions hold this belief, **${((nRegions / REGIONS.length) * 100).toFixed(1)}%** of the map. ${TIER_NOTE}
 
 | Strength | Regions | Share of its regions |
 |---|---:|---:|
@@ -557,8 +557,8 @@ ${maybeFold(`Where its people live (${f.people.length})`, f.people.length,
 ${[
       // Each direction only when it happens, in plain words: where the people live without the
       // belief, and where the belief is held without the people.
-      peopleNoTag.length ? `${peopleNoTag.length === 1 ? "In **1** region" : `In **${peopleNoTag.length}** regions`} its people live but do not hold the belief — ${peopleNoTag.slice(0, 12).map(regionLink).join(", ")}${peopleNoTag.length > 12 ? `, and ${peopleNoTag.length - 12} more` : ""}.` : "",
-      tagNoPeople.length ? `${tagNoPeople.length === 1 ? "**1** region holds" : `**${tagNoPeople.length}** regions hold`} the belief without its people living there — ${tagNoPeople.slice(0, 12).map(regionLink).join(", ")}${tagNoPeople.length > 12 ? `, and ${tagNoPeople.length - 12} more` : ""}.` : "",
+      peopleNoTag.length ? `${peopleNoTag.length === 1 ? "In **1** region" : `In **${peopleNoTag.length}** regions`} its people live but do not hold the belief: ${peopleNoTag.slice(0, 12).map(regionLink).join(", ")}${peopleNoTag.length > 12 ? `, and ${peopleNoTag.length - 12} more` : ""}.` : "",
+      tagNoPeople.length ? `${tagNoPeople.length === 1 ? "**1** region holds" : `**${tagNoPeople.length}** regions hold`} the belief without its people living there: ${tagNoPeople.slice(0, 12).map(regionLink).join(", ")}${tagNoPeople.length > 12 ? `, and ${tagNoPeople.length - 12} more` : ""}.` : "",
     ].filter(Boolean).join(" ")}`
     : `_No region lists ${name} people among its population.${nRegions ? ` The belief is still held in ${nRegions} ${nRegions === 1 ? "region" : "regions"}.` : ""}_`}
 
@@ -578,7 +578,7 @@ ${tierTable
 
 ${tierTable}
 
-${withheldRows.length ? `\n${withheldRows.length === 1 ? "This building adds" : "These buildings add"} the belief only where it is **not** held yet — that is how it spreads to new regions:\n\n| Where | What |\n|---|---|\n${withheldRows.join("\n")}` : ""}`
+${withheldRows.length ? `\n${withheldRows.length === 1 ? "This building adds" : "These buildings add"} the belief only where it is **not** held yet; that is how it spreads to new regions:\n\n| Where | What |\n|---|---|\n${withheldRows.join("\n")}` : ""}`
     : `_No building strengthens it where it is already held._`}
 
 ${genOtherRows.length
@@ -683,12 +683,12 @@ const indexBody = `# Beliefs
 
 [← all cultures](cultures.md) · [all regions and settlements](regions.md) · [wiki index](README.md)
 
-RIS replaces the base game's handful of religions with **${FACTS.length}** local beliefs — one per people, near
+RIS replaces the base game's handful of religions with **${FACTS.length}** local beliefs, one per people, near
 enough. In each region a belief is either the **majority** or a **minority** held alongside a
 larger one. Every belief has its own page: where it is, who its people are, who follows it, and
 what builds it.
 
-**${FACTS.filter((f) => f.regions.size).length}** of the ${FACTS.length} are on the map at the campaign start, across ${num(REGIONS.length)} regions. ${onNoRegion.length ? `The other ${onNoRegion.length} — ${onNoRegion.map((f) => `**${f.name}**`).join(" and ")} — ${onNoRegion.length === 1 ? "is" : "are"} held by no region: ${onNoRegion.length === 1 ? "it is" : "they are"} the umbrella ${onNoRegion.length === 1 ? "belief" : "beliefs"} the local ones sit under.` : ""}
+**${FACTS.filter((f) => f.regions.size).length}** of the ${FACTS.length} are on the map at the campaign start, across ${num(REGIONS.length)} regions. ${onNoRegion.length ? `The other ${onNoRegion.length} (${onNoRegion.map((f) => `**${f.name}**`).join(" and ")}) ${onNoRegion.length === 1 ? "is" : "are"} held by no region: ${onNoRegion.length === 1 ? "it is" : "they are"} the umbrella ${onNoRegion.length === 1 ? "belief" : "beliefs"} the local ones sit under.` : ""}
 
 ## What a belief does, and what it does not
 
@@ -711,7 +711,7 @@ ${gatedLevels || gatedRecruits ? "" : "- **Beliefs do not unlock buildings or un
 
 **Majority** and **Minority** are provinces: the ones where this is the largest belief, and the
 ones where it is held alongside a larger one. Together they are every province that holds it.
-**Factions** is not a count of provinces — it is how many factions have this as their state
+**Factions** is not a count of provinces: it is how many factions have this as their state
 belief, so a faction with forty provinces counts once.
 
 ${groupSections}

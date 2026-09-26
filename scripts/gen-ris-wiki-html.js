@@ -260,7 +260,7 @@ render();
   ];
   fs.writeFileSync(path.join(OUT, "factions.html"),
     PAGE("Factions, sortable", "Every playable faction, sortable by culture or by how much it starts with. " +
-      "Units is the faction's own roster — what it can raise from its own buildings anywhere it holds a " +
+      "Units is the faction's own roster: what it can raise from its own buildings anywhere it holds a " +
       "settlement. It excludes regional units, which are gated on holding the right province rather than on " +
       "being anyone in particular: every faction has between 424 and 443 of those.",
       columns, rows, "/factions.html", "[← wiki index](README.md) · [all factions](factions.md)"), "utf8");
@@ -287,6 +287,90 @@ render();
       if (!r.href) continue;
       byTok.set(decodeURIComponent(r.href.replace(/^regions\//, "").replace(/\.md$/, "")), { r, s: linkText(c[1]), o: linkText(c[2]) });
     }
+    // "Colour by" (asked for 2026-09-26: the same map by culture and the rest). Each mode is read
+    // back from the region pages themselves, so the map says what the pages say: the holder's
+    // culture from the head of the page, the rest from its "Resources and character" table.
+    // A multi mode is one where a region can have several values (a region can sit in two
+    // recruitment zones); the map colours it by its first and the legend isolates any one value.
+    const MODES = [
+      { k: "culture", label: "Culture (who built the town)" },
+      { k: "people", label: "People", row: "People", first: true },
+      { k: "terrain", label: "Terrain", row: "Terrain" },
+      { k: "climate", label: "Climate", row: "Climate" },
+      { k: "fertility", label: "Fertility", row: "Fertility", ord: true },
+      { k: "water", label: "Water source", row: "Water source" },
+      { k: "river", label: "River trade", row: "River trade" },
+      { k: "port", label: "Port", row: "Port" },
+      { k: "homeland", label: "Cultural homeland", row: "Cultural homeland", multi: true },
+      { k: "zones", label: "Recruitment zones", row: "Recruitment zones", multi: true },
+      { k: "specialty", label: "Specialty recruitment", row: "Specialty recruitment", multi: true },
+      { k: "mines", label: "Mine deposits", row: "Mine deposits", multi: true },
+    ];
+    for (const m of MODES) { m.vals = []; m.at = new Map(); }
+    // Culture is the settlement's founding culture: descr_strat's faction_creator, whose culture
+    // (descr_sm_factions) sets the style and chains of its buildings. The holder's culture would
+    // paint every Free Peoples town as the rebel faction's own, which says nothing about them.
+    const CREATOR_CULTURE = new Map();
+    try {
+      const rdR = (...f) => fs.readFileSync(path.join(spec.ris, ...f), "latin1");
+      const facCul = {};
+      let cur = null;
+      for (const raw of rdR("descr_sm_factions.txt").split(/\r?\n/)) {
+        const line = raw.replace(/;.*$/, "");
+        let mm = /^\s*"([a-z0-9_]+)"\s*:\s*$/.exec(line);
+        if (mm && mm[1] !== "factions") { cur = mm[1].toLowerCase(); continue; }
+        mm = /"culture"\s*:\s*"([a-z_]+)"/.exec(line);
+        if (mm && cur) { facCul[cur] = mm[1].toLowerCase(); cur = null; }
+      }
+      const culName = (t) => {
+        try { return fs.readFileSync(path.join(OUT, "cultures", `${t}.md`), "utf8").split("\n")[0].replace(/^#\s*/, "").replace(/<img[^>]*>/g, "").trim(); }
+        catch { return null; }
+      };
+      let region = null;
+      for (const raw of rdR("world", "maps", "campaign", "imperial_campaign", "descr_strat.txt").split(/\r?\n/)) {
+        const line = raw.replace(/;.*$/, "").trim();
+        let mm = /^settlement\b/.exec(line);
+        if (mm) { region = null; continue; }
+        mm = /^region\s+(\S+)/.exec(line);
+        if (mm) { region = mm[1].toLowerCase(); continue; }
+        mm = /^faction_creator\s+(\S+)/.exec(line);
+        if (mm && region) {
+          const t = facCul[mm[1].toLowerCase()], n = t && culName(t);
+          if (n) CREATOR_CULTURE.set(region, { name: n, href: `cultures/${t}.md` });
+        }
+      }
+    } catch (e) { console.log(`world-map.html: no founding cultures (${e.message})`); }
+    const valIdx = (m, name, href) => {
+      if (!m.at.has(name)) { m.at.set(name, m.vals.length); m.vals.push([name, href ? href.replace(/^\.\.\//, "") : null, 0]); }
+      const i = m.at.get(name); m.vals[i][2]++; return i;
+    };
+    const cellVals = (cell) => {
+      const out = [], re = /\[([^\]]*)\]\(([^)]*)\)/g;
+      let mm;
+      while ((mm = re.exec(cell))) out.push([mm[1].replace(/<img[^>]*>/g, "").replace(/\*/g, "").trim(), mm[2]]);
+      if (!out.length) for (const p of cell.split(/,\s*/)) { const t = p.replace(/<img[^>]*>/g, "").replace(/\s*\(quantity[^)]*\)/i, "").trim(); if (t) out.push([t, null]); }
+      return out;
+    };
+    const modesOf = (token) => {
+      let md;
+      try { md = fs.readFileSync(path.join(OUT, "regions", `${token}.md`), "utf8"); } catch { return null; }
+      const res = {};
+      const cu = CREATOR_CULTURE.get(String(token).toLowerCase());
+      if (cu) res.culture = [valIdx(MODES[0], cu.name, cu.href)];
+      const sec = (md.split("\n## Resources and character")[1] || "").split("\n## ")[0];
+      for (const line of sec.split("\n")) {
+        const r = /^\| ([A-Za-z ]+?) \| (.*) \|$/.exec(line);
+        if (!r) continue;
+        for (const m of MODES) {
+          if (m.row !== r[1]) continue;
+          let v = cellVals(r[2]);
+          if (m.ord) v = v.map(([t, h]) => [String(parseInt(t, 10)), h]).filter(([t]) => t !== "NaN");
+          if (m.first) v = v.slice(0, 1);
+          if (v.length) res[m.k] = v.map(([t, h]) => valIdx(m, t, h));
+        }
+      }
+      return res;
+    };
     const DATA = spec.regions.map((x) => {
       const e = byTok.get(x.token);
       if (!e) return null;
@@ -295,12 +379,19 @@ render();
         o: e.o.text, sym: e.o.sym || null,
         c: x.owner ? x.owner.map((v) => Math.round(v)) : null,
         x: x.sx, y: x.sy,
+        m: modesOf(x.token) || {},
       };
     });
+    // Legends read in a useful order: fertility low to high, everything else by name.
+    const MODES_OUT = MODES.filter((m) => m.vals.length).map((m) => {
+      const order = m.vals.map((v, i) => i).sort((a, b) => (m.ord ? +m.vals[a][0] - +m.vals[b][0] : m.vals[a][0].localeCompare(m.vals[b][0])));
+      return { k: m.k, label: m.label, multi: !!m.multi, ord: !!m.ord, vals: m.vals, order };
+    });
     const intro = "# The world map\n\n[← wiki index](README.md) · [all regions and settlements](regions.md)\n\n"
-      + "The campaign map at the start of the Unified Romans campaign. Drag to move, scroll or pinch to zoom, point at a region to see who holds it, click to open its page. Settlement names appear as you zoom in.\n";
+      + "The campaign map at the start of the Unified Romans campaign. Drag to move, scroll or pinch to zoom, point at a region to see who holds it, click to open its page. Settlement names appear as you zoom in. **Colour by** paints the regions by who holds them, their culture, people, terrain, climate and more; click a name in the key to show only that one.\n";
     const body = viewer.renderMarkdown(intro, []) + fs.readFileSync(path.join(__dirname, "lib", "worldMapView.html"), "utf8")
-      .replace("var DATA = __DATA__;", () => `var DATA = ${JSON.stringify(DATA)};`);
+      .replace("var DATA = __DATA__;", () => `var DATA = ${JSON.stringify(DATA)};`)
+      .replace("var MODES = __MODES__;", () => `var MODES = ${JSON.stringify(MODES_OUT)};`);
     fs.writeFileSync(path.join(OUT, "world-map.html"), viewer.SHELL("The world map", body, "/world-map.html", []), "utf8");
     console.log(`world-map.html: ${DATA.filter(Boolean).length} regions`);
   } else console.log("world-map.html: skipped (run gen-ris-region-pages.js first)");

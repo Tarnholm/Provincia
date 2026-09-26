@@ -229,7 +229,7 @@ const beliefFx = (b) => {
 };
 const ancFx = (a) => {
   const parts = [...a.effects.map(fx), ...a.beliefs.map(beliefFx)];
-  return parts.length ? parts.join(", ") : "no stat effects — flavour only";
+  return parts.length ? parts.join(", ") : "no stat effects (flavour only)";
 };
 let cultureLinked = 0;
 const cultureRef = (tok) => {
@@ -449,12 +449,12 @@ function acquisitionFold(a) {
   ].filter(Boolean).join("\n");
   const body = [table];
   if (raws.length) body.push("", fold("Technical", raws));
-  return fold(`How it is gained — ${events.join(", ")}`, body);
+  return fold(`How it is gained: ${events.join(", ")}`, body);
 }
 
 function ancEntry(a) {
   const bits = [];
-  if (a.unique) bits.push("**unique** — one in the world at a time");
+  if (a.unique) bits.push("**unique** (one in the world at a time)");
   // An entry excluding ITSELF is the file's idiom for "never twice on one character" and
   // reads as nonsense in print, so self-exclusions are dropped from the sentence.
   const partners = a.excluded.filter((x) => x !== a.name);
@@ -469,7 +469,7 @@ function ancEntry(a) {
   lines.push(`**Effects:** ${ancFx(a)}`);
   lines.push("");
   const d = ANC_TEXT[a.desc];
-  lines.push(d ? `> ${cell(d)}` : "> _description not determined — no text entry_");
+  lines.push(d ? `> ${cell(d)}` : "> _description not determined: no text entry_");
   if (traits.length) {
     lines.push("");
     lines.push(`Acquisition is tied to ${traits.length === 1 ? "the trait" : "traits"}: ${traits.map(traitRef).join(", ")}.`);
@@ -493,7 +493,7 @@ const writePage = (file, body) => { fs.writeFileSync(path.join(OUT, "ancillaries
 {
   const list = PAGES.get("priesthoods").slice().sort((x, y) => x.heading.localeCompare(y.heading));
   const body = `${HEAD("Priesthoods")}
-**${num(list.length)}** of the retinue are priests and priestesses — one per cult and city, from the
+**${num(list.length)}** of the retinue are priests and priestesses, one per cult and city, from the
 Priest of Amun to the Priestess of Vesta. Each joins a character through temple and
 belief conditions and carries a small bonus.
 
@@ -510,7 +510,7 @@ ${list.map((a) => `| **${cell(a.heading)}**${a.unique ? " · unique" : ""} | ${c
 const LETTERS = [...PAGES.keys()].filter((p) => /^[a-z]$/.test(p)).sort();
 for (const L of LETTERS) {
   const list = PAGES.get(L).slice().sort((x, y) => x.heading.localeCompare(y.heading));
-  const body = `${HEAD(`Retinue — ${L.toUpperCase()}`)}
+  const body = `${HEAD(`Retinue: ${L.toUpperCase()}`)}
 **${num(list.length)}** retinue member${list.length === 1 ? "" : "s"} whose name begins with **${L.toUpperCase()}**.
 ${LETTERS.map((x) => (x === L ? `**${x.toUpperCase()}**` : `[${x.toUpperCase()}](${x}.md)`)).join(" · ")}
 
@@ -528,7 +528,7 @@ const indexBody = `# Retinue
 
 [← wiki index](README.md) · [all traits](traits.md) · [all factions](factions.md)
 
-A character in **RTR: Imperium Surrectum** gathers a retinue — **${num(ALL.length)}** followers, keepsakes,
+A character in **RTR: Imperium Surrectum** gathers a retinue: **${num(ALL.length)}** followers, keepsakes,
 offices and animals that attach themselves to generals, governors and agents and travel
 with them. Where a trait is who a character has become, retinue is who and what he keeps
 around him, and members can be traded between characters who meet.
@@ -536,13 +536,13 @@ around him, and members can be traded between characters who meet.
 ## How retinue works
 
 - **Most members are earned in play.** They join a character when he does the right thing in
-  the right place — wins a battle, governs a city with a school, holds an office. A few are
+  the right place: wins a battle, governs a city with a school, holds an office. A few are
   granted only by events.
-- **Traits attract retinue.** What a character is shapes who seeks him out — the drunkard
+- **Traits attract retinue.** What a character is shapes who seeks him out: the drunkard
   attracts drinking companions, the scholar attracts philosophers. Trait and retinue pages
   link both ways.
 - **Some members are unique:** only one exists in the world at a time.
-- **Some members exclude others** — rival followers who will not share a tent.
+- **Some members exclude others:** rival followers who will not share a tent.
 
 ## Where to look
 
@@ -550,9 +550,9 @@ around him, and members can be traded between characters who meet.
 |---|---:|---|
 | [**Priesthoods**](ancillaries/priesthoods.md) | ${num(PAGES.get("priesthoods").length)} | one priest or priestess per cult and city |
 
-### The dictionary — every other member, by first letter
+### The dictionary: every other member, by first letter
 
-${LETTERS.map((L) => `- [**${L.toUpperCase()}**](ancillaries/${L}.md) — ${PAGES.get(L).length} member${PAGES.get(L).length === 1 ? "" : "s"}`).join("\n")}
+${LETTERS.map((L) => `- [**${L.toUpperCase()}**](ancillaries/${L}.md): ${PAGES.get(L).length} member${PAGES.get(L).length === 1 ? "" : "s"}`).join("\n")}
 
 `;
 fs.writeFileSync(path.join(OUT, "ancillaries.md"), indexBody, "utf8");

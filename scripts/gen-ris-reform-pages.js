@@ -446,7 +446,7 @@ function renderClause(text, ctx) {
     if (op === ">") n += 1;
     if (op === ">=" || op === ">") {
       const y = engineYear(n);
-      if (END_YEAR != null && y != null && y > END_YEAR) return `turn ${num(2 * n + 2)} has been reached — which is after the campaign ends in ${yearText(END_YEAR)}, so this can never happen`;
+      if (END_YEAR != null && y != null && y > END_YEAR) return `turn ${num(2 * n + 2)} has been reached, which is after the campaign ends in ${yearText(END_YEAR)}, so this can never happen`;
       return `it is ${turnText(n)} or later`;
     }
     if (op === "<" || op === "<=") return `it is before ${turnText(op === "<=" ? n + 1 : n)}`;
@@ -488,7 +488,7 @@ function renderClause(text, ctx) {
     }
     // Declared, but no region carries it and no script places it.
     NEVER_RESOURCES.add(res);
-    return N({ yes: `it carries \`${res}\` — **which no region has and no script ever places, so this can never happen**`, no: `it does not carry \`${res}\`` });
+    return N({ yes: `it carries \`${res}\`, **which no region has and no script ever places, so this can never happen**`, no: `it does not carry \`${res}\`` });
   }
   if ((m = /^I_SettlementOwner\s+local\s*(==|=)\s*(\S+)$/i.exec(t))) {
     if (ctx.forFaction && ctx.forFaction.toLowerCase() === m[2].toLowerCase()) return null; // restates the loop
@@ -837,7 +837,7 @@ function renderRoutes(tree, reform, complexCounters) {
       const loopText = `${lead} ${joinAnd(inner.map((x, i) => (i === 0 ? x.replace(/^it /, "") : x))) || "exists"}`;
       t = joinAnd([...outer, loopText]);
     } else t = joinAnd(conds);
-    return t || "nothing — it fires on the first check";
+    return t || "nothing (it fires on the first check)";
   });
   const texts = texts0.map(whoIs);
   return { routes, texts };
@@ -879,7 +879,7 @@ const COUNTER_GLOSS = {
     since: "Rome's first civil war was decided",
     // cw2_wait_done is set at cw2_wait > 49 (the AI fuse), which the second war's cw2_armed
     // monitors require - so 25 turns is halfway to the earliest second civil war.
-    how: "The first civil war counts as decided once the losing side — Rome or the Roman Rebels — is down to its last settlement. 25 turns is roughly halfway to the second civil war, which cannot begin until the same count passes 50.",
+    how: "The first civil war counts as decided once the losing side (Rome or the Roman Rebels) is down to its last settlement. 25 turns is roughly halfway to the second civil war, which cannot begin until the same count passes 50.",
     // cw2_wait_done too: the fuse length lives in ITS setter ("cw2_wait > 50"), and a testing
     // value there (2, shipped until 2026-09-24) silently stopped the count below 25.
     from: ["cw2_wait", "cw1_resolved", "cw2_wait_done"],
@@ -933,7 +933,7 @@ function complexCounterText(c, depth = 0) {
     const f = s.fors[s.fors.length - 1];
     let loop = "";
     if (f) {
-      if (f.faction && !isFaction(f.faction)) { NO_SUCH_FACTION.add(f.faction); loop = ` for each ${f.what} of \`${f.faction}\` — **no faction is called \`${f.faction}\`, so this loop counts nothing**`; }
+      if (f.faction && !isFaction(f.faction)) { NO_SUCH_FACTION.add(f.faction); loop = ` for each ${f.what} of \`${f.faction}\` (**no faction is called \`${f.faction}\`, so this loop counts nothing**)`; }
       else loop = f.faction ? ` for each ${f.what} ${heldBy(f.faction)}` : ` for each ${f.what} on the map`;
     }
     const what = s.op === "inc_counter" ? `goes up by ${s.n}${loop}` : s.from ? `is set to \`${s.from}\`` : `is set to ${s.n}`;
@@ -955,15 +955,15 @@ function complexCounterText(c, depth = 0) {
     if (incs.length > 1 && loops.length === 1 && incs.every((x) => x.fors.length && x.ifs.length)) {
       const f = loops[0];
       const items = incs.map((x) => renderCond(x.ifs[x.ifs.length - 1], { locals: new Map() })).filter(Boolean).map((t) => t.replace(/^it has (an? )?/, ""));
-      const over = f && !isFaction(f) ? `every settlement of \`${f}\` — **no faction is called \`${f}\`, so this counts nothing**` : f ? `every settlement ${heldBy(f)}` : "every settlement on the map";
+      const over = f && !isFaction(f) ? `every settlement of \`${f}\` (**no faction is called \`${f}\`, so this counts nothing**)` : f ? `every settlement ${heldBy(f)}` : "every settlement on the map";
       if (!isFaction(f)) NO_SUCH_FACTION.add(f);
-      return [`Recounted over ${over}: 1 for each of these buildings standing in one — ${orList(items)}`];
+      return [`Recounted over ${over}: 1 for each of these buildings standing in one: ${orList(items)}`];
     }
   }
   const out = [...new Set(lines)];
   if (depth === 0) for (const k of nested) {
     const sub = complexCounterText(k, 1);
-    if (sub.length) out.push(`\`${k}\`${deadCounter(k) ? " — **never rises, so any test that needs it above 0 fails**" : ""}:\n${sub.map((l) => `  - ${l}`).join("\n")}`);
+    if (sub.length) out.push(`\`${k}\`${deadCounter(k) ? " (**never rises, so any test that needs it above 0 fails**)" : ""}:\n${sub.map((l) => `  - ${l}`).join("\n")}`);
   }
   return out;
 }
@@ -983,7 +983,7 @@ function tallyPhrase(k, op, v) {
   // Conditions between the loop and the building test narrow WHERE ("HasResource aor_camillan").
   const lp = ks[0].fors[ks[0].fors.length - 1];
   const narrow = [...new Set(ks[0].ifs.slice(lp.ifDepth || 0, -1).map((cnd) => renderCond(cnd, { locals: new Map() })).filter(Boolean))].map((x) => x.replace(/^it /, ""));
-  const where = !f ? (narrow.length ? `in settlements that ${joinAnd(narrow).replace(/^lies /, "lie ")}` : "anywhere on the map") : isFaction(f) ? `in settlements ${heldBy(f)}` : `in settlements of \`${f}\` — **no faction is called \`${f}\`, so this is never met**`;
+  const where = !f ? (narrow.length ? `in settlements that ${joinAnd(narrow).replace(/^lies /, "lie ")}` : "anywhere on the map") : isFaction(f) ? `in settlements ${heldBy(f)}` : `in settlements of \`${f}\` (**no faction is called \`${f}\`, so this is never met**)`;
   return `${word} ${num(n)} of these buildings stand ${where}: ${orList(items)}`;
 }
 /** The gates of one set/inc site as bullets; nested set-counters become indented sub-lists. */
@@ -1188,7 +1188,7 @@ for (const r of REFORMS) {
         // The mod keeps the event declared but parks its trigger past the end of the campaign
         // (Marian: turn 4,002) - that is how a reform is switched off.
         OFF.add(r.name);
-        const m = /turn ([\d,]+) has been reached — which is after the campaign ends in ([^,]+),/.exec(texts[0]);
+        const m = /turn ([\d,]+) has been reached, which is after the campaign ends in ([^,]+),/.exec(texts[0]);
         req.push(`**Switched off in this version of the mod.** Its trigger waits for ${m ? `turn ${m[1]}, long after the campaign ends in ${m[2]}` : "a turn after the campaign ends"}, so it never fires.`);
       } else {
         req.push(...playerAiSections(routes, texts));
@@ -1224,7 +1224,7 @@ for (const r of REFORMS) {
   const pic = reformImage(r);
   // A banner, not the floated lede picture: at 732px wide a float squeezes the text into a column.
   if (pic) lines.push('<div class="reform-banner">', "", `![${cell(title)}](${pic})`, "", "</div>", "");
-  lines.push(`**Who gets it:** ${affects}${r.global ? " — once it fires it applies to all of them at once" : ""}`, "");
+  lines.push(`**Who gets it:** ${affects}${r.global ? "; once it fires it applies to all of them at once" : ""}`, "");
   if (body) lines.push(body.split("\n").map((l) => `> ${l}`).join("\n"), "");
   lines.push("## How to get it", "", ...req.map((x) => x + "\n"));
   const afterLinks = [...needs.map((n) => reformLink(n)), ...revAfter.map(revLink)];

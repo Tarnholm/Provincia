@@ -459,11 +459,14 @@ function loadCharacters() {
     const l = raw.trim();
     let m = /^faction\s+([a-z0-9_]+)/i.exec(l);
     if (m) { cur = m[1].toLowerCase(); per[cur] = per[cur] || []; continue; }
-    // `character <name>, <role>, age N, x N, y N …`
-    m = /^character\s+([^,]+),\s*([a-z ]+)/i.exec(l);
+    // `character[,] [sub_faction <faction>,] <name>, <role>, age N, x N, y N …`. The comma after
+    // the keyword is optional (36 lines use it and were skipped), and the sub_faction clause
+    // (it only picks the name and portrait set, it is not a faction the character belongs to) was
+    // read as the name ("sub faction athens", reported 2026-09-26).
+    m = /^character[\s,]+(?:sub_faction\s+([a-z0-9_]+)\s*,\s*)?([^,]+),\s*([a-z ]+)/i.exec(l);
     if (m && cur) {
       const age = /\bage\s+(\d+)/i.exec(l);
-      per[cur].push({ name: m[1].trim().replace(/_/g, " "), role: roleLabel(m[2].trim()), age: age ? +age[1] : null });
+      per[cur].push({ name: m[2].trim().replace(/_/g, " "), role: roleLabel(m[3].trim()), sub: m[1] ? m[1].toLowerCase() : null, age: age ? +age[1] : null });
     }
   }
   return per;
@@ -912,6 +915,118 @@ const factions = Object.keys(strat)
   .filter((f) => !ONLY.length || ONLY.includes(f))
   .sort();
 
+// Starting diplomacy (asked for 2026-09-26). descr_strat's faction_relationships lines set who
+// is allied (199 or less, with a trade agreement where one is possible) and who is at war (201 or
+// more) on the first turn; 200 is neutral. A diplomatic state holds both ways, and the file
+// often states a pair from one side only, so each pair is read in both directions.
+// core_attitudes is left out: it is how the computer leans in talks, not a state a player sees.
+const DIPLO = new Map();
+for (const l of fs.readFileSync(STRAT, "latin1").split(/\r?\n/)) {
+  const m = /^\s*faction_relationships\s+([\w-]+)\s*,\s*(-?\d+)\s+(.+?)\s*$/.exec(l);
+  if (!m) continue;
+  const v = +m[2];
+  if (v === 200) continue;
+  const kind = v < 200 ? "ally" : "war";
+  for (const t of m[3].split(",").map((x) => x.trim().toLowerCase()).filter(Boolean)) {
+    for (const [x, y] of [[m[1].toLowerCase(), t], [t, m[1].toLowerCase()]]) {
+      if (x === y) continue;
+      if (!DIPLO.has(x)) DIPLO.set(x, new Map());
+      DIPLO.get(x).set(y, kind);
+    }
+  }
+}
+const DIPLO_EXPANDED = loadDisplayNames("expanded_bi.txt");
+const dipName = (f) => (REVOLT_INDEX.labels || {})[f] || (intros[f] && intros[f].title) || DIPLO_EXPANDED[f] || title(f);
+const dipLink = (f) => {
+  const img = fs.existsSync(path.join(OUT, "symbols", `${f}.png`))
+    ? `<img src="../symbols/${f}.png" alt="" width="24" height="24" style="vertical-align:middle"> ` : "";
+  const to = NON_PLAYER.has(f) ? NON_PLAYABLE_FILE : `${f}.md`;
+  return `[${img}${dipName(f)}](${to})`;
+};
+// Protectorates are not in descr_strat: the campaign script makes them on the first turn
+// (`console_command become_protector <protector> <protectorate>` in its FIRST TIME SETUP
+// block). Only that block is read; a become_protector fired later by an event is not a
+// starting state. The script is the one descr_strat's `script` section names.
+const PROTECTS = new Map(), PROTECTED_BY = new Map();
+{
+  const lines = fs.readFileSync(STRAT, "latin1").split(/\r?\n/);
+  const at = lines.findIndex((l) => /^\s*script\s*$/.test(l));
+  const scriptName = at >= 0 ? (lines.slice(at + 1).find((l) => l.trim() && !l.trim().startsWith(";")) || "").trim() : "";
+  let txt = "";
+  try { txt = fs.readFileSync(path.join(path.dirname(STRAT), scriptName), "latin1"); } catch { /* no script */ }
+  const setup = (txt.split(/==\s*0\.\s*FIRST TIME SETUP\s*==/i)[1] || "").split(/\n;\s*={5,}\s*\n;\s*==/)[0];
+  for (const l of setup.split(/\r?\n/)) {
+    const m = /^\s*console_command\s+become_protector\s+(\w+)\s+(\w+)/i.exec(l);
+    if (!m) continue;
+    const [p, c] = [m[1].toLowerCase(), m[2].toLowerCase()];
+    if (!PROTECTS.has(p)) PROTECTS.set(p, []);
+    PROTECTS.get(p).push(c);
+    PROTECTED_BY.set(c, p);
+  }
+}
+// The faction's own "Faction mechanics" guide, the pop-up the game shows when you press the
+// advisor's "?" while playing it (lib/risGuides.js reads it from the campaign script, so only
+// a text the game really shows appears). Headings inside it sit one level below the section.
+const GUIDES = require(path.join(__dirname, "lib", "risGuides.js")).loadGuides(RIS);
+const mechanicsSection = (f) => {
+  const g = GUIDES.byFaction.get(f);
+  if (!g) return "";
+  return `## Faction mechanics
+
+_The game's own guide for this faction, shown when you press the **?** button beside your advisor. The [other game guides](../guides.md) apply to every faction._
+
+${GUIDES.toMarkdown(g.body, 3)}
+
+`;
+};
+// Who is left out of the lists (the team's rule, 2026-09-26). A faction that only emerges
+// during the game (descr_strat marks it `dead_until_resurrected`: Italics, the Roman Senate,
+// Egypt, the Seleucid rebels...) is not on the map on turn one, so it is not shown in another
+// faction's lists; on its OWN page every relation it will start with is shown. The two Roman
+// rebel factions sit in a corner of the map all game under a special condition and are hidden
+// everywhere.
+const EMERGENT = (() => {
+  const out = new Set();
+  let cur = null;
+  for (const l of fs.readFileSync(STRAT, "latin1").split(/\r?\n/)) {
+    const m = /^faction\s+([a-z0-9_]+)/i.exec(l);
+    if (m) { cur = m[1].toLowerCase(); continue; }
+    if (cur && /^\s*dead_until_resurrected\b/i.test(l)) out.add(cur);
+  }
+  // Not marked in descr_strat (it starts with Hebros), but emerges in play: the team counts
+  // both Seleucid rebel factions as emergent (Wopper, 2026-09-26).
+  out.add("seleucid_rebels");
+  return out;
+})();
+const DIPLO_HIDDEN = new Set(["roman_rebels_1", "roman_rebels_2", "dummies", "slave"]);
+const diplomacySection = (f, display) => {
+  const rel = new Map([...(DIPLO.get(f) || new Map())].filter(([t]) => EMERGENT.has(f) || !EMERGENT.has(t) || t === "slave"));
+  const bySort = (x, y) => dipName(x).localeCompare(dipName(y));
+  const prot = (PROTECTS.get(f) || []).slice().sort(bySort), protector = PROTECTED_BY.get(f) || null;
+  // A protectorate is listed as one, not again among the allies.
+  const pick = (k) => [...(rel || new Map())].filter(([t, v]) => v === k && !DIPLO_HIDDEN.has(t) && strat[t] !== undefined
+    && !prot.includes(t) && t !== protector)
+    .map(([t]) => t).sort(bySort);
+  const allies = pick("ally"), war = pick("war");
+  // Trade has no line of its own in the setup. It comes with the alliance: descr_strat's notes
+  // say an alliance set there "gives Ally (and Trade agreement if possible)", and in every save
+  // Provincia has decoded each alliance and protectorate carries the trade-rights bit (bond 54 =
+  // trade + military access; see src/diplomacyTreatyBits.test.js). So the trade partners are the
+  // allies, the protectorates and the protector.
+  const tradeWith = [...new Set([...(protector ? [protector] : []), ...prot, ...allies])].sort(bySort);
+  // Every faction starts at war with the Free Peoples (slave), so listing them on every page
+  // says nothing; one plain line under the lists says it instead.
+  const free = rel && rel.get("slave") === "war"
+    ? `Like every faction, it is also at war with the ${dipLink("slave")}, who hold every settlement no faction does.\n\n` : "";
+  const line = (label, list) => (list.length ? `**${label}** (${list.length}): ${list.map(dipLink).join(" · ")}\n\n` : "");
+  const lines = `${protector ? `**A protectorate of** ${dipLink(protector)}\n\n` : ""}${line("Protectorates", prot)}${line("Allied with", allies)}${line("Trade agreements with", tradeWith)}${line("At war with", war)}`;
+  const rest = !lines ? `${display} begins the campaign with no allies, no trade agreements and no wars.\n\n`
+    : !war.length ? "At peace with every other faction.\n\n" : "";
+  return `## Starting diplomacy
+
+${lines}${rest}${free}`;
+};
+
 fs.mkdirSync(path.join(OUT, "factions"), { recursive: true });
 if (world) fs.mkdirSync(path.join(OUT, "maps"), { recursive: true });
 fs.mkdirSync(path.join(OUT, "symbols"), { recursive: true });
@@ -949,13 +1064,14 @@ for (const f of factions) {
     DIFFICULTY_WORD[DIFFICULTY[f]] ? `difficulty **${DIFFICULTY_WORD[DIFFICULTY[f]]}**` : null,
     cultureCell ? `**${cultureCell}** culture` : "culture _not determined_",
     religionCell ? `believes ${religionCell}` : "belief _not determined_",
-    `**${setts.length}** settlement${setts.length === 1 ? "" : "s"}`,
+    // Each count leads to the section that lists what it counts.
+    setts.length ? `**[${setts.length} settlement${setts.length === 1 ? "" : "s"}](#starting-settlements)**` : "**0** settlements",
     // The capital is a city, so name the city — "capital Stratos", not "capital Akarnania".
-    capital ? `capital **${SETTLEMENT_OF[capital.region] ? placeName(SETTLEMENT_OF[capital.region]) : placeName(capital.region)}**` : null,
+    capital ? `capital **${settlementLink(capital.region)}**` : null,
     totalPop ? `**${totalPop.toLocaleString("en-US")}** people` : null,
-    `**${cs.length}** character${cs.length === 1 ? "" : "s"}`,
-    `**${units.coreN}** faction unit${units.coreN === 1 ? "" : "s"}`,
-    units.aorN ? `**${units.aorN}** regional units` : null,
+    cs.length ? `**[${cs.length} character${cs.length === 1 ? "" : "s"}](#starting-characters)**` : "**0** characters",
+    units.coreN ? `**[${units.coreN} faction unit${units.coreN === 1 ? "" : "s"}](#faction-units)**` : "**0** faction units",
+    units.aorN ? `**[${units.aorN} regional unit${units.aorN === 1 ? "" : "s"}](#regional-units)**` : null,
   ].filter(Boolean);
 
   // The faction card beside the map: the emblem on top, the facts listed under it, in a panel
@@ -1049,17 +1165,17 @@ ${setts.map((s) => `| ${settlementLink(s.region)}${s.capital ? " **(capital)**" 
 <details>
 <summary>What is already built in each settlement</summary>
 
-${setts.map((s) => `**${settlementAndRegion(s.region)}** — ${(s.buildings || []).length ? (s.buildings || []).map((b) => buildingLink(b)).join(", ") : "_nothing built_"}`).join("\n\n")}
+${setts.map((s) => `**${settlementAndRegion(s.region)}**: ${(s.buildings || []).length ? (s.buildings || []).map((b) => buildingLink(b)).join(", ") : "_nothing built_"}`).join("\n\n")}
 
 </details>
 
-` : ""}${homelandSection}${cs.length ? `## Starting characters
+` : ""}${homelandSection}${diplomacySection(f, display)}${cs.length ? `## Starting characters
 
 | Name | Role | Age |
 |---|---|---:|
 ${cs.map((c) => `| ${displayName(c.name)} | ${c.role} | ${c.age != null ? c.age : "?"} |`).join("\n")}
 
-` : ""}${reformSection(f)}${revoltSection(f)}## Units you can recruit
+` : ""}${mechanicsSection(f)}${reformSection(f)}${revoltSection(f)}## Units you can recruit
 
 ${units.core.length + units.aor.length ? `${display} can recruit **${units.total}** unit type${units.total === 1 ? "" : "s"}: ${units.coreN} faction unit${units.coreN === 1 ? "" : "s"} and ${units.aorN} regional.
 
@@ -1250,7 +1366,7 @@ settlement is drawn with, which government levels the faction can install, and m
 the roster looks like. Factions in the same culture play more like each other than two
 neighbours in different ones do. Largest first within each.
 
-**Units** is the faction's own roster — what it can raise from its own buildings anywhere it
+**Units** is the faction's own roster: what it can raise from its own buildings anywhere it
 holds a settlement. It does not count regional units, which are gated on holding the right
 province rather than on being anyone in particular: every faction has between 424 and 443 of
 those, so the number tells you nothing about the faction. Each faction's page lists its own.

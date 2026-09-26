@@ -394,7 +394,7 @@ function describeEffects(rawLinesAll) {
     const r = sayCondition(cond, "eff");
     if (r.never) return;                       // can never apply to a player
     if (r.always) { spelled.push(text); return; }
-    conditional.push(`${text} — ${effectWhen(r)}`);
+    conditional.push(`${text}, ${effectWhen(r)}`);
   };
   const place = (text, cond, line) => {
     const c = String(cond || "").trim();
@@ -471,7 +471,7 @@ function describeEffects(rawLinesAll) {
   // size by size, or the page would claim it holds at every size.
   for (const g of groups.values()) {
     const uniq = [...new Set(g.values)].sort((a, b) => a - b);
-    const scopeNote = g.aiOnly ? " _(AI only — does not apply to you)_"
+    const scopeNote = g.aiOnly ? " _(AI only: does not apply to you)_"
       : (g.playerOnly ? " _(player only)_" : "");
     if (g.bySize && [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].some((n) => !g.sizes.has(n))) {
       for (const { p, line } of g.lines) conditioned(label(p.name, p.value, p.signed), p.cond, line);
@@ -1264,7 +1264,7 @@ function renderParts(n, ctx) {
   return { items, lost };
 }
 // How much structure a phrase already carries decides how it can be listed beside others: one
-// with its own "and" needs the heavy " — or — " separator, one with its own "or" a comma.
+// with its own "and" needs the heavy "; or " separator, one with its own "or" a comma.
 const hasAnd = (s) => / and /.test(plain(s));
 const hasOr = (s) => / or /.test(plain(s));
 function renderNode(n, ctx) {
@@ -1280,7 +1280,7 @@ function renderNode(n, ctx) {
     // its alternatives are themselves compound, so the reader can see where it ends.
     const strs = pos.map((x) => {
       if (!x.node || x.node.k !== "or") return x.s;
-      if (/ — or — /.test(x.s)) return `(${x.s})`;
+      if (/; or /.test(x.s)) return `(${x.s})`;
       // One merged phrase ("the region has Gold or Silver") needs no "either"; alternatives do.
       const one = x.node.c.every((c) => c.k === "atom" && !c.neg && c.a.key && c.a.key === x.node.c[0].a.key);
       return one ? x.s : `either ${x.s}`;
@@ -1292,7 +1292,7 @@ function renderNode(n, ctx) {
     return s + (lost ? " (among other conditions)" : "");
   }
   const strs = pos.map((x) => x.s);
-  const joined = strs.some(hasAnd) ? strs.join(" — or — ") : strs.some(hasOr) ? strs.join(", or ") : orList(strs);
+  const joined = strs.some(hasAnd) ? strs.join("; or ") : strs.some(hasOr) ? strs.join(", or ") : orList(strs);
   return joined + (lost ? ", or under other conditions" : "");
 }
 function noteUnknown(ctx) {
@@ -1320,7 +1320,7 @@ function sayCondition(expr, mode) {
   noteUnknown(ctx);
   return res;
 }
-/** "— only when …" for an effect line. */
+/** ", only when …" for an effect line. */
 function effectWhen(res) {
   if (!res.text) return "only under certain conditions";
   return res.except ? res.text : `only when ${res.text}`;
@@ -1389,7 +1389,7 @@ function requirementLines(requires) {
     // "either" or brackets around it.
     const text = x.except ? `Not when ${x.s}` : capFirst(x.s);
     if (plain(text).length <= LONG_REQUIREMENT || !x.node) { lines.push(text); continue; }
-    lines.push(`${topicPhrase(x.node)} — see the full conditions below`);
+    lines.push(`${topicPhrase(x.node)} (see the full conditions below)`);
     long.push(...(x.except ? ["- Not when:", ...outline(negate(x.node), 1)] : outline(x.node, 0)));
   }
   if (lost) lines.push("Further conditions the game checks");
@@ -1449,7 +1449,7 @@ for (const c of list) {
     "[← all buildings](../buildings.md) · [wiki index](../README.md)",
     "",
     rows.length > 1
-      ? `${rows.length} levels, each replacing the one before it — you upgrade in place rather than building alongside.\n\n**${pathLine}**`
+      ? `${rows.length} levels, each replacing the one before it: you upgrade in place rather than building alongside.\n\n**${pathLine}**`
       : "A single-level building: there is nothing to upgrade it into.",
     "",
     "",   // a blank line before the first `## `, or a single-level page runs the two together
@@ -1508,9 +1508,9 @@ Costs in denarii, build time in turns.
     const playerReq = l.requires ? forPlayer(l.requires) : l.requires;
     const req = playerReq === null ? null : playerReq ? requirementLines(playerReq) : { lines: [], long: [] };
     if (l.requires && req === null) {
-      parts.push(`**Requirements** — _no faction you can play is able to build this level._`, "");
+      parts.push(`**Requirements:** _no faction you can play is able to build this level._`, "");
     } else if (req.lines.length) {
-      parts.push(`**Requirements** — all of these must hold before this level can be built.`, "");
+      parts.push(`**Requirements:** all of these must hold before this level can be built.`, "");
       parts.push(...req.lines.map((r) => `- ${r}`), "");
       if (req.long.length) parts.push("<details>", "<summary>Show the full conditions</summary>", "", ...req.long, "", "</details>", "");
     }
@@ -1535,24 +1535,24 @@ Costs in denarii, build time in turns.
     }
 
     if (eff.beliefs.length) {
-      parts.push(`**Religious belief** — spreads ${eff.beliefs.length} belief${eff.beliefs.length === 1 ? "" : "s"}, by how much depending on what the region already believes.`, "");
+      parts.push(`**Religious belief:** spreads ${eff.beliefs.length} belief${eff.beliefs.length === 1 ? "" : "s"}, by how much depending on what the region already believes.`, "");
       parts.push(...fold(`the ${eff.beliefs.length} beliefs`, eff.beliefs, 6));
     }
 
     if (eff.recruits.length) {
-      parts.push(`**Recruitment** — unlocks ${eff.recruits.length} unit${eff.recruits.length === 1 ? "" : "s"}. Which of them you can actually raise depends on your faction, your government and the region.`, "");
+      parts.push(`**Recruitment:** unlocks ${eff.recruits.length} unit${eff.recruits.length === 1 ? "" : "s"}. Which of them you can actually raise depends on your faction, your government and the region.`, "");
       parts.push(...fold(`the ${eff.recruits.length} units`, eff.recruits, 8));
     }
 
     if (eff.raw.length) {
-      parts.push(...fold(`${eff.raw.length} effect line${eff.raw.length === 1 ? "" : "s"} this wiki does not translate yet — shown as the game files write them`, eff.raw.map((r) => `\`${r}\``), 0));
+      parts.push(...fold(`${eff.raw.length} effect line${eff.raw.length === 1 ? "" : "s"} this wiki does not translate yet, shown as the game files write them`, eff.raw.map((r) => `\`${r}\``), 0));
     }
     if (!eff.effects.length && !eff.recruits.length && !eff.beliefs.length && !eff.conditional.length && !eff.raw.length) {
       parts.push("No direct effects.", "");
     }
 
     if (ex.length) {
-      parts.push(`> **Excludes:** building this rules out ${ex.map(excludeText).join(", ")}. Choose deliberately — this is not reversible by demolition in every case.`, "");
+      parts.push(`> **Excludes:** building this rules out ${ex.map(excludeText).join(", ")}. Choose deliberately: this is not reversible by demolition in every case.`, "");
     }
     return parts.join("\n");
   });
@@ -1630,7 +1630,7 @@ const idx = `# Buildings
 ${index.length} building chains, ${totalLevels.toLocaleString("en-US")} levels in all. Each page follows a chain level by
 level: what it looks like, what it does, what it costs and needs, and what it upgrades into.
 
-${totalExclusions ? `**Some buildings rule others out** — once one is built, the other cannot be built in
+${totalExclusions ? `**Some buildings rule others out:** once one is built, the other cannot be built in
 that settlement. The *Excl.* column counts the levels in a chain that do this, and each page
 marks them.
 ` : ""}

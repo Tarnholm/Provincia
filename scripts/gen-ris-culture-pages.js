@@ -745,7 +745,7 @@ function culturePage(f, all) {
   if (sm) {
     artLines.push(`This culture has its own strategy-map buildings: **${smSizes.length}** of the ${LADDER.length} rungs have a block, with **${wallCount}** wall models between them${modelFamilies.length ? `, drawn from the \`${modelFamilies.join("`, `")}\` model set${modelFamilies.length === 1 ? "" : "s"}` : ""}.`);
     if (smMissing.length) {
-      artLines.push(`**How far this culture's ladder goes is stated two ways.** It is given \`max settlement level: ${c.max || "not stated"}\`, which reaches ${sizeNameOf(c.max || LADDER[LADDER.length - 1])}, but there is no strategy-map block at ${smMissing.map(sizeNameOf).join(" or ")} — so no model and no card for ${smMissing.length === 1 ? "that rung" : "those rungs"}. Which of the two the engine obeys is **not determined**.`);
+      artLines.push(`**How far this culture's ladder goes is stated two ways.** It is given \`max settlement level: ${c.max || "not stated"}\`, which reaches ${sizeNameOf(c.max || LADDER[LADDER.length - 1])}, but there is no strategy-map block at ${smMissing.map(sizeNameOf).join(" or ")}, so no model and no card for ${smMissing.length === 1 ? "that rung" : "those rungs"}. Which of the two the engine obeys is **not determined**.`);
     } else {
       artLines.push(`Every rung of the ladder has a block, so nothing is missing between the two files for this culture.`);
     }
@@ -758,10 +758,10 @@ function culturePage(f, all) {
       }),
     ]));
   } else {
-    artLines.push(`**This culture has no strategy-map buildings, walls or settlement card of its own.** Only **${SM_SETTLEMENTS.size}** of the ${CULTURES.length} cultures do — \`${[...SM_SETTLEMENTS.keys()].join("`, `")}\`. What its settlements are drawn with instead is **not determined**.`);
+    artLines.push(`**This culture has no strategy-map buildings, walls or settlement card of its own.** Only **${SM_SETTLEMENTS.size}** of the ${CULTURES.length} cultures do: \`${[...SM_SETTLEMENTS.keys()].join("`, `")}\`. What its settlements are drawn with instead is **not determined**.`);
   }
   if (declaredIcons.length) {
-    artLines.push(`This culture has a settlement card of its own for **${declaredIcons.length}** ${declaredIcons.length === 1 ? "size" : "sizes"}, from the \`${iconFamilies.join("`, `")}\` UI art ${iconFamilies.length === 1 ? "family" : "families"}${iconsOnDisk ? `, and ${iconsOnDisk} of those files ${iconsOnDisk === 1 ? "is" : "are"} in the mod folder` : `, and none of those files is in the mod folder — they come from the base game's own art`}.`);
+    artLines.push(`This culture has a settlement card of its own for **${declaredIcons.length}** ${declaredIcons.length === 1 ? "size" : "sizes"}, from the \`${iconFamilies.join("`, `")}\` UI art ${iconFamilies.length === 1 ? "family" : "families"}${iconsOnDisk ? `, and ${iconsOnDisk} of those files ${iconsOnDisk === 1 ? "is" : "are"} in the mod folder` : `, and none of those files is in the mod folder; they come from the base game's own art`}.`);
   } else {
     artLines.push("_This culture has no settlement card of its own._");
   }
@@ -888,7 +888,7 @@ const ownCols = [HAS_OWN_LEVELS ? "**Own buildings**" : null, HAS_OWN_UNITS ? "*
 // what knocking the underscores out of the token would have produced.
 const RENAMED = CULTURE_TOKENS.filter(isRenamed);
 const renameNote = RENAMED.length
-  ? `**${RENAMED.length}** of the ${CULTURES.length} carry a name the token would not have produced — ${RENAMED.map((t) => `\`${t}\` is **${cultureName(t)}**`).join(", ")} — so the token is never printed as a name here. Every name on these pages is the mod's own, from its text files.`
+  ? `**${RENAMED.length}** of the ${CULTURES.length} carry a name the token would not have produced: ${RENAMED.map((t) => `\`${t}\` is **${cultureName(t)}**`).join(", ")}, so the token is never printed as a name here. Every name on these pages is the mod's own, from its text files.`
   : `Every culture's name here is the mod's own, from its text files.`;
 
 const biggestHolder = (() => {
@@ -913,7 +913,7 @@ ${summary}
 **Settlements** is what the culture's factions hold at the start of the campaign.${ownCols.length ? ` ${ownCols.join(" and ")} ${ownCols.length === 1 ? "counts what" : "count what"} only that culture's factions can have.` : ""} **Beliefs**
 is how many different religions its factions follow.
 ${biggestHolder && biggestHolder.n / heldTotal > 0.2
-    ? `\nThe **${facName(biggestHolder.faction)}** — land no faction holds at the start — count as ${biggestHolder.culture.name ? `**${biggestHolder.culture.name}**` : biggestHolder.culture.tok}, which is why that row has ${num(biggestHolder.n)} settlements.\n`
+    ? `\nThe **${facName(biggestHolder.faction)}** (land no faction holds at the start) count as ${biggestHolder.culture.name ? `**${biggestHolder.culture.name}**` : biggestHolder.culture.tok}, which is why that row has ${num(biggestHolder.n)} settlements.\n`
     : ""}`;
 fs.writeFileSync(path.join(OUT, "cultures.md"), indexBody, "utf8");
 

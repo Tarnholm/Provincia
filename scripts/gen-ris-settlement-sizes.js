@@ -602,7 +602,7 @@ function sizePage(size, i) {
 
   const heldTotal = held.length;
   const startBody = at.length
-    ? `At the start of the campaign **${num(at.length)}** of the ${num(heldTotal)} settlements are this size — `
+    ? `At the start of the campaign **${num(at.length)}** of the ${num(heldTotal)} settlements are this size, `
       + `${(at.length / heldTotal * 100).toFixed(1)}% of them. `
       + `${at.filter((h) => h.capital).length} of those are a faction's capital.`
       + `\n\n${fold(`Who holds them (${byFaction.size} ${byFaction.size === 1 ? "faction" : "factions"})`, [
@@ -662,7 +662,7 @@ ${numberDisagreements.length === 0
 ${cultureReach}
 ## What it unlocks
 
-### Building levels first buildable here — ${levels.length}
+### Building levels first buildable here (${levels.length})
 
 ${levels.length
     ? `${levels.length === 1 ? "One building level needs" : `**${levels.length}** building levels need`} at least this size, so ${levels.length === 1 ? "it is" : "they are"} the ${levels.length === 1 ? "building" : "buildings"} a settlement can first put up on reaching it. Counting everything from the bottom of the ladder up to here, **${num(cumulativeLevels)}** building ${cumulativeLevels === 1 ? "level is" : "levels are"} available at this size.
@@ -670,10 +670,10 @@ ${levels.length
 ${maybeFold(`The ${levels.length} levels`, levels.length, levelTable)}`
     : `_No building level first becomes available at this size. ${cumulativeLevels ? `The ${num(cumulativeLevels)} that are available at this size all became available lower down the ladder.` : "Nothing at all can be built at this size."}_`}
 
-### Units first raisable here — ${units.length}
+### Units first raisable here (${units.length})
 
 ${units.length
-    ? `**${units.length}** ${units.length === 1 ? "unit" : "units"} cannot be raised in a smaller settlement — the smallest building level that lists ${units.length === 1 ? "it" : "them"} needs this size. Counting everything from the bottom of the ladder up to here, **${num(cumulativeUnits)}** ${cumulativeUnits === 1 ? "unit is" : "units are"} raisable at this size.
+    ? `**${units.length}** ${units.length === 1 ? "unit" : "units"} cannot be raised in a smaller settlement: the smallest building level that lists ${units.length === 1 ? "it" : "them"} needs this size. Counting everything from the bottom of the ladder up to here, **${num(cumulativeUnits)}** ${cumulativeUnits === 1 ? "unit is" : "units are"} raisable at this size.
 
 ${maybeFold(`The ${units.length} units`, units.length, unitTable)}`
     : `_No unit first becomes raisable at this size. ${cumulativeUnits ? `${num(cumulativeUnits)} units are raisable at this size, every one of them from lower down the ladder.` : "None of them can be raised at this size at all."}_`}
@@ -754,7 +754,7 @@ ${LADDER.map((s) => `[${sizeName(s)}](sizes/${s}.md)`).join(" < ")}
 
 **Population** is what it takes to reach the rung; **ceiling** is the population above which
 overcrowding starts. Both are the same for all ${CULTURES.length} cultures. **Builds** and **units** are what
-*first* becomes available at that size — the cumulative figures are on each page.
+*first* becomes available at that size; the cumulative figures are on each page.
 
 | | Size | Population | Ceiling | Builds | Units | At the start |
 |:-:|---|---:|---:|---:|---:|---:|
@@ -797,7 +797,7 @@ At the start of the campaign there are **${num(held.length)}** settlements.
 ${(() => {
   const empty = LADDER.filter((s) => !(startBySize.get(s) || []).length);
   return empty.length
-    ? `**${empty.map((s) => sizeName(s)).join(" and ")}** ${empty.length === 1 ? "is a rung no settlement starts on" : "are rungs no settlement starts on"} — ${empty.length === 1 ? "it exists" : "they exist"} in the rules and nowhere on the map at turn 0.`
+    ? `**${empty.map((s) => sizeName(s)).join(" and ")}** ${empty.length === 1 ? "is a rung no settlement starts on" : "are rungs no settlement starts on"}; ${empty.length === 1 ? "it exists" : "they exist"} in the rules and nowhere on the map at turn 0.`
     : "Every rung has at least one settlement on it at the campaign start.";
 })()}
 
@@ -813,7 +813,7 @@ ${(() => {
   if (!top) return "";
   const share = top[1] / held.length;
   if (share < 0.2) return "";
-  return `\nRead the largest row with care: **${facName(top[0])}** alone holds **${num(top[1])}** settlements — ${(share * 100).toFixed(0)}% of the map — and that faction's culture is ${cultureOf(top[0]) ? cultureRef(cultureOf(top[0])) : "unknown"}, so every one of them counts on that row. It is unclaimed ground, not a people.\n`;
+  return `\nRead the largest row with care: **${facName(top[0])}** alone holds **${num(top[1])}** settlements (${(share * 100).toFixed(0)}% of the map), and that faction's culture is ${cultureOf(top[0]) ? cultureRef(cultureOf(top[0])) : "unknown"}, so every one of them counts on that row. It is unclaimed ground, not a people.\n`;
 })()}
 ${crossTab}
 

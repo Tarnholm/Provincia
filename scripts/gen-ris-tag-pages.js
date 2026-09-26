@@ -393,14 +393,14 @@ function entryBody(f, opts) {
 
   const bullets = [];
   const levelList = (arr) => uniq(arr.map(([c, l]) => levelLink(c, l))).join(", ");
-  if (f.levels.length) bullets.push(`**Lets you build** — ${f.levels.length} building ${f.levels.length === 1 ? "level" : "levels"}: ${levelList(f.levels)}`);
-  if (f.blockedLevels.length) bullets.push(`**Blocks** — ${f.blockedLevels.length} building ${f.blockedLevels.length === 1 ? "level" : "levels"}: ${levelList(f.blockedLevels)}`);
+  if (f.levels.length) bullets.push(`**Lets you build:** ${f.levels.length} building ${f.levels.length === 1 ? "level" : "levels"}: ${levelList(f.levels)}`);
+  if (f.blockedLevels.length) bullets.push(`**Blocks:** ${f.blockedLevels.length} building ${f.blockedLevels.length === 1 ? "level" : "levels"}: ${levelList(f.blockedLevels)}`);
   const effWords = (m) => uniq([...m.values()].map((e) => `${effectRange(e)} (${levelName(e.level)})`));
-  if (f.effects.size) bullets.push(`**Numeric effects where it is present** — ${effWords(f.effects).join("; ")}`);
-  if (f.blockedEffects.size) bullets.push(`**Numeric effects it withholds** — these are granted only where it is absent: ${effWords(f.blockedEffects).join("; ")}`);
+  if (f.effects.size) bullets.push(`**Numeric effects where it is present:** ${effWords(f.effects).join("; ")}`);
+  if (f.blockedEffects.size) bullets.push(`**Numeric effects it withholds** (granted only where it is absent): ${effWords(f.blockedEffects).join("; ")}`);
   if (!opts.unitsSeparate) {
-    if (f.units.size) bullets.push(`**Lets you raise** — ${f.units.size} ${f.units.size === 1 ? "unit" : "units"}: ${[...f.units.values()].map((x) => unitLink(x.type)).join(", ")}`);
-    if (f.blockedUnits.size) bullets.push(`**Withholds** — ${f.blockedUnits.size} ${f.blockedUnits.size === 1 ? "unit" : "units"} other tags would otherwise give`);
+    if (f.units.size) bullets.push(`**Lets you raise:** ${f.units.size} ${f.units.size === 1 ? "unit" : "units"}: ${[...f.units.values()].map((x) => unitLink(x.type)).join(", ")}`);
+    if (f.blockedUnits.size) bullets.push(`**Withholds:** ${f.blockedUnits.size} ${f.blockedUnits.size === 1 ? "unit" : "units"} other tags would otherwise give`);
   }
   if (bullets.length) { out.push(""); out.push(...bullets.map((b) => `- ${b}`)); }
   else if (!opts.unitsSeparate || (!f.units.size && !f.blockedUnits.size)) { out.push(""); out.push(NOTHING); }
@@ -506,7 +506,7 @@ function recruitmentPage(title, file, tokens, lede) {
       parts.push("\n" + unitTable(f));
     }
     const extra = [];
-    if (f.blockedUnits.size && f.regions.length) extra.push(`- Carrying this zone **withholds ${f.blockedUnits.size}** ${f.blockedUnits.size === 1 ? "unit" : "units"} that a broader zone would otherwise give — that is how the generic rosters step aside for a local one.`);
+    if (f.blockedUnits.size && f.regions.length) extra.push(`- Carrying this zone **withholds ${f.blockedUnits.size}** ${f.blockedUnits.size === 1 ? "unit" : "units"} that a broader zone would otherwise give; that is how the generic rosters step aside for a local one.`);
     if (f.levels.length) extra.push(`- Also lets you build: ${uniq(f.levels.map(([c, l]) => levelLink(c, l))).join(", ")}`);
     if (extra.length) parts.push("\n" + extra.join("\n"));
     const rf = regionsFold(f, "Regions in this zone");
@@ -584,7 +584,7 @@ ${list.map((f) => {
 
 // ── build ────────────────────────────────────────────────────────────────────
 const terrain = simplePage("Terrain", "terrain.md", [...TERRAIN_TAGS].sort(),
-  `Every region on the map carries one terrain tag. Terrain decides which of the mod's competing\nland-use chains you may build — farms, irrigated farming, rainfed farming, the four\npastoralism chains, qanats, marsh reclamation — and several of them carry a standing penalty.`,
+  `Every region on the map carries one terrain tag. Terrain decides which of the mod's competing\nland-use chains you may build (farms, irrigated farming, rainfed farming, the four\npastoralism chains, qanats, marsh reclamation), and several of them carry a standing penalty.`,
   { header: "Terrain", regionsLabel: "Regions with this terrain" });
 
 const climate = simplePage("Climate", "climate.md", [...CLIMATE_TAGS].sort(),
@@ -608,7 +608,7 @@ const fertility = simplePage("Fertility", "fertility.md", FARM_TAGS,
   { header: "Fertility", regionsLabel: "Regions at this fertility" });
 
 const zones = recruitmentPage("Recruitment zones", "recruitment-zones.md", ZONE_TAGS,
-  `A recruitment zone is a region tag that unlocks local troops. Hold a region inside the zone,\nbuild the military building the unit needs, and you may raise it — whoever you are. This is how\nRIS lets an empire field the men of the places it has taken rather than only its own.\n\nZones overlap, and the broader one steps aside: a unit raised through the Greek zone is usually\nbarred from regions that are also in a more specific Greek zone, so the generic hoplite appears\nwhere there is no local speciality and the local speciality appears where there is.`);
+  `A recruitment zone is a region tag that unlocks local troops. Hold a region inside the zone,\nbuild the military building the unit needs, and you may raise it, whoever you are. This is how\nRIS lets an empire field the men of the places it has taken rather than only its own.\n\nZones overlap, and the broader one steps aside: a unit raised through the Greek zone is usually\nbarred from regions that are also in a more specific Greek zone, so the generic hoplite appears\nwhere there is no local speciality and the local speciality appears where there is.`);
 
 const specialty = recruitmentPage("Specialty recruitment", "specialty-recruitment.md", [...SPECIALTY_AOR].sort(),
   `Five zones that mark a kind of soldier or a military era rather than a place. They work like\nany other recruitment zone.`);
@@ -673,7 +673,7 @@ const indexBody = `# Region tag reference
 
 [← all regions](regions.md) · [wiki index](README.md)
 
-A region page lists what the region *is* — its terrain, climate, water source, harbour, recruitment
+A region page lists what the region *is*: its terrain, climate, water source, harbour, recruitment
 zones, homeland and fertility. These pages say what each of those **does**.
 
 | Reference | What it decides |

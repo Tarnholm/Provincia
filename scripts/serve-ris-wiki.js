@@ -854,7 +854,7 @@ hr{border:none;border-top:1px solid var(--line);margin:2rem 0}
 `;
 
 const NAV = [
-  ["Start here", [["/README.md", "Wiki index"], ["/factions.md", "All factions"],
+  ["Start here", [["/README.md", "Wiki index"], ["/guides.md", "Game guides"], ["/factions.md", "All factions"],
     ["/regions.md", "Regions and settlements"], ["/world-map.html", "World map"],
     ["/units.md", "All units"], ["/buildings.md", "All buildings"], ["/trade-goods.md", "Trade goods"],
     ["/cultures.md", "Cultures"], ["/religions.md", "Beliefs"], ["/traits.md", "Character traits"],
@@ -964,7 +964,7 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
   <div class="bar">
   <a class="brand" href="/README.md"><img src="/art/ris-mark.png" alt="">RTR: Imperium Surrectum</a>
   <form action="/search" method="get" role="search">
-    <input name="q" type="search" placeholder="Search ${INDEX.length.toLocaleString("en-US")} pages — a faction, region or unit…" autocomplete="off">
+    <input name="q" type="search" placeholder="Search ${INDEX.length.toLocaleString("en-US")} pages: a faction, region or unit…" autocomplete="off">
   </form>
   <div class="right">
     <button id="theme" type="button" title="Switch theme">theme</button>

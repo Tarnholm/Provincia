@@ -463,8 +463,8 @@ const iconImg = (tok, up, size) => (iconFiles.has(tok)
 
 // ── prose the pages share ────────────────────────────────────────────────────
 const SUBTYPE_WORDS = {
-  mineable: "**Mined** — a mine can be built at the settlement that holds it.",
-  slaves: "**Slaves** — taken by enslaving the people of a conquered settlement.",
+  mineable: "**Mined:** a mine can be built at the settlement that holds it.",
+  slaves: "**Slaves:** taken by enslaving the people of a conquered settlement.",
   none: "**Traded good**",
 };
 
@@ -534,13 +534,13 @@ function goodPage(g) {
   // ── what it does ──
   const bullets = [];
   const levelList = (arr) => uniq(arr.map(([c, l]) => levelLink(c, l))).join(", ");
-  if (f.levels.length) bullets.push(`**Lets you build** — ${f.levels.length} building ${f.levels.length === 1 ? "level" : "levels"}: ${levelList(f.levels)}`);
-  if (f.blockedLevels.length) bullets.push(`**Blocks** — ${f.blockedLevels.length} building ${f.blockedLevels.length === 1 ? "level" : "levels"}: ${levelList(f.blockedLevels)}`);
+  if (f.levels.length) bullets.push(`**Lets you build:** ${f.levels.length} building ${f.levels.length === 1 ? "level" : "levels"}: ${levelList(f.levels)}`);
+  if (f.blockedLevels.length) bullets.push(`**Blocks:** ${f.blockedLevels.length} building ${f.blockedLevels.length === 1 ? "level" : "levels"}: ${levelList(f.blockedLevels)}`);
   const effWords = (m) => uniq([...m.values()].map((e) => `${effectRange(e)} (${levelName(e.level)})`));
-  if (f.effects.size) bullets.push(`**Bonuses where it is present** — ${effWords(f.effects).join("; ")}`);
+  if (f.effects.size) bullets.push(`**Bonuses where it is present:** ${effWords(f.effects).join("; ")}`);
   // Negated clauses: these apply only where the good is ABSENT (often a smaller version of a
   // bonus above), so "lost where present" would overstate it.
-  if (f.blockedEffects.size) bullets.push(`**Bonuses only where it is absent** — ${effWords(f.blockedEffects).join("; ")}`);
+  if (f.blockedEffects.size) bullets.push(`**Bonuses only where it is absent:** ${effWords(f.blockedEffects).join("; ")}`);
   if (f.blockedUnits.size) bullets.push(`**${f.blockedUnits.size}** ${f.blockedUnits.size === 1 ? "unit" : "units"} can only be raised where the region does *not* have it`);
 
   let doesBody;
@@ -590,7 +590,7 @@ function goodPage(g) {
       .map(([fac, n]) => `| ${fac ? facRef(fac) : "_independent_"} | ${n} |`);
     const regionCount = g.regionsAgree
       ? `**${nRegions.toLocaleString("en-US")}** ${nRegions === 1 ? "region" : "regions"}`
-      : "_a number of regions this generator declines to state — the two ways of deriving it disagree_";
+      : "_a number of regions this generator declines to state: the two ways of deriving it disagree_";
     // Where a good is on EVERY region, its per-region amount is a baseline rather than a
     // feature of the region, and gen-ris-region-pages.js hides it below that baseline for
     // exactly that reason. Saying so here is what stops a reader finding Slaves listed on this
@@ -599,7 +599,7 @@ function goodPage(g) {
     const totalRegions = regionPages.size || nRegions;
     const above = [...g.byRegion.values()].filter((v) => v.quantity > 1).length;
     const everywhere = nRegions >= totalRegions && totalRegions > 0
-      ? `\n\nIt is on **every region on the map**, so its presence says nothing about a region — only a surplus does. `
+      ? `\n\nIt is on **every region on the map**, so its presence says nothing about a region; only a surplus does. `
         + `${above === 0 ? "No region has more than one" : `${above.toLocaleString("en-US")} ${above === 1 ? "region has" : "regions have"} more than one`}, and a region page lists it only where there is a surplus.`
       : "";
     whereBody = `**${g.markers.toLocaleString("en-US")}** ${g.markers === 1 ? "site" : "sites"} on the map, `
@@ -716,7 +716,7 @@ region around it has it, and it does three things: it is worth trade income, it 
 settlement build something, and it may let the region raise troops nobody else can.
 
 RIS has **${GOODS.length}** of them, on ${GOODS.reduce((a, g) => a + g.markers, 0).toLocaleString("en-US")} sites${regionsWithAnything >= (regionPagesCount || Infinity)
-    ? ` — between them they reach **every one of the ${regionsWithAnything.toLocaleString("en-US")} regions**, because one of them is on all of them`
+    ? `; between them they reach **every one of the ${regionsWithAnything.toLocaleString("en-US")} regions**, because one of them is on all of them`
     : ` across ${regionsWithAnything.toLocaleString("en-US")} regions`}.${placedGoods < GOODS.length ? ` ${GOODS.length - placedGoods} ${GOODS.length - placedGoods === 1 ? "is" : "are"} on no region at the start but still matter to buildings or units.` : ""}
 ${noEffect.length ? `\n${noEffect.map((g) => `[${g.name}](goods/${g.tok}.md)`).join(", ")} ${noEffect.length === 1 ? "is" : "are"} needed by no building or unit.\n` : ""}
 Reading the table: **tier** is the good's rank and **trade value** what one unit of it is worth

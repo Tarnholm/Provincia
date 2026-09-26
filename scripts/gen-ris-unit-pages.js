@@ -913,7 +913,7 @@ function detailTables(s, u) {
 
   out.push("### Weapons", "");
   if (hasSec && s.secAttack > s.attack) {
-    out.push(`> Its **secondary** attack is the stronger one — ${s.secAttack} against ${s.attack}.`, "");
+    out.push(`> Its **secondary** attack is the stronger one: ${s.secAttack} against ${s.attack}.`, "");
   }
   out.push("| | Primary | Secondary |", "|---|---|---|");
   out.push(`| Attack | ${dash(s.attack)} | ${hasSec ? dash(s.secAttack) : "—"} |`);
@@ -1059,7 +1059,7 @@ ${reqRows.join("\n")}` : "";
     }
     zonesListed++;
     if (!regs.length) { zoneLists.push(`_No province on the map carries **${zoneShort(t)}**._`); continue; }
-    zoneLists.push(`<details>\n<summary><strong>${zoneShort(t)}</strong> — ${regs.length} province${regs.length === 1 ? "" : "s"}</summary>\n\n`
+    zoneLists.push(`<details>\n<summary><strong>${zoneShort(t)}</strong>: ${regs.length} province${regs.length === 1 ? "" : "s"}</summary>\n\n`
       + `${regs.map((r) => `[${regionName(r)}](../regions/${encodeURIComponent(r)}.md)`).join(" · ")}\n\n</details>`);
   }
   const zoneMap = areaMap([...zonesNeeded].flatMap((t) => REGIONS_BY_TAG.get(t) || []),
@@ -1092,7 +1092,7 @@ ${hire.pools.size ? `Mercenaries are **hired from a regional pool, not recruited
 offered by **${hire.pools.size} pool${hire.pools.size === 1 ? "" : "s"}** covering **${hire.regions.size} region${hire.regions.size === 1 ? "" : "s"}**${rng(hire.cost) ? `, at **${rng(hire.cost)} dn** to hire` : ""}${rng(hire.exp) ? ` and **${rng(hire.exp)} experience**` : ""}.
 ${hireMap ? `\n${hireMap}\n` : ""}
 ${hire.openToAll
-  ? `At least one of those pools sells to **any faction** that has an army in range — no faction restriction.`
+  ? `At least one of those pools sells to **any faction** that has an army in range, with no faction restriction.`
   : hire.restrict.size
     ? `Every pool offering it is restricted. Only these factions can hire it:\n\n${[...hire.restrict].sort((a, b) => factionName(a).localeCompare(factionName(b))).map(factionLink).join(" · ")}`
     : `_The pool lines carry no faction restriction the parser recognised._`}
@@ -1191,7 +1191,7 @@ ${merged.length.toLocaleString("en-US")} units.
 
 ## Mercenaries
 
-**${mercUnits.toLocaleString("en-US")} of these units are mercenaries** — hired from a regional pool on
+**${mercUnits.toLocaleString("en-US")} of these units are mercenaries**, hired from a regional pool on
 the map, not recruited from a building.
 
 ## By class
@@ -1202,7 +1202,7 @@ ${Object.entries(byClass).sort((a, b) => b[1].length - a[1].length).map(([c, v])
 
 ## Full roster
 
-**Defence** is the total the game shows — armour, defence skill and shield added together —
+**Defence** is the total the game shows (armour, defence skill and shield added together),
 not the defence skill on its own. **Men** is the base size; the game scales it by your
 unit-size setting.
 

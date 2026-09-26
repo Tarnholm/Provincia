@@ -291,7 +291,7 @@ const cultureRef = (tok) => {
 
 // ── who a trait can appear on ────────────────────────────────────────────────
 const CHAR_CLASS = {
-  family: "family members — generals, governors, leaders",
+  family: "family members (generals, governors, leaders)",
   all: "every character, agents included",
   diplomat: "diplomats",
   spy: "spies",
@@ -507,7 +507,7 @@ function triggerFold(t) {
   const body = [table];
   if (raws.length) body.push("", fold("Technical", raws));
   return fold(
-    `How it is ${losses.length && !gains.length ? "lost" : gains.length && losses.length ? "gained and lost" : "gained"} — ${events.join(", ")}`,
+    `How it is ${losses.length && !gains.length ? "lost" : gains.length && losses.length ? "gained and lost" : "gained"}: ${events.join(", ")}`,
     body,
   );
 }
@@ -543,7 +543,7 @@ function traitEntry(t) {
     lines.push("");
     const d = VNVS[l.desc];
     if (d) lines.push(`> ${cell(d)}`);
-    else lines.push("> _description not determined — no text entry_");
+    else lines.push("> _description not determined: no text entry_");
   } else {
     lines.push(`| Level | At points | Effects |`);
     lines.push(`|---|---:|---|`);
@@ -553,7 +553,7 @@ function traitEntry(t) {
     const descs = t.levels.filter((l) => VNVS[l.desc]);
     if (descs.length) {
       lines.push("");
-      lines.push(fold(`What the game says at each level`, descs.map((l) => `**${cell(l.display)}** — ${cell(VNVS[l.desc])}\n`)));
+      lines.push(fold(`What the game says at each level`, descs.map((l) => `**${cell(l.display)}**: ${cell(VNVS[l.desc])}\n`)));
     }
   }
   if (t.excludeCultures.length) {
@@ -606,17 +606,17 @@ const writePage = (file, body) => { fs.writeFileSync(path.join(OUT, "traits", fi
 
 // the three compressed table pages
 writePage("governorships.md", tablePage("governorships", "City governorships",
-  (list) => `One web of **${num(list.length)}** mutually exclusive city titles — Archon, Shophet, Strategos and
-their kin — one per governable city. Holding the office grants the title and its bonus;
+  (list) => `One web of **${num(list.length)}** mutually exclusive city titles (Archon, Shophet, Strategos and
+their kin), one per governable city. Holding the office grants the title and its bonus;
 losing the city takes it away. A governor can hold only one city title.`));
 writePage("fears-and-hatreds.md", tablePage("fears-and-hatreds", "Fears and hatreds",
   (list) => `**${num(list.length)}** traits from the ethnic module: characters who campaign against a people long
-enough come to hate them — or fear them. Hatred sharpens combat against that people;
+enough come to hate them, or fear them. Hatred sharpens combat against that people;
 fear blunts it. Each pair pulls against the other, so a character drifts toward one pole.`));
 writePage("origins.md", tablePage("origins", "Origins and hometowns",
   (list) => `**${num(list.length)}** birthplace stamps: "From" a city for family members, "Native of" a city for
-agents. Most carry no stat effects at all — they exist so a character's biography names
-a home — and the handful that do are border-city stamps with a loyalty edge.`));
+agents. Most carry no stat effects at all (they exist so a character's biography names
+a home), and the handful that do are border-city stamps with a loyalty edge.`));
 
 // the two small full-detail class pages
 function classPage(page, title, intro) {
@@ -628,12 +628,12 @@ ${list.map(traitEntry).join("\n\n---\n\n")}
 `;
 }
 writePage("agents.md", classPage("agents", "Agent traits",
-  (list) => `**${num(list.length)}** traits that appear only on diplomats, spies and assassins — the skill ladders
+  (list) => `**${num(list.length)}** traits that appear only on diplomats, spies and assassins: the skill ladders
 and habits of the characters who work alone. Traits open to every character type,
 agents included, are in the main dictionary.`));
 writePage("admirals.md", classPage("admirals", "Admiral traits",
   (list) => `**${num(list.length)}** traits that appear only on admirals: sea-sense, victory experience, the state of
-the fleet's supplies and pay. A fleet's character is its admiral — ships carry no
+the fleet's supplies and pay. A fleet's character is its admiral; ships carry no
 traits of their own.`));
 
 // the dictionary
@@ -642,7 +642,7 @@ const OTHER = PAGES.get("other") || [];
 if (OTHER.length) { console.error(`unplaceable traits (no letter in display name): ${OTHER.map((t) => t.name).join(", ")}`); process.exit(1); }
 for (const L of LETTERS) {
   const list = PAGES.get(L).slice().sort((a, b) => a.heading.localeCompare(b.heading));
-  const body = `${HEAD(`Traits — ${L.toUpperCase()}`)}
+  const body = `${HEAD(`Traits: ${L.toUpperCase()}`)}
 **${num(list.length)}** trait${list.length === 1 ? "" : "s"} whose display name begins with **${L.toUpperCase()}**.
 ${LETTERS.map((x) => (x === L ? `**${x.toUpperCase()}**` : `[${x.toUpperCase()}](${x}.md)`)).join(" · ")}
 
@@ -661,26 +661,26 @@ const PAGE_ROWS = [
   ["fears-and-hatreds.md", "Fears and hatreds", "the ethnic module: hatred sharpens, fear blunts"],
   ["origins.md", "Origins and hometowns", "birthplace stamps for characters and agents"],
   ["agents.md", "Agent traits", "diplomats, spies and assassins only"],
-  ["admirals.md", "Admiral traits", "admirals only — experience, supplies, pay"],
+  ["admirals.md", "Admiral traits", "admirals only: experience, supplies, pay"],
 ];
 
 const indexBody = `# Character traits
 
 [← wiki index](README.md) · [all factions](factions.md) · [all units](units.md)
 
-Characters in **RTR: Imperium Surrectum** are shaped by **${num(VISIBLE.length)}** traits — the virtues,
+Characters in **RTR: Imperium Surrectum** are shaped by **${num(VISIBLE.length)}** traits: the virtues,
 vices, offices, wounds, habits and reputations that appear on a general's, governor's or
 agent's scroll.
 
 ## How traits work
 
 - **A trait is a ladder of levels.** A character earns points in a trait from what he does
-  and where he is — battles fought, turns spent idle, buildings raised — and each new level
+  and where he is (battles fought, turns spent idle, buildings raised), and each new level
   shows once he has enough points for it.
 - **Traits pull against each other.** Points in one drain its opposite, so a character drifts
   toward drink or sobriety, courage or cowardice, never both.
 - **Some traits run in families.** Sons can inherit them from their father at birth.
-- **Some levels grant an epithet** — the "the Great" and "the Mad" a name carries.
+- **Some levels grant an epithet:** the "the Great" and "the Mad" a name carries.
 - **Some traits are one-way.** Once they reach a certain level they cannot drop back; each
   trait's entry says so where it applies.
 
@@ -690,9 +690,9 @@ agent's scroll.
 |---|---:|---|
 ${PAGE_ROWS.map(([f, title, what]) => `| [**${title}**](traits/${f}) | ${num((PAGES.get(f.replace(/\.md$/, "")) || []).length)} | ${what} |`).join("\n")}
 
-### The dictionary — every other trait, by first letter
+### The dictionary: every other trait, by first letter
 
-${LETTERS.map((L) => `- [**${L.toUpperCase()}**](traits/${L}.md) — ${PAGES.get(L).length} trait${PAGES.get(L).length === 1 ? "" : "s"}`).join("\n")}
+${LETTERS.map((L) => `- [**${L.toUpperCase()}**](traits/${L}.md): ${PAGES.get(L).length} trait${PAGES.get(L).length === 1 ? "" : "s"}`).join("\n")}
 
 Who the traits appear on: ${Object.entries(charCounts).sort((a, b) => b[1] - a[1]).map(([c, n]) => `**${num(n)}** on ${charName(c)}`).join(" · ")}.
 
