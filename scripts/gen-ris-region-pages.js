@@ -1226,9 +1226,12 @@ for (const r of list) {
   addRow("Geography and gating", g.geography, GATE_PLAIN);
   addRow("Other tags", g.other, GATE_PLAIN);
 
+  const mapImg = `![Map of ${placeName(r.region)} and its neighbours](../region-maps/${encodeURIComponent(r.region)}.webp)`;
   const body = `# ${placeName(r.region)}
 
 [← all regions and settlements](../regions.md) · [wiki index](../README.md)
+
+${mapImg}
 
 **Its settlement is [${settleName}](${settleHref})**${ownerPhrase ? `, held at the campaign start by ${ownerPhrase}` : ""}. That page has the town —
 its size, its population, what is built there and what it can raise. This one is the land.
@@ -1282,6 +1285,8 @@ ${gated.join("\n")}
   const townBody = `# ${settleName}
 
 [← all regions and settlements](../regions.md) · [wiki index](../README.md)
+
+${mapImg}
 
 The settlement of the region of **[${placeName(r.region)}](../regions/${encodeURIComponent(r.region)}.md)**${ownerPhrase ? `, held at the campaign start by ${ownerPhrase}` : ""}.
 ${townGlance ? `\n${townGlance}\n` : ""}${held ? "" : `\nNo faction holds it at the campaign start. If the region revolts, the rebels are ${r.rebels}.\n`}
@@ -1351,6 +1356,48 @@ ${index.map((e) => {
 fs.writeFileSync(path.join(OUT, "regions.md"), idx, "utf8");
 // The old separate settlement list is now this page.
 fs.rmSync(path.join(OUT, "settlements.md"), { force: true });
+
+// ── region maps ──────────────────────────────────────────────────────────────
+// One map per region, shown on its region page and its settlement page, drawn by
+// lib/regionMaps.py the way Provincia's map view draws the world (terrain palette, hillshade,
+// owner tints, borders, settlement names). The render takes minutes, so it is skipped when its
+// inputs - this list, the three map TGAs and the renderer itself - are unchanged.
+{
+  const fmap = require(path.join(__dirname, "lib", "factionMap.js"));
+  const parsers = require(path.join(__dirname, "..", "src", "parsers.js"));
+  const world = fmap.loadWorld({ risDir: RIS, dg, parsers, strat });
+  const rgbOf = {};
+  const dr = dg.parseDescrRegions(fs.readFileSync(path.join(RIS, "world", "maps", "base", "descr_regions.txt"), "latin1"));
+  for (const [k, n] of Object.entries(dr.rgbToRegion)) if (!rgbOf[n]) rgbOf[n] = k.split(",").map(Number);
+  const nameOf = new Map(index.map((e) => [e.region, e.settlementName]));
+  const spec = { ris: RIS, out: path.join(OUT, "region-maps"), regions: [] };
+  for (const e of index) {
+    const ri = world ? world.idxOf.get(e.region) : undefined;
+    if (ri === undefined || !rgbOf[e.region]) continue;
+    const o = world.ownerOf[ri];
+    const xy = world.settleXY[ri];
+    spec.regions.push({ token: e.region, rgb: rgbOf[e.region], settlement: nameOf.get(e.region),
+      owner: o >= 0 && world.colour[o] ? world.colour[o] : null, sx: xy ? xy.x : null, sy: xy ? xy.y : null });
+  }
+  const crypto = require("crypto");
+  const base = path.join(RIS, "world", "maps", "base");
+  const sig = crypto.createHash("sha1").update(JSON.stringify(spec))
+    .update(["map_regions.tga", "map_ground_types.tga", "map_heights.tga"].map((f) => fs.statSync(path.join(base, f)).size + ":" + fs.statSync(path.join(base, f)).mtimeMs).join("|"))
+    .update(fs.readFileSync(path.join(__dirname, "lib", "regionMaps.py"))).digest("hex");
+  const sigFile = path.join(spec.out, ".sig");
+  const have = fs.existsSync(sigFile) && fs.readFileSync(sigFile, "utf8") === sig
+    && spec.regions.every((r) => fs.existsSync(path.join(spec.out, `${r.token}.webp`)));
+  if (have) console.log(`  region maps: unchanged, ${spec.regions.length} kept`);
+  else {
+    fs.mkdirSync(spec.out, { recursive: true });
+    const specFile = path.join(require("os").tmpdir(), "ris-region-maps.json");
+    fs.writeFileSync(specFile, JSON.stringify(spec));
+    require("child_process").execFileSync("python", [path.join(__dirname, "lib", "regionMaps.py"), specFile], { stdio: "inherit" });
+    const want = new Set(spec.regions.map((r) => `${r.token}.webp`));
+    for (const f of fs.readdirSync(spec.out)) if (f.endsWith(".webp") && !want.has(f)) fs.unlinkSync(path.join(spec.out, f));
+    fs.writeFileSync(sigFile, sig);
+  }
+}
 
 console.log(`${list.length} region pages written`);
 console.log(`  settlement pages written:   ${settlementIndex.length} (listed in regions.md) · distinct tokens ${settlementTokens.size}${settlementTokens.size === settlementIndex.length ? " — no collision" : " — COLLISION, a page was overwritten"}`);
