@@ -577,6 +577,9 @@ td.cmp-best{color:var(--acc);font-weight:700}
 .cmp-clear{padding:.05rem .55rem;margin-left:.6rem}
 .cmp-x:hover,.cmp-clear:hover{border-color:var(--acc)}
 .cmp-panel{overflow-x:auto;margin:0 0 1rem;border:1px solid var(--line);border-radius:8px}
+tr.cmp-hold>td{padding:.5rem;background:var(--bg)}
+tr.cmp-hold .cmp-panel{margin:0}
+.cmp-panel td,.cmp-panel th{white-space:nowrap}
 .cmp-panel table{margin:0}
 .cmp-panel thead th{position:static;top:auto}
 .cmp-btn{display:inline-block;margin:0 0 .8rem;background:var(--panel);color:var(--fg);border:1px solid var(--acc);border-radius:6px;padding:.3rem .8rem;cursor:pointer;font:inherit}
@@ -873,7 +876,7 @@ hr{border:none;border-top:1px solid var(--line);margin:2rem 0}
 `;
 
 const NAV = [
-  ["Start here", [["/README.md", "Wiki index"], ["/guides.md", "Game guides"], ["/factions.md", "All factions"],
+  ["Start here", [["/README.md", "Wiki index"], ["/guides.md", "Game guides"], ["/community-guides.html", "Community guides"], ["/factions.md", "All factions"],
     ["/regions.md", "Regions and settlements"], ["/world-map.html", "World map"],
     ["/units.md", "All units"], ["/buildings.md", "All buildings"], ["/trade-goods.md", "Trade goods"],
     ["/cultures.md", "Cultures"], ["/religions.md", "Beliefs"], ["/traits.md", "Character traits"],
@@ -915,7 +918,9 @@ function editHref(rel) {
 function navHtml(rel) {
   const parts = [];
   for (const [heading, items] of NAV) {
-    const links = items.filter(([href]) => fs.existsSync(path.join(ROOT, href.slice(1))));
+    // Community guides is made by the site build (build-ris-wiki-site.js), not a generator, so
+    // it is never in the wiki folder; it is always listed.
+    const links = items.filter(([href]) => href === "/community-guides.html" || fs.existsSync(path.join(ROOT, href.slice(1))));
     if (!links.length) continue;
     parts.push(`<h4>${esc(heading)}</h4>` + links
       .map(([href, label]) => `<a href="${href}"${href === rel ? ' class="on"' : ""}>${esc(label)}</a>`)
@@ -945,7 +950,9 @@ function crumbs(rel) {
       traits: "/traits.md", ancillaries: "/ancillaries.md", reforms: "/reforms.md", revolts: "/revolts.md", diaries: "/diaries.md",
     };
     const overview = INDEX_OF[section] || null;
-    out.push(overview && fs.existsSync(path.join(ROOT, overview.slice(1)))
+    // A community guide lives in team/ but belongs to the Community guides list.
+    if (section === "team" && /^Guide-/.test(segs[1] || "")) out.push(`<a href="/community-guides.html">community guides</a>`);
+    else out.push(overview && fs.existsSync(path.join(ROOT, overview.slice(1)))
       ? `<a href="${overview}">${esc(section)}</a>` : esc(section));
   }
   return `<div class="crumb">${out.join(" › ")}</div>`;
@@ -1224,7 +1231,9 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
     for (var i = 0; i < links.length; i++){ var m = UNIT.exec(links[i].getAttribute("href")); if (m) return m[2]; }
     return null;
   };
-  var statTables = [], any = false;
+  // plainTables: unit tables with no stat columns (a faction's recruit tables); lastTbl: the
+  // table the reader last picked from, where the comparison is shown.
+  var statTables = [], plainTables = [], lastTbl = null, any = false;
   main.querySelectorAll("table").forEach(function(tbl){
     if (tbl.closest(".cmp-panel")) return;
     var tb = tbl.tBodies[0];
@@ -1245,6 +1254,7 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
     if (!perRow || !head) return;
     var heads = [].slice.call(head.cells).map(function(th){ return th.textContent.trim().toLowerCase(); });
     if (heads.some(function(h){ return COLS[h] && COLS[h][1]; })) statTables.push({ tbl: tbl, heads: heads });
+    else plainTables.push(tbl);
   });
   if (!any && !UNIT.test(location.pathname)) return;
 
@@ -1324,7 +1334,9 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
       });
       return;
     }
-    // No stat table here: the same rows in a small table at the top of the page.
+    // No stat table here: the same rows in a small table of their own, as the first row of the
+    // unit table the reader is picking from (a faction's recruit table), so it shows where they
+    // click; on a page with no unit table (a unit's own page), under the title.
     var heads = PANEL.map(function(c){ return c[1] === "card" ? "" : c[1]; });
     var rows = p.filter(function(s){ return data[s]; }).map(function(s){ return pinRow(s, heads, null); });
     markBest(rows, heads);
@@ -1334,6 +1346,22 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
     var tb = panel.querySelector("tbody");
     tb.appendChild(capRow(rows.length, PANEL.length));
     rows.forEach(function(r){ tb.appendChild(r); });
+    var host = plainTables.indexOf(lastTbl) >= 0 ? lastTbl : plainTables[0];
+    var hb = host && host.tBodies[0];
+    if (hb) {
+      var cols = host.tHead && host.tHead.rows[0] ? host.tHead.rows[0].cells.length : (hb.rows[0] ? hb.rows[0].cells.length : 1);
+      var hold = document.createElement("tr");
+      hold.className = "cmp-pin cmp-hold";
+      var td = document.createElement("td");
+      td.colSpan = cols; td.appendChild(panel); hold.appendChild(td);
+      var sep = document.createElement("tr");
+      sep.className = "cmp-pin cmp-sep";
+      sep.innerHTML = '<td colspan="' + cols + '">All units</td>';
+      hb.insertBefore(sep, hb.firstChild);
+      hb.insertBefore(hold, sep);
+      panel = null;   // removed with its row
+      return;
+    }
     var top = btn || main.querySelector("h1");
     if (top) top.insertAdjacentElement("afterend", panel); else main.insertBefore(panel, main.firstChild);
   }
@@ -1343,6 +1371,7 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
     if (t.classList && t.classList.contains("cmp-clear")) { save([]); render(); return; }
     var el = t.closest && t.closest("[data-unit]");
     if (!el || el.closest(".cmp-pin") || el.classList.contains("cmp-btn") || t.closest("a, button, input, select, summary")) return;
+    lastTbl = el.closest("table");
     toggle(el.getAttribute("data-unit"));
   });
   // A unit's own page: a button under the title.

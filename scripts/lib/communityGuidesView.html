@@ -1,0 +1,129 @@
+<!-- The Community guides page body, inserted by build-ris-wiki-site.js (asked for 2026-09-27).
+     The list is wiki-notes/guides.json, written by the site build and refreshed by the wiki's
+     GitHub Action (sync-wiki-notes.js) on every wiki edit, so a new guide shows within minutes.
+     "+ New guide" opens the GitHub wiki's editor with the page name and a template already in
+     it (the editor fills both from wiki[name] and wiki[body] in the address). -->
+<style>
+.cg-bar{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin:.4rem 0 1rem}
+.cg-bar input[type=search]{flex:1;min-width:14rem;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:.4rem .7rem;font:inherit}
+.cg-btn{background:var(--panel);color:var(--fg);border:1px solid var(--acc);border-radius:6px;padding:.4rem .9rem;cursor:pointer;font:inherit;font-weight:600}
+.cg-btn:hover{background:var(--acc-soft)}
+.cg-form{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem 1.1rem;margin:0 0 1.2rem;display:grid;gap:.7rem}
+.cg-form[hidden]{display:none}
+.cg-form label{display:grid;gap:.25rem;font-size:.9rem;color:var(--dim)}
+.cg-form input{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:.4rem .6rem;font:inherit}
+.cg-form .cg-row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.cg-form p{margin:0;color:var(--dim);font-size:.85rem}
+.cg-chips{display:flex;gap:.35rem;flex-wrap:wrap}
+.cg-chip{display:inline-flex;align-items:center;gap:.3rem;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:.1rem .55rem .1rem .2rem;font-size:.85rem;color:var(--fg)}
+.cg-chip img{width:20px;height:20px}
+.cg-chip button{background:none;border:0;color:var(--dim);cursor:pointer;padding:0 .1rem;font:inherit}
+.cg-list{list-style:none;padding:0;margin:0;display:grid;gap:.6rem}
+.cg-item{display:flex;gap:.9rem;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.7rem .9rem}
+.cg-item:hover{border-color:var(--acc)}
+.cg-emb{display:flex;flex:none;width:6.2rem;justify-content:center}
+.cg-emb img{width:44px;height:44px;margin-left:-10px;border-radius:50%;background:var(--bg)}
+.cg-emb img:first-child{margin-left:0}
+.cg-emb .cg-none{width:44px;height:44px;border-radius:50%;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:1.2rem}
+.cg-txt{min-width:0}
+.cg-txt a{font-weight:700;font-size:1.05rem}
+.cg-txt p{margin:.15rem 0 0;color:var(--fg)}
+.cg-txt small{color:var(--dim)}
+.cg-empty{color:var(--dim)}
+</style>
+<div class="cg-bar">
+  <input type="search" id="cg-q" placeholder="Search guides: a title, a faction, an author…" autocomplete="off">
+  <button type="button" class="cg-btn" id="cg-new">+ New guide</button>
+</div>
+<form class="cg-form" id="cg-form" hidden>
+  <label>Title of the guide<input id="cg-title" required placeholder="e.g. Playing Carthage: the first ten turns"></label>
+  <label>Factions it is about (optional; their emblems show beside the guide)
+    <div class="cg-row"><input id="cg-fac" list="cg-facs" placeholder="Type a faction and press Enter"><datalist id="cg-facs"></datalist></div>
+  </label>
+  <div class="cg-chips" id="cg-chips"></div>
+  <label>One-line summary (optional)<input id="cg-sum" placeholder="What the guide helps with"></label>
+  <label>Your name (optional)<input id="cg-by" placeholder="Shown as the author"></label>
+  <div class="cg-row"><button type="submit" class="cg-btn">Open the editor</button>
+    <p>Opens the guide on the wiki with a template to fill in. Replace the placeholder text and press <b>Save page</b>; it appears here within a few minutes. You need edit rights on the wiki (signed in to GitHub).</p></div>
+</form>
+<ul class="cg-list" id="cg-list"><li class="cg-empty">Loading…</li></ul>
+<script>
+(function(){
+  var FACTIONS = __FACTIONS__;   // [[token, name]] for every playable faction
+  var WIKI = "__WIKI_URL__";
+  var byName = {}, byTok = {};
+  FACTIONS.forEach(function(f){ byName[f[1].toLowerCase()] = f; byTok[f[0]] = f; });
+  function esc(t){ return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); }
+  var emb = function(tok, name){ return '<img src="symbols/' + tok + '.png" alt="" title="' + esc(name) + '" onerror="this.remove()">'; };
+
+  // ── the list ──
+  var guides = [], q = document.getElementById("cg-q"), list = document.getElementById("cg-list");
+  function draw(){
+    var t = q.value.trim().toLowerCase();
+    var shown = guides.filter(function(g){
+      if (!t) return true;
+      var hay = [g.title, g.summary, g.author].concat(g.factions.map(function(f){ return f.n; })).join(" ").toLowerCase();
+      return t.split(/\s+/).every(function(w){ return hay.indexOf(w) >= 0; });
+    });
+    if (!guides.length) { list.innerHTML = '<li class="cg-empty">No guides yet. Be the first: press <b>+ New guide</b>.</li>'; return; }
+    if (!shown.length) { list.innerHTML = '<li class="cg-empty">No guide matches that.</li>'; return; }
+    list.innerHTML = shown.map(function(g){
+      var fs = g.factions.filter(function(f){ return f.t; });
+      var pics = fs.slice(0, 4).map(function(f){ return emb(f.t, f.n); }).join("") || '<span class="cg-none">✎</span>';
+      var names = g.factions.map(function(f){ return esc(f.n); }).join(" · ");
+      return '<li class="cg-item"><div class="cg-emb">' + pics + '</div><div class="cg-txt"><a href="team/' + encodeURIComponent(g.page) + '.html">' + esc(g.title) + '</a>'
+        + (g.summary ? '<p>' + esc(g.summary) + '</p>' : "")
+        + '<small>' + [names, g.author ? "by " + esc(g.author) : ""].filter(Boolean).join(" · ") + '</small></div></li>';
+    }).join("");
+  }
+  q.addEventListener("input", draw);
+  fetch("wiki-notes/guides.json", { cache: "no-cache" }).then(function(r){ return r.ok ? r.json() : []; })
+    .catch(function(){ return []; }).then(function(g){ guides = g || []; draw(); });
+
+  // ── + New guide ──
+  var form = document.getElementById("cg-form"), fac = document.getElementById("cg-fac"), chips = document.getElementById("cg-chips"), picked = [];
+  document.getElementById("cg-facs").innerHTML = FACTIONS.map(function(f){ return '<option value="' + esc(f[1]) + '">'; }).join("");
+  document.getElementById("cg-new").addEventListener("click", function(){ form.hidden = !form.hidden; if (!form.hidden) document.getElementById("cg-title").focus(); });
+  function drawChips(){
+    chips.innerHTML = picked.map(function(f, i){ return '<span class="cg-chip">' + emb(f[0], f[1]) + esc(f[1]) + '<button type="button" data-i="' + i + '" title="Remove">×</button></span>'; }).join("");
+  }
+  function addFaction(){
+    var f = byName[fac.value.trim().toLowerCase()];
+    if (f && picked.indexOf(f) < 0) { picked.push(f); drawChips(); }
+    fac.value = "";
+  }
+  fac.addEventListener("keydown", function(e){ if (e.key === "Enter") { e.preventDefault(); addFaction(); } });
+  fac.addEventListener("change", addFaction);
+  chips.addEventListener("click", function(e){ var i = e.target.getAttribute("data-i"); if (i != null) { picked.splice(+i, 1); drawChips(); } });
+  form.addEventListener("submit", function(e){
+    e.preventDefault();
+    var title = document.getElementById("cg-title").value.trim();
+    if (!title) return;
+    var name = "Guide-" + title.replace(/[^A-Za-z0-9À-ɏ\s-]/g, "").trim().replace(/\s+/g, "-");
+    var L = String.fromCharCode(10);
+    var body = [
+      "# " + title, "",
+      "Factions: " + picked.map(function(f){ return f[1]; }).join(", "),
+      "Summary: " + document.getElementById("cg-sum").value.trim(),
+      "Author: " + document.getElementById("cg-by").value.trim(), "",
+      "<!-- The three lines above fill in this guide's entry on the Community guides page:",
+      "     Factions = faction names, separated by commas (their emblems show beside the guide)",
+      "     Summary  = one line shown under the title",
+      "     Author   = who wrote it",
+      "     Replace the placeholder text below with your guide. Each ## heading is a section.",
+      "     Links to wiki pages work too, e.g. [Rome](factions-romans_julii). -->", "",
+      "## Overview", "",
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.", "",
+      "## Getting started", "",
+      "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.", "",
+      "## Tips", "",
+      "- Lorem ipsum dolor sit amet.",
+      "- Consectetur adipiscing elit.",
+      "- Sed do eiusmod tempor incididunt.", "",
+      "## Mistakes to avoid", "",
+      "Sunt in culpa qui officia deserunt mollit anim id est laborum.", ""
+    ].join(L);
+    window.open(WIKI + "/_new?wiki%5Bname%5D=" + encodeURIComponent(name) + "&wiki%5Bbody%5D=" + encodeURIComponent(body), "_blank", "noopener");
+  });
+})();
+</script>

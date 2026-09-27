@@ -79,7 +79,7 @@ const viewer = (() => {
 const { renderMarkdown, sectionise, SHELL, CSS, INDEX } = viewer;
 
 // Team notes the team wrote in the GitHub wiki, pulled in by scripts/pull-github-wiki-notes.js
-const { readNote, readTeamPages, NOTES_DIR, PAGES_DIR, LF } = require("./ris-wiki-notes.js");
+const { readNote, readTeamPages, NOTES_DIR, PAGES_DIR, LF, isGuide, parseGuide, factionResolver, guideMarkdown, guideList } = require("./ris-wiki-notes.js");
 const NOTES = path.resolve(valOf("--notes", NOTES_DIR));
 const NOTE_SEP = LF + LF + "## Team notes" + LF + LF;
 let notesMerged = 0;
@@ -111,6 +111,19 @@ const TEAM = readTeamPages(TEAM_PAGES_DIR).map((p) => ({
   title: (/^#\s+(.+)$/m.exec(p.md) || [, p.name.split("-").join(" ")])[1].trim(),
 }));
 const TEAM_HUB = "team.md";
+// Community guides are the team pages named Guide-* (asked for 2026-09-27). They have their
+// own list page, so the Team pages hub leaves them out.
+const GUIDES_PAGE = "community-guides.html";
+const TEAM_ONLY = TEAM.filter((p) => !isGuide(p.name));
+const FACTION_PAIRS = (() => {
+  try {
+    return fs.readdirSync(path.join(WIKI, "factions")).filter((f) => f.endsWith(".md") && f !== "non-playable.md").map((f) => {
+      const m = /^#\s+(.+)$/m.exec(fs.readFileSync(path.join(WIKI, "factions", f), "utf8"));
+      return [f.slice(0, -3), m ? m[1].replace(/<[^>]*>/g, "").trim() : null];
+    });
+  } catch { return []; }
+})();
+const RESOLVE_FACTION = factionResolver(FACTION_PAIRS);
 // mapUrl checks every target against the source wiki; these pages are produced here instead,
 // so without this every link to one would be reported as a missing file.
 const PRODUCED_HERE = new Set(TEAM.length ? [TEAM_HUB, ...TEAM.map((p) => p.rel)] : []);
@@ -125,7 +138,9 @@ function teamTarget(flat, fromName, quiet) {
   const bare = decodeURIComponent(hash >= 0 ? flat.slice(0, hash) : flat).trim();
   if (!bare) return null;
   const src = TEAM_MAP[bare];
-  if (src) { teamLinks++; return "/" + src.split("\\").join("/") + frag; }
+  // page-map.json names the page without its extension ("factions/romans_julii"); a link needs
+  // the file, or it resolves to nothing on the site.
+  if (src) { teamLinks++; const p = src.split("\\").join("/"); return "/" + p + (/\.(md|html)$/i.test(p) ? "" : ".md") + frag; }
   // A link from one team page to another: those are not in the map, they are in the store.
   if (TEAM.some((t) => t.name === bare)) { teamLinks++; return "/team/" + bare + ".md" + frag; }
   if (!quiet) teamUnresolved.push({ from: fromName, target: bare });
@@ -158,6 +173,12 @@ function resolveTeamLinks(md, fromName) {
       const t = teamTarget(flat, fromName);
       return t ? `[${label}](${t})` : label;
     });
+  // [Label](Page-name): how the GitHub wiki's own editor links a page. Only a bare name (no
+  // slash, colon or dot) is tried, so ordinary links and site paths pass through untouched.
+  md = md.replace(/\[([^\]\n]*)\]\(([A-Za-z0-9_%-][^)\s/:.#]*)(#[^)\s]*)?\)/g, (m, label, name, frag) => {
+    const t = teamTarget(name + (frag || ""), fromName, true);
+    return t ? `[${label}](${t})` : m;
+  });
   return md;
 }
 
@@ -167,7 +188,7 @@ function resolveTeamLinks(md, fromName) {
 const TEAM_INDEX_SECTION = LF + LF + [
   "## Written by the team",
   "",
-  `[Team pages](/${TEAM_HUB}) — ${TEAM.length} page${TEAM.length === 1 ? "" : "s"} written by the team in the wiki,`,
+  `[Team pages](/${TEAM_HUB}) — ${TEAM_ONLY.length} page${TEAM_ONLY.length === 1 ? "" : "s"} written by the team in the wiki,`,
   "rather than generated from the game files.",
   "",
 ].join(LF);
@@ -246,7 +267,7 @@ function mapUrl(fromRel, raw) {
   const rootRel = toRootRel(fromRel, decodeURIComponent(bare));
   // Produced by this script rather than copied from the wiki, so their absence from the
   // source directory is not a missing reference.
-  const produced = ["search.html", "index.html", "search-index.js", "search-text.js", "wiki.css", "wiki.js"].includes(rootRel)
+  const produced = ["search.html", "community-guides.html", "index.html", "search-index.js", "search-text.js", "wiki.css", "wiki.js"].includes(rootRel)
     || PRODUCED_HERE.has(rootRel);
   if (!produced && !fs.existsSync(path.join(WIKI, rootRel))) notedMissing(rootRel, fromRel);
   else if (!produced && !/\.(md|html)$/i.test(rootRel)) {
@@ -533,11 +554,12 @@ note(`team notes merged: ${n(notesMerged)} (from ${NOTES})`);
 let teamRendered = 0;
 if (TEAM.length) {
   for (const p of TEAM) {
-    const md = resolveTeamLinks(p.md, p.name);
+    // A guide gets its header (factions, author, summary) and a link back to the list.
+    const md = resolveTeamLinks(isGuide(p.name) ? guideMarkdown(parseGuide(p.name, p.md), RESOLVE_FACTION, "/", ".md") : p.md, p.name);
     const toc = [];
     const html = SHELL(p.title, sectionise(renderMarkdown(md, toc)), "/" + p.rel, toc);
     writeOut(p.rel.replace(/\.md$/i, ".html"), finish(html, p.rel));
-    INDEX.push({ title: p.title, rel: "/" + p.rel, section: "team" });
+    INDEX.push({ title: p.title, rel: "/" + p.rel, section: isGuide(p.name) ? "guides" : "team" });
     teamRendered++;
   }
   const hubMd = [
@@ -547,7 +569,7 @@ if (TEAM.length) {
     "from the game files. Everything else on this site is rebuilt from the RIS data on every",
     "update; these pages are not, and are only ever changed by the person who writes them.",
     "",
-    ...TEAM.map((p) => `- [${p.title}](/${p.rel})`),
+    ...TEAM_ONLY.map((p) => `- [${p.title}](/${p.rel})`),
     "",
   ].join(LF);
   const hubToc = [];
@@ -556,6 +578,26 @@ if (TEAM.length) {
   INDEX.push({ title: "Team pages", rel: "/" + TEAM_HUB, section: "team" });
 }
 note(`team pages: ${n(teamRendered)} rendered (from ${TEAM_PAGES_DIR}), ${n(teamLinks)} links into the game data resolved`);
+
+// ── community guides ─────────────────────────────────────────────────────────
+// The list page, and the list it reads. wiki-notes/guides.json is also rewritten by the wiki's
+// GitHub Action on every wiki edit (sync-wiki-notes.js), which is how a new guide shows up
+// without a full rebuild; both write it with the same guideList().
+{
+  const guides = guideList(TEAM, RESOLVE_FACTION);
+  fs.mkdirSync(path.join(SITE, "wiki-notes"), { recursive: true });
+  fs.writeFileSync(path.join(SITE, "wiki-notes", "guides.json"), JSON.stringify(guides));
+  const playable = FACTION_PAIRS.filter(([, t]) => t).sort((a, b) => a[1].localeCompare(b[1]));
+  const intro = renderMarkdown("# Community guides\n\n[← wiki index](/README.md) · [game guides](/guides.md)\n\n"
+    + "Guides written by the RIS team and community: how to play a faction, a campaign, a system. "
+    + "Search them below, or press **+ New guide** to write one.\n", []);
+  const body = intro + fs.readFileSync(path.join(__dirname, "lib", "communityGuidesView.html"), "utf8")
+    .replace("__FACTIONS__", () => JSON.stringify(playable))
+    .replace("__WIKI_URL__", () => "https://github.com/Tarnholm/ris-wiki/wiki");
+  writeOut(GUIDES_PAGE, finish(SHELL("Community guides", body, "/" + GUIDES_PAGE, []), GUIDES_PAGE));
+  INDEX.push({ title: "Community guides", rel: "/" + GUIDES_PAGE, section: "guides" });
+  note(`community guides: ${n(guides.length)} listed`);
+}
 
 // A link a contributor wrote that no longer resolves. Reported in full and never fatal: the
 // usual cause is a data regeneration renaming the page it pointed at, and the game data must

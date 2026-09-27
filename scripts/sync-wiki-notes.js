@@ -12,7 +12,7 @@
 // never a second markdown implementation, which would agree on the day it was
 // written and drift from then on.
 const fs = require('fs'), path = require('path');
-const { extractNotes, MENU_PAGE } = require('./ris-wiki-notes.js');
+const { extractNotes, MENU_PAGE, isGuide, parseGuide, factionResolver, guideMarkdown, guideList, resolveWikiLinks } = require('./ris-wiki-notes.js');
 
 // serve-ris-wiki.js resolves its wiki root from process.argv AT LOAD TIME and exits(2) if
 // that directory is missing — defaulting to C:/RIS/_wiki, which exists on the machine
@@ -38,6 +38,16 @@ if (!fs.existsSync(mapFile)) {
   process.exit(1);
 }
 const PAGE_MAP = JSON.parse(fs.readFileSync(mapFile, 'utf8'));
+
+// A wiki page name -> its path on the site (a generated page, or another team page).
+const WIKI_TARGET = (name) => PAGE_MAP[name] || (fs.existsSync(path.join(WIKI, name + '.md')) ? 'team/' + name : null);
+
+// Community guides (Guide-* pages): faction names in a guide's "Factions:" line resolve to a
+// faction by its token or its page title, read from the wiki's own factions-*.md pages.
+const RESOLVE = factionResolver(fs.readdirSync(WIKI).filter((f) => /^factions-.+\.md$/.test(f)).map((f) => {
+  const m = /^#\s+(.+)$/m.exec(fs.readFileSync(path.join(WIKI, f), 'utf8'));
+  return [f.slice('factions-'.length, -3), m ? m[1].replace(/<[^>]*>/g, '').trim() : null];
+}));
 
 // ── team pages on the site itself ───────────────────────────────────────────
 // A team page's HTML is written here too, not only its fragment: an edit then shows without
@@ -68,7 +78,9 @@ function writeTeamPage(page, body, html) {
 function updateTeamLists() {
   const hub = path.join(SITE, 'team.html');
   if (!fs.existsSync(hub) || !fs.existsSync(TEAM_DIR)) return;
-  const pages = fs.readdirSync(TEAM_DIR).filter((f) => f.endsWith('.html')).map((f) => f.slice(0, -5)).sort((a, b) => a.localeCompare(b));
+  // Guides have their own list (community-guides.html), so they are not repeated here.
+  const pages = fs.readdirSync(TEAM_DIR).filter((f) => f.endsWith('.html')).map((f) => f.slice(0, -5))
+    .filter((p) => !isGuide(p)).sort((a, b) => a.localeCompare(b));
   const title = (p) => {
     const md = path.join(WIKI, p + '.md');
     return fs.existsSync(md) ? titleOf(p, fs.readFileSync(md, 'utf8')) : p.replace(/-/g, ' ');
@@ -112,7 +124,10 @@ for (const f of fs.readdirSync(WIKI)) {
     const mdPath = path.join(OUT, key + '.md');
     const prev = fs.existsSync(mdPath) ? fs.readFileSync(mdPath, 'utf8').trim() : null;
     if (prev === body) { unchanged++; continue; }
-    const html = renderMarkdown(body, []);
+    // A guide gets its header (factions, author, summary) and a link back to the list; on every
+    // team page, links written the wiki's way ([[Page]], [Label](Page-name)) become site links.
+    const shown = isGuide(page) ? guideMarkdown(parseGuide(page, body), RESOLVE, '../', '.html') : body;
+    const html = renderMarkdown(resolveWikiLinks(shown, WIKI_TARGET, '../', '.html'), []);
     fs.writeFileSync(mdPath, body + '\n');
     fs.writeFileSync(path.join(OUT, key + '.html'), html);
     const made = writeTeamPage(page, body, html);
@@ -156,6 +171,13 @@ for (const page of before) {
 }
 
 fs.writeFileSync(path.join(OUT, 'index.json'), JSON.stringify(index));
+// The Community guides list, read by community-guides.html when it loads.
+{
+  const guides = guideList(fs.readdirSync(WIKI).filter((f) => f.endsWith('.md') && isGuide(f.slice(0, -3)))
+    .map((f) => ({ name: f.slice(0, -3), md: fs.readFileSync(path.join(WIKI, f), 'utf8') })), RESOLVE);
+  const gf = path.join(OUT, 'guides.json'), next = JSON.stringify(guides);
+  if (!fs.existsSync(gf) || fs.readFileSync(gf, 'utf8') !== next) { fs.writeFileSync(gf, next); console.log('guides: ' + guides.length); }
+}
 updateTeamLists();
 writeMenu();
 
