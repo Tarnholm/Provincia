@@ -567,7 +567,8 @@ body.has-jump{--topbar:5.35rem}
 tr[data-unit],td[data-unit]{cursor:pointer}
 tr.cmp-on>td,td.cmp-on{background:var(--acc-soft)}
 tr.cmp-pin>td{background:var(--raised);border-bottom:1px solid var(--line)}
-tr.cmp-pin:last-of-type>td{border-bottom:2px solid var(--acc)}
+tr.cmp-sep>td{background:var(--bg);border-top:2px solid var(--acc);border-bottom:1px solid var(--line);
+  padding:1.1rem .7rem .35rem;color:var(--dim);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase}
 tr.cmp-cap>td{background:var(--acc-soft);font-size:.88rem;padding:.35rem .7rem}
 tr.cmp-cap span{color:var(--dim);margin-left:.4rem}
 td.cmp-best{color:var(--acc);font-weight:700}
@@ -1315,6 +1316,11 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
         var first = tb.firstChild;
         tb.insertBefore(capRow(rows.length, t.heads.length), first);
         rows.forEach(function(r){ tb.insertBefore(r, first); });
+        // A clear break between the compared rows and the table they came from.
+        var sep = document.createElement("tr");
+        sep.className = "cmp-pin cmp-sep";
+        sep.innerHTML = '<td colspan="' + t.heads.length + '">All units</td>';
+        tb.insertBefore(sep, first);
       });
       return;
     }
