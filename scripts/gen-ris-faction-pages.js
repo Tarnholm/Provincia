@@ -1396,7 +1396,7 @@ fs.writeFileSync(path.join(OUT, "factions.md"), idx, "utf8");
 [← wiki index](README.md) · [all factions](factions.md)
 
 A **remastered** faction's units use the new Rome Remastered models, with several soldier
-variants per unit, instead of the old models the mod started with. **${rows.length}** of the
+variants per unit, instead of the game's stock models with new textures. **${rows.length}** of the
 ${index.length} playable factions are remastered. Everywhere on this wiki they carry a red **R**
 after their name.
 
