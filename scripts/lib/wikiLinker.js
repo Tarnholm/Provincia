@@ -42,9 +42,18 @@ function titles(dir) {
   return out;
 }
 
+// Built once per wiki folder and link root: reading every page title is slow, and the faction
+// generator asks for a linker for each of 54 factions.
+const CACHE = new Map();
 function makeLinker(OUT, opts = {}) {
   const root = opts.root || "";
-  const self = opts.self || null;
+  const key = OUT + "|" + root;
+  if (!CACHE.has(key)) CACHE.set(key, buildLinker(OUT, root));
+  const link = CACHE.get(key);
+  return (md) => link(md, opts.self || null);
+}
+
+function buildLinker(OUT, root) {
   const byName = new Map();   // name -> href, or null when two different pages share it
   const add = (name, href, min = 4) => {
     if (!name || name.length < min) return;
@@ -79,15 +88,30 @@ function makeLinker(OUT, opts = {}) {
     }
   } catch { /* no sizes yet */ }
 
-  const targets = [...byName].filter(([n, h]) => h && h.split("#")[0] !== self)
+  const targets = [...byName].filter(([n, h]) => h)
     .map(([n, h]) => ({ re: new RegExp(`(?<![\\w-])${esc(n)}(?![\\w-])`), href: root + h, len: n.length, id: h.split("#")[0] }))
     .sort((a, b) => b.len - a.len);
 
+  // "MIC 1".."MIC 4" in the guides are the Military Industrial Complex's levels in order; each
+  // is written as that level's name, linked to its section (the team, 2026-09-28). The order is
+  // read from the chain page's "Levels at a glance" table.
+  const MIC = (() => {
+    try {
+      const md = fs.readFileSync(path.join(OUT, "buildings", "military_industrial_complex.md"), "utf8");
+      return [...md.matchAll(/^\|[^|]*\|\s*\[([^\]]+)\]\(#([^)]+)\)/gm)].map((m) => ({ name: m[1], anchor: m[2] }));
+    } catch { return []; }
+  })();
+  const micLevels = (md) => md.replace(/\bMIC (\d)\b/g, (m, n) => {
+    const l = MIC[+n - 1];
+    return l ? `[${l.name}](${root}buildings/military_industrial_complex.md#${l.anchor})` : m;
+  });
+
   // First mention per section; a page is linked once per section whatever name it went by.
-  return (md) => {
+  return (md, self) => {
     const done = new Set();
-    return String(md).split("\n").map((line) => {
-      if (/^#{1,6}\s/.test(line)) { done.clear(); return line; }
+    if (self) done.add(self);   // a page never links to itself
+    return micLevels(String(md)).split("\n").map((line) => {
+      if (/^#{1,6}\s/.test(line)) { done.clear(); if (self) done.add(self); return line; }
       const parts = line.split(/(\[[^\]]*\]\([^)]*\)|<[^>]+>)/);
       for (const t of targets) {
         if (done.has(t.id)) continue;
