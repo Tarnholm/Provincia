@@ -761,7 +761,7 @@ ${LADDER.map((s) => `[${sizeName(s)}](sizes/${s}.md)`).join(" < ")}
 **Manpower** is what it takes to reach the size; **ceiling** is the manpower above which
 overcrowding starts. Both are the same for all ${CULTURES.length} cultures.
 
-| | Size | Manpower | Ceiling | Builds | Units | At the start |
+| | Size | Manpower | Ceiling | New buildings | New units | Settlements at start |
 |:-:|---|---:|---:|---:|---:|---:|
 ${PAGES.map((p) => {
   const up = valuesFor(p.size, "upgrade");
