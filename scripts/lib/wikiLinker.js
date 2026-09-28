@@ -25,6 +25,8 @@ const ALIASES = [
   ["Colony Level", "buildings/colony.md"],
   ["colonies", "buildings/colony.md"],
   ["colony", "buildings/colony.md"],
+  ["water&sanitation", "buildings/health.md"],
+  ["healing chain", "buildings/hospitals.md"],
   ["governments", "buildings/core_building.md"],
   ["government", "buildings/core_building.md"],
 ];
