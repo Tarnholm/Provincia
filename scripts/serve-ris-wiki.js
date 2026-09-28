@@ -892,7 +892,7 @@ const NAV = [
     ["/units-overview.md", "Roster vs vanilla"]]],
   ["Region tags", [["/tags/terrain.md", "Terrain"],
     ["/tags/climate.md", "Climate"], ["/tags/irrigation.md", "Water sources"],
-    ["/tags/ports.md", "Ports"], ["/tags/recruitment-zones.md", "Recruitment zones"],
+    ["/tags/ports.md", "Ports"], ["/aor.md", "Areas of recruitment"], ["/tags/recruitment-zones.md", "Recruitment zones"],
     ["/tags/specialty-recruitment.md", "Specialty recruitment"],
     ["/tags/recruitment-other.md", "Other recruitment tags"],
     ["/tags/cultural-homeland.md", "Cultural homelands"],

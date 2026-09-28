@@ -59,7 +59,7 @@ const numOf = (cell) => {
 // clicking through from the index landed on what looked like a different site. What is added
 // here is only what a static table lacks: a filter box, click-to-sort headings and the bars.
 const viewer = require(path.join(__dirname, "serve-ris-wiki.js"));
-const PAGE = (title, intro, columns, rows, route, links) => {
+const PAGE = (title, intro, columns, rows, route, links, opts = {}) => {
   const head = viewer.renderMarkdown(`# ${title}\n\n${links}\n\n${intro}\n`, []);
   const body = `${head}
 <style>
@@ -85,7 +85,7 @@ const PAGE = (title, intro, columns, rows, route, links) => {
 </style>
 <div class="sbar"><input id="q" type="search" placeholder="Filter…" autocomplete="off">${
   columns.map((c, i) => c.toggle ? `<label class="stog"><input type="checkbox" data-col="${i}"> ${esc(c.toggle)}</label>` : "").join("")
-}<span id="count"></span></div>
+}${opts.noCount ? "" : "<span id=\"count\"></span>"}</div>
 <div class="tw big sview"><table><thead><tr>${
   columns.map((c, i) => c.hidden ? "" : `<th data-i="${i}"${c.num ? ' class="right"' : ""}${c.width ? ` style="width:${c.width}"` : ""}>${esc(c.label)}</th>`).join("")
 }</tr></thead><tbody></tbody></table></div>
@@ -146,7 +146,7 @@ function render() {
   tbody.innerHTML = rows.map((r) =>
     "<tr>" + r.map((v, i) => COLS[i].hidden ? "" : "<td" + (COLS[i].num ? ' class="right"' : COLS[i].thumb ? ' class="thumb"' : "") + ">" +
       cell(v, COLS[i]) + "</td>").join("") + "</tr>").join("");
-  countEl.textContent = rows.length.toLocaleString("en-US") + " of " + ROWS.length.toLocaleString("en-US") +
+  if (countEl) countEl.textContent = rows.length.toLocaleString("en-US") + " of " + ROWS.length.toLocaleString("en-US") +
     (needle ? " matching" : " rows");
   document.querySelectorAll(".sview th").forEach((th, i) => {
     th.classList.toggle("sorted", i === sortCol);
@@ -275,7 +275,7 @@ render();
       "Units is the faction's own roster: what it can raise from its own buildings anywhere it holds a " +
       "settlement. It excludes regional units, which are gated on holding the right province rather than on " +
       "being anyone in particular: every faction has between 424 and 443 of those.",
-      columns, rows, "/factions.html", "[← wiki index](README.md) · [all factions](factions.md)"), "utf8");
+      columns, rows, "/factions.html", "[← wiki index](README.md) · [all factions](factions.md)", { noCount: true }), "utf8");
   console.log(`factions.html: ${rows.length.toLocaleString("en-US")} rows across ${new Set(rows.map((r) => r[1])).size} cultures`);
   if (rows.length < 200) {
     console.error(`  FAILED: factions.html has ${rows.length} rows — factions.md's shape has changed again`);

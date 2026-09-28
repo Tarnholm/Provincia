@@ -378,11 +378,6 @@ ${fs.existsSync(path.join(OUT, "world-map", "preview.webp")) ? `<a href="world-m
 
 **[Open the interactive map](world-map.html)**
 ` : ""}
-| | Vanilla | RIS | Change | |
-|---|---:|---:|---:|---:|
-${row("Regions", v.regions, r.regions)}
-${row("Settlements at campaign start", v.settlements, r.settlements)}
-
 ## What this means to play
 
 **The map is cut far finer.** ${n(v.regions)} regions become ${n(r.regions)}. This is the

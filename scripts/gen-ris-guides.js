@@ -51,3 +51,50 @@ ${withPage.map((f) => `- [${emblem(f)}${nameOf(f)}](factions/${f}.md#faction-mec
 `;
 fs.writeFileSync(path.join(OUT, "guides.md"), body, "utf8");
 console.log(`guides.md: ${g.general.length} guides, ${withPage.length} faction mechanics linked`);
+
+// ── aor.md: areas of recruitment ─────────────────────────────────────────────
+// Asked for 2026-09-28, with the guides linking to it (wikiLinker maps "AOR" and "Area of
+// Recruitment" here). What each government allows is the game's own guide, word for word (the
+// "Dependency - …" lines of the recruitment guide); the areas, their units and maps are the
+// recruitment zones page, counted from it.
+{
+  const rec = g.general.find((x) => /recruit/i.test(x.title));
+  const lines = rec ? String(rec.body).replace(/\\n/g, "\n").split("\n").map((l) => l.trim()) : [];
+  const GOV = ["Dependency", "Indirect Rule", "Direct Rule", "Homeland"];
+  const govRows = GOV.map((gv) => {
+    const l = lines.find((x) => x.indexOf(gv + " -") === 0);
+    return l ? [gv, l.slice(gv.length + 2).trim()] : null;
+  }).filter(Boolean);
+  const micLine = lines.find((x) => /Area of Recruitment \(AOR\) units/.test(x));
+  let zones = 0, units = 0;
+  try {
+    const z = fs.readFileSync(path.join(OUT, "tags", "recruitment-zones.md"), "utf8");
+    const table = z.split(/\| Zone \| Units \| Regions \|/)[1] || "";
+    // Only the index table's own rows: it ends at the first line that is not a table row.
+    const rows = table.split("\n").slice(2);
+    const end = rows.findIndex((l) => !/^\|/.test(l));
+    zones = (end < 0 ? rows : rows.slice(0, end)).length;
+    units = new Set([...z.matchAll(/\]\(\.\.\/units\/([a-z0-9_]+)\.md\)/g)].map((m) => m[1])).size;
+  } catch { /* no zone page yet */ }
+  const aor = `# Areas of recruitment (AOR)
+
+[← wiki index](README.md) · [game guides](guides.md) · [recruitment zones](tags/recruitment-zones.md)
+
+An area of recruitment is a group of regions with troops of their own. Any faction that holds a
+region in the area can raise them there, alongside its own faction units. RIS has
+**${zones.toLocaleString("en-US")}** areas and **${units.toLocaleString("en-US")}** AOR units; every area, its units and its map
+are on [recruitment zones](tags/recruitment-zones.md).
+
+## What each government allows
+
+| Government | Recruitment |
+|---|---|
+${govRows.map(([gv, t]) => `| ${gv} | ${t} |`).join("\n")}
+
+${micLine ? `${micLine}\n\n` : ""}Where areas overlap, the broader one steps aside: a unit of a general area is barred from regions
+that also belong to a more specific one, so the local speciality is raised there instead.
+`;
+  const linkHere = require(path.join(__dirname, "lib", "wikiLinker.js")).makeLinker(OUT, { root: "", self: "aor.md" });
+  fs.writeFileSync(path.join(OUT, "aor.md"), linkHere(aor), "utf8");
+  console.log(`aor.md: ${zones} areas, ${units} AOR units, ${govRows.length} government rows`);
+}
