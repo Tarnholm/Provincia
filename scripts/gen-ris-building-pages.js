@@ -1629,8 +1629,7 @@ const idx = `# Buildings
 
 [← wiki index](README.md)
 
-${index.length} building chains, ${totalLevels.toLocaleString("en-US")} levels in all. Each page follows a chain level by
-level: what it looks like, what it does, what it costs and needs, and what it upgrades into.
+${index.length} building chains, ${totalLevels.toLocaleString("en-US")} levels in all.
 
 ${totalExclusions ? `**Some buildings rule others out:** once one is built, the other cannot be built in
 that settlement. The *Excl.* column counts the levels in a chain that do this, and each page

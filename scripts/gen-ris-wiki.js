@@ -376,7 +376,7 @@ roster. See [all factions](factions.md).
 
 ${fs.existsSync(path.join(OUT, "world-map", "preview.webp")) ? `<a href="world-map.html"><img src="world-map/preview.webp" alt="The campaign map: open the interactive map" width="1020" height="700" style="max-width:100%;height:auto;display:block;border-radius:8px"></a>
 
-**[Open the interactive map](world-map.html)**: drag, zoom, point at a region to see who holds it, click to open it.
+**[Open the interactive map](world-map.html)**
 ` : ""}
 | | Vanilla | RIS | Change | |
 |---|---:|---:|---:|---:|

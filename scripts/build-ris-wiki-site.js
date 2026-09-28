@@ -596,8 +596,7 @@ note(`team pages: ${n(teamRendered)} rendered (from ${TEAM_PAGES_DIR}), ${n(team
   fs.writeFileSync(path.join(SITE, "wiki-notes", "guides.json"), JSON.stringify(guides));
   const playable = FACTION_PAIRS.filter(([, t]) => t).sort((a, b) => a[1].localeCompare(b[1]));
   const intro = renderMarkdown("# Community guides\n\n[← wiki index](/README.md) · [game guides](/guides.md)\n\n"
-    + "Guides written by the RIS team and community: how to play a faction, a campaign, a system. "
-    + "Search them below, or press **+ New guide** to write one.\n", []);
+    + "Guides written by the RIS team and community: how to play a faction, a campaign, a system.\n", []);
   const body = intro + fs.readFileSync(path.join(__dirname, "lib", "communityGuidesView.html"), "utf8")
     .replace("__FACTIONS__", () => JSON.stringify(playable))
     .replace("__WIKI_URL__", () => "https://github.com/Tarnholm/ris-wiki/wiki");

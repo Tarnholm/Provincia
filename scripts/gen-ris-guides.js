@@ -34,14 +34,12 @@ const body = `# Game guides
 [← wiki index](README.md)
 
 These are the guides the game itself shows during a campaign. Press the **?** button beside
-your advisor to bring them up. They explain what RIS changes, so they are worth reading before
-a first campaign.
+your advisor to bring them up.
 
 ${g.general.map((x) => `## ${x.title}\n\n${toMarkdown(x.body, 3)}\n`).join("\n")}
 ## Faction mechanics
 
-Each of these factions also has a guide of its own, shown after the ones above. It covers the
-faction's reforms and its special rules, such as a mercenary centre. It is on the faction's page.
+These factions also have a guide of their own, on the faction's page.
 
 <div class="nodeal">
 

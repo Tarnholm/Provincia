@@ -685,8 +685,7 @@ const indexBody = `# Beliefs
 
 RIS replaces the base game's handful of religions with **${FACTS.length}** local beliefs, one per people, near
 enough. In each region a belief is either the **majority** or a **minority** held alongside a
-larger one. Every belief has its own page: where it is, who its people are, who follows it, and
-what builds it.
+larger one.
 
 **${FACTS.filter((f) => f.regions.size).length}** of the ${FACTS.length} are on the map at the campaign start, across ${num(REGIONS.length)} regions. ${onNoRegion.length ? `The other ${onNoRegion.length} (${onNoRegion.map((f) => `**${f.name}**`).join(" and ")}) ${onNoRegion.length === 1 ? "is" : "are"} held by no region: ${onNoRegion.length === 1 ? "it is" : "they are"} the umbrella ${onNoRegion.length === 1 ? "belief" : "beliefs"} the local ones sit under.` : ""}
 

@@ -388,7 +388,7 @@ render();
       return { k: m.k, label: m.label, multi: !!m.multi, ord: !!m.ord, vals: m.vals, order };
     });
     const intro = "# The world map\n\n[← wiki index](README.md) · [all regions and settlements](regions.md)\n\n"
-      + "The campaign map at the start of the Unified Romans campaign. Drag to move, scroll or pinch to zoom, point at a region to see who holds it, click to open its page. Settlement names appear as you zoom in. **Colour by** paints the regions by who holds them, their culture, people, terrain, climate and more; click a name in the key to show only that one.\n";
+      + "The campaign map at the start of the Unified Romans campaign.\n";
     const body = viewer.renderMarkdown(intro, []) + fs.readFileSync(path.join(__dirname, "lib", "worldMapView.html"), "utf8")
       .replace("var DATA = __DATA__;", () => `var DATA = ${JSON.stringify(DATA)};`)
       .replace("var MODES = __MODES__;", () => `var MODES = ${JSON.stringify(MODES_OUT)};`);

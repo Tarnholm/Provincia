@@ -1360,7 +1360,7 @@ const idx = `# All factions
 
 [← wiki index](README.md) · [factions overview](factions-overview.md) · [cultures](cultures.md) · [beliefs](religions.md) · [remastered factions](remastered.md)
 
-${index.length} playable factions, each with its own page, in ${cultureGroups.filter((g) => g.tok).length} cultures. **${index.filter((e) => REMASTERED.get(e.f) && REMASTERED.get(e.f).remastered).length}** of them are [remastered](remastered.md): their units use the new Rome Remastered models. They carry a red **R** after their name everywhere on this wiki.
+${index.length} playable factions in ${cultureGroups.filter((g) => g.tok).length} cultures. **${index.filter((e) => REMASTERED.get(e.f) && REMASTERED.get(e.f).remastered).length}** of them are [remastered](remastered.md): their units use the new Rome Remastered models. They carry a red **R** after their name everywhere on this wiki.
 
 ${numberWord(NON_PLAYABLE_SHOWN)} more factions appear in a campaign but are not playable. They are listed on
 [factions you cannot play](factions/${NON_PLAYABLE_FILE}).

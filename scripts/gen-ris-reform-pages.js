@@ -1269,8 +1269,7 @@ for (const r of REFORMS) {
 Reforms are one-off changes to a faction's army. Each fires once, when its requirements are met, and from then on
 new units can be recruited, older ones are retired and some units already in the field are converted.
 
-**${REFORMS.length}** reforms. Open one to see what it takes and what it unlocks; every unit page links back to the
-reforms that open or close it.
+**${REFORMS.length}** reforms.
 
 | Reform | Who gets it | Units unlocked | Units retired | Units converted |
 |---|---|---:|---:|---:|

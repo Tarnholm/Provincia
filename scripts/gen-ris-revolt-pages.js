@@ -620,7 +620,7 @@ const TASK = `Write the wiki page for this revolt: what it is, what sets it off,
   const rows = Object.entries(index.revolts).map(([k, v]) => `| [${cell(v.title)}](revolts/${k}.md) | ${andList(v.factions.map((f) => factionLinkShown(f, "")))} | ${cell(String(v.fromLinked || v.from).replace(/\]\(\.\.\//g, "]("))} |`);
   fs.writeFileSync(path.join(OUT, "revolts.md"), `# Revolts
 
-Revolts, breakaways and civil wars that can happen in a campaign. Each page says what starts it, what happens and whether you can take over the rebels.
+Revolts, breakaways and civil wars that can happen in a campaign.
 
 | Revolt | Who breaks away | From |
 |---|---|---|

@@ -752,7 +752,7 @@ const indexBody = `# Settlement sizes
 
 Every settlement in RIS is one of **${LADDER.length}** sizes. Its size decides three
 things: what it can build, what it can raise, and how large it is allowed to grow before
-overcrowding starts. These pages say what each size does, one page per size.
+overcrowding starts.
 
 ${LADDER.map((s) => `[${sizeName(s)}](sizes/${s}.md)`).join(" < ")}
 

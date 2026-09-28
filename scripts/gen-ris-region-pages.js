@@ -1405,10 +1405,9 @@ const idx = `# All regions and settlements
 ${index.length.toLocaleString("en-US")} regions, each with one settlement, every one held by a faction at the campaign start.
 ${capitals} settlements are a faction's capital, marked ★.
 The region is the land (terrain, fertility, trade goods); the settlement is the town (its size,
-population and buildings). Each has its own page.
+manpower and buildings).
 
-Size is one of ${Object.keys(SIZE_INDEX).length || 5} levels, and it decides what a settlement can build and raise;
-each one links to [what that size does](sizes.md).
+Size is one of ${Object.keys(SIZE_INDEX).length || 5} [levels](sizes.md), and it decides what a settlement can build and raise.
 
 | Region | Settlement | Held by | Size | Manpower | Goods | Buildings |
 |---|---|---|---|---:|---:|---:|
