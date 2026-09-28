@@ -587,6 +587,9 @@ tr.cmp-hold .cmp-panel{margin:0}
 /* A remastered faction: the red (R) after its name (lib/remasteredTag.js). */
 .rm-tag{color:#e0463c;font-weight:700;font-size:.78em;margin-left:.25em;white-space:nowrap;cursor:help}
 :root[data-theme="light"] .rm-tag{color:#b3261e}
+/* A long list spread across the width (the guides' faction list). */
+.cols ul{columns:15rem;column-gap:2.2rem;margin:0}
+.cols li{break-inside:avoid;margin:0 0 .35rem}
 .top{position:sticky;top:0;z-index:20;background:var(--tyrian);border-bottom:1px solid var(--tyrian-deep);
   box-shadow:var(--shadow)}
 .top .bar{display:flex;gap:1rem;align-items:center;padding:.55rem 1rem}

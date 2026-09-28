@@ -19,6 +19,8 @@ const OUT = valOf("--out", "C:/RIS/_wiki");
 const { loadGuides, toMarkdown } = require(path.join(__dirname, "lib", "risGuides.js"));
 
 const g = loadGuides(RIS);
+// Buildings, units, factions, goods and places the guides name, linked to their pages.
+const LINK = require(path.join(__dirname, "lib", "wikiLinker.js")).makeLinker(OUT, { root: "" });
 if (!g.general.length) { console.error("no guides found in the campaign script"); process.exit(2); }
 
 const nameOf = (f) => {
@@ -36,12 +38,12 @@ const body = `# Game guides
 These are the guides the game itself shows during a campaign. Press the **?** button beside
 your advisor to bring them up.
 
-${g.general.map((x) => `## ${x.title}\n\n${toMarkdown(x.body, 3)}\n`).join("\n")}
+${g.general.map((x) => `## ${x.title}\n\n${LINK(toMarkdown(x.body, 3))}\n`).join("\n")}
 ## Faction mechanics
 
 These factions also have a guide of their own, on the faction's page.
 
-<div class="nodeal">
+<div class="nodeal cols">
 
 ${withPage.map((f) => `- [${emblem(f)}${nameOf(f)}](factions/${f}.md#faction-mechanics)`).join("\n")}
 

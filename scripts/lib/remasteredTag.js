@@ -14,7 +14,7 @@
   function tag(){
     var t = document.createElement("span");
     t.className = "rm-tag";
-    t.title = "Remastered: this faction's units use the new Rome Remastered models";
+    t.title = "Remastered: This faction has been remastered by the Mod team";
     t.textContent = "(R)";
     return t;
   }

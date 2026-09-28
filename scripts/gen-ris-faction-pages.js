@@ -975,9 +975,9 @@ const mechanicsSection = (f) => {
   if (!g) return "";
   return `## Faction mechanics
 
-_The game's own guide for this faction, shown when you press the **?** button beside your advisor. The [other game guides](../guides.md) apply to every faction._
+_From the game's own guide. See also the [other game guides](../guides.md)._
 
-${GUIDES.toMarkdown(g.body, 3)}
+${require(path.join(__dirname, "lib", "wikiLinker.js")).makeLinker(OUT, { root: "../", self: `factions/${f}.md` })(GUIDES.toMarkdown(g.body, 3))}
 
 `;
 };
