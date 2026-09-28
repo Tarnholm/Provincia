@@ -66,9 +66,14 @@ console.log(`guides.md: ${g.general.length} guides, ${withPage.length} faction m
     return l ? [gv, l.slice(gv.length + 2).trim()] : null;
   }).filter(Boolean);
   const micLine = lines.find((x) => /Area of Recruitment \(AOR\) units/.test(x));
-  let zones = 0, units = 0;
+  let zones = 0, units = 0, listing = "";
   try {
     const z = fs.readFileSync(path.join(OUT, "tags", "recruitment-zones.md"), "utf8");
+    // The whole zone listing (index table, then each area with its map and units), shown here
+    // too (the team, 2026-09-28: "should show all the recruitment zones with their images").
+    // It is written from tags/, so its "../" paths are made relative to the wiki root.
+    const at = z.indexOf("| Zone | Units | Regions |");
+    if (at >= 0) listing = z.slice(at).replace(/\]\(\.\.\//g, "](").replace(/src="\.\.\//g, 'src="');
     const table = z.split(/\| Zone \| Units \| Regions \|/)[1] || "";
     // Only the index table's own rows: it ends at the first line that is not a table row.
     const rows = table.split("\n").slice(2);
@@ -82,8 +87,7 @@ console.log(`guides.md: ${g.general.length} guides, ${withPage.length} faction m
 
 An area of recruitment is a group of regions with troops of their own. Any faction that holds a
 region in the area can raise them there, alongside its own faction units. RIS has
-**${zones.toLocaleString("en-US")}** areas and **${units.toLocaleString("en-US")}** AOR units; every area, its units and its map
-are on [recruitment zones](tags/recruitment-zones.md).
+**${zones.toLocaleString("en-US")}** areas and **${units.toLocaleString("en-US")}** AOR units.
 
 ## What each government allows
 
@@ -95,6 +99,6 @@ ${micLine ? `${micLine}\n\n` : ""}Where areas overlap, the broader one steps asi
 that also belong to a more specific one, so the local speciality is raised there instead.
 `;
   const linkHere = require(path.join(__dirname, "lib", "wikiLinker.js")).makeLinker(OUT, { root: "", self: "aor.md" });
-  fs.writeFileSync(path.join(OUT, "aor.md"), linkHere(aor), "utf8");
+  fs.writeFileSync(path.join(OUT, "aor.md"), linkHere(aor) + (listing ? `\n## The areas\n\n${listing}` : ""), "utf8");
   console.log(`aor.md: ${zones} areas, ${units} AOR units, ${govRows.length} government rows`);
 }
