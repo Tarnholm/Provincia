@@ -99,6 +99,19 @@ ${micLine ? `${micLine}\n\n` : ""}Where areas overlap, the broader one steps asi
 that also belong to a more specific one, so the local speciality is raised there instead.
 `;
   const linkHere = require(path.join(__dirname, "lib", "wikiLinker.js")).makeLinker(OUT, { root: "", self: "aor.md" });
-  fs.writeFileSync(path.join(OUT, "aor.md"), linkHere(aor) + (listing ? `\n## The areas\n\n${listing}` : ""), "utf8");
+  // Each area is a fold, closed, so the page is quick to scroll (the team, 2026-09-28); its id is
+  // the anchor the index table links to, and the site script opens a fold a link points at.
+  const anchorOf = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const folded = listing.split(/\n(?=## )/).map((part, i) => {
+    const m = /^## (.+)\n/.exec(part);
+    if (!m || i === 0 && !/^## /.test(part)) return part;
+    const name = m[1].trim();
+    let rest = part.slice(m[0].length);
+    const counts = /^\s*\*\*([\d,]+)\*\* regions? · \*\*([\d,]+)\*\* units?\s*\n/.exec(rest);
+    const label = counts ? `${name} · ${counts[1]} region${counts[1] === "1" ? "" : "s"} · ${counts[2]} unit${counts[2] === "1" ? "" : "s"}` : name;
+    if (counts) rest = rest.slice(counts[0].length);
+    return `<details id="${anchorOf(name)}">\n<summary>${label}</summary>\n\n${rest.trim()}\n\n</details>\n`;
+  }).join("\n");
+  fs.writeFileSync(path.join(OUT, "aor.md"), linkHere(aor) + (listing ? `\n## The areas\n\n${folded}` : ""), "utf8");
   console.log(`aor.md: ${zones} areas, ${units} AOR units, ${govRows.length} government rows`);
 }

@@ -124,6 +124,8 @@ const headingsOf = (() => {
         const text = m[1].replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[*`]/g, "");
         set.add(slugId(text));
       }
+      // An element's own id is an anchor too: the AOR page's folds are <details id="...">.
+      for (const m of fs.readFileSync(file, "utf8").matchAll(/<[a-z]+[^>]*\sid="([^"]+)"/g)) set.add(m[1].toLowerCase());
     } catch { /* unreadable target */ }
     cache.set(key, set);
     return set;
