@@ -27,6 +27,9 @@ const ALIASES = [
   ["colony", "buildings/colony.md"],
   ["Area of Recruitment", "aor.md"],
   ["AOR", "aor.md"],
+  // The special export level's bonus, which the guide lists under the good's name (the team,
+  // 2026-09-28: "the bonus from jewellery exports").
+  ["Jewelry", "buildings/jewelry.md#jewellery-exports-industry"],
   ["water&sanitation", "buildings/health.md"],
   ["healing chain", "buildings/hospitals.md"],
   ["governments", "buildings/core_building.md"],
