@@ -584,6 +584,9 @@ tr.cmp-hold .cmp-panel{margin:0}
 .cmp-panel thead th{position:static;top:auto}
 .cmp-btn{display:inline-block;margin:0 0 .8rem;background:var(--panel);color:var(--fg);border:1px solid var(--acc);border-radius:6px;padding:.3rem .8rem;cursor:pointer;font:inherit}
 .cmp-hint{color:var(--dim);font-size:.85rem;margin:.2rem 0 .4rem}
+/* A remastered faction: the red (R) after its name (lib/remasteredTag.js). */
+.rm-tag{color:#e0463c;font-weight:700;font-size:.78em;margin-left:.25em;white-space:nowrap;cursor:help}
+:root[data-theme="light"] .rm-tag{color:#b3261e}
 .top{position:sticky;top:0;z-index:20;background:var(--tyrian);border-bottom:1px solid var(--tyrian-deep);
   box-shadow:var(--shadow)}
 .top .bar{display:flex;gap:1rem;align-items:center;padding:.55rem 1rem}
@@ -876,7 +879,7 @@ hr{border:none;border-top:1px solid var(--line);margin:2rem 0}
 `;
 
 const NAV = [
-  ["Start here", [["/README.md", "Wiki index"], ["/guides.md", "Game guides"], ["/community-guides.html", "Community guides"], ["/factions.md", "All factions"],
+  ["Start here", [["/README.md", "Wiki index"], ["/guides.md", "Game guides"], ["/community-guides.html", "Community guides"], ["/factions.md", "All factions"], ["/remastered.md", "Remastered factions"],
     ["/regions.md", "Regions and settlements"], ["/world-map.html", "World map"],
     ["/units.md", "All units"], ["/buildings.md", "All buildings"], ["/trade-goods.md", "Trade goods"],
     ["/cultures.md", "Cultures"], ["/religions.md", "Beliefs"], ["/traits.md", "Character traits"],

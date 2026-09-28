@@ -494,7 +494,14 @@ fs.mkdirSync(SITE, { recursive: true });
 // page in the wiki lost the mod's rule under its title and nothing else looked wrong. A real
 // browser found that; no amount of reading the HTML would have, because the HTML was correct.
 const CSS_OUT = rewriteHtml(CSS, "wiki.css");
-const JS_OUT = SHELL_SCRIPT.replace(/^<script>|<\/script>$/g, "") + EXTRA_JS;
+// The red (R) after a remastered faction's name, everywhere: the list the faction generator
+// wrote, and the script that tags the links (lib/remasteredTag.js).
+const REMASTERED_JS = (() => {
+  let list = [];
+  try { list = JSON.parse(fs.readFileSync(path.join(WIKI, "factions", "remastered.json"), "utf8")); } catch { /* none yet */ }
+  return `\nwindow.RIS_REMASTERED = ${JSON.stringify(list)};\n` + fs.readFileSync(path.join(__dirname, "lib", "remasteredTag.js"), "utf8");
+})();
+const JS_OUT = SHELL_SCRIPT.replace(/^<script>|<\/script>$/g, "") + EXTRA_JS + REMASTERED_JS;
 fs.writeFileSync(wrote(path.join(SITE, "wiki.css")), CSS_OUT);
 fs.writeFileSync(wrote(path.join(SITE, "wiki.js")), JS_OUT);
 // Pages link the two with a content hash (?v=...). Without it a browser keeps its cached copy

@@ -936,6 +936,8 @@ for (const l of fs.readFileSync(STRAT, "latin1").split(/\r?\n/)) {
   }
 }
 const DIPLO_EXPANDED = loadDisplayNames("expanded_bi.txt");
+// Remastered factions (lib/remastered.js, read from the unit file): the list page and the R tag.
+const REMASTERED = require(path.join(__dirname, "lib", "remastered.js")).remasteredFactions(RIS);
 const dipName = (f) => (REVOLT_INDEX.labels || {})[f] || (intros[f] && intros[f].title) || DIPLO_EXPANDED[f] || title(f);
 const dipLink = (f) => {
   const img = fs.existsSync(path.join(OUT, "symbols", `${f}.png`))
@@ -1356,9 +1358,9 @@ const cultureJump = cultureGroups
 
 const idx = `# All factions
 
-[← wiki index](README.md) · [factions overview](factions-overview.md) · [cultures](cultures.md) · [beliefs](religions.md)
+[← wiki index](README.md) · [factions overview](factions-overview.md) · [cultures](cultures.md) · [beliefs](religions.md) · [remastered factions](remastered.md)
 
-${index.length} playable factions, each with its own page, in ${cultureGroups.filter((g) => g.tok).length} cultures.
+${index.length} playable factions, each with its own page, in ${cultureGroups.filter((g) => g.tok).length} cultures. **${index.filter((e) => REMASTERED.get(e.f) && REMASTERED.get(e.f).remastered).length}** of them are [remastered](remastered.md): their units use the new Rome Remastered models. They carry a red **R** after their name everywhere on this wiki.
 
 ${numberWord(NON_PLAYABLE_SHOWN)} more factions appear in a campaign but are not playable. They are listed on
 [factions you cannot play](factions/${NON_PLAYABLE_FILE}).
@@ -1378,6 +1380,47 @@ those, so the number tells you nothing about the faction. Each faction's page li
 ${cultureSection}
 `;
 fs.writeFileSync(path.join(OUT, "factions.md"), idx, "utf8");
+
+// ── remastered factions ──────────────────────────────────────────────────────
+// The list (asked for 2026-09-28), and factions/remastered.json, which the site build hands to
+// wiki.js so every link to a remastered faction, on any page, gets a red R after the name.
+// What counts as remastered is read from the unit file by lib/remastered.js.
+{
+  const rows = index.filter((e) => REMASTERED.get(e.f) && REMASTERED.get(e.f).remastered)
+    .sort((a, b) => a.display.localeCompare(b.display));
+  const cultureOf = (e) => cultureRef(e.culture, "") || "";
+  const oldNames = (v) => v.oldUnits.map((t) => unitLink(t).replace("](../units/", "](units/"));
+  const partly = rows.filter((e) => REMASTERED.get(e.f).oldUnits.length);
+  const body = `# Remastered factions
+
+[← wiki index](README.md) · [all factions](factions.md)
+
+A **remastered** faction's units use the new Rome Remastered models, with several soldier
+variants per unit, instead of the old models the mod started with. **${rows.length}** of the
+${index.length} playable factions are remastered. Everywhere on this wiki they carry a red **R**
+after their name.
+
+Counted from the units each faction can raise as its own, leaving out the peasant levy and the
+ships, which every faction shares. A faction counts as remastered when most of its own units
+are.
+
+<div class="nodeal">
+
+| | Faction | Culture | Units on new models |
+|:-:|---|---|---:|
+${rows.map((e) => { const v = REMASTERED.get(e.f); return `| ${e.symbol ? `<img src="symbols/${e.f}.png" alt="" width="24" height="24">` : ""} | [${e.display}](factions/${e.f}.md) | ${cultureOf(e)} | ${v.newUnits.length} of ${v.total} |`; }).join("\n")}
+
+</div>
+${partly.length ? `
+## Still on some old models
+
+${partly.map((e) => `- [${e.display}](factions/${e.f}.md): ${oldNames(REMASTERED.get(e.f)).join(", ")}`).join("\n")}
+` : ""}`;
+  fs.writeFileSync(path.join(OUT, "remastered.md"), body, "utf8");
+  fs.writeFileSync(path.join(OUT, "factions", "remastered.json"),
+    JSON.stringify([...REMASTERED].filter(([, v]) => v.remastered).map(([f]) => f).sort()), "utf8");
+  console.log(`remastered.md: ${rows.length} of ${index.length} playable factions remastered`);
+}
 
 console.log(`\n${index.length} faction pages written`);
 console.log(`  with main-menu intro text: ${introsFound}`);
