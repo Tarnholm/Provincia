@@ -276,7 +276,10 @@ const LADDER_B = (() => {
   for (const c of CULTURES) for (const k of Object.keys(c.levels)) if (!seen.includes(k)) seen.push(k);
   return seen;
 })();
-const LADDER = LADDER_A.length >= LADDER_B.length ? LADDER_A : LADDER_B;
+// Villages are left out entirely (the team, 2026-09-28: "act as if villages doesn't exist at
+// all"): no settlement starts as one, and a player never sees one, so the wiki has no village
+// page, row or level number.
+const LADDER = (LADDER_A.length >= LADDER_B.length ? LADDER_A : LADDER_B).filter((s) => s !== "village");
 const LADDER_AGREE = LADDER_A.length === LADDER_B.length && LADDER_A.every((v, i) => LADDER_B[i] === v);
 if (!LADDER.length) { console.error("no settlement ladder could be read — check descr_sm_settlements.txt and descr_cultures.txt"); process.exit(2); }
 const rankOf = (s) => LADDER.indexOf(String(s || "").toLowerCase().replace(/\s+/g, "_"));
@@ -648,7 +651,7 @@ function sizePage(size, i) {
   const body = `${HEAD(name)}
 ${ladderLine}
 
-${upSentence}${prev || next ? ` It is rung **${i + 1}** of ${LADDER.length}${prev && next ? `, above ${sizeName(prev)} and below ${sizeName(next)}` : prev ? `, above ${sizeName(prev)}` : `, below ${sizeName(next)}`}.` : ""}
+${upSentence}${prev || next ? ` It is level **${i + 1}** of ${LADDER.length}${prev && next ? `, above ${sizeName(prev)} and below ${sizeName(next)}` : prev ? `, above ${sizeName(prev)}` : `, below ${sizeName(next)}`}.` : ""}
 
 
 ## What it takes to reach it, and what holds it there
@@ -699,11 +702,14 @@ fs.mkdirSync(path.join(OUT, "sizes"), { recursive: true });
 fs.writeFileSync(path.join(OUT, "sizes", "index.json"), JSON.stringify(INDEX, null, 1), "utf8");
 
 // ── the index page ───────────────────────────────────────────────────────────
+const FREE_PEOPLES = "\u0000free-peoples";
 const distinctCultures = uniq(held.map((h) => cultureOf(h.faction)).filter(Boolean)).sort();
 const crossTab = (() => {
   const m = new Map();     // culture -> Map(size -> n)
   for (const h of held) {
-    const c = cultureOf(h.faction) || "not determined";
+    // The Free Peoples (slave) are their own row: counted under their faction's culture they
+    // made one culture look like 38% of the map (the team, 2026-09-28).
+    const c = h.faction === "slave" ? FREE_PEOPLES : cultureOf(h.faction) || "not determined";
     if (!m.has(c)) m.set(c, new Map());
     m.get(c).set(h.level, (m.get(c).get(h.level) || 0) + 1);
   }
@@ -720,7 +726,7 @@ const crossTab = (() => {
   return ["<div class=\"nodeal\">", "",
     `| Culture | ${used.map((s) => sizeName(s)).join(" | ")} | Total |`,
     `|---|${used.map(() => "---:").join("|")}|---:|`,
-    ...rows.map((r) => `| ${cultureRef(r.c)} | ${used.map((s) => (r.counts.get(s) || 0) || "—").join(" | ")} | ${num(r.total)} |`),
+    ...rows.map((r) => `| ${r.c === FREE_PEOPLES ? `[${facName("slave")}](factions/non-playable.md)` : cultureRef(r.c)} | ${used.map((s) => (r.counts.get(s) || 0) || "—").join(" | ")} | ${num(r.total)} |`),
     `| **All** | ${used.map((s) => num((startBySize.get(s) || []).length)).join(" | ")} | **${num(held.length)}** |`,
     "", "</div>",
   ].join("\n");
@@ -744,17 +750,16 @@ const indexBody = `# Settlement sizes
 
 [← all regions and settlements](regions.md) · [wiki index](README.md)
 
-Every settlement in RIS sits on a ladder of **${LADDER.length}** sizes. The rung it is on decides three
+Every settlement in RIS is one of **${LADDER.length}** sizes. Its size decides three
 things: what it can build, what it can raise, and how large it is allowed to grow before
-overcrowding starts. These pages say what each rung does, one page per size.
+overcrowding starts. These pages say what each size does, one page per size.
 
 ${LADDER.map((s) => `[${sizeName(s)}](sizes/${s}.md)`).join(" < ")}
 
 ## The ladder
 
-**Manpower** is what it takes to reach the rung; **ceiling** is the manpower above which
-overcrowding starts. Both are the same for all ${CULTURES.length} cultures. **Builds** and **units** are what
-*first* becomes available at that size; the cumulative figures are on each page.
+**Manpower** is what it takes to reach the size; **ceiling** is the manpower above which
+overcrowding starts. Both are the same for all ${CULTURES.length} cultures.
 
 | | Size | Manpower | Ceiling | Builds | Units | At the start |
 |:-:|---|---:|---:|---:|---:|---:|
@@ -797,24 +802,12 @@ At the start of the campaign there are **${num(held.length)}** settlements.
 ${(() => {
   const empty = LADDER.filter((s) => !(startBySize.get(s) || []).length);
   return empty.length
-    ? `**${empty.map((s) => sizeName(s)).join(" and ")}** ${empty.length === 1 ? "is a rung no settlement starts on" : "are rungs no settlement starts on"}; ${empty.length === 1 ? "it exists" : "they exist"} in the rules and nowhere on the map at turn 0.`
-    : "Every rung has at least one settlement on it at the campaign start.";
+    ? `**${empty.map((s) => sizeName(s)).join(" and ")}** ${empty.length === 1 ? "is a size no settlement starts at" : "are sizes no settlement starts at"}.`
+    : "";
 })()}
 
 Culture is the owning faction's${cultureUnknown ? `; ${num(cultureUnknown)} settlements have no culture and are shown as a dash` : ""}.
-${(() => {
-  // The largest row is not the largest PEOPLE. Whichever faction holds the most settlements
-  // contributes all of them to its declared culture, and in RIS that is the unowned-territory
-  // faction, so the top row of this table is mostly land nobody plays. Stated from the data
-  // rather than left for a reader to be misled by.
-  const byFac = new Map();
-  for (const h of held) byFac.set(h.faction, (byFac.get(h.faction) || 0) + 1);
-  const top = [...byFac.entries()].sort((a, b) => b[1] - a[1])[0];
-  if (!top) return "";
-  const share = top[1] / held.length;
-  if (share < 0.2) return "";
-  return `\nRead the largest row with care: **${facName(top[0])}** alone holds **${num(top[1])}** settlements (${(share * 100).toFixed(0)}% of the map), and that faction's culture is ${cultureOf(top[0]) ? cultureRef(cultureOf(top[0])) : "unknown"}, so every one of them counts on that row. It is unclaimed ground, not a people.\n`;
-})()}
+
 ${crossTab}
 
 `;

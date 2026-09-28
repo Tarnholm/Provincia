@@ -1407,7 +1407,7 @@ ${capitals} settlements are a faction's capital, marked ★.
 The region is the land (terrain, fertility, trade goods); the settlement is the town (its size,
 population and buildings). Each has its own page.
 
-Size is a rung on a ladder of ${Object.keys(SIZE_INDEX).length || 6}, and it decides what a settlement can build and raise;
+Size is one of ${Object.keys(SIZE_INDEX).length || 5} levels, and it decides what a settlement can build and raise;
 each one links to [what that size does](sizes.md).
 
 | Region | Settlement | Held by | Size | Manpower | Goods | Buildings |

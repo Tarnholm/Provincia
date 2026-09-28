@@ -629,7 +629,9 @@ function parseChains(edb) {
       if (m) { level.requires += (level.requires ? " and " : "") + m[1].trim(); continue; }
       m = /^construction\s+(\d+)/.exec(t); if (m) { level.turns = +m[1]; continue; }
       m = /^cost\s+(\d+)/.exec(t);         if (m) { level.cost = +m[1]; continue; }
-      m = /^settlement_min\s+(\S+)/.exec(t); if (m) { level.minSize = m[1]; continue; }
+      // No settlement is ever a village in RIS, and the wiki treats villages as if they did not
+      // exist (the team, 2026-09-28), so "at least a village" is no minimum at all: "any".
+      m = /^settlement_min\s+(\S+)/.exec(t); if (m) { if (m[1].toLowerCase() !== "village") level.minSize = m[1]; continue; }
       if (/^upgrades\s*$/.test(t)) {
         // The next non-brace tokens are the levels this upgrades into.
         for (let k = i + 1; k < Math.min(i + 8, lines.length); k++) {
