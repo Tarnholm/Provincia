@@ -1286,7 +1286,7 @@ ${mapImg}
 <div class="fmeta">
 
 **Its settlement is [${settleName}](${settleHref})**${ownerPhrase ? `, held at the campaign start by ${ownerPhrase}` : ""}. That page has the town:
-its size, its population, what is built there and what it can raise. This one is the land.
+its size, its manpower, what is built there and what it can raise. This one is the land.
 
 ${[glance, held ? null : `This region begins **independent**. If it revolts, the rebels are ${r.rebels}.`].filter(Boolean).join("\n\n")}
 
@@ -1333,7 +1333,7 @@ ${gated.join("\n")}
       : "_No faction holds this settlement at the campaign start, so the campaign file records nothing built in it._";
   const townGlance = [
     held ? `**Size:** ${sizeRef(held.level, "../") || "_not determined_"}` : null,
-    held && held.pop != null ? `**Population:** ${held.pop.toLocaleString("en-US")}` : null,
+    held && held.pop != null ? `**Manpower:** ${held.pop.toLocaleString("en-US")}` : null,
     held && (held.buildings || []).length ? `**Buildings:** ${held.buildings.length}` : null,
   ].filter(Boolean).join(" · ");
   const townBody = `# ${settleName}
@@ -1410,7 +1410,7 @@ population and buildings). Each has its own page.
 Size is a rung on a ladder of ${Object.keys(SIZE_INDEX).length || 6}, and it decides what a settlement can build and raise;
 each one links to [what that size does](sizes.md).
 
-| Region | Settlement | Held by | Size | Population | Goods | Buildings |
+| Region | Settlement | Held by | Size | Manpower | Goods | Buildings |
 |---|---|---|---|---:|---:|---:|
 ${index.map((e) => {
   const t = townOf.get(e.settlement) || {};

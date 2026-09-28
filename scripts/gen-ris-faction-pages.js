@@ -1072,7 +1072,7 @@ for (const f of factions) {
     setts.length ? `**[${setts.length} settlement${setts.length === 1 ? "" : "s"}](#starting-settlements)**` : "**0** settlements",
     // The capital is a city, so name the city — "capital Stratos", not "capital Akarnania".
     capital ? `capital **${settlementLink(capital.region)}**` : null,
-    totalPop ? `**${totalPop.toLocaleString("en-US")}** people` : null,
+    totalPop ? `**${totalPop.toLocaleString("en-US")}** manpower` : null,
     cs.length ? `**[${cs.length} character${cs.length === 1 ? "" : "s"}](#starting-characters)**` : "**0** characters",
     units.coreN ? `**[${units.coreN} faction unit${units.coreN === 1 ? "" : "s"}](#faction-units)**` : "**0** faction units",
     units.aorN ? `**[${units.aorN} regional unit${units.aorN === 1 ? "" : "s"}](#regional-units)**` : null,
@@ -1160,9 +1160,9 @@ ${homeRegions.map((r) => regionLink(r)).join(" · ")}
 
 ${mapLine || `${note}${glance}\n\n`}${brief ? `## The campaign brief\n\n> ${brief.split("\n").filter((l) => l.trim()).join("\n>\n> ")}\n\n` : ""}${setts.length ? `## Starting settlements
 
-${display} begins with **${setts.length} settlement${setts.length === 1 ? "" : "s"}** and **${totalPop.toLocaleString("en-US")}** people.
+${display} begins with **${setts.length} settlement${setts.length === 1 ? "" : "s"}** and **${totalPop.toLocaleString("en-US")}** manpower.
 
-| Settlement | Region | Size | Population | Already built |
+| Settlement | Region | Size | Manpower | Already built |
 |---|---|---|---:|---|
 ${setts.map((s) => `| ${settlementLink(s.region)}${s.capital ? " **(capital)**" : ""} | ${regionLink(s.region)} | ${String(s.level || "").replace(/_/g, " ")} | ${s.pop != null ? s.pop.toLocaleString("en-US") : "?"} | ${(s.buildings || []).length} building${(s.buildings || []).length === 1 ? "" : "s"} |`).join("\n")}
 
@@ -1395,8 +1395,8 @@ fs.writeFileSync(path.join(OUT, "factions.md"), idx, "utf8");
 
 [← wiki index](README.md) · [all factions](factions.md)
 
-A **remastered** faction's units use the new Rome Remastered models, with several soldier
-variants per unit, instead of the game's stock models with new textures. **${rows.length}** of the
+A **remastered** faction's units are the mod's own new models, with seven soldier models per
+unit, instead of older models with new textures. **${rows.length}** of the
 ${index.length} playable factions are remastered. Everywhere on this wiki they carry a red **R**
 after their name.
 

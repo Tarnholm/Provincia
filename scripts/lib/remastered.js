@@ -1,66 +1,58 @@
-// Which factions are remastered (asked for 2026-09-28): their units are RIS's own new models,
-// not the stock game models. There is no list of this in the mod, so it is read from the model
-// files each unit's soldiers are drawn with:
+// Which factions are remastered (asked for 2026-09-28): their units are RIS's own new models.
+// There is no list of this in the mod. The mod author's rule: a remastered unit has 7 soldier
+// models. The unit file lists them in the unit's `soldiers` block:
 //
-//   remastered:  achaian_epilektoi1..7_lodN.cas, roman_velite_remastered1..7_lodN.cas
-//                (RIS's own models, several numbered soldier variants per unit)
-//   stock:       carthaginian_sacred_band_high_lodN.cas, celtic_light_spearman_high_lodN.cas
-//                (the game's own models, "_high", with RIS textures)
+//   soldiers   40, 0, 0.91
+//   {
+//       default { roman_velite_remastered1 ... roman_velite_remastered7 }
+//   }
 //
-// First version (same day) went by the unit file's syntax alone (`soldiers` block = new), which
-// counted Carthage as remastered: its core units use that block but point at the stock
-// "_high" models. Corrected by the author: "Carthage is not remastered yet."
+// Old units have one model (`soldier  corsico_sardinian_infantry, 40, 0, 0.98`) or a block of 4,
+// which is an old model with shield variants (Carthage's core units, the Iberians, the
+// Numidians). A block per faction counts on its own; a unit is remastered when any of its
+// blocks has 7 or more models.
 //
-// export_descr_unit.txt names each unit's soldier models; descr_model_battle.txt names the .cas
-// files behind each model. A unit is remastered when none of its models is a stock "_high" one.
+// History (all 2026-09-28): the first version counted any `soldiers` block as new, which made
+// Carthage remastered ("Carthage is not remastered yet"); the second looked for stock "_high"
+// model files; this one is the author's rule, and gives the same factions as the second.
+//
 // A faction's units are those whose `ownership` line names it, leaving out the mercenary, AOR
-// and horde copies and what every faction shares (the peasant levy and the ships). A faction is
-// remastered when most of its own units are.
+// and horde copies and what every faction shares (the peasant levy and the ships). A faction
+// is remastered when most of its own units are.
 const fs = require("fs");
 const path = require("path");
 
 const SKIP = /^(merc |aor |horde |naval )|^barb peasant slave$/;
+const REMASTER_MODELS = 7;
 
-function modelFiles(RIS) {
-  const cas = new Map();
-  let t = null;
-  for (const raw of fs.readFileSync(path.join(RIS, "descr_model_battle.txt"), "latin1").split(/\r?\n/)) {
-    const l = raw.replace(/;.*$/, "").trim();
-    let m = /^type\s+(\S+)/.exec(l);
-    if (m) { t = m[1]; if (!cas.has(t)) cas.set(t, new Set()); continue; }
-    m = /^(?:no_variation\s+)?model_flexi(?:_m)?\s+(\S+\.cas)/i.exec(l);
-    if (m && t) cas.get(t).add(m[1].replace(/.*\//, "").replace(/_lod\d+\.cas$/i, "").replace(/\.cas$/i, ""));
-  }
-  return cas;
-}
-
-function remasteredFactions(RIS) {
-  const CAS = modelFiles(RIS);
+function readUnits(RIS) {
   const units = [];
-  let cur = null, inBlock = false;
+  let cur = null, depth = 0, block = null, pending = null;
   for (const raw of fs.readFileSync(path.join(RIS, "export_descr_unit.txt"), "latin1").split(/\r?\n/)) {
     const l = raw.replace(/;.*$/, "").trim();
     let m = /^type\s+(.+)$/.exec(l);
-    if (m) { cur = { type: m[1].trim(), models: [], own: [] }; units.push(cur); inBlock = false; continue; }
+    if (m) { cur = { type: m[1].trim(), blocks: new Map(), own: [] }; units.push(cur); depth = 0; continue; }
     if (!cur) continue;
-    if (/^soldiers\b/.test(l)) { inBlock = true; cur.variants = true; continue; }
-    if (/^officer\b/.test(l)) inBlock = false;
-    m = /^soldier\s+([^,]+)/.exec(l);
-    if (m) { cur.models.push(m[1].trim()); continue; }
-    if (inBlock && l && !/[{}]/.test(l) && l !== "default") cur.models.push(l);
+    if (/^soldiers\b/.test(l)) { depth = -1; continue; }   // the block's braces follow
+    if (depth !== 0) {
+      if (l === "{") { depth = depth < 0 ? 1 : depth + 1; if (depth === 2) block = pending || "default"; continue; }
+      if (l === "}") { depth--; if (depth <= 0) depth = 0; continue; }
+      if (!l) continue;
+      if (depth === 1) { pending = l; continue; }            // a block name: default, carthage...
+      if (depth >= 2) { if (!cur.blocks.has(block)) cur.blocks.set(block, new Set()); cur.blocks.get(block).add(l); }
+      continue;
+    }
     m = /^ownership\s+(.+)$/.exec(l);
     if (m) cur.own = m[1].split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
   }
+  return units;
+}
+
+function remasteredFactions(RIS) {
   const byFaction = new Map();
-  for (const u of units) {
+  for (const u of readUnits(RIS)) {
     if (SKIP.test(u.type)) continue;
-    const files = [...new Set(u.models.flatMap((x) => [...(CAS.get(x) || [])]))];
-    if (!files.length) continue;
-    // Both signs: a block of soldier variants (the old single `soldier` line is never a
-    // remastered unit: the Arab kingdoms' units use it with models not named "_high"), and none
-    // of the models a stock "_high" one (Carthage, Iberia and the Numidians use the block with
-    // those).
-    const isNew = !!u.variants && !files.some((c) => /_high$/i.test(c));
+    const isNew = [...u.blocks.values()].some((s) => s.size >= REMASTER_MODELS);
     for (const f of u.own) {
       if (!byFaction.has(f)) byFaction.set(f, { newUnits: [], oldUnits: [] });
       byFaction.get(f)[isNew ? "newUnits" : "oldUnits"].push(u.type);

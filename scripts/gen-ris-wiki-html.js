@@ -198,7 +198,7 @@ render();
 }
 
 // ── regions ──────────────────────────────────────────────────────────────────
-// regions.md columns: Region | Settlement (★ capital) | Held by | Size | Population | Goods | Buildings
+// regions.md columns: Region | Settlement (★ capital) | Held by | Size | Manpower | Goods | Buildings
 {
   const SIZE_RANK = { village: 1, town: 2, large_town: 3, city: 4, large_city: 5, huge_city: 6 };
   const raw = parseTable("regions.md", 7).filter((c) => /^\[/.test(c[0]));
@@ -218,7 +218,7 @@ render();
   });
   const columns = [
     { label: "Region", width: "13rem" }, { label: "Settlement", width: "13rem" }, { label: "Held by", width: "13rem" }, { label: "Size", width: "7rem" },
-    { label: "Population", num: true }, { label: "Goods", num: true }, { label: "Buildings", num: true },
+    { label: "Manpower", num: true }, { label: "Goods", num: true }, { label: "Buildings", num: true },
   ];
   fs.writeFileSync(path.join(OUT, "regions.html"),
     PAGE("Regions and settlements, sortable",

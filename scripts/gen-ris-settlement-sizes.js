@@ -286,11 +286,11 @@ const NUM_KEYS = ["upgrade", "min pop", "max pop", "squalour pop", "base"];
 // The file's own comments, quoted rather than paraphrased — they are the only definition of
 // these fields that exists anywhere in the mod.
 const NUM_WORDS = {
-  upgrade: ["Population needed to reach it", "population needed to upgrade to this level"],
+  upgrade: ["Manpower needed to reach it", "population needed to upgrade to this level"],
   "min pop": ["Floor", "minimum population possible in this settlement"],
   "max pop": ["Overcrowding starts", "maximum population before overcrowding"],
   "squalour pop": ["Squalour doubles", "above this population, each extra pop counts double for squalour"],
-  base: ["Base population", "the base population of this settlement before squalor kicks in"],
+  base: ["Base manpower", "the base population of this settlement before squalor kicks in"],
 };
 /** For one size and one field: the distinct values across every culture that declares it. */
 function valuesFor(size, key) {
@@ -547,7 +547,7 @@ function numbersTable(size) {
   }
   // No "what the mod file calls it" column: the file's own comment wording is for modders; the
   // row label already says it in a player's words.
-  return `| | Population |\n|---|---:|\n${rows.join("\n")}`;
+  return `| | Manpower |\n|---|---:|\n${rows.join("\n")}`;
 }
 
 function sizePage(size, i) {
@@ -567,7 +567,7 @@ function sizePage(size, i) {
   const upSentence = upVals.size === 1
     ? (([...upVals.keys()][0] === 0)
       ? `Every settlement starts here: it takes no population at all to be this size, which makes it the bottom of the ladder.`
-      : `A settlement reaches this size at a population of **${num([...upVals.keys()][0])}**.`)
+      : `A settlement reaches this size at a manpower of **${num([...upVals.keys()][0])}**.`)
     : upVals.size ? `The cultures do not agree on the population it takes: ${[...upVals.entries()].map(([v, cs]) => `${num(v)} for ${cs.join(", ")}`).join("; ")}.`
       : "";
 
@@ -611,7 +611,7 @@ function sizePage(size, i) {
           .map(([f, n]) => `| ${facLink(f)} | ${cultureOf(f) ? sizeCultureRef(cultureOf(f)) : "—"} | ${num(n)} |`),
       ])}`
       + `\n\n${fold(`Every settlement that begins at this size (${num(at.length)})`, [
-        "| Settlement | Held by | Population | Buildings |", "|---|---|---:|---:|",
+        "| Settlement | Held by | Manpower | Buildings |", "|---|---|---:|---:|",
         ...at.map((h) => `| ${settlementLink(h)}${h.capital ? " ★" : ""} | ${facLink(h.faction)} | ${h.pop != null ? num(h.pop) : "—"} | ${h.builds} |`),
       ])}`
     : `**No settlement on the map begins at this size.**`;
@@ -752,11 +752,11 @@ ${LADDER.map((s) => `[${sizeName(s)}](sizes/${s}.md)`).join(" < ")}
 
 ## The ladder
 
-**Population** is what it takes to reach the rung; **ceiling** is the population above which
+**Manpower** is what it takes to reach the rung; **ceiling** is the manpower above which
 overcrowding starts. Both are the same for all ${CULTURES.length} cultures. **Builds** and **units** are what
 *first* becomes available at that size; the cumulative figures are on each page.
 
-| | Size | Population | Ceiling | Builds | Units | At the start |
+| | Size | Manpower | Ceiling | Builds | Units | At the start |
 |:-:|---|---:|---:|---:|---:|---:|
 ${PAGES.map((p) => {
   const up = valuesFor(p.size, "upgrade");
