@@ -67,6 +67,8 @@ const PAGE = (title, intro, columns, rows, route, links) => {
 .sbar input{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;
  padding:.42rem .65rem;font:inherit;font-size:.9rem;min-width:18rem}
 .sbar input:focus{outline:2px solid var(--acc-soft);border-color:var(--acc)}
+.sbar .stog{display:flex;gap:.35rem;align-items:center;color:var(--dim);font-size:.9rem;cursor:pointer}
+.sbar .stog input{min-width:0}
 #count{color:var(--dim);font-size:.84rem;font-variant-numeric:tabular-nums}
 .sview th{cursor:pointer;user-select:none}
 .sview th:hover,.sview th.sorted{color:var(--acc)}
@@ -81,9 +83,11 @@ const PAGE = (title, intro, columns, rows, route, links) => {
 .bars i{display:block;height:100%;background:var(--acc)}
 @media(max-width:700px){.sbar input{min-width:11rem}}
 </style>
-<div class="sbar"><input id="q" type="search" placeholder="Filter…" autocomplete="off"><span id="count"></span></div>
+<div class="sbar"><input id="q" type="search" placeholder="Filter…" autocomplete="off">${
+  columns.map((c, i) => c.toggle ? `<label class="stog"><input type="checkbox" data-col="${i}"> ${esc(c.toggle)}</label>` : "").join("")
+}<span id="count"></span></div>
 <div class="tw big sview"><table><thead><tr>${
-  columns.map((c, i) => `<th data-i="${i}"${c.num ? ' class="right"' : ""}${c.width ? ` style="width:${c.width}"` : ""}>${esc(c.label)}</th>`).join("")
+  columns.map((c, i) => c.hidden ? "" : `<th data-i="${i}"${c.num ? ' class="right"' : ""}${c.width ? ` style="width:${c.width}"` : ""}>${esc(c.label)}</th>`).join("")
 }</tr></thead><tbody></tbody></table></div>
 <script>
 (function(){
@@ -125,11 +129,13 @@ function render() {
   const needle = q.value.trim().toLowerCase();
   let rows = ROWS;
   if (needle) {
-    rows = rows.filter((r) => r.some((v) => {
+    rows = rows.filter((r) => r.some((v, i) => {
+      if (COLS[i].hidden) return false;
       const t = (v && typeof v === "object") ? v.text : v;
       return String(t == null ? "" : t).toLowerCase().includes(needle);
     }));
   }
+  document.querySelectorAll(".sbar .stog input:checked").forEach((cb) => { const c = +cb.dataset.col; rows = rows.filter((r) => r[c]); });
   rows = rows.slice().sort((a, b) => {
     const x = valueOf(a, sortCol), y = valueOf(b, sortCol);
     if (x < y) return sortDesc ? 1 : -1;
@@ -138,7 +144,7 @@ function render() {
   });
   // Built as one string: appending ~1,700 rows node by node is visibly slow on a phone.
   tbody.innerHTML = rows.map((r) =>
-    "<tr>" + r.map((v, i) => "<td" + (COLS[i].num ? ' class="right"' : COLS[i].thumb ? ' class="thumb"' : "") + ">" +
+    "<tr>" + r.map((v, i) => COLS[i].hidden ? "" : "<td" + (COLS[i].num ? ' class="right"' : COLS[i].thumb ? ' class="thumb"' : "") + ">" +
       cell(v, COLS[i]) + "</td>").join("") + "</tr>").join("");
   countEl.textContent = rows.length.toLocaleString("en-US") + " of " + ROWS.length.toLocaleString("en-US") +
     (needle ? " matching" : " rows");
@@ -154,6 +160,7 @@ document.querySelectorAll(".sview th").forEach((th) => th.addEventListener("clic
   render();
 }));
 q.addEventListener("input", render);
+document.querySelectorAll(".sbar .stog input").forEach((cb) => cb.addEventListener("change", render));
 render();
 })();
 </script>`;
@@ -191,7 +198,7 @@ render();
     { label: "Variants", num: true },
   ];
   fs.writeFileSync(path.join(OUT, "units.html"),
-    PAGE("Unit roster, sortable", "Every unit in RIS. Click a column to sort, type to filter. " +
+    PAGE("Unit roster, sortable", "Every unit in RIS. " +
       "Defence skill runs far higher than in vanilla (median 19 against 3), so do not read it against vanilla intuition.",
       columns, rows, "/units.html", "[← wiki index](README.md) · [all units](units.md)"), "utf8");
   console.log(`units.html: ${rows.length.toLocaleString("en-US")} rows`);
@@ -222,7 +229,7 @@ render();
   ];
   fs.writeFileSync(path.join(OUT, "regions.html"),
     PAGE("Regions and settlements, sortable",
-      "Every region with its settlement, as it stands at the campaign start. Click a heading to sort, type to filter. ★ marks a faction capital; Size sorts from village up.",
+      "Every region with its settlement, as it stands at the campaign start. ★ marks a faction capital.",
       columns, rows, "/regions.html", "[← wiki index](README.md) · [all regions and settlements](regions.md)"), "utf8");
   console.log(`regions.html: ${rows.length.toLocaleString("en-US")} rows`);
   if (rows.length < 1000) { console.error(`  FAILED: regions.html has ${rows.length} rows — regions.md's shape has changed`); process.exitCode = 1; }
@@ -240,6 +247,9 @@ render();
 {
   let body = "";
   try { body = fs.readFileSync(path.join(OUT, "factions.md"), "utf8"); } catch { /* stays empty */ }
+  // Remastered factions (gen-ris-faction-pages.js writes the list), for the "Remastered only" box.
+  let REMASTERED = new Set();
+  try { REMASTERED = new Set(JSON.parse(fs.readFileSync(path.join(OUT, "factions", "remastered.json"), "utf8"))); } catch { /* none */ }
   const rows = [];
   let culture = null;
   for (const line of body.split(/\r?\n/)) {
@@ -252,14 +262,16 @@ render();
     const c = line.split("|").slice(1, -1).map((x) => x.trim());
     if (c.length < 4 || !/^\[/.test(c[0])) continue;
     const f = linkText(c[0]);
-    rows.push([{ text: f.text, href: f.href, sym: f.sym }, culture, numOf(c[1]), numOf(c[2]), numOf(c[3])]);
+    const tok = String(f.href || "").replace(/^factions\//, "").replace(/\.md$/, "");
+    rows.push([{ text: f.text, href: f.href, sym: f.sym }, culture, numOf(c[1]), numOf(c[2]), numOf(c[3]), REMASTERED.has(tok)]);
   }
   const columns = [
     { label: "Faction", width: "16rem" }, { label: "Culture", width: "11rem" }, { label: "Provinces", num: true },
     { label: "Characters", num: true }, { label: "Units", num: true },
+    { label: "Remastered", hidden: true, toggle: "Remastered only" },
   ];
   fs.writeFileSync(path.join(OUT, "factions.html"),
-    PAGE("Factions, sortable", "Every playable faction, sortable by culture or by how much it starts with. " +
+    PAGE("Factions, sortable", "Every playable faction. " +
       "Units is the faction's own roster: what it can raise from its own buildings anywhere it holds a " +
       "settlement. It excludes regional units, which are gated on holding the right province rather than on " +
       "being anyone in particular: every faction has between 424 and 443 of those.",
