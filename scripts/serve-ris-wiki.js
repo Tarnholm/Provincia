@@ -101,7 +101,8 @@ function inline(s) {
 // not a block, so it goes through the paragraph path, gets escaped, and the reader sees the tags
 // as text — which is exactly what happened on 60 region pages before anyone noticed.
 // `<a class="vid" ...>...</a>` is one card of the community-videos grid, one per line.
-const RAW_BLOCK = /^\s*(<a class="vid"[^>]*>.*<\/a>|<\/?(?:details|summary|div|p|br|hr)\b[^>]*>|<summary[^>]*>.*<\/summary>|<details\b[^>]*><summary[^>]*>.*<\/summary>)\s*$/i;
+// `<div class="ptabs">…</div>` is a tab strip on one line (All factions | Remastered).
+const RAW_BLOCK = /^\s*(<a class="vid"[^>]*>.*<\/a>|<div class="ptabs">.*<\/div>|<\/?(?:details|summary|div|p|br|hr)\b[^>]*>|<summary[^>]*>.*<\/summary>|<details\b[^>]*><summary[^>]*>.*<\/summary>)\s*$/i;
 
 function slugId(s) {
   return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
