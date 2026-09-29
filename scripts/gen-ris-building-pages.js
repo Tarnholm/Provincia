@@ -825,7 +825,7 @@ const charSection = (chainTok) => {
     ...list.sort(sort).map(cell)].join("\n");
   const traits = rows.filter((r) => r.kind === "trait"), ancs = rows.filter((r) => r.kind === "anc");
   const out = ["## Traits and retinue", ""];
-  const wrap = (label, n, md) => (n > 20 ? `<details>\n<summary>${label} (${n})</summary>\n\n${md}\n\n</details>\n` : `${md}\n`);
+  const wrap = (label, n, md) => (n > 80 ? `<details>\n<summary>${label} (${n})</summary>\n\n${md}\n\n</details>\n` : `${md}\n`);
   if (traits.length) {
     out.push("### Traits", "", wrap("All the traits", traits.length, table(traits, "Trait", (r) =>
       `| [${r.idx.name}](../traits/${r.idx.page}#${r.idx.anchor}) | ${needs(r)} | ${[...r.pts].sort((a, b) => a - b).map((p) => (p > 0 ? `+${p}` : `−${-p}`)).join(", ")} | ${range(r.chances, "%")} |`)));

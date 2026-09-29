@@ -627,6 +627,8 @@ tr.cmp-hold .cmp-panel{margin:0}
 .ptabs span{border-color:var(--line);background:var(--panel);color:var(--fg);font-weight:600}
 .ptabs a{color:var(--dim)}
 .ptabs a:hover{color:var(--acc)}
+/* Tables that should line up with each other: always the full width. */
+.wide .tw,.wide table{width:100%}
 .hov .hov-map{display:block;width:100%;max-height:9rem;object-fit:cover;border-radius:6px;margin:.2rem 0 .3rem}
 .top{position:sticky;top:0;z-index:20;background:var(--tyrian);border-bottom:1px solid var(--tyrian-deep);
   box-shadow:var(--shadow)}
@@ -1379,7 +1381,10 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
     if (!p.length) return;
     if (!data) { load().then(render); return; }
     if (statTables.length) {
-      statTables.forEach(function(t){
+      // One table per page: the one the reader is picking from, else the first. Pinned into every
+      // stat table, a settlement page showed the comparison twice (2026-09-29).
+      var host = statTables.filter(function(t){ return t.tbl === lastTbl; })[0] || statTables[0];
+      [host].forEach(function(t){
         var tb = t.tbl.tBodies[0], rows = [];
         p.forEach(function(slug){
           var own = tb.querySelector('tr[data-unit="' + slug + '"]');

@@ -996,7 +996,10 @@ const cardDim = (u) => cardImg(u).replace(/<img /, `<img${DIMMED} `);
 const unitRows = (rows, dim) => rows
   .sort((a, b) => unitName(a.unit).localeCompare(unitName(b.unit)))
   .map((e) => `| ${dim ? cardDim(e.unit) : cardImg(e.unit)} | ${unitRef(e.unit)} | ${atCell(e.at)} | ${e.info.cost != null ? e.info.cost.toLocaleString("en-US") : "—"} | ${e.info.upkeep != null ? e.info.upkeep.toLocaleString("en-US") : "—"} |`);
-const unitTable = (rows, dim) => `| | Unit | ${dim ? "Once you have" : "Raised at"} | Cost | Upkeep |\n|:-:|---|---|---:|---:|\n${unitRows(rows, dim).join("\n")}`;
+// Every unit table on the page is one full-width table, never dealt: a group of one row was
+// dealt across the page while a group of two sized to its content, so the tables under one
+// heading came out at different widths (reported 2026-09-29).
+const unitTable = (rows, dim) => `<div class="nodeal wide">\n\n| | Unit | ${dim ? "Once you have" : "Raised at"} | Cost | Upkeep |\n|:-:|---|---|---:|---:|\n${unitRows(rows, dim).join("\n")}\n\n</div>`;
 // The opening tag and the <summary> go on SEPARATE lines. Written as one line the viewer does
 // not see a block and prints the tags as text, which is what happened to 60 region pages.
 const maybeFold = (summary, rows, table) => (rows.length > FOLD_AT
