@@ -609,6 +609,11 @@ function loadMercPools() {
   return byType;
 }
 const mercPools = loadMercPools();
+// Pool names and pages, shared with gen-ris-mercenary-pages.js so the links always land.
+const MP = require(path.join(__dirname, "lib", "mercPools.js"));
+const POOL_NAMES = MP.poolNames(MP.parseMercPools(RIS).pools);
+const poolLinks = (tokens) => [...tokens].sort((a, b) => (POOL_NAMES[a] || a).localeCompare(POOL_NAMES[b] || b))
+  .map((t) => `[${POOL_NAMES[t] || t}](../${MP.poolFile(t)})`).join(" · ");
 
 // Only link factions that actually have a page — slave, the senate and the dummy factions
 // are excluded from the wiki, and linking them was 1,006 broken links once already.
@@ -1091,6 +1096,8 @@ ${reqRows.join("\n")}` : "";
 
 ${hire.pools.size ? `Mercenaries are **hired from a regional pool, not recruited from a building**. This unit is
 offered by **${hire.pools.size} pool${hire.pools.size === 1 ? "" : "s"}** covering **${hire.regions.size} region${hire.regions.size === 1 ? "" : "s"}**${rng(hire.cost) ? `, at **${rng(hire.cost)} dn** to hire` : ""}${rng(hire.exp) ? ` and **${rng(hire.exp)} experience**` : ""}.
+
+**Mercenary pool${hire.pools.size === 1 ? "" : "s"}:** ${poolLinks(hire.pools)}
 ${hireMap ? `\n${hireMap}\n` : ""}
 ${hire.openToAll
   ? `At least one of those pools sells to **any faction** that has an army in range, with no faction restriction.`

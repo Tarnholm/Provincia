@@ -1360,7 +1360,9 @@ const idx = `# All factions
 
 [← wiki index](README.md) · [factions overview](factions-overview.md) · [cultures](cultures.md) · [beliefs](religions.md) · [remastered factions](remastered.md)
 
-${index.length} playable factions in ${cultureGroups.filter((g) => g.tok).length} cultures. **${index.filter((e) => REMASTERED.get(e.f) && REMASTERED.get(e.f).remastered).length}** of them are [remastered](remastered.md): their units use the new Rome Remastered models. They carry a red **R** after their name everywhere on this wiki.
+${index.length} playable factions in ${cultureGroups.filter((g) => g.tok).length} cultures. **${index.filter((e) => REMASTERED.get(e.f) && REMASTERED.get(e.f).remastered).length}** of them have been [remastered](remastered.md) by the mod team and carry a red **(R)** after their name.
+
+No faction page lists victory conditions: RIS sets them only to steer the computer-run factions, so they are not goals for the player.
 
 ${numberWord(NON_PLAYABLE_SHOWN)} more factions appear in a campaign but are not playable. They are listed on
 [factions you cannot play](factions/${NON_PLAYABLE_FILE}).
@@ -1420,6 +1422,25 @@ ${partly.map((e) => `- [${e.display}](factions/${e.f}.md): ${oldNames(REMASTERED
   fs.writeFileSync(path.join(OUT, "factions", "remastered.json"),
     JSON.stringify([...REMASTERED].filter(([, v]) => v.remastered).map(([f]) => f).sort()), "utf8");
   console.log(`remastered.md: ${rows.length} of ${index.length} playable factions remastered`);
+}
+
+// ── hover previews ───────────────────────────────────────────────────────────
+// factions/preview.json: what the site shows when a reader points at a faction link (asked for
+// 2026-09-29; lib/hoverPreview.js reads it). Only what the faction card itself says.
+{
+  const plain = (md) => String(md || "").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[*_`]/g, "").trim();
+  const out = {};
+  for (const e of index) {
+    out[e.f] = {
+      n: e.display,
+      d: DIFFICULTY_WORD[DIFFICULTY[e.f]] || null,
+      c: e.culture ? plain(cultureRef(e.culture, "")) || null : null,
+      s: e.setts, u: e.units - (e.aor || 0),
+      r: !!(REMASTERED.get(e.f) && REMASTERED.get(e.f).remastered),
+      e: !!e.symbol,
+    };
+  }
+  fs.writeFileSync(path.join(OUT, "factions", "preview.json"), JSON.stringify(out), "utf8");
 }
 
 console.log(`\n${index.length} faction pages written`);

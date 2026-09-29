@@ -501,7 +501,9 @@ const REMASTERED_JS = (() => {
   try { list = JSON.parse(fs.readFileSync(path.join(WIKI, "factions", "remastered.json"), "utf8")); } catch { /* none yet */ }
   return `\nwindow.RIS_REMASTERED = ${JSON.stringify(list)};\n` + fs.readFileSync(path.join(__dirname, "lib", "remasteredTag.js"), "utf8");
 })();
-const JS_OUT = SHELL_SCRIPT.replace(/^<script>|<\/script>$/g, "") + EXTRA_JS + REMASTERED_JS;
+// Hover previews for unit and faction links (lib/hoverPreview.js).
+const HOVER_JS = "\n" + fs.readFileSync(path.join(__dirname, "lib", "hoverPreview.js"), "utf8");
+const JS_OUT = SHELL_SCRIPT.replace(/^<script>|<\/script>$/g, "") + EXTRA_JS + REMASTERED_JS + HOVER_JS;
 fs.writeFileSync(wrote(path.join(SITE, "wiki.css")), CSS_OUT);
 fs.writeFileSync(wrote(path.join(SITE, "wiki.js")), JS_OUT);
 // Pages link the two with a content hash (?v=...). Without it a browser keeps its cached copy
@@ -683,6 +685,12 @@ fs.writeFileSync(wrote(path.join(SITE, "search-index.js")),
     fs.mkdirSync(path.join(SITE, "units"), { recursive: true });
     fs.copyFileSync(src, wrote(path.join(SITE, "units", "compare.json")));
   } else console.log("  no units/compare.json: the compare box will have no numbers (run gen-ris-unit-pages.js)");
+  // The faction hover previews' data (factions/preview.json, gen-ris-faction-pages.js).
+  const fp = path.join(WIKI, "factions", "preview.json");
+  if (fs.existsSync(fp)) {
+    fs.mkdirSync(path.join(SITE, "factions"), { recursive: true });
+    fs.copyFileSync(fp, wrote(path.join(SITE, "factions", "preview.json")));
+  }
 }
 // Full-text words (asked for 2026-09-26: "roman equites" found nothing, because the unit's page
 // is titled differently and the words are only in its text). An inverted index: every word of

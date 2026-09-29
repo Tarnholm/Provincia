@@ -69,6 +69,13 @@ const PAGE = (title, intro, columns, rows, route, links, opts = {}) => {
 .sbar input:focus{outline:2px solid var(--acc-soft);border-color:var(--acc)}
 .sbar .stog{display:flex;gap:.35rem;align-items:center;color:var(--dim);font-size:.9rem;cursor:pointer}
 .sbar .stog input{min-width:0}
+.scols{position:relative}
+.scols summary{cursor:pointer;color:var(--dim);font-size:.9rem;list-style:none;border:1px solid var(--line);border-radius:8px;padding:.35rem .65rem}
+.scols summary::-webkit-details-marker{display:none}
+.scols[open] summary{border-color:var(--acc);color:var(--fg)}
+.scols div{position:absolute;z-index:5;margin-top:.3rem;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.5rem .7rem;display:grid;gap:.3rem;min-width:11rem;box-shadow:var(--shadow)}
+.scols label{display:flex;gap:.4rem;align-items:center;font-size:.9rem;cursor:pointer;white-space:nowrap}
+.scols input{min-width:0}
 #count{color:var(--dim);font-size:.84rem;font-variant-numeric:tabular-nums}
 .sview th{cursor:pointer;user-select:none}
 .sview th:hover,.sview th.sorted{color:var(--acc)}
@@ -85,9 +92,11 @@ const PAGE = (title, intro, columns, rows, route, links, opts = {}) => {
 </style>
 <div class="sbar"><input id="q" type="search" placeholder="Filter…" autocomplete="off">${
   columns.map((c, i) => c.toggle ? `<label class="stog"><input type="checkbox" data-col="${i}"> ${esc(c.toggle)}</label>` : "").join("")
+}${
+  columns.some((c) => c.optional) ? `<details class="scols"><summary>More columns</summary><div>${columns.map((c, i) => c.optional ? `<label><input type="checkbox" data-opt="${i}"> ${esc(c.label)}</label>` : "").join("")}</div></details>` : ""
 }${opts.noCount ? "" : "<span id=\"count\"></span>"}</div>
 <div class="tw big sview"><table><thead><tr>${
-  columns.map((c, i) => c.hidden ? "" : `<th data-i="${i}"${c.num ? ' class="right"' : ""}${c.width ? ` style="width:${c.width}"` : ""}>${esc(c.label)}</th>`).join("")
+  columns.map((c, i) => c.hidden ? "" : `<th data-i="${i}"${c.optional ? " hidden" : ""}${c.num ? ' class="right"' : ""}${c.width ? ` style="width:${c.width}"` : ""}>${esc(c.label)}</th>`).join("")
 }</tr></thead><tbody></tbody></table></div>
 <script>
 (function(){
@@ -96,6 +105,21 @@ const ROWS = ${JSON.stringify(rows)};
 const tbody = document.querySelector(".sview tbody");
 const q = document.getElementById("q");
 const countEl = document.getElementById("count");
+const SHOW = {};
+const SHOW_KEY = "ris-cols-" + location.pathname.split("/").pop();
+try { (JSON.parse(localStorage.getItem(SHOW_KEY)) || []).forEach((i) => { SHOW[i] = true; }); } catch (e) {}
+document.querySelectorAll(".scols input").forEach((cb) => {
+  const i = +cb.dataset.opt;
+  cb.checked = !!SHOW[i];
+  const th = document.querySelector('.sview th[data-i="' + i + '"]');
+  if (th) th.hidden = !SHOW[i];
+  cb.addEventListener("change", () => {
+    SHOW[i] = cb.checked;
+    if (th) th.hidden = !cb.checked;
+    try { localStorage.setItem(SHOW_KEY, JSON.stringify(Object.keys(SHOW).filter((k) => SHOW[k]))); } catch (e) {}
+    render();
+  });
+});
 let sortCol = COLS[0].thumb ? 1 : 0, sortDesc = false;
 
 function cell(v, col) {
@@ -144,7 +168,7 @@ function render() {
   });
   // Built as one string: appending ~1,700 rows node by node is visibly slow on a phone.
   tbody.innerHTML = rows.map((r) =>
-    "<tr>" + r.map((v, i) => COLS[i].hidden ? "" : "<td" + (COLS[i].num ? ' class="right"' : COLS[i].thumb ? ' class="thumb"' : "") + ">" +
+    "<tr>" + r.map((v, i) => COLS[i].hidden || (COLS[i].optional && !SHOW[i]) ? "" : "<td" + (COLS[i].num ? ' class="right"' : COLS[i].thumb ? ' class="thumb"' : "") + ">" +
       cell(v, COLS[i]) + "</td>").join("") + "</tr>").join("");
   if (countEl) countEl.textContent = rows.length.toLocaleString("en-US") + " of " + ROWS.length.toLocaleString("en-US") +
     (needle ? " matching" : " rows");
@@ -172,6 +196,9 @@ render();
 {
   // units.md now leads each row with a card cell; the columns below are read after it.
   const raw = parseTable("units.md", 9).map((c) => (/<img/.test(c[0]) || c[0] === "" ? c.slice(1) : c)).filter((c) => /^\[/.test(c[0]));
+  // The extra stats come from units/compare.json (gen-ris-unit-pages.js), keyed by the page slug.
+  let CMP = {};
+  try { CMP = JSON.parse(fs.readFileSync(path.join(OUT, "units", "compare.json"), "utf8")); } catch { /* none yet */ }
   const rows = raw.map((c) => {
     const u = linkText(c[0]);
     // The card sits beside the name so the roster is scannable by eye. Derived from the
@@ -185,6 +212,11 @@ render();
       c[1],
       numOf(c[2]), numOf(c[3]), numOf(c[4]), numOf(c[5]), numOf(c[6]), numOf(c[7]),
       numOf(c[8]) || 1,
+      ...(() => {
+        const d = CMP[slug] || {};
+        return [d.charge ?? null, d.armour ?? null, d.shield ?? null, d.hp ?? null, d.range ?? null, d.ammo ?? null,
+          d.mount || "", (d.abil || []).join(", "), !!d.merc, !!d.mount, d.cls === "missile"];
+      })(),
     ];
   });
   // Bar maxima come from the data, not a guessed ceiling: RIS stats run far above vanilla
@@ -196,6 +228,12 @@ render();
     { label: "Defence", num: true, bar: maxOf(5) }, { label: "Morale", num: true, bar: maxOf(6) },
     { label: "Cost", num: true }, { label: "Upkeep", num: true },
     { label: "Variants", num: true },
+    { label: "Charge", num: true, optional: true }, { label: "Armour", num: true, optional: true },
+    { label: "Shield", num: true, optional: true }, { label: "Hit points", num: true, optional: true },
+    { label: "Range", num: true, optional: true }, { label: "Ammunition", num: true, optional: true },
+    { label: "Mount", optional: true }, { label: "Abilities", optional: true },
+    { label: "Mercenary", hidden: true, toggle: "Mercenary" }, { label: "Mounted", hidden: true, toggle: "Mounted" },
+    { label: "Missile", hidden: true, toggle: "Missile" },
   ];
   fs.writeFileSync(path.join(OUT, "units.html"),
     PAGE("Unit roster, sortable", "Every unit in RIS. " +

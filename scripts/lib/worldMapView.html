@@ -32,7 +32,7 @@
 .wm-leg small{color:var(--dim)}
 .wm-leg .wm-note{color:var(--dim);align-self:center}
 </style>
-<div class="wm-bar"><button type="button" id="wm-plus" title="Zoom in">+</button><button type="button" id="wm-minus" title="Zoom out">−</button><button type="button" id="wm-fit">Whole map</button><label>Colour by <select id="wm-mode"><option value="">nothing</option><option value="faction">Faction</option></select></label><label><input type="checkbox" id="wm-names" checked> Settlement names</label><input type="search" id="wm-find" placeholder="Find a settlement or region…" list="wm-list" autocomplete="off"><datalist id="wm-list"></datalist></div>
+<div class="wm-bar"><button type="button" id="wm-plus" title="Zoom in">+</button><button type="button" id="wm-minus" title="Zoom out">−</button><button type="button" id="wm-fit">Whole map</button><label>Colour by <select id="wm-mode"><option value="">nothing</option><option value="faction">Faction</option></select></label><label>only where <select id="wm-and"><option value="">anything</option></select><select id="wm-and-v" hidden></select></label><label><input type="checkbox" id="wm-names" checked> Settlement names</label><input type="search" id="wm-find" placeholder="Find a settlement or region…" list="wm-list" autocomplete="off"><datalist id="wm-list"></datalist></div>
 <div class="wm-leg" id="wm-leg" hidden></div>
 <div class="wm" id="wm"><div class="wm-in" id="wm-in"><img src="world-map/world.webp" alt="The campaign map" width="4080" height="2800"><canvas id="wm-cv" width="1020" height="700"></canvas></div><div class="wm-tip" id="wm-tip"></div></div>
 <img id="wm-ids" src="world-map/ids.png" alt="" hidden>
@@ -106,7 +106,8 @@ function colours(m){
   return c;
 }
 function colourOf(d){
-  if (!mode) return null;
+  if (!passes(d)) return null;
+  if (!mode) return andOn() ? HI : null;
   if (mode === "faction") return d.c;
   var v = d.m && d.m[mode.k];
   if (!v || !v.length) return null;
@@ -116,8 +117,8 @@ function colourOf(d){
   return cols[v[0]];
 }
 function paint(){
-  box.classList.toggle("owners", !!mode); box.classList.toggle("iso", iso >= 0);
-  if (!ids || !mode) return;
+  box.classList.toggle("owners", !!mode || andOn()); box.classList.toggle("iso", iso >= 0 || (!mode && andOn()));
+  if (!ids || (!mode && !andOn())) return;
   var cv = document.getElementById("wm-cv"), g = cv.getContext("2d"), o = g.createImageData(MW, MH);
   var cache = DATA.map(function(d){ return d ? colourOf(d) : null; });
   for (var i = 0; i < MW * MH; i++) {
@@ -149,6 +150,19 @@ function setMode(k){
   legend(); paint();
 }
 sel.onchange = function(){ setMode(this.value); };
+// "Only where": a second property and one of its values; only regions that have it are painted
+// (asked for 2026-09-29: e.g. hills that have iron).
+var andSel = document.getElementById("wm-and"), andVal = document.getElementById("wm-and-v"), andMode = null, andV = -1;
+MODES.forEach(function(m){ var op = document.createElement("option"); op.value = m.k; op.textContent = m.label; andSel.appendChild(op); });
+function andOn(){ return !!andMode && andV >= 0; }
+function passes(d){ if (!andOn()) return true; var v = d.m && d.m[andMode.k]; return !!v && v.indexOf(andV) >= 0; }
+andSel.onchange = function(){
+  andMode = MODES.find(function(m){ return m.k === andSel.value; }) || null; andV = -1;
+  andVal.hidden = !andMode;
+  andVal.innerHTML = andMode ? '<option value="">choose…</option>' + andMode.order.map(function(v){ return '<option value="' + v + '">' + esc(andMode.vals[v][0]) + '</option>'; }).join("") : "";
+  paint();
+};
+andVal.onchange = function(){ andV = andVal.value === "" ? -1 : +andVal.value; paint(); };
 try { var saved = localStorage.getItem("ris-wm-mode"); if (saved && [].some.call(sel.options, function(o){ return o.value === saved; })) { sel.value = saved; setMode(saved); } } catch (e) {}
 function regionAt(cx, cy){
   if (!ids) return null;

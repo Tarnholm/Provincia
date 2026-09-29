@@ -485,9 +485,25 @@ function renderMarkdown(md, toc) {
     }
 
     if (/^\s*[-*]\s+/.test(line)) {
-      const buf = [];
-      while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) { buf.push(lines[i].replace(/^\s*[-*]\s+/, "")); i++; }
-      out.push("<ul>" + buf.map((b) => `<li>${inline(b)}</li>`).join("") + "</ul>");
+      // Nested by indentation (the mod's changelogs go three levels deep): each distinct indent
+      // width is a level, and a level can only open one deeper than the one before it. A flat
+      // list renders exactly as it always has.
+      const items = [];
+      while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+        const m = /^(\s*)[-*]\s+(.*)$/.exec(lines[i]);
+        items.push({ d: m[1].replace(/\t/g, "    ").length, t: m[2] });
+        i++;
+      }
+      const widths = [...new Set(items.map((x) => x.d))].sort((a, b) => a - b);
+      let html = "", depth = -1;
+      for (const x of items) {
+        const lvl = Math.min(widths.indexOf(x.d), depth + 1);
+        if (lvl > depth) { html += "<ul>"; depth = lvl; }
+        else { while (depth > lvl) { html += "</li></ul>"; depth--; } html += "</li>"; }
+        html += `<li>${inline(x.t)}`;
+      }
+      while (depth >= 0) { html += "</li></ul>"; depth--; }
+      out.push(html);
       continue;
     }
 
@@ -590,6 +606,19 @@ tr.cmp-hold .cmp-panel{margin:0}
 /* A long list spread across the width (the guides' faction list). */
 .cols ul{columns:15rem;column-gap:2.2rem;margin:0}
 .cols li{break-inside:avoid;margin:0 0 .35rem}
+/* Hover previews of unit and faction links (lib/hoverPreview.js). */
+.hov{position:fixed;z-index:40;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  box-shadow:var(--shadow);padding:.55rem .7rem;font-size:.85rem;max-width:17rem;line-height:1.35}
+.hov[hidden]{display:none}
+.hov-h{display:flex;gap:.55rem;align-items:center;margin-bottom:.35rem}
+.hov-h img{border-radius:4px;flex:none}
+.hov-h b{display:block;color:var(--acc);font-size:.95rem}
+.hov-h small{color:var(--dim)}
+.hov table{margin:0;border-collapse:collapse;width:100%}
+.hov th,.hov td{padding:.08rem .3rem;border:0;background:none}
+.hov th{color:var(--dim);font-weight:500;text-align:left;text-transform:none;letter-spacing:0;font-size:.85rem}
+.hov td{text-align:right;font-variant-numeric:tabular-nums}
+.hov p{margin:.35rem 0 0;color:var(--dim);font-size:.8rem}
 .top{position:sticky;top:0;z-index:20;background:var(--tyrian);border-bottom:1px solid var(--tyrian-deep);
   box-shadow:var(--shadow)}
 .top .bar{display:flex;gap:1rem;align-items:center;padding:.55rem 1rem}
@@ -884,10 +913,10 @@ hr{border:none;border-top:1px solid var(--line);margin:2rem 0}
 const NAV = [
   ["Start here", [["/README.md", "Wiki index"], ["/guides.md", "Game guides"], ["/community-guides.html", "Community guides"], ["/factions.md", "All factions"], ["/remastered.md", "Remastered factions"],
     ["/regions.md", "Regions and settlements"], ["/world-map.html", "World map"],
-    ["/units.md", "All units"], ["/buildings.md", "All buildings"], ["/trade-goods.md", "Trade goods"],
+    ["/units.md", "All units"], ["/mercenaries.md", "Mercenary pools"], ["/buildings.md", "All buildings"], ["/trade-goods.md", "Trade goods"],
     ["/cultures.md", "Cultures"], ["/religions.md", "Beliefs"], ["/traits.md", "Character traits"],
     ["/ancillaries.md", "Retinue"], ["/reforms.md", "Reforms"], ["/revolts.md", "Revolts"], ["/sizes.md", "Settlement sizes"],
-    ["/diaries.md", "Developer diaries"], ["/community-videos.md", "Community videos"]]],
+    ["/diaries.md", "Developer diaries"], ["/community-videos.md", "Community videos"], ["/changelog.md", "Changelog"]]],
   ["Overviews", [["/factions-overview.md", "Factions vs vanilla"], ["/map-and-regions.md", "The map"],
     ["/units-overview.md", "Roster vs vanilla"]]],
   ["Region tags", [["/tags/terrain.md", "Terrain"],
@@ -1221,6 +1250,11 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
   var data = null, loading = null;
   function picks(){ try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } }
   function save(p){ try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) {} }
+  // A shared comparison: ?compare=unit1,unit2 in the address sets the picks (asked for
+  // 2026-09-29, so a comparison can be posted as a link).
+  var shared = /[?&]compare=([^&#]*)/.exec(location.search);
+  if (shared) save(decodeURIComponent(shared[1]).split(",").filter(function(s){ return /^[a-z0-9_]+$/.test(s); }).slice(0, MAX));
+  function shareLink(){ return location.origin + location.pathname + "?compare=" + picks().join(","); }
   function load(){
     if (!loading) loading = fetch(ROOT + "units/compare.json").then(function(r){ return r.json(); })
       .then(function(d){ data = d; return d; }).catch(function(){ data = {}; return data; });
@@ -1321,7 +1355,8 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
     tr.className = "cmp-pin cmp-cap";
     tr.innerHTML = '<td colspan="' + cols + '"><b>Comparing ' + n + " unit" + (n === 1 ? "" : "s") + "</b>"
       + (n < 2 ? " <span>Click another unit’s row to add it.</span>" : " <span>Gold is the better value.</span>")
-      + ' <button type="button" class="cmp-clear">Clear</button></td>';
+      + ' <button type="button" class="cmp-clear">Clear</button>'
+      + (n > 1 ? ' <button type="button" class="cmp-share" title="Copy a link to this comparison">Share</button>' : "") + '</td>';
     return tr;
   }
   var panel = null;
@@ -1388,6 +1423,13 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
     var t = e.target;
     if (t.classList && t.classList.contains("cmp-x")) { e.preventDefault(); toggle(t.getAttribute("data-unit")); return; }
     if (t.classList && t.classList.contains("cmp-clear")) { save([]); render(); return; }
+    if (t.classList && t.classList.contains("cmp-share")) {
+      var url = shareLink();
+      var done = function(){ t.textContent = "Link copied"; setTimeout(function(){ t.textContent = "Share"; }, 1800); };
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, function(){ prompt("Link to this comparison", url); });
+      else prompt("Link to this comparison", url);
+      return;
+    }
     var el = t.closest && t.closest("[data-unit]");
     if (!el || el.closest(".cmp-pin") || el.classList.contains("cmp-btn") || t.closest("a, button, input, select, summary")) return;
     lastTbl = el.closest("table");

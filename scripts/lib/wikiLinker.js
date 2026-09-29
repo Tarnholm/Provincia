@@ -57,15 +57,20 @@ function makeLinker(OUT, opts = {}) {
   const key = OUT + "|" + root;
   if (!CACHE.has(key)) CACHE.set(key, buildLinker(OUT, root));
   const link = CACHE.get(key);
-  return (md) => link(md, opts.self || null);
+  return (md) => link(md, opts.self || null, opts.exclude);
 }
 
 function buildLinker(OUT, root) {
-  const byName = new Map();   // name -> href, or null when two different pages share it
+  // name -> href. Kinds are added in order of precedence (aliases, factions, units, reforms,
+  // buildings, goods, settlements, sizes): a name shared across kinds goes to the first
+  // ("Carthage" is the faction, not the town); two pages of the SAME kind sharing a name are
+  // ambiguous, and the name is not linked at all.
+  const byName = new Map(), kindOf = new Map();
   const add = (name, href, min = 4) => {
     if (!name || name.length < min) return;
-    if (!byName.has(name)) byName.set(name, href);
-    else if (byName.get(name) !== href) byName.set(name, null);
+    const kind = href.split("/")[0].split("#")[0];
+    if (!byName.has(name)) { byName.set(name, href); kindOf.set(name, kind); }
+    else if (byName.get(name) !== href && kindOf.get(name) === kind) byName.set(name, null);
   };
   for (const [n, h] of ALIASES) add(n, h, 3);
   for (const t of titles(path.join(OUT, "factions"))) if (t.file !== "non-playable.md") add(t.title, `factions/${t.file}`);
@@ -114,12 +119,24 @@ function buildLinker(OUT, root) {
   });
 
   // First mention per section; a page is linked once per section whatever name it went by.
-  return (md, self) => {
+  // `exclude`: phrases never linked inside (the changelog's "TW: Rome 2" is a game, not Rome).
+  return (md, self, exclude) => {
     const done = new Set();
     if (self) done.add(self);   // a page never links to itself
+    const skip = (exclude || []).length ? new RegExp(`(${exclude.map(esc).join("|")})`) : null;
     return micLevels(String(md)).split("\n").map((line) => {
       if (/^#{1,6}\s/.test(line)) { done.clear(); if (self) done.add(self); return line; }
-      const parts = line.split(/(\[[^\]]*\]\([^)]*\)|<[^>]+>)/);
+      // Existing links, HTML tags and excluded phrases are the odd parts, never linked into.
+      // parts alternate: text at even indexes, protected pieces at odd ones.
+      const parts = [];
+      // An odd length means the last piece is text (even index): extend it; else start one.
+      const pushText = (t) => { if (parts.length % 2 === 1) parts[parts.length - 1] += t; else parts.push(t); };
+      const pushKept = (k) => { if (parts.length % 2 === 0) parts.push(""); parts.push(k); };
+      line.split(/(\[[^\]]*\]\([^)]*\)|<[^>]+>)/).forEach((p, i) => {
+        if (i % 2) { pushKept(p); return; }
+        (skip ? p.split(skip) : [p]).forEach((b, j) => (j % 2 ? pushKept(b) : pushText(b)));
+      });
+      if (parts.length % 2 === 0) parts.push("");
       for (const t of targets) {
         if (done.has(t.id)) continue;
         for (let i = 0; i < parts.length; i += 2) {

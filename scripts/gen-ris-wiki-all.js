@@ -16,6 +16,7 @@ const ORDER = [
   'gen-ris-faction-pages.js',
   'gen-ris-unit-pages.js',
   'gen-ris-unit-cards.js',
+  'gen-ris-mercenary-pages.js', // after regions and units: pool maps, unit pages link to the pools
   'gen-ris-building-pages.js',
   'gen-ris-building-icons.js',
   'gen-ris-culture-pages.js',
@@ -28,7 +29,8 @@ const ORDER = [
   'gen-ris-settlement-sizes.js',
   'gen-ris-tag-pages.js',
   'gen-ris-building-pages.js', // again: building conditions word region tags by the tag pages' current names
-  'gen-ris-guides.js',         // after every page family: its links point at pages by name
+  'gen-ris-guides.js',          // after every page family: its links point at pages by name
+  'gen-ris-changelog-pages.js', // likewise: the linker reads the page titles
   'gen-ris-diary-pages.js',   // from the local Discord cache (fetch-discord-diaries.js); skips if absent
   'gen-ris-wiki.js',
   'gen-ris-wiki-html.js',

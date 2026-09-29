@@ -1051,6 +1051,204 @@ function recruitSection(rec, held) {
   return out.join("\n\n");
 }
 
+// ── units raised here because of the land itself ────────────────────────────
+// The settlement page answers "what can its OWNER raise"; this answers the region's own
+// question: which units does holding THIS land open to anyone. Those are the recruit lines
+// that positively require one of the region's recruitment tags (the tags gen-ris-tag-pages.js
+// files under recruitment zones, specialty recruitment and the other recruitment markers),
+// found through the same tagUsage() walk the tag pages use, so a zone lists the same units there
+// and here.
+//
+// Kept to what the land decides, nothing else:
+//   - player lines only: a `not is_player` line is the AI's roster.
+//   - `factions { all, }` lines only. A line naming its own factions is a faction's roster
+//     that happens to be region-gated (Achaian Hoplites for Achaea), not the region's.
+//   - the condition is evaluated against the region's tags and placed goods, with the owner,
+//     the buildings and the reforms left undecided; a line the region makes false is dropped
+//     (the generic Greek hoplite in a region that also carries a more specific Greek zone).
+// The Requires cell is worded like the faction pages' (building level first, then each
+// remaining condition by its display_string, linked through lib/reqLinks.js). Conditions the
+// region itself already settles are not repeated; they are the group heading.
+const RL = require(path.join(__dirname, "lib", "reqLinks.js")).makeReqLinks({
+  edb: EDB_TXT, OUT, bName,
+  // Chain names read back from the chain pages, as gen-ris-faction-pages.js does, so an alias
+  // links and reads the same on both.
+  chainNames: (() => {
+    const out = {};
+    for (const c of buildingPages) {
+      try {
+        const m = /^#\s+(.+?)(?:\s+chain)?\s*$/m.exec(fs.readFileSync(path.join(OUT, "buildings", `${c}.md`), "utf8").slice(0, 300));
+        if (m) out[c] = m[1].trim();
+      } catch { /* unreadable page: the text entry is used */ }
+    }
+    return out;
+  })(),
+});
+// alias -> the game's own wording of it, from its display_string (keys spread across text/*.txt).
+const ALIAS_TEXT = (() => {
+  const lut = {};
+  try {
+    for (const f of fs.readdirSync(path.join(RIS, "text")).filter((n) => /\.txt$/i.test(n))) {
+      try {
+        for (const m of fs.readFileSync(path.join(RIS, "text", f), "utf16le").matchAll(/\{([^}]+)\}(.*)/g)) {
+          const k = m[1].trim().toLowerCase();
+          if (!(k in lut)) lut[k] = m[2].trim();
+        }
+      } catch { /* unreadable text file */ }
+    }
+  } catch { /* no text dir */ }
+  const out = {};
+  for (const m of EDB_TXT.matchAll(/^[ \t]*alias[ \t]+(\S+)[^\r\n]*\r?\n[ \t]*\{([\s\S]*?)\n[ \t]*\}/gm)) {
+    const ds = /display_string\s+(\S+)/.exec(m[2]);
+    const v = ds ? lut[ds[1].trim().toLowerCase()] : null;
+    if (v) out[m[1].toLowerCase()] = v;
+  }
+  return out;
+})();
+const RECRUIT_TAG_PAGES = new Set(["recruitment-zones.md", "specialty-recruitment.md", "recruitment-other.md"]);
+const RECRUIT_TAGS = new Set(Object.keys(TAG_ANCHORS).filter((t) => RECRUIT_TAG_PAGES.has(TAG_ANCHORS[t].page)));
+// Recruit line -> the recruitment tags it positively requires.
+const LINE_GRANTS = (() => {
+  const usage = RC.tagUsage(EDB, EDB_ALIASES);
+  const out = new Map();
+  for (const t of RECRUIT_TAGS) {
+    for (const r of ((usage.get(t) || {}).recruits || [])) {
+      if (/\bnot\s+is_player\b/i.test(r.requires)) continue;
+      const pos = [...r.requires.matchAll(/(not\s+)?factions\s*\{([^}]*)\}/gi)].filter((m) => !m[1])
+        .flatMap((m) => m[2].split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
+      if (!pos.includes("all")) continue;
+      if (!out.has(r.line)) out.set(r.line, { r, tags: new Set() });
+      out.get(r.line).tags.add(t);
+    }
+  }
+  return [...out.values()];
+})();
+const OFF_REFORM = (tok) => !!(REFORM_LINKS[tok] && REFORM_LINKS[tok].off);
+const landStats = { regions: 0, rows: 0, max: null, counts: [], unworded: new Map(), notPage: new Set() };
+const EVERYWHERE_CHAIN = new Set(["hinterland_region"]);
+const cellEsc = (s) => String(s).replace(/\|/g, "\\|");
+/** One `and`-clause of a recruit line, in the faction pages' words. */
+function landClause(c) {
+  const neg = /^not\s+/i.test(c);
+  const b = c.replace(/^not\s+/i, "").trim();
+  const k = b.toLowerCase();
+  let s = null;
+  if (ALIAS_TEXT[k]) s = RL.linkAlias(k, ALIAS_TEXT[k]).replace(/\s*\|\s*/g, " · ");
+  let m;
+  if (!s && (m = /^major_event\s+"?([A-Za-z0-9_]+)"?/i.exec(b))) {
+    s = REFORM_LINKS[m[1]] ? `[${String(REFORM_LINKS[m[1]].title).replace(/\|/g, "\\|")}](../reforms/${m[1]}.md)` : eventName(m[1]);
+  }
+  if (!s && (m = /^building_present_min_level\s+(\S+)\s+(\S+)$/i.exec(b))) s = RL.levelLink(m[2], m[1]);
+  if (!s && (m = /^building_present\s+(\S+)$/i.exec(b))) s = RL.levelLink(m[1]) || (chainPage(m[1]) ? chainLink(m[1]) : null);
+  if (!s && (m = /^hidden_resource\s+(\S+)$/i.exec(b))) s = RL.tagClause(m[1]);
+  if (!s && (m = /^resource\s+(\S+)$/i.exec(b))) s = goodPages.has(m[1].toLowerCase()) ? `[${resName(m[1].toLowerCase()) || humanise(m[1])}](../goods/${m[1].toLowerCase()}.md)` : (resName(m[1].toLowerCase()) || null);
+  if (!s) { landStats.unworded.set(b, (landStats.unworded.get(b) || 0) + 1); s = humanise(b); }
+  return (neg ? "not " : "") + s;
+}
+/**
+ * Units any faction can raise in region r because of the region's own tags, grouped by the tag
+ * that grants each: [{ tag, rows: [{ unit, where, conds }] }].
+ */
+function landUnits(r) {
+  const tags = new Set(r.tags.map((t) => t.toLowerCase()));
+  const ctx = {
+    faction: null, isPlayer: true, tags,
+    goods: new Set((MAP_RESOURCES.out.get(r.region) || new Map()).keys()),
+    chainOrder: CHAIN_ORDER, chainTags: CHAIN_TAGS,
+    majorEvent: (name) => (OFF_REFORM(name) ? false : null),
+  };
+  const routes = new Map();   // unit page key -> { unit, sets: [] }
+  for (const { r: line, tags: grants } of LINE_GRANTS) {
+    const here = [...grants].filter((t) => tags.has(t));
+    if (!here.length) continue;
+    if (RC.evaluate(line.requires, ctx, EDB_ALIASES).value === false) continue;
+    // The clauses a player still has to meet: faction gates and is_player are not requirements,
+    // and a clause this region already makes true (its own tags, an absent rival tag, a
+    // switched-off reform's "not") says nothing on this page.
+    const conds = line.requires
+      .replace(/(not\s+)?factions\s*\{[^}]*\}/gi, " ")
+      .replace(/\bnot\s+is_player\b/gi, " ").replace(/\bis_player\b/gi, " ")
+      .split(/\band\b/i).map((s) => s.trim()).filter(Boolean)
+      .filter((c) => RC.evaluate(c, ctx, EDB_ALIASES).value !== true);
+    const info = UNIT_INFO[line.unit] || {};
+    const key = info.dict || `type:${line.unit}`;
+    if (!routes.has(key)) routes.set(key, { unit: line.unit, sets: [] });
+    routes.get(key).sets.push({ c: [...new Set(conds)], chain: line.chain, level: line.level, tag: here.sort()[0] });
+  }
+  const groups = new Map();
+  for (const e of routes.values()) {
+    // Same reduction as the faction pages: `X` and `not X` on two routes of one level cancel
+    // (the pair decides something else, not whether), then the shortest route is the one shown.
+    let sets = e.sets;
+    const key = (s) => [...s].sort().join(" & ");
+    for (let pass = 0; pass < 3; pass++) {
+      const keys = new Set(sets.map((s) => `${s.level}|${key(s.c)}`));
+      sets = sets.map((s) => ({ ...s, c: s.c.filter((c) => {
+        const rest = s.c.filter((x) => x !== c);
+        const m = /^not\s+(.+)$/i.exec(c);
+        return !keys.has(`${s.level}|${key(m ? [...rest, m[1]] : [...rest, `not ${c}`])}`);
+      }) }));
+    }
+    const best = [...sets].sort((a, b) => a.c.length - b.c.length)[0];
+    if (!groups.has(best.tag)) groups.set(best.tag, []);
+    groups.get(best.tag).push({ unit: e.unit, where: best, conds: best.c });
+  }
+  return [...groups.entries()].map(([tag, rows]) => ({ tag, rows }))
+    .sort((a, b) => b.rows.length - a.rows.length || a.tag.localeCompare(b.tag));
+}
+const landCard = (u) => {
+  const d = (UNIT_INFO[u] || {}).dict;
+  const s = d ? uSlug(d) : null;
+  if (!s || !cardFiles.has(s)) return "";
+  const img = `<img src="../cards/${s}.png" alt="" width="${CARD_W}" height="${CARD_H}" loading="lazy">`;
+  return unitPages.has(s) ? `[${img}](../units/${s}.md)` : img;
+};
+const landUnitLink = (u) => {
+  const d = (UNIT_INFO[u] || {}).dict;
+  const s = d ? uSlug(d) : null;
+  if (s && !unitPages.has(s)) landStats.notPage.add(u);
+  return s && unitPages.has(s) ? `[${unitName(u)}](../units/${s}.md)` : unitName(u);
+};
+const landRequires = (row) => {
+  const lv = !EVERYWHERE_CHAIN.has(String(row.where.chain).toLowerCase()) && row.where.level;
+  const name = lv ? (bName(lv) || lv.replace(/_/g, " ")) : null;
+  const p = lv ? chainPage(row.where.chain) : null;
+  const b = name ? `**${p ? `[${name}](../buildings/${p}.md)` : name}**` : null;
+  return [b, ...row.conds.map((c) => cellEsc(landClause(c)))].filter(Boolean).join(" · ") || "_no further requirement_";
+};
+const landHeading = (tag) => {
+  const a = TAG_ANCHORS[tag];
+  const label = /^aor_/.test(tag) ? `${a.name} area of recruitment` : `${a.name} region`;
+  return `[${label}](../tags/${a.page}#${a.anchor})`;
+};
+const LAND_FOLD_AT = 25;
+function landSection(r) {
+  const groups = landUnits(r);
+  const n = groups.reduce((a, g) => a + g.rows.length, 0);
+  landStats.counts.push(n);
+  if (!n) return null;
+  landStats.regions++;
+  landStats.rows += n;
+  if (!landStats.max || n > landStats.max[1]) landStats.max = [r.region, n];
+  const tables = groups.map((g) => `**${landHeading(g.tag)}** (${g.rows.length} ${g.rows.length === 1 ? "unit" : "units"})
+
+<div class="rtab nodeal">
+
+| | Unit | Requires |
+|---|---|---|
+${g.rows.sort((a, b) => unitName(a.unit).localeCompare(unitName(b.unit)))
+    .map((row) => `| ${landCard(row.unit)} | ${landUnitLink(row.unit)} | ${landRequires(row)} |`).join("\n")}
+
+</div>`).join("\n\n");
+  // Many of these lines bar a named set of factions (`not factions { … }`). Measured: every one
+  // of the 1,977 barred faction/line pairs is a faction with the same unit (same EDU dictionary,
+  // same page) on a route of its own, so the second sentence is exact, not a gloss.
+  const lede = `Whoever holds ${placeName(r.region)} can raise ${n === 1 ? "this unit" : `these ${n} units`} here. A faction with one of them on its own roster raises it that way instead.`;
+  return n > LAND_FOLD_AT
+    ? `${lede}\n\n<details>\n<summary>${n} units, by the tag that grants them</summary>\n\n${tables}\n\n</details>`
+    : `${lede}\n\n${tables}`;
+}
+
 // A region no faction holds at the campaign start is one of the mod's holding regions ("Han
 // Region", "Seleucid Rebels Settlement"): a place kept off the playable map so a faction that
 // is not yet in play still exists. No player ever sees one, so they get no page and are not
@@ -1274,6 +1472,7 @@ for (const r of list) {
   addRow("Cultural homeland", g.culture, GATE);
   addRow("Other tags", g.other, GATE_PLAIN);
 
+  const land = landSection(r);
   const mapImg = `![Map of ${placeName(r.region)} and its neighbours](../region-maps/${encodeURIComponent(r.region)}.webp)`;
   const body = `# ${placeName(r.region)}
 
@@ -1316,6 +1515,10 @@ What this region counts as for recruitment, homelands and building.
 ${gated.join("\n")}
 
 </details>
+` : ""}${land ? `
+## Units raised here
+
+${land}
 ` : ""}
 `;
 
@@ -1507,6 +1710,13 @@ console.log(`  unit rows still conditional:${recruitStats.conditional.toLocaleSt
 console.log(`  settlement ladder: ${SETTLE.order.join(" < ")} (${SETTLE.ladders} cultures declare one, ${SETTLE.disagree} disagree)`);
 console.log(`  reforms ruled out at turn 0: ${[...EVENT_INACTIVE.values()].filter((v) => v === "inactive").length}/${EVENT_INACTIVE.size}; the rest stay conditional and are named on the page`);
 console.log(`  undecided clause kinds: ${[...recruitStats.undecided].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => `${k} x${n.toLocaleString("en-US")}`).join(", ") || "none"}`);
+{
+  const c = [...landStats.counts].sort((a, b) => a - b);
+  const med = c.length ? c[Math.floor(c.length / 2)] : 0;
+  console.log(`  units raised through the land (any faction): ${landStats.regions.toLocaleString("en-US")} of ${c.length.toLocaleString("en-US")} regions have some, ${landStats.rows.toLocaleString("en-US")} rows, median ${med}, largest ${landStats.max ? `${landStats.max[1]} (${landStats.max[0]})` : "none"}, folded over ${LAND_FOLD_AT}: ${c.filter((n) => n > LAND_FOLD_AT).length} · from ${LINE_GRANTS.length} player lines open to all factions`);
+  if (landStats.unworded.size) console.log(`    clauses with no display wording (humanised): ${[...landStats.unworded].map(([k, n]) => `${k} x${n}`).join(", ")}`);
+  if (landStats.notPage.size) console.log(`    units with no page (plain text): ${[...landStats.notPage].join(", ")}`);
+}
 console.log(`  tag reference links: ${tagLinked.toLocaleString("en-US")} values linked${tagUnlinked.size ? `, ${tagUnlinked.size} tokens with no reference entry (${[...tagUnlinked].slice(0, 6).join(", ")})` : ""}`);
 console.log(`  trade good links: ${goodLinked.toLocaleString("en-US")} table cells linked to goods/ (${goodPages.size} good pages found)${goodUnlinked.size ? `, ${goodUnlinked.size} goods with no page (${[...goodUnlinked].join(", ")})` : ""}${goodPages.size ? "" : "  <- run gen-ris-trade-goods.js, then this generator again"}`);
 
