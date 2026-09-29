@@ -685,6 +685,17 @@ fs.writeFileSync(wrote(path.join(SITE, "search-index.js")),
     fs.mkdirSync(path.join(SITE, "units"), { recursive: true });
     fs.copyFileSync(src, wrote(path.join(SITE, "units", "compare.json")));
   } else console.log("  no units/compare.json: the compare box will have no numbers (run gen-ris-unit-pages.js)");
+  // Hover previews for every other page family (lib/pagePreviews.js): previews/<family>.json,
+  // read from the generated pages themselves.
+  const { buildPreviews } = require("./lib/pagePreviews.js");
+  const PREV = buildPreviews(WIKI);
+  fs.mkdirSync(path.join(SITE, "previews"), { recursive: true });
+  let prevN = 0;
+  for (const [fam, data] of Object.entries(PREV)) {
+    fs.writeFileSync(wrote(path.join(SITE, "previews", `${fam}.json`)), JSON.stringify(data));
+    prevN += Object.keys(data).length;
+  }
+  note(`hover previews: ${n(prevN)} entries across ${n(Object.keys(PREV).length)} page families`);
   // The faction hover previews' data (factions/preview.json, gen-ris-faction-pages.js).
   const fp = path.join(WIKI, "factions", "preview.json");
   if (fs.existsSync(fp)) {

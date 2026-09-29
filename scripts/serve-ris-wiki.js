@@ -619,6 +619,14 @@ tr.cmp-hold .cmp-panel{margin:0}
 .hov th{color:var(--dim);font-weight:500;text-align:left;text-transform:none;letter-spacing:0;font-size:.85rem}
 .hov td{text-align:right;font-variant-numeric:tabular-nums}
 .hov p{margin:.35rem 0 0;color:var(--dim);font-size:.8rem}
+.hov .hov-ic{max-width:48px;max-height:48px;object-fit:contain}
+/* Tabs between two views of one list (All factions | Remastered). */
+.ptabs{display:flex;gap:.3rem;margin:.2rem 0 1rem;border-bottom:1px solid var(--line)}
+.ptabs a,.ptabs span{padding:.4rem .9rem;border:1px solid transparent;border-bottom:0;border-radius:8px 8px 0 0;margin-bottom:-1px;text-decoration:none}
+.ptabs span{border-color:var(--line);background:var(--panel);color:var(--fg);font-weight:600}
+.ptabs a{color:var(--dim)}
+.ptabs a:hover{color:var(--acc)}
+.hov .hov-map{display:block;width:100%;max-height:9rem;object-fit:cover;border-radius:6px;margin:.2rem 0 .3rem}
 .top{position:sticky;top:0;z-index:20;background:var(--tyrian);border-bottom:1px solid var(--tyrian-deep);
   box-shadow:var(--shadow)}
 .top .bar{display:flex;gap:1rem;align-items:center;padding:.55rem 1rem}
@@ -911,7 +919,7 @@ hr{border:none;border-top:1px solid var(--line);margin:2rem 0}
 `;
 
 const NAV = [
-  ["Start here", [["/README.md", "Wiki index"], ["/guides.md", "Game guides"], ["/community-guides.html", "Community guides"], ["/factions.md", "All factions"], ["/remastered.md", "Remastered factions"],
+  ["Start here", [["/README.md", "Wiki index"], ["/guides.md", "Game guides"], ["/community-guides.html", "Community guides"], ["/factions.md", "All factions"],
     ["/regions.md", "Regions and settlements"], ["/world-map.html", "World map"],
     ["/units.md", "All units"], ["/mercenaries.md", "Mercenary pools"], ["/buildings.md", "All buildings"], ["/trade-goods.md", "Trade goods"],
     ["/cultures.md", "Cultures"], ["/religions.md", "Beliefs"], ["/traits.md", "Character traits"],

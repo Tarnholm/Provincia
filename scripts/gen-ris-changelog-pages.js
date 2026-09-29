@@ -131,12 +131,21 @@ for (const v of versions) {
   if (!series.has(s)) series.set(s, []);
   series.get(s).push(v);
 }
+// One table, newest at the top: a section per series was laid out as cards side by side, which
+// read out of order (the team, 2026-09-29: "have the 0.6 up top and 0.0 at the bottom").
 const index = `# Changelog
 
 [← wiki index](README.md)
 
 The mod team's release notes for every version of RIS, newest first.
 
-${[...series].map(([s, vs]) => `## ${s}\n\n| Version | Entries |\n|---|---:|\n${vs.map((v) => `| [${titleOf(v)}](changelog/${v.ver}.md) | ${v.items} |`).join("\n")}\n`).join("\n")}`;
+<div class="nodeal">
+
+| Version | Entries |
+|---|---:|
+${versions.map((v) => `| [${titleOf(v)}](changelog/${v.ver}.md) | ${v.items} |`).join("\n")}
+
+</div>
+`;
 fs.writeFileSync(path.join(OUT, "changelog.md"), index, "utf8");
 console.log(`changelog.md: ${versions.length} versions (${versions[versions.length - 1].ver} to ${versions[0].ver})`);

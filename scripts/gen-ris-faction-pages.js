@@ -1358,7 +1358,9 @@ const cultureJump = cultureGroups
 
 const idx = `# All factions
 
-[← wiki index](README.md) · [factions overview](factions-overview.md) · [cultures](cultures.md) · [beliefs](religions.md) · [remastered factions](remastered.md)
+[← wiki index](README.md) · [factions overview](factions-overview.md) · [cultures](cultures.md) · [beliefs](religions.md)
+
+<div class="ptabs"><span>All factions</span><a href="remastered.md">Remastered</a></div>
 
 ${index.length} playable factions in ${cultureGroups.filter((g) => g.tok).length} cultures. **${index.filter((e) => REMASTERED.get(e.f) && REMASTERED.get(e.f).remastered).length}** of them have been [remastered](remastered.md) by the mod team and carry a red **(R)** after their name.
 
@@ -1396,6 +1398,8 @@ fs.writeFileSync(path.join(OUT, "factions.md"), idx, "utf8");
   const body = `# Remastered factions
 
 [← wiki index](README.md) · [all factions](factions.md)
+
+<div class="ptabs"><a href="factions.md">All factions</a><span>Remastered</span></div>
 
 A **remastered** faction's units are the mod's own new models, with seven soldier models per
 unit, instead of older models with new textures. **${rows.length}** of the

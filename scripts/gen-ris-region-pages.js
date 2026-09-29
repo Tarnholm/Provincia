@@ -1484,8 +1484,7 @@ ${mapImg}
 
 <div class="fmeta">
 
-**Its settlement is [${settleName}](${settleHref})**${ownerPhrase ? `, held at the campaign start by ${ownerPhrase}` : ""}. That page has the town:
-its size, its manpower, what is built there and what it can raise. This one is the land.
+**Its settlement is [${settleName}](${settleHref})**${ownerPhrase ? `, held at the campaign start by ${ownerPhrase}` : ""}.
 
 ${[glance, held ? null : `This region begins **independent**. If it revolts, the rebels are ${r.rebels}.`].filter(Boolean).join("\n\n")}
 
