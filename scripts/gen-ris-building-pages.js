@@ -769,6 +769,74 @@ const RL = makeReqLinks({ edb, OUT, bName: dName, chainNames: CHAIN_NAMES });
 const CHAIN_OF_LEVEL = new Map();
 for (const c of chains) for (const l of c.order) if (!CHAIN_OF_LEVEL.has(l.toLowerCase())) CHAIN_OF_LEVEL.set(l.toLowerCase(), c);
 
+// ── traits and retinue a building brings (asked for 2026-09-29) ─────────────────
+// A trait or retinue trigger that requires a building level (SettlementBuildingExists /
+// SettlementBuildingFinished / GovernorBuildingExists <op> <level>) is listed on that level's
+// chain page, with what it does (trait points gained or lost, a retinue member joining) and
+// its chance. Negated conditions ("not SettlementBuildingExists") are a building that must be
+// ABSENT, and are not listed. Names and links come from traits/index.json and
+// ancillaries/index.json, written by the trait and retinue generators.
+const CHAR_BY_CHAIN = (() => {
+  const byChain = new Map();   // chain token -> Map(key -> row)
+  const readJson = (f) => { try { return JSON.parse(fs.readFileSync(path.join(OUT, f), "utf8")); } catch { return {}; } };
+  const TRAITS = readJson("traits/index.json"), ANCS = readJson("ancillaries/index.json");
+  const scan = (file, kind) => {
+    let conds = [];
+    const flush = () => { conds = []; };
+    for (const raw of (rd(file) || "").split(/\r?\n/)) {
+      const l = raw.replace(/;.*$/, "").trim();
+      if (/^Trigger\b/.test(l)) { flush(); continue; }
+      let m = /^(?:Condition|and)\s+(not\s+)?(?:SettlementBuildingExists|SettlementBuildingFinished|GovernorBuildingExists)\s*(>=|<=|=|>|<)\s*(\S+)/.exec(l);
+      if (m) { if (!m[1]) conds.push({ op: m[2], level: m[3].toLowerCase() }); continue; }
+      const eff = kind === "trait" ? /^Affects\s+(\S+)\s+(-?\d+)\s+Chance\s+(\d+)/i.exec(l) : /^AcquireAncillary\s+(\S+)\s+chance\s+(\d+)/i.exec(l);
+      if (!eff || !conds.length) continue;
+      const tok = eff[1], pts = kind === "trait" ? +eff[2] : null, chance = +(kind === "trait" ? eff[3] : eff[2]);
+      const idx = kind === "trait" ? TRAITS[tok] : ANCS[tok];
+      if (!idx) continue;   // a trait or member the wiki does not show (hidden ones)
+      for (const c of conds) {
+        const chain = CHAIN_OF_LEVEL.get(c.level);
+        if (!chain) continue;
+        if (!byChain.has(chain.chain)) byChain.set(chain.chain, new Map());
+        const key = `${kind}|${tok}|${c.op}|${c.level}|${pts == null ? "" : Math.sign(pts)}`;
+        const rows = byChain.get(chain.chain);
+        if (!rows.has(key)) rows.set(key, { kind, tok, idx, op: c.op, level: c.level, pts: new Set(), chances: new Set() });
+        const r = rows.get(key);
+        if (pts != null) r.pts.add(pts);
+        r.chances.add(chance);
+      }
+    }
+  };
+  scan("export_descr_character_traits.txt", "trait");
+  scan("export_descr_ancillaries.txt", "anc");
+  return byChain;
+})();
+const charSection = (chainTok) => {
+  const rows = [...(CHAR_BY_CHAIN.get(chainTok) || new Map()).values()];
+  if (!rows.length) return "";
+  const needs = (r) => {
+    const n = dName(r.level) || r.level;
+    return { ">=": `${n} or above`, "=": n, ">": `above ${n}`, "<=": `${n} or below`, "<": `below ${n}` }[r.op] || n;
+  };
+  const range = (set, suffix) => { const v = [...set].sort((a, b) => a - b); return v[0] === v[v.length - 1] ? `${v[0]}${suffix}` : `${v[0]}–${v[v.length - 1]}${suffix}`; };
+  const rank = (r) => { const ch = CHAIN_OF_LEVEL.get(r.level); return ch ? ch.order.map((x) => x.toLowerCase()).indexOf(r.level) : 0; };
+  const sort = (a, b) => a.idx.name.localeCompare(b.idx.name) || rank(a) - rank(b);
+  const table = (list, head, cell) => [`| ${head} | Building |${list[0].kind === "trait" ? "Points | " : ""}Chance |`,
+    `|---|---|${list[0].kind === "trait" ? "---:|" : ""}---:|`,
+    ...list.sort(sort).map(cell)].join("\n");
+  const traits = rows.filter((r) => r.kind === "trait"), ancs = rows.filter((r) => r.kind === "anc");
+  const out = ["## Traits and retinue", ""];
+  const wrap = (label, n, md) => (n > 20 ? `<details>\n<summary>${label} (${n})</summary>\n\n${md}\n\n</details>\n` : `${md}\n`);
+  if (traits.length) {
+    out.push("### Traits", "", wrap("All the traits", traits.length, table(traits, "Trait", (r) =>
+      `| [${r.idx.name}](../traits/${r.idx.page}#${r.idx.anchor}) | ${needs(r)} | ${[...r.pts].sort((a, b) => a - b).map((p) => (p > 0 ? `+${p}` : `−${-p}`)).join(", ")} | ${range(r.chances, "%")} |`)));
+  }
+  if (ancs.length) {
+    out.push("### Retinue", "", wrap("All the retinue members", ancs.length, table(ancs, "Member", (r) =>
+      `| [${r.idx.name}](../ancillaries/${r.idx.page}#${r.idx.anchor}) | ${needs(r)} | ${range(r.chances, "%")} |`)));
+  }
+  return out.join("\n");
+};
+
 // ── English lists ──
 const orList = (xs) => (xs.length <= 1 ? (xs[0] || "") : `${xs.slice(0, -1).join(", ")} or ${xs[xs.length - 1]}`);
 const andList = (xs) => (xs.length <= 1 ? (xs[0] || "") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
@@ -1561,7 +1629,7 @@ Costs in denarii, build time in turns.
 
   // No glossary of shorthands any more: every condition is written out in words where it is
   // used, so there is nothing left on the page for one to decode.
-  const body = [lede, glance, ...sections].filter(Boolean).join("\n") + "\n";
+  const body = [lede, glance, ...sections, charSection(c.chain)].filter(Boolean).join("\n") + "\n";
   fs.writeFileSync(path.join(OUT, "buildings", `${slug(c.chain)}.md`), body, "utf8");
 
   const firstDesc = rows.map((r) => r.d).find((d) => d.short || d.full);
