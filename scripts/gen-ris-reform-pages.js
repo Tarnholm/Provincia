@@ -810,8 +810,10 @@ function playerAiSections(routes, texts) {
     byText.get(key).ts.push(t);
   }
   for (const { fs, ts } of byText.values()) out.push(`**If you are playing ${names(fs)}:** ${list(ts)}`);
-  if (ai.length) out.push(`**If nobody is playing ${names([...aiWho])}** (the AI runs them): ${list(ai)}`);
+  // Only the player's version (the team, 2026-09-30: "for conditions that are different for
+  // the AI and player, only do the player version"). The AI-only routes are not shown.
   if (any.length) out.push(`**In any campaign:** ${list(any)}`);
+  if (!out.length && ai.length) out.push("It does not fire for a player.");
   return out;
 }
 /** A parsed trigger script as its routes and one sentence per route. */

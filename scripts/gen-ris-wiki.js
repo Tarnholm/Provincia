@@ -249,9 +249,9 @@ function build(v, r) {
   // filled from the data, so they follow the mod.
   pages["README.md"] = `# Welcome to RIS: Wiki
 
-<img src="art/ris-logo.png" alt="Rome: Total Realism, Imperium Surrectum" width="128" style="float:none;margin:.2rem 0 1rem">
+<img src="art/ris-logo-wide.png" alt="Rome: Total Realism, Imperium Surrectum" width="560" height="168" style="display:block;float:none;margin:.4rem auto 1.4rem;max-width:100%;height:auto">
 
-**RTR: Imperium Surrectum** is a total overhaul mod for *Rome: Total War Remastered* with a focus on historical accuracy alongside fun and challenging gameplay.
+**RTR: Imperium Surrectum** is a total overhaul mod for Rome: Total War Remastered with a focus on historical accuracy alongside fun and challenging gameplay.
 
 RIS 0.7 marks a major new release, reflecting over two years of research and hard work to refine and expand the mod.
 
@@ -282,7 +282,7 @@ The [game guides](guides.md) document the new systems, and our [community guides
 
 Pointers for first time players:
 
-- Optimised for H/H
+- Optimised for Hard/Hard difficulty
 - [Re-load every 8 turns](guides.md#optimizing-campaign-ai-performance)
 - Settings changed to remastered
 
