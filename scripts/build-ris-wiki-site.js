@@ -535,32 +535,35 @@ function finish(html, fromRel) {
 // A page that reads differently in a campaign variant (Four Romans, RIS Light, RIS Classic)
 // gets a strip of campaign buttons under its title (asked for 2026-09-30). The variants' own
 // pages are under v/<id>/ (gen-ris-variant-merge.js), with v/variants.json saying which main
-// page each variant has its own version of, which pages only a variant has, and which main
-// pages a variant does not have at all (shown greyed out: that campaign has no such page).
-// A campaign whose page is the same as the main one links to the main page.
+// page each variant has its own version of and which pages only a variant has. The buttons
+// toggle between the versions (2026-10-01: "just a toggle button").
 const VMAP = (() => { try { return JSON.parse(fs.readFileSync(path.join(WIKI, "v", "variants.json"), "utf8")); } catch { return null; } })();
 const VIDS = VMAP ? Object.keys(VMAP.names) : [];
 const V_ONLY = new Map(VIDS.map((id) => [id, new Set((VMAP.only || {})[id] || [])]));
-const V_ABSENT = new Map(VIDS.map((id) => [id, new Set((VMAP.absent || {})[id] || [])]));
 function campaignStrip(md, rel) {
-  if (!VMAP) return md;
+  const strip = stripFor(rel);
+  if (!strip) return md;
+  // Under the title, before everything else.
+  return /^#\s+.+$/m.test(md) ? md.replace(/^(#\s+.+\n)/m, `$1\n${strip}\n`) : `${strip}\n\n${md}`;
+}
+function stripFor(rel) {
+  if (!VMAP) return "";
   const m = /^v\/([^/]+)\/(.+)$/.exec(rel);
   const cur = m ? m[1] : "main", base = m ? m[2] : rel;
   const own = new Set((VMAP.pages[base] || []));
   for (const id of VIDS) if (V_ONLY.get(id).has(base)) own.add(id);
-  if (cur === "main" && !own.size) return md;          // the same page in every campaign
+  // A button only for a campaign whose version of this page differs; a page that reads the same
+  // everywhere has none. The current version is shown selected; the others toggle to theirs.
   const mainHas = fs.existsSync(path.join(WIKI, base));
-  const chip = (id, name) => {
-    const here = id === cur;
-    if (id === "main") return here ? `<span data-c="main">${name}</span>` : mainHas ? `<a data-c="main" href="/${base}">${name}</a>` : `<span class="off" data-c="main" title="Not in this campaign">${name}</span>`;
-    if (here) return `<span data-c="${id}">${name}</span>`;
-    if (own.has(id)) return `<a data-c="${id}" href="/v/${id}/${base}">${name}</a>`;
-    if (V_ABSENT.get(id).has(base) || !mainHas) return `<span class="off" data-c="${id}" title="Not in this campaign">${name}</span>`;
-    return `<a data-c="${id}" href="/${base}">${name}</a>`;   // same as the main campaign's page
-  };
-  const strip = `<div class="ctabs">${[chip("main", "Main campaign"), ...VIDS.map((id) => chip(id, VMAP.names[id]))].join("")}</div>`;
-  // Under the title, before everything else.
-  return /^#\s+.+$/m.test(md) ? md.replace(/^(#\s+.+\n)/m, `$1\n${strip}\n`) : `${strip}\n\n${md}`;
+  const shown = [];
+  if (mainHas) shown.push("main");
+  for (const id of VIDS) if (own.has(id)) shown.push(id);
+  if (!shown.includes(cur)) shown.push(cur);
+  if (shown.length < 2) return "";
+  const nameOf = (id) => (id === "main" ? "Main campaign" : VMAP.names[id]);
+  const chip = (id) => (id === cur ? `<span data-c="${id}">${nameOf(id)}</span>`
+    : `<a data-c="${id}" href="${id === "main" ? `/${base}` : `/v/${id}/${base}`}">${nameOf(id)}</a>`);
+  return `<div class="ctabs">${shown.map(chip).join("")}</div>`;
 }
 
 // ── render every page ────────────────────────────────────────────────────────
@@ -676,7 +679,7 @@ for (const rel of staticHtml) {
   // The world map's key carries its links in plain arrays (["Arab","tags/recruitment-zones.md#arab",73]),
   // with no key in front, and those still pointed at .md: a 404 on the site (2026-09-26).
   // Only there: the sortable views carry other bare .md strings (script config) that are not links.
-  if (rel === "world-map.html") html = html.replace(/"((?:[\w%.-]+\/)+[\w%.-]+\.md(?:#[^"]*)?)"/g, (m, v) => {
+  if (/(^|\/)world-map\.html$/.test(rel)) html = html.replace(/"((?:[\w%.-]+\/)+[\w%.-]+\.md(?:#[^"]*)?)"/g, (m, v) => {
     embeddedRefs++;
     return `"${mapUrl(rel, v)}"`;
   });
@@ -692,6 +695,9 @@ for (const rel of staticHtml) {
   // swapped and the page ran without wiki.js (no Team menu, no table dealing). The shell's
   // blocks are put back in their current form first, found by position and by the script's
   // own opening line, so the swap always matches.
+  // The campaign buttons, as on the markdown pages (the world map has a version per campaign).
+  const cstrip = stripFor(rel);
+  if (cstrip) html = html.replace(/(<h1\b[^>]*>[\s\S]*?<\/h1>)/, (h) => `${h}\n${cstrip}`);
   html = html.replace(/<style>[\s\S]*?<\/style>/, () => `<style>${CSS}</style>`)
     .replace(/<script>\s*\/\/ Theme choice persists[\s\S]*?<\/script>/, () => SHELL_SCRIPT);
   html = finish(html, rel);

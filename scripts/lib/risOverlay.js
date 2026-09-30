@@ -40,6 +40,41 @@ if (OVER) {
   const wrap1 = (name) => { fs[name] = function (p, ...rest) { return orig[name].call(fs, redirect(p), ...rest); }; };
   for (const n of ["existsSync", "readFileSync", "statSync", "lstatSync", "openSync", "createReadStream"]) wrap1(n);
 
+  // text/campaign_descriptions.txt keys each campaign's faction titles and briefs by the
+  // campaign's name ({RIS_LIGHT_ROMANS_JULII_TITLE}); the generators read the main campaign's
+  // {IMPERIAL_CAMPAIGN_…}. The campaign's own keys are handed to them under that name. RIS
+  // Classic's file carries only RIS Light's keys, so Classic has no titles or briefs, as in game.
+  if (CAMP !== "imperial_campaign") {
+    const own = new RegExp(`\\{${CAMP.toUpperCase()}_`, "g");
+    // With no titles of its own, a faction is called what the game calls it everywhere else:
+    // its descr_sm_factions "string" key, looked up in expanded_bi.txt.
+    let fallback = null;
+    const fallbackTitles = () => {
+      if (fallback != null) return fallback;
+      fallback = "";
+      try {
+        const facs = fs.readFileSync(path.join(BASE, "descr_sm_factions.txt"), "latin1");
+        const bi = fs.readFileSync(path.join(BASE, "text", "expanded_bi.txt"), "utf16le");
+        const names = {};
+        for (const m of bi.matchAll(/^\{([A-Za-z0-9_]+)\}[ \t]*([^\r\n]*)/gm)) names[m[1].toUpperCase()] = m[2].trim();
+        for (const m of facs.matchAll(/"([a-z0-9_]+)":[^\n]*\n\s*\{(?:\s*;[^\n]*)*\s*"string":\s*"([A-Za-z0-9_]+)"/g)) {
+          const name = names[m[2].toUpperCase()];
+          if (name) fallback += `\r\n{IMPERIAL_CAMPAIGN_${m[1].toUpperCase()}_TITLE}${name}`;
+        }
+      } catch { /* no names */ }
+      return fallback;
+    };
+    const readFile = fs.readFileSync;
+    fs.readFileSync = function (p, ...rest) {
+      const out = readFile.call(fs, p, ...rest);
+      if (typeof p !== "string" || !/[\\/]text[\\/]campaign_descriptions\.txt$/i.test(p)) return out;
+      let text = (typeof out === "string" ? out : out.toString("utf16le"))
+        .replace(/\{IMPERIAL_CAMPAIGN_/g, "{UNUSED_CAMPAIGN_").replace(own, "{IMPERIAL_CAMPAIGN_");
+      if (!/\{IMPERIAL_CAMPAIGN_[A-Z0-9_]+_TITLE\}/.test(text)) text += fallbackTitles();
+      return typeof out === "string" ? text : Buffer.from(text, "utf16le");
+    };
+  }
+
   // A folder lists what either mod has in it (the submod's campaign folder alone, for a
   // campaign folder).
   fs.readdirSync = function (p, opts) {

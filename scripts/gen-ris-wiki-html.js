@@ -18,6 +18,8 @@ const path = require("path");
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const OUT = valOf("--out", process.env.RIS_WIKI_OUT || "C:/RIS/_wiki");
+// A campaign variant (gen-ris-wiki-variants.js) is named as on its campaign buttons.
+const CAMPAIGN_NAME = ((require("./lib/risVariants.js").VARIANTS.find((v) => v.id === process.env.RIS_VARIANT)) || { name: "Unified Romans" }).name;
 
 const esc = (s) => String(s == null ? "" : s)
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -440,8 +442,16 @@ render();
       return { k: m.k, label: m.label, multi: !!m.multi, ord: !!m.ord, vals: m.vals, order };
     });
     const intro = "# The world map\n\n[← wiki index](README.md) · [all regions and settlements](regions.md)\n\n"
-      + "The campaign map at the start of the Unified Romans campaign.\n";
+      + `The campaign map at the start of the ${CAMPAIGN_NAME} campaign.\n`;
+    // The viewer was written for the main map (1020 x 700 map pixels, drawn 4 screen pixels each);
+    // RIS Light's map is 510 x 350 and RIS Classic's 384 x 234. ids.png is one pixel per map
+    // pixel, so its PNG header gives the size.
+    const idsHead = fs.readFileSync(path.join(OUT, "world-map", "ids.png")).subarray(16, 24);
+    const MW = idsHead.readUInt32BE(0), MH = idsHead.readUInt32BE(4), WS = 4;
     const body = viewer.renderMarkdown(intro, []) + fs.readFileSync(path.join(__dirname, "lib", "worldMapView.html"), "utf8")
+      .replace(/\b4080(px)?\b/g, (m, px) => `${MW * WS}${px || ""}`).replace(/\b2800(px)?\b/g, (m, px) => `${MH * WS}${px || ""}`)
+      .replace('width="1020" height="700"', `width="${MW}" height="${MH}"`)
+      .replace("var WS = 4, MW = 1020, MH = 700;", `var WS = ${WS}, MW = ${MW}, MH = ${MH};`)
       .replace("var DATA = __DATA__;", () => `var DATA = ${JSON.stringify(DATA)};`)
       .replace("var MODES = __MODES__;", () => `var MODES = ${JSON.stringify(MODES_OUT)};`);
     fs.writeFileSync(path.join(OUT, "world-map.html"), viewer.SHELL("The world map", body, "/world-map.html", []), "utf8");

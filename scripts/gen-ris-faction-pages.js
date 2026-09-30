@@ -1046,7 +1046,7 @@ const mapStat = { bytes: 0, clamped: [], overflowed: [], dims: new Map(), minSub
 for (const f of factions) {
   const setts = (strat[f].settlements || []);
   const intro = intros[f] || {};
-  const display = intro.title || title(f);
+  const display = intro.title || DIPLO_EXPANDED[f] || title(f);   // expanded_bi: RIS Classic has no campaign titles
   if (intro.descr) introsFound++;
   const cs = chars[f] || [];
   const units = recruitableBy(recruitRows, f);

@@ -36,6 +36,35 @@ const isPage = (r) => /\.md$/i.test(r) || /^[^/]+\.html$/i.test(r);   // pages a
 // renamed, as Rome is in Four Romans), the Discord diaries and videos, the home page.
 const SHARED = /^(?:changelog|diaries)(?:\/|\.md$)|^community-videos\.md$|^README\.md$/i;
 
+// A large section that reads exactly as on the main page (a faction's "Units you can recruit",
+// ~300 KB of HTML, the same in 9 of 10 variant faction pages) links to the main page's section
+// instead of being published again: the whole wiki has to fit GitHub Pages' 1 GB.
+const SHARE_MIN = 20000;
+const slugId = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");   // serve-ris-wiki.js
+const sections = (text) => {
+  const out = [];
+  for (const part of text.split(/^(?=## )/m)) out.push({ head: (/^## (.+)$/m.exec(part) || [])[1] || null, text: part });
+  return out;
+};
+let sharedBytes = 0;
+function shareSections(mine, theirs, rel) {
+  const main = new Map(sections(theirs).filter((s) => s.head).map((s) => [s.head, s.text]));
+  let shared = false;
+  const text = sections(mine).map((s) => {
+    if (!s.head || s.text.length < SHARE_MIN || main.get(s.head) !== s.text) return s.text;
+    sharedBytes += s.text.length;
+    shared = true;
+    return `## ${s.head}\n\nThe same as in the [main campaign](/${rel}#${slugId(s.head)}).\n\n`;
+  }).join("");
+  if (!shared) return text;
+  // In-page links into a heading that went with the shared section go to the main page's.
+  const ids = new Set([...text.matchAll(/^#{1,6}\s+(.+)$/gm)].map((m) => slugId(m[1])));
+  for (const m of text.matchAll(/\sid="([^"]+)"/g)) ids.add(m[1]);
+  const to = (id) => (ids.has(id) ? `#${id}` : `/${rel}#${id}`);
+  return text.replace(/\]\(#([^)\s]+)\)/g, (all, id) => `](${to(id)})`)
+    .replace(/(\shref=")#([^"]+)"/g, (all, a, id) => `${a}${to(id)}"`);
+}
+
 // Clean rebuild of the generated folder.
 fs.rmSync(V_ROOT, { recursive: true, force: true });
 fs.mkdirSync(V_ROOT, { recursive: true });
@@ -84,12 +113,18 @@ for (const v of VARIANTS) {
     };
     return text
       .replace(/(\]\()([^)\s]+)(\))/g, (all, a, t, b) => a + fix(t) + b)
-      .replace(/(\s(?:src|href)=")([^"]+)(")/g, (all, a, t, b) => a + fix(t) + b);
+      .replace(/(\s(?:src|href)=")([^"]+)(")/g, (all, a, t, b) => a + fix(t) + b)
+      // The sortable views (factions.html, regions.html, units.html) carry their rows as JSON.
+      .replace(/("(?:href|img|sym)":")([^"]+)(")/g, (all, a, t, b) => a + fix(t) + b)
+      // The world map's key: bare "tags/recruitment-zones.md#arab" strings in arrays.
+      .replace(/"((?:[\w%.-]+\/)+[\w%.-]+\.md(?:#[^"]*)?)"/g, (all, t) => (/world-map\.html$/.test(rel) ? `"${fix(t)}"` : all));
   };
   for (const r of pages) {
     const out = path.join(V_ROOT, v.id, r);
     fs.mkdirSync(path.dirname(out), { recursive: true });
-    fs.writeFileSync(out, rewrite(fs.readFileSync(path.join(v.out, r), "utf8"), r));
+    let text = fs.readFileSync(path.join(v.out, r), "utf8");
+    if (/\.md$/i.test(r) && fs.existsSync(path.join(MAIN, r))) text = shareSections(text, fs.readFileSync(path.join(MAIN, r), "utf8"), r);
+    fs.writeFileSync(out, rewrite(text, r));
     if (fs.existsSync(path.join(MAIN, r))) (MAP.pages[r] = MAP.pages[r] || []).push(v.id);
     else (MAP.only[v.id] = MAP.only[v.id] || []).push(r);
   }
@@ -101,6 +136,7 @@ for (const v of VARIANTS) {
     fs.copyFileSync(path.join(v.out, r), out);
     copied++; bytes += fs.statSync(out).size;
   }
-  console.log(`${v.name}: ${pages.size} pages of its own (${only} only in it), ${copied} pictures/files (${(bytes / 1048576).toFixed(0)} MB)`);
+  console.log(`${v.name}: ${pages.size} pages of its own (${only} only in it), ${copied} pictures/files (${(bytes / 1048576).toFixed(0)} MB), ${(sharedBytes / 1048576).toFixed(0)} MB of sections linked to the main page`);
+  sharedBytes = 0;
 }
 fs.writeFileSync(path.join(V_ROOT, "variants.json"), JSON.stringify(MAP));

@@ -514,8 +514,16 @@ function parseDescrRegions(text) {
     const name = lines[i];
     if (!name || /^[;\s]/.test(name)) continue; // region names start at col 0
     if (!/^[A-Za-z]/.test(name)) continue;
-    const city = (lines[i + 1] || "").trim();
-    const rgbLine = (lines[i + 4] || "").trim();
+    // The fields are the block's next lines that are not comments: RIS Classic comments out
+    // Tonelandia's creator faction (`;	dummies`), and counting that line put its colour one off.
+    const fields = [];
+    for (let j = i + 1; j < lines.length && fields.length < 4; j++) {
+      const f = lines[j].trim();
+      if (!f || f.startsWith(";")) continue;
+      fields.push(f.replace(/\s*;.*$/, ""));
+    }
+    const city = fields[0] || "";
+    const rgbLine = fields[3] || "";
     const m = rgbLine.match(/^(\d+)\s+(\d+)\s+(\d+)/);
     if (city && m) {
       const region = name.trim();

@@ -988,8 +988,20 @@ function navHtml(rel) {
 // A page deep in factions/ or units/ gets a trail back up, which the flat "Index ·" bar
 // never gave: 2,700 pages and no sense of where you are.
 function crumbs(rel) {
-  const segs = rel.replace(/^\//, "").split("/");
+  let segs = rel.replace(/^\//, "").split("/");
   const out = [`<a href="/README.md">RIS wiki</a>`];
+  // A campaign variant's page (v/<id>/…, gen-ris-variant-merge.js): the campaign's name, then
+  // the family as usual, pointing at the campaign's own overview when it has one.
+  let vpre = "";
+  if (segs[0] === "v" && segs.length > 2) {
+    if (!crumbs.vnames) {
+      crumbs.vnames = {};
+      try { crumbs.vnames = JSON.parse(fs.readFileSync(path.join(ROOT, "v", "variants.json"), "utf8")).names || {}; } catch { /* none */ }
+    }
+    out.push(esc(crumbs.vnames[segs[1]] || segs[1]));
+    vpre = `/v/${segs[1]}`;
+    segs = segs.slice(2);
+  }
   if (segs.length > 1) {
     const section = segs[0];
     // Named explicitly rather than derived from the directory: the trade goods live in goods/
@@ -1005,7 +1017,8 @@ function crumbs(rel) {
       sizes: "/sizes.md", cultures: "/cultures.md", religions: "/religions.md",
       traits: "/traits.md", ancillaries: "/ancillaries.md", reforms: "/reforms.md", revolts: "/revolts.md", diaries: "/diaries.md",
     };
-    const overview = INDEX_OF[section] || null;
+    let overview = INDEX_OF[section] || null;
+    if (overview && vpre && fs.existsSync(path.join(ROOT, vpre.slice(1), overview.slice(1)))) overview = vpre + overview;
     // A community guide lives in team/ but belongs to the Community guides list.
     if (section === "team" && /^Guide-/.test(segs[1] || "")) out.push(`<a href="/community-guides.html">community guides</a>`);
     else out.push(overview && fs.existsSync(path.join(ROOT, overview.slice(1)))
@@ -1236,28 +1249,6 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
     }, { rootMargin: (-Math.round(px) - 8) + "px 0px 0px 0px", threshold: 0 });
     order.forEach(function(id){ var el = document.getElementById(id); if (el) io.observe(el); });
   }
-})();
-
-// ── the campaign you are reading about ───────────────────────────────────────
-// A click on a campaign button remembers the campaign; any later page with its own version for
-// that campaign opens on it (asked for 2026-09-30). "Main campaign" clears the choice.
-(function(){
-  var KEY = "ris-campaign";
-  var strip = document.querySelector(".ctabs");
-  if (!strip) return;
-  strip.addEventListener("click", function(e){
-    var a = e.target.closest && e.target.closest("a[data-c]");
-    if (!a) return;
-    try { localStorage.setItem(KEY, a.getAttribute("data-c")); } catch (x) {}
-  });
-  var want = null;
-  try { want = localStorage.getItem(KEY); } catch (x) {}
-  if (!want) return;
-  var here = strip.querySelector("span[data-c]:not(.off)");
-  if (here && here.getAttribute("data-c") === want) return;
-  var go = strip.querySelector('a[data-c="' + want + '"]');
-  // Only to that campaign's OWN version, never to a page that is merely the same.
-  if (go && (want === "main" || ("/" + go.getAttribute("href")).indexOf("/v/" + want + "/") >= 0)) location.replace(go.href);
 })();
 
 // ── a link to a closed fold opens it ─────────────────────────────────────────
