@@ -162,6 +162,9 @@ for (const p of pages) {
     if (!clean) continue;
     links++;
     const resolved = path.resolve(dir, clean);
+    // community-guides.html is made by the site build (build-ris-wiki-site.js), never by a
+    // generator, so it is not in this folder; a link to it is fine.
+    if (path.relative(OUT, resolved).replace(/\\/g, "/") === "community-guides.html") continue;
     if (!fs.existsSync(resolved)) { badLinks++; if (badLinks <= 8) fail(`BROKEN LINK in ${path.relative(OUT, p)}: ${target}`); }
     else if (/\.md$/i.test(clean)) {
       linkedTo.add(path.resolve(resolved));

@@ -245,23 +245,46 @@ function build(v, r) {
   // template. Taken from C:/RIS/_resources/logos and separators, which is where the project
   // keeps its artwork; the file is copied into wiki/art by hand, not generated, because it is
   // an asset of the mod and not something this script has any business producing.
-  pages["README.md"] = `# RTR: Imperium Surrectum
+  // The opening is the team's own draft (2026-09-30), kept as written; only the numbers are
+  // filled from the data, so they follow the mod.
+  pages["README.md"] = `# Welcome to RIS: Wiki
 
 <img src="art/ris-logo.png" alt="Rome: Total Realism, Imperium Surrectum" width="128" style="float:none;margin:.2rem 0 1rem">
 
-A player's guide to **RTR: Imperium Surrectum**, a mod for *Rome: Total War Remastered*.
+**RTR: Imperium Surrectum** is a total overhaul mod for *Rome: Total War Remastered* with a focus on historical accuracy alongside fun and challenging gameplay.
 
-## At a glance
+RIS 0.7 marks a major new release, reflecting over two years of research and hard work to refine and expand the mod.
 
-| | |
-|---|---:|
-| Playable factions | ${n(r.playableByDesign)} |
-| Factions in the game | ${n(r.factions)} |
-| Regions on the map | ${n(r.regions)} |
-| Units | ${n(r.units)} |
-| Cultures | ${n(r.cultures)} |
-| Building chains | ${n(r.buildingChains)} |
-| Building levels | ${n(r.buildingLevels)} |
+RIS greatly expands and revamps the whole base game:
+
+- A completely overhauled [map](world-map.html) with ${n(r.settlements)} [settlements](regions.md).
+- ${n(r.playableByDesign)} playable [factions](factions.md), many of which [remastered](remastered.md) for v0.7.
+- ${n(r.units)} new [units](units.md), many of which remastered for v0.7.
+- ${n(r.cultures)} unique [cultures](cultures.md), nuanced by ${familyCount("religions").toLocaleString("en-US")} [beliefs](religions.md), for more diverse governance and recruitment.
+- Revamped and expanded [building chains](buildings.md), creating more unique and strategic settlements.
+
+On top of this, RIS 0.7 adds major new systems for:
+
+- [Recruitment](guides.md#new-recruitment-system)
+- [Economy](guides.md#new-growth-and-economy-system)
+- [Traits](traits.md) and [retinue](ancillaries.md)
+- [Reforms](reforms.md) and [revolts](revolts.md)
+
+These changes ensure a far richer campaign, with a scale and diversity that far surpasses the original game.
+
+Alongside the main campaign, RIS also includes two other new and unique campaigns: 4 Romans, bringing the RIS feel to the vanilla Four Roman factions, and a classic/lite map for those looking for quicker and more decisive campaigns, each with their own mod folders.
+
+This wiki documents the new additions and the main systems found in RIS 0.7, for the main campaign.
+
+## I'm new: where do I start?
+
+The [game guides](guides.md) document the new systems, and our [community guides](community-guides.html) have everything you need to get started on the most popular campaigns.
+
+Pointers for first time players:
+
+- Optimised for H/H
+- [Re-load every 8 turns](guides.md#optimizing-campaign-ai-performance)
+- Settings changed to remastered
 
 ## Sortable tables
 
