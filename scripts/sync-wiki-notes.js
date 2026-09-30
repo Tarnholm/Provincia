@@ -78,6 +78,14 @@ function writeTeamPage(page, body, html) {
 function updateTeamLists() {
   const hub = path.join(SITE, 'team.html');
   if (!fs.existsSync(hub) || !fs.existsSync(TEAM_DIR)) return;
+  // A team page whose wiki page is gone is removed from the site. Retired generated pages
+  // (off-map regions, the old settlements and tags indexes) were caught here once as "team
+  // pages" while they briefly existed on the wiki outside page-map.json, and then stayed on the
+  // site's Team pages list for good (reported 2026-09-30).
+  for (const f of fs.readdirSync(TEAM_DIR)) {
+    const page = f.replace(/\.(html|txt)$/, '');
+    if (!fs.existsSync(path.join(WIKI, page + '.md'))) { fs.unlinkSync(path.join(TEAM_DIR, f)); console.log('removed team/' + f + '  (no such page on the wiki)'); }
+  }
   // Guides have their own list (community-guides.html), so they are not repeated here.
   const pages = fs.readdirSync(TEAM_DIR).filter((f) => f.endsWith('.html')).map((f) => f.slice(0, -5))
     .filter((p) => !isGuide(p)).sort((a, b) => a.localeCompare(b));
