@@ -15,13 +15,13 @@ const path = require("path");
 
 const valOf = (flag, dflt) => { const i = process.argv.indexOf(flag); return i >= 0 ? process.argv[i + 1] : dflt; };
 const RIS = valOf("--ris", "C:/RIS/RIS/data");
-const OUT = valOf("--out", "C:/RIS/_wiki");
+const OUT = valOf("--out", process.env.RIS_WIKI_OUT || "C:/RIS/_wiki");
 const { loadGuides, toMarkdown } = require(path.join(__dirname, "lib", "risGuides.js"));
 
 const g = loadGuides(RIS);
 // Buildings, units, factions, goods and places the guides name, linked to their pages.
 const LINK = require(path.join(__dirname, "lib", "wikiLinker.js")).makeLinker(OUT, { root: "" });
-if (!g.general.length) { console.error("no guides found in the campaign script"); process.exit(2); }
+if (!g.general.length) { console.error("no guides found in the campaign script"); process.exit(process.env.RIS_VARIANT ? 0 : 2); }   // RIS Classic has no campaign script
 
 const nameOf = (f) => {
   try { return fs.readFileSync(path.join(OUT, "factions", `${f}.md`), "utf8").split("\n")[0].replace(/^#\s*/, "").trim(); }

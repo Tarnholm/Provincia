@@ -63,7 +63,7 @@ const { makeConditionReader } = require("./lib/risTriggerConditions.js");
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const RIS = valOf("--ris", "C:/RIS/RIS/data");
-const OUT = valOf("--out", "C:/RIS/_wiki");
+const OUT = valOf("--out", process.env.RIS_WIKI_OUT || "C:/RIS/_wiki");
 const num = (n) => Number(n).toLocaleString("en-US");
 const uniq = (a) => [...new Set(a)];
 const cell = (s) => String(s).replace(/\|/g, "\\|");

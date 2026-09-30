@@ -37,6 +37,8 @@ const IMG_EXT = /\.(png|jpe?g|gif|svg|webp)$/i;
 function walk(dir, acc = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name);
+    // v/ holds the campaign variants' own pages (gen-ris-variant-merge.js): site only.
+    if (e.isDirectory() && e.name === 'v' && path.resolve(dir) === path.resolve(SRC)) continue;
     if (e.isDirectory()) walk(p, acc);
     else if (e.name.endsWith('.md')) acc.push(p);
   }

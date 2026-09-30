@@ -531,6 +531,38 @@ function finish(html, fromRel) {
   return out;
 }
 
+// ── campaign buttons ─────────────────────────────────────────────────────────
+// A page that reads differently in a campaign variant (Four Romans, RIS Light, RIS Classic)
+// gets a strip of campaign buttons under its title (asked for 2026-09-30). The variants' own
+// pages are under v/<id>/ (gen-ris-variant-merge.js), with v/variants.json saying which main
+// page each variant has its own version of, which pages only a variant has, and which main
+// pages a variant does not have at all (shown greyed out: that campaign has no such page).
+// A campaign whose page is the same as the main one links to the main page.
+const VMAP = (() => { try { return JSON.parse(fs.readFileSync(path.join(WIKI, "v", "variants.json"), "utf8")); } catch { return null; } })();
+const VIDS = VMAP ? Object.keys(VMAP.names) : [];
+const V_ONLY = new Map(VIDS.map((id) => [id, new Set((VMAP.only || {})[id] || [])]));
+const V_ABSENT = new Map(VIDS.map((id) => [id, new Set((VMAP.absent || {})[id] || [])]));
+function campaignStrip(md, rel) {
+  if (!VMAP) return md;
+  const m = /^v\/([^/]+)\/(.+)$/.exec(rel);
+  const cur = m ? m[1] : "main", base = m ? m[2] : rel;
+  const own = new Set((VMAP.pages[base] || []));
+  for (const id of VIDS) if (V_ONLY.get(id).has(base)) own.add(id);
+  if (cur === "main" && !own.size) return md;          // the same page in every campaign
+  const mainHas = fs.existsSync(path.join(WIKI, base));
+  const chip = (id, name) => {
+    const here = id === cur;
+    if (id === "main") return here ? `<span data-c="main">${name}</span>` : mainHas ? `<a data-c="main" href="/${base}">${name}</a>` : `<span class="off" data-c="main" title="Not in this campaign">${name}</span>`;
+    if (here) return `<span data-c="${id}">${name}</span>`;
+    if (own.has(id)) return `<a data-c="${id}" href="/v/${id}/${base}">${name}</a>`;
+    if (V_ABSENT.get(id).has(base) || !mainHas) return `<span class="off" data-c="${id}" title="Not in this campaign">${name}</span>`;
+    return `<a data-c="${id}" href="/${base}">${name}</a>`;   // same as the main campaign's page
+  };
+  const strip = `<div class="ctabs">${[chip("main", "Main campaign"), ...VIDS.map((id) => chip(id, VMAP.names[id]))].join("")}</div>`;
+  // Under the title, before everything else.
+  return /^#\s+.+$/m.test(md) ? md.replace(/^(#\s+.+\n)/m, `$1\n${strip}\n`) : `${strip}\n\n${md}`;
+}
+
 // ── render every page ────────────────────────────────────────────────────────
 let rendered = 0;
 for (const rel of mdPages) {
@@ -545,6 +577,7 @@ for (const rel of mdPages) {
   // nothing links to is a page nobody finds. Appended to the markdown rather than to the HTML
   // so it picks up the same section treatment as everything else on the index.
   if (rel === "README.md" && TEAM.length) md = md.trimEnd() + TEAM_INDEX_SECTION;
+  md = campaignStrip(md, rel);
   const title = (/^#\s+(.+)$/m.exec(md) || [, path.basename(rel)])[1];
   // The toc has to be kept and handed on, not created in the argument list: renderMarkdown fills
   // the array it is given, and SHELL builds the bar's jump strip out of it. Passing a throwaway

@@ -59,7 +59,7 @@ const path = require("path");
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const RIS = valOf("--ris", "C:/RIS/RIS/data");
-const OUT = valOf("--out", "C:/RIS/_wiki");
+const OUT = valOf("--out", process.env.RIS_WIKI_OUT || "C:/RIS/_wiki");
 const rd = (...f) => { try { return fs.readFileSync(path.join(RIS, ...f), "latin1"); } catch { return null; } };
 // Matches both GitHub's heading-anchor rule and the local viewer's slugId(), which is the
 // pair that has to agree or an in-page link breaks in one of the two places.
@@ -231,7 +231,8 @@ function loadPlacements() {
   // the field pattern above cannot silently drop some without the run saying so.
   stats.altLines = (strat.match(/^resource\s+/gim) || []).length;
 
-  for (const m of strat.matchAll(/^resource\s+([a-z_]+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*(?:;\s*(.*))?$/gim)) {
+  // The comma after the quantity is optional to the game: Four Romans writes `dyes, 2   281, 407`.
+  for (const m of strat.matchAll(/^resource\s+([a-z_]+)\s*,\s*(-?\d+)(?:\s*,\s*|\s+)(-?\d+)\s*,\s*(-?\d+)\s*(?:;\s*(.*))?$/gim)) {
     stats.lines++;
     const tok = m[1].toLowerCase();
     const qty = parseInt(m[2], 10);

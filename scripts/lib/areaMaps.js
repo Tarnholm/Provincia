@@ -20,7 +20,7 @@ const os = require("os");
 const crypto = require("crypto");
 const { execFileSync } = require("child_process");
 
-const SPEC = path.join(os.tmpdir(), "ris-region-maps.json");
+const SPEC = path.join(os.tmpdir(), `ris-region-maps${process.env.RIS_VARIANT ? "-" + process.env.RIS_VARIANT : ""}.json`);
 
 function areaMaps(OUT, dirName) {
   const outDir = path.join(OUT, dirName);
@@ -54,7 +54,7 @@ function areaMaps(OUT, dirName) {
       && spec.areas.every((a) => fs.existsSync(path.join(outDir, `${a.file}.webp`)));
     if (have) { console.log(`  ${dirName}: unchanged, ${spec.areas.length} kept`); return spec.areas.length; }
     fs.mkdirSync(outDir, { recursive: true });
-    const tmp = path.join(os.tmpdir(), `ris-${dirName}.json`);
+    const tmp = path.join(os.tmpdir(), `ris-${dirName}${process.env.RIS_VARIANT ? "-" + process.env.RIS_VARIANT : ""}.json`);
     fs.writeFileSync(tmp, JSON.stringify(spec));
     execFileSync("python", [path.join(__dirname, "regionMaps.py"), tmp], { stdio: "inherit" });
     const want = new Set(spec.areas.map((a) => `${a.file}.webp`));

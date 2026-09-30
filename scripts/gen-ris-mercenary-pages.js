@@ -27,7 +27,7 @@ const { parseMercPools, poolNames, poolFile } = require("./lib/mercPools.js");
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const RIS = valOf("--ris", "C:/RIS/RIS/data");
-const OUT = valOf("--out", "C:/RIS/_wiki");
+const OUT = valOf("--out", process.env.RIS_WIKI_OUT || "C:/RIS/_wiki");
 
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 const fmt = (n) => Number(n).toLocaleString("en-US");
@@ -43,7 +43,7 @@ const listDir = (d, ext) => { try { return fs.readdirSync(path.join(OUT, d)).fil
 
 // ── pools ────────────────────────────────────────────────────────────────────
 const { pools, bad } = parseMercPools(RIS);
-if (!pools.length) { console.error("no mercenary pools parsed from descr_mercenaries.txt"); process.exit(2); }
+if (!pools.length) { console.error("no mercenary pools parsed from descr_mercenaries.txt"); process.exit(process.env.RIS_VARIANT ? 0 : 2); }   // RIS Classic ships an empty file: no mercenaries there
 const NAMES = poolNames(pools);
 
 // ── units: EDU type -> dictionary -> unit page ───────────────────────────────

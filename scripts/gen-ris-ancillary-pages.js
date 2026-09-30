@@ -53,7 +53,7 @@ const RIS = valOf("--ris", "C:/RIS/RIS/data");
 // not shipped in the mod folder — the engine falls back to the install, and so does this.
 const VAN = valOf("--vanilla",
   "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data");
-const OUT = valOf("--out", "C:/RIS/_wiki");
+const OUT = valOf("--out", process.env.RIS_WIKI_OUT || "C:/RIS/_wiki");
 const num = (n) => Number(n).toLocaleString("en-US");
 const uniq = (a) => [...new Set(a)];
 const cell = (s) => String(s).replace(/\|/g, "\\|");

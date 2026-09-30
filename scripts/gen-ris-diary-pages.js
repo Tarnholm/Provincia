@@ -27,7 +27,7 @@ const { execFileSync } = require("child_process");
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const CACHE = valOf("--cache", "C:/dev/ris-diaries-cache");
-const OUT = valOf("--out", "C:/RIS/_wiki");
+const OUT = valOf("--out", process.env.RIS_WIKI_OUT || "C:/RIS/_wiki");
 const LIST = argv.includes("--list");
 const GAP_HOURS = 1;
 const MAX_WIDTH = 1600;

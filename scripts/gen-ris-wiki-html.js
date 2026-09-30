@@ -17,7 +17,7 @@ const path = require("path");
 
 const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
-const OUT = valOf("--out", "C:/RIS/_wiki");
+const OUT = valOf("--out", process.env.RIS_WIKI_OUT || "C:/RIS/_wiki");
 
 const esc = (s) => String(s == null ? "" : s)
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -269,7 +269,10 @@ render();
       "Every region with its settlement, as it stands at the campaign start. ★ marks a faction capital.",
       columns, rows, "/regions.html", "[← wiki index](README.md) · [all regions and settlements](regions.md)"), "utf8");
   console.log(`regions.html: ${rows.length.toLocaleString("en-US")} rows`);
-  if (rows.length < 1000) { console.error(`  FAILED: regions.html has ${rows.length} rows — regions.md's shape has changed`); process.exitCode = 1; }
+  // Measured against the region pages actually written: RIS Light has 547, RIS Classic 160.
+  let regionPages = 0;
+  try { regionPages = fs.readdirSync(path.join(OUT, "regions")).filter((f) => f.endsWith(".md") && f !== "index.md").length; } catch { /* none */ }
+  if (rows.length < regionPages * 0.9) { console.error(`  FAILED: regions.html has ${rows.length} rows for ${regionPages} region pages — regions.md's shape has changed`); process.exitCode = 1; }
 }
 
 // ── factions ─────────────────────────────────────────────────────────────────
@@ -327,7 +330,7 @@ render();
 // region generator saves, which is the order of DATA below. Names, links and emblems are read
 // back from regions.md so they match the region index exactly.
 {
-  const specFile = path.join(require("os").tmpdir(), "ris-region-maps.json");
+  const specFile = path.join(require("os").tmpdir(), `ris-region-maps${process.env.RIS_VARIANT ? "-" + process.env.RIS_VARIANT : ""}.json`);
   if (fs.existsSync(specFile) && fs.existsSync(path.join(OUT, "world-map", "world.webp"))) {
     const spec = JSON.parse(fs.readFileSync(specFile, "utf8"));
     const byTok = new Map();

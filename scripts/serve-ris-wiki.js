@@ -46,6 +46,8 @@ const INDEX = [];
   try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
   for (const e of entries) {
     const p = path.join(dir, e.name);
+    // v/ holds the campaign variants' own pages: reached by the campaign buttons, not search.
+    if (e.isDirectory() && e.name === "v" && path.resolve(dir) === path.resolve(ROOT)) continue;
     if (e.isDirectory()) { indexPages(p); continue; }
     if (!/\.md$/i.test(e.name)) continue;
     let title = e.name.replace(/\.md$/i, "");
@@ -102,7 +104,7 @@ function inline(s) {
 // as text — which is exactly what happened on 60 region pages before anyone noticed.
 // `<a class="vid" ...>...</a>` is one card of the community-videos grid, one per line.
 // `<div class="ptabs">…</div>` is a tab strip on one line (All factions | Remastered).
-const RAW_BLOCK = /^\s*(<a class="vid"[^>]*>.*<\/a>|<div class="ptabs">.*<\/div>|<\/?(?:details|summary|div|p|br|hr)\b[^>]*>|<summary[^>]*>.*<\/summary>|<details\b[^>]*><summary[^>]*>.*<\/summary>)\s*$/i;
+const RAW_BLOCK = /^\s*(<a class="vid"[^>]*>.*<\/a>|<div class="(?:ptabs|ctabs)">.*<\/div>|<\/?(?:details|summary|div|p|br|hr)\b[^>]*>|<summary[^>]*>.*<\/summary>|<details\b[^>]*><summary[^>]*>.*<\/summary>)\s*$/i;
 
 function slugId(s) {
   return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -627,6 +629,13 @@ tr.cmp-hold .cmp-panel{margin:0}
 .ptabs span{border-color:var(--line);background:var(--panel);color:var(--fg);font-weight:600}
 .ptabs a{color:var(--dim)}
 .ptabs a:hover{color:var(--acc)}
+/* Campaign buttons on pages that differ between campaigns (build-ris-wiki-site.js). */
+.ctabs{display:flex;flex-wrap:wrap;gap:.35rem;margin:.1rem 0 1rem}
+.ctabs a,.ctabs span{padding:.28rem .8rem;border:1px solid var(--line);border-radius:999px;font-size:.88rem;text-decoration:none;background:var(--panel)}
+.ctabs a{color:var(--fg)}
+.ctabs a:hover{border-color:var(--acc);color:var(--acc)}
+.ctabs span{border-color:var(--acc);color:var(--acc);font-weight:600;background:var(--acc-soft)}
+.ctabs span.off{border-color:var(--line);color:var(--dim);font-weight:400;background:transparent;opacity:.55;cursor:default}
 /* Tables that should line up with each other: always the full width. */
 .wide .tw,.wide table{width:100%}
 .hov .hov-map{display:block;width:100%;max-height:9rem;object-fit:cover;border-radius:6px;margin:.2rem 0 .3rem}
@@ -1227,6 +1236,28 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
     }, { rootMargin: (-Math.round(px) - 8) + "px 0px 0px 0px", threshold: 0 });
     order.forEach(function(id){ var el = document.getElementById(id); if (el) io.observe(el); });
   }
+})();
+
+// ── the campaign you are reading about ───────────────────────────────────────
+// A click on a campaign button remembers the campaign; any later page with its own version for
+// that campaign opens on it (asked for 2026-09-30). "Main campaign" clears the choice.
+(function(){
+  var KEY = "ris-campaign";
+  var strip = document.querySelector(".ctabs");
+  if (!strip) return;
+  strip.addEventListener("click", function(e){
+    var a = e.target.closest && e.target.closest("a[data-c]");
+    if (!a) return;
+    try { localStorage.setItem(KEY, a.getAttribute("data-c")); } catch (x) {}
+  });
+  var want = null;
+  try { want = localStorage.getItem(KEY); } catch (x) {}
+  if (!want) return;
+  var here = strip.querySelector("span[data-c]:not(.off)");
+  if (here && here.getAttribute("data-c") === want) return;
+  var go = strip.querySelector('a[data-c="' + want + '"]');
+  // Only to that campaign's OWN version, never to a page that is merely the same.
+  if (go && (want === "main" || ("/" + go.getAttribute("href")).indexOf("/v/" + want + "/") >= 0)) location.replace(go.href);
 })();
 
 // ── a link to a closed fold opens it ─────────────────────────────────────────

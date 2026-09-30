@@ -19,7 +19,7 @@ const path = require("path");
 
 const valOf = (flag, dflt) => { const i = process.argv.indexOf(flag); return i >= 0 ? process.argv[i + 1] : dflt; };
 const SRC = valOf("--src", "C:/RIS/RIS/changelog");
-const OUT = valOf("--out", "C:/RIS/_wiki");
+const OUT = valOf("--out", process.env.RIS_WIKI_OUT || "C:/RIS/_wiki");
 const DIR = path.join(OUT, "changelog");
 // Phrases where a name means something else: a game title, the units rather than the trade good,
 // a unit style rather than the faction, a script rather than the building, a building rather

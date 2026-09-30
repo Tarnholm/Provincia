@@ -37,8 +37,12 @@ const ORDER = [
 ];
 
 const failed = [];
+// A campaign variant (gen-ris-wiki-variants.js) skips what cannot differ between campaigns:
+// the developer diaries and community videos come from Discord, not the mod.
+const VARIANT_SKIP = new Set(['gen-ris-diary-pages.js']);
 for (const [i, s] of ORDER.entries()) {
   const label = `[${i + 1}/${ORDER.length}] ${s}`;
+  if (process.env.RIS_VARIANT && VARIANT_SKIP.has(s)) { console.log(label + ' ... skipped (same in every campaign)'); continue; }
   process.stdout.write(label + ' ... ');
   try {
     execFileSync(process.execPath, [path.join(__dirname, s)], { stdio: 'pipe' });

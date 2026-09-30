@@ -48,8 +48,22 @@ OWNER_MIX = 0.30
 FONT_DIR = os.path.join(os.environ.get("WINDIR", "C:/Windows"), "Fonts")
 
 
+def overlay(path):
+    """A campaign variant's own map file, when it has one (lib/risOverlay.js does the same for
+    the Node generators): RIS_OVERLAY_DATA replaces files under RIS_BASE_DATA."""
+    over = os.environ.get("RIS_OVERLAY_DATA")
+    if not over:
+        return path
+    base = os.path.abspath(os.environ.get("RIS_BASE_DATA", "C:/RIS/RIS/data"))
+    full = os.path.abspath(path)
+    if not os.path.normcase(full).startswith(os.path.normcase(base) + os.sep):
+        return path
+    cand = os.path.join(over, os.path.relpath(full, base))
+    return cand if os.path.exists(cand) else path
+
+
 def load(path):
-    return np.asarray(Image.open(path).convert("RGB"))
+    return np.asarray(Image.open(overlay(path)).convert("RGB"))
 
 
 def main(spec_path, only=None):

@@ -29,7 +29,7 @@ const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1]
 const RIS = valOf("--ris", "C:/RIS/RIS/data");
 // For the region-colour parser and the TGA reader, both already used elsewhere in Provincia.
 const dg = require(path.join(__dirname, "..", "src", "descrStratGeneral.js"));
-const OUT = valOf("--out", "C:/RIS/_wiki");
+const OUT = valOf("--out", process.env.RIS_WIKI_OUT || "C:/RIS/_wiki");
 const ONLY = (valOf("--only", "") || "").split(",").map((s) => s.trim()).filter(Boolean);
 
 const gv = require(path.join(__dirname, "..", "src", "growthEval.js"));
@@ -358,7 +358,8 @@ function loadMapResources() {
   // two. Reading the quantity as x put 1,166 placements in one Saharan region and left the x
   // range at 1-5, which is what gave the error away. The trailing comment names the
   // settlement, and agreement with it is the check reported below.
-  for (const m of strat.matchAll(/^resource\s+([a-z_]+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*(?:;\s*(.*))?$/gim)) {
+  // The comma after the quantity is optional to the game: Four Romans writes `dyes, 2   281, 407`.
+  for (const m of strat.matchAll(/^resource\s+([a-z_]+)\s*,\s*(-?\d+)(?:\s*,\s*|\s+)(-?\d+)\s*,\s*(-?\d+)\s*(?:;\s*(.*))?$/gim)) {
     placed++;
     const reg = regionNear(+m[3], +m[4]);
     const note = (m[5] || "").trim();
@@ -1656,7 +1657,7 @@ fs.rmSync(path.join(OUT, "settlements.md"), { force: true });
     .update(fs.readFileSync(path.join(__dirname, "lib", "regionMaps.py"), "utf8").replace(/\n    # WORLD-START[\s\S]*?    # WORLD-END\n/, "")).digest("hex");   // the world-map block only affects world-map/
   // Saved every run (not only when rendering): gen-ris-unit-pages.js draws its area-of-recruitment
   // maps from this same list, so both kinds of map agree on names, owners and positions.
-  const specFile = path.join(require("os").tmpdir(), "ris-region-maps.json");
+  const specFile = path.join(require("os").tmpdir(), `ris-region-maps${process.env.RIS_VARIANT ? "-" + process.env.RIS_VARIANT : ""}.json`);
   fs.writeFileSync(specFile, JSON.stringify(spec));
   const sigFile = path.join(spec.out, ".sig");
   const have = fs.existsSync(sigFile) && fs.readFileSync(sigFile, "utf8") === sig
@@ -1678,7 +1679,7 @@ fs.rmSync(path.join(OUT, "settlements.md"), { force: true });
     && ["world.webp", "ids.png", "preview.webp"].every((f) => fs.existsSync(path.join(worldDir, f)))) {
     console.log("  world map: unchanged");
   } else {
-    const worldSpec = path.join(require("os").tmpdir(), "ris-world-map.json");
+    const worldSpec = path.join(require("os").tmpdir(), `ris-world-map${process.env.RIS_VARIANT ? "-" + process.env.RIS_VARIANT : ""}.json`);
     fs.writeFileSync(worldSpec, JSON.stringify({ ...spec, world_out: worldDir }));
     require("child_process").execFileSync("python", [path.join(__dirname, "lib", "regionMaps.py"), worldSpec], { stdio: "inherit" });
     fs.writeFileSync(worldSig, sig);

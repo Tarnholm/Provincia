@@ -161,7 +161,7 @@ for (const p of pages) {
     const clean = target.split("#")[0];
     if (!clean) continue;
     links++;
-    const resolved = path.resolve(dir, clean);
+    const resolved = clean.startsWith("/") ? path.join(OUT, clean) : path.resolve(dir, clean);
     // community-guides.html is made by the site build (build-ris-wiki-site.js), never by a
     // generator, so it is not in this folder; a link to it is fine.
     if (path.relative(OUT, resolved).replace(/\\/g, "/") === "community-guides.html") continue;
@@ -189,7 +189,7 @@ for (const p of pages) {
     const clean = target.split("#")[0];
     if (!clean) continue;
     links++;
-    const resolved = path.resolve(dir, clean);
+    const resolved = clean.startsWith("/") ? path.join(OUT, clean) : path.resolve(dir, clean);
     if (!fs.existsSync(resolved)) { badLinks++; if (badLinks <= 8) fail(`BROKEN <a href> in ${path.relative(OUT, p)}: ${target}`); }
     else if (/\.md$/i.test(clean)) linkedTo.add(path.resolve(resolved));
   }
@@ -197,13 +197,13 @@ for (const p of pages) {
   // <img src="..."> as well as markdown images
   for (const m of body.matchAll(/<img[^>]+src="([^"]+)"/g)) {
     images++;
-    const r = path.resolve(dir, m[1]);
+    const r = m[1].startsWith("/") ? path.join(OUT, m[1]) : path.resolve(dir, m[1]);
     if (!fs.existsSync(r)) { badImages++; if (badImages <= 8) fail(`BROKEN IMAGE in ${path.relative(OUT, p)}: ${m[1]}`); }
   }
   for (const m of body.matchAll(/!\[[^\]]*\]\(([^)\s]+)\)/g)) {
     if (/^https?:/.test(m[1])) continue;
     images++;
-    const r = path.resolve(dir, m[1].split("#")[0]);
+    const r = m[1].startsWith("/") ? path.join(OUT, m[1].split("#")[0]) : path.resolve(dir, m[1].split("#")[0]);
     if (!fs.existsSync(r)) { badImages++; if (badImages <= 8) fail(`BROKEN IMAGE in ${path.relative(OUT, p)}: ${m[1]}`); }
   }
 }
@@ -216,7 +216,10 @@ note(`images: ${images.toLocaleString("en-US")} checked, ${badImages} broken`);
 // page hides. README is the entry point so it is exempt.
 {
   const readme = path.resolve(OUT, "README.md");
-  const orphans = pages.filter((p) => path.resolve(p) !== readme && !linkedTo.has(path.resolve(p)));
+  // A campaign variant's own page (v/<id>/...) is reached by the campaign buttons the site
+  // build draws, which are not in the markdown; it is never an orphan.
+  const vDir = path.resolve(OUT, "v") + path.sep;
+  const orphans = pages.filter((p) => path.resolve(p) !== readme && !path.resolve(p).startsWith(vDir) && !linkedTo.has(path.resolve(p)));
   if (orphans.length) {
     fail(`ORPHANED: ${orphans.length} page(s) that nothing links to — e.g. ${orphans.slice(0, 5).map((p) => path.relative(OUT, p)).join(", ")}`);
   }
