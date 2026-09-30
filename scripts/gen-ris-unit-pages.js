@@ -1161,9 +1161,13 @@ ${cardMarkup(u)}${u.merc === "all" ? `> **Mercenary.** Hired from a regional poo
 
 ${descBlock}## Stats
 
+<div class="nodeal">
+
 | | | Rank in roster |
 |---|---:|---|
 ${stat("Men per unit", s.men, "", "men")}${stat("Attack", s.attack, "", "attack")}${stat("Charge bonus", s.charge, "", "charge")}${stat("Defence", s.defenceTotal, "", "defenceTotal")}${stat("  · armour", s.armour, "", "armour")}${stat("  · defence skill", s.defence, "", "defence")}${stat("  · shield", s.shield, "", "shield")}${stat("Morale", s.morale, "", "morale")}${s.discipline ? `| Discipline | ${disciplineText(s.discipline)} | |\n` : ""}${s.training ? `| Training | ${plain(s.training)} | |\n` : ""}${hiredOnly ? "" : stat("Recruitment cost", s.cost, " dn", "cost")}${stat("Upkeep per turn", s.upkeep, " dn", "upkeep")}${hiredOnly ? "" : stat("Turns to recruit", s.turns)}
+</div>
+
 ${detailTables(s, u)}
 ${attrBlock}${u.statsDiffer ? `\n> **The mod gives this unit more than one set of numbers.** The figures above are one of\n> them, so check in-game if the exact values matter.\n` : ""}
 ${hireSection}${
