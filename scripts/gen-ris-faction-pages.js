@@ -1358,7 +1358,7 @@ const cultureJump = cultureGroups
 
 const idx = `# All factions
 
-[← wiki index](README.md) · [factions overview](factions-overview.md) · [cultures](cultures.md) · [beliefs](religions.md)
+[← wiki index](README.md) · [cultures](cultures.md) · [beliefs](religions.md)
 
 <div class="ptabs"><span>All factions</span><a href="remastered.md">Remastered</a></div>
 

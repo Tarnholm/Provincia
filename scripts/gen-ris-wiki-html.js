@@ -236,8 +236,7 @@ render();
     { label: "Missile", hidden: true, toggle: "Missile" },
   ];
   fs.writeFileSync(path.join(OUT, "units.html"),
-    PAGE("Unit roster, sortable", "Every unit in RIS. " +
-      "Defence skill runs far higher than in vanilla (median 19 against 3), so do not read it against vanilla intuition.",
+    PAGE("Unit roster, sortable", "Every unit in RIS.",
       columns, rows, "/units.html", "[← wiki index](README.md) · [all units](units.md)"), "utf8");
   console.log(`units.html: ${rows.length.toLocaleString("en-US")} rows`);
 }

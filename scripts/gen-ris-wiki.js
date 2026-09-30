@@ -245,30 +245,23 @@ function build(v, r) {
   // template. Taken from C:/RIS/_resources/logos and separators, which is where the project
   // keeps its artwork; the file is copied into wiki/art by hand, not generated, because it is
   // an asset of the mod and not something this script has any business producing.
-  pages["README.md"] = `# RIS vs Vanilla: what is different
+  pages["README.md"] = `# RTR: Imperium Surrectum
 
 <img src="art/ris-logo.png" alt="Rome: Total Realism, Imperium Surrectum" width="128" style="float:none;margin:.2rem 0 1rem">
 
-A player's guide to how **RTR: Imperium Surrectum** differs from vanilla *Rome: Total
-War Remastered*.
+A player's guide to **RTR: Imperium Surrectum**, a mod for *Rome: Total War Remastered*.
 
 ## At a glance
 
-| | Vanilla | RIS | Change | |
-|---|---:|---:|---:|---:|
-${row("Playable factions", v.playableListed, r.playableByDesign)}
-${row("Factions in the game", v.factions, r.factions)}
-${row("Regions on the map", v.regions, r.regions)}
-${row("Settlements at campaign start", v.settlements, r.settlements)}
-${row("Units in the roster", v.units, r.units)}
-${row("Cultures", v.cultures, r.cultures)}
-${row("Building chains", v.buildingChains, r.buildingChains)}
-${row("Building levels (total)", v.buildingLevels, r.buildingLevels)}
-
-The short version: **RIS is far larger than vanilla in almost every direction a player
-notices, but not uniformly.** The map and the unit roster grow enormously. The building
-tree grows least${buildingShape(v, r)}.
-
+| | |
+|---|---:|
+| Playable factions | ${n(r.playableByDesign)} |
+| Factions in the game | ${n(r.factions)} |
+| Regions on the map | ${n(r.regions)} |
+| Units | ${n(r.units)} |
+| Cultures | ${n(r.cultures)} |
+| Building chains | ${n(r.buildingChains)} |
+| Building levels | ${n(r.buildingLevels)} |
 
 ## Sortable tables
 
@@ -286,29 +279,25 @@ For anything you want to sort or search rather than read:
 | [**Settlement sizes**](sizes.md) | ${familyCount("sizes").toLocaleString("en-US")} | The settlement size feature is a campaign progression mechanic where crossing specific population thresholds unlocks upgraded government buildings, which in turn allow you to construct higher-tier military and economic structures. |
 | ${artStrip("resource-icons", 24)} [**Trade goods**](trade-goods.md) | ${familyCount("goods").toLocaleString("en-US")} | What each good is worth, where on the map it is, who holds it, what it unlocks |
 | **Region tags** | ${familyCount("tags").toLocaleString("en-US")} | What a region's [terrain](tags/terrain.md), [climate](tags/climate.md), [water source](tags/irrigation.md), [harbour](tags/ports.md), [recruitment zones](tags/recruitment-zones.md), [homeland](tags/cultural-homeland.md) and [fertility](tags/fertility.md) each decide |
-| [The map](map-and-regions.md) | — | How the density compares with vanilla |
 
 ### Who plays it
 
 | | Pages | What is on them |
 |---|---:|---|
-| ${artStrip("symbols", 26)} [**All factions**](factions.md) | ${familyCount("factions").toLocaleString("en-US")} | Grouped by culture: what each starts with, its roster, its characters, its territory |
+| ${artStrip("symbols", 26)} [**Factions**](factions.md) | ${familyCount("factions").toLocaleString("en-US")} | Grouped by culture: what each starts with, its roster, its characters, its territory |
 | [**Cultures**](cultures.md) | ${familyCount("cultures").toLocaleString("en-US")} | Who is in each, what its settlements are drawn with, and what the mod gates on being it |
 | ${artStrip("belief-icons", 22)} [**Beliefs**](religions.md) | ${familyCount("religions").toLocaleString("en-US")} | Where each is on the map and at what strength, whose people it is, who follows it |
-| [**Character traits**](traits.md) | ${familyCount("traits").toLocaleString("en-US")} | Every visible trait: its levels, effects, how it is gained, and the traits that pull against it |
+| [**Traits**](traits.md) | ${familyCount("traits").toLocaleString("en-US")} | Every visible trait: its levels, effects, how it is gained, and the traits that pull against it |
 | ${artStrip("ancillary-icons", 24)} [**Retinue**](ancillaries.md) | ${familyCount("ancillaries").toLocaleString("en-US")} | The followers, keepsakes and offices a character gathers, and the traits that attract them |
 | [**Reforms**](reforms.md) | ${familyCount("reforms").toLocaleString("en-US")} | What each army reform takes to happen, and the units it unlocks, retires and converts |${familyCount("revolts") ? `
 | [**Revolts**](revolts.md) | ${familyCount("revolts").toLocaleString("en-US")} | Breakaways and civil wars: what sets each off, what happens, and whether you can take over the rebels |` : ""}
-| [Factions overview](factions-overview.md) | — | How crowded the world is beside vanilla |
 
 ### What they build and field
 
 | | Pages | What is on them |
 |---|---:|---|
 | ${artStrip("cards", 34)} [**All units**](units.md) | ${familyCount("units").toLocaleString("en-US")} | Stats, cards, who can recruit each one and what they need to build first |
-| ${artStrip("icons", 26)} [**All buildings**](buildings.md) | ${familyCount("buildings").toLocaleString("en-US")} | Every chain: what each level does, what it costs, what it upgrades into |
-| [Units overview](units-overview.md) | — | How the roster compares with vanilla |
-| [Buildings and economy](buildings-and-economy.md) | — | A wider, shallower tree than vanilla's |
+| ${artStrip("icons", 26)} [**Buildings**](buildings.md) | ${familyCount("buildings").toLocaleString("en-US")} | Every chain: what each level does, what it costs, what it upgrades into |
 ${familyCount("diaries") ? `
 ### From the team
 
@@ -497,6 +486,9 @@ for (const name of Object.keys(pages)) {
     process.exit(3);
   }
 }
+// The vanilla comparison pages are retired (the team, 2026-09-30: "remove all comparisons vs
+// vanilla"); they are still built above so nothing else in this file breaks, but not written.
+for (const gone of ["factions-overview.md", "map-and-regions.md", "units-overview.md", "buildings-and-economy.md"]) delete pages[gone];
 fs.mkdirSync(OUT, { recursive: true });
 for (const [name, body] of Object.entries(pages)) {
   fs.writeFileSync(path.join(OUT, name), body, "utf8");
