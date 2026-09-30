@@ -6253,7 +6253,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 1,
 		},
 
 		"logos":

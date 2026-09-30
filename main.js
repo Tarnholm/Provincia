@@ -4,6 +4,10 @@ const path = require("path");
 const fs = require("fs");
 const { Worker } = require("worker_threads");
 const pathSafety = require("./src/pathSafety.js");
+// The main window + an optional second map window (src/appWindows.js). Live
+// broadcasts go to both; only the main window drives the watchers.
+const { createAppWindows } = require("./src/appWindows.js");
+const appWindows = createAppWindows({ log: (s) => _logLine(s) });
 
 // Army factions in live mode (src/liveArmyFactions.js). The labeller wants the
 // campaign's faction order; read it once per mod.
@@ -468,8 +472,7 @@ function setupModWatcher(modDataDir) {
       clearTimeout(modWatchDebounce[base]);
       modWatchDebounce[base] = setTimeout(() => {
         _charInitCache.clear(); // mod changed on disk → next characters-init re-parses
-        const win = BrowserWindow.getAllWindows()[0];
-        if (win) win.webContents.send("mod-file-changed", { file: base });
+        appWindows.send("mod-file-changed", { file: base });
         console.log(`[mod-watch] ${base} changed on disk → notified renderer`);
       }, 400);
     });
@@ -495,8 +498,7 @@ function setupModWatcher(modDataDir) {
         if (!filename || !/\.tga$/i.test(String(filename))) return;
         clearTimeout(modWatchDebounce.__factionIcons);
         modWatchDebounce.__factionIcons = setTimeout(() => {
-          const win = BrowserWindow.getAllWindows()[0];
-          if (win) win.webContents.send("mod-file-changed", { file: "faction_icons" });
+          appWindows.send("mod-file-changed", { file: "faction_icons" });
           console.log("[mod-watch] faction icon TGA changed on disk → notified renderer");
         }, 400);
       });
@@ -1644,9 +1646,11 @@ function applyContentSecurityPolicy() {
 // userData survives the installer overwrite.
 const WINDOW_STATE_FILE = "window-state.json";
 
-function readSavedWindowState() {
+const MAP_WINDOW_STATE_FILE = "map-window-state.json";
+
+function readSavedWindowState(file = WINDOW_STATE_FILE) {
   try {
-    const fp = path.join(app.getPath("userData"), WINDOW_STATE_FILE);
+    const fp = path.join(app.getPath("userData"), file);
     if (!fs.existsSync(fp)) return null;
     const data = JSON.parse(fs.readFileSync(fp, "utf8"));
     // Sanity checks — reject corrupted / unreasonable values so the window
@@ -1669,7 +1673,7 @@ function readSavedWindowState() {
   }
 }
 
-function saveWindowState(win, restoreTarget) {
+function saveWindowState(win, restoreTarget, file = WINDOW_STATE_FILE) {
   if (!win || win.isDestroyed()) return;
   try {
     const maximized = win.isMaximized();
@@ -1711,14 +1715,18 @@ function saveWindowState(win, restoreTarget) {
       maximized,
       savedAt: Date.now(),
     };
-    const fp = path.join(app.getPath("userData"), WINDOW_STATE_FILE);
+    const fp = path.join(app.getPath("userData"), file);
     fs.writeFileSync(fp, JSON.stringify(state, null, 2));
   } catch (e) {
     console.warn("[window-state] write failed:", e.message);
   }
 }
 
-function createWindow() {
+// role "primary" = the main window. role "map" = the second map window: same
+// renderer, own position file, follows the main window's watchers (the
+// preload switches its watcher calls to attach-only via the argv flag).
+function createWindow(role = "primary") {
+  const isMap = role === "map";
   // Drop Electron's default File/Edit/View/Window menu — the app's UI is
   // self-contained and doesn't need it. Done at app level (vs per-window) so
   // child windows (e.g. devtools detach) inherit. Useful shortcuts that
@@ -1726,7 +1734,8 @@ function createWindow() {
   // default accelerators in dev; release builds intentionally lose them.
   Menu.setApplicationMenu(null);
 
-  const saved = readSavedWindowState();
+  const stateFile = isMap ? MAP_WINDOW_STATE_FILE : WINDOW_STATE_FILE;
+  const saved = readSavedWindowState(stateFile);
   const winOptions = {
     width: saved?.width || 1920,
     height: saved?.height || 1080,
@@ -1757,15 +1766,37 @@ function createWindow() {
       // (contextBridge/ipcRenderer), which the sandboxed preload shim provides.
       sandbox: true,
       preload: path.join(__dirname, "preload.js"),
+      ...(isMap ? { additionalArguments: ["--provincia-window=map"] } : {}),
     },
+    ...(isMap ? { title: "Provincia — Map 2" } : {}),
   };
   if (saved && typeof saved.x === "number" && typeof saved.y === "number") {
     winOptions.x = saved.x;
     winOptions.y = saved.y;
   }
+  // First map window (no saved position): put it on a screen the main window
+  // is NOT on, maximised — the whole point is a map per screen. One screen:
+  // the default size, offset so it doesn't sit exactly on the main window.
+  let openMaximized = !!saved?.maximized;
+  if (isMap && !saved) {
+    const place = mapWindowFirstPlacement();
+    if (place) { winOptions.x = place.x; winOptions.y = place.y; openMaximized = place.maximize; }
+  }
   const win = new BrowserWindow(winOptions);
   win.setMenuBarVisibility(false);
-  if (saved?.maximized) win.maximize();
+  if (openMaximized) win.maximize();
+  if (isMap) {
+    appWindows.addFollower(win);
+    // Keep "Map 2" in the taskbar: the page's own <title> would replace it.
+    win.on("page-title-updated", (e) => e.preventDefault());
+  } else {
+    appWindows.setPrimary(win);
+    // The map window follows the main one; without it there are no watchers
+    // to follow, so it goes when the main window goes.
+    win.on("closed", () => {
+      for (const w of appWindows.getFollowers()) { try { w.close(); } catch { /* already closing */ } }
+    });
+  }
 
   // Defense-in-depth: the app never opens child windows or navigates away
   // from its own document — deny window.open and off-app navigation outright.
@@ -1945,7 +1976,7 @@ function createWindow() {
   // tolerance — so no fragile session flag is needed and the window can't creep.
   const scheduleSave = () => {
     if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => { saveWindowState(win, saved); saveTimer = null; }, 500);
+    saveTimer = setTimeout(() => { saveWindowState(win, saved, stateFile); saveTimer = null; }, 500);
   };
   win.on("move", () => scheduleSave());
   win.on("resize", () => scheduleSave());
@@ -1953,21 +1984,56 @@ function createWindow() {
   win.on("unmaximize", () => scheduleSave());
   win.on("close", () => {
     if (saveTimer) clearTimeout(saveTimer);
-    saveWindowState(win, saved);
+    saveWindowState(win, saved, stateFile);
   });
 
   if (useDevServer) {
     // For CRA/Vite HMR (may need eval) — suppress security warning in dev only
     process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = "true";
     win.loadURL(devServerURL);
-    win.webContents.openDevTools({ mode: "detach" });
+    if (!isMap) win.webContents.openDevTools({ mode: "detach" });
   } else {
     // Load built assets (CRA build output)
     const indexPath = path.join(__dirname, "build", "index.html");
     win.loadFile(indexPath);
   }
-
+  return win;
 }
+
+// Where a first-ever map window opens: the largest display the main window is
+// not on (maximised there), else offset from the main window on the same one.
+function mapWindowFirstPlacement() {
+  try {
+    const { screen } = require("electron");
+    const main = appWindows.getPrimary();
+    const mainDisplay = main ? screen.getDisplayMatching(main.getBounds()) : screen.getPrimaryDisplay();
+    const others = screen.getAllDisplays().filter((d) => d.id !== mainDisplay.id);
+    if (others.length) {
+      others.sort((a, b) => (b.workArea.width * b.workArea.height) - (a.workArea.width * a.workArea.height));
+      const wa = others[0].workArea;
+      return { x: wa.x + 40, y: wa.y + 40, maximize: true };
+    }
+    const b = main ? main.getBounds() : mainDisplay.workArea;
+    return { x: b.x + 60, y: b.y + 60, maximize: false };
+  } catch (e) {
+    _logLine(`[map-window] placement failed, using defaults: ${e && e.message}`);
+    return null;
+  }
+}
+
+// Open the second map window, or bring it forward if it is already open.
+ipcMain.handle("map-window-open", async () => {
+  const existing = appWindows.getFollowers()[0];
+  if (existing) {
+    if (existing.isMinimized()) existing.restore();
+    existing.focus();
+    return { ok: true, focused: true };
+  }
+  if (!appWindows.getPrimary()) return { ok: false, reason: "main window not open" };
+  createWindow("map");
+  _logLine("[map-window] opened");
+  return { ok: true, opened: true };
+});
 
 // IPC: native folder picker — deep-scans a mod root for campaign directories.
 // RTW mod structure: data/world/maps/campaign/<name>/ contains per-campaign files,
@@ -2898,7 +2964,7 @@ registerSaveListHandlers(ipcMain, { dialog });
 const {
   registerLogWatchHandlers, clearPassengers, isLogWatchActive, reanchorLogOffsetsToEof,
 } = require("./src/logWatchHandlers.js");
-registerLogWatchHandlers(ipcMain, { BrowserWindow, getLogPath: () => _logPath });
+registerLogWatchHandlers(ipcMain, { BrowserWindow, getLogPath: () => _logPath, appWindows });
 
 // ── Save file watcher & parser ────────────────────────────────────────────
 // Watches the RTW saves directory for new autosave .sav files, parses binary
@@ -3179,21 +3245,15 @@ const SAVE_WATCH_COOLDOWN_MS = 60000;
 // frame is disposed. Sending IPC to it throws "Render frame was disposed" and
 // every save-watch reparse then spams that error while doing useless work.
 // Treat a destroyed window / webContents (or a crashed renderer) as gone.
+// The MAIN window gates the work (a map window alone never keeps a reparse
+// alive); the results go to every app window.
 function getLiveWindow() {
-  const win = BrowserWindow.getAllWindows()[0];
-  if (!win || win.isDestroyed()) return null;
-  const wc = win.webContents;
-  try {
-    if (!wc || wc.isDestroyed() || wc.isCrashed()) return null;
-  } catch { return null; }
-  return win;
+  return appWindows.getPrimary();
 }
-// Send to the renderer only if it's alive; never throw if the frame is gone.
+// Send to the live app windows; never throw if a frame is gone.
 function safeSend(channel, payload) {
-  const win = getLiveWindow();
-  if (!win) return false;
-  try { win.webContents.send(channel, payload); return true; }
-  catch { return false; }
+  if (channel === "live-char-moves") return appWindows.sendLiveMoves(payload) > 0;
+  return appWindows.send(channel, payload) > 0;
 }
 
 async function reparseLatestSave() {
@@ -3293,7 +3353,7 @@ async function reparseLatestSave() {
     const newData = await parseSaveData(full, ({ stage }) => emitSaveProgress(stage, 30), saveBuf);
     if (lastSaveData) {
       const events = diffSaveData(lastSaveData, newData);
-      if (events.length > 0) win.webContents.send("save-events", { file: latestFile, events });
+      if (events.length > 0) safeSend("save-events", { file: latestFile, events });
     }
 
     emitSaveProgress("Parsing characters & armies", 50);
@@ -3539,8 +3599,7 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
   try {
     clearPassengers();
     if (isLogWatchActive()) reanchorLogOffsetsToEof();
-    const winR = BrowserWindow.getAllWindows()[0];
-    if (winR) winR.webContents.send("live-char-moves", { moves: [], deaths: [], reset: true });
+    appWindows.sendLiveMoves({ moves: [], deaths: [], reset: true });
   } catch {}
 
   // Parse latest save as baseline and send initial snapshot.
@@ -3727,7 +3786,23 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
     console.warn("[save-watch] fs.watch failed:", e.message);
   }
 
+  broadcastLiveMode();
   return { ok: true, saveDir, baseline: lastSaveFile, initialData: lastSaveData };
+});
+
+// Live mode as the map window sees it: on once the main window's live save is
+// parsed (so an attaching window gets data, not a half-done parse), off after
+// save-watch-stop. The map window switches its own Live on/off to match.
+function liveModeReady() { return !!(activeSaveDir && lastSaveData); }
+function broadcastLiveMode() { appWindows.send("live-mode", { active: liveModeReady() }); }
+ipcMain.handle("live-mode-get", async () => ({ active: liveModeReady() }));
+
+// The map window's save-watch-start: hand it what the main window's watcher
+// already parsed and keep that watcher running. A second save-watch-start
+// would re-parse the save and reset every window's live state.
+ipcMain.handle("save-watch-attach", async () => {
+  if (!activeSaveDir) return { ok: false, attached: true, reason: "live mode is not running in the main window" };
+  return { ok: true, attached: true, saveDir: activeSaveDir, baseline: lastSaveFile, initialData: lastSaveData };
 });
 
 // Manual trigger — still useful as a belt-and-suspenders path from log turn-end detection.
@@ -3978,8 +4053,7 @@ ipcMain.handle("characters-init", async (_event, modDataDir) => {
         });
         console.log(`[characters-init] army factions by source: ${JSON.stringify(counts)}`);
       } catch (e) { console.warn("[characters-init] army-faction re-attribution failed:", e.message); }
-      const win = BrowserWindow.getAllWindows()[0];
-      if (win) win.webContents.send("save-snapshot", { file: lastSaveFile, data: lastSaveData });
+      safeSend("save-snapshot", { file: lastSaveFile, data: lastSaveData });
     }
 
     // 0.9.635: Save-out-of-sync detector. The save stores INDICES into
@@ -4068,6 +4142,7 @@ ipcMain.handle("save-watch-stop", async () => {
   lastSaveData = null;
   lastSaveFile = null;
   lastSaveMtime = 0;
+  broadcastLiveMode();
   return { ok: true };
 });
 
@@ -4161,7 +4236,7 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on("second-instance", () => {
-    const win = BrowserWindow.getAllWindows()[0];
+    const win = appWindows.getPrimary();
     if (win) {
       if (win.isMinimized()) win.restore();
       win.focus();

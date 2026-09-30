@@ -446,7 +446,11 @@ describe("scripting_log.txt — the engine's own mod-file errors", () => {
 
     // ── leads: every one must name a file, a key and a suggestion ──
     expect(r.auditError).toBeUndefined();
-    expect(r.modLeads.length).toBeGreaterThan(0); // static audit leads exist even on a clean log
+    // Leads are resolutions OF the log's errors (auditScriptErrors walks the
+    // findings), so a clean log has none. This pinned ">0" and failed once the
+    // game rewrote the log with 0 errors (2026-09-28) — the mod getting
+    // healthier again, not a pipeline break.
+    if (r.findings.length > 0) expect(r.modLeads.length).toBeGreaterThan(0);
     for (const l of r.modLeads) {
       expect(l.file).toBeTruthy();
       expect(l.key).toBeTruthy();

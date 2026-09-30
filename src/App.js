@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
+import { IS_MAP_WINDOW } from "./windowRole";
 import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
 import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect, subscribeWidgets, getWidgetSnapshot } from "./Movable";
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, prefetchBuildingIconsBulk, invalidateBuildingIcon, warmStats } from "./buildingIcons";
@@ -2180,6 +2181,12 @@ function App() {
   }, [computeFactionGrid]);
   const [showFactionSummary, setShowFactionSummary] = useState(false);
   const [devMode, setDevMode] = useState(false);
+  // Dev setting (Tools menu): show the "Map 2" button that opens the second
+  // map window. Off by default; the button only shows in dev mode.
+  const [mapWindowEnabled, setMapWindowEnabled] = useState(() => {
+    try { return localStorage.getItem("devMapWindow") === "1"; } catch { return false; }
+  });
+  const showMapWindowButton = devMode && mapWindowEnabled && !IS_MAP_WINDOW && !!window.electronAPI?.openMapWindow;
   const [devRecoveryPrompt, setDevRecoveryPrompt] = useState(false); // show recovery banner on dev mode enter
   const [showLoadMenu, setShowLoadMenu] = useState(false); // load saves dropdown
   const loadMenuRef = useRef(null);
@@ -2937,6 +2944,15 @@ function App() {
   const [mapVariant, setMapVariant] = useState(
     () => localStorage.getItem("mapVariant") || MAP_VARIANTS.starting.key
   );
+  // The map window follows the main window's campaign slot: switching it here
+  // would reload the main process's mod data under the main window's live
+  // mode. A 'storage' event fires here when the main window writes the key.
+  useEffect(() => {
+    if (!IS_MAP_WINDOW) return undefined;
+    const onStorage = (e) => { if (e.key === "mapCampaign" && e.newValue) setMapCampaign(e.newValue); };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
   // Ground-types TGA pixels for the Geography overlay (lazy-loaded once on
   // first activation). Stored at native TGA resolution (≈2x supersampled
   // for Remastered Imperial campaign — 2041×1401 covering a 1020×700 region
@@ -6527,6 +6543,24 @@ function App() {
   const processLogEventsRef = useRef(processLogEvents);
   useEffect(() => { processLogEventsRef.current = processLogEvents; }, [processLogEvents]);
   useEffect(() => { saveCharactersByRegionRef.current = saveCharactersByRegion; }, [saveCharactersByRegion]);
+
+  // Map window: Live follows the main window. Its own Live button only
+  // explains that; this switches it on and off when the main window's live
+  // save is ready / stopped (main.js broadcasts "live-mode"). handleLiveToggle
+  // is defined far below, so it is reached through a ref assigned there.
+  const liveToggleRef = useRef(null);
+  const liveActiveNowRef = useRef(liveLogActive);
+  liveActiveNowRef.current = liveLogActive;
+  useEffect(() => {
+    if (!IS_MAP_WINDOW) return undefined;
+    const api = window.electronAPI;
+    if (!api?.getLiveMode || !api?.onLiveMode) return undefined;
+    const apply = (active) => {
+      if (!!active !== liveActiveNowRef.current && liveToggleRef.current) liveToggleRef.current();
+    };
+    api.getLiveMode().then((r) => apply(r && r.active)).catch(() => {});
+    return api.onLiveMode((r) => apply(r && r.active));
+  }, []);
 
   // Effect: start/stop save file watcher (alongside log watcher)
   useEffect(() => {
@@ -10579,7 +10613,9 @@ function App() {
       } catch { /* diagnostics must never break the lift */ }
     }
     setShowSplash(false);
-    if (!welcomeShownOnceRef.current) {
+    // The map window skips welcome / What's New: the main window shows it (and
+    // records it as seen), so a second copy on the other screen is just noise.
+    if (!welcomeShownOnceRef.current && !IS_MAP_WINDOW) {
       welcomeShownOnceRef.current = true;
       setShowWelcome(true);
     }
@@ -15058,6 +15094,8 @@ function App() {
     }
   };
 
+  liveToggleRef.current = handleLiveToggle;
+
   // 0.9.x: Calibrate handler — extracted verbatim from the old view-options
   // pill's inline onClick when the Calibrate button moved up next to the Live
   // button in the map-mode category pill. Same pattern as handleLiveToggle.
@@ -15515,7 +15553,7 @@ function App() {
           {/* Inactive color: yellow in dark mode (2026-07-16 user request — the
               theme default read as dark grey and the button looked disabled);
               light mode keeps the theme default. Active stays green. */}
-          <button data-ui-highlight="live" className="map-mode-btn" onClick={handleLiveToggle} style={{ ...btnStyle(liveLogActive), minWidth: 0, position: "relative", color: liveLogActive ? "#4f8" : (isDark ? "#ffd24a" : undefined) }}><MapBtnBadge k="view.live" />Live</button>
+          <button data-ui-highlight="live" className="map-mode-btn" onClick={IS_MAP_WINDOW ? () => pushToast(liveLogActive ? "Live follows the main window — switch it off there." : "Live follows the main window — switch it on there and this map joins in.", "info", 5000) : handleLiveToggle} style={{ ...btnStyle(liveLogActive), minWidth: 0, position: "relative", color: liveLogActive ? "#4f8" : (isDark ? "#ffd24a" : undefined) }}><MapBtnBadge k="view.live" />Live</button>
           {/* 0.9.423: Calibrate-for-mod button. Tells the user to start
               a new game + save at turn 0 so the auto-cache pass picks up
               real save-read stats and uses them in non-live mode. The
@@ -15850,6 +15888,23 @@ function App() {
                         style={{ ...btnStyle(false), background: "transparent", border: "1px solid transparent", color: t.color, textAlign: "left", padding: "5px 8px", minWidth: 0 }}
                       >{t.icon} {t.label}</button>
                     ))}
+                    {!IS_MAP_WINDOW && window.electronAPI?.openMapWindow && (
+                      <label
+                        title="Adds a Map 2 button to the title bar (dev mode only): a second window for another screen, with its own map mode and overlays. Live data and the campaign follow this window."
+                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 8px 3px", marginTop: 3, borderTop: "1px solid rgba(106,90,58,0.6)", color: "#cfd6e0", fontSize: "0.78rem", cursor: "pointer" }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={mapWindowEnabled}
+                          onChange={(ev) => {
+                            const on = ev.target.checked;
+                            setMapWindowEnabled(on);
+                            try { localStorage.setItem("devMapWindow", on ? "1" : "0"); } catch {}
+                          }}
+                        />
+                        ⧉ Second map window
+                      </label>
+                    )}
                   </div>
                 )}
               </span>
@@ -19390,6 +19445,18 @@ Click for unit card`}
           >
             Provincia
           </span>
+          {IS_MAP_WINDOW && (
+            <span
+              title="Second map window — pick its own map mode and overlays; live data and the campaign follow the main window."
+              style={{
+                WebkitAppRegion: "no-drag",
+                fontFamily: "var(--font-display)", fontSize: "0.74rem", fontWeight: 700,
+                letterSpacing: "0.08em", textTransform: "uppercase",
+                color: "#dca64a", padding: "1px 8px", borderRadius: 6,
+                border: "1px solid rgba(220,166,74,0.45)",
+              }}
+            >Map 2</span>
+          )}
           <div data-ui-highlight="campaigns" className={welcomeHighlight === "campaigns" ? "ws-ui-glow" : undefined} style={{ display: "flex", alignItems: "center", gap: 6, borderRadius: 6, WebkitAppRegion: "no-drag" }}>
             {Object.values(CAMPAIGNS).map((camp) => {
               const active = mapCampaign === camp.key;
@@ -19399,6 +19466,10 @@ Click for unit card`}
                   // Onboarding rings ONLY the empty mod slot (Slot 2) as the import target.
                   data-onboard-slot={camp.key === DEFAULT_CAMPAIGNS.imperial.key ? "1" : undefined}
                   onClick={() => {
+                    if (IS_MAP_WINDOW) {
+                      if (!active) pushToast("Switch campaigns in the main window — this map follows it.", "info", 4000);
+                      return;
+                    }
                     // During onboarding, left-clicking the still-empty Slot 2 would
                     // switch to a blank slot and derail the guided import. Block it —
                     // the user must RIGHT-CLICK to import (which the card instructs).
@@ -19410,12 +19481,15 @@ Click for unit card`}
                     // import modal pre-targeted to this campaign (dev-only, like
                     // the dev-pill Import button).
                     e.preventDefault();
+                    if (IS_MAP_WINDOW) return;
                     setPendingImportSlot(camp.key);
                     setFileImportDone(false);
                     setShowFileImport(true);
                   }}
                   title={
-                    active
+                    IS_MAP_WINDOW
+                      ? (active ? `${camp.label} (active) — follows the main window` : "Switch campaigns in the main window")
+                      : active
                       ? `${camp.label} (active) — right-click to import files into this slot`
                       : `Switch to ${camp.label} — right-click to import files into this slot`
                   }
@@ -19454,13 +19528,29 @@ Click for unit card`}
               (the reserved TITLEBAR_CONTROLS_W gap). Dev-only, as before. */}
           {/* 0.9.846: "?" always available (not dev-gated); the panel itself
               hides dev-only shortcut rows outside dev mode. */}
+          {showMapWindowButton && (
+            <button
+              onClick={() => { window.electronAPI.openMapWindow().catch(() => {}); }}
+              title="Open a second map window — for another screen, with its own map mode and overlays"
+              style={{
+                WebkitAppRegion: "no-drag",
+                marginLeft: "auto",
+                height: 22, padding: "0 8px", borderRadius: 6,
+                border: "1px solid rgba(255,255,255,0.18)",
+                background: "rgba(255,255,255,0.06)",
+                color: "#cfd6e0", fontSize: "0.74rem", fontWeight: 700,
+                fontFamily: "var(--font-display)",
+                cursor: "pointer", lineHeight: 1, whiteSpace: "nowrap",
+              }}
+            >⧉ Map 2</button>
+          )}
           <button
             data-ui-highlight={welcomeHighlight === "shortcuts" ? "shortcuts" : undefined}
             onClick={() => setShowShortcuts((p) => !p)}
             title="Keyboard shortcuts"
             style={{
               WebkitAppRegion: "no-drag",
-              marginLeft: "auto",
+              marginLeft: showMapWindowButton ? 0 : "auto",
               width: 22, height: 22, padding: 0, borderRadius: 6,
               border: "1px solid rgba(255,255,255,0.18)",
               background: showShortcuts ? "rgba(220,166,74,0.25)" : "rgba(255,255,255,0.06)",
@@ -19573,6 +19663,9 @@ Click for unit card`}
         }
         // Useful actions.
         idx.push({ kind: "action", id: "scripts", label: "Open Scripts window", sub: "action", action: () => { window.electronAPI?.openScriptsWindow?.(); setCmdOpen(false); } });
+        if (showMapWindowButton) {
+          idx.push({ kind: "action", id: "map2", label: "Open second map window", sub: "action", action: () => { window.electronAPI.openMapWindow().catch(() => {}); setCmdOpen(false); } });
+        }
         if (window.electronAPI?.scriptsJumpTo) {
           idx.push({ kind: "action", id: "edb", label: "Open EDB in editor", sub: "action", action: () => { window.electronAPI.scriptsJumpTo("export_descr_buildings.txt", null); setCmdOpen(false); } });
         }

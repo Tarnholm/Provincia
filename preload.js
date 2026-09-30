@@ -1,5 +1,13 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
+// "map" = the second map window (main.js createWindow("map") passes the flag).
+// It runs the full renderer but must not drive the main process's watchers:
+// save-watch-start / log-watch-start restart them, re-parse the save and reset
+// every window's live state. So its watcher calls ATTACH to the main window's
+// instead, and its stop calls do nothing (the main window owns the watchers).
+const WINDOW_ROLE = (process.argv || []).includes("--provincia-window=map") ? "map" : "main";
+const IS_MAP = WINDOW_ROLE === "map";
+
 // 0.9.1269: freeze forensics — report every click/dblclick target to the main
 // process (which keeps the last 15). When the renderer hangs or crashes, main
 // logs this trail, so "what did the user click right before the freeze?" is
@@ -29,6 +37,8 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 contextBridge.exposeInMainWorld("electronAPI", {
+  windowRole: WINDOW_ROLE,
+  openMapWindow: () => ipcRenderer.invoke("map-window-open"),
   // Open the embedded Settlement Processor (Scripts) window (dev pill).
   openScriptsWindow: () => ipcRenderer.invoke("sps:open-window"),
   // Open a config file in the Scripts window's Monaco editor and (if
@@ -188,7 +198,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Dev autosave history persisted to a userData file (survives restart; too
   // big for localStorage). readAutosaves → { autosaves:[...] }; writeAutosaves(json).
   readAutosaves: () => ipcRenderer.invoke("read-autosaves"),
-  writeAutosaves: (json) => ipcRenderer.invoke("write-autosaves", json),
+  // The map window never writes the shared history files: it started later and
+  // holds a shorter history, so its write would cut the main window's.
+  writeAutosaves: (json) => (IS_MAP ? Promise.resolve({ ok: true, skipped: "map window" }) : ipcRenderer.invoke("write-autosaves", json)),
   // Resolvable faction list for the fog picker: { factions: [{faction, explored}] }
   // — only factions whose vision record resolves from this save (no rebels/slave/
   // all-seeing/empty), so every dropdown option is guaranteed to work.
@@ -209,13 +221,15 @@ contextBridge.exposeInMainWorld("electronAPI", {
   addgenApply: (selection) => ipcRenderer.invoke("addgen-apply", selection),
   getLiveStartingArmies: (modDataDir, campaignDir) => ipcRenderer.invoke("get-live-starting-armies", modDataDir, campaignDir),
   getUserDataPath: () => ipcRenderer.invoke("get-user-data-path"),
-  saveUserFile: (name, content) => ipcRenderer.invoke("save-user-file", name, content),
+  saveUserFile: (name, content) => (IS_MAP && name === "live_history.json"
+    ? Promise.resolve(true)
+    : ipcRenderer.invoke("save-user-file", name, content)),
   readUserFile: (name) => ipcRenderer.invoke("read-user-file", name),
   // Live log watcher
   getAppPaths: () => ipcRenderer.invoke("get-app-paths"),
   selectLogFolder: () => ipcRenderer.invoke("select-log-folder"),
-  logWatchStart: (logDir) => ipcRenderer.invoke("log-watch-start", logDir),
-  logWatchStop: () => ipcRenderer.invoke("log-watch-stop"),
+  logWatchStart: (logDir) => (IS_MAP ? ipcRenderer.invoke("log-watch-attach") : ipcRenderer.invoke("log-watch-start", logDir)),
+  logWatchStop: () => (IS_MAP ? Promise.resolve({ ok: true, attached: true }) : ipcRenderer.invoke("log-watch-stop")),
   logWatchReset: () => ipcRenderer.invoke("log-watch-reset"),
   logReadFull: (logDir) => ipcRenderer.invoke("log-read-full", logDir),
   onLogLines: (callback) => {
@@ -298,13 +312,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getModFileMtimes: (modDataDir) => ipcRenderer.invoke("get-mod-file-mtimes", modDataDir),
   getAppVersion: () => ipcRenderer.invoke("get-app-version"),
   // Save file watcher
-  saveWatchStart: (saveDir, pinnedSave) => ipcRenderer.invoke("save-watch-start", saveDir, pinnedSave || null),
+  saveWatchStart: (saveDir, pinnedSave) => (IS_MAP ? ipcRenderer.invoke("save-watch-attach") : ipcRenderer.invoke("save-watch-start", saveDir, pinnedSave || null)),
   getLatestSaveMtime: (saveDir) => ipcRenderer.invoke("get-latest-save-mtime", saveDir),
   listSaves: (saveDir) => ipcRenderer.invoke("list-saves", saveDir),
   selectSaveFile: (saveDir) => ipcRenderer.invoke("select-save-file", saveDir),
   selectSaveFiles: (saveDir) => ipcRenderer.invoke("select-save-files", saveDir),
   calibrateFromSave: (savePath) => ipcRenderer.invoke("calibrate-from-save", savePath),
-  saveWatchStop: () => ipcRenderer.invoke("save-watch-stop"),
+  saveWatchStop: () => (IS_MAP ? Promise.resolve({ ok: true, attached: true }) : ipcRenderer.invoke("save-watch-stop")),
   saveCheckNow: () => ipcRenderer.invoke("save-check-now"),
   // Character/unit extraction — initialize once the mod data directory is known.
   charactersInit: (modDataDir) => ipcRenderer.invoke("characters-init", modDataDir),
@@ -339,7 +353,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getFactionDisplayMap: () => ipcRenderer.invoke("faction-display-map"),
   getFactionDisplayNames: (modDataDir, campaign) => ipcRenderer.invoke("faction-display-names", modDataDir, campaign),
   getFactionCultures: (modDataDir) => ipcRenderer.invoke("faction-cultures", modDataDir),
-  logMessage: (level, text) => ipcRenderer.invoke("log-message", level, text),
+  logMessage: (level, text) => ipcRenderer.invoke("log-message", level, IS_MAP ? `[map2] ${text}` : text),
   getLogPath: () => ipcRenderer.invoke("get-log-path"),
   revealLogFile: () => ipcRenderer.invoke("reveal-log-file"),
   onSaveEvents: (callback) => {
@@ -349,6 +363,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
   onSaveSnapshot: (callback) => {
     ipcRenderer.on("save-snapshot", (_event, data) => callback(data));
     return () => ipcRenderer.removeAllListeners("save-snapshot");
+  },
+  // Map window: is the main window's live save ready ({active}), and changes to it.
+  getLiveMode: () => ipcRenderer.invoke("live-mode-get"),
+  onLiveMode: (callback) => {
+    ipcRenderer.on("live-mode", (_event, data) => callback(data));
+    return () => ipcRenderer.removeAllListeners("live-mode");
   },
   onSaveProgress: (callback) => {
     ipcRenderer.on("save-progress", (_event, data) => callback(data));

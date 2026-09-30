@@ -84,8 +84,11 @@ function registerCrashReporterHandlers(ipcMain, { app, BrowserWindow, writeLog }
   };
   const notify = () => {
     try {
-      const win = BrowserWindow.getAllWindows()[0];
-      if (win && !win.isDestroyed()) win.webContents.send("crash-reporter-status", status());
+      // Every window: the panel can be open in the main or the map window;
+      // windows without a listener ignore it.
+      for (const win of BrowserWindow.getAllWindows()) {
+        if (win && !win.isDestroyed()) win.webContents.send("crash-reporter-status", status());
+      }
     } catch { /* the UI simply polls instead */ }
   };
   const status = () => ({

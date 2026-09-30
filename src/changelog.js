@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1523",
+    date: "2026-10-01",
+    items: [
+      { type: "feature", text: "**A second map window for a second screen (dev setting).** Tick “⧉ Second map window” at the bottom of the 🧰 Tools menu and a Map 2 button appears in the title bar while dev mode is on. It opens the same campaign in a window of its own — maximised on your other screen the first time — with its own map mode, overlays and panel positions, so you can keep Trade Lanes on one screen and Political on the other. Live mode and the campaign are switched in the main window and Map 2 follows: it shows the same live data as it arrives, without reading the save a second time. Closing the main window closes Map 2." },
+    ],
+  },
+
+  {
     version: "0.9.1522",
     date: "2026-09-26",
     items: [

@@ -1,3 +1,6 @@
+// First: the map window swaps in its own localStorage view before any module
+// reads it (see windowRole.js).
+import "./windowRole";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";

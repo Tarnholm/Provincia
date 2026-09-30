@@ -1,6 +1,6 @@
 {
   "name": "provincia",
-  "version": "0.9.1522",
+  "version": "0.9.1523",
   "description": "Provincia — Rome: Total War mod data viewer",
   "author": "Tarnholm",
   "license": "MIT",
@@ -29,6 +29,7 @@
     "wiki:check": "node scripts/check-ris-wiki-site.js",
     "wiki:probe": "electron scripts/probe-ris-wiki-site.js",
     "wiki:gen": "node scripts/gen-ris-wiki-all.js",
+    "wiki:variants": "node scripts/gen-ris-wiki-variants.js && node scripts/gen-ris-variant-merge.js",
     "wiki:diff": "node scripts/diff-github-wiki.js",
     "wiki:pull": "node scripts/pull-github-wiki-notes.js"
   },
@@ -130,6 +131,7 @@
       "src/modEditingHandlers.js",
       "src/campaignScan.js",
       "src/characterFactionBlocks.js",
+      "src/appWindows.js",
       "src/liveArmyFactions.js",
       "src/factionTransfer.js",
       "src/newFaction.js",

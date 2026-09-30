@@ -585,12 +585,12 @@ ipcMain.handle("analyze-ai-movement", async (_event, logPath, modDataDir, savePa
       p = prefer.map((n) => path.join(dir, n)).find((c) => fs.existsSync(c)) || path.join(dir, prefer[0]);
     }
     if (!fs.existsSync(p)) return { error: "log not found: " + p };
-    const { BrowserWindow } = require("electron");
-    const win = BrowserWindow.getAllWindows()[0];
+    // Progress goes back to the window that asked (main or map window).
+    const wc = _event && _event.sender;
     const result = await runCrackWorker(
       "aiMovement",
       { logPath: p, modDataDir: modDataDir || null, savePath: savePath || null },
-      (prog) => { try { if (win && !win.isDestroyed()) win.webContents.send("ai-movement-progress", prog); } catch { /* advisory */ } }
+      (prog) => { try { if (wc && !wc.isDestroyed()) wc.send("ai-movement-progress", prog); } catch { /* advisory */ } }
     );
     // replay the worker's diagnostics into provincia.log
     if (result && Array.isArray(result.logs)) { for (const line of result.logs) { try { _writeLog(line); } catch { /* */ } } delete result.logs; }
@@ -618,12 +618,12 @@ ipcMain.handle("chronicle-campaign-log", async (_event, logPath, displayNames) =
     }
     if (fs.statSync(p).isDirectory()) p = path.join(p, "campaign_ai_log.txt");
     if (!fs.existsSync(p)) return { error: "log not found: " + p };
-    const { BrowserWindow } = require("electron");
-    const win = BrowserWindow.getAllWindows()[0];
+    // Progress goes back to the window that asked (main or map window).
+    const wc = _event && _event.sender;
     const result = await runCrackWorker(
       "chronicle",
       { logPath: p, displayNames: displayNames || {} },
-      (prog) => { try { if (win && !win.isDestroyed()) win.webContents.send("chronicle-progress", prog); } catch { /* advisory */ } }
+      (prog) => { try { if (wc && !wc.isDestroyed()) wc.send("chronicle-progress", prog); } catch { /* advisory */ } }
     );
     _writeLog(`[chronicle] ${path.basename(p)}: ${result && result.factions ? result.factions.length : 0} factions, ${result ? result.lines : 0} lines`);
     return result;

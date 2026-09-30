@@ -9,6 +9,7 @@
 const fs = require("fs");
 const path = require("path");
 const { parseLine: parseLogLineV2, restingTile, agentRestingTile, battleSetupStarts, battleMainArmies } = require("./messageLogParser.js");
+const { legacyAppWindows } = require("./appWindows.js");
 
 // ── Live log watcher for Rome Remastered ──────────────────────────────────
 // Watches message_log.txt and campaign_ai_log.txt, tails new lines, sends to renderer.
@@ -380,7 +381,10 @@ function reanchorLogOffsetsToEof() {
   if (fs.existsSync(ap)) logOffsetAI = fs.statSync(ap).size;
 }
 
-function registerLogWatchHandlers(ipcMain, { BrowserWindow, getLogPath }) {
+function registerLogWatchHandlers(ipcMain, { BrowserWindow, getLogPath, appWindows }) {
+// Sends go through the app-window registry (primary + map windows); unit
+// tests register without one and get the old first-window behaviour.
+const windows = appWindows || legacyAppWindows(BrowserWindow);
 
 // Reset live-log tracking without restarting the watcher: re-anchor to
 // current EOF, drop passenger / flow / position state, tell the renderer
@@ -406,8 +410,7 @@ ipcMain.handle("log-watch-reset", async () => {
     }
     clearPassengers();
     logPollTurnIdx = 1;
-    const winR = BrowserWindow.getAllWindows()[0];
-    if (winR) winR.webContents.send("live-char-moves", { moves: [], deaths: [], reset: true });
+    windows.sendLiveMoves({ moves: [], deaths: [], reset: true });
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e.message };
@@ -440,8 +443,7 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
   // Otherwise stale entries from a previous campaign would mix with the new
   // log's data.
   try {
-    const winClear = BrowserWindow.getAllWindows()[0];
-    if (winClear) winClear.webContents.send("live-char-moves", { moves: [], deaths: [], reset: true });
+    windows.sendLiveMoves({ moves: [], deaths: [], reset: true });
   } catch {}
 
   // Backfill: parse the whole existing log once for character-move events
@@ -449,8 +451,7 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
   // shouldn't have to wait for a new move to happen to see armies in their
   // correct spots).
   try {
-    const win0 = BrowserWindow.getAllWindows()[0];
-    if (fs.existsSync(msgPath) && win0) {
+    if (fs.existsSync(msgPath) && windows.getPrimary()) {
       const moves = [];
       const deaths = [];
       const live = newLiveBatch();
@@ -546,30 +547,29 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
       if (gen !== _logWatchGen) return { ok: false, superseded: true };
       // Sync poll-side counter so subsequent delta reads continue from here.
       logPollTurnIdx = backfillTurn;
-      if (savesWritten.length) win0.webContents.send("live-char-moves", { moves: [], savesWritten });
-      if (liveBatchHasData(live)) win0.webContents.send("live-char-moves", { moves: [], ...liveBatchPayload(live) });
+      if (savesWritten.length) windows.sendLiveMoves({ moves: [], savesWritten });
+      if (liveBatchHasData(live)) windows.sendLiveMoves({ moves: [], ...liveBatchPayload(live) });
       if (moves.length > 0 || deaths.length > 0) {
         // Chunk moves; send deaths separately (smaller).
         const CHUNK = 1000;
         for (let i = 0; i < moves.length; i += CHUNK) {
-          win0.webContents.send("live-char-moves", { moves: moves.slice(i, i + CHUNK) });
+          windows.sendLiveMoves({ moves: moves.slice(i, i + CHUNK) });
         }
-        if (deaths.length > 0) win0.webContents.send("live-char-moves", { moves: [], deaths });
+        if (deaths.length > 0) windows.sendLiveMoves({ moves: [], deaths });
       }
       // Send the unit-flow snapshot after backfill so the renderer can
       // re-bucket save units in the field-army panel before the user
       // interacts. Snapshot is the cumulative {from, to, count} flow built
       // from every transfer event seen so far.
       const flow = unitFlowSnapshot();
-      if (flow.length > 0) win0.webContents.send("live-char-moves", { moves: [], unitFlow: flow });
+      if (flow.length > 0) windows.sendLiveMoves({ moves: [], unitFlow: flow });
     }
   } catch (e) { console.warn("[log-watch] backfill failed:", e.message); }
   if (gen !== _logWatchGen) return { ok: false, superseded: true };
 
   // Poll every 2 seconds for new data
   logPollInterval = setInterval(() => {
-    const win = BrowserWindow.getAllWindows()[0];
-    if (!win) return;
+    if (!windows.getPrimary()) return;
 
     // Read new lines from message_log
     try {
@@ -585,7 +585,7 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
         logOffset += buf.length;
         const text = buf.toString("utf8");
         if (text.trim()) {
-          win.webContents.send("log-lines", { source: "message", text });
+          windows.send("log-lines", { source: "message", text });
           // Also extract character-move + death events for live tracking.
           const moves = [];
           const deaths = [];
@@ -652,14 +652,14 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
           // units on every live event.
           const flow = unitFlowSnapshot();
           if (moves.length > 0 || deaths.length > 0 || flow.length > 0 || savesWritten.length > 0 || liveBatchHasData(live)) {
-            win.webContents.send("live-char-moves", { moves, deaths, unitFlow: flow, savesWritten, ...liveBatchPayload(live) });
+            windows.sendLiveMoves({ moves, deaths, unitFlow: flow, savesWritten, ...liveBatchPayload(live) });
           }
         }
       } else if (stat.size < logOffset) {
         // File was truncated (new campaign started) — reset and notify
         logOffset = 0;
-        win.webContents.send("log-lines", { source: "reset", text: "" });
-        win.webContents.send("live-char-moves", { moves: [], reset: true });
+        windows.send("log-lines", { source: "reset", text: "" });
+        windows.sendLiveMoves({ moves: [], reset: true });
       }
     } catch {}
 
@@ -674,7 +674,7 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
           fs.closeSync(fd);
           logOffsetAI = stat.size;
           const text = buf.toString("utf8");
-          if (text.trim()) win.webContents.send("log-lines", { source: "ai", text });
+          if (text.trim()) windows.send("log-lines", { source: "ai", text });
         } else if (stat.size < logOffsetAI) {
           logOffsetAI = 0;
         }
@@ -683,6 +683,15 @@ ipcMain.handle("log-watch-start", async (_event, logDir) => {
   }, 2000);
 
   return { ok: true, msgPath, aiPath };
+});
+
+// A second map window attaches instead of starting: the primary's watcher
+// keeps running untouched (log-watch-start would re-anchor its offsets and
+// wipe every window's live state). The window gets the live-char-moves
+// journal replayed to it, then the same broadcasts as the primary.
+ipcMain.handle("log-watch-attach", async (event) => {
+  const replayed = event && event.sender ? windows.replayLiveMoves(event.sender) : 0;
+  return { ok: true, attached: true, running: !!logPollInterval, replayed };
 });
 
 ipcMain.handle("log-watch-stop", async () => {
@@ -721,7 +730,9 @@ ipcMain.handle("log-read-full", async (_event, logDir) => {
   };
   const [m, a] = await Promise.all([readLog(msgPath), readLog(aiPath)]);
   msg = m.text; ai = a.text;
-  // The watcher continues from exactly where this read stopped.
+  // The watcher continues from exactly where this read stopped — unless a
+  // second map window asked: it only reads, the primary's watcher owns the offsets.
+  if (windows.isFollower(_event && _event.sender)) return { msg, ai };
   if (m.size != null) logOffset = m.size; else { try { logOffset = fs.statSync(msgPath).size; } catch {} }
   if (a.size != null) logOffsetAI = a.size; else { try { logOffsetAI = fs.statSync(aiPath).size; } catch {} }
   return { msg, ai };
