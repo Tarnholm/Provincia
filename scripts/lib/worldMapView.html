@@ -219,7 +219,8 @@ box.addEventListener("pointerup", function(e){
 });
 box.addEventListener("pointercancel", up);
 box.addEventListener("pointerleave", function(){ tip.style.display = "none"; });
-box.addEventListener("wheel", function(e){ e.preventDefault(); var r = box.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.2 : 1 / 1.2, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+// Scrolling down over the whole map scrolls the page; only zooming takes the wheel.
+box.addEventListener("wheel", function(e){ if (e.deltaY > 0 && s <= minS * 1.001) return; e.preventDefault(); var r = box.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.2 : 1 / 1.2, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 document.getElementById("wm-plus").onclick = function(){ zoomAt(1.4, box.clientWidth / 2, box.clientHeight / 2); };
 document.getElementById("wm-minus").onclick = function(){ zoomAt(1 / 1.4, box.clientWidth / 2, box.clientHeight / 2); };
 document.getElementById("wm-fit").onclick = fit;

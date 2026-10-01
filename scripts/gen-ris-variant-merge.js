@@ -102,6 +102,8 @@ for (const v of VARIANTS) {
     const dir = path.posix.dirname(rel);
     const fix = (target) => {
       if (/^(https?:|mailto:|#|data:|javascript:)/i.test(target) || target.startsWith("/")) return target;
+      // Script code building a link (`src="' + d.sym + '"` in the world map's card), not a path.
+      if (/['"<>]/.test(target) || target.includes("+ ") || target.includes("${")) return target;
       const m = /^([^#?]*)([?#].*)?$/.exec(target);
       const bare = m[1], tail = m[2] || "";
       if (!bare) return target;
