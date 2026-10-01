@@ -425,21 +425,55 @@ render();
       }
       return res;
     };
+    // The colours are Provincia's (lib/provinciaMapColours.js, read from src/App.js), one per
+    // mode, as hex in PMODES order.
+    const parsers = require(path.join(__dirname, "..", "src", "parsers.js"));
+    const drRegions = parsers.parseDescrRegions(fs.readFileSync(path.join(spec.ris, "world", "maps", "base", "descr_regions.txt"), "latin1"));
+    const sm = parsers.parseSmFactions(fs.readFileSync(path.join(spec.ris, "descr_sm_factions.txt"), "latin1"));
+    const owners = {};
+    for (const x of spec.regions) if (x.fac) owners[x.token] = x.fac;
+    const PC = require("./lib/provinciaMapColours.js").build(drRegions, owners, sm);
+    const PMODES = PC.modes;
+    const hex = (c) => (c ? c.map((v) => Math.round(v).toString(16).padStart(2, "0")).join("") : "");
+    // Regions with no page (the rebel regions RIS Classic's strat leaves out) are drawn and
+    // named, with no link.
+    const slaveRow = [...byTok.values()].find((e) => /symbols\/slave\.png$/.test(e.o.sym || ""));
     const DATA = spec.regions.map((x) => {
+      const key = x.rgb.join(",");
+      const p = PMODES.map((m) => hex(PC.colourOf(m, key)));
+      if (x.nopage) {
+        return { n: x.token.replace(/_/g, " "), s: x.settlement || "", cap: false,
+          o: slaveRow ? slaveRow.o.text : "", sym: slaveRow ? slaveRow.o.sym || null : null,
+          c: PC.colourOf("faction", key), x: x.sx, y: x.sy, m: {}, p };
+      }
       const e = byTok.get(x.token);
       if (!e) return null;
       return {
         n: e.r.text, href: e.r.href, s: e.s.text, cap: /★/.test(e.s.mark || ""),
         o: e.o.text, sym: e.o.sym || null,
-        c: x.owner ? x.owner.map((v) => Math.round(v)) : null,
+        c: PC.colourOf("faction", key),
         x: x.sx, y: x.sy,
         m: modesOf(x.token) || {},
+        p,
       };
     });
     // Legends read in a useful order: fertility low to high, everything else by name.
     const MODES_OUT = MODES.filter((m) => m.vals.length).map((m) => {
       const order = m.vals.map((v, i) => i).sort((a, b) => (m.ord ? +m.vals[a][0] - +m.vals[b][0] : m.vals[a][0].localeCompare(m.vals[b][0])));
-      return { k: m.k, label: m.label, multi: !!m.multi, ord: !!m.ord, vals: m.vals, order };
+      // A Provincia mode's key shows each value in the colour most of its regions get there.
+      const pi = PMODES.indexOf(m.k);
+      let pcol = null;
+      if (pi >= 0) {
+        const votes = m.vals.map(() => new Map());
+        spec.regions.forEach((x, i) => {
+          const d = DATA[i], v = d && d.m && d.m[m.k];
+          if (!v || !v.length) return;
+          const b = hex(PC.baseOf(m.k, x.rgb.join(",")));
+          votes[v[0]].set(b, (votes[v[0]].get(b) || 0) + 1);
+        });
+        pcol = votes.map((vm) => [...vm.entries()].sort((a, b) => b[1] - a[1]).map((e) => e[0])[0] || "");
+      }
+      return { k: m.k, label: m.label, multi: !!m.multi, ord: !!m.ord, vals: m.vals, order, pi, pcol };
     });
     const intro = "# The world map\n\n[← wiki index](README.md) · [all regions and settlements](regions.md)\n\n"
       + `The campaign map at the start of the ${CAMPAIGN_NAME} campaign.\n`;
@@ -451,6 +485,7 @@ render();
     const body = viewer.renderMarkdown(intro, []) + fs.readFileSync(path.join(__dirname, "lib", "worldMapView.html"), "utf8")
       .replace(/\b4080(px)?\b/g, (m, px) => `${MW * WS}${px || ""}`).replace(/\b2800(px)?\b/g, (m, px) => `${MH * WS}${px || ""}`)
       .replace('width="1020" height="700"', `width="${MW}" height="${MH}"`)
+      .replace("aspect-ratio:1020/700", `aspect-ratio:${MW}/${MH}`)   // the frame takes the map's shape: no empty sea bands
       .replace("var WS = 4, MW = 1020, MH = 700;", `var WS = ${WS}, MW = ${MW}, MH = ${MH};`)
       .replace("var DATA = __DATA__;", () => `var DATA = ${JSON.stringify(DATA)};`)
       .replace("var MODES = __MODES__;", () => `var MODES = ${JSON.stringify(MODES_OUT)};`);

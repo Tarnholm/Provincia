@@ -7,7 +7,7 @@
 .wm-bar button:hover{border-color:var(--acc)}
 .wm-bar label{display:flex;gap:.35rem;align-items:center;color:var(--dim);font-size:.9rem;cursor:pointer}
 .wm-bar input[type=search]{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:.3rem .6rem;font:inherit;min-width:14rem}
-.wm{position:relative;height:74vh;min-height:420px;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:#1c3f66;cursor:grab;touch-action:none;user-select:none}
+.wm{position:relative;aspect-ratio:1020/700;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:#1c3f66;cursor:grab;touch-action:none;user-select:none}
 .wm.drag{cursor:grabbing}
 .wm-in{position:absolute;left:0;top:0;transform-origin:0 0;width:4080px;height:2800px;will-change:transform;--lf:12px}
 .wm-in img,.wm-in canvas{position:absolute;left:0;top:0;width:4080px;height:2800px;max-width:none;pointer-events:none}
@@ -97,10 +97,13 @@ if (im.complete && im.naturalWidth) loadIds(); else im.addEventListener("load", 
 var mode = null, iso = -1, cols = [], HI = [235, 70, 30];
 function hsl(h, sa, l){ sa /= 100; l /= 100; var k = function(n){ return (n + h / 30) % 12; }, a = sa * Math.min(l, 1 - l);
   return [0, 8, 4].map(function(n){ return Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)))); }); }
+function rgbOf(h){ return h ? [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)] : null; }
 function colours(m){
   var c = [], n = m.order.length;
   m.order.forEach(function(v, pos){
-    if (m.ord) { var t = n > 1 ? pos / (n - 1) : 1; c[v] = [Math.round(170 - 130 * t), Math.round(120 + 45 * t), Math.round(70 - 20 * t)]; }
+    // A mode Provincia has is shown in Provincia's colours (gen-ris-wiki-html.js, pcol).
+    if (m.pcol && m.pcol[v]) c[v] = rgbOf(m.pcol[v]);
+    else if (m.ord) { var t = n > 1 ? pos / (n - 1) : 1; c[v] = [Math.round(170 - 130 * t), Math.round(120 + 45 * t), Math.round(70 - 20 * t)]; }
     else c[v] = hsl((pos * 137.508) % 360, 62, 52);
   });
   return c;
@@ -110,10 +113,13 @@ function colourOf(d){
   if (!mode) return andOn() ? HI : null;
   if (mode === "faction") return d.c;
   var v = d.m && d.m[mode.k];
-  if (!v || !v.length) return null;
   // One value shown alone is painted in one strong colour, whatever its key colour, so a blue
   // zone is not lost against the sea.
-  if (iso >= 0) return v.indexOf(iso) >= 0 ? HI : null;
+  if (iso >= 0) return v && v.indexOf(iso) >= 0 ? HI : null;
+  // Provincia's own colour for the region, which it gives every region (a region with no river
+  // trade has one too).
+  if (mode.pi >= 0 && d.p && d.p[mode.pi]) return rgbOf(d.p[mode.pi]);
+  if (!v || !v.length) return null;
   return cols[v[0]];
 }
 function paint(){

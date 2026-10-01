@@ -304,7 +304,8 @@ def main(spec_path, only=None):
                 taken.append((lx - 2, ly - 1, lx + w + 2, ly + 21))
                 dr.text((lx, ly), me[0][3], font=font_b, fill=LABEL_FILL, stroke_width=2, stroke_fill=LABEL_STROKE)
         for (px, py), name in others:
-            place(name, px, py, font, 4)
+            if name:
+                place(name, px, py, font, 4)
 
         if show_inset:
             ins = inset.copy()
@@ -325,7 +326,7 @@ def main(spec_path, only=None):
     written = 0
     if not spec.get("areas_only"):
         for k, r in enumerate(regions):
-            if only and r["token"] not in only:
+            if (only and r["token"] not in only) or r.get("nopage"):
                 continue
             if draw({k}, k, FILL, MIN_W, MAX_W, True, os.path.join(out_dir, r["token"] + ".webp")):
                 written += 1

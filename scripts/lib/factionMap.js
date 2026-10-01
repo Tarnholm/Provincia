@@ -207,14 +207,20 @@ function windowFor(world, regionNames) {
     n++;
   }
   if (!n) return null;
+  // The same 60% of a campaign's own map (RIS Light's is 510x350, RIS Classic's 384x234: a fixed
+  // 612x420 was larger than Classic's whole map), grown to fit a territory wider than that, in
+  // the map's aspect ratio. The main map gives exactly WIN_W x WIN_H, as before.
+  const { W, H } = world;
+  const winW = Math.min(W, Math.max(Math.round(W * WIN_W / 1020), x1 - x0 + 17, Math.round((y1 - y0 + 17) * W / H)));
+  const winH = Math.min(H, Math.round(winW * H / W));
   const cx = Math.round((x0 + x1) / 2), cy = Math.round((y0 + y1) / 2);
-  const wantX = cx - Math.floor(WIN_W / 2), wantY = cy - Math.floor(WIN_H / 2);
-  const ox = Math.max(0, Math.min(world.W - WIN_W, wantX));
-  const oy = Math.max(0, Math.min(world.H - WIN_H, wantY));
+  const wantX = cx - Math.floor(winW / 2), wantY = cy - Math.floor(winH / 2);
+  const ox = Math.max(0, Math.min(W - winW, wantX));
+  const oy = Math.max(0, Math.min(H - winH, wantY));
   return {
-    ox, oy, w: WIN_W, h: WIN_H,
+    ox, oy, w: winW, h: winH,
     clamped: ox !== wantX || oy !== wantY,
-    fits: (x1 - x0 + 1) <= WIN_W && (y1 - y0 + 1) <= WIN_H,
+    fits: (x1 - x0 + 1) <= winW && (y1 - y0 + 1) <= winH,
     terr: { x0, x1, y0, y1, w: x1 - x0 + 1, h: y1 - y0 + 1 },
   };
 }
@@ -329,8 +335,22 @@ function render(world, faction, regionNames) {
     dots++; if (mine.has(ri)) myDots++;
   }
 
+  // A small campaign map is scaled up by whole pixels to about the main map's picture size,
+  // so it fills the page the same way (1 on the main map, 3 on RIS Classic).
+  const k = Math.max(1, Math.round(WIN_W / w));
+  let img = out, iw = w, ih = h;
+  if (k > 1) {
+    iw = w * k; ih = h * k;
+    img = Buffer.alloc(iw * ih * 3);
+    for (let y = 0; y < ih; y++) {
+      for (let x = 0; x < iw; x++) {
+        const s = (Math.floor(y / k) * w + Math.floor(x / k)) * 3;
+        out.copy(img, (y * iw + x) * 3, s, s + 3);
+      }
+    }
+  }
   return {
-    buf: png(w, h, out), w, h, win,
+    buf: png(iw, ih, img), w: iw, h: ih, win,
     counts: { subjectPx, ownedPx, seaPx, coastPx, edgePx, haloPx, dots, myDots, bracketPx, factionColour: fi >= 0 && colour[fi] ? colour[fi] : null },
   };
 }

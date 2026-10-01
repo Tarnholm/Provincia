@@ -1648,7 +1648,23 @@ fs.rmSync(path.join(OUT, "settlements.md"), { force: true });
     const o = world.ownerOf[ri];
     const xy = world.settleXY[ri];
     spec.regions.push({ token: e.region, rgb: rgbOf[e.region], settlement: nameOf.get(e.region),
-      owner: o >= 0 && world.colour[o] ? world.colour[o] : null, sx: xy ? xy.x : null, sy: xy ? xy.y : null });
+      owner: o >= 0 && world.colour[o] ? world.colour[o] : null, fac: o >= 0 ? world.factions[o] : null,
+      sx: xy ? xy.x : null, sy: xy ? xy.y : null });
+  }
+  // Every other region on the campaign map is land too. RIS Classic's descr_strat lists 160 of
+  // its 300 regions; the game gives the rest to the rebels, and without them the world map and
+  // the region pictures drew Italy, Gaul and Iberia as sea. They have no page (`nopage`), so no
+  // picture of their own. The main campaign lists every region, so this adds nothing there.
+  if (world) {
+    const have = new Set(spec.regions.map((r) => r.token));
+    for (const n of Object.keys(rgbOf)) {
+      if (have.has(n)) continue;
+      const ri = world.idxOf.get(n);
+      // Not the 11-pixel placeholder boxes in the map's corner (Han_Region, Judaeans_Region…).
+      if (ri === undefined || !world.bbox[ri] || world.bbox[ri].n < 20) continue;
+      const xy = world.settleXY[ri];
+      spec.regions.push({ token: n, rgb: rgbOf[n], settlement: dr.regionToCity[n] || null, owner: null, sx: xy ? xy.x : null, sy: xy ? xy.y : null, nopage: true });
+    }
   }
   const crypto = require("crypto");
   const base = path.join(RIS, "world", "maps", "base");
