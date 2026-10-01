@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1524",
+    date: "2026-10-01",
+    items: [
+      { type: "improvement", text: "**Crash reporter stops flagging harmless engine lines.** Heirs placed at map position (0,0) are no longer reported as a crash risk or a mod fault. These are mostly heirs of the hording Parni, and the RIS team has ruled them harmless. Portrait hair variants, the bodyguard size cap, undefined toggles, “CAS file has invalid chunk” and the base game’s ground_rock2.tga typo are also no longer counted as errors. They are now listed together on one “ignored” line. A missing file in a sound pack now gets a note saying which pack needs rebuilding (bundled crash reporter v0.1.59)." },
+    ],
+  },
+
+  {
     version: "0.9.1523",
     date: "2026-10-01",
     items: [
