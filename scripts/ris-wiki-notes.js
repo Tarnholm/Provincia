@@ -91,12 +91,16 @@ function parseGuide(name, md) {
   const body = [];
   let inHead = true;   // meta lines count only before the first section heading or paragraph
   for (const l of lines) {
-    const t = l.trim();
+    // The GitHub wiki's editor puts a <br> before each header line ("<br>Faction: …").
+    const t = l.trim().replace(/^(?:<br\s*\/?>\s*)+/i, '');
     let m;
     if (title === null && (m = /^#\s+(.+)$/.exec(t))) { title = m[1].trim(); continue; }
     if (inHead && (m = META_RE.exec(t))) {
       const k = m[1].toLowerCase(), v = m[2].trim();
-      if (k.indexOf('faction') === 0) meta.factions = v.split(/[,;]/).map((x) => x.trim()).filter(Boolean);
+      // A faction may be written as a link with its emblem ("[<img …> Pergamon](…)"): the name
+      // is the link's text.
+      if (k.indexOf('faction') === 0) meta.factions = v.split(/[,;]/)
+        .map((x) => x.replace(/<img[^>]*>/gi, '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').trim()).filter(Boolean);
       else if (k === 'summary') meta.summary = v;
       else meta.author = v;
       continue;
@@ -107,7 +111,10 @@ function parseGuide(name, md) {
   // The template's instructions sit in an HTML comment, which the site's renderer would print
   // as text; a reader never sees them.
   return { name, title: title || String(name).slice(GUIDE_PREFIX.length).replace(/-/g, ' '), ...meta,
-    body: body.join(LF).replace(/<!--[\s\S]*?-->/g, '').replace(/\n{3,}/g, '\n\n').trim() };
+    body: body.join(LF).replace(/<!--[\s\S]*?-->/g, '')
+      // "<br>1. …" lines, the editor's way of starting a numbered line, become a real list.
+      .replace(/^<br\s*\/?>\s*(?=\d+\.\s)/gim, '').replace(/^([^\n\d][^\n]*)\n(?=1\.\s)/gm, '$1\n\n')
+      .replace(/\n{3,}/g, '\n\n').trim() };
 }
 
 // Faction name or token -> token, from [token, title] pairs (a wiki clone's factions-*.md, or

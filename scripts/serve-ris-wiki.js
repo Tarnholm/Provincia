@@ -729,6 +729,9 @@ main{min-width:0;padding:1.6rem 1.6rem 5rem;width:100%}
    until the tall campaign brief beside it finished. */
 .lede{max-width:none}
 .lede img{float:left;margin:.2rem 1.8rem .8rem 0;max-width:min(42%,34rem);border-radius:8px}
+/* An emblem in a line of text (a community guide's "[<img> Pergamon](…)") stays in the line:
+   floated like a lede picture it left a gap before the name and broke the line spacing. */
+.lede img:is([width="16"],[width="20"],[width="24"],[width="32"]){float:none;display:inline-block;margin:0 .3rem 0 0;border-radius:0;vertical-align:-.3em}
 /* A reform's event picture is a banner across the top, not a floated lede image. */
 .lede .reform-banner p,.lede .reform-banner p.imgrow,.reform-banner p{float:none;display:block;max-width:none;margin:0}
 .lede .reform-banner img,.reform-banner img{float:none;display:block;width:100%;max-width:732px;height:auto;margin:.3rem 0 1.2rem;border-radius:8px}

@@ -1257,6 +1257,32 @@ ${g.rows.sort((a, b) => unitName(a.unit).localeCompare(unitName(b.unit)))
 // Region", "Seleucid Rebels Settlement"): a place kept off the playable map so a faction that
 // is not yet in play still exists. No player ever sees one, so they get no page and are not
 // counted - and "independent" is not a thing in RIS (every real region has an owner).
+//
+// RIS Classic is the exception: its descr_strat places settlements in 160 of its 300 regions
+// and the game gives the rest to the rebels (confirmed by the team 2026-10-01). Those are real
+// map regions, so they get a page held by the Free Peoples, with no size, manpower or buildings,
+// which the strat does not give. A holding region is told apart by its size on the map: the
+// placeholders are 11-pixel boxes in the corner, a real region has hundreds of pixels.
+{
+  const pix = new Map();
+  try {
+    const t = dg.tgaToRaw(fs.readFileSync(path.join(RIS, "world", "maps", "base", "map_regions.tga")));
+    for (let i = 0; i < t.raw.length; i += 3) {
+      const k = `${t.raw[i + 2]},${t.raw[i + 1]},${t.raw[i]}`;
+      pix.set(k, (pix.get(k) || 0) + 1);
+    }
+  } catch { /* no map: nothing is added */ }
+  const dr = dg.parseDescrRegions(fs.readFileSync(path.join(RIS, "world", "maps", "base", "descr_regions.txt"), "latin1"));
+  const rgbOfRegion = {};
+  for (const [k, n] of Object.entries(dr.rgbToRegion)) rgbOfRegion[n] = k;
+  let unlisted = 0;
+  for (const r of regions) {
+    if (byRegion[r.region] || (pix.get(rgbOfRegion[r.region]) || 0) < 20) continue;
+    byRegion[r.region] = { faction: "slave", region: r.region, buildings: [], unlisted: true };
+    unlisted++;
+  }
+  if (unlisted) console.log(`  ${unlisted} regions not in descr_strat: held by the Free Peoples`);
+}
 const PLACEHOLDERS = regions.filter((r) => !byRegion[r.region]);
 const REAL = regions.filter((r) => byRegion[r.region]);
 for (const r of PLACEHOLDERS) {
@@ -1538,7 +1564,7 @@ ${land}
     : held ? "_Nothing is built here at the campaign start._"
       : "_No faction holds this settlement at the campaign start, so the campaign file records nothing built in it._";
   const townGlance = [
-    held ? `**Size:** ${sizeRef(held.level, "../") || "_not determined_"}` : null,
+    held && !held.unlisted ? `**Size:** ${sizeRef(held.level, "../") || "_not determined_"}` : null,
     held && held.pop != null ? `**Manpower:** ${held.pop.toLocaleString("en-US")}` : null,
     held && (held.buildings || []).length ? `**Buildings:** ${held.buildings.length}` : null,
   ].filter(Boolean).join(" · ");
