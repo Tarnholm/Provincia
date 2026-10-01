@@ -68,7 +68,23 @@ function makeConditionReader({ RIS, OUT, traitRef, ancRef }) {
   const cmp = (op, n) => ({ ">": `above ${n}`, ">=": `${n} or more`, "<": `below ${n}`, "<=": `${n} or less`, "=": `exactly ${n}`, "!=": `anything but ${n}` }[op]);
   const pct = (op, n) => ({ ">": `over ${n}%`, ">=": `at least ${n}%`, "<": `under ${n}%`, "<=": `at most ${n}%`, "=": `exactly ${n}%`, "!=": `anything but ${n}%` }[op]);
   const NEG_OP = { ">": "<=", ">=": "<", "<": ">=", "<=": ">", "=": "!=" };
-  const turn = (op, n) => ({ ">": `after turn ${n}`, ">=": `from turn ${n} on`, "<": `before turn ${n}`, "<=": `up to turn ${n}`, "=": `on turn ${n}`, "!=": `on any turn but ${n}` }[op]);
+  // I_TurnNumber is the ENGINE's turn count, and RIS's four-turns-a-year script runs two player
+  // turns to each of it (the mod's own note: "TPY makes it (I_TurnNumber*2)+2"; engine turn 0 is
+  // the first three). So the number in the file is about half the turn the player sees, and is
+  // shown as the player's turn, as the reform and revolt pages do.
+  const P = (n) => 2 * n + 2;   // first player turn of engine turn n (n >= 1)
+  const turn = (op, n) => {
+    n = Number(n);
+    switch (op) {
+      case ">": return `from turn ${P(n + 1)} on`;
+      case ">=": return n <= 0 ? "on any turn" : `from turn ${P(n)} on`;
+      case "<": return n <= 0 ? "never" : `before turn ${P(n)}`;
+      case "<=": return n < 0 ? "never" : `before turn ${P(n + 1)}`;
+      case "=": return n === 0 ? "on turns 1 to 3" : `on turn ${P(n)} or ${P(n) + 1}`;
+      case "!=": return n === 0 ? "from turn 4 on" : `on any turn but ${P(n)} and ${P(n) + 1}`;
+      default: return `turn ${n}`;
+    }
+  };
 
   // Level count per trait, so "= 1" on a one-level trait reads as simply "has it".
   const TRAIT_LEVELS = {};
