@@ -39,6 +39,7 @@ function buildCalibSaveOpts(modDataDir, savePath) {
     const { crackSave } = require("./saveCracker.js");
     const _saveBuf = fs.readFileSync(savePath);
     const cr = crackSave(_saveBuf, modDataDir);
+    out.cracked = cr; // reused by the trade engine (src/tradeEngine.js) so the save is parsed once
     const sf = (cr && cr.settlementFields) || {};
     // committed pops from the calibration save → the tax base tracks the actual
     // campaign state (turn-1 saves equal descr_strat; mid-campaign saves diverge).

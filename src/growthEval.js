@@ -234,6 +234,12 @@ function parseStratUncached(stratPath) {
     // spawned the wrong "seasonal port exclusion" rule — fixed 2026-06-09).
     const ty = ln.match(/^\s*type\s+(\w+)\s+(\S+)/); if (ty) cur.buildings.push({ chain: ty[1], level: ty[2] });
   }
+  // DUPLICATE settlement guard: a region can be listed twice (RIS 2026-10: Napa under kush AND under slave).
+  // The game keeps the FIRST one in file order (live-checked: Napa is Kush's); drop the later copies.
+  const seenRegion = new Set();
+  for (const fac of Object.keys(factions)) {
+    factions[fac].settlements = factions[fac].settlements.filter(s => !s.region || (seenRegion.has(s.region) ? false : (seenRegion.add(s.region), true)));
+  }
   return factions;
 }
 
@@ -334,7 +340,15 @@ function evalAtom(t, ctx) {
   // settlement-tier >= reading (harmless for growth: all live sizeN growth lines are
   // `not is_player`, i.e. AI-only, which the player path never reaches).
   if ((m = t.match(/^size(\d+)/))) return ctx.empireTier != null ? ctx.empireTier === +m[1] : ctx.sizeTier >= +m[1];
-  if (t === "homeland") return ctx.homeland;
+  // `port` = the settlement has a PORT object = its region has a port site (descr_regions base_port_level_N,
+  // the white map_regions pixel) — built harbour or not. Live-checked 2026-10-01: 533/533 port objects carry
+  // base_port_level, 0/779 others; Tunesia, Thamoudaia, Arinna (no port building) take the coastal market line.
+  if (t === "port") return [...(ctx.hidden || [])].some(h => /^base_port_level/i.test(h)) || ctx.buildings.has("port_buildings");
+  // `homeland` is a faction-specific alias chain in RIS (egyptian_homeland = factions { egypt } and
+  // hidden_resource homeland_egyptian): a Ptolemaic-held Egyptian nome is NOT homeland. Live-checked
+  // 2026-10-01 against the engine's land trade (AI "not homeland" +1 trade level). Fall back to
+  // "any homeland_* resource" only when the EDB has no alias.
+  if (t === "homeland") return ctx.aliases && ctx.aliases.homeland != null ? evalReq(ctx.aliases.homeland, ctx) : ctx.homeland;
   // NOTE (latent): `no_other_government` falls through to false below (so `not no_other_government`
   // = true). Correct only because every town has a government at start; a proper buildings-aware
   // check broke the PO model (which populates ctx.buildings differently), so it's left as-is. If a

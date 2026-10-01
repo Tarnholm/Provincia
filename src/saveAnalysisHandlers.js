@@ -856,9 +856,10 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
     let opts;
     let poAnchorByCity = null; // { city: { po, bracket } } — EXACT stored PO from the calibration save
     let setBracketByCity = null; // { city: bracket } — the rate the PLAYER SET in-game (save)
-    let saveApplied = false, saveError = null;
+    let saveApplied = false, saveError = null, saveCracked = null;
     if (savePath) {
       const cs = require("./calibSaveOpts.js").buildCalibSaveOpts(modDataDir, savePath);
+      saveCracked = cs.cracked || null;
       opts = cs.opts || undefined;
       poAnchorByCity = cs.poAnchorByCity;
       setBracketByCity = cs.setBracketByCity || null;
@@ -958,6 +959,16 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
         ...(nTaxH ? { taxHByCity: taxH } : {}),
         ...(nCorr ? { corrByCity: corr } : {}),
         ...(asAI ? { asAI: true, isPlayer: false } : (humanDifficulty ? { humanDifficulty } : {})) };
+    // ENGINE TRADE (src/tradeEngine.js): with a save attached, every settlement's trade is the engine-exact
+    // value from the save's own state (owners, pops, buildings, governors, diplomacy, roads, armies).
+    if (savePath && saveApplied) {
+      try {
+        const t0 = Date.now();
+        const eng = require("./tradeEngine.js").tradeForSave(modDataDir, savePath, saveCracked);
+        budgetOpts.tradeByRegion = eng.byRegion;
+        _writeLog(`[turn1-budget] ${faction}: engine trade from the save (${Object.keys(eng.byRegion).length} settlements, ${Date.now() - t0} ms)`);
+      } catch (e) { _writeLog(`[turn1-budget] ${faction}: engine trade failed, using the model: ${e && e.message}`); }
+    }
     const budget = im.computeTurn1Budget(modDataDir, faction, bracketByCity, budgetOpts);
     if (budget && !budget.error) budget.asAI = !!asAI;
     // FIRST-LOOK pass (2026-08-04, mod-team request): when the campaign opens the

@@ -85,7 +85,10 @@ function parseEDBIncome(edbPath) {
     if (_t === "}") { if (inFC) inFC = false; continue; }
     let m;
     if ((m = ln.match(/^\s*taxable_income_bonus\s+(?:bonus\s+)?(-?\d+)(?:\s+requires\s+(.+))?/))) { add("taxable", { val: +m[1], req: (m[2] || "").trim() }); continue; }
-    if ((m = ln.match(/^\s*trade_base_income_bonus\s+(?:bonus\s+)?(-?\d+)(?:\s+requires\s+(.+))?/))) { add(inFC ? "factionTrade" : "trade", { val: +m[1], req: (m[2] || "").trim() }); continue; }
+    // `trade_base_income_bonus bonus N` ADDS; `trade_base_income_bonus N` (no "bonus") is a LEVEL — the engine keeps
+    // the highest level and adds the bonuses on top (CAPABILITY_LEVEL {level, bonus}). RIS has 8 level lines
+    // (region_base AI +1, hemp/pitch/sulphur supply, foundry); Sousiane's pitch_2 1 + region_base 1 = level 1.
+    if ((m = ln.match(/^\s*trade_base_income_bonus\s+(bonus\s+)?(-?\d+)(?:\s+requires\s+(.+))?/))) { add(inFC ? "factionTrade" : "trade", { val: +m[2], req: (m[3] || "").trim(), level: !m[1] }); continue; }
     if ((m = ln.match(/^\s*trade_level_bonus\s+(?:bonus\s+)?(-?\d+)(?:\s+requires\s+(.+))?/))) { add("tradeLvl", { val: +m[1], req: (m[2] || "").trim() }); continue; }
     if ((m = ln.match(/^\s*mine_resource\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("mine", { val: +m[1], req: (m[2] || "").trim() }); continue; }
     if ((m = ln.match(/^\s*trade_fleet\s+(-?\d+)(?:\s+requires\s+(.+))?/))) { add("fleet", { val: +m[1], req: (m[2] || "").trim() }); continue; }
@@ -137,20 +140,29 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
   const f = factions[want];
   if (!f) return { error: `faction ${faction} not found in descr_strat` };
   const factionTokens = gv.factionTokenSet(want, factionGroups);
-  const tier = empireTier(f.settlements.length);
+  // opts.ownerOf {region: faction}: the owners the campaign has NOW (a save) — towns change hands from turn 1
+  const ownerOf = opts && opts.ownerOf;
+  const mySettlements = ownerOf
+    ? Object.entries(factions).flatMap(([fk, ff]) => ff.settlements.filter(s => (ownerOf[s.region] || fk) === want))
+    : f.settlements;
+  // the empire_sizeN events fire at round end, so a town taken mid-round does not move the tier yet: a save
+  // passes the settlement count the events last saw (opts.sizeCount)
+  const tier = empireTier(opts && opts.sizeCount != null ? opts.sizeCount : mySettlements.length);
 
   const out = [];
   let factionwideTrade = 0; // Σ faction_capability trade bonuses across all the faction's settlements (applied to every settlement)
-  for (const s of f.settlements) {
+  for (const s of mySettlements) {
     const region = byRegion[s.region];
     if (!region) continue;
     // AI PERSPECTIVE: the RIS campaign script DESTROYS government (gov1-4) and colony
     // buildings in every AI settlement at campaign start (building-state audit
     // 2026-06-10) — descr_strat lists them but the AI economy never has them. Drop
     // them from AI features (taxable points, PO, trade) to model the post-script state.
+    // opts.buildingsByRegion {region: [{chain, level}]}: the buildings the campaign has NOW (a save)
+    const srcBuildings = (opts && opts.buildingsByRegion && opts.buildingsByRegion[s.region]) || s.buildings;
     const aiDropped = !isPlayer
-      ? s.buildings.filter(b => !/^government|^colony$/i.test(b.chain))
-      : s.buildings;
+      ? srcBuildings.filter(b => !/^government|^colony$/i.test(b.chain))
+      : srcBuildings;
     const buildings = new Map();
     for (const b of aiDropped) {
       const order = inc.chainLevels[b.chain] || null;
@@ -159,7 +171,8 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
     }
     const ctx = {
       hidden: region.hidden || new Set(), buildings, chainLevels: inc.chainLevels, aliases: inc.aliases,
-      capital: s.capital, faction: want, factionTokens,
+      // opts.capitalRegion: the capital the campaign has NOW (a save) — AI factions move theirs on turn 1
+      capital: (opts && opts.capitalRegion) ? s.region === opts.capitalRegion : s.capital, faction: want, factionTokens,
       homeland: [...(region.hidden || [])].some(h => h.startsWith("homeland")),
       sizeTier: 1, resources: resourcesByRegion[s.region] || new Set(),
       // noSizeEvents (2026-08-04): model the FIRST-LOOK state — the empire_sizeN major
@@ -174,7 +187,7 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
     // be active for the turn-1 econ block). Hierarchy: winter > size > base.
     const cat = (req) => /\bdisabling_in_winter\b/.test(req || "") ? "winter" : /\bsize\d+\b/.test(req || "") ? "size" : "base";
     const tax = { base: 0, size: 0, winter: 0 }, trade = { base: 0, size: 0, winter: 0 };
-    let tradeLvlSum = 0, mineSum = 0, fleetSum = 0, wallLevel = -1, healthPips = 0, lawBonus = 0, lawWalls = 0, lawTerrain = 0;
+    let tradeLevel = 0, tradeLvlSum = 0, mineSum = 0, fleetSum = 0, fleetLevel = 0, wallLevel = -1, healthPips = 0, lawBonus = 0, lawWalls = 0, lawTerrain = 0;
     const explain = (opts && opts.explain) ? [] : null;
     // Wall/defense law lines carry `is_toggled "settlement condition"` — live-verified
     // ACTIVE in peace (Arsinoe +1 palisade, Kyrene +1 stone wall, Ptolemais +1 wall;
@@ -186,11 +199,14 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
       const cap = inc.capIndex[b.chain + ":" + b.level];
       if (!cap) continue;
       for (const x of cap.taxable) if (gv.evalReq(x.req, ctx)) { tax[cat(x.req)] += x.val; if (/^hinterland_region$/i.test(b.chain)) taxableRegionBase += x.val; else taxableBuilding += x.val; if (explain) explain.push({ chain: b.chain + ":" + b.level, val: x.val, req: x.req }); }
-      for (const x of cap.trade) if (gv.evalReq(x.req, ctx)) { trade[cat(x.req)] += x.val; if (explain) explain.push({ kind: "trade", chain: b.chain + ":" + b.level, val: x.val, req: x.req }); }
+      for (const x of cap.trade) if (gv.evalReq(x.req, ctx)) {
+        if (x.level) tradeLevel = Math.max(tradeLevel, x.val); else trade[cat(x.req)] += x.val;
+        if (explain) explain.push({ kind: "trade", chain: b.chain + ":" + b.level, val: x.val, req: x.req, level: !!x.level });
+      }
       for (const x of (cap.factionTrade || [])) if (gv.evalReq(x.req, ctx)) factionwideTrade += x.val; // factionwide bonus — counted once, applied to ALL settlements after the loop
       for (const x of cap.tradeLvl) if (gv.evalReq(x.req, ctx)) tradeLvlSum += x.val;
       for (const x of cap.mine) if (gv.evalReq(x.req, ctx)) mineSum += x.val;
-      for (const x of cap.fleet) if (gv.evalReq(x.req, ctx)) fleetSum += x.val;
+      for (const x of cap.fleet) if (gv.evalReq(x.req, ctx)) { fleetSum += x.val; fleetLevel = Math.max(fleetLevel, x.val); }
       for (const x of (cap.walls || [])) if (gv.evalReq(x.req, ctx)) wallLevel = Math.max(wallLevel, x.val);
       for (const x of (cap.health || [])) if (gv.evalReq(x.req, ctx)) healthPips += x.val;
       for (const x of (cap.law || [])) if (lawReqOk(x.req)) {
@@ -199,12 +215,14 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
         else if (/^hinterland_region$/i.test(b.chain)) lawTerrain += x.val;
       }
     }
+    // level lines count once (the highest); kept in the base bucket so the parts still add up
+    trade.base += tradeLevel;
     const taxablePct = tax.base + tax.size + tax.winter, tradePct = trade.base + trade.size + trade.winter;
     // farming level. GROWTH semantics = max across chains (validated); for INCOME the
     // per-chain levels may ADD (farms + irrigation both feed farm income) — both exposed:
     // farmLevel (max, growth-style) and farmLevelSum (sum of per-chain maxima).
     let farmLevel = 0, farmLevelSum = 0, farmBonus = 0;
-    for (const b of s.buildings) {
+    for (const b of srcBuildings) {
       const cap = growthEDB.capIndex[b.chain + ":" + b.level];
       if (!cap) continue;
       let fl = null;
@@ -222,10 +240,10 @@ function computeIncomeFeatures(modDataDir, faction, opts) {
     out.push({
       region: s.region, settlement: region.settlement, pop: s.pop, level: s.level, capital: !!s.capital,
       taxExplain: explain || undefined,
-      taxablePct, taxableRegionBase, taxableBuilding, tradePct, taxPctParts: tax, tradePctParts: trade, tradeLvlSum, mineSum, fleetSum, farmLevel, farmLevelSum, farmN: region.farmN || 0,
+      taxablePct, taxableRegionBase, taxableBuilding, tradePct, taxPctParts: tax, tradePctParts: trade, tradeLvlSum, mineSum, fleetSum, fleetLevel, farmLevel, farmLevelSum, farmN: region.farmN || 0,
       wallLevel, healthPips, lawBonus, lawWalls, lawTerrain,
       resources: resList, portLevel, roadLevel,
-      buildings: s.buildings.map(b => b.chain + ":" + b.level),
+      buildings: srcBuildings.map(b => b.chain + ":" + b.level),
       ...(explain ? { taxableLines: explain } : {}),
     });
   }
@@ -679,7 +697,7 @@ const CALIB = {
   // 2026-06-18). f10 = per-frontier distance/cost; the far tail does not form a route.
   // Baktria: 5 traded all f10<=319, the 2 excluded (Margiane/Notia_Margiane) f10>=493 → cutoff ~400.
   // useFrontierGraph swaps pixel-adjacency for the frontier graph; falls back to adjacency if absent.
-  useFrontierGraph: true, frontierF10Cutoff: 400,
+  useFrontierGraph: true, frontierF10Cutoff: Infinity,
   // LAND-LANE LIVE PINS (2026-06-12, three corpora: julii 26-town t1 scrolls
   // [jcrops/julii/routes-all.tsv — every town's land partner list COMPLETE, row
   // sums = scroll totals], capua clean-vintage scroll [Freg 91/Bov 60/Malev 184/
@@ -1100,6 +1118,19 @@ function _mapVer(modDataDir) {
 }
 // RTW's bit-hack fast integer-sqrt — the same √ approximation the engine uses in its trade-value math.
 function _fastSqrt(x){ const _b=new ArrayBuffer(4),_f=new Float32Array(_b),_i=new Int32Array(_b); _f[0]=x; _i[0]=(((_i[0]-0x3f800000)|0)>>1)+0x3f800000; return _f[0]; }
+// One LAND trade route exactly as the game computes it (32-bit floats, integer percent):
+//   v    = (0.13·fastSqrt(popA+popB) + basket) · band            band 1 own/trade rights, 0.33 without, 0 war
+//   row  = trunc(mult · v), mult = max(0, 1 + trade_level_bonus + min(their road, our road_level))
+//   shown = max(0, trunc((100 + pct) · row / 100)), pct = governor Trading + 10·trade_base_income_bonus
+// basket = 2·(our goods they lack) + (their goods we lack), each good qty × trade value.
+const _F013 = Math.fround(0.13), _F033 = Math.fround(0.33);
+function _landRouteExact(popSum, basket, rights, mult, pct) {
+  const f = Math.fround;
+  let v = f(f(f(_fastSqrt(popSum) * _F013) + 0) + basket);
+  if (!rights) v = f(v * _F033);
+  const row = Math.trunc(f(Math.max(0, mult) * v));
+  return Math.max(0, Math.trunc(((100 + pct) * row) / 100));
+}
 function frontierGraph(modDataDir) {
   if (!modDataDir) return {};
   _modEpochCheck(modDataDir);
@@ -1489,18 +1520,23 @@ function wonderOwners(modDataDir) {
 // partner rides that partner's own market/trade-building bonus (its export leg was boosted by it), but each
 // budget's colonyMByRegion only covers its own faction's regions — so a foreign import (e.g. Seleucid Antioch
 // importing Rhodes' goods) silently dropped Rhodes' market bonus. Built once per mod dir (cached).
+// The faction the human plays. RIS's EDB gives AI and player towns different trade bonuses and trade
+// fleets (`is_player` / `not is_player` lines), so every cross-faction evaluation needs to know it.
+let _playerFac = null;
+function setPlayerFaction(f) { _playerFac = f || null; }
 const _tradePctAllCache = {};
 function tradePctByRegionAll(modDataDir) {
   _modEpochCheck(modDataDir);
-  if (_tradePctAllCache[modDataDir]) return _tradePctAllCache[modDataDir];
+  const _ck = modDataDir + "|" + _playerFac;
+  if (_tradePctAllCache[_ck]) return _tradePctAllCache[_ck];
   const out = {};
   try {
     const ctx = tradePartnerCtx(modDataDir);
     for (const f of new Set(Object.values(ctx.ownerOfRegion))) {
-      try { const F = computeIncomeFeatures(modDataDir, f); for (const s of (F.settlements || [])) out[s.region] = (s.tradePct || 0) * 10; } catch { /* skip faction */ }
+      try { const F = computeIncomeFeatures(modDataDir, f, { isPlayer: f === _playerFac }); for (const s of (F.settlements || [])) out[s.region] = (s.tradePct || 0) * 10; } catch { /* skip faction */ }
     }
   } catch { /* no ctx */ }
-  return (_tradePctAllCache[modDataDir] = out);
+  return (_tradePctAllCache[_ck] = out);
 }
 
 // ---- region ownership + starting allies (trade agreements) + all port towns ----
@@ -1672,7 +1708,8 @@ function tradeGoodsByRegion(modDataDir) {
 const _seaLaneCache = {};
 function seaLanesByRegion(modDataDir) {
   _modEpochCheck(modDataDir);
-  if (_seaLaneCache[modDataDir]) return _seaLaneCache[modDataDir];
+  const _sk = modDataDir + "|" + _playerFac;
+  if (_seaLaneCache[_sk]) return _seaLaneCache[_sk];
   const out = {};
   try {
     const { ownerOfRegion, allies, wars, popOfRegion } = tradePartnerCtx(modDataDir);
@@ -1810,7 +1847,7 @@ function seaLanesByRegion(modDataDir) {
         }
         out2[A] = lanes;
       }
-      return (_seaLaneCache[modDataDir] = out2);
+      return (_seaLaneCache[_sk] = out2);
     }
     // ★ RIS (map 0x7b) SEA-LANE SELECTION — ROW-CRACKED 2026-07-05 against the fresh 12-town per-route
     // ground truth (scripts/ris-rome-perroute-gt-2026-07-05.json, scored by scripts/sea-row-diff.js).
@@ -1841,6 +1878,13 @@ function seaLanesByRegion(modDataDir) {
       const _rights = (fa, fb) => fa === fb || (/^romans?_/.test(fa) && /^romans?_/.test(fb)) ||
         (allies[fa] && allies[fa].has(fb)) || prot.suzerainOf[fa] === fb || prot.suzerainOf[fb] === fa;
       const exportPick = {}; // region -> [{to, d}] greedy value-ranked picks
+      // SLOTS = the town's trade_fleet capability, evaluated from the EDB like the game does (live-checked
+      // 2026-10-01 on the whole map): an AI shipwright outside its homeland and not the capital gets 1 fleet,
+      // the player's always gets 2. Falls back to the built port level when the EDB has no trade_fleet line.
+      const fleetOf = {};
+      for (const f of new Set(ports.map(p => p.fac))) {
+        try { for (const st of (computeIncomeFeatures(modDataDir, f, { isPlayer: f === _playerFac }).settlements || [])) if (st.fleetLevel > 0) fleetOf[st.region] = st.fleetLevel; } catch { /* keep port level */ }
+      }
       for (const p of ports) {
         const F = p.fac, A = p.region;
         if (F === "slave") continue;
@@ -1857,7 +1901,7 @@ function seaLanesByRegion(modDataDir) {
           cands.push({ r, d: fr.dist, val });
         }
         cands.sort((x, y) => y.val - x.val);
-        exportPick[A] = cands.slice(0, Math.max(1, p.level)).map(c => ({ to: c.r, d: c.d }));
+        exportPick[A] = cands.slice(0, Math.max(1, Math.min(3, fleetOf[A] || p.level))).map(c => ({ to: c.r, d: c.d }));
       }
       const inbound = {}; // P -> [{from, d}] exporters that picked P
       for (const A in exportPick) for (const c of exportPick[A]) (inbound[c.to] = inbound[c.to] || []).push({ from: A, d: c.d });
@@ -1882,10 +1926,10 @@ function seaLanesByRegion(modDataDir) {
         }
         out2r[A] = lanes;
       }
-      return (_seaLaneCache[modDataDir] = out2r);
+      return (_seaLaneCache[_sk] = out2r);
     }
   } catch { /* none */ }
-  return (_seaLaneCache[modDataDir] = out);
+  return (_seaLaneCache[_sk] = out);
 }
 
 // DEV WHAT-IF (2026-08-03, Trade Lanes "All built" toggle): the sea-lane set
@@ -2224,8 +2268,20 @@ function parseProtectorates(modDataDir) {
   const clientsOf = {}, suzerainOf = {};
   try {
     const dir = path.join(modDataDir, "world", "maps", "campaign", "imperial_campaign");
+    // Only the script(s) descr_strat actually runs (`script` then <file>). RIS ships an inactive alternate
+    // "ris_campaign_script - protectorates.txt" whose become_protector lines never execute — reading it gave
+    // the Antigonids, Seleucids and Carthage clients (and trade rights) the game doesn't have (live-checked
+    // 2026-10-01: Argos, Characene, Lysiad and Bactria trade at the no-rights 0.33 / 0.5).
+    let active = null;
+    try {
+      const ds = fs.readFileSync(path.join(dir, "descr_strat.txt"), "latin1").split(/\r?\n/);
+      for (let i = 0; i < ds.length - 1; i++) if (/^\s*script\s*$/i.test(ds[i])) {
+        const nm = ds[i + 1].replace(/;.*/, "").trim(); if (nm) (active = active || new Set()).add(nm.toLowerCase());
+      }
+    } catch { /* fall back to every script */ }
     for (const f of fs.readdirSync(dir)) {
       if (!/\.txt$/i.test(f) || /^descr_strat/i.test(f)) continue;
+      if (active && !active.has(f.toLowerCase())) continue;
       const text = fs.readFileSync(path.join(dir, f), "latin1");
       if (!/become_protector/i.test(text)) continue;
       for (const raw of text.split(/\r?\n/)) {
@@ -2248,6 +2304,9 @@ function parseProtectorates(modDataDir) {
 // income, wages, corruption, armyBudget } } — armyBudget = income − wages − corruption
 // = the sustainable per-turn upkeep budget for armies (the Army Setup unit budget).
 function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
+  // who the human plays: explicit opts.playerFaction, else the faction budgeted from the player's seat
+  if (opts && Object.prototype.hasOwnProperty.call(opts, "playerFaction")) setPlayerFaction(opts.playerFaction);
+  else if (!(opts && opts.isPlayer === false)) setPlayerFaction(faction);
   // opts.noSizeEvents → first-look economy (empire_sizeN events not fired yet; see
   // computeIncomeFeatures). Partner-side trade rates (tradePctByRegionAll) stay at
   // steady-state — each partner's own size events fire on its own schedule, and the
@@ -2582,7 +2641,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
         const roadMult = 1 + Math.min(Math.max(0, (s.roadLevel || 0) - 1), roadOfRegion[n] || 0);
         // qty-weighted exclusion cargo: exporter's goods n lacks (+ ½ of n's goods exporter lacks)
         const _exC = _landCargo(s.region, n), _imC = _landCargo(n, s.region);
-        let _landRow;
+        let _landRow, _dbg = null;
         if (CALIB.useLandingFrontiers) {
           // ENGINE LAND-TRADE LAW (Gemini-confirmed): Cargo · BAND · Road_Multiplier · landBandBump. NO distance
           // term (land is localized adjacent exchange — f10 is only the validity check, not a divisor). The
@@ -2600,11 +2659,14 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
             let _exTV = 0, _imTV = 0;
             for (const r in _gx) if (!(r in _gy)) _exTV += _gx[r] * (_rawVal[r] || 0);
             for (const r in _gy) if (!(r in _gx)) _imTV += _gy[r] * (_rawVal[r] || 0);
-            const _vband = _landAlliedBand.has(own) ? 1.0 : CALIB.seaBandForeign;
             // popOfRegion is the reliable pop source (the live save s.pop is garbage for some settlements; the old
             // land law never read pop so it was latent). Exporter pop = popOfRegion[s.region].
             const _popExp = popOfRegion[s.region] || s.pop || 0;
-            _landRow = Math.trunc(roadMult * _vband * (0.13 * _fastSqrt(_popExp + (popOfRegion[n] || 0)) + 2 * _exTV + _imTV));
+            // trade_level_bonus (river ports +1/+2) adds to the same multiplier as the road term.
+            const _mult = 1 + (s.tradeLvlSum || 0) + Math.min(Math.max(0, (s.roadLevel || 0) - 1), roadOfRegion[n] || 0);
+            const _pct = (colonyMByRegion[s.region] || 0) + ((gv0 && gv0.trading) || 0);
+            _landRow = _landRouteExact(_popExp + (popOfRegion[n] || 0), 2 * _exTV + _imTV, _landAlliedBand.has(own), _mult, _pct);
+            if (process.env.TRADE_DEBUG) _dbg = { basket: 2 * _exTV + _imTV, rights: _landAlliedBand.has(own), mult: _mult, pct: _pct, popSum: _popExp + (popOfRegion[n] || 0) };
           } else {
             const _band = own === facLow ? CALIB.landBandOwn : (tradeRightsSet.has(own) ? CALIB.seaBandAgree : CALIB.seaBandForeign);
             _landRow = _landRate * CALIB.landBandBump * (_exC + CALIB.tradeLandImportFrac * _imC + CALIB.tradeLandConst)
@@ -2614,11 +2676,13 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
           _landRow = _landRate * (_exC + CALIB.tradeLandImportFrac * _imC + CALIB.tradeLandConst)
             * roadMult * (hasRights ? 1 : CALIB.tradeNoRights);
         }
-        landTrade += _vanLandM ? Math.trunc(_landM * _landRow) : _landRow;
+        // the exact law already applies the trade bonus (integer percent) inside _landRouteExact
+        const _shown = (_vanLandM && CALIB.useLandingFrontiers) ? _landRow : _vanLandM ? Math.trunc(_landM * _landRow) : _landRow;
+        landTrade += _shown;
         if (process.env.TRADE_DEBUG) (global.__TDBG = global.__TDBG || []).push({
           kind: "land", from: s.settlement, fromRegion: s.region, toRegion: n,
           cargo: (tradeQtyVal[n] || 0), road: (roadOfRegion[n] || 0) + (s.roadLevel || 0),
-          popFrom: s.pop, popTo: (popOfRegion[n] || 0), exp: _vanLandM ? Math.trunc(_landM * _landRow) : Math.round(_landRow), imp: 0
+          popFrom: s.pop, popTo: (popOfRegion[n] || 0), exp: _vanLandM ? _shown : Math.round(_landRow), imp: 0, ...(_dbg || {})
         });
       }
       // TRADE-BUILDING bonus M (cracked in-game 2026-06-25, Corduba trader add/remove): the settlement's
@@ -2890,7 +2954,11 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
     const _measKey = _measTbl && String(s.settlement || "").replace(/[\s-]+/g, "_");
     const _meas = _measTbl ? (_measTbl[_measKey] != null ? _measTbl[_measKey] : _measTbl[s.settlement]) : null;
     if (_meas != null) { tradeLandSum += _meas - landTrade; tradeSeaSum -= seaTrade; }
-    const tTrade = _meas != null ? _meas : landTrade + seaTrade;
+    // ENGINE TRADE (src/tradeEngine.js, opts.tradeByRegion): with a save attached, every settlement's trade
+    // comes from the engine-exact calculator fed by the save's own state — it replaces the model above.
+    const _eng = opts && opts.tradeByRegion ? opts.tradeByRegion[s.region] : null;
+    if (_eng && _meas == null) { tradeLandSum += _eng.landTotal - landTrade; tradeSeaSum += (_eng.seaTotal + _eng.wonder) - seaTrade; }
+    const tTrade = _meas != null ? _meas : _eng ? _eng.total : landTrade + seaTrade;
     // ADMIN income (the in-game scroll's 4th row, labeled "Governor" — ledger f9
     // 'other'): admin% × town gross.
     // EXACT LAW (2026-06-11 live cyrene, 7/7 towns to the denarius): admin% =
@@ -2982,6 +3050,8 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
       // per-town level the rounded value matches the panel (Venusia 809.7→810) — flooring it
       // would show 809 and we can't lift the law without breaking the faction sum. (2026-06-16)
       bracket, taxes: Math.trunc(tTax), farming: Math.round(tFarm), mining: Math.floor(tMine), trade: Math.floor(tTrade), admin: Math.floor(tAdmin),
+      // the engine's trade rows (the in-game trade scroll): land routes, own fleets, imports, Colossus
+      ...(_eng ? { tradeEngine: true, tradeRows: { land: _eng.land, fleets: _eng.fleets, imports: _eng.imports, wonder: _eng.wonder } } : {}),
       corruption: Math.floor(corrAmt),
       _dist: dist, _gross: (tTaxNoH + tFarm + tMine + tTrade + tAdmin), _law: lawTot,
       corrCalibrated: corrOv != null ? true : undefined,
@@ -3101,7 +3171,7 @@ function computeTurn1Budget(modDataDir, faction, bracketByCity, opts) {
 
 _modEpochCaches.push(_coordCache, _frontierCache, _mapVerCache, _landingCache, _adjCache, _seaCache, _mineQtyCache, _mineDepositCache, _mineProspectCache, _wonderCache, _tradePctAllCache, _tradeCtxCache, _tradeQtyCache, _tradeQtyMapsCache, _tradeGoodsCache, _seaLaneCache, _seaPortDistCache, _seaFlowPtsCache, _seaLaneGoodsCache, _seaLaneValueCache, _landLaneCache, _protCache, _adjLenCache);
 
-module.exports = { empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, bodyguardBlockByFaction, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, regionBorderLen, frontierGraph, landingFrontierGraph, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion, devAllBuiltSeaLanes, seaFlowPtsByLane, seaLaneGoods, seaLaneValues, landLaneData, seaPortDistDepth, mineDepositsByRegion, mineProspects,
+module.exports = { setPlayerFaction, wonderOwners, empireTier, parseEDBIncome, parseResourceValues, computeIncomeFeatures, countCharacters, computeTurn1Budget, armyUpkeepEDU, bodyguardBlockByFaction, parseProtectorates, TRIBUTE_RATE, CALIB, regionAdjacency, regionBorderLen, frontierGraph, landingFrontierGraph, tradePartnerCtx, tradeQtyValByRegion, tradeQtyMapsByRegion, tradeGoodsByRegion, seaLanesByRegion, devAllBuiltSeaLanes, seaFlowPtsByLane, seaLaneGoods, seaLaneValues, landLaneData, seaPortDistDepth, mineDepositsByRegion, mineProspects,
   // mod-file epoch (see the _modEpochCheck block): other modules with modDir-keyed
   // caches over the SAME mod files (poModel) register them here so one epoch sweep
   // clears everything consistently.

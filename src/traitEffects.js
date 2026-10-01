@@ -312,6 +312,10 @@ function govEffectByCityFromSave(cracked, parsed, modDataDir) {
     // frozen turn-1. This is the value the in-game settlement tax card shows; it is NOT
     // recoverable from the (clobbered/derived) traits, so read it directly. (2026-06-17)
     if (ch.taxEffect != null) e.taxEffect = ch.taxEffect;
+    // AUTHORITATIVE governor Trading %: the save's own attribute vector (index 24). Exact vs the running
+    // game for all 1312 governors (2026-10-01); the trait re-derivation above level-floors sub-threshold
+    // traits and misses ancillaries gained in play, which put 89 governors off by 5-15%.
+    if (ch.tradingEffect != null) e.trading = ch.tradingEffect;
     if (e.growthFarm || e.health || e.squalor || e.tax || e.trading || e.mining || e.influence || e.law || e.unrest || e.localPop || e.mgmt || e.mgmtStat != null || e.taxEffect != null) out[city] = e;
   }
   return out;

@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1526",
+    date: "2026-10-02",
+    items: [
+      { type: "improvement", text: "**Settlement trade income now matches the game to the denarius.** Trade is computed from your save the way the game computes it: every land route (population, goods, trade rights, road links and road levels, the governor's trading skill), every sea route (which ports a town's fleets pick, distance, docks, blockades, enemy armies in the region), the imports each partner sends back, and the Colossus. Checked against the running game on all 811 faction-owned settlements of a Turn 2 save: every one matches. Hover a settlement's trade value to see its routes row by row, like the in-game income scroll." },
+    ],
+  },
+
+  {
     version: "0.9.1525",
     date: "2026-10-01",
     items: [

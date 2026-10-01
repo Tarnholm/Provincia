@@ -5,6 +5,19 @@ import React from "react";
 import { createPortal } from "react-dom";
 import FactionIcon from "../FactionIcon";
 
+// The trade cell's tooltip when the value came from the save-driven trade engine: the same rows as the
+// in-game trade scroll (land routes, own fleets, imports) so a town can be checked line by line.
+function tradeRowsTitle(rows) {
+  const name = (x) => (x || "").replace(/_/g, " ");
+  const lines = ["Trade income from the save — the game's own trade rules, row by row as on the in-game trade scroll:"];
+  for (const r of rows.land || []) lines.push(`  land  ${name(r.toSettlement || r.to)}  ${r.value}`);
+  for (const f of rows.fleets || []) lines.push(`  ⚓ export  ${name(f.toSettlement || f.to)}  ${f.export}`);
+  for (const i of rows.imports || []) lines.push(`  ⚓ import  ${name(i.fromSettlement || i.from)}  ${i.value}`);
+  if (rows.wonder) lines.push(`  Colossus  +${rows.wonder}`);
+  if (lines.length === 1) lines.push("  no trade routes");
+  return lines.join("\n");
+}
+
 export default function ArmySetupModal({
   activeIconsDir,
   armyBudgetFloor,
@@ -513,7 +526,7 @@ export default function ArmySetupModal({
                                   title={s.govIncome ? `Governor income traits applied (parsed from descr_strat starting traits + ancillaries, exact-tile binding):${s.govIncome.tax ? `\n  tax ${s.govIncome.tax > 0 ? "+" : ""}${s.govIncome.tax}%` : ""}${s.govIncome.trading ? `\n  trade ${s.govIncome.trading > 0 ? "+" : ""}${s.govIncome.trading}%` : ""}${s.govIncome.mining ? `\n  mining ${s.govIncome.mining > 0 ? "+" : ""}${s.govIncome.mining}%` : ""}\nFrom: ${(s.govIncome.hits || []).join(", ")}` : undefined}>
                                   {s.taxes}{s.taxH != null ? <span style={{ color: "#7fd1c0", fontSize: "0.64rem", cursor: "help" }} title={`Calibrated from your pasted live reading: per-campaign tax multiplier ×${s.taxH.toFixed(2)} applied (live = model × H, the engine's hidden 5%-step campaign roll).`}> {s.taxH === 1 ? "✓" : `×${s.taxH.toFixed(2)}`}</span> : null}{s.govIncome ? <span style={{ color: s.govIncome.tax >= 0 ? "#9fd37f" : "#e8a07a", fontSize: "0.66rem" }}> 👤</span> : null}</td>
                                 <td style={{ color: "#9fd37f" }}>{s.farming}</td>
-                                <td style={{ color: "#cfd37f" }} title="Trade income (land routes + sea lanes).">{s.trade != null ? Math.round(s.trade) : 0}</td>
+                                <td style={{ color: "#cfd37f", cursor: s.tradeRows ? "help" : "default" }} title={s.tradeRows ? tradeRowsTitle(s.tradeRows) : "Trade income (land routes + sea lanes)."}>{s.trade != null ? Math.round(s.trade) : 0}{s.tradeRows ? <span style={{ color: "#7fd1c0", fontSize: "0.64rem" }}> ✓</span> : null}</td>
                                 <td style={{ color: (s.corruption ? "#e8a07a" : "#667"), cursor: s.corruption ? "help" : "default" }} title={s.corruption ? `Corruption ('Other' expenditure on the in-game settlement scroll) ≈−${Math.round(s.corruption)}/turn. Compare against the scroll — a mismatch flags a miscomputed town.` : "No corruption (capital / low-distance / law-suppressed)."}>{s.corruption ? `−${Math.round(s.corruption)}` : "0"}</td>
                                 <td style={{ color: (s.admin ? "#d3c89f" : "#667") }} title={s.admin ? `Governor administration income (the scroll's 'Admin'/'Other' income line) ≈+${Math.round(s.admin)}/turn — admin% × town gross.` : "No admin income."}>{s.admin ? Math.round(s.admin) : 0}</td>
                                 <td style={{ color: "#9fd3c0", fontWeight: 600 }} title={`Settlement NET income (farms + taxes + trade + admin − corruption) = the in-game scroll's 'Net Income' line${s.corrCalibrated ? " · corruption calibrated to your live paste" : ""}.`}>{s.totalIncome != null ? s.totalIncome : ((s.taxes || 0) + (s.farming || 0) + (s.trade || 0) + (s.admin || 0) - (s.corruption || 0))}</td>

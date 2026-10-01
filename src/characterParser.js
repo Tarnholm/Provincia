@@ -415,7 +415,7 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
   // on all 7 Cyrene governors in BOTH the Turn-1 and Turn-2 saves
   // (Magas −25, Perseus +5, Hermokrates +10, Aristoteles +5, others 0), giving
   // the correct faction tax total of 3995 with Automala = 594.
-  let taxEffect = null;
+  let taxEffect = null, tradingEffect = null;
   {
     // Locate the stat cluster by its frame signature [u16=23][u32=50] rather
     // than a fixed offset. The frame's exact position drifts ±4 by record
@@ -460,6 +460,13 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
         // TaxCollection effects are small (±~50). Anything larger is a garbage
         // read (frame mislocated); leave null so the caller can fall back.
         if (Math.abs(te) <= 100) taxEffect = te;
+      }
+      // Trading effect = attribute 24 of the same vector (frame+4+4*24 = frame+100): the engine's own
+      // governor Trading % (traits at their threshold level + ancillaries). Live-checked 2026-10-01
+      // against the running game for every governor on the map.
+      if (frameP + 100 + 4 <= buf.length) {
+        const tr = buf.readInt32LE(frameP + 100);
+        if (Math.abs(tr) <= 200) tradingEffect = tr;
       }
     }
   }
@@ -621,6 +628,7 @@ function parseCharacter(buf, offset, nameLookup, traitNames, layoutB = false) {
     influence,
     loyalty,
     taxEffect,
+    tradingEffect,
   };
 }
 
