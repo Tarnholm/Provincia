@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1527",
+    date: "2026-10-02",
+    items: [
+      { type: "improvement", text: "**Trade Lanes map: roads redrawn for the current RIS map.** The road network was read again from the game after this summer's map changes: 356 settlements now connect to different neighbours than before (3,003 roads in all). Settlements the game no longer reaches by road, such as Alexandreia-Arachosia, now show none, as in the game." },
+    ],
+  },
+
+  {
     version: "0.9.1526",
     date: "2026-10-02",
     items: [
