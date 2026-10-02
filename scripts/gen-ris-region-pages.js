@@ -384,9 +384,39 @@ function loadMapResources() {
     const qty = parseInt(m[2], 10);
     e.set(type, (e.get(type) || 0) + (Number.isFinite(qty) ? qty : 1));
   }
-  return { out, placed, resolved, checked, agreed };
+  // The Seven Wonders: `landmark <type> <x>, <y>` in the same file, on the same grid. RIS Classic
+  // writes them with tabs and commas, the main campaign with spaces; RIS Light has none.
+  const landmarks = [];
+  for (const m of strat.matchAll(/^landmark\s+([a-z_]+)\s*,?\s*(-?\d+)\s*,\s*(-?\d+)/gim)) {
+    landmarks.push({ type: m[1].toLowerCase(), x: +m[2], y: +m[3], region: regionNear(+m[2], +m[3]) });
+  }
+  return { out, placed, resolved, checked, agreed, landmarks };
 }
 const MAP_RESOURCES = loadMapResources();
+
+// ── the Seven Wonders ────────────────────────────────────────────────────────
+// Asked for 2026-10-02. RIS places the wonders (descr_strat `landmark` lines) but defines nothing
+// else about them: their names, descriptions, effects and pictures are the base game's
+// (data/text/landmarks.txt, data/ui/wonders/*.tga in Rome Remastered), which RIS does not
+// override. A file RIS does ship takes precedence. landmarks.txt lists every wonder twice; the
+// second copy fixes the first's typos, so the last entry wins.
+const RR_DATA = "C:/Program Files (x86)/Steam/steamapps/common/Total War ROME REMASTERED/Contents/Resources/Data/data";
+const WONDER_IMAGE = { temple: "artemis", mausoleum: "mausoleum", pyramids_and_sphinx: "pyramid", pharos: "pharos", colossus: "colossus", statue: "zeus", gardens: "gardens" };
+const WONDER_TEXT = (() => {
+  const out = {};
+  let t = null;
+  for (const p of [path.join(RIS, "text", "landmarks.txt"), path.join(RR_DATA, "text", "landmarks.txt")]) {
+    try { t = fs.readFileSync(p, "utf16le"); break; } catch { /* next */ }
+  }
+  if (!t) return out;
+  for (const m of t.matchAll(/^\{([a-z_]+?)_(title|short_descr|long_descr|effects)\}[ \t]*([^\r\n]*)/gm)) {
+    (out[m[1]] = out[m[1]] || {})[m[2]] = m[3].trim().replace(/\\n/g, "\n");
+  }
+  return out;
+})();
+const WONDERS = (MAP_RESOURCES.landmarks || []).filter((w) => WONDER_TEXT[w.type] && WONDER_TEXT[w.type].title);
+const wonderAnchor = (w) => WONDER_TEXT[w.type].title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const wondersIn = (region) => WONDERS.filter((w) => w.region === region);
 
 // Every region carries one baseline `slaves` resource, so listing it says nothing about the
 // region — only a surplus above that baseline is worth showing. Verified rather than assumed:
@@ -1504,6 +1534,7 @@ for (const r of list) {
 
   const land = landSection(r);
   const mapImg = `![Map of ${placeName(r.region)} and its neighbours](../region-maps/${encodeURIComponent(r.region)}.webp)`;
+  const wonderLine = wondersIn(r.region).map((w) => `**Wonder:** [${WONDER_TEXT[w.type].title}](../wonders.md#${wonderAnchor(w)})`).join("\n\n");
   const body = `# ${placeName(r.region)}
 
 [← all regions and settlements](../regions.md) · [wiki index](../README.md)
@@ -1516,7 +1547,7 @@ ${mapImg}
 
 **Its settlement is [${settleName}](${settleHref})**${ownerPhrase ? `, held at the campaign start by ${ownerPhrase}` : ""}.
 
-${[glance, held ? null : `This region begins **independent**. If it revolts, the rebels are ${r.rebels}.`].filter(Boolean).join("\n\n")}
+${[glance, held ? null : `This region begins **independent**. If it revolts, the rebels are ${r.rebels}.`, wonderLine].filter(Boolean).join("\n\n")}
 
 </div>
 
@@ -1579,7 +1610,7 @@ ${mapImg}
 <div class="fmeta">
 
 The settlement of the region of **[${placeName(r.region)}](../regions/${encodeURIComponent(r.region)}.md)**${ownerPhrase ? `, held at the campaign start by ${ownerPhrase}` : ""}.
-${townGlance ? `\n${townGlance}\n` : ""}${held ? "" : `\nNo faction holds it at the campaign start. If the region revolts, the rebels are ${r.rebels}.\n`}
+${townGlance ? `\n${townGlance}\n` : ""}${held ? "" : `\nNo faction holds it at the campaign start. If the region revolts, the rebels are ${r.rebels}.\n`}${wonderLine ? `\n${wonderLine}\n` : ""}
 </div>
 
 </div>
@@ -1653,6 +1684,36 @@ ${index.map((e) => {
 fs.writeFileSync(path.join(OUT, "regions.md"), idx, "utf8");
 // The old separate settlement list is now this page.
 fs.rmSync(path.join(OUT, "settlements.md"), { force: true });
+
+// The Seven Wonders page: each wonder's picture, effect, where it stands and who holds it at the
+// campaign start, and the game's own description. A campaign without landmarks (RIS Light) has
+// no such page.
+if (WONDERS.length && !ONLY.length) {
+  const dir = path.join(OUT, "wonders");
+  fs.mkdirSync(dir, { recursive: true });
+  const conv = WONDERS.map((w) => [path.join(RR_DATA, "ui", "wonders", `${WONDER_IMAGE[w.type]}.tga`), path.join(dir, `${w.type}.webp`)])
+    .filter(([src, dst]) => fs.existsSync(src) && !fs.existsSync(dst));
+  if (conv.length) {
+    require("child_process").execFileSync("python", ["-c",
+      "import sys,json\nfrom PIL import Image\nfor s,d in json.loads(sys.argv[1]): Image.open(s).convert('RGB').save(d,'WEBP',quality=88,method=5)",
+      JSON.stringify(conv)], { stdio: "inherit" });
+  }
+  const byTok = new Map(index.map((e) => [e.region, e]));
+  const sections = WONDERS.map((w) => {
+    const tx = WONDER_TEXT[w.type], e = byTok.get(w.region);
+    const owner = e && e.ownerTok ? (hasPage(e.ownerTok) ? `[${facName(e.ownerTok)}](factions/${e.ownerTok}.md)` : nonPlayableRef(e.ownerTok).replace("../", "")) : null;
+    const where = e
+      ? `**Where:** [${e.settlementName}](settlements/${encodeURIComponent(e.settlement)}.md), in [${placeName(w.region)}](regions/${encodeURIComponent(w.region)}.md)${owner ? `, held at the campaign start by ${owner}` : ""}.`
+      : null;
+    const img = fs.existsSync(path.join(dir, `${w.type}.webp`)) ? `<div class="reform-banner">\n\n![${tx.title}](wonders/${w.type}.webp)\n\n</div>\n\n` : "";
+    return `## ${tx.title}\n\n${img}${tx.effects ? `**Effect:** ${tx.effects}\n\n` : ""}${where ? `${where}\n\n` : ""}${tx.long_descr ? tx.long_descr.split(/\n+/).map((p) => `> ${p}`).join("\n>\n") + "\n" : ""}`;
+  });
+  fs.writeFileSync(path.join(OUT, "wonders.md"),
+    `# The Seven Wonders\n\n[← wiki index](README.md) · [all regions and settlements](regions.md)\n\n${sections.join("\n")}`, "utf8");
+  console.log(`wonders.md: ${WONDERS.length} wonders (${WONDERS.filter((w) => byTok.has(w.region)).length} placed in a region with a page)`);
+} else if (!ONLY.length) {
+  fs.rmSync(path.join(OUT, "wonders.md"), { force: true });
+}
 
 // ── region maps ──────────────────────────────────────────────────────────────
 // One map per region, shown on its region page and its settlement page, drawn by

@@ -943,7 +943,7 @@ hr{border:none;border-top:1px solid var(--line);margin:2rem 0}
 const NAV = [
   ["Start here", [["/README.md", "Wiki index"], ["/guides.md", "Game guides"], ["/community-guides.html", "Community guides"], ["/factions.md", "Factions"],
     ["/regions.md", "Regions and settlements"], ["/world-map.html", "World map"],
-    ["/units.md", "All units"], ["/mercenaries.md", "Mercenary pools"], ["/buildings.md", "Buildings"], ["/trade-goods.md", "Trade goods"],
+    ["/units.md", "All units"], ["/mercenaries.md", "Mercenary pools"], ["/buildings.md", "Buildings"], ["/trade-goods.md", "Trade goods"], ["/wonders.md", "Wonders"],
     ["/cultures.md", "Cultures"], ["/religions.md", "Beliefs"], ["/traits.md", "Traits"],
     ["/ancillaries.md", "Retinue"], ["/reforms.md", "Reforms"], ["/revolts.md", "Revolts"], ["/sizes.md", "Settlement sizes"],
     ["/diaries.md", "Developer diaries"], ["/community-videos.md", "Community videos"], ["/changelog.md", "Changelog"]]],
