@@ -674,6 +674,7 @@ tr.cmp-hold .cmp-panel{margin:0}
 #theme{background:none;border:1px solid rgba(244,234,216,.3);border-radius:6px;
   color:rgba(244,234,216,.8);cursor:pointer;font:inherit;font-size:.78rem;padding:.2rem .5rem}
 #theme:hover{border-color:var(--gold);color:var(--gold)}
+#theme .ico{display:none}
 
 /* layout */
 /* 12.5rem, down from 15. The navigation is a list of short labels and was taking 15rem of a
@@ -936,7 +937,22 @@ hr{border:none;border-top:1px solid var(--line);margin:2rem 0}
   nav.side{position:static;height:auto;border-right:none;border-bottom:1px solid var(--line);
     max-height:12rem}
   main{padding:1.2rem 1.1rem 4rem}
-  .top .right{display:none}
+  /* The edit links are for the team at a desk; the theme switch is for everyone, phones
+     included. It used to go with them (the whole group was hidden), which left a phone with no
+     way out of whichever theme the OS picked. On a phone it is an icon, so the search keeps
+     its room and the bar stays one line. */
+  .top .bar{gap:.6rem;padding:.55rem .75rem}
+  .top .right a{display:none}
+  #theme{font-size:1.05rem;line-height:1;padding:.32rem .5rem;flex:none}
+  #theme .ico{display:inline}
+  #theme .lbl{display:none}
+}
+/* A phone cannot hold the name, a usable search box and the theme switch on one line: at 390px
+   the name took 233px and left the search 81. The badge alone is the mod's mark and still goes
+   home; the name is in the big logo on the index. */
+@media(max-width:480px){
+  .brand .name{display:none}
+  .brand img{width:30px;height:30px}
 }
 `;
 
@@ -1064,12 +1080,12 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
 <style>${CSS}</style></head><body${jumpStrip(toc) ? ' class="has-jump"' : ""}>
 <div class="top">
   <div class="bar">
-  <a class="brand" href="/README.md"><img src="/art/ris-mark.png" alt="">RTR: Imperium Surrectum</a>
+  <a class="brand" href="/README.md" aria-label="RTR: Imperium Surrectum, wiki index"><img src="/art/ris-mark.png" alt=""><span class="name">RTR: Imperium Surrectum</span></a>
   <form action="/search" method="get" role="search">
     <input name="q" type="search" placeholder="Search ${INDEX.length.toLocaleString("en-US")} pages: a faction, region or unit…" autocomplete="off">
   </form>
   <div class="right">
-    <button id="theme" type="button" title="Switch theme">theme</button>
+    <button id="theme" type="button" title="Switch theme" aria-label="Switch theme"><span class="ico" aria-hidden="true">◐</span><span class="lbl">theme</span></button>
     <a href="${editHref(rel)}" title="${/^\/?team\//.test(String(rel)) ? "Edit this page on the wiki (team members only)" : "Add a team note to this page on the wiki (team members only)"}">edit</a>
     <a href="${WIKI_URL}/_new" title="Write a new page on the wiki (team members only); it appears under Team pages">new page</a>
   </div>
