@@ -534,7 +534,7 @@ const ART_OUT = writeArt();
 // which is a modder's inventory. The pictures still head the ladder table on sizes.md.
 
 // ── page assembly ────────────────────────────────────────────────────────────
-const HEAD = (title) => `# ${title}\n\n[← settlement sizes](../sizes.md) · [all regions and settlements](../regions.md) · [wiki index](../README.md)\n`;
+const HEAD = (title) => `# ${title}\n\n[← settlement sizes](../sizes.md) · [regions and settlements](../regions.md) · [wiki index](../README.md)\n`;
 
 
 /** The population table for one size. */
@@ -748,7 +748,7 @@ function sizeCultureRef(tok) {
 
 const indexBody = `# Settlement sizes
 
-[← all regions and settlements](regions.md) · [wiki index](README.md)
+[← regions and settlements](regions.md) · [wiki index](README.md)
 
 Every settlement in RIS is one of **${LADDER.length}** sizes. Its size decides three
 things: what it can build, what it can raise, and how large it is allowed to grow before

@@ -902,7 +902,7 @@ const biggestHolder = (() => {
 
 const indexBody = `# Cultures
 
-[← all factions](factions.md) · [all regions and settlements](regions.md) · [beliefs](religions.md) · [wiki index](README.md)
+[← all factions](factions.md) · [regions and settlements](regions.md) · [beliefs](religions.md) · [wiki index](README.md)
 
 Every faction belongs to a culture. On top of a faction's own roster, its culture decides some
 of the buildings it can put up and the units it can raise, and what its agents and forts cost.

@@ -429,7 +429,7 @@ function regionsFold(f, what) {
 }
 
 // ── page assembly ────────────────────────────────────────────────────────────
-const HEAD = (title) => `# ${title}\n\n[← all regions and settlements](../regions.md) · [wiki index](../README.md)\n`;
+const HEAD = (title) => `# ${title}\n\n[← regions and settlements](../regions.md) · [wiki index](../README.md)\n`;
 
 
 function summaryTable(list, cols) {

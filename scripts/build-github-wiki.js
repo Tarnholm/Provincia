@@ -32,6 +32,7 @@ function existingNotes(pageFile) {
 
 const WIKI = '/Tarnholm/ris-wiki/wiki/';
 const RAW  = 'https://raw.githubusercontent.com/Tarnholm/ris-wiki/main/';
+const SITE = 'https://tarnholm.github.io/ris-wiki/';
 const IMG_EXT = /\.(png|jpe?g|gif|svg|webp)$/i;
 
 function walk(dir, acc = []) {
@@ -89,6 +90,10 @@ for (const abs of files) {
   md = md.replace(/\]\(([^)\s#]+)\.(md|html)(#[^)\s]*)?\)/g, (m, href, ext, anchor) => {
     if (/^(https?:|\/)/.test(href)) return m;
     const p = resolveRel(rel, href);
+    // An .html link is one of the interactive views (sortable lists, world map), which only the
+    // site has. It went to the page of the same name instead, so "sortable list" on the regions
+    // overview linked to itself. The site renames a view that shares a page's name to -sortable.
+    if (ext === 'html') { stats.links++; return `](${SITE}${pageSet.has(p) ? p + '-sortable' : p}.html${anchor || ''})`; }
     if (!pageSet.has(p)) { stats.unresolved.push(`${rel} -> ${href}.${ext}`); return m; }
     stats.links++;
     return `](${toWikiLink(p)}${anchor || ''})`;

@@ -1537,7 +1537,7 @@ for (const r of list) {
   const wonderLine = wondersIn(r.region).map((w) => `**Wonder:** [${WONDER_TEXT[w.type].title}](../wonders.md#${wonderAnchor(w)})`).join("\n\n");
   const body = `# ${placeName(r.region)}
 
-[← all regions and settlements](../regions.md) · [wiki index](../README.md)
+[← regions and settlements](../regions.md) · [wiki index](../README.md)
 
 <div class="fhead">
 
@@ -1601,7 +1601,7 @@ ${land}
   ].filter(Boolean).join(" · ");
   const townBody = `# ${settleName}
 
-[← all regions and settlements](../regions.md) · [wiki index](../README.md)
+[← regions and settlements](../regions.md) · [wiki index](../README.md)
 
 <div class="fhead">
 
@@ -1661,25 +1661,71 @@ const ownerCell = (e) => (e.owner
   : "_independent_");
 const townOf = new Map(settlementIndex.map((t) => [t.settlement, t]));
 const capitals = settlementIndex.filter((t) => t.capital).length;
-const idx = `# All regions and settlements
+// The full list lives in the sortable view only (asked for 2026-10-05: regions.md printed the
+// same 1,305 rows as regions.html, the less useful copy). The rows still have to exist for
+// gen-ris-wiki-html.js, which builds the sortable view and the world map from them, so they go
+// to regions/rows.json as the exact cells the table had: Region | Settlement (★ capital) |
+// Held by | Size | Manpower | Goods | Buildings.
+const rows = index.map((e) => {
+  const t = townOf.get(e.settlement) || {};
+  return [`[${e.regionName}](regions/${encodeURIComponent(e.region)}.md)`,
+    `[${e.settlementName}](settlements/${encodeURIComponent(e.settlement)}.md)${t.capital ? " ★" : ""}`,
+    ownerCell(e), sizeRef(t.level, "") || "—", t.pop != null ? t.pop.toLocaleString("en-US") : "—",
+    String(e.trade), String(e.builds)];
+});
+fs.writeFileSync(path.join(OUT, "regions", "rows.json"), JSON.stringify(rows), "utf8");
+// The overview: settlements by size at the start, then the region tag families.
+const bySize = new Map();
+for (const t of settlementIndex) if (t.level) bySize.set(t.level, (bySize.get(t.level) || 0) + 1);
+const sizeOrder = [...Object.keys(SIZE_INDEX), ...[...bySize.keys()].filter((k) => !SIZE_INDEX[k])];
+const sizeRows = sizeOrder.filter((k) => bySize.has(k))
+  .map((k) => `| ${sizeRef(k, "")} | ${bySize.get(k).toLocaleString("en-US")} |`).join("\n");
+const unheld = settlementIndex.filter((t) => !t.level).length;
+const LAND = [
+  ["tags/terrain.md", "Terrain", "one per region; decides which land-use chains can be built"],
+  ["tags/climate.md", "Climate", "one per region, alongside terrain; mostly acts through the rainfed farming level"],
+  ["tags/irrigation.md", "Water sources", "river, lake, springs, oasis or aquifer; gates irrigated farming, the Large Colony and qanats"],
+  ["tags/fertility.md", "Fertility", "how rich the farmland is"],
+  ["tags/ports.md", "Ports", "the natural harbour, which caps the port chain"],
+  ["tags/hazards-and-river-trade.md", "River trade", "river trade and hazards"],
+  ["trade-goods.md", "Trade goods", "the resources a region produces"],
+  ["wonders.md", "Wonders", "the Seven Wonders and where they stand"],
+].filter(([p]) => (p === "wonders.md" ? WONDERS.length > 0 : fs.existsSync(path.join(OUT, p))));
+const RECRUIT = [
+  ["aor.md", "Areas of recruitment"], ["tags/recruitment-zones.md", "Recruitment zones"],
+  ["tags/specialty-recruitment.md", "Specialty recruitment"], ["tags/cultural-homeland.md", "Cultural homelands"],
+].filter(([p]) => fs.existsSync(path.join(OUT, p)));
+const idx = `# Regions and settlements
 
-[← wiki index](README.md) · [settlement sizes](sizes.md) · [cultures](cultures.md) · [beliefs](religions.md)
+[← wiki index](README.md) · [sortable list](regions.html) · [world map](world-map.html)
 
-${index.length.toLocaleString("en-US")} regions, each with one settlement, every one held by a faction at the campaign start.
-${capitals} settlements are a faction's capital, marked ★.
+${index.length.toLocaleString("en-US")} regions, each with one settlement${unheld ? "" : ", every one held by a faction at the campaign start"}.
+${capitals} settlements are a faction's capital.
 The region is the land (terrain, fertility, trade goods); the settlement is the town (its size,
 manpower and buildings).
 
+## Settlements
+
 Size is one of ${Object.keys(SIZE_INDEX).length || 5} [levels](sizes.md), and it decides what a settlement can build and raise.
 
-| Region | Settlement | Held by | Size | Manpower | Goods | Buildings |
-|---|---|---|---|---:|---:|---:|
-${index.map((e) => {
-  const t = townOf.get(e.settlement) || {};
-  return `| [${e.regionName}](regions/${encodeURIComponent(e.region)}.md) | [${e.settlementName}](settlements/${encodeURIComponent(e.settlement)}.md)${t.capital ? " ★" : ""} | ${ownerCell(e)} | ${sizeRef(t.level, "") || "—"} | ${t.pop != null ? t.pop.toLocaleString("en-US") : "—"} | ${e.trade} | ${e.builds} |`;
-}).join("\n")}
+| Size | Settlements at start |
+|---|---:|
+${sizeRows}
+${unheld ? `
+${unheld.toLocaleString("en-US")} settlements are not held by any faction at the start.
+` : ""}
+## The land
 
-★ marks a faction capital.
+${LAND.map(([p, name, what]) => `- [**${name}**](${p}): ${what}`).join("\n")}
+${RECRUIT.length ? `
+## Recruitment
+
+${RECRUIT.map(([p, name]) => `- [**${name}**](${p})`).join("\n")}
+` : ""}
+## All regions
+
+- [**Sortable list**](regions.html): all ${index.length.toLocaleString("en-US")} regions and settlements, by holder, size, manpower, goods and buildings
+- [**World map**](world-map.html)
 `;
 fs.writeFileSync(path.join(OUT, "regions.md"), idx, "utf8");
 // The old separate settlement list is now this page.
@@ -1709,7 +1755,7 @@ if (WONDERS.length && !ONLY.length) {
     return `## ${tx.title}\n\n${img}${tx.effects ? `**Effect:** ${tx.effects}\n\n` : ""}${where ? `${where}\n\n` : ""}${tx.long_descr ? tx.long_descr.split(/\n+/).map((p) => `> ${p}`).join("\n>\n") + "\n" : ""}`;
   });
   fs.writeFileSync(path.join(OUT, "wonders.md"),
-    `# The Seven Wonders\n\n[← wiki index](README.md) · [all regions and settlements](regions.md)\n\n${sections.join("\n")}`, "utf8");
+    `# The Seven Wonders\n\n[← wiki index](README.md) · [regions and settlements](regions.md)\n\n${sections.join("\n")}`, "utf8");
   console.log(`wonders.md: ${WONDERS.length} wonders (${WONDERS.filter((w) => byTok.has(w.region)).length} placed in a region with a page)`);
 } else if (!ONLY.length) {
   fs.rmSync(path.join(OUT, "wonders.md"), { force: true });

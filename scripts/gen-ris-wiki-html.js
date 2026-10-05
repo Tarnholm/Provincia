@@ -41,6 +41,14 @@ function parseTable(file, minCols) {
   return rows;
 }
 
+// The region rows: regions.md stopped listing them (it is an overview now), so
+// gen-ris-region-pages.js writes the exact cells to regions/rows.json. An older wiki without
+// that file still has the table in regions.md.
+function regionRows() {
+  try { return JSON.parse(fs.readFileSync(path.join(OUT, "regions", "rows.json"), "utf8")); }
+  catch { return parseTable("regions.md", 7); }
+}
+
 // A link cell, "[text](href)" plus anything after it (a capital's star). Link text can carry an
 // inline symbol image now (the faction index puts each faction's emblem in its name), which is
 // pulled out into `sym` - it printed as raw <img> markup in the Faction column otherwise.
@@ -244,10 +252,10 @@ render();
 }
 
 // ── regions ──────────────────────────────────────────────────────────────────
-// regions.md columns: Region | Settlement (★ capital) | Held by | Size | Manpower | Goods | Buildings
+// regions/rows.json columns: Region | Settlement (★ capital) | Held by | Size | Manpower | Goods | Buildings
 {
   const SIZE_RANK = { village: 1, town: 2, large_town: 3, city: 4, large_city: 5, huge_city: 6 };
-  const raw = parseTable("regions.md", 7).filter((c) => /^\[/.test(c[0]));
+  const raw = regionRows().filter((c) => /^\[/.test(c[0]));
   const rows = raw.map((c) => {
     const r = linkText(c[0]);
     const s = linkText(c[1]);
@@ -269,12 +277,12 @@ render();
   fs.writeFileSync(path.join(OUT, "regions.html"),
     PAGE("Regions and settlements, sortable",
       "Every region with its settlement, as it stands at the campaign start. ★ marks a faction capital.",
-      columns, rows, "/regions.html", "[← wiki index](README.md) · [all regions and settlements](regions.md)"), "utf8");
+      columns, rows, "/regions.html", "[← wiki index](README.md) · [regions and settlements](regions.md)"), "utf8");
   console.log(`regions.html: ${rows.length.toLocaleString("en-US")} rows`);
   // Measured against the region pages actually written: RIS Light has 547, RIS Classic 160.
   let regionPages = 0;
   try { regionPages = fs.readdirSync(path.join(OUT, "regions")).filter((f) => f.endsWith(".md") && f !== "index.md").length; } catch { /* none */ }
-  if (rows.length < regionPages * 0.9) { console.error(`  FAILED: regions.html has ${rows.length} rows for ${regionPages} region pages — regions.md's shape has changed`); process.exitCode = 1; }
+  if (rows.length < regionPages * 0.9) { console.error(`  FAILED: regions.html has ${rows.length} rows for ${regionPages} region pages — regions/rows.json's shape has changed`); process.exitCode = 1; }
 }
 
 // ── factions ─────────────────────────────────────────────────────────────────
@@ -330,13 +338,13 @@ render();
 // world-map/world.webp and ids.png come from gen-ris-region-pages.js (lib/regionMaps.py);
 // ids.png holds each map pixel's region as index + 1, in the order of the region list the
 // region generator saves, which is the order of DATA below. Names, links and emblems are read
-// back from regions.md so they match the region index exactly.
+// back from regions/rows.json so they match the sortable region list exactly.
 {
   const specFile = path.join(require("os").tmpdir(), `ris-region-maps${process.env.RIS_VARIANT ? "-" + process.env.RIS_VARIANT : ""}.json`);
   if (fs.existsSync(specFile) && fs.existsSync(path.join(OUT, "world-map", "world.webp"))) {
     const spec = JSON.parse(fs.readFileSync(specFile, "utf8"));
     const byTok = new Map();
-    for (const c of parseTable("regions.md", 7)) {
+    for (const c of regionRows()) {
       const r = linkText(c[0]);
       if (!r.href) continue;
       byTok.set(decodeURIComponent(r.href.replace(/^regions\//, "").replace(/\.md$/, "")), { r, s: linkText(c[1]), o: linkText(c[2]) });
@@ -475,7 +483,7 @@ render();
       }
       return { k: m.k, label: m.label, multi: !!m.multi, ord: !!m.ord, vals: m.vals, order, pi, pcol };
     });
-    const intro = "# The world map\n\n[← wiki index](README.md) · [all regions and settlements](regions.md)\n\n"
+    const intro = "# The world map\n\n[← wiki index](README.md) · [regions and settlements](regions.md)\n\n"
       + `The campaign map at the start of the ${CAMPAIGN_NAME} campaign.\n`;
     // The viewer was written for the main map (1020 x 700 map pixels, drawn 4 screen pixels each);
     // RIS Light's map is 510 x 350 and RIS Classic's 384 x 234. ids.png is one pixel per map

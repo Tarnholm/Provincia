@@ -681,7 +681,7 @@ const groupSections = groups.map(({ g, list }) => {
 
 const indexBody = `# Beliefs
 
-[← all cultures](cultures.md) · [all regions and settlements](regions.md) · [wiki index](README.md)
+[← all cultures](cultures.md) · [regions and settlements](regions.md) · [wiki index](README.md)
 
 RIS replaces the base game's handful of religions with **${FACTS.length}** local beliefs, one per people, near
 enough. In each region a belief is either the **majority** or a **minority** held alongside a
