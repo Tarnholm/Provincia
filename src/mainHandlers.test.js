@@ -228,9 +228,12 @@ const haveMod = (() => { try { return fs.existsSync(path.join(MOD_DIR, "export_d
   // turn, so those must match the full crack byte-for-byte.
   it.runIf(saveFile)("crackSave tradeOnly matches the full crack on every field computeTradeNetwork reads", { timeout: 40000 }, () => {
     const { crackSave } = require("./saveCracker.js");
+    const { risData239 } = require("./risDataSnapshot.js");
+    // the fixture saves come from the 239-faction RIS; read them against that data
+    const mod = risData239() || MOD_DIR;
     const buf = fs.readFileSync(saveFile);
-    const full = crackSave(buf, MOD_DIR);
-    const trade = crackSave(buf, MOD_DIR, { tradeOnly: true });
+    const full = crackSave(buf, mod);
+    const trade = crackSave(buf, mod, { tradeOnly: true });
     for (const k of ["settlements", "diplomacy", "settlementFields", "ownerByCity", "playerFaction", "turn"]) {
       expect(trade[k]).toEqual(full[k]);
     }

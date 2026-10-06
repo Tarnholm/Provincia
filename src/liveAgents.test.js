@@ -6,6 +6,7 @@ import { describe, it, expect } from "vitest";
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import path from "node:path";
+import { risData239 } from "./risDataSnapshot.js";
 import { applyAgentMoves } from "./liveDiplomacy.js";
 
 const require = createRequire(import.meta.url);
@@ -15,7 +16,8 @@ const p = require("./messageLogParser.js");
 const lw = require("./logWatchHandlers.js");
 const { readTga } = require("./startingArmiesBuilder.js");
 
-const MOD = "C:/RIS/RIS/data";
+// calibration/saves-2026-09-24 were made with the 239-faction RIS: read them against that data (src/risDataSnapshot.js)
+const MOD = risData239() || "C:/RIS/RIS/data";
 const R = path.resolve(__dirname, "../calibration/saves-2026-09-24/recruit");
 const have = ["t5_end.sav", "t6_start.sav", "message_log_latest.txt"].every((n) => fs.existsSync(path.join(R, n))) && fs.existsSync(path.join(MOD, "world/maps/base/descr_regions.txt"));
 

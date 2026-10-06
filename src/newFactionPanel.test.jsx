@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// The ☥ New Faction panel. What must hold: it warns at the engine's ceiling
-// before anything is created, it will not let a faction be created without the
+// The ☥ New Faction panel. What must hold: at the 255-faction cap it refuses
+// to create another, it will not let a faction be created without the
 // things the engine destroys it for lacking (a town, a leader, an heir with a
 // different name, a free token), it defaults the family out of the donor's name
 // pool, and "Create faction" sends exactly what was chosen.
@@ -41,7 +41,7 @@ const typeIn = (sel, value) => {
 
 const SCAN = {
   modDataDir: "C:/RIS/RIS/data", campaign: "imperial_campaign", campaigns: ["imperial_campaign"],
-  count: 239, cap: 239, atCap: true, missingFiles: [], haveRecruitment: true,
+  count: 250, cap: 255, atCap: false, missingFiles: [], haveRecruitment: true,
   donors: [
     { faction: "parni", culture: "eastern", namelistMen: "parni_men", settlements: 1, inCampaign: true },
     { faction: "pontus", culture: "eastern", namelistMen: "pontus_men", settlements: 6, inCampaign: true },
@@ -79,15 +79,16 @@ const open = async (over) => {
 const pickDonor = async () => { click(document.querySelector('[data-donor="parni"]')); await settle(); };
 
 describe("NewFactionPanel", () => {
-  it("warns at the engine's ceiling before anything is created", async () => {
-    await open();
-    expect(text()).toMatch(/already declares 239 factions/);
-    expect(text()).toMatch(/240th may fail to load|239 is as far as the engine/);
+  it("at the 255-faction cap it says so and will not create another", async () => {
+    await open({ scan: { ...SCAN, count: 255, atCap: true } });
+    expect(text()).toMatch(/already declares 255 factions, and 255 is the most a mod can have/);
+    await pickDonor();
+    expect(button(/Create faction/).disabled).toBe(true);
   });
 
-  it("does not warn about a ceiling the mod is nowhere near", async () => {
-    await open({ scan: { ...SCAN, count: 30, atCap: false } });
-    expect(text()).not.toMatch(/as far as the engine is known to go/);
+  it("does not mention the cap when the mod is below it", async () => {
+    await open();
+    expect(text()).not.toMatch(/most a mod can have/);
   });
 
   it("defaults the leader and heir from the donor's name pool, and they differ", async () => {

@@ -411,12 +411,32 @@ function planFactionStratEntry({ stratText, newId, after, aiLabel = "ai_barbaria
 // can be added to; the user picks which (they asked to choose rather than take
 // the lot — one faction is named on ~260 lines of RIS's EDB).
 
+// Every `factions { … }` clause of a requirement, in order, with `not: true` for an
+// EXCLUSION (`not factions { … }`). One line can hold both: since 2026-10 RIS
+// starts every level and recruit requirement with `not factions { slave, } and …`.
+function factionClauses(s) {
+  const out = [];
+  const re = /(\bnot\s+)?\bfactions\s*\{([^}]*)\}/g;
+  let m;
+  while ((m = re.exec(s))) {
+    const bodyStart = m.index + m[0].indexOf("{") + 1;
+    out.push({ not: !!m[1], body: m[2], bodyStart, bodyEnd: bodyStart + m[2].length });
+  }
+  return out;
+}
+
+// The first POSITIVE clause that names `donor`, else null. Adding the new token to
+// an exclusion would forbid the thing rather than grant it, and a faction absent
+// from an exclusion is already allowed there, so exclusions never count.
+function grantClause(s, donor) {
+  return factionClauses(s).find((c) => !c.not && tokenRe(donor).test(c.body)) || null;
+}
+
 function listRecruitOptions(edbText, donor) {
   if (!edbText || !donor) return [];
   const lines = linesOf(edbText);
   const out = [];
   let building = null, level = null;
-  const has = tokenRe(donor);
   for (let i = 0; i < lines.length; i++) {
     const s = strip(lines[i]);
     const b = s.match(/^building\s+(\w+)/); if (b) { building = b[1]; level = null; }
@@ -426,12 +446,10 @@ function listRecruitOptions(edbText, donor) {
     const r = s.match(/^\s*recruit(?:_pool)?\s+"([^"]+)"/);
     const lv = !r && s.match(/^\s*(\w+)\s+requires\b/); if (lv) level = lv[1];
     if (!/\bfactions\s*\{/.test(s)) continue;
-    // `requires not factions { … }` is an EXCLUSION: putting the new token in it
-    // would forbid the thing rather than grant it. A faction absent from such a
-    // list is already allowed, so there is nothing to offer.
-    if (/\bnot\s+factions\s*\{/.test(s)) continue;
-    has.lastIndex = 0;
-    if (!has.test(s)) continue;
+    // Clause by clause: until 2026-10-06 any `not factions {` anywhere on the line
+    // dropped it, and once RIS put `not factions { slave, } and` in front of every
+    // requirement that dropped all of them (Parni: 128 recruit offers -> 0).
+    if (!grantClause(s, donor)) continue;
     out.push({ line: i, building, level, unit: r ? r[1] : null, kind: r ? "recruit" : "building", text: s.trim().slice(0, 160) });
   }
   return out;
@@ -447,10 +465,13 @@ function planRecruitment({ edbText, donor, newId, lines: picked = [] } = {}) {
   for (const i of want) {
     const l = lines[i];
     if (l == null) continue;
-    const re = new RegExp("(factions\\s*\\{[^}]*?)(" + donor + ")(\\s*[,}])", "i");
-    if (/\bnot\s+factions\s*\{/.test(strip(l))) continue; // an exclusion — see listRecruitOptions
-    if (!re.test(strip(l))) continue;
-    lines[i] = l.replace(re, (m, a, d, z) => a + d + ", " + id + z);
+    // the new token goes into the clause that GRANTS the donor - never into an
+    // exclusion, even when one sits earlier on the same line (see listRecruitOptions).
+    // strip() only cuts a trailing comment, so its offsets are the line's own.
+    const c = grantClause(strip(l), donor);
+    if (!c) continue;
+    const body = c.body.replace(new RegExp(tokenRe(donor).source), (m) => m + ", " + id); // first mention only
+    lines[i] = l.slice(0, c.bodyStart) + body + l.slice(c.bodyEnd);
     changed++;
   }
   return { text: lines.join(eol), changed, errors: [] };

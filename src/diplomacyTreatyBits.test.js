@@ -9,11 +9,13 @@ import { describe, it, expect } from "vitest";
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import path from "node:path";
+import { risData239 } from "./risDataSnapshot.js";
 
 const require = createRequire(import.meta.url);
 const { parseDiplomacyMatrix } = require("./saveCrackerExtras.js");
 const DIR = path.resolve(__dirname, "../calibration/saves-2026-09-24");
-const MOD = "C:/RIS/RIS/data";
+// calibration/saves-2026-09-24 were made with the 239-faction RIS: read them against that data (src/risDataSnapshot.js)
+const MOD = risData239() || "C:/RIS/RIS/data";
 const T2 = path.join(DIR, "rome_t2_before_trade.sav");
 const T6 = path.join(DIR, "rome_t6_start.sav");
 const have = fs.existsSync(T2) && fs.existsSync(T6) && fs.existsSync(path.join(MOD, "descr_sm_factions.txt"));

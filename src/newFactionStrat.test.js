@@ -146,6 +146,34 @@ describe("recruitment", () => {
     expect(L[o[1].line]).toMatch(/factions \{ parni, tocharians, \}/);
     expect(L[o[0].line]).not.toMatch(/tocharians/); // not picked, not touched
   });
+
+  // 2026-10-06: RIS starts every requirement with `not factions { slave, } and …`;
+  // the old whole-line check dropped every such line (Parni: 128 offers -> 0).
+  it("reads a requirement clause by clause: an exclusion in front does not hide the grant", () => {
+    const edb = [
+      "building bar",
+      "{",
+      "\tlevels bar_one",
+      "\t{",
+      "\t\tbar_one requires not factions { slave, } and factions { parni, armenia, }",
+      "\t\t{",
+      '\t\t\trecruit "parni archers" 0 requires not factions { slave, } and factions { parni, } and is_player',
+      '\t\t\trecruit "mixed" 0 requires not factions { parni, } and factions { all, }',
+      '\t\t\trecruit "both" 0 requires not factions { armenia, parni, } and factions { parni, }',
+      "\t\t}",
+      "\t}",
+      "}",
+    ].join(NL);
+    const o = listRecruitOptions(edb, "parni");
+    expect(o.map((x) => x.unit || x.level)).toEqual(["bar_one", "parni archers", "both"]);
+    const r = planRecruitment({ edbText: edb, donor: "parni", newId: "tocharians", lines: o.map((x) => x.line) });
+    expect(r.changed).toBe(3);
+    const L = r.text.split(NL);
+    expect(L[o[0].line]).toContain("not factions { slave, } and factions { parni, tocharians, armenia, }");
+    expect(L[o[1].line]).toContain("not factions { slave, } and factions { parni, tocharians, }");
+    // the grant is edited, the exclusion that also names the donor is left alone
+    expect(L[o[2].line]).toContain("not factions { armenia, parni, } and factions { parni, tocharians, }");
+  });
 });
 
 describe("readNamelist", () => {

@@ -24,10 +24,19 @@ const ft = require("./factionTransfer.js");
 const safeWrite = require("./safeModWrite.js");
 const { campaignsIn, mapCoords } = require("./factionTransferHandlers.js");
 
-// 239 is where RIS sits and no vanilla-engine mod is known to go past it.
-// Treated as a warning, not a wall: this is not a RIS-only tool and the ceiling
-// is the engine's, not Provincia's, so the user is told and decides.
-const FACTION_CAP = 239;
+// The most factions a mod may declare: 255. RIS ran 255 in game on 2026-10-06
+// (16 restored factions on top of 239), and 256+ is not supported - faction ids
+// are stored in one byte in places (Provincia's save reader reads the major
+// faction record's id as a u8). A WALL, not a warning: at 255 the tool refuses
+// to plan or write another faction.
+const FACTION_CAP = 255;
+
+// The refusal for a mod already at the cap, or null.
+function factionCapError(count) {
+  return count >= FACTION_CAP
+    ? `this mod already declares ${count} factions - ${FACTION_CAP} is the most a mod can have. Remove a faction before adding another.`
+    : null;
+}
 
 const REL = {
   smFactions: "descr_sm_factions.txt",
@@ -132,7 +141,7 @@ function registerNewFactionHandlers(ipcMain, { getActiveModDataDir, getModExport
 
       log(`[new-faction] ${dir}: ${donors.length} factions, campaign ${r.target.name}` +
         (missing.length ? `; MISSING ${missing.join(", ")}` : "") +
-        (donors.length >= FACTION_CAP ? `; AT/OVER the ${FACTION_CAP} ceiling` : ""));
+        (donors.length >= FACTION_CAP ? `; AT the ${FACTION_CAP}-faction cap` : ""));
 
       return {
         modDataDir: dir,
@@ -228,8 +237,8 @@ function registerNewFactionHandlers(ipcMain, { getActiveModDataDir, getModExport
       }
 
       const warnings = [...plan.warnings, ...strat.warnings];
-      const count = nf.listFactions(files.smFactions).length;
-      if (count >= FACTION_CAP) warnings.unshift(`this mod already declares ${count} factions — ${FACTION_CAP} is as far as the engine is known to go, and a ${ordinal(count + 1)} may not load`);
+      const capError = factionCapError(nf.listFactions(files.smFactions).length);
+      if (capError) return { error: capError, warnings };
 
       // resolve art sources before anything is written, so a preview reports
       // the same missing files the write would hit
@@ -282,4 +291,4 @@ function registerNewFactionHandlers(ipcMain, { getActiveModDataDir, getModExport
   });
 }
 
-module.exports = { registerNewFactionHandlers, gather, FACTION_CAP, ordinal };
+module.exports = { registerNewFactionHandlers, gather, FACTION_CAP, factionCapError, ordinal };

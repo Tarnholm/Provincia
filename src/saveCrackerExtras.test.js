@@ -27,7 +27,12 @@ const require = createRequire(import.meta.url);
 const { crackSave } = require("./saveCracker.js");
 
 const MACEDON_T0_PATH = "C:\\Users\\vtarn\\AppData\\Local\\Feral Interactive\\Total War ROME REMASTERED\\VFS\\Local\\Rome\\saves\\save_macedon t0.sav";
-const SM_FACTIONS_PATH = "C:\\RIS\\RIS\\data\\descr_sm_factions.txt";
+// The saves below come from the 239-faction RIS, and saves record factions by index:
+// take the faction order from that RIS (src/risDataSnapshot.js), not the installed one.
+const SM_FACTIONS_PATH = (() => {
+  const d = require("./risDataSnapshot.js").risData239();
+  return d ? require("path").join(d, "descr_sm_factions.txt") : "C:\\RIS\\RIS\\data\\descr_sm_factions.txt";
+})();
 const SAVE_DIR = "C:\\Users\\vtarn\\AppData\\Local\\Feral Interactive\\Total War ROME REMASTERED\\VFS\\Local\\Rome\\saves";
 
 function loadSaveIfPresent(path) {

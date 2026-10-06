@@ -6,7 +6,7 @@ import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
-const { planNewFaction } = require("./newFaction.js");
+const { planNewFaction, listFactions, smEntry } = require("./newFaction.js");
 
 const NL = String.fromCharCode(10);
 const SM = [
@@ -155,7 +155,7 @@ describe.skipIf(!haveRis)("against the installed RIS", () => {
     };
     const r = planNewFaction({ files: f, donor: "parni", newId: "tocharians", displayName: "Tocharians" });
     expect(r.errors).toEqual([]);
-    expect(r.summary.factionCountBefore).toBe(239);
+    expect(r.summary.factionCountBefore).toBe(listFactions(f.smFactions).length); // 239, 250, ... - follows the installed RIS
     expect(r.summary.art).toBeGreaterThanOrEqual(6);
     // every recorded source is a path the donor really uses
     for (const c of r.artCopies) expect(f.smFactions + f.banners + f.character + f.modelStrat).toContain(c.from);
@@ -163,6 +163,7 @@ describe.skipIf(!haveRis)("against the installed RIS", () => {
     for (const key of Object.keys(r.edits)) {
       expect((r.edits[key].match(/parni/gi) || []).length, key).toBeGreaterThanOrEqual((f[key].match(/parni/gi) || []).length);
     }
-    expect(r.edits.smFactions.split(/\r?\n/).length - f.smFactions.split(/\r?\n/).length).toBe(103);
+    // the clone adds exactly the donor's own entry (103 lines in the 239-faction RIS, 119 after)
+    expect(r.edits.smFactions.split(/\r?\n/).length - f.smFactions.split(/\r?\n/).length).toBe(smEntry(f.smFactions, "parni").lines.length);
   });
 });

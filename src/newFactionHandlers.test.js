@@ -8,7 +8,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 import fs from "node:fs";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
-const { registerNewFactionHandlers, gather } = require("./newFactionHandlers.js");
+const { registerNewFactionHandlers, gather, FACTION_CAP, factionCapError } = require("./newFactionHandlers.js");
 
 const MOD = "C:/RIS/RIS/data";
 const haveRis = fs.existsSync(MOD + "/descr_sm_factions.txt");
@@ -27,11 +27,14 @@ describe.skipIf(!haveRis)("new-faction IPC", () => {
     call = b.call;
   });
 
-  it("scans the mod: donors, campaigns and the ceiling", async () => {
+  it("scans the mod: donors, campaigns and the cap", async () => {
     const r = await call("new-faction-scan", MOD);
     expect(r.error).toBeUndefined();
-    expect(r.count).toBe(239);
-    expect(r.atCap).toBe(true); // 239 is the ceiling, and RIS is on it
+    // the count follows the installed RIS (239 before 2026-10-05, 250 after); the cap is 255
+    expect(r.count).toBe(r.donors.length);
+    expect(r.count).toBeGreaterThan(200);
+    expect(r.cap).toBe(255);
+    expect(r.atCap).toBe(r.count >= 255);
     expect(r.missingFiles).toEqual([]);
     expect(r.haveRecruitment).toBe(true);
     const parni = r.donors.find((d) => d.faction === "parni");
@@ -50,7 +53,7 @@ describe.skipIf(!haveRis)("new-faction IPC", () => {
     expect(r.recruitCount).toBeGreaterThan(50);
   });
 
-  it("plans the whole faction without writing, and warns about the ceiling", async () => {
+  it("plans the whole faction without writing", async () => {
     const donor = await call("new-faction-donor", MOD, "parni");
     const town = donor.settlements.find((s) => s.owner === "pontus");
     const r = await call("new-faction-apply", MOD, {
@@ -64,7 +67,15 @@ describe.skipIf(!haveRis)("new-faction IPC", () => {
     expect(r.summary.recruitChanged).toBe(5);
     expect(r.summary.strat).toMatchObject({ faction: "tocharians", leader: donor.names[0], heir: donor.names[1] });
     expect(r.summary.strat.settlements[0]).toMatchObject({ region: town.region, from: "pontus" });
-    expect(r.warnings.join(" ")).toMatch(/239 factions/);
+    expect(r.warnings.join(" ")).not.toMatch(/most a mod can have/);
+  });
+
+  it("caps a mod at 255 factions: the 255th is allowed, a 256th is refused", () => {
+    expect(FACTION_CAP).toBe(255);
+    expect(factionCapError(250)).toBeNull();
+    expect(factionCapError(254)).toBeNull();          // creating the 255th
+    expect(factionCapError(255)).toMatch(/255 factions - 255 is the most a mod can have/);
+    expect(factionCapError(300)).toMatch(/Remove a faction/);
   });
 
   it("refuses a bad ask, and never half-writes", async () => {
