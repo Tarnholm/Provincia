@@ -32,7 +32,7 @@ const CLONE = argv.filter((a, i) => !a.startsWith('--') && argv[i - 1] !== '--si
 
 if (!CLONE || !fs.existsSync(path.join(CLONE, '.git'))) {
   console.error('usage: node scripts/diff-github-wiki.js <wiki-clone> [--since <ref>] [--full] [--no-fetch]');
-  console.error('clone it with: git clone https://github.com/Tarnholm/ris-wiki.wiki.git');
+  console.error('clone it with: git clone https://github.com/RTR-Imperium-Surrectum/ris-wiki.wiki.git');
   process.exit(1);
 }
 

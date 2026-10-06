@@ -70,7 +70,7 @@ function writeTeamPage(page, body, html) {
   const title = titleOf(page, body);
   let out = tpl.replace(main[0], '<main>' + main[1] + '<div class="lede">' + html + '</div></main>');
   out = out.replace(/<title>[\s\S]*?<\/title>/, () => '<title>' + esc(title) + ' — RTR: Imperium Surrectum</title>');
-  out = out.replace(/href="https:\/\/github\.com\/Tarnholm\/ris-wiki\/wiki\/[^"]*\/_edit"/, () => 'href="https://github.com/Tarnholm/ris-wiki/wiki/' + encodeURIComponent(page) + '/_edit"');
+  out = out.replace(/href="https:\/\/github\.com\/(?:Tarnholm|RTR-Imperium-Surrectum)\/ris-wiki\/wiki\/[^"]*\/_edit"/, () => 'href="https://github.com/RTR-Imperium-Surrectum/ris-wiki/wiki/' + encodeURIComponent(page) + '/_edit"');
   out = out.replace(/<div class="jump">[\s\S]*?<\/div>\n?/, '');   // the template's section links are not this page's
   fs.writeFileSync(file, out);
   return isNew ? 'page created' : 'page rewritten';

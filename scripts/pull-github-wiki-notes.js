@@ -11,8 +11,8 @@
 //   node scripts/pull-github-wiki-notes.js <wiki-clone> [notes-dir] [--pages <dir>] [--prune]
 //
 // Round trip:
-//   teammate clicks Edit at github.com/Tarnholm/ris-wiki/wiki  ->  this script
-//   ->  npm run wiki:site  ->  tarnholm.github.io/ris-wiki/
+//   teammate clicks Edit at github.com/RTR-Imperium-Surrectum/ris-wiki/wiki  ->  this script
+//   ->  npm run wiki:site  ->  rtr-imperium-surrectum.github.io/ris-wiki/
 //
 // HOW A TEAM PAGE IS RECOGNISED, and why it is not guesswork: build-github-wiki.js writes
 // page-map.json into the wiki listing every page it generated. A page absent from that map
@@ -32,7 +32,7 @@ const NOTES = path.resolve(positional[1] || NOTES_DIR);
 
 if (!CLONE || !fs.existsSync(CLONE)) {
   console.error('usage: node scripts/pull-github-wiki-notes.js <wiki-clone> [notes-dir] [--pages <dir>] [--prune]');
-  console.error('clone it with: git clone https://github.com/Tarnholm/ris-wiki.wiki.git');
+  console.error('clone it with: git clone https://github.com/RTR-Imperium-Surrectum/ris-wiki.wiki.git');
   process.exit(1);
 }
 
@@ -105,7 +105,7 @@ const sweep = (before, touched, dir, label) => {
   return { orphans, removed };
 };
 // The map travels with the pages store. The site build needs it to turn a wiki link written
-// by a teammate ("/Tarnholm/ris-wiki/wiki/regions-Akarnania") back into the site's own path,
+// by a teammate ("/RTR-Imperium-Surrectum/ris-wiki/wiki/regions-Akarnania") back into the site's own path,
 // and the build must not depend on a wiki clone being present on the machine that runs it.
 fs.copyFileSync(mapFile, path.join(PAGES, 'page-map.json'));
 

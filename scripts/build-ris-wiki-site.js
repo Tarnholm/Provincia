@@ -93,7 +93,7 @@ let notesMerged = 0;
 // of the wiki rather than as an attachment to it.
 //
 // THE LINKS ARE THE WHOLE PROBLEM. A teammate writing in the wiki links the way the wiki
-// links -- `[[Akarnania]]`, or `/Tarnholm/ris-wiki/wiki/regions-Akarnania` -- and those flat
+// links -- `[[Akarnania]]`, or `/RTR-Imperium-Surrectum/ris-wiki/wiki/regions-Akarnania` -- and those flat
 // names exist nowhere in this site's layout. page-map.json (written by build-github-wiki.js,
 // copied into the store by the pull) is the only thing that can turn one back into a path, so
 // it travels with the pages. A link that no longer resolves -- because a data regeneration
@@ -168,7 +168,9 @@ function resolveTeamLinks(md, fromName) {
     teamUnresolved.push({ from: fromName, target: b.trim() });
     return a.trim();
   });
-  md = md.replace(/\[([^\]\n]*)\]\((?:https?:\/\/github\.com)?\/Tarnholm\/ris-wiki\/wiki\/([^)\s]+)\)/g,
+  // The repo moved from Tarnholm to the RTR-Imperium-Surrectum org on 2026-10-05; notes
+  // written before that still link the old owner.
+  md = md.replace(/\[([^\]\n]*)\]\((?:https?:\/\/github\.com)?\/(?:Tarnholm|RTR-Imperium-Surrectum)\/ris-wiki\/wiki\/([^)\s]+)\)/g,
     (m, label, flat) => {
       const t = teamTarget(flat, fromName);
       return t ? `[${label}](${t})` : label;
@@ -458,7 +460,7 @@ setItem:function(k,v){m[k]=String(v);},removeItem:function(k){delete m[k];}},con
 </script>`;
 
 // The output directory is also the git clone that publishes to GitHub Pages
-// (Tarnholm/ris-wiki), so what this build removes from it is removed from the published site.
+// (RTR-Imperium-Surrectum/ris-wiki), so what this build removes from it is removed from the published site.
 //
 // IT USED TO CLEAR THE WHOLE TREE except a KEEP set, and that cost a teammate their file:
 // someone committed `test` at the site root, a rebuild swept it away because it was not in
@@ -610,7 +612,7 @@ if (TEAM.length) {
   const hubMd = [
     "# Team pages",
     "",
-    "Written by the team in [the wiki](https://github.com/Tarnholm/ris-wiki/wiki), not generated",
+    "Written by the team in [the wiki](https://github.com/RTR-Imperium-Surrectum/ris-wiki/wiki), not generated",
     "from the game files. Everything else on this site is rebuilt from the RIS data on every",
     "update; these pages are not, and are only ever changed by the person who writes them.",
     "",
@@ -637,7 +639,7 @@ note(`team pages: ${n(teamRendered)} rendered (from ${TEAM_PAGES_DIR}), ${n(team
     + "Guides written by the RIS team and community: how to play a faction, a campaign, a system.\n", []);
   const body = intro + fs.readFileSync(path.join(__dirname, "lib", "communityGuidesView.html"), "utf8")
     .replace("__FACTIONS__", () => JSON.stringify(playable))
-    .replace("__WIKI_URL__", () => "https://github.com/Tarnholm/ris-wiki/wiki");
+    .replace("__WIKI_URL__", () => "https://github.com/RTR-Imperium-Surrectum/ris-wiki/wiki");
   writeOut(GUIDES_PAGE, finish(SHELL("Community guides", body, "/" + GUIDES_PAGE, []), GUIDES_PAGE));
   INDEX.push({ title: "Community guides", rel: "/" + GUIDES_PAGE, section: "guides" });
   note(`community guides: ${n(guides.length)} listed`);
@@ -914,8 +916,8 @@ note(`present but unreferenced: ${n(unreferenced.length)}${unreferenced.length ?
 note(`case-mismatched references: ${caseMismatch}${caseSamples.length ? " — e.g. " + caseSamples.join(", ") : ""} (would 404 on GitHub Pages, which is case-sensitive)`);
 
 // No OPEN-ME.txt is written. The wiki is read in the browser at
-// https://tarnholm.github.io/ris-wiki/ and edited in the browser at
-// https://github.com/Tarnholm/ris-wiki/wiki — there is no local step to explain.
+// https://rtr-imperium-surrectum.github.io/ris-wiki/ and edited in the browser at
+// https://github.com/RTR-Imperium-Surrectum/ris-wiki/wiki — there is no local step to explain.
 const openMe = path.join(SITE, "OPEN-ME.txt");
 if (fs.existsSync(openMe)) fs.unlinkSync(openMe);
 

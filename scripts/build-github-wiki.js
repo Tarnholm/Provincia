@@ -30,9 +30,9 @@ function existingNotes(pageFile) {
   return NOTES.extractNotes(fs.readFileSync(f, 'utf8'));
 }
 
-const WIKI = '/Tarnholm/ris-wiki/wiki/';
-const RAW  = 'https://raw.githubusercontent.com/Tarnholm/ris-wiki/main/';
-const SITE = 'https://tarnholm.github.io/ris-wiki/';
+const WIKI = '/RTR-Imperium-Surrectum/ris-wiki/wiki/';
+const RAW  = 'https://raw.githubusercontent.com/RTR-Imperium-Surrectum/ris-wiki/main/';
+const SITE = 'https://rtr-imperium-surrectum.github.io/ris-wiki/';
 const IMG_EXT = /\.(png|jpe?g|gif|svg|webp)$/i;
 
 function walk(dir, acc = []) {
@@ -211,7 +211,7 @@ const SB = [
   'be overwritten — fix wrong',
   'numbers in the generator, not',
   'here.', '',
-  '📖 [The styled site](https://tarnholm.github.io/ris-wiki/) has search.', ''
+  '📖 [The styled site](https://rtr-imperium-surrectum.github.io/ris-wiki/) has search.', ''
 ].join(LF);
 fs.writeFileSync(path.join(OUT, '_Sidebar.md'), SB);
 

@@ -978,7 +978,7 @@ const NAV = [
 // "edit" opens the page's own editor on the GitHub wiki (GitHub lets only collaborators save).
 // A generated page's wiki name comes from page-map.json (flat names: "regions-Akarnania"); a
 // team page is named for itself; anything unmapped falls back to the wiki's front page.
-const WIKI_URL = "https://github.com/Tarnholm/ris-wiki/wiki";
+const WIKI_URL = "https://github.com/RTR-Imperium-Surrectum/ris-wiki/wiki";
 const WIKI_NAME_OF = (() => {
   try {
     const { PAGES_DIR } = require("./ris-wiki-notes.js");
