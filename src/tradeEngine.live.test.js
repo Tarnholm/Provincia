@@ -2,14 +2,22 @@
 // numbers. Truth: Rome's in-game turn-1 trade scroll (screenshot) and a memory read of every settlement's
 // trade on turn 2, in the session that played turn 1 (scripts/ris-trade-live-turn2-2026-10-01.json) and with
 // the turn-2 save freshly loaded (scripts/ris-trade-live-turn2-loaded-2026-10-02.json). Skips when the saves are absent.
+//
+// The mod data is PINNED to RIS commit 093db88957 (2026-10-02, the EDB the game held in
+// memory during the captures): reading whatever C:\RIS has checked out made these tests fail
+// whenever RIS changed its trade inputs, which is data drift, not an engine bug. The snapshot
+// is built from the local RIS git repo once (src/risDataSnapshot.js); RIS_TRADE_MOD overrides.
 import { describe, it, expect } from "vitest";
 import fs from "fs";
+import { risDataSnapshot } from "./risDataSnapshot.js";
 
-const MOD = "C:/RIS/RIS/data";
+const CAPTURE_REV = "093db88957";
 const SAVES = "C:/Users/vtarn/AppData/Local/Feral Interactive/Total War ROME REMASTERED/VFS/Local/Rome/saves";
 const T1 = `${SAVES}/save_01-10-2026   Rome   Turn 1.sav`;
 const T2 = `${SAVES}/save_01-10-2026   Rome   Turn 2.sav`;
-const have = fs.existsSync(T1) && fs.existsSync(T2) && fs.existsSync(`${MOD}/export_descr_buildings.txt`);
+const haveSaves = fs.existsSync(T1) && fs.existsSync(T2);
+const MOD = process.env.RIS_TRADE_MOD || (haveSaves ? risDataSnapshot(CAPTURE_REV) : null);
+const have = haveSaves && !!MOD && fs.existsSync(`${MOD}/export_descr_buildings.txt`);
 const d = have ? describe : describe.skip;
 
 d("trade engine — save-driven, against the running game", () => {

@@ -82,11 +82,18 @@ function analyzeMovementLog(text, opts = {}) {
         status: ev.status, loco: ev.loco || null,
       });
       armies.set(ev.charUuid, a);
-    } else if (ev.type === "flee_tile" || ev.type === "fleeing_to_settlement") {
+    } else if (ev.type === "flee_tile" || ev.type === "fleeing_to_settlement"
+               || ev.type === "fleeing_to_tile" || ev.type === "fleeing") {
+      // "fleeing" = Name(faction:role):FLEEING:start(x,y):end(x,y), often with the
+      // next log line glued on; it carries no uuid, so it keys by name|faction and
+      // its position is the end tile. Both used to be parsed and then dropped here,
+      // so a log whose only traces were retreats read as "no movement events".
       fleeLines++;
       const key = ev.charUuid || (ev.name + "|" + (ev.faction || ""));
       const a = armies.get(key) || { name: ev.name, faction: ev.faction || null, role: null, moves: [], flees: [] };
-      a.flees.push({ turn, x: ev.x != null ? ev.x : null, y: ev.y != null ? ev.y : null });
+      const fx = ev.x != null ? ev.x : (ev.toX != null ? ev.toX : null);
+      const fy = ev.y != null ? ev.y : (ev.toY != null ? ev.toY : null);
+      a.flees.push({ turn, x: fx, y: fy });
       armies.set(key, a);
     }
   }

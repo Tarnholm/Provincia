@@ -313,3 +313,27 @@ describe("garrison-stripping, war-spam and espionage detectors (real line shapes
     expect(r.agents.zeroTurnPct).toBeCloseTo(2 / 3, 2);
   });
 });
+
+// 2026-10-06: a live message_log whose only traces were two retreats read as "no
+// movement events" - the parser recognised the FLEEING line (with the engine's next
+// line glued on), and the analyser dropped that event type.
+describe("flee-only logs count as movement", () => {
+  it("a FLEEING:start/end line with trailing text makes the log usable", () => {
+    const log = [
+      "Azes(e32c1250:army(e3741bc0):yuezhi:named character):FLEEING:",
+      "Azes(yuezhi:named character):FLEEING:start(1016,693):end(1015,693)Display timer start 1.00, line number 198",
+    ].join("\n");
+    expect(parseLine(log.split("\n")[1])).toMatchObject({ type: "fleeing", toX: 1015, toY: 693 });
+    const r = analyzeMovementLog(log);
+    expect(r.usable).toBe(true);
+    expect(r.fleeLines).toBe(1);
+    expect(r.moveLines).toBe(0);
+    expect(r.emptyReason).toBeNull();
+  });
+
+  it("an army fleeing to a tile is a flee event too", () => {
+    const r = analyzeMovementLog("Admiral Assandros(c20c0cf0:macedon)army(c3551750) is fleeing to tile(17,38)");
+    expect(r.usable).toBe(true);
+    expect(r.fleeLines).toBe(1);
+  });
+});
