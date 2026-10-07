@@ -5422,7 +5422,7 @@
 		"description": "BRUTTIANS_DESCR",
 
 		;;culture and (default?) character ethnicity
-		"culture":   "roman",
+		"culture":   "oscan",
 		"ethnicity": "mediterranean",
 
 		;;tags for faction groups
@@ -6337,7 +6337,7 @@
 		"description": "CAPUA_DESCR",
 
 		;;culture and (default?) character ethnicity
-		"culture":   "roman",
+		"culture":   "oscan",
 		"ethnicity": "mediterranean",
 
 		;;tags for faction groups
@@ -12812,7 +12812,7 @@
 		"description": "ITALICS_DESCR",
 
 		;;culture and (default?) character ethnicity
-		"culture":   "roman",
+		"culture":   "oscan",
 		"ethnicity": "mediterranean",
 
 		;;tags for faction groups
@@ -14010,7 +14010,7 @@
 		"description": "LUCANIANS_DESCR",
 
 		;;culture and (default?) character ethnicity
-		"culture":   "roman",
+		"culture":   "oscan",
 		"ethnicity": "mediterranean",
 
 		;;tags for faction groups
@@ -14652,7 +14652,7 @@
 		"description": "MAMERTINES_DESCR",
 
 		;;culture and (default?) character ethnicity
-		"culture":   "roman",
+		"culture":   "oscan",
 		"ethnicity": "mediterranean",
 
 		;;tags for faction groups
@@ -15433,7 +15433,7 @@
 		"description": "MESSAPIANS_DESCR",
 
 		;;culture and (default?) character ethnicity
-		"culture":   "roman",
+		"culture":   "iapygian",
 		"ethnicity": "mediterranean",
 
 		;;tags for faction groups
@@ -17601,7 +17601,7 @@
 		"description": "PICENTES_DESCR",
 
 		;;culture and (default?) character ethnicity
-		"culture":   "roman",
+		"culture":   "oscan",
 		"ethnicity": "mediterranean",
 
 		;;tags for faction groups
@@ -18756,7 +18756,7 @@
 		"description": "SAMNITES_DESCR",
 
 		;;culture and (default?) character ethnicity
-		"culture":   "roman",
+		"culture":   "oscan",
 		"ethnicity": "mediterranean",
 
 		;;tags for faction groups
@@ -18868,7 +18868,7 @@
 		"description": "SARDINIANS_DESCR",
 
 		;;culture and (default?) character ethnicity
-		"culture":   "iberian",
+		"culture":   "sardinian",
 		"ethnicity": "mediterranean",
 
 		;;tags for faction groups
@@ -18961,7 +18961,7 @@
 		"description": "SARSINATES_DESCR",
 
 		;;culture and (default?) character ethnicity
-		"culture":   "roman",
+		"culture":   "oscan",
 		"ethnicity": "mediterranean",
 
 		;;tags for faction groups
@@ -22848,7 +22848,7 @@
 		"description": "VOLSINII_DESCR",
 
 		;;culture and (default?) character ethnicity
-		"culture":   "roman",
+		"culture":   "etruscan",
 		"ethnicity": "mediterranean",
 
 		;;tags for faction groups
@@ -23316,7 +23316,7 @@
 		"description": "YUEZHI_DESCR",
 
 		;;culture and (default?) character ethnicity
-		"culture":   "scythian",
+		"culture":   "far_eastern",
 		"ethnicity": "caucasiandark",
 
 		;;tags for faction groups
@@ -23438,7 +23438,7 @@
 		"description": "CHINA_DESCR",
 
 		;;culture and (default?) character ethnicity
-		"culture":   "scythian",
+		"culture":   "far_eastern",
 		"ethnicity": "caucasiandark",
 
 		;;tags for faction groups
@@ -23546,7 +23546,7 @@
 		"description": "WUSUN_DESCR",
 
 		;;culture and (default?) character ethnicity
-		"culture":   "scythian",
+		"culture":   "far_eastern",
 		"ethnicity": "caucasiandark",
 
 		;;tags for faction groups
@@ -23654,7 +23654,7 @@
 		"description": "XIONGNU_DESCR",
 
 		;;culture and (default?) character ethnicity
-		"culture":   "scythian",
+		"culture":   "far_eastern",
 		"ethnicity": "caucasiandark",
 
 		;;tags for faction groups

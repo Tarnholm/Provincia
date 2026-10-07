@@ -5,6 +5,13 @@
 // greppable in the working tree. Full authoritative history is in git.
 const CHANGELOG_ARCHIVE = [
   {
+    version: "0.9.1525",
+    date: "2026-10-01",
+    items: [
+      { type: "fix", text: "**Crash reporter no longer counts a failed ambush as an error.** The game logs a failed ambush as “Conflict Type(FailedAmbush)”, and the reporter read that as an engine assert, which appeared in 6% of beta reports. It is now ignored. The battle summary still shows the conflict type (bundled crash reporter v0.1.60)." },
+    ],
+  },
+  {
     version: "0.9.1524",
     date: "2026-10-01",
     items: [

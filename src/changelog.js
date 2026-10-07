@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1530",
+    date: "2026-10-07",
+    items: [
+      { type: "fix", text: "**Bring In a Faction and New Faction give each character its own tile.** Every character used to be put on the town’s tile. Now only the faction leader stands in the town; everyone else goes to the nearest free tile in the town’s region, or in a neighbouring region if the region has none. A free tile has no mountain, dense forest, river, sea, cliff or volcano, and no other character on it. An admiral goes to the nearest free shallow-sea tile off the town. The preview shows where each character will stand." },
+      { type: "fix", text: "**A town taken from the rebels arrives empty.** The rebels’ garrison in the town and any rebel character standing on its tile are removed, instead of staying inside the new owner’s walls. The preview says what was removed." },
+      { type: "improvement", text: "**Brought-in characters are written the way RIS writes them.** Each character has a `;Asculum`, `;Outside Asculum` or `;Port of …` line above it, the family records follow as one group under the leader’s name, then the family links, with one blank line after each group." },
+    ],
+  },
+  {
     version: "0.9.1529",
     date: "2026-10-06",
     items: [
@@ -44,14 +53,6 @@ const CHANGELOG = [
     date: "2026-10-02",
     items: [
       { type: "improvement", text: "**Settlement trade income now matches the game to the denarius.** Trade is computed from your save the way the game computes it: every land route (population, goods, trade rights, road links and road levels, the governor's trading skill), every sea route (which ports a town's fleets pick, distance, docks, blockades, enemy armies in the region), the imports each partner sends back, and the Colossus. Checked against the running game on all 811 faction-owned settlements of a Turn 2 save: every one matches. Hover a settlement's trade value to see its routes row by row, like the in-game income scroll." },
-    ],
-  },
-
-  {
-    version: "0.9.1525",
-    date: "2026-10-01",
-    items: [
-      { type: "fix", text: "**Crash reporter no longer counts a failed ambush as an error.** The game logs a failed ambush as “Conflict Type(FailedAmbush)”, and the reporter read that as an engine assert, which appeared in 6% of beta reports. It is now ignored. The battle summary still shows the conflict type (bundled crash reporter v0.1.60)." },
     ],
   },
 
