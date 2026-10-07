@@ -68,6 +68,15 @@ function characterExtent(lines, i) {
   return j;
 }
 
+// A `character` line's comma fields after the keyword: [name, kind, …]. A
+// character can open with `sub_faction <faction>,` (RIS: 66 in the main
+// campaign, 22 of them outside the rebels) — that is not its name, and reading
+// it as one gave every character of a sub-faction the SAME name.
+function characterFields(head) {
+  const parts = head.replace(/^character\s+/, "").split(",").map((s) => s.trim());
+  return /^sub_faction\s/.test(parts[0] || "") ? parts.slice(1) : parts;
+}
+
 // Everything about one faction, as text that can be moved.
 function readFactionRoster(stratText, faction) {
   const lines = splitLines(stratText);
@@ -103,7 +112,7 @@ function readFactionRoster(stratText, faction) {
       while (bodyEnd > i + 1 && strip(lines[bodyEnd - 1]).trim() === "") bodyEnd--;
       const body = lines.slice(i, bodyEnd);
       const head = strip(body[0]);
-      const parts = head.replace(/^character\s+/, "").split(",").map((s) => s.trim());
+      const parts = characterFields(head);
       const x = (head.match(/\bx\s+(-?\d+)/) || [])[1];
       const y = (head.match(/\by\s+(-?\d+)/) || [])[1];
       const army = body.map(strip).filter((l) => /^\s*unit\s/.test(l)).map((l) => l.trim().replace(/^unit\s+/, "").split(/\s{2,}|\t+/)[0].trim());
@@ -168,7 +177,7 @@ function characterTiles(stratText) {
       if (!/^character\s/.test(t)) continue;
       const x = t.match(/\bx\s+(-?\d+)/), y = t.match(/\by\s+(-?\d+)/);
       if (!x || !y) continue;
-      out.push({ faction: b.faction, name: t.replace(/^character\s+/, "").split(",")[0].trim(), x: +x[1], y: +y[1] });
+      out.push({ faction: b.faction, name: characterFields(t)[0] || null, x: +x[1], y: +y[1] });
     }
   }
   return out;
@@ -213,7 +222,7 @@ function clearRebelsAt(stratText, regions = [], tiles = {}) {
       const x = t.match(/\bx\s+(-?\d+)/), y = t.match(/\by\s+(-?\d+)/);
       if (x && y && tileKeys.has(+x[1] + "," + +y[1])) {
         drop.push([i, end]);
-        result.characters.push(t.replace(/^character\s+/, "").split(",")[0].trim());
+        result.characters.push(characterFields(t)[0]);
       }
       i = end - 1;
     }

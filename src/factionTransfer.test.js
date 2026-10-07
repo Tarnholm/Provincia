@@ -153,6 +153,10 @@ describe("a town taken from the rebels arrives empty", () => {
     "character\tRebelOnTown, named character, age 30, , x 5, y 5",
     "army",
     "unit\t\tgreek hoplites\t\texp 0 armour 0 weapon_lvl 0",
+    // RIS writes most rebels this way (RIS_Light: 4 of 4)
+    "character\tsub_faction odrysians,\tTaroutinas,  named character, age 21, , x 5, y 5",
+    "army",
+    "unit\t\tthracian peltasts\t\texp 0 armour 0 weapon_lvl 0",
     "character\tRebelInField, named character, age 30, , x 6, y 5",
     "army",
     "unit\t\tgreek hoplites\t\texp 0 armour 0 weapon_lvl 0",
@@ -164,11 +168,12 @@ describe("a town taken from the rebels arrives empty", () => {
   it("drops the garrisoned_army and the rebel standing on the town's tile — nothing else", () => {
     const r = planFactionImport({ targetText: T, sourceText: SOURCE, faction: "athens", settlements: ["Attike"], settlementTiles: tiles });
     expect(r.errors).toEqual([]);
-    expect(r.summary.rebelsCleared).toEqual({ units: 2, characters: ["RebelOnTown"] });
+    expect(r.summary.rebelsCleared).toEqual({ units: 2, characters: ["RebelOnTown", "Taroutinas"] });
     const town = readFactionRoster(r.text, "athens").settlements[0].lines.join(NL);
     expect(town).not.toMatch(/garrisoned_army|unit/);
     expect(town).toMatch(/governors_house/);
-    expect(r.text).not.toMatch(/RebelOnTown/);
+    // REMOVED from the file, with their armies — not moved to another tile
+    expect(r.text).not.toMatch(/RebelOnTown|Taroutinas|thracian peltasts/);
     expect(r.text).toMatch(/RebelInField/);
     expect(readFactionRoster(r.text, "slave").characters.map((c) => c.name)).toEqual(["RebelInField"]);
   });
