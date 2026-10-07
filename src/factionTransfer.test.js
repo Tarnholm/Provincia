@@ -138,6 +138,123 @@ describe("planFactionImport", () => {
   });
 });
 
+describe("a town taken from the rebels arrives empty", () => {
+  const T = [
+    "faction\tathens, ai_athens",
+    "dead_until_resurrected",
+    "denari\t5000",
+    "faction\tslave, ai_rebel",
+    "denari\t1000",
+    "settlement", "{", "\tlevel town", "\tregion Attike", "\tgarrisoned_army",
+    "\tunit\t\tgreek hoplites\t\texp 0 armour 0 weapon_lvl 0",
+    "\tunit\t\tgreek archers\t\texp 0 armour 0 weapon_lvl 0",
+    "\tbuilding", "\t{", "\t\ttype core_building governors_house", "\t}", "}",
+    ...settle("Elsewhere", "town", "slave"),
+    "character\tRebelOnTown, named character, age 30, , x 5, y 5",
+    "army",
+    "unit\t\tgreek hoplites\t\texp 0 armour 0 weapon_lvl 0",
+    "character\tRebelInField, named character, age 30, , x 6, y 5",
+    "army",
+    "unit\t\tgreek hoplites\t\texp 0 armour 0 weapon_lvl 0",
+    "faction\tmacedon, ai_greek",
+    "",
+  ].join(NL);
+  const tiles = { Attike: { x: 5, y: 5 }, Elsewhere: { x: 9, y: 9 } };
+
+  it("drops the garrisoned_army and the rebel standing on the town's tile — nothing else", () => {
+    const r = planFactionImport({ targetText: T, sourceText: SOURCE, faction: "athens", settlements: ["Attike"], settlementTiles: tiles });
+    expect(r.errors).toEqual([]);
+    expect(r.summary.rebelsCleared).toEqual({ units: 2, characters: ["RebelOnTown"] });
+    const town = readFactionRoster(r.text, "athens").settlements[0].lines.join(NL);
+    expect(town).not.toMatch(/garrisoned_army|unit/);
+    expect(town).toMatch(/governors_house/);
+    expect(r.text).not.toMatch(/RebelOnTown/);
+    expect(r.text).toMatch(/RebelInField/);
+    expect(readFactionRoster(r.text, "slave").characters.map((c) => c.name)).toEqual(["RebelInField"]);
+  });
+
+  it("leaves a town that is not the rebels' as it is", () => {
+    const r = planFactionImport({ ...{ targetText: TARGET, sourceText: SOURCE, faction: "athens" }, settlements: ["Pella"], settlementTiles: { Pella: { x: 1, y: 2 } } });
+    expect(r.summary.rebelsCleared).toEqual({ units: 0, characters: [] });
+    expect(r.text).toMatch(/Antigonos/);
+  });
+});
+
+describe("the layout RIS writes a faction in", () => {
+  // the main mod's own Picentes, blank lines and family headings included
+  const SRC = [
+    "faction\tpicentes, ai_picentes",
+    "denari\t5000",
+    ...settle("Picenum", "large_town", "picentes"),
+    ";Asculum",
+    "character\tApaes,  named character, leader, age 46, , x 296, y 418",
+    "traits BeingItalic 1",
+    "army",
+    "unit\t\tpicentine general\t\t\texp 0 armour 0 weapon_lvl 0",
+    "",
+    "character\tPompo,  named character, heir, age 20, , x 295, y 421",
+    "army",
+    "unit\t\tpicentine general\t\t\texp 0 armour 0 weapon_lvl 0",
+    "",
+    ";Apaes",
+    "character_record\t\tVibdu,\t female, age 46, alive, never_a_leader",
+    "",
+    ";Pompo",
+    "character_record\t\tUibia, female, age 20, alive, never_a_leader",
+    "",
+    "relative\t Apaes,\t\t Vibdu,\t\tPompo, end",
+    "relative\tPompo,\t\tUibia, end",
+    "",
+    "faction\tpriene, ai_priene",
+    "",
+  ].join(NL);
+  const TGT = [
+    "faction\tpicentes, ai_picentes",
+    "dead_until_resurrected",
+    "re_emergent",
+    "denari\t5000",
+    "faction\tpriene, ai_rome",
+    "dead_until_resurrected",
+    "faction\tslave, ai_rebel",
+    "denari\t1000",
+    ...settle("Picenum", "large_town", "slave"),
+    "",
+  ].join(NL);
+
+  it("headings above each character, one blank line after every group", () => {
+    const r = planFactionImport({
+      targetText: TGT, sourceText: SRC, faction: "picentes", settlements: ["Picenum"],
+      characters: ["Apaes", "Pompo"], family: ["Vibdu", "Uibia"],
+      placements: { Apaes: { x: 148, y: 209, comment: ";Asculum" }, Pompo: { x: 149, y: 210, comment: ";Outside Asculum" } },
+    });
+    expect(r.errors).toEqual([]);
+    const L = r.text.split(NL);
+    const from = L.indexOf(";Asculum"), to = L.indexOf("faction\tpriene, ai_rome");
+    expect(L[from - 1]).toBe("}"); // the town runs straight into its first character
+    expect(L.slice(from, to + 1)).toEqual([
+      ";Asculum",
+      "character\tApaes,  named character, leader, age 46, , x 148, y 209",
+      "traits BeingItalic 1",
+      "army",
+      "unit\t\tpicentine general\t\t\texp 0 armour 0 weapon_lvl 0",
+      "",
+      ";Outside Asculum",
+      "character\tPompo,  named character, heir, age 20, , x 149, y 210",
+      "army",
+      "unit\t\tpicentine general\t\t\texp 0 armour 0 weapon_lvl 0",
+      "",
+      ";Apaes",
+      "character_record\t\tVibdu,\t female, age 46, alive, never_a_leader",
+      "character_record\t\tUibia, female, age 20, alive, never_a_leader",
+      "",
+      "relative\t Apaes,\t\t Vibdu,\t\tPompo, end",
+      "relative\tPompo,\t\tUibia, end",
+      "",
+      "faction\tpriene, ai_rome",
+    ]);
+  });
+});
+
 // ── against the real mod, when it is installed ──────────────────────────────
 const MAIN = "C:/RIS/RIS/data/world/maps/campaign/imperial_campaign/descr_strat.txt";
 const LIGHT = "C:/RIS/_submods/RIS_Light/data/world/maps/campaign/ris_light/descr_strat.txt";

@@ -293,8 +293,11 @@ export default function NewFactionPanel({ modDataDir, campaign, factionDisplayNa
                       <div>{preview.summary.files.length} file(s) written: {preview.summary.files.join(", ")}</div>
                       <div>
                         {preview.summary.strat.settlements.map((s) => `${s.region} from ${s.from === "slave" ? "the rebels" : label(s.from, factionDisplayNames)}`).join(", ")}
-                        {" · "}{preview.summary.strat.leader} leads, {preview.summary.strat.heir} succeeds, at ({preview.summary.strat.at.x},{preview.summary.strat.at.y})
+                        {" · "}{preview.summary.strat.leader} leads from ({preview.summary.strat.at.x},{preview.summary.strat.at.y}), {preview.summary.strat.heir} succeeds{preview.summary.strat.heirAt ? `, outside at (${preview.summary.strat.heirAt.x},${preview.summary.strat.heirAt.y})` : ""}
                       </div>
+                      {preview.summary.strat.rebelsCleared && (preview.summary.strat.rebelsCleared.units > 0 || preview.summary.strat.rebelsCleared.characters.length > 0) && (
+                        <div>Rebels removed: {[preview.summary.strat.rebelsCleared.units ? `a garrison of ${preview.summary.strat.rebelsCleared.units} unit(s)` : null, preview.summary.strat.rebelsCleared.characters.length ? `${preview.summary.strat.rebelsCleared.characters.join(", ")} standing in the town` : null].filter(Boolean).join(" and ")}</div>
+                      )}
                       <div>{preview.summary.art} art file(s) copied{preview.summary.artMissing ? `, ${preview.summary.artMissing} not found` : ""}{preview.summary.recruitChanged ? ` · ${preview.summary.recruitChanged} recruitment line(s)` : ""}</div>
                       {preview.warnings.map((w, i) => <div key={i} style={{ color: WARN, marginTop: 3 }}>⚠ {w}</div>)}
                     </div>

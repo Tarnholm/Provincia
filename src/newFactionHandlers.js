@@ -22,7 +22,7 @@ const path = require("path");
 const nf = require("./newFaction.js");
 const ft = require("./factionTransfer.js");
 const safeWrite = require("./safeModWrite.js");
-const { campaignsIn, mapCoords } = require("./factionTransferHandlers.js");
+const { campaignsIn, mapCoords, placeOnMap } = require("./factionTransferHandlers.js");
 
 // The most factions a mod may declare: 255. RIS ran 255 in game on 2026-10-06
 // (16 restored factions on top of 239), and 256+ is not supported - faction ids
@@ -216,19 +216,34 @@ function registerNewFactionHandlers(ipcMain, { getActiveModDataDir, getModExport
       if (plan.errors.length) return { error: plan.errors[0], warnings: plan.warnings };
 
       // 2. the campaign: declaration, a town, and the family the engine needs
+      // The leader stands in the first town; the heir on the nearest free tile
+      // of its region (src/freeTiles.js), never on the leader's tile.
       const { coords } = mapCoords(dir);
       const wanted = Array.isArray(choice.settlements) ? choice.settlements : [];
-      const at = wanted.map((rg) => coords[rg]).find(Boolean) || null;
+      const home = wanted.find((rg) => coords[rg]) || null;
+      let at = null, heirAt = null;
+      const placeNotes = [];
+      if (home && choice.leader && choice.heir && files.strat) {
+        const placed = placeOnMap(dir, ft.clearRebelsAt(files.strat, wanted, coords).text, [
+          { name: choice.leader.name, role: "leader", region: home },
+          { name: choice.heir.name, role: "heir", region: home },
+        ]);
+        if (placed.errors.length) return { error: placed.errors[0], warnings: plan.warnings };
+        at = placed.placements[choice.leader.name];
+        heirAt = placed.placements[choice.heir.name];
+        placeNotes.push(...placed.notes);
+      }
       const strat = nf.planFactionStratEntry({
         stratText: files.strat, newId: choice.newId, after: choice.donor,
         // the personality cloned above is ai_<newId>; pointing the strat line
         // at the donor's label (as the panel suggests) left that clone unused
         aiLabel: plan.edits.aiPersonality ? "ai_" + String(choice.newId).toLowerCase() : choice.aiLabel,
         settlements: wanted,
-        leader: choice.leader, heir: choice.heir, at,
+        leader: choice.leader, heir: choice.heir, at, heirAt, settlementTiles: coords,
         denari: choice.denari ?? 5000, playable: !!choice.playable,
       });
       if (strat.errors.length) return { error: strat.errors[0], warnings: [...plan.warnings, ...strat.warnings] };
+      strat.warnings.push(...placeNotes);
 
       // 3. recruitment, only where the user asked for it
       let rec = { text: files.edb, changed: 0 };

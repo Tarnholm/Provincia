@@ -82,6 +82,9 @@ const NEEDED = [
   "feral_descr_ai_personality.txt", "descr_namelists.txt", "text/expanded_bi.txt",
   "world/maps/base/descr_regions.txt", "world/maps/base/map_regions.tga",
   "world/maps/campaign/imperial_campaign/descr_strat.txt", "world/maps/campaign/imperial_campaign/descr_win_conditions.txt",
+  // the heir's free tile is judged on these (src/freeTiles.js); last, because
+  // the tests above address this list by index
+  "world/maps/base/map_ground_types.tga", "world/maps/base/map_features.tga",
 ];
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "provincia-newfaction-"));
 afterAll(() => {

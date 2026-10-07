@@ -135,6 +135,7 @@
       "src/appWindows.js",
       "src/liveArmyFactions.js",
       "src/factionTransfer.js",
+      "src/freeTiles.js",
       "src/newFaction.js",
       "src/factionTransferHandlers.js",
       "src/newFactionHandlers.js",

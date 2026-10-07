@@ -19,6 +19,7 @@ const ft = require("./factionTransfer.js");
 const descrGen = require("./descrStratGeneral.js");
 const { findRelatedModDirs } = require("./modPathResolver.js");
 const safeWrite = require("./safeModWrite.js");
+const freeTiles = require("./freeTiles.js");
 
 const CAMPAIGN_REL = ["world", "maps", "campaign"];
 
@@ -89,10 +90,36 @@ function mapCoords(modDataDir) {
   const hit = _coordCache.get(key);
   if (hit && hit.mtime === mtime) return hit;
   const { regionToCity, rgbToRegion } = descrGen.parseDescrRegions(fs.readFileSync(regPath, "utf8"));
-  const coords = descrGen.buildRegionCoords(fs.readFileSync(tgaPath), rgbToRegion);
-  const val = { mtime, coords, regionToCity };
+  const tgaBuf = fs.readFileSync(tgaPath);
+  const coords = descrGen.buildRegionCoords(tgaBuf, rgbToRegion);
+  // the terrain behind free-tile placement, decoded on first use
+  let tiles;
+  const tileMap = () => {
+    if (tiles !== undefined) return tiles;
+    const groundPath = path.join(base, "map_ground_types.tga"), featPath = path.join(base, "map_features.tga");
+    tiles = fs.existsSync(groundPath) ? freeTiles.makeTileMap({
+      regions: descrGen.tgaToRaw(tgaBuf),
+      ground: descrGen.tgaToRaw(fs.readFileSync(groundPath)),
+      features: fs.existsSync(featPath) ? descrGen.tgaToRaw(fs.readFileSync(featPath)) : null,
+      rgbToRegion,
+    }) : null;
+    return tiles;
+  };
+  const val = { mtime, coords, regionToCity, tileMap };
   _coordCache.set(key, val);
   return val;
+}
+
+// Each character on its own tile: the leader in the town, everyone else on the
+// nearest free tile (src/freeTiles.js). `chars` = [{ name, role, kind, region }].
+// Occupancy is read from `stratText` — pass the text AFTER the rebels have left
+// the towns being taken, or the leader finds his own town occupied.
+function placeOnMap(modDataDir, stratText, chars) {
+  const { coords, regionToCity, tileMap } = mapCoords(modDataDir);
+  const tiles = tileMap();
+  if (!tiles) return { errors: ["this map has no map_ground_types.tga — cannot tell a free tile from a mountain"], placements: {}, notes: [] };
+  const occupied = ft.characterTiles(stratText).map((c) => c.x + "," + c.y);
+  return freeTiles.placeCharacters({ tiles, towns: coords, cityOf: regionToCity, occupied, chars });
 }
 
 function registerFactionTransferHandlers(ipcMain, { getActiveModDataDir, getModExportDir, modOut, _writeLog } = {}) {
@@ -214,26 +241,34 @@ function registerFactionTransferHandlers(ipcMain, { getActiveModDataDir, getModE
       const targetText = readTarget(r.target.strat);
       const sourceText = r.source ? fs.readFileSync(r.source.strat, "latin1") : null;
 
-      // Characters land on the tile of the town the user chose for them, or of
-      // the faction's first new town — a coordinate from THIS map, never the
-      // source's.
+      // Characters belong to the town the user chose for them, or to the
+      // faction's first new town — coordinates from THIS map, never the
+      // source's. The leader stands in the town; everyone else on the nearest
+      // free tile of its region (src/freeTiles.js).
       const { coords } = mapCoords(dir);
       const settlements = Array.isArray(choice.settlements) ? choice.settlements : [];
-      const fallback = settlements.map((rg) => coords[rg]).find(Boolean) || null;
-      const placements = {};
+      const home = settlements.find((rg) => coords[rg]) || null;
+      const roster = sourceText ? ft.readFactionRoster(sourceText, faction) : null;
+      const placements = {}, toPlace = [];
       for (const name of (choice.characters || [])) {
         const at = (choice.placements || {})[name];
-        const c = (at && at.region && coords[at.region]) || (at && at.x != null ? at : null) || fallback;
-        if (!c) return { error: `no tile on this map for "${name}" — choose at least one settlement first` };
-        placements[name] = { x: c.x, y: c.y };
+        if (at && !at.region && at.x != null && at.y != null) { placements[name] = { x: at.x, y: at.y }; continue; }
+        const region = (at && at.region && coords[at.region]) ? at.region : home;
+        if (!region) return { error: `no tile on this map for "${name}" — choose at least one settlement first` };
+        const c = roster && roster.characters.find((x) => x.name === name);
+        toPlace.push({ name, role: c ? c.role : null, kind: c ? c.kind : null, region });
       }
+      const placed = placeOnMap(dir, ft.clearRebelsAt(targetText, settlements, coords).text, toPlace);
+      if (placed.errors.length) return { error: placed.errors[0] };
+      Object.assign(placements, placed.placements);
 
       const plan = ft.planFactionImport({
         targetText, sourceText, faction,
         settlements, characters: choice.characters || [], family: choice.family || [],
-        placements, denari: choice.denari ?? null,
+        placements, settlementTiles: coords, denari: choice.denari ?? null,
       });
       if (plan.errors.length) return { error: plan.errors[0], warnings: plan.warnings };
+      plan.warnings.push(...placed.notes);
       if (choice.dryRun) return { ok: true, dryRun: true, summary: plan.summary, warnings: plan.warnings };
 
       const w = safeWrite.safeWriteModFile(r.target.strat, plan.text, "latin1", { outPath: exportOut(r.target.strat) });
@@ -245,4 +280,4 @@ function registerFactionTransferHandlers(ipcMain, { getActiveModDataDir, getModE
   });
 }
 
-module.exports = { registerFactionTransferHandlers, campaignsIn, baseModOf, mapCoords };
+module.exports = { registerFactionTransferHandlers, campaignsIn, baseModOf, mapCoords, placeOnMap };

@@ -97,7 +97,11 @@ function readFactionRoster(stratText, faction) {
 
     if (/^character\s/.test(t)) {
       const end = characterExtent(lines, i);
-      const body = lines.slice(i, end);
+      // the blank lines and `;Pompo`-style headings after a character's army
+      // belong to whatever comes next, not to the character
+      let bodyEnd = end;
+      while (bodyEnd > i + 1 && strip(lines[bodyEnd - 1]).trim() === "") bodyEnd--;
+      const body = lines.slice(i, bodyEnd);
       const head = strip(body[0]);
       const parts = head.replace(/^character\s+/, "").split(",").map((s) => s.trim());
       const x = (head.match(/\bx\s+(-?\d+)/) || [])[1];
@@ -153,6 +157,72 @@ function settlementOwners(stratText) {
   return out;
 }
 
+// Every `character` on the map, any faction: { faction, name, x, y }. What a
+// free tile has to avoid.
+function characterTiles(stratText) {
+  const lines = splitLines(stratText);
+  const out = [];
+  for (const b of factionBlocks(lines)) {
+    for (let i = b.start + 1; i < b.end; i++) {
+      const t = strip(lines[i]).trim();
+      if (!/^character\s/.test(t)) continue;
+      const x = t.match(/\bx\s+(-?\d+)/), y = t.match(/\by\s+(-?\d+)/);
+      if (!x || !y) continue;
+      out.push({ faction: b.faction, name: t.replace(/^character\s+/, "").split(",")[0].trim(), x: +x[1], y: +y[1] });
+    }
+  }
+  return out;
+}
+
+// A town handed over from the rebels arrives EMPTY. The rebels hold a town two
+// ways and both are removed: a `garrisoned_army` (with its `unit` lines) inside
+// the settlement block, and a `character` of the slave faction standing on the
+// town's tile — which would otherwise stay put inside the new owner's walls.
+// `tiles` = { region: {x,y} } for the towns being taken; regions held by anyone
+// but the rebels are left alone. Returns { text, units, characters }.
+function clearRebelsAt(stratText, regions = [], tiles = {}) {
+  const eol = eolOf(stratText);
+  const lines = splitLines(stratText);
+  const owners = settlementOwners(stratText);
+  const rebelTowns = regions.filter((r) => owners[r] && owners[r].faction === "slave");
+  const result = { text: stratText, units: 0, characters: [] };
+  if (!rebelTowns.length) return result;
+  const slave = blockOf(lines, "slave");
+  if (!slave) return result;
+
+  const tileKeys = new Set(rebelTowns.map((r) => tiles[r]).filter((t) => t && t.x != null && t.y != null).map((t) => t.x + "," + t.y));
+  const drop = []; // [start, end) ranges, removed high to low
+  for (let i = slave.start + 1; i < slave.end; i++) {
+    const t = strip(lines[i]).trim();
+    if (/^settlement\b/.test(t)) {
+      const end = settlementExtent(lines, i);
+      const rm = (lines.slice(i, end).map(strip).find((l) => REGION_LINE_RE.test(l)) || "").match(REGION_LINE_RE);
+      if (rm && rebelTowns.includes(rm[1])) {
+        for (let j = i + 1; j < end; j++) {
+          if (!/^garrisoned_army\b/.test(strip(lines[j]).trim())) continue;
+          let k = j + 1;
+          while (k < end && /^unit\s/.test(strip(lines[k]).trim())) { k++; result.units++; }
+          drop.push([j, k]);
+          j = k - 1;
+        }
+      }
+      i = end - 1; continue;
+    }
+    if (/^character\s/.test(t)) {
+      const end = characterExtent(lines, i);
+      const x = t.match(/\bx\s+(-?\d+)/), y = t.match(/\by\s+(-?\d+)/);
+      if (x && y && tileKeys.has(+x[1] + "," + +y[1])) {
+        drop.push([i, end]);
+        result.characters.push(t.replace(/^character\s+/, "").split(",")[0].trim());
+      }
+      i = end - 1;
+    }
+  }
+  for (const [s, e] of drop.sort((a, b) => b[0] - a[0])) lines.splice(s, e - s);
+  result.text = lines.join(eol);
+  return result;
+}
+
 // Put a character on a different map: rewrite x,y in its `character` line.
 function replaceCoords(characterLines, x, y) {
   const copy = characterLines.slice();
@@ -163,21 +233,33 @@ function replaceCoords(characterLines, x, y) {
 // Where a new item belongs inside a faction block: after the last item of its
 // own kind, else after the last item of the kind before it. descr_strat wants
 // settlements, then characters, then character_records, then relatives.
+//
+// An item ends at its last real line; the blank lines after it are its spacing
+// and stay with it, but a comment heading after them (`;Pompo` above a family
+// group) belongs to what follows — so the point is after the blanks and before
+// the comment. Returns { at, after } where `after` is the kind it follows
+// (null = the faction header).
 function insertionPoint(lines, block, kind) {
   const order = ["settlement", "character", "character_record", "relative"];
   const lastOf = {};
   for (let i = block.start + 1; i < block.end; i++) {
     const t = strip(lines[i]).trim();
     if (/^settlement\b/.test(t)) { lastOf.settlement = settlementExtent(lines, i); i = lastOf.settlement - 1; continue; }
-    if (/^character\s/.test(t)) { lastOf.character = characterExtent(lines, i); i = lastOf.character - 1; continue; }
+    if (/^character\s/.test(t)) {
+      const end = characterExtent(lines, i);
+      let real = end;
+      while (real > i + 1 && strip(lines[real - 1]).trim() === "") real--;
+      lastOf.character = real; i = end - 1; continue;
+    }
     if (/^character_record\s/.test(t)) { lastOf.character_record = i + 1; continue; }
     if (/^relative\s/.test(t)) { lastOf.relative = i + 1; continue; }
   }
-  for (let k = order.indexOf(kind); k >= 0; k--) if (lastOf[order[k]] != null) return lastOf[order[k]];
+  const pastBlanks = (i) => { while (i < block.end && lines[i].trim() === "") i++; return i; };
+  for (let k = order.indexOf(kind); k >= 0; k--) if (lastOf[order[k]] != null) return { at: pastBlanks(lastOf[order[k]]), after: order[k] };
   // nothing of any earlier kind: after the faction header and its denari/flags
   let i = block.start + 1;
   while (i < block.end && /^(denari|ai_do_not_attack|re_emergent|dead_until_resurrected)\b/.test(strip(lines[i]).trim())) i++;
-  return i;
+  return { at: i, after: null };
 }
 
 /**
@@ -190,27 +272,33 @@ function insertionPoint(lines, block, kind) {
  *   characters        [name, …] from the source roster (their armies come too)
  *   family            [name, …] source character_record names
  *   placements        { characterName: {x, y} } — required for each character
+ *   settlementTiles   { region: {x,y} } — the towns' tiles, so rebels standing
+ *                     on a taken town's tile are removed with its garrison
  *   denari            optional treasury override
  *
  * Returns { text, summary, warnings, errors }. On any error the text is
  * unchanged: a half-woken faction is worse than none.
  */
-function planFactionImport({ targetText, sourceText, faction, settlements = [], characters = [], family = [], placements = {}, denari = null } = {}) {
+function planFactionImport({ targetText, sourceText, faction, settlements = [], characters = [], family = [], placements = {}, settlementTiles = {}, denari = null } = {}) {
   const fail = (msg) => ({ text: targetText, summary: null, warnings: [], errors: [msg] });
   if (!targetText || !faction) return fail("targetText and faction are required");
 
   const fac = String(faction).toLowerCase();
   const eol = eolOf(targetText);
-  let lines = splitLines(targetText);
-  if (!blockOf(lines, fac)) return fail(`faction "${fac}" has no block in this campaign`);
+  if (!blockOf(splitLines(targetText), fac)) return fail(`faction "${fac}" has no block in this campaign`);
 
   const source = sourceText ? readFactionRoster(sourceText, fac) : null;
   if ((characters.length || family.length) && !source) return fail(`faction "${fac}" has no block in the source campaign`);
 
-  const warnings = [], summary = { faction: fac, settlements: [], characters: [], family: [], relatives: 0, wokeFromDormant: false, takenFrom: {} };
+  const warnings = [], summary = { faction: fac, settlements: [], characters: [], family: [], relatives: 0, wokeFromDormant: false, takenFrom: {}, rebelsCleared: { units: 0, characters: [] } };
+
+  // ── 0. the rebels leave the towns being taken ───────────────────────────
+  const cleared = clearRebelsAt(targetText, settlements, settlementTiles);
+  summary.rebelsCleared = { units: cleared.units, characters: cleared.characters };
+  let lines = splitLines(cleared.text);
 
   // ── 1. settlements: cut each from its current owner ─────────────────────
-  const owners = settlementOwners(targetText);
+  const owners = settlementOwners(cleared.text);
   const moved = [];
   for (const region of settlements) {
     const owner = owners[region];
@@ -262,7 +350,7 @@ function planFactionImport({ targetText, sourceText, faction, settlements = [], 
     if (!c) return fail(`"${name}" is not a character of ${fac} in the source campaign`);
     const at = placements[name];
     if (!at || at.x == null || at.y == null) return fail(`no map position given for "${name}" — a character needs a tile on this map`);
-    chosenChars.push({ c, lines: replaceCoords(c.lines, at.x, at.y) });
+    chosenChars.push({ c, comment: at.comment || null, lines: replaceCoords(c.lines, at.x, at.y) });
   }
   const chosenFamily = family.map((name) => {
     const f = source.family.find((x) => x.name === name);
@@ -279,18 +367,29 @@ function planFactionImport({ targetText, sourceText, faction, settlements = [], 
   const insert = (kind, payload) => {
     if (!payload.length) return;
     block = blockOf(lines, fac);
-    const at = insertionPoint(lines, block, kind);
-    lines.splice(at, 0, ...payload);
+    const { at, after } = insertionPoint(lines, block, kind);
+    // a town's `}` runs straight into the first character (`}` / `;Asculum`),
+    // as RIS writes it; anything else gets a blank line before a new group
+    const gap = after && after !== "settlement" && lines[at - 1].trim() !== "" ? [""] : [];
+    lines.splice(at, 0, ...gap, ...payload);
   };
+  // Layout, as RIS writes a faction (user, 2026-10-07): each character under a
+  // `;Asculum` / `;Outside Asculum` / `;Port of …` heading, then the family
+  // records as one group, then the relative lines — every group followed by
+  // one blank line.
   // forward order: each insert lands after the last item of its own kind, so
   // the file keeps the order the caller asked for
   for (const mv of moved) insert("settlement", mv.lines);
-  for (const ch of chosenChars) insert("character", ch.lines);
-  insert("character_record", chosenFamily.map((f) => f.line));
-  insert("relative", chosenRelatives.map((r) => r.line));
+  for (const ch of chosenChars) insert("character", [...(ch.comment ? [ch.comment] : []), ...ch.lines, ""]);
+  const leader = chosenChars.find((x) => x.c.role === "leader");
+  if (chosenFamily.length) insert("character_record", [...(leader ? [";" + leader.c.name] : []), ...chosenFamily.map((f) => f.line), ""]);
+  if (chosenRelatives.length) insert("relative", [...chosenRelatives.map((r) => r.line), ""]);
+  // a stub that already ended in a blank line would now end in two
+  block = blockOf(lines, fac);
+  while (block.end - 2 > block.start && lines[block.end - 1].trim() === "" && lines[block.end - 2].trim() === "") { lines.splice(block.end - 1, 1); block = blockOf(lines, fac); }
 
   summary.settlements = moved.map((m) => ({ region: m.region, from: m.from, level: m.level }));
-  summary.characters = chosenChars.map((x) => ({ name: x.c.name, role: x.c.role, units: x.c.unitCount, x: placements[x.c.name].x, y: placements[x.c.name].y }));
+  summary.characters = chosenChars.map((x) => ({ name: x.c.name, role: x.c.role, units: x.c.unitCount, x: placements[x.c.name].x, y: placements[x.c.name].y, where: x.comment ? x.comment.slice(1) : null }));
   summary.family = chosenFamily.map((f) => f.name);
   summary.relatives = chosenRelatives.length;
   if (!moved.length && !chosenChars.length) warnings.push("nothing was handed over — the faction is awake but holds nothing and will die on the first turn");
@@ -300,4 +399,4 @@ function planFactionImport({ targetText, sourceText, faction, settlements = [], 
   return { text: lines.join(eol), summary, warnings, errors: [] };
 }
 
-module.exports = { readFactionRoster, settlementOwners, planFactionImport, factionBlocks, settlementExtent, replaceCoords };
+module.exports = { readFactionRoster, settlementOwners, planFactionImport, factionBlocks, settlementExtent, replaceCoords, characterTiles, clearRebelsAt };

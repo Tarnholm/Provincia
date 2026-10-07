@@ -246,7 +246,13 @@ export default function FactionTransferPanel({ modDataDir, campaign, factionDisp
                     <div style={{ ...box, marginTop: 12, padding: "8px 12px", fontSize: "0.78rem" }}>
                       <div style={{ color: GOLD, marginBottom: 3 }}>What will happen</div>
                       <div>{preview.summary.settlements.length} settlement(s): {preview.summary.settlements.map((s) => `${s.region} from ${s.from === "slave" ? "the rebels" : label(s.from, factionDisplayNames)}`).join(", ") || "none"}</div>
-                      <div>{preview.summary.characters.length} character(s) placed at {preview.summary.characters.map((c) => `${c.name.replace(/_/g, " ")} (${c.x},${c.y})`).join(", ") || "none"}; {preview.summary.family.length} family record(s), {preview.summary.relatives} link(s)</div>
+                      {(() => {
+                        const rc = preview.summary.rebelsCleared;
+                        if (!rc || (!rc.units && !rc.characters.length)) return null;
+                        const parts = [rc.units ? `a garrison of ${rc.units} unit(s)` : null, rc.characters.length ? `${rc.characters.map((n) => n.replace(/_/g, " ")).join(", ")} standing in the town` : null].filter(Boolean);
+                        return <div>Rebels removed: {parts.join(" and ")}</div>;
+                      })()}
+                      <div>{preview.summary.characters.length} character(s) placed at {preview.summary.characters.map((c) => `${c.name.replace(/_/g, " ")} (${c.x},${c.y}${c.where ? " — " + c.where : ""})`).join(", ") || "none"}; {preview.summary.family.length} family record(s), {preview.summary.relatives} link(s)</div>
                       {preview.warnings.map((w, i) => <div key={i} style={{ color: WARN, marginTop: 3 }}>⚠ {w}</div>)}
                     </div>
                   )}

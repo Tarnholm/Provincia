@@ -37,7 +37,7 @@
 // reads or writes a disk.
 "use strict";
 
-const { settlementOwners, settlementExtent } = require("./factionTransfer.js");
+const { settlementOwners, settlementExtent, clearRebelsAt } = require("./factionTransfer.js");
 const { REGION_LINE_RE } = require("./stratTokens.js");
 
 const TOKEN = /^[a-z][a-z0-9_]*$/;
@@ -324,7 +324,7 @@ function readNamelist(namelistsText, pool, depth) {
  *   at            { x, y } for the characters
  *   playable      list it as playable rather than nonplayable
  */
-function planFactionStratEntry({ stratText, newId, after, aiLabel = "ai_barbarian", settlements = [], leader = null, heir = null, at = null, denari = 5000, playable = false } = {}) {
+function planFactionStratEntry({ stratText, newId, after, aiLabel = "ai_barbarian", settlements = [], leader = null, heir = null, at = null, heirAt = null, settlementTiles = {}, denari = 5000, playable = false } = {}) {
   const errors = [], warnings = [];
   const fail = (m) => ({ text: stratText, summary: null, warnings, errors: [m] });
   if (!stratText || !newId) return fail("a campaign and a faction id are required");
@@ -338,8 +338,12 @@ function planFactionStratEntry({ stratText, newId, after, aiLabel = "ai_barbaria
   if (!settlements.length) return fail("a new faction needs at least one settlement, or it is destroyed at once");
   if (!at || at.x == null || at.y == null) return fail("no map position for the leader and heir");
 
+  // 0. the rebels leave the towns being taken (garrison and anyone on the tile)
+  const cleared = clearRebelsAt(stratText, settlements, settlementTiles);
+  lines = linesOf(cleared.text);
+
   // 1. take the settlements from whoever holds them
-  const owners = settlementOwners(stratText);
+  const owners = settlementOwners(cleared.text);
   const taken = [];
   for (const region of settlements) {
     const o = owners[region];
@@ -393,14 +397,20 @@ function planFactionStratEntry({ stratText, newId, after, aiLabel = "ai_barbaria
 
   const body = [`faction\t${id}, ${aiLabel}`, `denari\t${denari}`];
   for (const t of taken) body.push(...cuts.find((c) => c.region === t.region).lines);
+  // only the leader stands in the town; the caller gives the heir his own free
+  // tile (src/freeTiles.js). Each under a `;Asculum` / `;Outside …` heading.
+  const hAt = heirAt && heirAt.x != null && heirAt.y != null ? heirAt : at;
+  if (at.comment) body.push(at.comment);
   body.push(`character\t${leader.name}, named character, leader, age ${leader.age || 40}, , x ${at.x}, y ${at.y}`);
-  body.push(`character\t${heir.name}, named character, heir, age ${heir.age || 20}, , x ${at.x}, y ${at.y}`);
+  body.push("");
+  if (hAt !== at && hAt.comment) body.push(hAt.comment);
+  body.push(`character\t${heir.name}, named character, heir, age ${heir.age || 20}, , x ${hAt.x}, y ${hAt.y}`);
   body.push("");
   lines.splice(host.end, 0, ...body);
 
   return {
     text: lines.join(eol),
-    summary: { faction: id, declaredAs: listName, settlements: taken, leader: leader.name, heir: heir.name, at, denari },
+    summary: { faction: id, declaredAs: listName, settlements: taken, leader: leader.name, heir: heir.name, at, heirAt: hAt, denari, rebelsCleared: { units: cleared.units, characters: cleared.characters } },
     warnings, errors: [],
   };
 }
