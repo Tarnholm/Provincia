@@ -299,6 +299,11 @@ export default function NewFactionPanel({ modDataDir, campaign, factionDisplayNa
                         <div>Rebels removed: {[preview.summary.strat.rebelsCleared.units ? `a garrison of ${preview.summary.strat.rebelsCleared.units} unit(s)` : null, preview.summary.strat.rebelsCleared.characters.length ? `${preview.summary.strat.rebelsCleared.characters.join(", ")} standing in the town` : null].filter(Boolean).join(" and ")}</div>
                       )}
                       <div>{preview.summary.art} art file(s) copied{preview.summary.artMissing ? `, ${preview.summary.artMissing} not found` : ""}{preview.summary.recruitChanged ? ` · ${preview.summary.recruitChanged} recruitment line(s)` : ""}</div>
+                      {(preview.summary.mapRwm || []).filter((m) => m.changed > 0).map((m) => (
+                        <div key={m.file} title="map.rwm stores each region's creator as a faction number. The new faction shifts the numbers after its donor, so they are updated to match; otherwise rebel armies would show another faction's banner.">
+                          {m.file}: {m.changed} of {m.regions} region creators updated to the new faction order
+                        </div>
+                      ))}
                       {preview.warnings.map((w, i) => <div key={i} style={{ color: WARN, marginTop: 3 }}>⚠ {w}</div>)}
                     </div>
                   )}
