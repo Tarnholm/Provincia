@@ -140,6 +140,7 @@
       "src/newFaction.js",
       "src/factionTransferHandlers.js",
       "src/newFactionHandlers.js",
+      "src/rwmCreators.js",
       "src/hordeFactions.js",
       "src/safeModWrite.js",
       "src/stratTokens.js",

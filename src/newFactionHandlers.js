@@ -23,6 +23,8 @@ const nf = require("./newFaction.js");
 const ft = require("./factionTransfer.js");
 const safeWrite = require("./safeModWrite.js");
 const { campaignsIn, mapCoords, placeOnMap } = require("./factionTransferHandlers.js");
+const { planRwmCreators } = require("./rwmCreators.js");
+const { tgaToRaw } = require("./descrStratGeneral.js");
 
 // The most factions a mod may declare: 255. RIS ran 255 in game on 2026-10-06
 // (16 restored factions on top of 239), and 256+ is not supported - faction ids
@@ -90,6 +92,33 @@ function resolveArt(rel, roots) {
     if (fs.existsSync(q)) return q;
   }
   return null;
+}
+
+// map.rwm stores each region's creator as a faction INDEX and the sea's "no
+// faction" as the faction COUNT (src/rwmCreators.js). The new faction is
+// inserted after its donor, so every later index shifts and the count grows:
+// on RIS 1,220 of 1,319 stored ids go stale and the rebels show other
+// cultures' banners. Every map.rwm in the mod (the base map and any campaign's
+// own) is re-synced to the new faction list as part of the same write.
+function planMapRwms(dir, smText, out) {
+  const base = path.join(dir, "world", "maps", "base");
+  const readBuf = (p) => { const src = safeWrite.editBasePath(p, out(p)); try { return fs.readFileSync(src); } catch { return null; } };
+  const plans = [], warnings = [];
+  for (const d of [base, ...campaignsIn(dir).map((c) => path.dirname(c.strat))]) {
+    const livePath = path.join(d, "map.rwm");
+    const rwm = readBuf(livePath);
+    if (!rwm) continue;
+    const rel = path.relative(dir, livePath).replace(/\\/g, "/");
+    const regions = readBuf(path.join(d, "descr_regions.txt")) || readBuf(path.join(base, "descr_regions.txt"));
+    const tga = readBuf(path.join(d, "map_regions.tga")) || readBuf(path.join(base, "map_regions.tga"));
+    if (!regions || !tga) { warnings.push(`${rel}: no descr_regions.txt / map_regions.tga beside it, so its region creators were not re-synced; rebel banners may show the wrong faction`); continue; }
+    let r;
+    try { r = planRwmCreators({ rwm, smFactions: smText, descrRegions: regions.toString("latin1"), regionsRaw: tgaToRaw(tga).raw }); }
+    catch (e) { warnings.push(`${rel}: could not be read (${e.message}); its region creators were not re-synced`); continue; }
+    if (!r.ok) { warnings.push(`${rel}: region creators NOT re-synced (${r.problems[0]}${r.problems.length > 1 ? ` and ${r.problems.length - 1} more` : ""}); rebel banners will show the wrong faction until map.rwm is rebuilt`); continue; }
+    plans.push({ rel, livePath, changed: r.changes.length, regions: r.land + r.seas, buffer: r.buffer });
+  }
+  return { plans, warnings };
 }
 
 function registerNewFactionHandlers(ipcMain, { getActiveModDataDir, getModExportDir, modOut, getBaseGameDataDir, _writeLog } = {}) {
@@ -252,6 +281,8 @@ function registerNewFactionHandlers(ipcMain, { getActiveModDataDir, getModExport
       }
 
       const warnings = [...plan.warnings, ...strat.warnings];
+      const rwm = planMapRwms(dir, plan.edits.smFactions, out);
+      warnings.push(...rwm.warnings);
       const capError = factionCapError(nf.listFactions(files.smFactions).length);
       if (capError) return { error: capError, warnings };
 
@@ -267,6 +298,7 @@ function registerNewFactionHandlers(ipcMain, { getActiveModDataDir, getModExport
       const summary = {
         ...plan.summary, strat: strat.summary, recruitChanged: rec.changed,
         art: art.length, artMissing: art.filter((a) => a.missing).length,
+        mapRwm: rwm.plans.map((p) => ({ file: p.rel, changed: p.changed, regions: p.regions })),
         files: [...Object.keys(plan.edits), "strat", ...(rec.changed ? ["edb"] : [])],
       };
       if (choice.dryRun) return { ok: true, dryRun: true, summary, warnings, art };
@@ -281,6 +313,10 @@ function registerNewFactionHandlers(ipcMain, { getActiveModDataDir, getModExport
       edits.strat = strat.text;
       const batch = Object.entries(edits).filter(([key]) => paths[key])
         .map(([key, text]) => ({ key, livePath: paths[key], outPath: out(paths[key]), data: text, encoding: ENC[key] || "latin1" }));
+      // map.rwm (binary) before descr_strat, which stays LAST
+      const rwmWrites = rwm.plans.filter((p) => p.buffer)
+        .map((p) => ({ key: "mapRwm:" + p.rel, livePath: p.livePath, outPath: out(p.livePath), data: p.buffer, encoding: undefined }));
+      batch.splice(batch.findIndex((b) => b.key === "strat") >= 0 ? batch.findIndex((b) => b.key === "strat") : batch.length, 0, ...rwmWrites);
       const res = safeWrite.safeWriteModFiles(batch);
       const written = batch.map((b, i) => ({ key: b.key, path: res.results[i].path, exported: res.results[i].exported, backupStamp: res.results[i].backupStamp }));
 

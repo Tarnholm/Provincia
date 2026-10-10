@@ -68,6 +68,12 @@ describe.skipIf(!haveRis)("new-faction IPC", () => {
     expect(r.summary.strat).toMatchObject({ faction: "tocharians", leader: donor.names[0], heir: donor.names[1] });
     expect(r.summary.strat.settlements[0]).toMatchObject({ region: town.region, from: "pontus" });
     expect(r.warnings.join(" ")).not.toMatch(/most a mod can have/);
+    // the base map.rwm is re-synced in the same write: the clone lands after parni,
+    // so every later faction index and the sea's "no faction" count move
+    const base = r.summary.mapRwm.find((m) => m.file === "world/maps/base/map.rwm");
+    expect(base).toBeTruthy();
+    expect(base.changed).toBeGreaterThan(1000);
+    expect(r.warnings.join(" ")).not.toMatch(/NOT re-synced/);
   });
 
   it("caps a mod at 255 factions: the 255th is allowed, a 256th is refused", () => {

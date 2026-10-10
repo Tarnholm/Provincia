@@ -81,6 +81,34 @@ describe("planNewFaction", () => {
     expect(new Set(froms).size).toBe(froms.length); // no duplicates
   });
 
+  it("copies the captain art the engine finds by faction id, which no file names", () => {
+    const r = planNewFaction({ files: files(), ...base });
+    const pairs = r.artCopies.filter((c) => c.byName).map((c) => c.from + " -> " + c.to);
+    expect(pairs).toEqual([
+      "data/ui/captain banners/captain_card_parni.tga -> data/ui/captain banners/captain_card_tocharians.tga",
+      "data/ui/captain banners/captain_portrait_parni.tga.dds -> data/ui/captain banners/captain_portrait_tocharians.tga.dds",
+      "data/ui/captain banners/captain_card_parni_rebel.tga -> data/ui/captain banners/captain_card_tocharians_rebel.tga",
+      "data/ui/captain banners/captain_portrait_parni_rebel.tga.dds -> data/ui/captain banners/captain_portrait_tocharians_rebel.tga.dds",
+    ]);
+  });
+
+  it("does not inherit the donor's shadow-faction link", () => {
+    const f = files();
+    f.smFactions = f.smFactions.replace('		"culture":   "iranian",',
+      ['		"culture":   "iranian",', "", "		;;RESURRECTION anchor (generated): saka comes back from the dead only if some faction names it here",
+        '		"shadow faction": "saka",', '		"shadow max provinces": 0,', '		"allow shadow switchback": false,'].join(NL));
+    const r = planNewFaction({ files: f, ...base });
+    expect(r.errors).toEqual([]);
+    const lines = r.edits.smFactions.split(NL);
+    const at = lines.findIndex((l) => /^	"tocharians":/.test(l));
+    const end = lines.findIndex((l, i) => i > at && /^	"\w+":/.test(l));
+    const clone = lines.slice(at, end).join(NL);
+    expect(clone).not.toMatch(/shadow faction|shadow max provinces|RESURRECTION anchor/);
+    expect(clone).toMatch(/"allow shadow switchback": false/); // a setting of its own, harmless
+    expect(r.edits.smFactions.match(/"shadow faction": "saka"/g)).toHaveLength(1); // the donor keeps it
+    expect(r.warnings.join(" ")).toMatch(/shadow faction/);
+  });
+
   it("leaves every donor line in place, and takes nothing from other factions", () => {
     const f = files();
     const r = planNewFaction({ files: f, ...base });
@@ -158,7 +186,7 @@ describe.skipIf(!haveRis)("against the installed RIS", () => {
     expect(r.summary.factionCountBefore).toBe(listFactions(f.smFactions).length); // 239, 250, ... - follows the installed RIS
     expect(r.summary.art).toBeGreaterThanOrEqual(6);
     // every recorded source is a path the donor really uses
-    for (const c of r.artCopies) expect(f.smFactions + f.banners + f.character + f.modelStrat).toContain(c.from);
+    for (const c of r.artCopies.filter((x) => !x.byName)) expect(f.smFactions + f.banners + f.character + f.modelStrat).toContain(c.from);
     // nothing of the donor's was consumed
     for (const key of Object.keys(r.edits)) {
       expect((r.edits[key].match(/parni/gi) || []).length, key).toBeGreaterThanOrEqual((f[key].match(/parni/gi) || []).length);

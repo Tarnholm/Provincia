@@ -189,6 +189,21 @@ function planNewFaction({ files = {}, donor, newId, displayName, description, cu
       }
       return out;
     });
+    // A "shadow faction" line is a LINK, not scaffolding: the faction naming
+    // S is what lets S come back from the dead, takes S's revolts and blocks
+    // trade between the pair (rtw.exe FACTION::remove_from_game, the revolt
+    // chooser, the can_offer_trade gate). A clone would become a second
+    // anchor for the donor's shadow, so it does not inherit the link, nor the
+    // max-provinces setting and comment that belong to it.
+    for (let k = clone.length - 1; k >= 0; k--) {
+      const m = strip(clone[k]).match(/^\s*"shadow faction"\s*:\s*"(\w+)"/);
+      if (!m) continue;
+      let from = k, to = k + 1;
+      while (to < clone.length && /^\s*"shadow max provinces"\s*:/.test(strip(clone[to]))) to++;
+      while (from > 0 && /^\s*;/.test(clone[from - 1]) && /shadow|resurrect/i.test(clone[from - 1])) from--;
+      clone.splice(from, to - from);
+      warnings.push(`${donor} names ${m[1]} as its shadow faction (the link that lets ${m[1]} come back); the new faction does not inherit that link`);
+    }
     // JSON-ish list: if the donor's closing brace carried no comma (last
     // entry of a strict file), the donor now needs one and the clone ends as
     // the donor did
@@ -267,6 +282,17 @@ function planNewFaction({ files = {}, donor, newId, displayName, description, cu
   } else warnings.push("no text file supplied — the faction will show as its raw key in game");
 
   if (errors.length) return { edits: {}, artCopies: [], summary: null, warnings, errors };
+
+  // 8. the captain art. No file names it: the engine builds the paths from the
+  //    faction id (captain_card_<id>.tga, captain_portrait_<id>.tga.dds, and a
+  //    _rebel pair of each), so the renames above never see it. Without them the
+  //    faction's captains get the engine's blank placeholder (RIS 8605528ab7:
+  //    the 16 restored factions had none).
+  for (const suffix of ["", "_rebel"]) {
+    for (const [stem, ext] of [["captain_card_", ".tga"], ["captain_portrait_", ".tga.dds"]]) {
+      artCopies.push({ from: `data/ui/captain banners/${stem}${donor}${suffix}${ext}`, to: `data/ui/captain banners/${stem}${id}${suffix}${ext}`, byName: true });
+    }
+  }
 
   // de-duplicate the art list; the same texture is often named by several lines
   const seen = new Set();
