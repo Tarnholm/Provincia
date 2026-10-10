@@ -11,7 +11,9 @@
  *                   version (that entry defines the release version).
  *   2. Bump       — package.json version := top changelog version.
  *   2b. Bundle    — regenerate the TRACKED build inputs (AI-log patterns,
- *                   public/ mod data from C:\RIS) BEFORE the tests and the
+ *                   public/ mod data from git origin/alternate_map in C:\RIS,
+ *                   regardless of the branch checked out there; RIS_BUNDLE_REV
+ *                   overrides) BEFORE the tests and the
  *                   commit, so the suite tests what ships and the release
  *                   commit holds what the installer holds. (The build's
  *                   prebuild used to do this AFTER the commit: every ship left
@@ -228,7 +230,8 @@ run("Push", "git", ["push", "origin", "master", "--tags"]);
 run("Build", "npm", ["run", "build"]);
 {
   // The bundle already ran before the commit, so the build must not move any
-  // tracked file. If it did, C:\RIS changed during this ship: the installer
+  // tracked file. If it did, the bundled RIS rev (origin/alternate_map) moved
+  // during this ship, e.g. a fetch landed between the two bundle runs: the installer
   // about to be published holds files the release commit does not.
   const drift = sh("git status --short");
   if (drift) console.warn(`\n!!! The build changed tracked files AFTER the release commit — the mod data moved while shipping:\n${drift}\n!!! The installer carries these; commit them on their own after this ship so the source matches it.`);

@@ -2,7 +2,14 @@
  * Bundles the latest RIS mod files into public/ before each build.
  *
  * Sources (override with env vars):
- *   RIS_MOD_ROOT     → C:\RIS\RIS
+ *   RIS_BUNDLE_REV   → origin/alternate_map. descr_sm_factions.txt and the faction
+ *                      icons are read from this git rev of C:\RIS (Git LFS smudged,
+ *                      as a checkout would write them), NOT from the working tree,
+ *                      so the build no longer depends on which branch C:\RIS has
+ *                      checked out. Falls back to the working tree, with a loud
+ *                      warning, when git or the rev is unavailable.
+ *   RIS_MOD_ROOT     → C:\RIS\RIS. Setting it bundles that folder as-is (the old
+ *                      behaviour, no git involved).
  *   RIS_CLASSIC_DIR  → C:\RIS\_submods\RIS_Classic\data\world\maps\campaign\ris_classic
  *
  * Outputs (public/):
@@ -53,6 +60,35 @@ function readCampaignScript(campaign) {
 }
 
 const MOD_ROOT = process.env.RIS_MOD_ROOT || "C:\\RIS\\RIS";
+const RIS_REPO = path.dirname(MOD_ROOT);
+const BUNDLE_REV = process.env.RIS_BUNDLE_REV || "origin/alternate_map";
+const { risBundleSnapshot } = require("../src/risDataSnapshot.js");
+
+// The data folder the tracked build inputs come from: a git snapshot of
+// BUNDLE_REV, unless RIS_MOD_ROOT is set explicitly.
+function resolveBundleDataDir() {
+  const workTree = path.join(MOD_ROOT, "data");
+  if (process.env.RIS_MOD_ROOT) {
+    log(`RIS_MOD_ROOT set: bundling the folder as-is (${workTree})`);
+    return workTree;
+  }
+  const snap = risBundleSnapshot(BUNDLE_REV, { repo: RIS_REPO });
+  if (snap) {
+    log(`RIS data from git ${BUNDLE_REV} = ${snap.commit.slice(0, 10)} (snapshot ${snap.dir})`);
+    return snap.dir;
+  }
+  let branch = "?";
+  try {
+    branch = require("child_process").execFileSync("git", ["-C", RIS_REPO, "branch", "--show-current"],
+      { encoding: "utf8", windowsHide: true, stdio: ["pipe", "pipe", "ignore"] }).trim() || "(detached HEAD)";
+  } catch { /* not a git repo */ }
+  warn("!".repeat(78));
+  warn(`could not read ${BUNDLE_REV} from git in ${RIS_REPO}; falling back to the WORKING TREE,`);
+  warn(`which has branch "${branch}" checked out. Unless that is the release branch, this`);
+  warn(`build bundles that branch's factions and icons.`);
+  warn("!".repeat(78));
+  return workTree;
+}
 const CLASSIC_DIR = process.env.RIS_CLASSIC_DIR || "C:\\RIS\\_submods\\RIS_Classic\\data\\world\\maps\\campaign\\ris_classic";
 const PUBLIC_DIR = path.resolve(__dirname, "..", "public");
 
@@ -151,14 +187,15 @@ function run() {
   log(`CLASSIC_DIR=${CLASSIC_DIR}`);
 
   // 1. Shared file: descr_sm_factions.txt
-  const smPath = path.join(MOD_ROOT, "data", "descr_sm_factions.txt");
+  const dataDir = resolveBundleDataDir();
+  const smPath = path.join(dataDir, "descr_sm_factions.txt");
   if (fs.existsSync(smPath)) copyRaw(smPath, "descr_sm_factions.txt");
   else warn(`descr_sm_factions.txt not found at ${smPath} (leaving existing public/ copy)`);
 
   // 1b. Faction icons — bundle ONLY the mod's icons (first-launch fallback for
   // the mod slot). Vanilla Slot 1 reads its crests live from the detected game
   // install (get-vanilla-icons-dir), so vanilla art is NOT bundled.
-  copyFactionIcons(path.join(MOD_ROOT, "data", "ui", "faction_icons"), { label: "mod" });
+  copyFactionIcons(path.join(dataDir, "ui", "faction_icons"), { label: "mod" });
 
   // 2. Per-campaign files
   for (const c of CAMPAIGNS) {

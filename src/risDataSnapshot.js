@@ -65,4 +65,25 @@ function risData239() {
   return process.env.RIS_239_DATA || risDataSnapshot(RIS_239_REV, { patterns: TEXT_PATTERNS, tag: "text" });
 }
 
-module.exports = { risDataSnapshot, risData239, RIS_239_REV };
+// The build's RIS inputs (scripts/bundle-mod-data.js): the faction list and the
+// faction icons, read from a git rev instead of whatever C:\RIS has checked out, so a
+// test branch in the working tree never leaks into an installer. `rev` may be a
+// branch name; it is resolved to its commit first so the cache follows the branch.
+// Returns { dir, commit } or null (no repo, no such rev, or an LFS object missing).
+const BUNDLE_PATTERNS = [
+  /^RIS\/data\/descr_sm_factions\.txt$/,
+  /^RIS\/data\/ui\/faction_icons\/[^/]+\.tga$/i,
+];
+function risBundleSnapshot(rev, { repo = "C:/RIS" } = {}) {
+  if (!fs.existsSync(path.join(repo, ".git"))) return null;
+  let commit;
+  try {
+    commit = execFileSync("git", ["-C", repo, "rev-parse", "--verify", "-q", `${rev}^{commit}`],
+      { encoding: "utf8", windowsHide: true, stdio: ["pipe", "pipe", "ignore"] }).trim();
+  } catch { return null; }
+  if (!commit) return null;
+  const dir = risDataSnapshot(commit, { repo, patterns: BUNDLE_PATTERNS, tag: "bundle" });
+  return dir ? { dir, commit } : null;
+}
+
+module.exports = { risDataSnapshot, risData239, RIS_239_REV, risBundleSnapshot, BUNDLE_PATTERNS };
