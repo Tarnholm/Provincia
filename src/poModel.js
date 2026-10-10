@@ -35,12 +35,12 @@
 //   distance   = −5·floor(max(0, d_eu − 10)·0.2/5) — euclidean px to the capital,
 //                descr_cultures "capital distance multiplier" 0.2 (all cultures).
 //                egypt-verified to d=339 (Berenike −65); julii 25/26.
-//   culture    = −20 when the region's majority religion ≠ faction religion AND no
-//                colony level ≥ 2 (Paestum: dorian majority but colony_2 → exempt);
-//                + leader-culture-differs −10 (same condition — the faction leader
-//                always carries the faction culture). The −5 "governor's culture
-//                differs" row is NOT modeled (needs per-character culture; ±5pp on
-//                2-3 towns either way).
+//   culture    = settlement culture (engine PO factor 12, src/culturePenalty.js):
+//                (100 − S)/2 %, S = the owner culture's share of the town's creator
+//                points — exact from descr_strat at the campaign start, or the save's
+//                stored value; + leader −10 / governor −5 when the region's majority
+//                religion ≠ faction religion AND no colony level ≥ 2 (Paestum: dorian
+//                majority but colony_2 → exempt).
 //   tax        = bracket delta on the total, relative to low: 0/−30/−50/−70
 //                (live-verified Croton/Sena full sweeps 2026-06-11).
 //
@@ -54,6 +54,7 @@ const im = require("./incomeModel.js");
 const te = require("./traitEffects.js");
 const dg = require("./descrStratGeneral.js");
 const rp = require("./recruitPool.js");
+const cpen = require("./culturePenalty.js");
 
 const TAX_ORDER_DELTA = { low: 0, normal: -30, high: -50, very_high: -70 };
 // pop above the level's "squalour pop" counts double (descr_cultures, all cultures share
@@ -268,23 +269,25 @@ function computeStartingPO(modDataDir, faction, opts = {}) {
     // distance to capital
     const d = (c && capC) ? Math.hypot(c.x - capC.x, c.y - capC.y) : 0;
     const dist = Math.floor(Math.max(0, d - 10) * DIST_MULT / 5);
-    // culture penalty, unless colony ≥ 2 converted the settlement: settlement-culture −22
-    // + faction-leader-culture-differs −10 + governor-culture-differs −5 = 37. (Cracked exact from
-    // the Neapolis in-game PO scroll 2026-07-01: −22 −10 −5 = −37 → PO 88.) The −22 settlement term
-    // is a FLAT approximation — it truly varies with the foreign-culture conversion %; the −5/−10
-    // are fixed RTW penalties that always apply here because the deterministic governor + faction
-    // leader carry the owner faction's culture, which differs from a foreign settlement's official.
+    // culture rows, unless colony ≥ 2 converted the settlement: the Neapolis in-game PO scroll
+    // (2026-07-01) read settlement culture −22 + faction-leader-culture-differs −10 +
+    // governor-culture-differs −5 = 37 → PO 88. The −10/−5 rows stay as they were (fixed RTW
+    // penalties under the `foreign` test below).
     let colonyLvl = 0;
     for (const b of s.buildings) { const m = b.match(/^colony:.*?(\d+)?$/); if (m) colonyLvl = m[1] ? +m[1] : 1; }
     const foreign = !!(maj && facRel && maj !== facRel && colonyLvl < 2);
-    // GRADUATED CULTURE PENALTY (2026-07-06): the real culture/religion unrest scales with the
-    // settlement's un-converted foreign-culture population %, not a binary — Volaterrae (Etruscan,
-    // mostly Roman-converted) reads only −0.5% in-game, not the flat foreign −37. When a save is
-    // attached, use its EXACT stored per-settlement culture penalty (order-breakdown slot 12, in
-    // pips → ×5 for %); this covers both a nearly-converted town (0.5) and a foreign one to the
-    // denarius. Fall back to the flat estimate only with no save.
+    // The SETTLEMENT CULTURE row is the engine's PO factor 12 (src/culturePenalty.js, decompiled
+    // 2026-10-10): (100 − S)/2 %, S = the owner culture's share of the town's creator points.
+    // Neapolis' −22 is S = 56 (Spartan-founded, Roman-built) to the point. With a save attached
+    // its EXACT stored value (order-breakdown slot 12, pips ×5) wins, as before; without one the
+    // formula runs on descr_strat (exact at the campaign start: 1,304 and 1,305 of 1,306 towns on
+    // two Four Romans turn-1 saves). It applies to every town, not only religiously foreign
+    // ones: Arretium (Samnite-founded, Julii-owned) starts at −20%.
     const savedCult = opts.cultPenByCity && (opts.cultPenByCity[region.settlement] != null ? opts.cultPenByCity[region.settlement] : opts.cultPenByCity[s.settlement]);
-    const cultPen = savedCult != null ? savedCult : (foreign ? 37 : 0);
+    let cultureCalc = null;
+    if (savedCult == null) { try { cultureCalc = cpen.culturePenaltyForRegion(modDataDir, s.region); } catch { cultureCalc = null; } }
+    const settlementCult = savedCult != null ? savedCult : (cultureCalc ? cultureCalc.pct : (foreign ? 22 : 0));
+    const cultPen = savedCult != null ? savedCult : settlementCult + (foreign ? 15 : 0);
     const poNormal = 100 + 5 * (gar + law + hap + infl + health - sq - dist) - cultPen;
     const poAt = {};
     for (const b of Object.keys(TAX_ORDER_DELTA)) {
@@ -293,7 +296,8 @@ function computeStartingPO(modDataDir, faction, opts = {}) {
     }
     out[region.settlement] = {
       poAt,
-      rows: { base: 100, garrison: 5 * gar, law: 5 * law, happiness: 5 * hap, govInfluence: 5 * infl, health: 5 * health, squalor: -5 * sq, distance: -5 * dist, culture: -cultPen, men, pop: s.pop },
+      rows: { base: 100, garrison: 5 * gar, law: 5 * law, happiness: 5 * hap, govInfluence: 5 * infl, health: 5 * health, squalor: -5 * sq, distance: -5 * dist, culture: -cultPen, cultureSettlement: -settlementCult, men, pop: s.pop },
+      ...(cultureCalc ? { culture: { pct: cultureCalc.pct, S: cultureCalc.S, ownCulture: cultureCalc.ownCulture, creator: cultureCalc.creator, egyptianCounts: cultureCalc.egyptianCounts, shares: cultureCalc.shares } } : {}),
     };
   }
   return out;

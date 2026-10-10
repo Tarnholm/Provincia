@@ -1622,7 +1622,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
             { label: "Tax",             v: o.tax,                       sign: +1 }, // signed already
             { label: "Distance",        v: o.distanceToCapitalPenalty,  sign: -1 },
             { label: "Foreign culture", v: o.foreignCulturePenalty,     sign: -1 },
-            { label: "Religious unrest",v: o.religiousUnrestPenalty,    sign: -1 },
+            { label: "Culture",         v: o.religiousUnrestPenalty,    sign: -1 }, // engine PO factor 12 = culture penalty (src/culturePenalty.js)
             { label: "Health",          v: o.healthBonus,               sign: +1 },
             { label: "Capital",         v: o.capitalBonus,              sign: +1 },
             { label: "Tax admin",       v: o.taxAdminLine,              sign: +1 },

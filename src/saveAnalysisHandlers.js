@@ -1134,6 +1134,9 @@ ipcMain.handle("get-turn1-budget", async (_event, modDataDir, faction, savePath,
         };
         for (const s of budget.settlements) {
           const br = s.optimalBracket || "normal";
+          // Settlement culture row + who holds the town's culture points (src/culturePenalty.js,
+          // exact at the campaign start) for the PO tooltip.
+          { const pc = po[s.settlement] || po[s.region]; if (pc && pc.culture) s.poCulture = pc.culture; }
           // The save's stored PO is exact ONLY for the save's own PLAYER faction; for every
           // OTHER faction the save carries an unreliable value (AI Rome's Paestum read 225 → 155
           // at V.High vs the component model's 65 and the in-game 70 — like governors, the engine

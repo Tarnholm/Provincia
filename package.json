@@ -107,6 +107,7 @@
       "src/growthEval.js",
       "src/incomeModel.js",
       "src/poModel.js",
+      "src/culturePenalty.js",
       "src/garrisonBaseline.js",
       "src/modOverlay.js",
       "src/baseModFallback.js",

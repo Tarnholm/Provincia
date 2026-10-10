@@ -95,7 +95,7 @@ function settlementFieldsAt(buf, markerOffset) {
     tax: orderBreakdown[2],                       // s2  signed tax effect      CONFIRMED
     foreignCulturePenalty: orderBreakdown[4],     // s4  flat foreign-culture   CONFIRMED
     distanceToCapitalPenalty: orderBreakdown[11], // s11 distance penalty       CONFIRMED
-    religiousUnrestPenalty: orderBreakdown[12],   // s12 religion/culture       CONFIRMED
+    religiousUnrestPenalty: orderBreakdown[12],   // s12 = engine factor 12, the CULTURE penalty ((100 − S)/10 pips; src/culturePenalty.js)
     capitalBonus: orderBreakdown[10],             // s10 capital-status bonus   CONFIRMED
     startTransientBonus: orderBreakdown[7],       // s7  turn-1-only transient  CONFIRMED
     taxAdminLine: orderBreakdown[14],             // s14 mid-campaign tax line  CONFIRMED
