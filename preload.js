@@ -56,6 +56,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // { namelistEmpty, namelistSingle, stratTraitRefs, stratAncillaryRefs,
   //   stratUnitRefs, factionCulture } — each with `issues` + `error`.
   validateModExtra: (dataDir) => ipcRenderer.invoke("sps:validate-mod-extra", dataDir),
+  // Engine rules (src/engineRules.js): { checks: [{ id, severity, title, why, issues }], skipped, error }.
+  validateEngineRules: (dataDir) => ipcRenderer.invoke("sps:validate-engine-rules", dataDir),
   // Per-faction captain banner file coverage: each faction needs
   // captain_portrait_<X>.tga.dds + captain_card_<X>.tga (+ rebel variants).
   // Missing files cause record.m_card_path.is_valid() Failed crashes.

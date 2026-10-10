@@ -6,10 +6,33 @@
 // so behavior is byte-identical to the inline IIFE it replaced.
 import React from "react";
 
+// Engine rules (src/engineRules.js): severity colours + short tile labels.
+const ENGINE_SEV_COLOR = { error: "#f87171", warn: "#fbbf24", info: "#9ca3af" };
+const ENGINE_TILE = {
+  cultureBanner: "Culture banners",
+  factionlessCultureFilter: "Empty culture filters",
+  aiPersonalityCrlf: "AI personality LF",
+  edbBrowserGap: "Browser gaps",
+  edbDirectNot: "EDB direct not",
+  edbBrowserSizeSkip: "Browser-hidden levels",
+  edbNumbers: "EDB number widths",
+  edbAndOr: "and-before-or",
+  recruitOwnership: "Dead recruit lines",
+  hordeUnits: "Horde units",
+  emergenceList: "Emergence lists",
+  armySize: "Armies > 20",
+  holdRegions: "hold_regions names",
+  portraitTgaBesideDds: "Portrait .tga + .dds",
+  portraitVariation: "Portrait variations",
+  lookupVariants: "Picture fallbacks",
+  eventStrings: "Event strings",
+  floodScale: "Flood scale",
+};
+
 export default function DashboardModal(props) {
   const {
     dashResult, dashLoading, setShowDashboard,
-    portraitAudit, captainBannerAudit, modExtraAudit, descrRegionsAudit,
+    portraitAudit, captainBannerAudit, modExtraAudit, engineRulesAudit, descrRegionsAudit,
     regionScrollsAudit, smFactionsAudit, aorCoverage, edbResAudit,
     buildingImagesAudit, unitLocAudit, unitImagesAudit, logWarningsAudit,
     textureDimsAudit, modDataDir,
@@ -135,6 +158,7 @@ export default function DashboardModal(props) {
                         ["RTW log warnings (total)", Object.values(logWarningsAudit?.counts || {}).reduce((a, b) => a + b, 0), "#9ca3af", "RTW log: cosmetic"],
                         ["Missing region_base", (regionScrollsAudit?.missing || []).length, "#f87171", "Settlements missing hinterland_region region_base"],
                       ],
+                      (engineRulesAudit?.checks || []).map((c) => [ENGINE_TILE[c.id] || c.title, (c.issues || []).length, ENGINE_SEV_COLOR[c.severity] || "#9ca3af", c.title]),
                     ].map((row, rowIdx) => {
                       // Hide tiles with 0 issues — the clean ones aren't actionable.
                       // If a whole row goes to zero, skip the row entirely so we
@@ -318,6 +342,28 @@ export default function DashboardModal(props) {
                           ))}
                         </Section>
                       </>
+                    )}
+                    {engineRulesAudit && !engineRulesAudit.error && (engineRulesAudit.checks || []).map((c) => (
+                      <Section key={c.id} title={c.title} count={(c.issues || []).length} color={ENGINE_SEV_COLOR[c.severity] || "#9ca3af"}>
+                        {c.why && <div style={{ fontSize: "0.72rem", color: "#9ca3af", padding: "2px 8px 6px" }}>{c.why}</div>}
+                        {c.error && <Row label={`Check failed: ${c.error}`} />}
+                        {(c.issues || []).slice(0, 200).map((d, i) => {
+                          const jumpable = /\.txt$/i.test(d.file || "");
+                          return (
+                            <Row key={i}
+                              label={jumpable ? d.text : `${d.file ? d.file + ": " : ""}${d.text}`}
+                              file={jumpable && d.line ? d.file : undefined} line={d.line}
+                              onClick={jumpable ? () => jumpTo(d.file, d.snippet, d.line) : undefined}
+                            />
+                          );
+                        })}
+                        {(c.issues || []).length > 200 && <div style={{ fontSize: "0.72rem", color: "#888", padding: "4px 8px" }}>…and {(c.issues || []).length - 200} more</div>}
+                      </Section>
+                    ))}
+                    {engineRulesAudit && engineRulesAudit.error && (
+                      <Section title="Engine rules — audit failed" count={1} color="#f87171">
+                        <Row label={engineRulesAudit.error} />
+                      </Section>
                     )}
                     {modExtraAudit && modExtraAudit.error && (
                       <Section title="Mod-data audit failed" count={1} color="#f87171">

@@ -825,6 +825,16 @@ ipcMain.handle('sps:validate-mod-extra', async (_, dataDir) => {
 // should carry: namelists{men, women, surnames}, logos, colours, culture,
 // movies. Missing any of these surfaces as engine warnings (silent
 // fallback) or load errors. Reports per faction.
+// Engine rules: checks built from decoded exe behaviour (src/engineRules.js).
+ipcMain.handle('sps:validate-engine-rules', async (_, dataDir) => {
+  if (!dataDir) return { checks: [], skipped: [], error: 'no dataDir provided' };
+  try {
+    return require('./src/engineRules.js').runAll(dataDir, readModText);
+  } catch (e) {
+    return { checks: [], skipped: [], error: e.message };
+  }
+});
+
 ipcMain.handle('sps:validate-sm-factions', async (_, dataDir) => {
   const out = { incomplete: [], summary: { total: 0, complete: 0 }, error: null };
   if (!dataDir) { out.error = 'no dataDir provided'; return out; }

@@ -293,6 +293,22 @@ describe("panels render smoke-test", () => {
     expect(c.textContent).toContain("Dangling chain references"); // now visible
   });
 
+  it("DashboardModal renders engine-rules checks as a tile and a section with the engine's reason", async () => {
+    const engineRulesAudit = { error: null, skipped: [], checks: [
+      { id: "cultureBanner", severity: "error", title: "Cultures with no banner block", why: "Banners are looked up by culture.", issues: [{ file: "descr_cultures.txt", line: 3, snippet: '"hosts"', text: "hosts has no `banner hosts` block in descr_banners.txt" }] },
+      { id: "portraitTgaBesideDds", severity: "error", title: "Portrait folders with .tga beside .tga.dds", why: "x", issues: [{ file: "ui/scythian/portraits/portraits/young", text: "2 portraits with a .tga beside the .tga.dds" }] },
+      { id: "floodScale", severity: "error", title: "Floods with scale below 2", why: "y", issues: [] },
+    ] };
+    const c = await mount(<DashboardModal {...dashProps} engineRulesAudit={engineRulesAudit} dashLoading={false} dashResult={{ summary: {} }} />);
+    expect(c.textContent).toContain("Culture banners");                 // tile
+    expect(c.textContent).toContain("Cultures with no banner block");   // section
+    expect(c.textContent).toContain("Banners are looked up by culture.");
+    expect(c.textContent).toContain("hosts has no `banner hosts` block");
+    expect(c.textContent).toContain("ui/scythian/portraits/portraits/young: 2 portraits");
+    expect(c.textContent).not.toContain("Floods with scale below 2");  // clean -> hidden
+    expect(c.textContent).not.toContain("undefined");
+  });
+
   it("ArmySetupModal renders with empty data (no throw; search props are strings)", async () => {
     const noop = () => {};
     const props = {

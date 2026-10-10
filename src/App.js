@@ -4092,6 +4092,18 @@ function App() {
       .then(r => setModExtraAudit(r))
       .catch(e => setModExtraAudit({ error: e?.message }));
   }, [showDashboard, modDataDir]);
+  // Engine rules: checks built from decoded exe behaviour (src/engineRules.js).
+  const [engineRulesAudit, setEngineRulesAudit] = useState(null);
+  useEffect(() => {
+    if (!showDashboard) return;
+    if (!window.electronAPI?.validateEngineRules || !modDataDir) {
+      setEngineRulesAudit(null);
+      return;
+    }
+    window.electronAPI.validateEngineRules(modDataDir)
+      .then(r => setEngineRulesAudit(r))
+      .catch(e => setEngineRulesAudit({ error: e?.message }));
+  }, [showDashboard, modDataDir]);
   const [captainBannerAudit, setCaptainBannerAudit] = useState(null);
   useEffect(() => {
     if (!showDashboard) return;
@@ -19601,6 +19613,7 @@ Click for unit card`}
           portraitAudit={portraitAudit}
           captainBannerAudit={captainBannerAudit}
           modExtraAudit={modExtraAudit}
+          engineRulesAudit={engineRulesAudit}
           descrRegionsAudit={descrRegionsAudit}
           regionScrollsAudit={regionScrollsAudit}
           smFactionsAudit={smFactionsAudit}
