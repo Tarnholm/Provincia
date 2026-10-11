@@ -868,8 +868,9 @@
 			;;minimum number of named characters we should have when we first go horde
 			"min named characters": 2,
 
-			;;maximum percentage of armies horde units can fill
-			"max horde unit army percent": 100,
+			;;maximum percentage of armies horde units can fill (x 0.2 = units per army, HORDE::pr_distribute_units);
+			;;95 = 19, so the leader's army keeps a free place for heirs coming of age (at 100 = 20 every heir fails while a horde)
+			"max horde unit army percent": 95,
 
 			;;the amount of horde units to disband every time we get a settlement
 			;;if amount of settlements exceeds the numbers in this array, 100% disband assumed
@@ -3685,7 +3686,7 @@
 		},
 
 		"available in custom battles": true,
-		"prefer naval invasions": false,
+		"prefer naval invasions": true,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
 

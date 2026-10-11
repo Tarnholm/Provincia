@@ -13,6 +13,18 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1531",
+    date: "2026-10-12",
+    items: [
+      { type: "feature", text: "**Crash Reporter v0.1.66 turns the game’s full logging on.** Before the game starts and again after it closes, `show_err enable_logging verbose_script_logging` is added to the game’s Advanced settings and switched on. Your other switches, `-nm` included, stay. The standalone reporter also starts the game through Steam when it opens (`launch_game` in its settings), has a new icon in its window and taskbar, and names more decoded crash addresses." },
+      { type: "feature", text: "**Dashboard: Engine rules.** A new tile and section check the mod against rules decoded from the game itself: a banner for every culture, culture filters with no factions, the AI personality file’s line endings, building-browser gaps and hidden levels, EDB field widths, and/or grouping, dead recruit lines, horde units, emergence lists, armies over 20 units, hold_regions names, portrait folders and variation blocks, picture fallbacks, event strings and flood scale." },
+      { type: "improvement", text: "**Public order shows the exact culture penalty.** Without a save, the penalty is now worked out the way the game does it, from who built each building in the town, instead of a flat -22. The turn-1 tooltip lists which factions hold the culture points. Checked against RIS turn-1 saves: 1,304 of 1,306 towns match." },
+      { type: "fix", text: "**New Faction keeps map.rwm in step.** The map stores each region’s creator by faction number, and a new faction shifts every number after it, so rebel towns showed other factions’ banners. Every map.rwm in the mod is now updated with the rest of the files, and the preview says how many regions change. The donor’s captain art is copied, and the donor’s shadow-faction link is no longer cloned." },
+      { type: "fix", text: "**Faction tools read sub_faction characters’ real names.** A line like `character sub_faction odrysians, Taroutinas, …` was read as the name “sub_faction odrysians”, so Bring In a Faction picked the same character twice." },
+      { type: "fix", text: "**The installer carries the RIS faction list from alternate_map.** v0.9.1530 shipped a test branch’s 250-faction list; the bundled faction list and icons now always come from the alternate_map branch." },
+    ],
+  },
+  {
     version: "0.9.1530",
     date: "2026-10-07",
     items: [

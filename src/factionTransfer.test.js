@@ -265,15 +265,24 @@ const MAIN = "C:/RIS/RIS/data/world/maps/campaign/imperial_campaign/descr_strat.
 const LIGHT = "C:/RIS/_submods/RIS_Light/data/world/maps/campaign/ris_light/descr_strat.txt";
 const haveReal = fs.existsSync(MAIN) && fs.existsSync(LIGHT);
 
-describe.skipIf(!haveReal)("against the installed RIS and its Light submod", () => {
+// The faction to wake: one Light has dormant today that main RIS gives towns Light also has (minaeans when this
+// was written; current RIS data has none). RIS data moves, so the test picks one, and skips when there is none.
+const realFaction = (() => {
+  if (!haveReal) return null;
+  const main = fs.readFileSync(MAIN, "latin1"), light = fs.readFileSync(LIGHT, "latin1");
+  const owners = settlementOwners(light);
+  return [...light.matchAll(/^faction\s+(\w+)/gm)].map((m) => m[1]).find((f) =>
+    readFactionRoster(light, f).dormant && readFactionRoster(main, f).settlements.some((s) => owners[s.region])) || null;
+})();
+
+describe.skipIf(!realFaction)("against the installed RIS and its Light submod", () => {
   it("wakes a dormant faction and disturbs nothing else on a 28,000-line campaign", () => {
     const main = fs.readFileSync(MAIN, "latin1");
     const light = fs.readFileSync(LIGHT, "latin1");
-    const fac = "minaeans";
-    expect(readFactionRoster(light, fac).dormant, `${fac} is expected to be dormant in RIS_Light`).toBe(true);
+    const fac = realFaction;
+    const owners = settlementOwners(light);
 
     const src = readFactionRoster(main, fac);
-    const owners = settlementOwners(light);
     const towns = src.settlements.map((s) => s.region).filter((r) => owners[r]);
     expect(towns.length).toBeGreaterThan(0);
 
