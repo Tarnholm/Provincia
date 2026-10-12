@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1532",
+    date: "2026-10-12",
+    items: [
+      { type: "improvement", text: "**Bundled Crash Reporter v0.1.67.** The reporter is now hardened against being picked apart with a debugger. It makes no difference to normal use — it changes nothing on disk and never stops a report from being sent." },
+    ],
+  },
+  {
     version: "0.9.1531",
     date: "2026-10-12",
     items: [
