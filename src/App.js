@@ -58,40 +58,79 @@ const resolveNonLiveCommanderInfoApp = nonLiveCommanderResolver.resolveNonLiveCo
 const lookupNonLivePortraitApp = nonLiveCommanderResolver.lookupNonLivePortrait;
 import UpdateBanner from "./UpdateBanner";
 // FamilyTree is code-split — see the lazy wrappers above.
-import EntityBudgetModal from "./panels/EntityBudgetModal";
-import XrefModal from "./panels/XrefModal";
-import RevertAutosaveModal from "./panels/RevertAutosaveModal";
-import SettlementAuditModal from "./panels/SettlementAuditModal";
-import LoadModModal from "./panels/LoadModModal";
-import AiDiagModal from "./panels/AiDiagModal";
-import ShortcutsModal from "./panels/ShortcutsModal";
-import DevToolsHelp from "./panels/DevToolsHelp";
-import AddRegionModal from "./panels/AddRegionModal";
-import CompareModal from "./panels/CompareModal";
-import CommandPalette from "./panels/CommandPalette";
-import WealthPanel from "./panels/WealthPanel";
-import DashboardModal from "./panels/DashboardModal";
-import ArmySetupModal from "./panels/ArmySetupModal";
-import SubmodDriftPanel from "./panels/SubmodDriftPanel";
-import StratPopulationsModal from "./panels/StratPopulationsModal";
-import EconBaselinePanel from "./panels/EconBaselinePanel";
-import ReportExportPanel from "./panels/ReportExportPanel";
-import SaveComparePanel from "./panels/SaveComparePanel";
-import ModLintPanel from "./panels/ModLintPanel";
-import UnitComparePanel from "./panels/UnitComparePanel";
-import RecruitPlannerPanel from "./panels/RecruitPlannerPanel";
-import DiploHeatmapPanel from "./panels/DiploHeatmapPanel";
-import AiMovementPanel from "./panels/AiMovementPanel";
-import FactionChroniclePanel from "./panels/FactionChroniclePanel";
-import CrashReporterPanel from "./panels/CrashReporterPanel";
-import TraitExplorerPanel from "./panels/TraitExplorerPanel";
-import ExtinctionWatchPanel from "./panels/ExtinctionWatchPanel";
-import FactionTransferPanel from "./panels/FactionTransferPanel";
-import NewFactionPanel from "./panels/NewFactionPanel";
-import CampaignAutopsyPanel from "./panels/CampaignAutopsyPanel";
-import BuildOrderPanel from "./panels/BuildOrderPanel";
-import DefinitionLocatorPanel from "./panels/DefinitionLocatorPanel";
-import WhatIfPanel from "./panels/WhatIfPanel";
+// Panels/modals are code-split too (2026-10-12): each loads as its own async
+// chunk the first time it opens, instead of sitting in the ~1.35 MB boot chunk.
+// Module-scope Suspense wrappers keep the JSX call sites identical to the old
+// static imports; every one of these renders only on a user action, so a
+// fallback of null (nothing for the few ms the chunk loads) is invisible.
+const EntityBudgetModalLazy = lazy(() => import("./panels/EntityBudgetModal"));
+const EntityBudgetModal = (props) => <Suspense fallback={null}><EntityBudgetModalLazy {...props} /></Suspense>;
+const XrefModalLazy = lazy(() => import("./panels/XrefModal"));
+const XrefModal = (props) => <Suspense fallback={null}><XrefModalLazy {...props} /></Suspense>;
+const RevertAutosaveModalLazy = lazy(() => import("./panels/RevertAutosaveModal"));
+const RevertAutosaveModal = (props) => <Suspense fallback={null}><RevertAutosaveModalLazy {...props} /></Suspense>;
+const SettlementAuditModalLazy = lazy(() => import("./panels/SettlementAuditModal"));
+const SettlementAuditModal = (props) => <Suspense fallback={null}><SettlementAuditModalLazy {...props} /></Suspense>;
+const LoadModModalLazy = lazy(() => import("./panels/LoadModModal"));
+const LoadModModal = (props) => <Suspense fallback={null}><LoadModModalLazy {...props} /></Suspense>;
+const AiDiagModalLazy = lazy(() => import("./panels/AiDiagModal"));
+const AiDiagModal = (props) => <Suspense fallback={null}><AiDiagModalLazy {...props} /></Suspense>;
+const ShortcutsModalLazy = lazy(() => import("./panels/ShortcutsModal"));
+const ShortcutsModal = (props) => <Suspense fallback={null}><ShortcutsModalLazy {...props} /></Suspense>;
+const DevToolsHelpLazy = lazy(() => import("./panels/DevToolsHelp"));
+const DevToolsHelp = (props) => <Suspense fallback={null}><DevToolsHelpLazy {...props} /></Suspense>;
+const AddRegionModalLazy = lazy(() => import("./panels/AddRegionModal"));
+const AddRegionModal = (props) => <Suspense fallback={null}><AddRegionModalLazy {...props} /></Suspense>;
+const CompareModalLazy = lazy(() => import("./panels/CompareModal"));
+const CompareModal = (props) => <Suspense fallback={null}><CompareModalLazy {...props} /></Suspense>;
+const CommandPaletteLazy = lazy(() => import("./panels/CommandPalette"));
+const CommandPalette = (props) => <Suspense fallback={null}><CommandPaletteLazy {...props} /></Suspense>;
+const WealthPanelLazy = lazy(() => import("./panels/WealthPanel"));
+const WealthPanel = (props) => <Suspense fallback={null}><WealthPanelLazy {...props} /></Suspense>;
+const DashboardModalLazy = lazy(() => import("./panels/DashboardModal"));
+const DashboardModal = (props) => <Suspense fallback={null}><DashboardModalLazy {...props} /></Suspense>;
+const ArmySetupModalLazy = lazy(() => import("./panels/ArmySetupModal"));
+const ArmySetupModal = (props) => <Suspense fallback={null}><ArmySetupModalLazy {...props} /></Suspense>;
+const SubmodDriftPanelLazy = lazy(() => import("./panels/SubmodDriftPanel"));
+const SubmodDriftPanel = (props) => <Suspense fallback={null}><SubmodDriftPanelLazy {...props} /></Suspense>;
+const StratPopulationsModalLazy = lazy(() => import("./panels/StratPopulationsModal"));
+const StratPopulationsModal = (props) => <Suspense fallback={null}><StratPopulationsModalLazy {...props} /></Suspense>;
+const EconBaselinePanelLazy = lazy(() => import("./panels/EconBaselinePanel"));
+const EconBaselinePanel = (props) => <Suspense fallback={null}><EconBaselinePanelLazy {...props} /></Suspense>;
+const ReportExportPanelLazy = lazy(() => import("./panels/ReportExportPanel"));
+const ReportExportPanel = (props) => <Suspense fallback={null}><ReportExportPanelLazy {...props} /></Suspense>;
+const SaveComparePanelLazy = lazy(() => import("./panels/SaveComparePanel"));
+const SaveComparePanel = (props) => <Suspense fallback={null}><SaveComparePanelLazy {...props} /></Suspense>;
+const ModLintPanelLazy = lazy(() => import("./panels/ModLintPanel"));
+const ModLintPanel = (props) => <Suspense fallback={null}><ModLintPanelLazy {...props} /></Suspense>;
+const UnitComparePanelLazy = lazy(() => import("./panels/UnitComparePanel"));
+const UnitComparePanel = (props) => <Suspense fallback={null}><UnitComparePanelLazy {...props} /></Suspense>;
+const RecruitPlannerPanelLazy = lazy(() => import("./panels/RecruitPlannerPanel"));
+const RecruitPlannerPanel = (props) => <Suspense fallback={null}><RecruitPlannerPanelLazy {...props} /></Suspense>;
+const DiploHeatmapPanelLazy = lazy(() => import("./panels/DiploHeatmapPanel"));
+const DiploHeatmapPanel = (props) => <Suspense fallback={null}><DiploHeatmapPanelLazy {...props} /></Suspense>;
+const AiMovementPanelLazy = lazy(() => import("./panels/AiMovementPanel"));
+const AiMovementPanel = (props) => <Suspense fallback={null}><AiMovementPanelLazy {...props} /></Suspense>;
+const FactionChroniclePanelLazy = lazy(() => import("./panels/FactionChroniclePanel"));
+const FactionChroniclePanel = (props) => <Suspense fallback={null}><FactionChroniclePanelLazy {...props} /></Suspense>;
+const CrashReporterPanelLazy = lazy(() => import("./panels/CrashReporterPanel"));
+const CrashReporterPanel = (props) => <Suspense fallback={null}><CrashReporterPanelLazy {...props} /></Suspense>;
+const TraitExplorerPanelLazy = lazy(() => import("./panels/TraitExplorerPanel"));
+const TraitExplorerPanel = (props) => <Suspense fallback={null}><TraitExplorerPanelLazy {...props} /></Suspense>;
+const ExtinctionWatchPanelLazy = lazy(() => import("./panels/ExtinctionWatchPanel"));
+const ExtinctionWatchPanel = (props) => <Suspense fallback={null}><ExtinctionWatchPanelLazy {...props} /></Suspense>;
+const FactionTransferPanelLazy = lazy(() => import("./panels/FactionTransferPanel"));
+const FactionTransferPanel = (props) => <Suspense fallback={null}><FactionTransferPanelLazy {...props} /></Suspense>;
+const NewFactionPanelLazy = lazy(() => import("./panels/NewFactionPanel"));
+const NewFactionPanel = (props) => <Suspense fallback={null}><NewFactionPanelLazy {...props} /></Suspense>;
+const CampaignAutopsyPanelLazy = lazy(() => import("./panels/CampaignAutopsyPanel"));
+const CampaignAutopsyPanel = (props) => <Suspense fallback={null}><CampaignAutopsyPanelLazy {...props} /></Suspense>;
+const BuildOrderPanelLazy = lazy(() => import("./panels/BuildOrderPanel"));
+const BuildOrderPanel = (props) => <Suspense fallback={null}><BuildOrderPanelLazy {...props} /></Suspense>;
+const DefinitionLocatorPanelLazy = lazy(() => import("./panels/DefinitionLocatorPanel"));
+const DefinitionLocatorPanel = (props) => <Suspense fallback={null}><DefinitionLocatorPanelLazy {...props} /></Suspense>;
+const WhatIfPanelLazy = lazy(() => import("./panels/WhatIfPanel"));
+const WhatIfPanel = (props) => <Suspense fallback={null}><WhatIfPanelLazy {...props} /></Suspense>;
 
 // Error boundary around the 🧰 tool panels (2026-07-17): a runtime crash in
 // one panel renders a dismissable notice instead of white-screening the app.
@@ -1835,16 +1874,38 @@ const CULTURE_PALETTE = [
   [240,160,100],[100,240,160],[160,100,240],[240,220,100],[100,160,240],[240,100,220],
 ];
 
+// Numeric region lookup (2026-10-12): the recolor's hot loop used to build a
+// `${r},${g},${b}` string per pixel — ~714k string allocations per full-map
+// recolor on the RIS map, all churned straight into GC. A Map keyed by the
+// packed 24-bit colour (r<<16|g<<8|b) does the same lookup with zero
+// allocation. Memoised per `regions` object in a WeakMap so it's built once
+// (not per call) and never mutates the input; it's GC'd when regions is replaced.
+const _regionsNumLut = new WeakMap();
+function regionsNumericLUT(regions) {
+  let m = _regionsNumLut.get(regions);
+  if (m) return m;
+  m = new Map();
+  for (const key in regions) {
+    const c = key.indexOf(","), c2 = c >= 0 ? key.indexOf(",", c + 1) : -1;
+    if (c2 < 0) continue; // not an "r,g,b" key
+    const r = +key.slice(0, c), g = +key.slice(c + 1, c2), b = +key.slice(c2 + 1);
+    if (r >= 0 && g >= 0 && b >= 0) m.set((r << 16) | (g << 8) | b, regions[key]);
+  }
+  _regionsNumLut.set(regions, m);
+  return m;
+}
+
 // getColor receives (region, origR, origG, origB) so callers can add per-province variation
 function buildColoredCanvas(pixelData, width, height, regions, getColor, upscale) {
   if (pixelData.length !== 4 * width * height) return null;
   const S = upscale || 1;
   const outW = width * S, outH = height * S;
   const d = new Uint8ClampedArray(outW * outH * 4);
+  const lut = regionsNumericLUT(regions);
   for (let i = 0; i < pixelData.length; i += 4) {
     const srcX = (i / 4) % width, srcY = Math.floor(i / 4 / width);
     const r = pixelData[i], g = pixelData[i + 1], b = pixelData[i + 2];
-    const region = regions[`${r},${g},${b}`];
+    const region = lut.get((r << 16) | (g << 8) | b);
     if (S === 1) {
       if (region) {
         const col = getColor(region, r, g, b, srcX, srcY);
@@ -2051,6 +2112,18 @@ function App() {
   const [offscreen, setOffscreen] = useState(null);
   const [coloredOffscreen, setColoredOffscreen] = useState(null);
   const [stripeOverlay, setStripeOverlay] = useState(null);
+  // Map-sized downscale of stripeOverlay, cached so the 8x (8160x5600) overlay is
+  // resampled ONCE when it or the map size changes — not re-resampled every repaint.
+  const stripeDownRef = useRef(null);
+  // Per-map-mode recolor cache (2026-10-12). { token, byMode:Map }. token is an
+  // identity snapshot of every recolor input except colorMode; byMode holds each
+  // already-built mode's { canvas, stripe }. Setters reach the real useState
+  // setters through colorSettersRef so the effect can shadow them by name
+  // (referencing the originals directly would hit a const TDZ in-block).
+  const colorCacheRef = useRef({ token: null, byMode: new Map() });
+  const colorSettersRef = useRef({ setColored: null, setStripe: null });
+  colorSettersRef.current.setColored = setColoredOffscreen;
+  colorSettersRef.current.setStripe = setStripeOverlay;
   const [selectedProvinces, setSelectedProvinces] = useState([]);
   // rgbKey of the region currently hovered in the right-hand province/victory
   // list — draws a bright outline on the map so the user can locate it.
@@ -8984,7 +9057,7 @@ function App() {
   // Background marble
   useEffect(() => {
     const img = new window.Image();
-    img.src = PUBLIC_URL + "/menu_marble_frame.png";
+    img.src = PUBLIC_URL + "/menu_marble_frame.webp";
     img.onload = () => {
       const src = document.createElement("canvas");
       src.width = img.width;
@@ -9268,6 +9341,35 @@ function App() {
 
   // Build colored overlay canvas for culture/population/farm/religion/dev modes
   useEffect(() => {
+    // ── Per-map-mode canvas cache (2026-10-12) ──────────────────────────────
+    // Switching A→B→A used to fully recompute A (a multi-hundred-ms per-pixel
+    // recolor) every time. Cache each mode's built canvas (+ stripe overlay),
+    // keyed by an identity snapshot of every recolor input EXCEPT colorMode (the
+    // dep array below, minus colorMode). If any of those changed, the pixels
+    // differ, so drop the whole cache; otherwise a mode already built for the
+    // current inputs is re-applied instantly with no rebuild.
+    const _cc = colorCacheRef.current;
+    const _realColored = colorSettersRef.current.setColored;
+    const _realStripe = colorSettersRef.current.setStripe;
+    const _token = [aorView, regions, offscreen, imgSize, populationData, coastalRegions, devFlatColors, factionColors, factionRegionsMap, homelandsData, selectedFaction, governmentMap, selectedHiddenResource, resourcesData, buildingRecruits, unitOwnership, factionCultures, currentOwnerByCity, initialOwnerByCity, initialCreatorByCity, buildingLevelsLookup, buildingsData, groundTypesPixels, groundTypesSize, editsTick, playerExploration, fogFaction, fogVision, victoryConditions, rgbToOwnerMap, saveArmiesData, saveHappinessByCity, saveIncomeByCity, mapMercData, mercPoolFilter, mineProspects, miningView, startingArmiesByRegion, regionAdjacency, roadRegions, playerFaction, diplomacyMatrix, factionMetrics, factionReligions, campaignTimeline, historyTurnIdx, liveSliderTurn, battleLedgerSnap, tradeLanes, regionCentroids];
+    if (!_cc.token || _cc.token.length !== _token.length || _token.some((v, i) => v !== _cc.token[i])) {
+      _cc.token = _token;
+      _cc.byMode = new Map();
+    }
+    const _hit = _cc.byMode.get(colorMode);
+    if (_hit && _hit.built) {
+      _realColored(_hit.canvas);       // instant: reuse the already-built canvas
+      _realStripe(_hit.stripe || null);
+      return;
+    }
+    // Miss → build as usual, but these locals SHADOW the useState setters for the
+    // whole effect (including the scheduled build closure), so each branch's
+    // setColoredOffscreen / setStripeOverlay both caches the mode's output and
+    // applies it. The build may be async-scheduled; _entry fills in when it runs.
+    const _entry = { canvas: null, stripe: null, built: false };
+    const setColoredOffscreen = (c) => { _entry.canvas = c; _entry.built = true; _cc.byMode.set(colorMode, _entry); _realColored(c); };
+    const setStripeOverlay = (s) => { _entry.stripe = s; _cc.byMode.set(colorMode, _entry); _realStripe(s); };
+
     const NON_OVERLAY = new Set(["resource", "victory", "region"]);
     if (NON_OVERLAY.has(colorMode) || !pixelDataRef.current || !offscreen) {
       setColoredOffscreen(null);
@@ -10589,7 +10691,7 @@ function App() {
     if (!willShowOnboarding) return;
     musicStartedRef.current = true;
     try {
-      const audio = new Audio((import.meta.env.BASE_URL || ".") + "/startup.wav");
+      const audio = new Audio((import.meta.env.BASE_URL || ".") + "/startup.ogg");
       const v0 = audioVolumeRef.current;
       audio.volume = v0;
       audio.muted = v0 <= 0.001;
@@ -11373,15 +11475,26 @@ function App() {
     }
     ctx.drawImage(src, 0, 0);
 
-    // Draw stripe overlay (high-res, scaled down with smoothing for clean lines)
+    // Draw stripe overlay. The source is an 8x canvas (8160x5600 on the RIS map);
+    // high-quality-resampling all of it to map size on EVERY repaint was the hot
+    // cost in culture mode. Instead resample it ONCE into a map-sized cache (when
+    // the overlay or map size changes) and blit that 1:1 each frame.
     if (stripeOverlay) {
+      const dw = imgSize.width, dh = imgSize.height;
+      let dc = stripeDownRef.current;
+      if (!dc || dc.src !== stripeOverlay || dc.w !== dw || dc.h !== dh) {
+        const c = document.createElement("canvas");
+        c.width = dw; c.height = dh;
+        const dctx = c.getContext("2d");
+        dctx.imageSmoothingEnabled = true;
+        dctx.imageSmoothingQuality = "high";   // one clean downscale, cached
+        dctx.drawImage(stripeOverlay, 0, 0, dw, dh);
+        dc = { src: stripeOverlay, w: dw, h: dh, canvas: c };
+        stripeDownRef.current = dc;
+      }
       ctx.save();
-      ctx.imageSmoothingEnabled = true;
-      // The overlay is an 8x canvas (8160x5600 on the RIS map); "high" quality
-      // resamples all of it on every pan frame. Same `panning` rule as the other
-      // heavy layers: cheapest filter during the drag, full quality on release.
-      ctx.imageSmoothingQuality = panning ? "low" : "high";
-      ctx.drawImage(stripeOverlay, 0, 0, imgSize.width, imgSize.height);
+      ctx.imageSmoothingEnabled = false;        // 1:1 blit of the cached downscale
+      ctx.drawImage(dc.canvas, 0, 0);
       ctx.restore();
     }
 

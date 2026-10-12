@@ -115,6 +115,48 @@ function registerSaveAnalysisHandlers(ipcMain, { _writeLog, getLastSaveBuf, base
     return p;
   };
 
+  // Shared FULL crack (0.9.153x). Loading a save fires several handlers that each
+  // used to read AND fully crack the SAME 30-45 MB file on the main thread —
+  // crack-save, get-optimal-taxes, get-strat-tax-plan — a ~5s crack EACH and the
+  // single biggest freeze in the app. They now share ONE crack that is:
+  //   • run off the main thread (runCrackWorker "full"), and
+  //   • cached by (savePath, mtime, size, modDataDir), so the burst of handlers on
+  //     one save load reuses it instead of re-cracking 3-5×.
+  // The cache is deliberately SHORT-LIVED (30s TTL) and tiny (LRU 2): it collapses
+  // the on-load burst but expires fast, so a mod edit + re-analyze picks up fresh
+  // data within seconds and only ~2 cracked saves are ever held in memory.
+  const _crackCacheTtlMs = 30000;
+  const _crackCacheMax = 2;
+  const _crackCache = new Map();            // key -> { cracked, t }
+  const _crackCacheGet = (key) => {
+    const v = _crackCache.get(key);
+    if (!v) return null;
+    if (Date.now() - v.t > _crackCacheTtlMs) { _crackCache.delete(key); return null; }
+    _crackCache.delete(key); _crackCache.set(key, v);   // LRU bump
+    return v.cracked;
+  };
+  const _crackCacheSet = (key, cracked) => {
+    _crackCache.set(key, { cracked, t: Date.now() });
+    while (_crackCache.size > _crackCacheMax) { const k = _crackCache.keys().next().value; _crackCache.delete(k); }
+  };
+  const _inflightFullCrack = new Map();
+  // Rejects on worker failure so every caller keeps its synchronous fallback
+  // (never a regression vs the old main-thread crack).
+  const getSharedFullCrack = async (savePath, modDataDir) => {
+    const st = await fs.promises.stat(savePath);
+    const key = `${savePath}|${st.mtimeMs}|${st.size}|${modDataDir}`;
+    const hit = _crackCacheGet(key);
+    if (hit) return hit;
+    let p = _inflightFullCrack.get(key);
+    if (!p) {
+      p = runCrackWorker("full", { savePath, modDataDir }).then((res) => { try { _crackCacheSet(key, res); } catch { /* cache is best-effort */ } return res; });
+      _inflightFullCrack.set(key, p);
+      const done = () => { _inflightFullCrack.delete(key); };
+      p.then(done, done);
+    }
+    return p;
+  };
+
   // Crack + extract ONE timeline row in a worker. Resolves { ok:true, row } or
   // { ok:false, error, file } for a per-save crack failure (mirrors the CLI's
   // per-file try/catch); REJECTS only on worker-infra failure (spawn/'error'),
@@ -168,21 +210,30 @@ function registerSaveAnalysisHandlers(ipcMain, { _writeLog, getLastSaveBuf, base
 
 ipcMain.handle("crack-save", async (_event, savePath, modDataDir) => {
   try {
-    const { crackSave } = require("./saveCracker.js");
-    const buf = await fs.promises.readFile(savePath); // async: saves are 30-45 MB — don't block the event loop on I/O
-    const cracked = crackSave(buf, modDataDir);
-    // 0.9.860: attach the per-faction Financial Overview breakdown (income by
-    // category, expenditure by category, net) read from the stored econ-history
-    // KPI block. This is the REAL in-game breakdown (matches the Finance & Family
-    // panel to the denarius), not a derivation. Failure is non-fatal — the rest
-    // of the crack still returns.
+    // 0.9.153x: run the crack off the main thread and share it (getSharedFullCrack).
+    // The FULL crack already attaches the per-faction Financial Overview breakdown
+    // (income/expenditure by category, net) read from the stored econ-history KPI
+    // block — the REAL in-game numbers (matches Finance & Family to the denarius).
+    let cracked;
     try {
-      const { parseFinancialOverview } = require("./economyParser.js");
-      cracked.economy = parseFinancialOverview(buf, cracked);
-      const pf = cracked.economy && cracked.economy.playerFaction;
+      cracked = await getSharedFullCrack(savePath, modDataDir);
+    } catch (werr) {
+      // Fallback: worker unavailable/failed → crack synchronously (never a
+      // regression vs the old behaviour). Failure of the economy attach is non-fatal.
+      _writeLog(`[crack-save] worker fallback (${werr && werr.message}) — running on main thread`);
+      const { crackSave } = require("./saveCracker.js");
+      const buf = await fs.promises.readFile(savePath); // async: saves are 30-45 MB — don't block the event loop on I/O
+      cracked = crackSave(buf, modDataDir);
+      try {
+        const { parseFinancialOverview } = require("./economyParser.js");
+        cracked.economy = parseFinancialOverview(buf, cracked);
+      } catch (e2) { _writeLog(`[economy] parse failed: ${e2 && e2.message}`); }
+    }
+    if (cracked && cracked.economy) {
+      const pf = cracked.economy.playerFaction;
       const pe = pf && cracked.economy.byFaction ? cracked.economy.byFaction[pf] : null;
       if (pe) _writeLog(`[economy] ${pf} income=${pe.income?.total} expend=${pe.expenditure?.total} net=${pe.net} treasury=${pe.treasury}`);
-    } catch (e2) { _writeLog(`[economy] parse failed: ${e2 && e2.message}`); }
+    }
     return cracked;
   } catch (e) {
     return { error: e && e.message ? e.message : String(e) };
@@ -268,8 +319,12 @@ ipcMain.handle("get-optimal-taxes", async (_event, savePath, modDataDir, playerH
     if (!savePath || !modDataDir) return { error: "savePath + modDataDir required" };
     const buf = await fs.promises.readFile(savePath); // async: saves are 30-45 MB — don't block the event loop on I/O
     const as = require("./armySetup.js");
-    const { crackSave } = require("./saveCracker.js");
-    const cracked = crackSave(buf, modDataDir);
+    // 0.9.153x: reuse the shared off-thread crack (crack-save fired on the same
+    // save load); sync-crack only if the worker is unavailable. optimalTaxPlan
+    // still needs the raw buffer, so we read it either way (fast async I/O).
+    let cracked;
+    try { cracked = await getSharedFullCrack(savePath, modDataDir); }
+    catch { const { crackSave } = require("./saveCracker.js"); cracked = crackSave(buf, modDataDir); }
     // USER RULE: turn-2 save = growth ONLY; budget comes from a TURN-1 save.
     let economyBudgets = null;
     if (economyPath && economyPath !== savePath) {
@@ -303,8 +358,10 @@ ipcMain.handle("get-strat-tax-plan", async (_event, modDataDir, faction, savePat
     let opts;
     if (savePath && fs.existsSync(savePath)) {
       try {
-        const { crackSave } = require("./saveCracker.js");
-        const cr = crackSave(await fs.promises.readFile(savePath), modDataDir);
+        // 0.9.153x: reuse the shared off-thread crack; sync-crack only as fallback.
+        let cr;
+        try { cr = await getSharedFullCrack(savePath, modDataDir); }
+        catch { const { crackSave } = require("./saveCracker.js"); cr = crackSave(await fs.promises.readFile(savePath), modDataDir); }
         const growthDevByCity = {};
         const sf = (cr && cr.settlementFields) || {};
         // committed pops from the calibration save → the tax base tracks the actual

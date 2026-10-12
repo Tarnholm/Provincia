@@ -7,11 +7,16 @@
 // the records here, so the main thread doesn't redo that pass.
 //
 // Communication:
-//   in:  { saveBuf, nameLookup, traitNames, traitEpithets }
+//   in:  { savePath?, saveBuf?, nameLookup, traitNames, traitEpithets }
 //   out: { ok: true, characters } | { ok: false, error }
+//
+// Prefer savePath: the worker re-reads the 30-45 MB file itself (off the main
+// thread, from the OS cache the main thread just warmed) instead of the main
+// thread structured-cloning the whole buffer across to us.
 
 "use strict";
 
+const fs = require("fs");
 const { parentPort } = require("worker_threads");
 const { findCharacterRecords } = require("./characterParser.js");
 
@@ -52,10 +57,13 @@ function applyEpithets(characters, modTraitEpithets) {
 
 parentPort.on("message", (payload) => {
   try {
-    const { saveBuf, nameLookup, traitNames, traitEpithets } = payload;
-    // postMessage delivers Buffers as Uint8Array on the worker side —
-    // wrap back into a real Buffer so byte-reading helpers work.
-    const buf = Buffer.isBuffer(saveBuf) ? saveBuf : Buffer.from(saveBuf.buffer, saveBuf.byteOffset, saveBuf.byteLength);
+    const { savePath, saveBuf, nameLookup, traitNames, traitEpithets } = payload;
+    // Prefer re-reading the file here (off-thread) over a cloned buffer. postMessage
+    // delivers Buffers as Uint8Array on the worker side — wrap back into a real
+    // Buffer so byte-reading helpers work.
+    let buf;
+    if (savePath && fs.existsSync(savePath)) buf = fs.readFileSync(savePath);
+    else buf = Buffer.isBuffer(saveBuf) ? saveBuf : Buffer.from(saveBuf.buffer, saveBuf.byteOffset, saveBuf.byteLength);
     const characters = findCharacterRecords(buf, nameLookup, traitNames, null);
     applyEpithets(characters, traitEpithets);
     parentPort.postMessage({ ok: true, characters });

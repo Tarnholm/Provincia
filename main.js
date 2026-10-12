@@ -63,7 +63,7 @@ const { autoUpdater } = require("electron-updater");
 // the main thread's parseSaveData. Worker is short-lived (one parse per
 // invocation, then terminate) — the spawn cost (~30-50ms) is small
 // relative to the ~1-1.5s the byte-by-byte scan saves us.
-function findCharsInWorker(saveBuf, nameLookup, traitNames, traitEpithets) {
+function findCharsInWorker(savePath, saveBuf, nameLookup, traitNames, traitEpithets) {
   return new Promise((resolve, reject) => {
     let workerPath = path.join(__dirname, "src", "charactersWorker.js");
     let worker;
@@ -75,14 +75,16 @@ function findCharsInWorker(saveBuf, nameLookup, traitNames, traitEpithets) {
       else reject(new Error(msg && msg.error ? msg.error : "worker failed"));
     });
     worker.once("error", (err) => { worker.terminate(); reject(err); });
-    worker.postMessage({ saveBuf, nameLookup, traitNames, traitEpithets });
+    // Prefer savePath so the worker re-reads the 30-45 MB file itself rather than
+    // us structured-cloning the whole buffer across the thread boundary.
+    worker.postMessage({ savePath: savePath || null, saveBuf: savePath ? null : saveBuf, nameLookup, traitNames, traitEpithets });
   });
 }
 
 // Same pattern for the buildings parser — runs in parallel with the
 // chars worker AND parseSaveData. Worth ~200-400ms off the main-thread
 // time on a typical save reload.
-function parseBuildingsInWorker(saveBuf) {
+function parseBuildingsInWorker(savePath, saveBuf) {
   return new Promise((resolve, reject) => {
     let workerPath = path.join(__dirname, "src", "buildingsWorker.js");
     let worker;
@@ -109,8 +111,11 @@ function parseBuildingsInWorker(saveBuf) {
       for (const k of getBaselineBuildingChains()) merged.add(k);
       whitelist = merged;
     }
+    // Prefer savePath so the worker re-reads the file itself rather than us
+    // structured-cloning the 30-45 MB buffer across the thread boundary.
     worker.postMessage({
-      saveBuf,
+      savePath: savePath || null,
+      saveBuf: savePath ? null : saveBuf,
       whitelist: Array.from(whitelist),
       maxLevels: modChainMaxLevels || {},
     });
@@ -3340,12 +3345,12 @@ async function reparseLatestSave() {
       }, ms)),
     ]);
     const charsP = (modNameLookup && modTraitNames)
-      ? withTimeout(findCharsInWorker(saveBuf, modNameLookup, modTraitNames, modTraitEpithets).catch((e) => {
+      ? withTimeout(findCharsInWorker(full, saveBuf, modNameLookup, modTraitNames, modTraitEpithets).catch((e) => {
           console.warn("[save-watch] chars worker failed, falling back to sync:", e.message);
           return null;
         }), 30000, "chars")
       : Promise.resolve(null);
-    const buildingsP = withTimeout(parseBuildingsInWorker(saveBuf).catch((e) => {
+    const buildingsP = withTimeout(parseBuildingsInWorker(full, saveBuf).catch((e) => {
       console.warn("[save-watch] buildings worker failed, falling back to sync:", e.message);
       return null;
     }), 30000, "buildings");
@@ -3620,12 +3625,12 @@ ipcMain.handle("save-watch-start", async (_event, saveDir, pinnedSave) => {
       // Kick off v1 char scan + building scan in workers — they run
       // parallel with parseSaveData on separate cores.
       const charsP = (modNameLookup && modTraitNames)
-        ? findCharsInWorker(saveBuf, modNameLookup, modTraitNames, modTraitEpithets).catch((e) => {
+        ? findCharsInWorker(full, saveBuf, modNameLookup, modTraitNames, modTraitEpithets).catch((e) => {
             console.warn("[save-watch] initial chars worker failed, falling back:", e.message);
             return null;
           })
         : Promise.resolve(null);
-      const buildingsP = parseBuildingsInWorker(saveBuf).catch((e) => {
+      const buildingsP = parseBuildingsInWorker(full, saveBuf).catch((e) => {
         console.warn("[save-watch] initial buildings worker failed, falling back:", e.message);
         return null;
       });
@@ -3954,12 +3959,12 @@ ipcMain.handle("characters-init", async (_event, modDataDir) => {
       lastSaveBuf = saveBuf;
       // Run the v1 char scan AND building scan in parallel workers.
       const charsP = (modNameLookup && modTraitNames)
-        ? findCharsInWorker(saveBuf, modNameLookup, modTraitNames, modTraitEpithets).catch((e) => {
+        ? findCharsInWorker(full, saveBuf, modNameLookup, modTraitNames, modTraitEpithets).catch((e) => {
             console.warn("[characters-init] chars worker failed, falling back:", e.message);
             return null;
           })
         : Promise.resolve(null);
-      const buildingsP = parseBuildingsInWorker(saveBuf).catch((e) => {
+      const buildingsP = parseBuildingsInWorker(full, saveBuf).catch((e) => {
         console.warn("[characters-init] buildings worker failed, falling back:", e.message);
         return null;
       });

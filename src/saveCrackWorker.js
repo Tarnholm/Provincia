@@ -1,8 +1,10 @@
 // Worker thread that runs the heavy save cracks OFF the Electron main thread,
-// so loading a save no longer freezes the app for several seconds. Two modes:
+// so loading a save no longer freezes the app for several seconds. Modes:
 //
-//   mode "economy": crackSave(economyOnly) + parseFinancialOverview → the
+//   mode "economy": crackSave(tradeOnly) + parseFinancialOverview → the
 //                   Financial Overview object the economy panel needs.
+//   mode "full":    full crackSave + parseFinancialOverview → the whole cracked
+//                   object the crack-save IPC returns (and the tax handlers share).
 //   mode "trade":   computeTradeNetwork → the trade-network object.
 //
 // Both cracks are self-contained (buffer + modDataDir in, plain object out) —
@@ -62,6 +64,19 @@ parentPort.on("message", async (payload) => {
       const { parseFinancialOverview } = require("./economyParser.js");
       const cracked = crackSave(buf, modDataDir, { tradeOnly: true });
       result = { cr: cracked, economy: parseFinancialOverview(buf, cracked) };
+    } else if (mode === "full") {
+      // FULL crack + Financial Overview, returned as ONE object — the exact shape
+      // the crack-save IPC used to build on the main thread. Moved off-thread so a
+      // ~5s synchronous crack no longer freezes all IPC/window events, and cached
+      // by the handler so the other save handlers that fire on the same save load
+      // (optimal-taxes, strat-tax-plan) reuse it instead of re-cracking 3-5×.
+      const { crackSave } = require("./saveCracker.js");
+      const cracked = crackSave(buf, modDataDir);
+      try {
+        const { parseFinancialOverview } = require("./economyParser.js");
+        cracked.economy = parseFinancialOverview(buf, cracked);
+      } catch (e2) { console.log(`[economy] parse failed: ${e2 && e2.message}`); }
+      result = cracked;
     } else if (mode === "trade") {
       // preCracked: reuse the economy panel's shared tradeOnly crack when present,
       // skipping this worker's own ~3s re-crack.

@@ -3686,7 +3686,7 @@
 		},
 
 		"available in custom battles": true,
-		"prefer naval invasions": true,
+		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
 

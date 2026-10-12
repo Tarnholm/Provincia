@@ -1200,7 +1200,7 @@ const cardStyle = {
   boxShadow: "0 8px 40px rgba(0,0,0,0.55)",
   backgroundColor: "var(--ft-card-bg)",
   backgroundImage:
-    `linear-gradient(var(--ft-card-overlay), var(--ft-card-overlay)), url(${PUBLIC_URL}menu_marble_frame.png)`,
+    `linear-gradient(var(--ft-card-overlay), var(--ft-card-overlay)), url(${PUBLIC_URL}menu_marble_frame.webp)`,
   backgroundRepeat: "no-repeat, repeat",
   color: "var(--ft-text)",
 };

@@ -25,6 +25,21 @@ export default defineConfig({
     // source locations after the fact. "hidden" keeps DevTools behavior and
     // bundle bytes identical for users.
     sourcemap: "hidden",
+    // The 34 panels/modals are now dynamic import()s (React.lazy), so Rollup emits
+    // each as its own chunk out of the boot bundle. Split the npm vendors out too
+    // so they cache across app updates (they change far less often than App.js).
+    chunkSizeWarningLimit: 2000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            // Keep react + react-dom + scheduler together (one shared runtime).
+            if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return "vendor-react";
+            return "vendor";
+          }
+        },
+      },
+    },
     // src/diagnostics.js is a CommonJS module (main.js require()s it at runtime;
     // it's listed in package.json build.files). The renderer (App.js) also imports
     // it. Rollup's CJS interop only runs on node_modules by default, so opt this

@@ -5,19 +5,25 @@
 // it costs ~200-400ms — main-thread time we recover by moving here.
 //
 // Communication:
-//   in:  { saveBuf, whitelist (array of chain names), maxLevels (object) }
+//   in:  { savePath?, saveBuf?, whitelist (array of chain names), maxLevels (object) }
 //   out: { ok: true, buildingsByCity, queuedByCity } | { ok: false, error }
+//
+// Prefer savePath: the worker re-reads the 30-45 MB file itself (off the main
+// thread, from the OS cache) instead of the main thread cloning the buffer across.
 
 "use strict";
 
+const fs = require("fs");
 const { parentPort } = require("worker_threads");
 const { parseSettlements, findAllSettlementMarkers } = require("./buildingParser.js");
 const { parseQueuesForSettlements, detectEngine } = require("./queueParser.js");
 
 parentPort.on("message", (payload) => {
   try {
-    const { saveBuf, whitelist, maxLevels } = payload;
-    const buf = Buffer.isBuffer(saveBuf)
+    const { savePath, saveBuf, whitelist, maxLevels } = payload;
+    let buf;
+    if (savePath && fs.existsSync(savePath)) buf = fs.readFileSync(savePath);
+    else buf = Buffer.isBuffer(saveBuf)
       ? saveBuf
       : Buffer.from(saveBuf.buffer, saveBuf.byteOffset, saveBuf.byteLength);
     const whitelistSet = new Set(whitelist);
