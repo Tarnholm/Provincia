@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1533",
+    date: "2026-10-12",
+    items: [
+      { type: "improvement", text: "**New look.** A new splash screen and app icon — a Roman aquila and standard over a gold map of the classical world." },
+    ],
+  },
+  {
     version: "0.9.1532",
     date: "2026-10-12",
     items: [
