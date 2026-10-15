@@ -245,17 +245,15 @@ function build(v, r) {
   // template. Taken from C:/RIS/_resources/logos and separators, which is where the project
   // keeps its artwork; the file is copied into wiki/art by hand, not generated, because it is
   // an asset of the mod and not something this script has any business producing.
-  // The opening is the team's own draft (2026-09-30), kept as written; only the numbers are
-  // filled from the data, so they follow the mod.
+  // The opening is the team's own draft (2026-09-30, campaign paragraphs revised by wizzam on
+  // the GitHub wiki 2026-10-10), kept as written; only the numbers are filled from the data.
   pages["README.md"] = `# Welcome to RIS: Wiki
 
 <img src="art/ris-logo-wide.png" alt="Rome: Total Realism, Imperium Surrectum" width="560" height="168" style="display:block;float:none;margin:.4rem auto 1.4rem;max-width:100%;height:auto">
 
-**RTR: Imperium Surrectum** is a total overhaul mod for Rome: Total War Remastered with a focus on historical accuracy alongside fun and challenging gameplay.
+**RTR: Imperium Surrectum** is a total overhaul mod for Rome: Total War Remastered with a focus on historical accuracy alongside fun and challenging gameplay. RIS 0.7 marks a major new release, reflecting over two years of research and hard work to refine and expand the mod.
 
-RIS 0.7 marks a major new release, reflecting over two years of research and hard work to refine and expand the mod.
-
-RIS greatly expands and revamps the whole base game:
+With 0.7, RIS greatly expands and revamps the whole base game:
 
 - A completely overhauled [map](world-map.html) with ${n(r.settlements)} [settlements](regions.md).
 - ${n(r.playableByDesign)} playable [factions](factions.md), many of which [remastered](remastered.md) for v0.7.
@@ -272,7 +270,11 @@ On top of this, RIS 0.7 adds major new systems for:
 
 These changes ensure a far richer campaign, with a scale and diversity that far surpasses the original game.
 
-Alongside the main campaign, RIS also includes two other new and unique campaigns: 4 Romans, bringing the RIS feel to the vanilla Four Roman factions, and a classic/lite map for those looking for quicker and more decisive campaigns, each with their own mod folders.
+The main RIS experience has two separate campaigns, one for a unified Roman faction and one with four Roman factions and senate missions closer to the vanilla set-up.
+
+The new release also launches a new RIS Light campaign with similar depth and mechanics but a smaller scale. 600 settlements and a half-sized map make for quicker and more decisive campaigns. The Light campaign also features a 1Roman or 4Roman campaign.
+
+Each of the campaigns has its own mod folders.
 
 This wiki documents the new additions and the main systems found in RIS 0.7, for the main campaign.
 

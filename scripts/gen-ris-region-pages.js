@@ -1699,10 +1699,15 @@ const idx = `# Regions and settlements
 
 [← wiki index](README.md) · [sortable list](regions.html) · [world map](world-map.html)
 
-${index.length.toLocaleString("en-US")} regions, each with one settlement${unheld ? "" : ", every one held by a faction at the campaign start"}.
-${capitals} settlements are a faction's capital.
-The region is the land (terrain, fertility, trade goods); the settlement is the town (its size,
-manpower and buildings).
+RIS's map has been heavily researched and reworked to give historically accurate regions with distinct flavour and more campaign depth.
+
+The growth and development of all ${index.length.toLocaleString("en-US")} settlements is determined by their terrain, climate, natural harbour, and water source. These features impact available options for various building chains including farms, ports, and health/ sanitation buildings.
+
+Regions also feature extensively re-worked trade goods, which influence trade and new building chains for industrial buildings within settlements.
+
+Pay attention to the building browser for each settlement to see what options are available to you.
+
+Note that as building chains develop, buildings will increasingly involve trade offs with others, meaning that more prioritisation and settlement specialisation will be needed.
 
 ## Settlements
 
