@@ -1,23 +1,23 @@
 {
- "hash": "10a90de21d76a302",
+ "hash": "acf6e3a16a034741",
  "model": "claude-opus-5-5 (Claude Code session)",
- "written": "2026-09-26",
+ "written": "2026-10-16",
  "prose": {
   "title": "The Cilician Pirate Revolt",
-  "summary": "The rough coast of Cilicia rises and Nagidos and Korakesion become the Cilician Pirates. Both start the campaign in the hands of the Ptolemaic Empire. The revolt can break out whenever one of the two rebels on its own, and it happens by itself at turn 102 (245 BC) at the latest.",
-  "breaks_away_from": "Whoever holds Nagidos and Korakesion (at the start, the Ptolemaic Empire)",
-  "who_it_can_happen_to": "It can happen in any campaign. If you choose the Cilician Pirates when starting a campaign, the game plays forward until they rise and then hands them to you.",
+  "summary": "The Cilician coast rises and Nagidos and Korakesion become the Cilician Pirates. Both cities start the campaign in the hands of the Ptolemaic Empire. The revolt can break out early when one of the two rebels on its own, and it happens by itself at turn 102 (245 BC) at the latest.",
+  "breaks_away_from": "whoever holds Nagidos and Korakesion (at the start, the Ptolemaic Empire)",
+  "who_it_can_happen_to": "It can happen in any campaign, whether the two cities are held by a human or by the AI.",
   "what_sets_it_off": [
-   "Each time Nagidos or Korakesion rebels on its own through unrest, there are three chances in four that the Cilician revolt breaks out; it breaks out for certain if either city is already in rebel hands.",
-   "If it has not happened by turn 102 (245 BC), the revolt breaks out automatically at the start of that turn."
+   "Nagidos or Korakesion rebels on its own: the revolt then breaks out on a 25% chance, or for certain if Nagidos or Korakesion is already held by the Free Peoples.",
+   "If it has not happened before, the revolt breaks out automatically at the start of turn 102 (245 BC)."
   ],
   "what_happens": [
-   "Nagidos and Korakesion both rebel at the start of the next turn, whoever owns them.",
+   "Nagidos and Korakesion both rebel, whoever owns them, unless a city already belongs to the Cilician Pirates.",
    "Both pass to the Cilician Pirates, a faction that does not exist at the start of the campaign.",
    "Each city gets a garrison 3.5 times normal strength, drawn from Cilician Brigands, Kietaian Hillmen, Cilician Neocretan Archers, Cilician Pirates, Cilician Spearmen, Cilician Renowned Pirates and Cilician Cavalry.",
    "The Cilician Pirates receive 10000 denarii when Nagidos joins them.",
    "The revolt happens only once per campaign."
   ],
-  "playing_as_the_rebels": "If the revolt breaks out after a city rises on its own, a message offers a human player the chance to take over the Cilician Pirates, provided that player is playing the Seleucid Empire or the Ptolemaic Empire, or owns Nagidos or Korakesion. If you accept, you switch to playing the Cilician Pirates and a government building is added in Nagidos and Korakesion; declining changes nothing. No offer is made when the revolt breaks out automatically at turn 102 (245 BC). The Cilician Pirates can also be chosen at the start of a new campaign: the game plays forward until they rise, and you take over from there."
+  "playing_as_the_rebels": "At the start of the turn after the revolt breaks out, by either route, the message 'Cilician Pirates Ravage Trade Routes!' offers the human player the chance to take over the Cilician Pirates, provided the player is playing the Seleucid Empire or the Ptolemaic Empire, or held Nagidos or Korakesion during the turn the revolt broke out. Accepting switches the player to the Cilician Pirates and adds a government building in Nagidos and Korakesion; declining changes nothing. Otherwise no offer is made. The Cilician Pirates are a playable faction."
  }
 }

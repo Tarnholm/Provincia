@@ -1,25 +1,25 @@
 {
- "hash": "8aeb7b6616521350",
+ "hash": "504f5a02340d5433",
  "model": "claude-opus-5-5 (Claude Code session)",
- "written": "2026-09-26",
+ "written": "2026-10-16",
  "prose": {
   "title": "The Seleucid Revolts",
-  "summary": "When a weak new king takes the Seleucid throne, the Seleucid Empire's western and eastern provinces break away at once. Its settlements in Asia Minor join the Seleucid Rebels already on the map, and those in the Upper Satrapies form a second Seleucid Rebels faction.",
+  "summary": "When a new Seleucid king comes to the throne, the Seleucid Empire's provinces in Asia Minor and the Upper Satrapies break away at once. Its settlements in Asia Minor go to the Seleucid Rebels already on the map, and those in the Upper Satrapies to a second Seleucid Rebels faction that does not exist at the start of the campaign.",
   "breaks_away_from": "the Seleucid Empire",
-  "who_it_can_happen_to": "It can happen in any campaign, whether the Seleucid Empire is played by a human or the AI.",
+  "who_it_can_happen_to": "It can happen in any campaign, whether the Seleucid Empire is played by a human or by the AI.",
   "what_sets_it_off": [
-   "A weak new king (low influence and command) succeeds to the Seleucid throne; the revolt breaks out at the start of his next turn."
+   "A general of the Seleucid Empire who carries the trait marking a new Seleucid king starts his turn; the revolt breaks out at that moment."
   ],
   "what_happens": [
-   "Every Seleucid Empire settlement in Asia Minor rebels at the start of the next turn and passes to the Seleucid Rebels, the faction that already holds 4 regions there from the start of the campaign.",
-   "When Sardis goes over, these Seleucid Rebels receive 10000 denarii.",
-   "Every Seleucid Empire settlement in the Upper Satrapies rebels at the start of the next turn and passes to a second Seleucid Rebels faction, which comes into being through this revolt.",
-   "When Ekbatana goes over, the second Seleucid Rebels faction receives 10000 denarii.",
-   "The towns that go over to either rebel faction receive garrisons of Seleucid Chalkaspides, Thureophoroi, Greek Hoplites, Greek Peltasts, Greek Archers, Seleucid Xystophoroi, Prodromoi and Neocretan Archers.",
+   "Every settlement the Seleucid Empire holds at that moment in Asia Minor rebels. Asia Minor covers 92 regions, of which 35 belong to the Seleucid Empire at the start of the campaign.",
+   "These settlements pass to the Seleucid Rebels, the faction that already holds 4 regions in Asia Minor from the start of the campaign. If Sardis is among them, the Seleucid Rebels receive 10000 denarii.",
+   "Every settlement the Seleucid Empire holds at that moment in the Upper Satrapies rebels. The Upper Satrapies cover 55 regions, of which 28 belong to the Seleucid Empire at the start of the campaign.",
+   "These settlements pass to the second Seleucid Rebels faction. If Ekbatana is among them, it receives 10000 denarii.",
+   "Settlements that go over to either rebel faction get a normal-strength garrison drawn from Seleucid Chalkaspides, Thureophoroi, Greek Hoplites, Greek Peltasts, Greek Archers, Seleucid Xystophoroi, Prodromoi and Neocretan Archers.",
    "If any Upper Satrapies settlement rebels, the Parni surrender all their regions, unless a human is playing the Parni.",
-   "Both Seleucid Rebels factions are always at war with the Seleucid Empire: if either is ever at peace with it, it declares war again at the start of its turn.",
+   "At the start of each of their turns, both Seleucid Rebels factions declare war on the Seleucid Empire if they are not already at war with it, except while they are dormant. For the first Seleucid Rebels faction this applies from the start of the campaign.",
    "The revolt happens only once per campaign."
   ],
-  "playing_as_the_rebels": "No offer is made. Neither Seleucid Rebels faction can be played; both are always run by the AI."
+  "playing_as_the_rebels": "No offer to take over the rebels is made when the revolt breaks out. Both Seleucid Rebels factions are playable factions."
  }
 }

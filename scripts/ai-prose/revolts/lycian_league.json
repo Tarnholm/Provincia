@@ -1,24 +1,25 @@
 {
- "hash": "f6306c90c2baa2a1",
+ "hash": "8502bf04590cd1b8",
  "model": "claude-opus-5-5 (Claude Code session)",
- "written": "2026-09-26",
+ "written": "2026-10-16",
  "prose": {
   "title": "The Lycian Revolt",
-  "summary": "The six Lycian cities of Patara, Xanthos, Tlos, Limyra, Myra and Telmessos break away from whoever holds them, at the start of the campaign the Ptolemaic Empire, and form the Lycian League. It can happen early when one of the cities rebels while Lycia is under Rhodian or foreign rule, and it happens anyway at turn 102 (245 BC).",
+  "summary": "The six Lycian cities of Patara, Xanthos, Tlos, Limyra, Myra and Telmessos break away from whoever holds them, at the campaign start the Ptolemaic Empire, and form the Lycian League. It can come early when one of the cities rebels under Rhodian or foreign rule, and otherwise happens at the end of the Seleucid Empire's turn from turn 202 (220 BC).",
   "breaks_away_from": "The Ptolemaic Empire, or whoever holds the Lycian cities at the time",
-  "who_it_can_happen_to": "Every campaign, whoever holds the Lycian cities, human or AI.",
+  "who_it_can_happen_to": "Any campaign, whoever holds the Lycian cities, human or AI.",
   "what_sets_it_off": [
-   "If one of the six Lycian cities rebels by itself through unrest, and Rhodes has held 3 or more of the six cities for more than 10 rounds in total (not necessarily in a row), the whole of Lycia revolts.",
-   "From turn 72 (253 BC), if one of the six Lycian cities rebels by itself through unrest while 4 or more of the six are held by factions other than the Ptolemaic Empire, the Seleucid Empire and Rhodes, the whole of Lycia revolts.",
-   "If neither of these has happened, the revolt happens at turn 102 (245 BC), no matter who holds the cities."
+   "If one of the six Lycian cities rebels, and Rhodes has held 3 or more of the six at the end of more than 10 Seleucid turns in total (not necessarily in a row), the whole of Lycia revolts.",
+   "From turn 142 (235 BC), if one of the six cities rebels while 4 or more of the six were held, at the end of the last Seleucid turn, by factions other than the Ptolemaic Empire, the Seleucid Empire and Rhodes (rebels included), the whole of Lycia revolts.",
+   "From turn 202 (220 BC), if it has not yet happened, the revolt fires at the end of the Seleucid Empire's turn, whoever holds the cities.",
+   "From turn 302 (195 BC), if the Seleucid Empire is gone and the revolt has still not happened, any one of the six cities rebelling sets it off."
   ],
   "what_happens": [
-   "At the start of the next turn Patara, Xanthos, Tlos, Limyra, Myra and Telmessos all rebel against whoever holds them.",
+   "Patara, Xanthos, Tlos, Limyra, Myra and Telmessos all rebel against whoever holds them.",
    "All six cities pass to the Lycian League, which did not exist until now.",
-   "Each city gets a strong garrison, 3.5 times normal strength, drawn from Akontistai, Greek Slingers, Lycian Archers, Lycian Marines, Lycian Hoplites, Lycian Drepanophoroi, Prodromoi and Xystophoroi.",
+   "Each city gets a garrison at 3.5 times normal strength, drawn from Akontistai, Greek Slingers, Lycian Archers, Lycian Marines, Lycian Hoplites, Lycian Drepanophoroi, Prodromoi and Xystophoroi.",
    "When Patara revolts, the Lycian League receives 10000 denarii.",
    "The revolt happens only once per campaign."
   ],
-  "playing_as_the_rebels": "If you, the human player, held at least one of the six Lycian cities when the revolt began, a message titled 'The Lycian League declares its independence!' appears a turn or so later and offers to let you play as the Lycian League. If you accept, you switch to playing the Lycian League and a government building is placed in Patara, Xanthos, Tlos, Limyra and Myra. No offer is made if you held none of the six cities."
+  "playing_as_the_rebels": "If you, the human player, held at least one of the six Lycian cities at the last check before the revolt (made at the end of each Seleucid turn), a message titled 'The Lycian League declares its independence!' appears at the end of the next Seleucid turn and offers to let you play as the Lycian League. If you accept, you switch to playing the Lycian League and a government building is placed in Patara, Xanthos, Tlos, Limyra, Myra and Telmessos. No offer is made if you held none of the six cities, or if the Seleucid Empire has no further turn."
  }
 }

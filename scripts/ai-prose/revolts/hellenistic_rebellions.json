@@ -1,0 +1,53 @@
+{
+ "hash": "a0f820cababf5497",
+ "model": "claude-opus-5-5 (Claude Code session)",
+ "written": "2026-10-16",
+ "prose": {
+  "title": "The Hellenistic Rebellions",
+  "summary": "Four connected rebellions split the Seleucid and Ptolemaic empires. The Seleucid Dynasts, Adaios' breakaway Thracian satrapy, are at large from the start; from turn 40 (261 BC) Hyrkania and Parthia break away from the Seleucid Empire as the Seleucid Satraps; from turn 20 (266 BC) a Lysimachid claimant can raise Miletos against the Ptolemaic Empire as the Ptolemaic Dynasts, and Miletos later breaks away from him as Miletus. Separately, Cyrene rejoins the Ptolemaic Empire when its faction leader is replaced, the death of Magas in the messages.",
+  "breaks_away_from": "The Seleucid Empire and the Ptolemaic Empire, then the Ptolemaic Dynasts",
+  "who_it_can_happen_to": "Any campaign, whether the empires are human or AI: the Seleucid Dynasts exist from the start, the Seleucid Satraps need the Seleucid Empire to hold at least one of their towns, the Lysimachid revolt needs the Ptolemaic Empire to hold Miletos, and Cyrene's return needs a campaign not played as Cyrene.",
+  "what_sets_it_off": [
+   "The Seleucid Dynasts are alive from the start of the campaign, so their revolt is already under way on the first turn.",
+   "At the start of the Seleucid Empire's first turn from turn 40 (261 BC), each of Zadrakarta, Sirynx-Tambrax, Amardion Phrourion, Tapyron Phrourion, Hekatompylos, Tagai, Apauarktike, Nisa and Derbikon Taphai that the Seleucid Empire still holds revolts, and the Seleucid Satraps (shown as Seleucid Rebels) emerge there.",
+   "The eastern revolt is tried only once, and never if the Seleucid succession revolt has already happened, if the Seleucid Satraps already exist, or if the Seleucid Empire holds none of those towns at that moment.",
+   "From turn 20 (266 BC), at the start of each Ptolemaic Empire turn while it holds Miletos, there is a 35% chance that Miletos revolts and the Ptolemaic Dynasts (shown as Ptolemaic Rebels) emerge there, as long as the Ptolemaic succession revolt has not already happened.",
+   "If the Ptolemaic Dynasts do not appear and Miletos is still Ptolemaic at the start of the Ptolemaic Empire's next turn, the 35% chance rolls again on later turns; if Miletos has passed to anyone else without the Ptolemaic Dynasts appearing, it never rolls again.",
+   "When the AI runs the Ptolemaic Dynasts, Miletos breaks away from them to Miletus on their first turn after more than 4 turns have passed since they emerged.",
+   "When a human plays the Ptolemaic Dynasts, Miletos breaks away from them to Miletus the first time one of their generals captures a settlement other than Miletos.",
+   "When Cyrene gets a new faction leader from turn 4 (270 BC) onwards, Cyrene rejoins the Ptolemaic Empire at the start of the next faction's turn, provided no human plays Cyrene and Cyrene and the Ptolemaic Empire are both still alive; otherwise it never happens."
+  ],
+  "what_happens": [
+   "On the Seleucid Dynasts' first turn they take their reserved holding settlement if the Free Peoples hold it.",
+   "A human Seleucid Empire gets the message 'AN UPSTART DYNAST' at the start of their first turn on which the Seleucid Dynasts are alive and at war with them.",
+   "The Seleucid Dynasts give up once the Seleucid Empire has won more than 2 land battles against them, once they get a new faction leader from turn 4 (270 BC) onwards, or once they hold fewer than 3 settlements, their reserved holding settlement included.",
+   "When a human plays neither the Seleucid Empire nor the Seleucid Dynasts, this happens automatically at the start of the next faction's turn while both are alive: every Dynasts settlement except their reserved holding settlement passes to the Seleucid Empire.",
+   "A human Seleucid Empire is instead asked once, at the start of a turn while still at war with the Dynasts, through the message 'The Thracian Satrapy Submits': accepting takes back every Dynasts city except their reserved holding settlement, each with a government building, and declining keeps the war going with no further offer.",
+   "When the Seleucid Dynasts give up, their faction leader, or failing him another family general, is moved to a fixed spot and made immovable and immortal, all their other armies are destroyed, and they become neutral with the Seleucid Empire.",
+   "If those dormant Seleucid Dynasts later hold more than one settlement, the parked general is freed and moved to a fixed spot.",
+   "Human Seleucid Dynasts are never made to give up.",
+   "In the east, the rebelling towns pass to the Seleucid Satraps, which did not exist until now, with garrisons drawn from Seleucid Chalkaspides, Thureophoroi, Greek Hoplites, Greek Peltasts, Greek Archers, Seleucid Xystophoroi, Prodromoi and Neocretan Archers.",
+   "On the Satraps' first turn, every one of those towns held by the Seleucid Empire or the Free Peoples also passes to them, as does every one held by the Parni or Bactria unless a human plays that faction.",
+   "At the same moment the Parni, unless a human plays them, lose every settlement they hold to the Free Peoples and take to the steppe as a horde.",
+   "If Bactria and the Seleucid Empire are both alive, the Seleucid Empire and Bactria are put at war.",
+   "The Satraps are put at war with the Parni, and while the Parni live the Satraps are put back at war with them at the start of each of their turns until the Satraps give up.",
+   "When a human plays neither the Satraps nor the Parni, the Satraps give up automatically once they have played at least one turn and either get a new faction leader, have lost more than 2 settlements since one of their generals last captured one, or hold fewer than 2 settlements, their reserved holding settlement included.",
+   "Their settlements, except their reserved holding settlement, then go to the Parni if they are alive, otherwise to the Seleucid Empire if it is alive, with a government building in each for a human Seleucid player, otherwise to the Free Peoples.",
+   "A human Parni player is instead asked once, through the message 'The Satraps Submit', when the same conditions are met: accepting gives the Parni every Satraps city except their reserved holding settlement, each with a government building, and declining keeps the war going with no further offer.",
+   "When the Satraps give up, their faction leader, or failing him another family general, is moved to a fixed spot and made immovable and immortal, all their other armies are destroyed, and they become neutral with the Parni and the Seleucid Empire.",
+   "If those dormant Satraps later hold more than one settlement, the parked general is freed and moved to a fixed spot, and their reserved holding settlement passes to the Free Peoples.",
+   "Human Seleucid Satraps are never made to give up.",
+   "In the west, Miletos rebels against the Ptolemaic Empire and passes to the Ptolemaic Dynasts, which did not exist until now, with a garrison drawn from Akontistai, Greek Slingers, Greek Archers, Greek Peltasts, Greek Hoplites, Thureophoroi, Ptolemaic Machairophoroi, Ptolemaic Klerouchoi Phalangites, Ptolemaic Klerouchoi Agema, Ptolemaic Basilikon Agema, Prodromoi, Ptolemaic Xystophoroi and Ptolemaic Agema Cavalry.",
+   "On the Ptolemaic Dynasts' first turn their faction leader receives the Lysimachid trait and they take their reserved holding settlement.",
+   "If the Ptolemaic Dynasts still hold Miletos when it breaks away, the city rebels against them and passes to Miletus, which did not exist until now, with a garrison 3.5 times normal strength drawn from Akontistai, Greek Slingers, Greek Archers, Greek Peltasts, Milesian Horophylakes, Milesian Hoplites, Thureophoroi, Prodromoi and Xystophoroi, and Miletus receives 10000.",
+   "AI Ptolemaic Dynasts then give up on their next turn, whether or not Miletos was still theirs: every settlement they hold apart from their reserved holding settlement goes to the Seleucid Empire if it is alive, otherwise to the Ptolemaic Empire if it is alive, otherwise to the Free Peoples, with a government building in each for a human Seleucid or Ptolemaic receiver.",
+   "At the same time their faction leader, or failing him another family general, is moved to a fixed spot and made immovable and immortal, all their other armies are destroyed, and they become neutral with the Ptolemaic Empire and the Seleucid Empire.",
+   "If those dormant Ptolemaic Dynasts later hold more than one settlement, the parked general is freed and moved to a fixed spot, and their reserved holding settlement passes to the Free Peoples.",
+   "Human Ptolemaic Dynasts are never made to give up their cities, and on their first capture of a settlement other than Miletos the message 'The Lysimachid Kingdom' names their new goal: Thrace, the Hellespont and the cities of western Asia Minor.",
+   "When Cyrene rejoins the Ptolemaic Empire, every Cyrene settlement passes to the Ptolemaic Empire, with a government building in each for a human Ptolemaic player, and every Cyrene army is destroyed.",
+   "A human Ptolemaic player then gets the message 'The Death of Magas' at the start of their next turn.",
+   "Each of these steps happens only once per campaign."
+  ],
+  "playing_as_the_rebels": "A human Seleucid Empire player is offered the Seleucid Satraps at the start of their turn after the Satraps emerge, through the message 'Chaos in the East!'. When the Seleucid succession revolt breaks out, the same player is offered the Seleucid Dynasts at the start of their next turn ('Asia Minor Secedes from the Empire!') while the Dynasts hold a settlement, and if that offer is declined or not made, the Seleucid Satraps ('The Upper Satrapies revolt!') while the Satraps hold a settlement. A human Ptolemaic Empire player is offered the Ptolemaic Dynasts at the start of their turn after the Dynasts emerge ('Return of the Lysimachids?'), and again at the start of the turn after the Ptolemaic succession revolt breaks out ('War of the Brothers') while the Dynasts hold a settlement. Accepting any of these places a government building in every settlement of that faction except its reserved holding settlement and switches the player to it; declining keeps the player where they are and leaves the rebels to the AI. Human Parni and Bactria players only get 'Chaos in the East!' as information, and no one is offered Miletus or Cyrene."
+ }
+}

@@ -172,10 +172,13 @@ const tocKey = (t) => t.toUpperCase().replace(/[^A-Z]+/g, " ").trim().split(" ")
 const HEADERS = [];
 CS_LINES.forEach((l, i) => {
   if (i < 60) return;
-  const m = /^\s*;+\s*=*\s*(\d{1,2})\.\s+(.+?)\s*=*\s*$/.exec(l);
+  const m = /^\s*;+\s*=*\s*(\d{1,2})([A-Z]?)\.\s+(.+?)\s*=*\s*$/.exec(l);
   if (!m) return;
   const n = parseInt(m[1], 10);
-  const toc = TOC.find((x) => x.num === n && tocKey(m[2]).startsWith(tocKey(x.title).split(" ")[0]));
+  // A lettered section added between two numbered ones ("28A. HELLENISTIC REBELLIONS") is its own
+  // section under its own heading; the table of contents only lists the numbered ones.
+  if (m[2]) { if (/^;+\s*==/.test(l)) HEADERS.push({ line: i + 1, num: `${n}${m[2]}`, title: m[3].replace(/\s*\(.*$/, "").trim() }); return; }
+  const toc = TOC.find((x) => x.num === n && tocKey(m[3]).startsWith(tocKey(x.title).split(" ")[0]));
   if (toc) HEADERS.push({ line: i + 1, num: n, title: toc.title });
 });
 // A header repeated as a banner (";== 27. X ==" inside ";;;;") counts once.
