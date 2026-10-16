@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { patchDescrRegions } from "./descrRegionsPatch";
-import { IS_MAP_WINDOW } from "./windowRole";
+import { IS_MAP_WINDOW, mainWindowValue } from "./windowRole";
 import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
 import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect, subscribeWidgets, getWidgetSnapshot } from "./Movable";
 import { loadBuildingIcon, getCachedBuildingIcon, prefetchBuildingIcons, prefetchBuildingIconsBulk, invalidateBuildingIcon, warmStats } from "./buildingIcons";
@@ -2687,7 +2687,11 @@ function App() {
   // modDataDir/modIconsDir in an effect below (after those states exist).
   const [showLoadModModal, setShowLoadModModal] = useState(false);
   const modLoadedRef = useRef(false);
+  // Map 2 showing another campaign than the main window: a function that says
+  // so (set below, once mapCampaign exists), else null.
+  const mapViewOnlyNoticeRef = useRef(null);
   const requireMod = useCallback(() => {
+    if (mapViewOnlyNoticeRef.current) { mapViewOnlyNoticeRef.current(); return false; }
     if (modLoadedRef.current) return true;
     setShowLoadModModal(true);
     return false;
@@ -2975,15 +2979,27 @@ function App() {
   const [mapVariant, setMapVariant] = useState(
     () => localStorage.getItem("mapVariant") || MAP_VARIANTS.starting.key
   );
-  // The map window follows the main window's campaign slot: switching it here
-  // would reload the main process's mod data under the main window's live
-  // mode. A 'storage' event fires here when the main window writes the key.
+  // Map 2 shows its own campaign slot (2026-10-17: Imperial on one screen, RIS
+  // Light on the other) and follows the main window's until it picks one;
+  // picking the main window's slot again follows it again (src/windowRole.js).
+  // While the two differ Map 2 is VIEW-ONLY: the main process saves edits into
+  // the main window's campaign, and the live save is the main window's game.
+  // A 'storage' event fires here when the main window writes the key.
+  const [mainCampaign, setMainCampaign] = useState(() => (IS_MAP_WINDOW && mainWindowValue("mapCampaign")) || mapCampaign);
   useEffect(() => {
     if (!IS_MAP_WINDOW) return undefined;
-    const onStorage = (e) => { if (e.key === "mapCampaign" && e.newValue) setMapCampaign(e.newValue); };
+    const onStorage = (e) => {
+      if (e.key !== "mapCampaign" || !e.newValue) return;
+      setMainCampaign(e.newValue);
+      setMapCampaign(localStorage.getItem("mapCampaign") || e.newValue); // its own pick, else the main window's
+    };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
+  const mapViewOnly = IS_MAP_WINDOW && mapCampaign !== mainCampaign;
+  mapViewOnlyNoticeRef.current = mapViewOnly
+    ? () => pushToast(`Map 2 is showing ${CAMPAIGNS[mapCampaign]?.label} to compare, so it is view only. Edit in the main window, or pick ${CAMPAIGNS[mainCampaign]?.label} here.`, "info", 6000)
+    : null;
   // Ground-types TGA pixels for the Geography overlay (lazy-loaded once on
   // first activation). Stored at native TGA resolution (≈2x supersampled
   // for Remastered Imperial campaign — 2041×1401 covering a 1020×700 region
@@ -6591,19 +6607,28 @@ function App() {
   // explains that; this switches it on and off when the main window's live
   // save is ready / stopped (main.js broadcasts "live-mode"). handleLiveToggle
   // is defined far below, so it is reached through a ref assigned there.
+  // Showing another campaign (mapViewOnly) keeps Live off: the live save is
+  // the main window's game. Turning it off here never stops the main window's
+  // watchers (preload.js makes the map window's stops no-ops).
   const liveToggleRef = useRef(null);
   const liveActiveNowRef = useRef(liveLogActive);
   liveActiveNowRef.current = liveLogActive;
+  const mainLiveRef = useRef(false);
+  const mapViewOnlyRef = useRef(mapViewOnly);
+  mapViewOnlyRef.current = mapViewOnly;
+  const syncMapLive = useCallback(() => {
+    const want = mainLiveRef.current && !mapViewOnlyRef.current;
+    if (want !== liveActiveNowRef.current && liveToggleRef.current) liveToggleRef.current();
+  }, []);
   useEffect(() => {
     if (!IS_MAP_WINDOW) return undefined;
     const api = window.electronAPI;
     if (!api?.getLiveMode || !api?.onLiveMode) return undefined;
-    const apply = (active) => {
-      if (!!active !== liveActiveNowRef.current && liveToggleRef.current) liveToggleRef.current();
-    };
+    const apply = (active) => { mainLiveRef.current = !!active; syncMapLive(); };
     api.getLiveMode().then((r) => apply(r && r.active)).catch(() => {});
     return api.onLiveMode((r) => apply(r && r.active));
-  }, []);
+  }, [syncMapLive]);
+  useEffect(() => { if (IS_MAP_WINDOW) syncMapLive(); }, [mapViewOnly, syncMapLive]);
 
   // Effect: start/stop save file watcher (alongside log watcher)
   useEffect(() => {
@@ -12667,6 +12692,7 @@ function App() {
     } catch { return null; }
   }, [mapCampaign, CAMPAIGNS]);
   useEffect(() => {
+    if (IS_MAP_WINDOW) return; // the main window's campaign is where edits are saved, whatever Map 2 shows
     const api = window.electronAPI;
     if (api?.setActiveCampaign) api.setActiveCampaign(importedCampaignFolderNow()).catch(() => {});
   }, [importedCampaignFolderNow, campaignLabels]);
@@ -15656,7 +15682,7 @@ function App() {
           {/* Inactive color: yellow in dark mode (2026-07-16 user request — the
               theme default read as dark grey and the button looked disabled);
               light mode keeps the theme default. Active stays green. */}
-          <button data-ui-highlight="live" className="map-mode-btn" onClick={IS_MAP_WINDOW ? () => pushToast(liveLogActive ? "Live follows the main window — switch it off there." : "Live follows the main window — switch it on there and this map joins in.", "info", 5000) : handleLiveToggle} style={{ ...btnStyle(liveLogActive), minWidth: 0, position: "relative", color: liveLogActive ? "#4f8" : (isDark ? "#ffd24a" : undefined) }}><MapBtnBadge k="view.live" />Live</button>
+          <button data-ui-highlight="live" className="map-mode-btn" onClick={IS_MAP_WINDOW ? () => pushToast(mapViewOnly ? `Live is the main window's game, on ${CAMPAIGNS[mainCampaign]?.label || "its campaign"} — switch this map back to it to follow along.` : liveLogActive ? "Live follows the main window — switch it off there." : "Live follows the main window — switch it on there and this map joins in.", "info", 5000) : handleLiveToggle} style={{ ...btnStyle(liveLogActive), minWidth: 0, position: "relative", color: liveLogActive ? "#4f8" : (isDark ? "#ffd24a" : undefined) }}><MapBtnBadge k="view.live" />Live</button>
           {/* 0.9.423: Calibrate-for-mod button. Tells the user to start
               a new game + save at turn 0 so the auto-cache pass picks up
               real save-read stats and uses them in non-live mode. The
@@ -15987,14 +16013,14 @@ function App() {
                       <button
                         key={t.label}
                         className="dev-btn"
-                        onClick={() => { setShowToolsMenu(false); t.open(); }}
+                        onClick={() => { setShowToolsMenu(false); if (mapViewOnlyNoticeRef.current) { mapViewOnlyNoticeRef.current(); return; } t.open(); }} // tools write into the main window's campaign
                         title={t.desc}
                         style={{ ...btnStyle(false), background: "transparent", border: "1px solid transparent", color: t.color, textAlign: "left", padding: "5px 8px", minWidth: 0 }}
                       >{t.icon} {t.label}</button>
                     ))}
                     {!IS_MAP_WINDOW && window.electronAPI?.openMapWindow && (
                       <label
-                        title="Adds a Map 2 button to the title bar (dev mode only): a second window for another screen, with its own map mode and overlays. Live data and the campaign follow this window."
+                        title="Adds a Map 2 button to the title bar (dev mode only): a second window for another screen, with its own map mode, overlays and campaign slot (to compare two campaigns). Live data follows this window."
                         style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 8px 3px", marginTop: 3, borderTop: "1px solid rgba(106,90,58,0.6)", color: "#cfd6e0", fontSize: "0.78rem", cursor: "pointer" }}
                       >
                         <input
@@ -19551,7 +19577,9 @@ Click for unit card`}
           </span>
           {IS_MAP_WINDOW && (
             <span
-              title="Second map window — pick its own map mode and overlays; live data and the campaign follow the main window."
+              title={mapViewOnly
+                ? `Second map window, showing ${CAMPAIGNS[mapCampaign]?.label} beside the main window's ${CAMPAIGNS[mainCampaign]?.label}. View only: edit in the main window. Pick ${CAMPAIGNS[mainCampaign]?.label} here to follow the main window again.`
+                : "Second map window — its own map mode, overlays and campaign slot (click a slot to compare). Live data follows the main window."}
               style={{
                 WebkitAppRegion: "no-drag",
                 fontFamily: "var(--font-display)", fontSize: "0.74rem", fontWeight: 700,
@@ -19559,7 +19587,7 @@ Click for unit card`}
                 color: "#dca64a", padding: "1px 8px", borderRadius: 6,
                 border: "1px solid rgba(220,166,74,0.45)",
               }}
-            >Map 2</span>
+            >{mapViewOnly ? "Map 2 · view only" : "Map 2"}</span>
           )}
           <div data-ui-highlight="campaigns" className={welcomeHighlight === "campaigns" ? "ws-ui-glow" : undefined} style={{ display: "flex", alignItems: "center", gap: 6, borderRadius: 6, WebkitAppRegion: "no-drag" }}>
             {Object.values(CAMPAIGNS).map((camp) => {
@@ -19571,7 +19599,16 @@ Click for unit card`}
                   data-onboard-slot={camp.key === DEFAULT_CAMPAIGNS.imperial.key ? "1" : undefined}
                   onClick={() => {
                     if (IS_MAP_WINDOW) {
-                      if (!active) pushToast("Switch campaigns in the main window — this map follows it.", "info", 4000);
+                      if (active) return;
+                      // The bundled vanilla slot (not imported over) loads the game install's
+                      // data into the main process instead of the mod's, so the two windows
+                      // can only compare imported slots; vanilla is shown in both or neither.
+                      const bundled = (k) => k === "classic" && !campaignLabels[k];
+                      if (camp.key !== mainCampaign && (bundled(camp.key) || bundled(mainCampaign))) {
+                        pushToast("Map 2 can compare imported campaigns only. The bundled vanilla slot shows in both windows: switch campaigns in the main window.", "info", 5000);
+                        return;
+                      }
+                      setMapCampaign(camp.key);
                       return;
                     }
                     // During onboarding, left-clicking the still-empty Slot 2 would
@@ -19592,7 +19629,7 @@ Click for unit card`}
                   }}
                   title={
                     IS_MAP_WINDOW
-                      ? (active ? `${camp.label} (active) — follows the main window` : "Switch campaigns in the main window")
+                      ? (active ? `${camp.label} (shown here)` : camp.key === mainCampaign ? `Show ${camp.label} here — the main window's campaign; this map follows it again` : `Show ${camp.label} here, beside the main window's ${CAMPAIGNS[mainCampaign]?.label} (view only)`)
                       : active
                       ? `${camp.label} (active) — right-click to import files into this slot`
                       : `Switch to ${camp.label} — right-click to import files into this slot`

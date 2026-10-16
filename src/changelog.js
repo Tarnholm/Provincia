@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1539",
+    date: "2026-10-17",
+    items: [
+      { type: "feature", text: "**Map 2 can show another campaign.** Click a campaign slot in the second map window to show it there, Imperial on one screen and RIS Light on the other, with its own map mode and overlays. While it shows a different campaign from the main window it is view only (its title says so): edits, tools and Live stay with the main window, which is the campaign Provincia saves into. Click the main window's slot in Map 2 to follow the main window again." },
+    ],
+  },
+  {
     version: "0.9.1538",
     date: "2026-10-16",
     items: [

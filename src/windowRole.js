@@ -17,12 +17,15 @@ export const IS_MAP_WINDOW = WINDOW_ROLE === "map";
 export const MAP_STORAGE_PREFIX = "provincia.map2:";
 const REMOVED = "\u0000removed";
 
-// Which campaign is loaded, where it was imported from, and which game folders
-// live mode reads belong to the MAIN window: the map window follows them and
-// its own writes to them are dropped (each launch re-stamps lastImport_*, and
-// a copy would pin the map window to an old import).
+// Where each campaign was imported from, and which game folders live mode
+// reads, belong to the MAIN window: the map window follows them and its own
+// writes to them are dropped (each launch re-stamps lastImport_*, and a copy
+// would pin the map window to an old import). Which slot is SHOWN
+// (mapCampaign) is the map window's own since 2026-10-17, so one screen can
+// show Imperial beside RIS Light; picking the main window's slot again stores
+// no copy, and it goes back to following.
 export const isSharedKey = (k) =>
-  k.startsWith("lastImport_") || k === "mapCampaign" || k === "importedCampaign" ||
+  k.startsWith("lastImport_") || k === "importedCampaign" ||
   k === "liveLogDir" || k === "liveSaveDir";
 
 export function createOverlayStorage(real, prefix = MAP_STORAGE_PREFIX) {
@@ -76,8 +79,16 @@ export function createOverlayStorage(real, prefix = MAP_STORAGE_PREFIX) {
   };
 }
 
+// The main window's own value of a key, past the map window's overlay (the
+// map window uses it to tell whether it shows the main window's campaign).
+let _realStorage = null;
+export function mainWindowValue(k) {
+  try { return (_realStorage || window.localStorage).getItem(String(k)); } catch { return null; }
+}
+
 if (IS_MAP_WINDOW) {
   try {
+    _realStorage = window.localStorage;
     const overlay = createOverlayStorage(window.localStorage);
     Object.defineProperty(window, "localStorage", { configurable: true, get: () => overlay });
   } catch (e) {

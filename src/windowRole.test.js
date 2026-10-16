@@ -41,16 +41,26 @@ describe("map window storage overlay", () => {
     expect(s.getItem("colorMode")).toBe("culture");
   });
 
-  it("campaign and live-folder keys always follow the main window", () => {
-    const real = memoryStorage({ lastImport_imperial: '{"at":1}', mapCampaign: "imperial", liveLogDir: "C:/a" });
+  it("import and live-folder keys always follow the main window", () => {
+    const real = memoryStorage({ lastImport_imperial: '{"at":1}', liveLogDir: "C:/a" });
     const s = createOverlayStorage(real);
     s.setItem("lastImport_imperial", '{"at":2}');
-    s.setItem("mapCampaign", "classic");
     s.removeItem("liveLogDir");
-    expect(real._m.size).toBe(3); // nothing of its own stored
+    expect(real._m.size).toBe(2); // nothing of its own stored
     expect(s.getItem("lastImport_imperial")).toBe('{"at":1}');
-    expect(s.getItem("mapCampaign")).toBe("imperial");
     expect(s.getItem("liveLogDir")).toBe("C:/a");
+  });
+
+  it("the shown campaign is the map window's own, and picking the main window's again follows it", () => {
+    const real = memoryStorage({ mapCampaign: "imperial" });
+    const s = createOverlayStorage(real);
+    s.setItem("mapCampaign", "classic"); // Imperial on one screen, RIS Light on the other
+    expect(s.getItem("mapCampaign")).toBe("classic");
+    expect(real.getItem("mapCampaign")).toBe("imperial");
+    s.setItem("mapCampaign", "imperial");
+    expect(real.getItem(MAP_STORAGE_PREFIX + "mapCampaign")).toBe(null);
+    real.setItem("mapCampaign", "classic");
+    expect(s.getItem("mapCampaign")).toBe("classic");
   });
 
   it("still sees the main window's later changes to keys it never set", () => {
