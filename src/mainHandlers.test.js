@@ -226,7 +226,7 @@ const haveMod = (() => { try { return fs.existsSync(path.join(MOD_DIR, "export_d
   // the diplomacy matrix (trade-rights gating needs it). computeTradeNetwork
   // uses only settlements/diplomacy/settlementFields/ownerByCity/playerFaction/
   // turn, so those must match the full crack byte-for-byte.
-  it.runIf(saveFile)("crackSave tradeOnly matches the full crack on every field computeTradeNetwork reads", { timeout: 90000 }, () => {
+  it.runIf(saveFile)("crackSave tradeOnly matches the full crack on every field computeTradeNetwork reads", { timeout: 90000 }, (ctx) => {
     const { crackSave } = require("./saveCracker.js");
     const { risData239 } = require("./risDataSnapshot.js");
     const buf = fs.readFileSync(saveFile);
@@ -234,7 +234,10 @@ const haveMod = (() => { try { return fs.existsSync(path.join(MOD_DIR, "export_d
     // snapshot, or the installed RIS (250 factions on the test branch). The
     // diplomacy matrix only decodes against the matching faction list.
     const sources = [risData239(), MOD_DIR].filter(Boolean);
-    const mod = sources.find((m) => crackSave(buf, m, { tradeOnly: true })?.diplomacy) || sources[0];
+    const mod = sources.find((m) => crackSave(buf, m, { tradeOnly: true })?.diplomacy);
+    // Neither list matches the save (C:\RIS checked out on another branch than
+    // the one the save was made on): diplomacy cannot be read here at all.
+    if (!mod) return ctx.skip();
     const full = crackSave(buf, mod);
     const trade = crackSave(buf, mod, { tradeOnly: true });
     for (const k of ["settlements", "diplomacy", "settlementFields", "ownerByCity", "playerFaction", "turn"]) {

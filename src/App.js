@@ -2212,9 +2212,10 @@ function App() {
   const [showFactionSummary, setShowFactionSummary] = useState(false);
   const [devMode, setDevMode] = useState(false);
   // Dev setting (Tools menu): show the "Map 2" button that opens the second
-  // map window. Off by default; the button only shows in dev mode.
+  // map window. On for everyone in dev mode unless unticked in Tools
+  // (2026-10-16: testers never found the tick box).
   const [mapWindowEnabled, setMapWindowEnabled] = useState(() => {
-    try { return localStorage.getItem("devMapWindow") === "1"; } catch { return false; }
+    try { return localStorage.getItem("devMapWindow") !== "0"; } catch { return true; }
   });
   const showMapWindowButton = devMode && mapWindowEnabled && !IS_MAP_WINDOW && !!window.electronAPI?.openMapWindow;
   const [devRecoveryPrompt, setDevRecoveryPrompt] = useState(false); // show recovery banner on dev mode enter

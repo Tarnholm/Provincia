@@ -204,6 +204,6 @@ describe.skipIf(!haveRis)("against the installed RIS", () => {
       for (let c = k; c > 0 && /^\s*;/.test(donor[c - 1]) && /shadow|resurrect/i.test(donor[c - 1]); c--) shadowLines++;
     });
     expect(r.edits.smFactions.split(/\r?\n/).length - f.smFactions.split(/\r?\n/).length).toBe(donor.length - shadowLines);
-    expect(r.edits.smFactions.match(/"shadow faction"/g).length, "the clone carries no shadow link").toBe(f.smFactions.match(/"shadow faction"/g).length);
+    expect((r.edits.smFactions.match(/"shadow faction"/g) || []).length, "the clone carries no shadow link").toBe((f.smFactions.match(/"shadow faction"/g) || []).length); // a RIS checkout without resurrection links has none
   });
 });
