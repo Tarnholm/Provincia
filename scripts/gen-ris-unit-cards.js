@@ -24,7 +24,18 @@ const argv = process.argv.slice(2);
 const valOf = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const RIS = valOf("--ris", "C:/RIS/RIS/data");
 const OUT = valOf("--out", process.env.RIS_WIKI_OUT || "C:/RIS/_wiki");
-const SCALE = Math.max(1, parseInt(valOf("--scale", "2"), 10));
+const SCALE_ARG = valOf("--scale", null);
+// Cards come in several sizes (328x448 remastered, 164x224 originals, 123x168 since the mod's 4K
+// downscale), so the divisor is chosen per file to land near 164 px wide; --scale N forces one.
+const CARD_W = 164;
+const scaleFor = (file) => {
+  if (SCALE_ARG) return Math.max(1, parseInt(SCALE_ARG, 10));
+  try {
+    const fd = fs.openSync(file, "r"), h = Buffer.alloc(18);
+    fs.readSync(fd, h, 0, 18, 0); fs.closeSync(fd);
+    return Math.max(1, Math.round(h.readUInt16LE(12) / CARD_W));
+  } catch { return 1; }
+};
 const LIMIT = parseInt(valOf("--limit", "0"), 10) || 0;
 
 const dg = require(path.join(__dirname, "..", "src", "descrStratGeneral.js"));
@@ -105,18 +116,18 @@ for (const u of todo) {
   const src = byDict.get(u.dict);
   if (!src) { missing++; if (missingNames.length < 8) missingNames.push(u.dict); continue; }
   try {
-    const r = convert(src, SCALE);
+    const r = convert(src, scaleFor(src));
     if (!r) { failed++; continue; }
     fs.writeFileSync(path.join(OUT, "cards", `${slug(u.dict)}.png`), r.buf);
     written++; bytes += r.buf.length;
   } catch { failed++; }
-  // The info card gets the same downscale as the roster card. Both source images are
+  // The info card gets the same treatment as the roster card. Both source images were
   // 328x448, so writing the info cards at full size added 188 MB for pixels nobody asked
   // for — a wiki does not justify that in a repo people clone to play a game.
   const isrc = info.byDict.get(u.dict);
   if (!isrc) { infoMissing++; continue; }
   try {
-    const r = convert(isrc, SCALE);
+    const r = convert(isrc, scaleFor(isrc));
     if (!r) { infoFailed++; continue; }
     fs.writeFileSync(path.join(OUT, "cards", `${slug(u.dict)}_info.png`), r.buf);
     infoWritten++; bytes += r.buf.length;
@@ -127,5 +138,5 @@ console.log(`\ncards written:  ${written.toLocaleString("en-US")}`);
 console.log(`  no card found: ${missing.toLocaleString("en-US")}${missingNames.length ? ` (e.g. ${missingNames.join(", ")})` : ""}`);
 console.log(`  failed decode: ${failed.toLocaleString("en-US")}`);
 console.log(`  info cards:    ${infoWritten.toLocaleString("en-US")} written · ${infoMissing.toLocaleString("en-US")} with no info art · ${infoFailed.toLocaleString("en-US")} failed`);
-console.log(`  total size:    ${(bytes / 1048576).toFixed(1)} MB at 1/${SCALE} scale`);
+console.log(`  total size:    ${(bytes / 1048576).toFixed(1)} MB, about ${CARD_W} px wide`);
 console.log(`  average:       ${written ? Math.round(bytes / written / 1024) : 0} KB each`);
