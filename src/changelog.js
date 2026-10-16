@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1537",
+    date: "2026-10-16",
+    items: [
+      { type: "feature", text: "**Compare Settlements: fill a submod town from the main mod.** A new Settlements tab in Bring In a Faction (also on its own tile, ⇋ Compare Settlements) puts each town on this map beside the same town in the main mod — found by region, or by settlement name where the map was redrawn — with level, population and every building chain side by side. The list starts with the towns that have the most to fill. **Fill in what is missing** ticks every chain the town lacks or has smaller, and the level and population when the main mod’s are bigger; **Match the main mod** ticks every difference, smaller values and removals included. The level and the core building tick together. Buildings keep their place in the town, new ones arrive as the main mod writes them, and commented-out (;GOVPO) buildings are left alone. Each building warns when it needs a bigger town than this one will be, a hidden resource the region lacks on this map, or a slot another building already fills. Works for RIS_Light and RIS_Classic against the main mod with no setup." },
+      { type: "fix", text: "**A building listed twice in a town shows up.** The compare marks it (RIS_Light has three: port_buildings in Parthenope, glass_production in Mareotis and Rhodos), and taking it keeps one copy." },
+    ],
+  },
+  {
     version: "0.9.1536",
     date: "2026-10-16",
     items: [

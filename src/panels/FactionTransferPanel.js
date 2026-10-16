@@ -14,7 +14,12 @@
 // gains the towns and people chosen. What it already holds, and who of the
 // main-mod roster is already here, is shown and cannot be picked twice.
 //
+// A second tab, Settlements (src/panels/SettlementComparePane.js), puts a
+// town on this map beside the same town in the main mod and copies across
+// the level, population and buildings the user ticks.
+//
 // Props:
+//   initialTab   "factions" (default) | "settlements"
 //   modDataDir   active mod data dir
 //   campaign     optional campaign name (a mod may ship several)
 //   factionDisplayNames { faction: "Display Name" }
@@ -22,6 +27,7 @@
 //   onClose      () => void
 import React from "react";
 import { createPortal } from "react-dom";
+import SettlementComparePane from "./SettlementComparePane.js";
 
 const GOLD = "#e8c873";
 const WARN = "#ff9d7a";
@@ -29,7 +35,8 @@ const DIM = "#9ab";
 
 const label = (f, names) => (names && f && names[f]) || (f ? f.replace(/_/g, " ") : "—");
 
-export default function FactionTransferPanel({ modDataDir, campaign, factionDisplayNames, pushToast, onClose }) {
+export default function FactionTransferPanel({ initialTab = "factions", modDataDir, campaign, factionDisplayNames, pushToast, onClose }) {
+  const [tab, setTab] = React.useState(initialTab === "settlements" ? "settlements" : "factions");
   const [scan, setScan] = React.useState(null);        // { target, source, factions } | { error }
   const [faction, setFaction] = React.useState(null);
   const [roster, setRoster] = React.useState(null);    // { roster, settlements, … } | { error }
@@ -136,16 +143,31 @@ export default function FactionTransferPanel({ modDataDir, campaign, factionDisp
         style={{ background: "rgba(26,22,18,0.98)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, width: "min(1080px, 95vw)", maxHeight: "88vh", display: "flex", flexDirection: "column", color: "#ddd", boxShadow: "0 18px 60px rgba(0,0,0,0.55)" }}>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "12px 16px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <div className="panel-heading" style={{ fontSize: "1.1rem", fontWeight: 600, color: GOLD }}>
+          <div className="panel-heading" style={{ fontSize: "1.1rem", fontWeight: 600, color: GOLD, display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
             Bring In a Faction
-            <span style={{ marginLeft: 10, fontSize: "0.74rem", color: DIM, fontWeight: 400 }}>
-              {scan && scan.target ? `${scan.target.campaign} · ${dormant.length} dormant, ${awake.length} on the map` : ""}
-              {scan && scan.source ? `  ·  roster from ${scan.source.campaign} (${scan.source.settlements} settlements)` : ""}
+            <span role="tablist" style={{ display: "inline-flex", gap: 4 }}>
+              {[["factions", "Factions"], ["settlements", "Settlements"]].map(([k, t]) => (
+                <button key={k} role="tab" aria-selected={tab === k} data-tab={k} onClick={() => setTab(k)}
+                  style={{ background: tab === k ? "rgba(232,200,115,0.16)" : "transparent", color: tab === k ? GOLD : DIM, border: "1px solid " + (tab === k ? "rgba(232,200,115,0.45)" : "rgba(255,255,255,0.12)"), borderRadius: 6, padding: "2px 10px", fontSize: "0.76rem", cursor: "pointer", fontWeight: 400 }}>
+                  {t}
+                </button>
+              ))}
             </span>
+            {tab === "factions" && (
+              <span style={{ fontSize: "0.74rem", color: DIM, fontWeight: 400 }}>
+                {scan && scan.target ? `${scan.target.campaign} · ${dormant.length} dormant, ${awake.length} on the map` : ""}
+                {scan && scan.source ? `  ·  roster from ${scan.source.campaign} (${scan.source.settlements} settlements)` : ""}
+              </span>
+            )}
           </div>
           <button onClick={close} aria-label="Close" style={{ background: "transparent", border: "none", color: DIM, fontSize: "1rem", cursor: "pointer" }}>✕</button>
         </div>
 
+        {tab === "settlements" && (
+          <SettlementComparePane modDataDir={modDataDir} campaign={(scan && scan.target && scan.target.campaign) || campaign}
+            factionDisplayNames={factionDisplayNames} pushToast={pushToast} />
+        )}
+        {tab === "factions" && <>
         {!scan && <div style={{ padding: "28px 12px", textAlign: "center", color: DIM, fontSize: "0.85rem" }}>Reading the campaign…</div>}
         {scan && scan.error && <div style={{ padding: "20px 16px", color: WARN, fontSize: "0.82rem" }}>⚠ {scan.error}</div>}
         {scan && !scan.error && !scan.source && (
@@ -309,6 +331,7 @@ export default function FactionTransferPanel({ modDataDir, campaign, factionDisp
             </button>
           </div>
         )}
+        </>}
       </div>
     </div>,
     document.body

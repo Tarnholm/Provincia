@@ -24,6 +24,9 @@ const descrGen = require("./descrStratGeneral.js");
 const { findRelatedModDirs } = require("./modPathResolver.js");
 const safeWrite = require("./safeModWrite.js");
 const freeTiles = require("./freeTiles.js");
+const sc = require("./settlementCompare.js");
+const { readBuildingCatalogue, requiresBlocks } = require("./buildingCatalogue.js");
+const { parseFactionCultures } = require("./culturePenalty.js");
 
 const CAMPAIGN_REL = ["world", "maps", "campaign"];
 
@@ -124,6 +127,69 @@ function placeOnMap(modDataDir, stratText, chars) {
   if (!tiles) return { errors: ["this map has no map_ground_types.tga — cannot tell a free tile from a mountain"], placements: {}, notes: [] };
   const occupied = ft.characterTiles(stratText).map((c) => c.x + "," + c.y);
   return freeTiles.placeCharacters({ tiles, towns: coords, cityOf: regionToCity, occupied, chars });
+}
+
+// ── Compare Settlements: what the base mod knows about buildings ─────────
+// A submod ships no EDB or descr_sm_factions of its own (RIS_Light, Classic),
+// so each is read from the first of the two mods that has it.
+const _fileCache = new Map(); // path → { mtime, value }
+function cachedRead(file, parse) {
+  try {
+    const mtime = fs.statSync(file).mtimeMs;
+    const hit = _fileCache.get(file);
+    if (hit && hit.mtime === mtime) return hit.value;
+    const value = parse(fs.readFileSync(file, "utf8"));
+    _fileCache.set(file, { mtime, value });
+    return value;
+  } catch { return null; }
+}
+function firstExisting(dirs, rel) {
+  for (const d of dirs) { if (!d) continue; const f = path.join(d, rel); if (fs.existsSync(f)) return f; }
+  return null;
+}
+function buildingContext(targetDir, sourceDir) {
+  const edb = firstExisting([targetDir, sourceDir], "export_descr_buildings.txt");
+  const sm = firstExisting([targetDir, sourceDir], "descr_sm_factions.txt");
+  return {
+    catalogue: (edb && cachedRead(edb, readBuildingCatalogue)) || readBuildingCatalogue(""),
+    cultureOf: (sm && (cachedRead(sm, parseFactionCultures) || {}).cultureOf) || {},
+  };
+}
+// descr_regions per region: { city, tags:Set } — the 5th field is the tag list
+// (Etruria / Arretium / romans_julii / Etruscans / 157 198 13 / aor_etruscan, …).
+function regionInfo(modDataDir) {
+  const f = path.join(modDataDir, "world", "maps", "base", "descr_regions.txt");
+  return cachedRead(f, (text) => {
+    const out = {};
+    const lines = text.split(/\r?\n/);
+    for (let i = 0; i < lines.length; i++) {
+      const name = lines[i];
+      if (!name || !/^[A-Za-z]/.test(name)) continue;
+      const fields = [];
+      for (let j = i + 1; j < lines.length && fields.length < 5; j++) {
+        if (/^[A-Za-z]/.test(lines[j])) break; // the next region
+        const t = lines[j].trim();
+        if (!t || t.startsWith(";")) continue;
+        fields.push(t.replace(/\s*;.*$/, ""));
+      }
+      if (fields.length >= 4) out[name.trim()] = { city: fields[0], tags: new Set((fields[4] || "").split(/[,\s]+/).map((x) => x.trim().toLowerCase()).filter(Boolean)) };
+    }
+    return out;
+  }) || {};
+}
+
+// The same town in the base mod: same region name, else same settlement name.
+function matchTowns(targetDir, targetText, sourceDir, sourceText) {
+  const here = sc.settlementIndex(targetText), there = sc.settlementIndex(sourceText);
+  const hereInfo = regionInfo(targetDir), thereInfo = regionInfo(sourceDir);
+  const byRegion = new Map(there.map((s) => [s.region, s]));
+  const byCity = new Map();
+  for (const s of there) { const c = thereInfo[s.region] && thereInfo[s.region].city; if (c && !byCity.has(c)) byCity.set(c, s); }
+  return here.map((h) => {
+    const city = (hereInfo[h.region] && hereInfo[h.region].city) || h.region;
+    const t = byRegion.get(h.region) || byCity.get(city) || null;
+    return { here: h, there: t, city, sourceCity: t ? ((thereInfo[t.region] && thereInfo[t.region].city) || t.region) : null, tags: (hereInfo[h.region] || {}).tags || new Set() };
+  });
 }
 
 function registerFactionTransferHandlers(ipcMain, { getActiveModDataDir, getModExportDir, modOut, _writeLog } = {}) {
@@ -326,6 +392,103 @@ function registerFactionTransferHandlers(ipcMain, { getActiveModDataDir, getModE
       return { ok: true, summary: plan.summary, warnings: plan.warnings, path: w.path, exported: w.exported, backupStamp: w.backupStamp };
     } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
   });
+
+  // ── Compare Settlements (2026-10-16): this map's town vs the base mod's ──
+  // Both campaigns resolve exactly as for Bring In a Faction, so RIS_Light and
+  // RIS_Classic both compare against the main mod with no setup.
+  const loadPair = (modDataDir, campaign, strict) => {
+    const dir = modDataDir || getActiveModDataDir();
+    if (!dir) return { error: "no mod loaded" };
+    const r = resolve(dir, campaign, strict);
+    if (r.error) return r;
+    if (!r.source) return { error: "no fuller mod found beside this one to compare against" };
+    return { dir, r, targetText: readTarget(r.target.strat), sourceText: fs.readFileSync(r.source.strat, "latin1") };
+  };
+  const blockLines = (text, s) => text.split(/\r?\n/).slice(s.start, s.end);
+
+  ipcMain.handle("settlement-compare-list", async (_e, modDataDir, campaign) => {
+    try {
+      const p = loadPair(modDataDir, campaign);
+      if (p.error) return p;
+      const { catalogue } = buildingContext(p.dir, p.r.source.modDataDir);
+      const towns = matchTowns(p.dir, p.targetText, p.r.source.modDataDir, p.sourceText).map((m) => {
+        const row = { region: m.here.region, city: m.city, owner: m.here.owner, sourceRegion: m.there ? m.there.region : null, sourceCity: m.sourceCity, sourceOwner: m.there ? m.there.owner : null };
+        if (!m.there) return row;
+        const c = sc.compareSettlement(blockLines(p.targetText, m.here), blockLines(p.sourceText, m.there), catalogue);
+        const f = Object.fromEntries(c.fields.map((x) => [x.key, x]));
+        return {
+          ...row,
+          level: f.level ? f.level.here : null, sourceLevel: f.level ? f.level.there : null,
+          population: f.population ? +f.population.here : null, sourcePopulation: f.population ? +f.population.there : null,
+          buildings: c.buildings.filter((b) => b.here).length, sourceBuildings: c.buildings.filter((b) => b.there).length,
+          missing: c.buildings.filter((b) => b.status === "missing").length,
+          higher: c.buildings.filter((b) => b.status === "higher_there" || b.status === "different").length,
+          onlyHere: c.buildings.filter((b) => b.status === "only_here").length,
+          fieldsMore: c.fields.filter((x) => sc.fieldIsMore(x.key, x.here, x.there)).map((x) => x.key),
+        };
+      });
+      return {
+        target: { campaign: p.r.target.name },
+        source: { campaign: p.r.source.campaign, modDataDir: p.r.source.modDataDir, settlements: p.r.source.settlements },
+        towns,
+      };
+    } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+  });
+
+  ipcMain.handle("settlement-compare", async (_e, modDataDir, region, campaign) => {
+    try {
+      const p = loadPair(modDataDir, campaign);
+      if (p.error) return p;
+      const m = matchTowns(p.dir, p.targetText, p.r.source.modDataDir, p.sourceText).find((x) => x.here.region === region);
+      if (!m) return { error: `no settlement in region "${region}" on this map` };
+      if (!m.there) return { error: `${m.city} has no counterpart in ${p.r.source.campaign}` };
+      const { catalogue, cultureOf } = buildingContext(p.dir, p.r.source.modDataDir);
+      const here = blockLines(p.targetText, m.here), there = blockLines(p.sourceText, m.there);
+      const c = sc.compareSettlement(here, there, catalogue);
+      // What would stop each main-mod building working in THIS town: the tier it
+      // needs, a requires clause this region / owner fails, or a slot (EDB
+      // `tag`) another chain already fills here.
+      const hereChains = c.buildings.filter((b) => b.here).map((b) => b.chain);
+      const checks = {};
+      for (const b of c.buildings) {
+        if (!b.there) continue;
+        const key = `${b.chain}|${b.there}`;
+        const slot = catalogue.tags[b.chain];
+        checks[b.chain] = {
+          settlementMin: b.chain === "core_building" ? null : (catalogue.settlementMins[key] || null),
+          // rebels: every level says `not factions { slave }` — that stops them
+          // BUILDING, not a descr_strat holding it (main RIS's own rebel towns do)
+          requires: requiresBlocks(catalogue.levelRequires[key], { faction: m.here.owner === "slave" ? null : m.here.owner, culture: cultureOf[m.here.owner], tags: m.tags }),
+          slotTakenBy: b.status === "missing" && slot ? (hereChains.find((ch) => ch !== b.chain && catalogue.tags[ch] === slot) || null) : null,
+        };
+      }
+      return {
+        region: m.here.region, city: m.city, owner: m.here.owner,
+        sourceRegion: m.there.region, sourceCity: m.sourceCity, sourceOwner: m.there.owner,
+        sourceCampaign: p.r.source.campaign, targetCampaign: p.r.target.name,
+        fields: c.fields.map((x) => ({ ...x, more: sc.fieldIsMore(x.key, x.here, x.there) })),
+        buildings: c.buildings, checks,
+        settlementTiers: catalogue.settlementTiers, levels: sc.LEVELS,
+      };
+    } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+  });
+
+  ipcMain.handle("settlement-compare-apply", async (_e, modDataDir, region, choice = {}, campaign) => {
+    try {
+      const p = loadPair(modDataDir, campaign, true);
+      if (p.error) return p;
+      const m = matchTowns(p.dir, p.targetText, p.r.source.modDataDir, p.sourceText).find((x) => x.here.region === region);
+      if (!m || !m.there) return { error: `no main-mod counterpart for "${region}"` };
+      const plan = sc.planSettlementCopy({ targetText: p.targetText, sourceText: p.sourceText, targetRegion: m.here.region, sourceRegion: m.there.region, choice });
+      if (plan.errors.length) return { error: plan.errors[0] };
+      if (!plan.changes.length) return { ok: true, changes: [], unchanged: true };
+      if (choice.dryRun) return { ok: true, dryRun: true, changes: plan.changes };
+      const w = safeWrite.safeWriteModFile(p.r.target.strat, plan.text, "latin1", { outPath: exportOut(p.r.target.strat) });
+      log(`[settlement-compare] ${m.city} (${region}) in ${p.r.target.name} from ${p.r.source.campaign}: ${plan.changes.join("; ")}; ` +
+        (w.exported ? `exported to ${w.path}` : `backup ${w.backupStamp}`));
+      return { ok: true, changes: plan.changes, path: w.path, exported: w.exported, backupStamp: w.backupStamp };
+    } catch (e) { return { error: e && e.message ? e.message : String(e) }; }
+  });
 }
 
-module.exports = { registerFactionTransferHandlers, campaignsIn, baseModOf, mapCoords, placeOnMap };
+module.exports = { registerFactionTransferHandlers, campaignsIn, baseModOf, mapCoords, placeOnMap, matchTowns, regionInfo, buildingContext };
