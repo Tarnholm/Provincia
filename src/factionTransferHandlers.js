@@ -8,6 +8,10 @@
 // analysis overlay finds it (src/modPathResolver.js findRelatedModDirs), so a
 // roster comes from the main mod without the user pointing at it.
 //
+// FACTIONS ALREADY ON THE MAP get the same treatment (2026-10-16): the roster
+// marks the towns they hold and the people already here, and characters
+// stand in one of their own towns when no new one is chosen.
+//
 // Campaign folders are NOT always imperial_campaign — RIS_Light's is
 // `ris_light`, RIS_Classic's `ris_classic` — so both sides are discovered by
 // scanning world/maps/campaign/*/descr_strat.txt rather than guessing names.
@@ -201,28 +205,36 @@ function registerFactionTransferHandlers(ipcMain, { getActiveModDataDir, getModE
       const srcMap = mapCoords(r.source.modDataDir);
 
       // Its source towns that exist here — the suggestion — plus every other
-      // town on this map, so the user can pick freely.
+      // town on this map, so the user can pick freely. Towns it already holds
+      // here are listed as its own, never suggested.
+      const fac = String(faction).toLowerCase();
       const suggested = new Set();
       for (const s of there.settlements) {
-        if (owners[s.region]) { suggested.add(s.region); continue; }
+        if (owners[s.region]) { if (owners[s.region].faction !== fac) suggested.add(s.region); continue; }
         // same settlement NAME under a different region name (the maps were redrawn)
         const city = srcMap.regionToCity[s.region];
         if (!city) continue;
         const hereRegion = Object.keys(owners).find((rg) => regionToCity[rg] === city);
-        if (hereRegion) suggested.add(hereRegion);
+        if (hereRegion && owners[hereRegion].faction !== fac) suggested.add(hereRegion);
       }
       const settlements = Object.entries(owners).map(([region, o]) => ({
-        region, city: regionToCity[region] || region, level: o.level, owner: o.faction,
+        region, city: regionToCity[region] || region, level: o.level, owner: o.faction, own: o.faction === fac,
         suggested: suggested.has(region), x: (coords[region] || {}).x ?? null, y: (coords[region] || {}).y ?? null,
-      })).sort((a, b) => (b.suggested - a.suggested) || a.city.localeCompare(b.city));
+      })).sort((a, b) => (b.suggested - a.suggested) || (a.own - b.own) || a.city.localeCompare(b.city));
 
+      const hereNames = new Set([...here.characters.map((c) => c.name), ...here.family.map((f) => f.name)]);
+      const clashes = ft.roleClashes(here, there);
+      const holder = (role) => (here.characters.find((c) => c.role === role) || {}).name || null;
       return {
         faction,
-        target: { campaign: r.target.name, dormant: here.dormant, settlements: here.settlements.length, denari: here.denari },
+        target: {
+          campaign: r.target.name, dormant: here.dormant, settlements: here.settlements.length, denari: here.denari,
+          characters: here.characters.length, family: here.family.length, leader: holder("leader"), heir: holder("heir"),
+        },
         source: { campaign: r.source.campaign, denari: there.denari, aiLabel: there.aiLabel },
         roster: {
-          characters: there.characters.map((c) => ({ name: c.name, kind: c.kind, role: c.role, age: c.age, units: c.unitCount, army: c.army, homeRegion: null })),
-          family: there.family.map((f) => ({ name: f.name, gender: f.gender, age: f.age, alive: f.alive })),
+          characters: there.characters.map((c) => ({ name: c.name, kind: c.kind, role: c.role, age: c.age, units: c.unitCount, army: c.army, homeRegion: null, here: hereNames.has(c.name), demotedFrom: clashes[c.name] || null })),
+          family: there.family.map((f) => ({ name: f.name, gender: f.gender, age: f.age, alive: f.alive, here: hereNames.has(f.name) })),
           relatives: there.relatives.map((x) => ({ names: x.names })),
         },
         settlements,
@@ -241,22 +253,49 @@ function registerFactionTransferHandlers(ipcMain, { getActiveModDataDir, getModE
       const targetText = readTarget(r.target.strat);
       const sourceText = r.source ? fs.readFileSync(r.source.strat, "latin1") : null;
 
-      // Characters belong to the town the user chose for them, or to the
-      // faction's first new town — coordinates from THIS map, never the
-      // source's. The leader stands in the town; everyone else on the nearest
-      // free tile of its region (src/freeTiles.js).
-      const { coords } = mapCoords(dir);
+      // Characters belong to the town the user chose for them, else the town
+      // they stand by in the source campaign when the faction holds it here
+      // afterwards, else its first new town — coordinates from THIS map, never
+      // the source's. The leader stands in the town; everyone else on the
+      // nearest free tile of its region (src/freeTiles.js).
+      const { coords, regionToCity } = mapCoords(dir);
       const settlements = Array.isArray(choice.settlements) ? choice.settlements : [];
-      const home = settlements.find((rg) => coords[rg]) || null;
       const roster = sourceText ? ft.readFactionRoster(sourceText, faction) : null;
+      // a faction already on the map: its people are never brought twice,
+      // and with no new town they gather at one it holds
+      const here = ft.readFactionRoster(targetText, faction);
+      const hereNames = new Set(here ? [...here.characters.map((c) => c.name), ...here.family.map((f) => f.name)] : []);
+      const clashes = ft.roleClashes(here, roster);
+      const home = settlements.find((rg) => coords[rg]) || (here ? here.settlements.map((s) => s.region).find((rg) => coords[rg]) : null) || null;
+      // the source town nearest each character, carried to this map by region
+      // or by settlement name (the submods redrew the regions)
+      const ownAfter = new Set([...settlements, ...(here ? here.settlements.map((s) => s.region) : [])]);
+      const srcMap = r.source ? mapCoords(r.source.modDataDir) : null;
+      const regionOfCity = {};
+      for (const [rg, city] of Object.entries(regionToCity)) if (!regionOfCity[city]) regionOfCity[city] = rg;
+      const sourceTown = (c) => {
+        if (!srcMap || !c || c.x == null || c.y == null) return null;
+        let best = null, bestD = Infinity;
+        for (const s of roster.settlements) {
+          const t = srcMap.coords[s.region];
+          if (!t) continue;
+          const d = (t.x - c.x) ** 2 + (t.y - c.y) ** 2;
+          if (d < bestD) { bestD = d; best = s.region; }
+        }
+        if (!best) return null;
+        const hereRegion = coords[best] ? best : regionOfCity[srcMap.regionToCity[best]];
+        return hereRegion && ownAfter.has(hereRegion) && coords[hereRegion] ? hereRegion : null;
+      };
       const placements = {}, toPlace = [];
       for (const name of (choice.characters || [])) {
+        if (hereNames.has(name)) continue;
         const at = (choice.placements || {})[name];
         if (at && !at.region && at.x != null && at.y != null) { placements[name] = { x: at.x, y: at.y }; continue; }
-        const region = (at && at.region && coords[at.region]) ? at.region : home;
-        if (!region) return { error: `no tile on this map for "${name}" — choose at least one settlement first` };
         const c = roster && roster.characters.find((x) => x.name === name);
-        toPlace.push({ name, role: c ? c.role : null, kind: c ? c.kind : null, region });
+        const region = (at && at.region && coords[at.region]) ? at.region : (sourceTown(c) || home);
+        if (!region) return { error: `no tile on this map for "${name}" — choose at least one settlement first` };
+        // a leader who arrives as a family member does not take the town's tile
+        toPlace.push({ name, role: c && !clashes[name] ? c.role : null, kind: c ? c.kind : null, region });
       }
       const placed = placeOnMap(dir, ft.clearRebelsAt(targetText, settlements, coords).text, toPlace);
       if (placed.errors.length) return { error: placed.errors[0] };
@@ -268,11 +307,20 @@ function registerFactionTransferHandlers(ipcMain, { getActiveModDataDir, getModE
         placements, settlementTiles: coords, denari: choice.denari ?? null,
       });
       if (plan.errors.length) return { error: plan.errors[0], warnings: plan.warnings };
-      plan.warnings.push(...placed.notes);
+      // "X is placed in R — H has no free tile", once per crowded town
+      const crowded = {};
+      for (const n of placed.notes) {
+        const m = n.match(/^(.+) is placed in \S+ — (\S+) has no free tile$/);
+        if (m) (crowded[m[2]] = crowded[m[2]] || []).push(m[1]); else plan.warnings.push(n);
+      }
+      for (const [town, names] of Object.entries(crowded)) {
+        plan.warnings.push(names.length === 1 ? `${names[0]} stands in a neighbouring region — ${town} has no free tile`
+          : `${names.length} characters stand in neighbouring regions — ${town} has no free tile left`);
+      }
       if (choice.dryRun) return { ok: true, dryRun: true, summary: plan.summary, warnings: plan.warnings };
 
       const w = safeWrite.safeWriteModFile(r.target.strat, plan.text, "latin1", { outPath: exportOut(r.target.strat) });
-      log(`[faction-transfer] woke ${faction} in ${r.target.name}: ${plan.summary.settlements.length} settlement(s), ` +
+      log(`[faction-transfer] ${plan.summary.wasAwake ? "added to" : "woke"} ${faction} in ${r.target.name}: ${plan.summary.settlements.length} settlement(s), ` +
         `${plan.summary.characters.length} character(s), ${plan.summary.family.length} family; ` +
         (w.exported ? `exported to ${w.path}` : `backup ${w.backupStamp}`));
       return { ok: true, summary: plan.summary, warnings: plan.warnings, path: w.path, exported: w.exported, backupStamp: w.backupStamp };

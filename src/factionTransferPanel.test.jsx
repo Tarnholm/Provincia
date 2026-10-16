@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// The ☥ Bring In a Faction panel. What must hold: it only offers factions this
-// campaign leaves dormant, it pre-ticks the suggested towns and the whole
+// The ☥ Bring In a Faction panel. What must hold: it offers the factions this
+// campaign leaves dormant and, apart, the ones already on the map; it pre-ticks the suggested towns and the whole
 // roster, it names the current owner of every town (the warning the user asked
 // for), and "Bring in" sends exactly what is ticked.
 import React from "react";
@@ -73,12 +73,15 @@ function apiWith(overrides = {}) {
 }
 
 describe("FactionTransferPanel", () => {
-  it("lists only the dormant factions, with what each has in the fuller mod", async () => {
+  it("lists the dormant factions, then the ones on the map, with what each has in the fuller mod", async () => {
     apiWith();
     mount(<FactionTransferPanel modDataDir="C:/mod" onClose={() => { }} />);
     await settle();
     const rows = [...document.querySelectorAll("[data-dormant-faction]")].map((n) => n.getAttribute("data-dormant-faction"));
-    expect(rows).toEqual(["minaeans", "acragas"]); // carthage is awake, so it is not on offer
+    expect(rows).toEqual(["minaeans", "acragas"]);
+    const awake = [...document.querySelectorAll("[data-awake-faction]")].map((n) => n.getAttribute("data-awake-faction"));
+    expect(awake).toEqual(["carthage"]);
+    expect(text()).toMatch(/41 towns here · 41 towns, 9 characters over there/);
     expect(text()).toMatch(/5 towns, 2 characters over there/);
     expect(text()).toMatch(/roster from imperial_campaign \(1306 settlements\)/);
   });
@@ -137,5 +140,46 @@ describe("FactionTransferPanel", () => {
     mount(<FactionTransferPanel modDataDir="C:/mod" onClose={() => { }} />);
     await settle();
     expect(text()).toMatch(/no campaign with a descr_strat/);
+  });
+
+  it("a faction on the map: what it has is shown and not picked, and Add sends only the new", async () => {
+    const AWAKE = {
+      faction: "carthage",
+      target: { campaign: "ris_light", dormant: false, settlements: 1, denari: 9000, characters: 1, family: 0, leader: "Hanno", heir: null },
+      source: { campaign: "imperial_campaign", denari: 9000, aiLabel: "ai_carthage" },
+      roster: {
+        characters: [
+          { name: "Hamilcar", kind: "named character", role: "leader", age: 50, units: 8, army: ["punic general"], here: false, demotedFrom: "leader" },
+          { name: "Hanno", kind: "named character", role: null, age: 40, units: 2, army: [], here: true, demotedFrom: null },
+          { name: "Mago", kind: "named character", role: null, age: 30, units: 1, army: [], here: false, demotedFrom: null },
+        ],
+        family: [{ name: "Sophonisba", gender: "female", age: 20, alive: true, here: false }],
+        relatives: [],
+      },
+      settlements: [
+        { region: "Sardinia", city: "Karalis", level: "town", owner: "slave", own: false, suggested: true, x: 1, y: 1 },
+        { region: "Africa", city: "Carthago", level: "huge_city", owner: "carthage", own: true, suggested: false, x: 2, y: 2 },
+      ],
+      suggestedCount: 1,
+    };
+    const calls = apiWith({ factionTransferRoster: () => Promise.resolve(AWAKE) });
+    mount(<FactionTransferPanel modDataDir="C:/mod" pushToast={() => { }} onClose={() => { }} />);
+    await settle();
+    click(document.querySelector('[data-awake-faction="carthage"]'));
+    await settle();
+    expect(text()).toMatch(/already theirs/);
+    expect(text()).toMatch(/already here/);
+    expect(text()).toMatch(/comes as a family member — Hanno is leader here/);
+    expect(text()).toMatch(/Hanno stays leader/);
+    // clicking what it already has does nothing
+    click(document.querySelector('[data-town="Africa"]'));
+    click(document.querySelector('[data-character="Hanno"]'));
+    expect(text()).toMatch(/1 settlement\(s\), 2 character\(s\), 1 family record\(s\)/);
+    // with no town ticked it can still add people — it already holds one
+    click(document.querySelector('[data-town="Sardinia"]'));
+    expect(button(/^Add$/).disabled).toBe(false);
+    click(button(/^Add$/));
+    await settle();
+    expect(calls.apply[0].choice).toMatchObject({ settlements: [], characters: ["Hamilcar", "Mago"], family: ["Sophonisba"] });
   });
 });

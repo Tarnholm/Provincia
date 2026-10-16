@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1536",
+    date: "2026-10-16",
+    items: [
+      { type: "feature", text: "**Bring In a Faction also adds to factions already on the map.** Under the dormant factions there is now an “On the map” list. Pick one and it works as before: towns from this map (suggested from what it holds in the main mod), and characters, armies and family copied from the main mod. The faction keeps everything it already has. Its own towns and anyone already on the map are shown but can’t be picked twice. A faction has one leader and one heir, so a main-mod leader or heir arriving where the faction already has one comes as a plain family member, and the list says so. Characters can be added without taking a town." },
+      { type: "improvement", text: "**Characters brought in stand near their own towns.** Each one goes to the town nearest where they stand in the main mod, when the faction holds that town on this map. Before, everyone gathered at the first town chosen. The preview now says once per town when it ran out of free tiles, instead of a line for every character." },
+    ],
+  },
+  {
     version: "0.9.1535",
     date: "2026-10-16",
     items: [

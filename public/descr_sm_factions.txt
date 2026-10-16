@@ -46,7 +46,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -133,7 +133,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -220,7 +220,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -307,7 +307,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -476,7 +476,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -575,7 +575,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -673,7 +673,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -769,7 +769,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -1145,7 +1145,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -1387,7 +1387,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -1481,7 +1481,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -1574,7 +1574,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -1740,7 +1740,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -2376,7 +2376,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -2543,7 +2543,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -3034,7 +3034,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -3200,7 +3200,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -3805,7 +3805,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -3900,7 +3900,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -4068,7 +4068,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -4234,7 +4234,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -4472,7 +4472,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -4639,7 +4639,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -4735,7 +4735,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -5119,7 +5119,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -5211,7 +5211,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -5888,7 +5888,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -6054,7 +6054,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -6346,7 +6346,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -6585,7 +6585,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -7045,7 +7045,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -7139,7 +7139,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -7233,7 +7233,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -7326,7 +7326,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -7419,7 +7419,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -7513,7 +7513,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -7898,7 +7898,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -7992,7 +7992,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -8084,7 +8084,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -8181,7 +8181,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -9005,7 +9005,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -9464,7 +9464,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -9704,7 +9704,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -9797,7 +9797,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -9891,7 +9891,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -10308,7 +10308,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -10621,7 +10621,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -10709,7 +10709,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -10876,7 +10876,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -11146,7 +11146,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -11241,7 +11241,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -11481,7 +11481,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -11719,7 +11719,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -11885,7 +11885,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -11981,7 +11981,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -12075,7 +12075,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -12169,7 +12169,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -12482,7 +12482,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -12960,7 +12960,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -13054,7 +13054,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -13660,7 +13660,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -13754,7 +13754,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -14142,7 +14142,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -14307,7 +14307,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -14400,7 +14400,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -14493,7 +14493,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -14734,7 +14734,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -14973,7 +14973,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -15597,7 +15597,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -15983,7 +15983,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -16369,7 +16369,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -16712,7 +16712,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -16951,7 +16951,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -17432,7 +17432,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -17597,7 +17597,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":
@@ -17765,7 +17765,7 @@
 			],
 
 			;;strength multiplier (compared to the strength of a regular revolt from the settlement)
-			"strength": 3.5,
+			"strength": 0.01,
 		},
 
 		"logos":

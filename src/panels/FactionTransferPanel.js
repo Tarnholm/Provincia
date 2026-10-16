@@ -10,6 +10,10 @@
 // tile here. Suggested towns are the ones that faction holds over there which
 // also exist here, by region or by settlement name.
 //
+// A faction already on the map is offered too: it keeps everything it has and
+// gains the towns and people chosen. What it already holds, and who of the
+// main-mod roster is already here, is shown and cannot be picked twice.
+//
 // Props:
 //   modDataDir   active mod data dir
 //   campaign     optional campaign name (a mod may ship several)
@@ -65,9 +69,9 @@ export default function FactionTransferPanel({ modDataDir, campaign, factionDisp
         setRoster(r || { error: "no answer" });
         if (r && !r.error) {
           setPicked({
-            settlements: new Set(r.settlements.filter((s) => s.suggested).map((s) => s.region)),
-            characters: new Set(r.roster.characters.map((c) => c.name)),
-            family: new Set(r.roster.family.map((f) => f.name)),
+            settlements: new Set(r.settlements.filter((s) => s.suggested && !s.own).map((s) => s.region)),
+            characters: new Set(r.roster.characters.filter((c) => !c.here).map((c) => c.name)),
+            family: new Set(r.roster.family.filter((f) => !f.here).map((f) => f.name)),
           });
         }
       })
@@ -97,8 +101,9 @@ export default function FactionTransferPanel({ modDataDir, campaign, factionDisp
       if (r && r.error) { pushToast && pushToast(`Could not bring in ${label(faction, factionDisplayNames)}: ${r.error}`, "error", 9000); setPreview(null); }
       else if (dryRun) setPreview(r);
       else {
+        const who = label(faction, factionDisplayNames), n = r.summary.settlements.length, c = r.summary.characters.length;
         pushToast && pushToast(
-          `${label(faction, factionDisplayNames)} now holds ${r.summary.settlements.length} settlement(s) with ${r.summary.characters.length} character(s). ` +
+          (r.summary.wasAwake ? `${who} gains ${n} settlement(s) and ${c} character(s). ` : `${who} now holds ${n} settlement(s) with ${c} character(s). `) +
           (r.exported ? `Exported to ${r.path}.` : "A timestamped backup was saved beside descr_strat. Click 🔄 Reload so the map catches up."), "info", 9000);
         setPreview(null); setFaction(null);
         if (api.factionTransferScan) api.factionTransferScan(modDataDir, campaign).then((s) => setScan(s));
@@ -107,11 +112,20 @@ export default function FactionTransferPanel({ modDataDir, campaign, factionDisp
     finally { setBusy(false); }
   };
 
-  const dormant = (scan && scan.factions ? scan.factions : []).filter((f) => f.dormant);
-  const shown = dormant.filter((f) => {
+  const all = (scan && scan.factions ? scan.factions : []).filter((f) => f.faction !== "slave");
+  const dormant = all.filter((f) => f.dormant);
+  const awake = all.filter((f) => !f.dormant);
+  const matches = (f) => {
     const q = query.trim().toLowerCase();
     return !q || f.faction.toLowerCase().includes(q) || label(f.faction, factionDisplayNames).toLowerCase().includes(q);
-  }).sort((a, b) => (b.sourceSettlements || 0) - (a.sourceSettlements || 0) || a.faction.localeCompare(b.faction));
+  };
+  const bySource = (a, b) => (b.sourceSettlements || 0) - (a.sourceSettlements || 0) || a.faction.localeCompare(b.faction);
+  const shownDormant = dormant.filter(matches).sort(bySource);
+  // on the map: the main-mod rosters are the reason to open one, so main-mod size first
+  const shownAwake = awake.filter(matches).filter((f) => f.sourceSettlements != null).sort(bySource);
+  const isAwake = !!(roster && !roster.error && roster.target && !roster.target.dormant);
+  const pickedAny = picked.settlements.size + picked.characters.size + picked.family.size > 0;
+  const canApply = isAwake ? pickedAny : picked.settlements.size > 0;
 
   const box = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 7 };
   const chk = (on) => ({ display: "inline-block", width: 13, height: 13, marginRight: 7, borderRadius: 3, verticalAlign: "-2px", border: "1px solid " + (on ? "#8fd18f" : "rgba(255,255,255,0.3)"), background: on ? "rgba(143,209,143,0.55)" : "transparent" });
@@ -125,7 +139,7 @@ export default function FactionTransferPanel({ modDataDir, campaign, factionDisp
           <div className="panel-heading" style={{ fontSize: "1.1rem", fontWeight: 600, color: GOLD }}>
             Bring In a Faction
             <span style={{ marginLeft: 10, fontSize: "0.74rem", color: DIM, fontWeight: 400 }}>
-              {scan && scan.target ? `${scan.target.campaign} · ${dormant.length} dormant of ${scan.factions.length}` : ""}
+              {scan && scan.target ? `${scan.target.campaign} · ${dormant.length} dormant, ${awake.length} on the map` : ""}
               {scan && scan.source ? `  ·  roster from ${scan.source.campaign} (${scan.source.settlements} settlements)` : ""}
             </span>
           </div>
@@ -142,27 +156,33 @@ export default function FactionTransferPanel({ modDataDir, campaign, factionDisp
 
         {scan && !scan.error && scan.source && (
           <div style={{ display: "flex", minHeight: 0, flex: 1 }}>
-            {/* dormant factions */}
+            {/* factions: dormant first, then the ones already on the map */}
             <div style={{ width: 260, borderRight: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", minHeight: 0 }}>
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search dormant factions…" aria-label="Search factions"
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search factions…" aria-label="Search factions"
                 style={{ margin: "10px 12px", background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "4px 8px", fontSize: "0.8rem" }} />
               <div style={{ overflowY: "auto", padding: "0 8px 10px" }}>
-                {!shown.length && <div style={{ padding: 14, color: DIM, fontSize: "0.8rem" }}>No dormant faction matches.</div>}
-                {shown.map((f) => (
-                  <div key={f.faction} data-dormant-faction={f.faction} onClick={() => setFaction(f.faction)}
-                    style={{ padding: "6px 8px", margin: "2px 0", borderRadius: 6, cursor: "pointer", background: faction === f.faction ? "rgba(232,200,115,0.16)" : "transparent", border: "1px solid " + (faction === f.faction ? "rgba(232,200,115,0.45)" : "transparent") }}>
-                    <div style={{ fontSize: "0.84rem", color: "#e6e6e6" }}>{label(f.faction, factionDisplayNames)}</div>
-                    <div style={{ fontSize: "0.71rem", color: DIM }}>
-                      {f.sourceSettlements ? `${f.sourceSettlements} town${f.sourceSettlements === 1 ? "" : "s"}, ${f.sourceCharacters} character${f.sourceCharacters === 1 ? "" : "s"} over there` : "nothing over there either"}
-                    </div>
-                  </div>
+                {!shownDormant.length && !shownAwake.length && <div style={{ padding: 14, color: DIM, fontSize: "0.8rem" }}>No faction matches.</div>}
+                {[["Dormant", shownDormant, "dormant"], ["On the map", shownAwake, "awake"]].map(([title, list, kind]) => !!list.length && (
+                  <React.Fragment key={kind}>
+                    <div style={{ padding: "8px 8px 3px", fontSize: "0.7rem", color: GOLD, letterSpacing: "0.05em", textTransform: "uppercase" }}>{title} · {list.length}</div>
+                    {list.map((f) => (
+                      <div key={f.faction} {...{ [kind === "dormant" ? "data-dormant-faction" : "data-awake-faction"]: f.faction }} onClick={() => setFaction(f.faction)}
+                        style={{ padding: "6px 8px", margin: "2px 0", borderRadius: 6, cursor: "pointer", background: faction === f.faction ? "rgba(232,200,115,0.16)" : "transparent", border: "1px solid " + (faction === f.faction ? "rgba(232,200,115,0.45)" : "transparent") }}>
+                        <div style={{ fontSize: "0.84rem", color: "#e6e6e6" }}>{label(f.faction, factionDisplayNames)}</div>
+                        <div style={{ fontSize: "0.71rem", color: DIM }}>
+                          {kind === "awake" ? `${f.settlements} town${f.settlements === 1 ? "" : "s"} here · ` : ""}
+                          {f.sourceSettlements ? `${f.sourceSettlements} town${f.sourceSettlements === 1 ? "" : "s"}, ${f.sourceCharacters} character${f.sourceCharacters === 1 ? "" : "s"} over there` : "nothing over there" + (kind === "dormant" ? " either" : "")}
+                        </div>
+                      </div>
+                    ))}
+                  </React.Fragment>
                 ))}
               </div>
             </div>
 
             {/* the chosen faction */}
             <div style={{ flex: 1, overflowY: "auto", padding: "10px 14px", minWidth: 0 }}>
-              {!faction && <div style={{ padding: "40px 12px", textAlign: "center", color: DIM, fontSize: "0.85rem" }}>Pick a faction on the left.<br /><span style={{ fontSize: "0.76rem" }}>Its settlements come from this map; its characters and armies are copied from {scan.source.campaign}.</span></div>}
+              {!faction && <div style={{ padding: "40px 12px", textAlign: "center", color: DIM, fontSize: "0.85rem" }}>Pick a faction on the left.<br /><span style={{ fontSize: "0.76rem" }}>Its settlements come from this map; its characters and armies are copied from {scan.source.campaign}. A faction already on the map keeps what it has and gains what you choose.</span></div>}
               {faction && !roster && <div style={{ padding: "30px 12px", textAlign: "center", color: DIM, fontSize: "0.84rem" }}>Reading {label(faction, factionDisplayNames)}…</div>}
               {faction && roster && roster.error && <div style={{ padding: "16px 4px", color: WARN, fontSize: "0.82rem" }}>⚠ {roster.error}</div>}
 
@@ -170,9 +190,12 @@ export default function FactionTransferPanel({ modDataDir, campaign, factionDisp
                 <>
                   {/* settlements */}
                   <div style={{ fontSize: "0.86rem", color: GOLD, marginBottom: 4 }}>
-                    Settlements on this map <span style={{ color: DIM, fontSize: "0.75rem" }}>· {picked.settlements.size} chosen · {roster.suggestedCount} suggested</span>
+                    Settlements on this map <span style={{ color: DIM, fontSize: "0.75rem" }}>· {picked.settlements.size} chosen · {roster.suggestedCount} suggested{isAwake ? ` · ${roster.target.settlements} already theirs` : ""}</span>
                   </div>
-                  <div style={{ fontSize: "0.74rem", color: DIM, marginBottom: 6 }}>Taking a town hands it over from its current owner. Suggested ones are what this faction holds in {roster.source.campaign}.</div>
+                  <div style={{ fontSize: "0.74rem", color: DIM, marginBottom: 6 }}>
+                    Taking a town hands it over from its current owner. Suggested ones are what this faction holds in {roster.source.campaign}{isAwake ? " and not yet here" : ""}.
+                    {isAwake && <> It keeps its {roster.target.settlements} town{roster.target.settlements === 1 ? "" : "s"}, {roster.target.characters} character{roster.target.characters === 1 ? "" : "s"} and {roster.target.family} family record{roster.target.family === 1 ? "" : "s"}{roster.target.leader ? `; ${roster.target.leader.replace(/_/g, " ")} stays leader` : ""}.</>}
+                  </div>
                   <input value={townQuery} onChange={(e) => setTownQuery(e.target.value)} placeholder="Search towns…" aria-label="Search towns"
                     style={{ width: "100%", background: "rgba(255,255,255,0.07)", color: "#eee", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "3px 8px", fontSize: "0.78rem", marginBottom: 6 }} />
                   <div style={{ ...box, maxHeight: 190, overflowY: "auto", padding: "4px 0", marginBottom: 12 }}>
@@ -182,14 +205,15 @@ export default function FactionTransferPanel({ modDataDir, campaign, factionDisp
                       .map((s) => {
                         const on = picked.settlements.has(s.region);
                         return (
-                          <div key={s.region} data-town={s.region} onClick={() => toggle("settlements", s.region)}
-                            style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 10px", cursor: "pointer", fontSize: "0.78rem", background: on ? "rgba(143,209,143,0.08)" : "transparent" }}>
-                            <span style={chk(on)} />
+                          <div key={s.region} data-town={s.region} onClick={s.own ? undefined : () => toggle("settlements", s.region)}
+                            title={s.own ? "Already theirs" : undefined}
+                            style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 10px", cursor: s.own ? "default" : "pointer", fontSize: "0.78rem", background: on ? "rgba(143,209,143,0.08)" : "transparent", opacity: s.own ? 0.55 : 1 }}>
+                            <span style={s.own ? { ...chk(true), borderColor: "rgba(255,255,255,0.25)", background: "rgba(255,255,255,0.2)" } : chk(on)} />
                             <span style={{ flex: "0 1 190px", color: "#e6e6e6", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.city}</span>
                             <span style={{ flex: "0 1 150px", color: "#7d8896", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.region}</span>
                             <span style={{ width: 72, color: DIM }}>{s.level}</span>
-                            <span style={{ flex: 1, color: s.owner === "slave" ? DIM : WARN, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {s.owner === "slave" ? "rebels" : label(s.owner, factionDisplayNames)}
+                            <span style={{ flex: 1, color: s.own ? "#8fd18f" : s.owner === "slave" ? DIM : WARN, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {s.own ? "already theirs" : s.owner === "slave" ? "rebels" : label(s.owner, factionDisplayNames)}
                             </span>
                             {s.suggested && <span title="This faction holds this town in the fuller mod" style={{ color: GOLD, fontSize: "0.72rem" }}>suggested</span>}
                           </div>
@@ -208,11 +232,14 @@ export default function FactionTransferPanel({ modDataDir, campaign, factionDisp
                         {roster.roster.characters.map((c) => {
                           const on = picked.characters.has(c.name);
                           return (
-                            <div key={c.name} data-character={c.name} onClick={() => toggle("characters", c.name)} style={{ padding: "4px 10px", cursor: "pointer", fontSize: "0.78rem", background: on ? "rgba(143,209,143,0.08)" : "transparent" }}>
+                            <div key={c.name} data-character={c.name} onClick={c.here ? undefined : () => toggle("characters", c.name)} title={c.here ? "Already on this map" : undefined}
+                              style={{ padding: "4px 10px", cursor: c.here ? "default" : "pointer", fontSize: "0.78rem", background: on ? "rgba(143,209,143,0.08)" : "transparent", opacity: c.here ? 0.55 : 1 }}>
                               <div><span style={chk(on)} /><span style={{ color: "#e6e6e6" }}>{c.name.replace(/_/g, " ")}</span>
-                                {c.role && <span style={{ marginLeft: 6, color: GOLD, fontSize: "0.72rem" }}>{c.role}</span>}
+                                {c.role && <span style={{ marginLeft: 6, color: GOLD, fontSize: "0.72rem", textDecoration: c.demotedFrom && !c.here ? "line-through" : "none" }}>{c.role}</span>}
                                 <span style={{ marginLeft: 6, color: DIM, fontSize: "0.72rem" }}>{c.kind}{c.age ? `, ${c.age}` : ""} · {c.units} unit{c.units === 1 ? "" : "s"}</span>
+                                {c.here && <span style={{ marginLeft: 6, color: "#8fd18f", fontSize: "0.72rem" }}>already here</span>}
                               </div>
+                              {c.demotedFrom && !c.here && <div style={{ paddingLeft: 20, color: WARN, fontSize: "0.71rem" }}>comes as a family member — {(roster.target[c.demotedFrom] || "someone").replace(/_/g, " ")} is {c.demotedFrom} here</div>}
                               {!!c.army.length && <div style={{ paddingLeft: 20, color: "#7d8896", fontSize: "0.71rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.army.join(", ")}</div>}
                             </div>
                           );
@@ -229,9 +256,11 @@ export default function FactionTransferPanel({ modDataDir, campaign, factionDisp
                         {roster.roster.family.map((f) => {
                           const on = picked.family.has(f.name);
                           return (
-                            <div key={f.name} data-family={f.name} onClick={() => toggle("family", f.name)} style={{ padding: "3px 10px", cursor: "pointer", fontSize: "0.78rem", background: on ? "rgba(143,209,143,0.08)" : "transparent" }}>
+                            <div key={f.name} data-family={f.name} onClick={f.here ? undefined : () => toggle("family", f.name)} title={f.here ? "Already on this map" : undefined}
+                              style={{ padding: "3px 10px", cursor: f.here ? "default" : "pointer", fontSize: "0.78rem", background: on ? "rgba(143,209,143,0.08)" : "transparent", opacity: f.here ? 0.55 : 1 }}>
                               <span style={chk(on)} /><span style={{ color: "#e6e6e6" }}>{f.name.replace(/_/g, " ")}</span>
                               <span style={{ marginLeft: 6, color: DIM, fontSize: "0.72rem" }}>{f.gender}{f.age != null ? `, ${f.age}` : ""}{f.alive ? "" : ", dead"}</span>
+                              {f.here && <span style={{ marginLeft: 6, color: "#8fd18f", fontSize: "0.72rem" }}>already here</span>}
                             </div>
                           );
                         })}
@@ -273,10 +302,10 @@ export default function FactionTransferPanel({ modDataDir, campaign, factionDisp
               style={{ background: "transparent", color: GOLD, border: "1px solid rgba(232,200,115,0.45)", borderRadius: 6, padding: "4px 14px", fontSize: "0.8rem", cursor: faction && !busy ? "pointer" : "default", opacity: faction && !busy ? 1 : 0.5 }}>
               Preview
             </button>
-            <button onClick={() => run(false)} disabled={!faction || busy || !(roster && !roster.error) || !picked.settlements.size}
-              title={!picked.settlements.size ? "Choose at least one settlement — a faction with no town dies on the first turn" : ""}
-              style={{ background: "rgba(143,180,110,0.25)", color: "#b8d38f", border: "1px solid #7a9a5a", borderRadius: 6, padding: "4px 16px", fontSize: "0.8rem", cursor: faction && !busy && picked.settlements.size ? "pointer" : "default", opacity: faction && !busy && picked.settlements.size ? 1 : 0.5 }}>
-              {busy ? "Writing…" : "Bring in"}
+            <button onClick={() => run(false)} disabled={!faction || busy || !(roster && !roster.error) || !canApply}
+              title={canApply ? "" : isAwake ? "Choose a town, a character or a family record to add" : "Choose at least one settlement — a faction with no town dies on the first turn"}
+              style={{ background: "rgba(143,180,110,0.25)", color: "#b8d38f", border: "1px solid #7a9a5a", borderRadius: 6, padding: "4px 16px", fontSize: "0.8rem", cursor: faction && !busy && canApply ? "pointer" : "default", opacity: faction && !busy && canApply ? 1 : 0.5 }}>
+              {busy ? "Writing…" : isAwake ? "Add" : "Bring in"}
             </button>
           </div>
         )}

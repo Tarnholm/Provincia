@@ -20,6 +20,12 @@
 // resolve through the base mod exactly as they do there. Family records and
 // `relative` lines carry no coordinates and move verbatim.
 //
+// FACTIONS ALREADY ON THE MAP (2026-10-16). The same tool tops up a faction
+// that is awake here: more towns from this map, more people from the main mod.
+// Whoever is already here stays as written and is never brought twice (by
+// name), and RTW allows one leader and one heir, so a main-mod leader or heir
+// arriving where the faction already has one comes as a plain family member.
+//
 // Pure text in, text out: no fs, no IPC. Everything here is exercised against
 // the real RIS files in src/factionTransfer.test.js.
 "use strict";
@@ -232,6 +238,21 @@ function clearRebelsAt(stratText, regions = [], tiles = {}) {
   return result;
 }
 
+// The `leader` / `heir` token of a character line, gone: what a main-mod leader
+// becomes when the faction already has one here.
+function dropRole(head, role) {
+  return head.replace(new RegExp(`,\\s*${role}\\s*(?=,)`), "");
+}
+
+// Who brought from the source would clash with who is already here:
+// { name: "leader" | "heir" } for each source character whose role is taken.
+function roleClashes(targetRoster, sourceRoster) {
+  const taken = new Set((targetRoster ? targetRoster.characters : []).map((c) => c.role).filter(Boolean));
+  const out = {};
+  for (const c of (sourceRoster ? sourceRoster.characters : [])) if (c.role && taken.has(c.role)) out[c.name] = c.role;
+  return out;
+}
+
 // Put a character on a different map: rewrite x,y in its `character` line.
 function replaceCoords(characterLines, x, y) {
   const copy = characterLines.slice();
@@ -299,7 +320,13 @@ function planFactionImport({ targetText, sourceText, faction, settlements = [], 
   const source = sourceText ? readFactionRoster(sourceText, fac) : null;
   if ((characters.length || family.length) && !source) return fail(`faction "${fac}" has no block in the source campaign`);
 
-  const warnings = [], summary = { faction: fac, settlements: [], characters: [], family: [], relatives: 0, wokeFromDormant: false, takenFrom: {}, rebelsCleared: { units: 0, characters: [] } };
+  // what the faction already has here (nothing, for a dormant stub)
+  const here = readFactionRoster(targetText, fac);
+  const awake = !here.dormant;
+  const hereNames = new Set([...here.characters.map((c) => c.name), ...here.family.map((f) => f.name)]);
+  const clashes = roleClashes(here, source);
+
+  const warnings = [], summary = { faction: fac, settlements: [], characters: [], family: [], relatives: 0, wokeFromDormant: false, wasAwake: awake, alreadyHere: [], demoted: [], takenFrom: {}, rebelsCleared: { units: 0, characters: [] } };
 
   // ── 0. the rebels leave the towns being taken ───────────────────────────
   const cleared = clearRebelsAt(targetText, settlements, settlementTiles);
@@ -357,19 +384,37 @@ function planFactionImport({ targetText, sourceText, faction, settlements = [], 
   for (const name of characters) {
     const c = source.characters.find((x) => x.name === name);
     if (!c) return fail(`"${name}" is not a character of ${fac} in the source campaign`);
+    if (hereNames.has(name)) { summary.alreadyHere.push(name); continue; }
     const at = placements[name];
     if (!at || at.x == null || at.y == null) return fail(`no map position given for "${name}" — a character needs a tile on this map`);
-    chosenChars.push({ c, comment: at.comment || null, lines: replaceCoords(c.lines, at.x, at.y) });
+    let lines = replaceCoords(c.lines, at.x, at.y);
+    let role = c.role;
+    if (clashes[name]) {
+      lines = [dropRole(lines[0], clashes[name]), ...lines.slice(1)];
+      role = null;
+      const holder = here.characters.find((x) => x.role === clashes[name]);
+      summary.demoted.push(name);
+      warnings.push(`${name} comes as a family member, not ${clashes[name]} — ${holder ? holder.name : "someone"} is ${clashes[name]} here already`);
+    }
+    chosenChars.push({ c, role, comment: at.comment || null, lines });
   }
-  const chosenFamily = family.map((name) => {
+  const chosenFamily = [];
+  for (const name of family) {
     const f = source.family.find((x) => x.name === name);
-    if (!f) throw new Error(`"${name}" is not a family record of ${fac} in the source campaign`);
-    return f;
-  });
-  // a relative line only travels when everybody it names travelled
-  const present = new Set([...chosenChars.map((x) => x.c.name), ...chosenFamily.map((f) => f.name)]);
-  const chosenRelatives = (source ? source.relatives : []).filter((r) => r.names.length && r.names.every((n) => present.has(n)));
-  const droppedRelatives = (source ? source.relatives : []).length - chosenRelatives.length;
+    if (!f) return fail(`"${name}" is not a family record of ${fac} in the source campaign`);
+    if (hereNames.has(name)) { summary.alreadyHere.push(name); continue; }
+    chosenFamily.push(f);
+  }
+  if (summary.alreadyHere.length) warnings.push(`already here, left as written: ${summary.alreadyHere.join(", ")}`);
+  // A relative line travels when everybody it names is on this map afterwards
+  // and at least one of them is new — and never as a second line for a
+  // husband who already has one here.
+  const brought = new Set([...chosenChars.map((x) => x.c.name), ...chosenFamily.map((f) => f.name)]);
+  const husbandsHere = new Set(here.relatives.map((r) => r.husband));
+  const isNew = (r) => r.names.length && !r.names.every((n) => hereNames.has(n));
+  const chosenRelatives = (source ? source.relatives : []).filter((r) => isNew(r) &&
+    r.names.every((n) => brought.has(n) || hereNames.has(n)) && !husbandsHere.has(r.husband));
+  const droppedRelatives = (source ? source.relatives : []).filter(isNew).length - chosenRelatives.length;
   if (droppedRelatives > 0) warnings.push(`${droppedRelatives} family link(s) left behind — they name people you did not bring`);
 
   // NB: recomputed per call, so inserts go in ASCENDING order (see below)
@@ -390,7 +435,7 @@ function planFactionImport({ targetText, sourceText, faction, settlements = [], 
   // the file keeps the order the caller asked for
   for (const mv of moved) insert("settlement", mv.lines);
   for (const ch of chosenChars) insert("character", [...(ch.comment ? [ch.comment] : []), ...ch.lines, ""]);
-  const leader = chosenChars.find((x) => x.c.role === "leader");
+  const leader = chosenChars.find((x) => x.role === "leader");
   if (chosenFamily.length) insert("character_record", [...(leader ? [";" + leader.c.name] : []), ...chosenFamily.map((f) => f.line), ""]);
   if (chosenRelatives.length) insert("relative", [...chosenRelatives.map((r) => r.line), ""]);
   // a stub that already ended in a blank line would now end in two
@@ -398,14 +443,17 @@ function planFactionImport({ targetText, sourceText, faction, settlements = [], 
   while (block.end - 2 > block.start && lines[block.end - 1].trim() === "" && lines[block.end - 2].trim() === "") { lines.splice(block.end - 1, 1); block = blockOf(lines, fac); }
 
   summary.settlements = moved.map((m) => ({ region: m.region, from: m.from, level: m.level }));
-  summary.characters = chosenChars.map((x) => ({ name: x.c.name, role: x.c.role, units: x.c.unitCount, x: placements[x.c.name].x, y: placements[x.c.name].y, where: x.comment ? x.comment.slice(1) : null }));
+  summary.characters = chosenChars.map((x) => ({ name: x.c.name, role: x.role, units: x.c.unitCount, x: placements[x.c.name].x, y: placements[x.c.name].y, where: x.comment ? x.comment.slice(1) : null }));
   summary.family = chosenFamily.map((f) => f.name);
   summary.relatives = chosenRelatives.length;
-  if (!moved.length && !chosenChars.length) warnings.push("nothing was handed over — the faction is awake but holds nothing and will die on the first turn");
-  else if (!moved.length) warnings.push("no settlement — a faction with only characters is destroyed as soon as it has no town");
-  else if (!chosenChars.some((x) => x.c.role === "leader")) warnings.push("no leader among the characters brought — RTW needs a family member, or the faction dies with its last one");
+  const towns = here.settlements.length + moved.length;
+  const hasLeader = here.characters.some((c) => c.role === "leader") || chosenChars.some((x) => x.role === "leader");
+  if (awake && !moved.length && !chosenChars.length && !chosenFamily.length) warnings.push("nothing chosen — the faction stays as it is");
+  else if (!towns && !chosenChars.length) warnings.push("nothing was handed over — the faction is awake but holds nothing and will die on the first turn");
+  else if (!towns) warnings.push("no settlement — a faction with only characters is destroyed as soon as it has no town");
+  else if (!hasLeader) warnings.push("no leader among the characters brought — RTW needs a family member, or the faction dies with its last one");
 
   return { text: lines.join(eol), summary, warnings, errors: [] };
 }
 
-module.exports = { readFactionRoster, settlementOwners, planFactionImport, factionBlocks, settlementExtent, replaceCoords, characterTiles, clearRebelsAt };
+module.exports = { readFactionRoster, settlementOwners, planFactionImport, factionBlocks, settlementExtent, replaceCoords, characterTiles, clearRebelsAt, roleClashes, dropRole };

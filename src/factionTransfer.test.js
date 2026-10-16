@@ -260,6 +260,88 @@ describe("the layout RIS writes a faction in", () => {
   });
 });
 
+describe("a faction already on the map gains towns and people", () => {
+  const SRC = [
+    "faction\tmacedon, ai_greek",
+    "denari\t9000",
+    ...settle("Pella", "city", "macedon"),
+    ...settle("Amphipolis", "town", "macedon"),
+    "character\tDemetrios, named character, leader, age 50, , x 400, y 300",
+    "army",
+    "unit\t\tgreek general\t\texp 0 armour 0 weapon_lvl 0",
+    "character\tAntigonos, named character, heir, age 30, , x 401, y 300",
+    "army",
+    "unit\t\tgreek general\t\texp 0 armour 0 weapon_lvl 0",
+    "character\tKassandros, named character, age 25, , x 402, y 300",
+    "army",
+    "unit\t\tgreek hoplites\t\texp 0 armour 0 weapon_lvl 0",
+    "character_record\t\tPhila,\t female, age 45, alive, never_a_leader",
+    "character_record\t\tStratonike,\t female, age 28, alive, never_a_leader",
+    "relative\t Demetrios,\t Phila,\t Kassandros, end",
+    "relative\t Antigonos,\t Stratonike, end",
+    "faction\tslave, ai_rebel",
+    "",
+  ].join(NL);
+  const TGT = [
+    "faction\tmacedon, ai_greek",
+    "denari\t9000",
+    ...settle("Pella", "city", "macedon"),
+    "character\tAntigonos, named character, leader, age 50, , x 1, y 2",
+    "army",
+    "unit\t\tgreek general\t\texp 0 armour 0 weapon_lvl 0",
+    "",
+    "character_record\t\tStratonike,\t female, age 28, alive, never_a_leader",
+    "",
+    "relative\t Antigonos,\t Stratonike, end",
+    "",
+    "faction\tslave, ai_rebel",
+    "denari\t1000",
+    ...settle("Amphipolis", "town", "slave"),
+    "",
+  ].join(NL);
+  const base = { targetText: TGT, sourceText: SRC, faction: "macedon" };
+  const at = { Demetrios: { x: 5, y: 5 }, Antigonos: { x: 6, y: 6 }, Kassandros: { x: 7, y: 7 } };
+
+  it("keeps every line it had, adds the town and the newcomers, and brings nobody twice", () => {
+    const r = planFactionImport({ ...base, settlements: ["Amphipolis"], characters: ["Demetrios", "Antigonos", "Kassandros"], family: ["Phila", "Stratonike"], placements: at });
+    expect(r.errors).toEqual([]);
+    expect(r.summary.wasAwake).toBe(true);
+    expect(r.summary.alreadyHere).toEqual(["Antigonos", "Stratonike"]);
+    const after = readFactionRoster(r.text, "macedon");
+    expect(after.settlements.map((s) => s.region)).toEqual(["Pella", "Amphipolis"]);
+    expect(after.characters.map((c) => c.name)).toEqual(["Antigonos", "Demetrios", "Kassandros"]);
+    expect(after.family.map((f) => f.name)).toEqual(["Stratonike", "Phila"]);
+    // the old lines are all still there, in their order
+    const L = r.text.split(NL);
+    let k = 0;
+    for (const line of TGT.split(NL).slice(0, TGT.split(NL).indexOf("faction\tslave, ai_rebel"))) { k = L.indexOf(line, k); expect(k, line).toBeGreaterThanOrEqual(0); k++; }
+  });
+
+  it("one leader and one heir: a main-mod leader arrives as a family member", () => {
+    const r = planFactionImport({ ...base, settlements: [], characters: ["Demetrios"], placements: at });
+    expect(r.errors).toEqual([]);
+    expect(r.summary.demoted).toEqual(["Demetrios"]);
+    expect(r.text).toMatch(/character\tDemetrios, named character, age 50, , x 5, y 5/);
+    expect(readFactionRoster(r.text, "macedon").characters.filter((c) => c.role === "leader").map((c) => c.name)).toEqual(["Antigonos"]);
+    expect(r.warnings.join(" ")).toMatch(/Demetrios comes as a family member, not leader — Antigonos is leader here already/);
+    // it still holds Pella, so no "no settlement" warning for an add-only run
+    expect(r.warnings.join(" ")).not.toMatch(/no settlement|no leader|holds nothing/);
+  });
+
+  it("family links: a new one travels, a husband's existing one is never doubled", () => {
+    const r = planFactionImport({ ...base, characters: ["Demetrios", "Kassandros"], family: ["Phila", "Stratonike"], placements: at });
+    const rel = readFactionRoster(r.text, "macedon").relatives.map((x) => x.names.join("+"));
+    expect(rel).toEqual(["Antigonos+Stratonike", "Demetrios+Phila+Kassandros"]);
+  });
+
+  it("an empty ask leaves the faction as it was", () => {
+    const r = planFactionImport({ ...base });
+    expect(r.errors).toEqual([]);
+    expect(r.text).toBe(TGT);
+    expect(r.warnings.join(" ")).toMatch(/nothing chosen/);
+  });
+});
+
 // ── against the real mod, when it is installed ──────────────────────────────
 const MAIN = "C:/RIS/RIS/data/world/maps/campaign/imperial_campaign/descr_strat.txt";
 const LIGHT = "C:/RIS/_submods/RIS_Light/data/world/maps/campaign/ris_light/descr_strat.txt";
@@ -308,5 +390,39 @@ describe.skipIf(!realFaction)("against the installed RIS and its Light submod", 
     const A = blocks(light), B = blocks(r.text);
     const movedFactions = Object.keys(A).filter((f) => A[f] !== B[f]).sort();
     expect(movedFactions).toEqual([fac, "slave"].sort());
+  });
+});
+
+// An awake Light faction that main RIS gives towns it does not hold in Light.
+const realAwake = (() => {
+  if (!haveReal) return null;
+  const main = fs.readFileSync(MAIN, "latin1"), light = fs.readFileSync(LIGHT, "latin1");
+  const owners = settlementOwners(light);
+  return [...light.matchAll(/^faction\s+(\w+)/gm)].map((m) => m[1]).find((f) => {
+    if (f === "slave") return false;
+    const here = readFactionRoster(light, f), there = readFactionRoster(main, f);
+    return here && !here.dormant && here.settlements.length && there && there.characters.length &&
+      there.settlements.some((s) => owners[s.region] && owners[s.region].faction !== f);
+  }) || null;
+})();
+
+describe.skipIf(!realAwake)("adding to a faction already on the installed Light map", () => {
+  it("keeps its people, adds the rest of the main roster, one leader at most", () => {
+    const main = fs.readFileSync(MAIN, "latin1"), light = fs.readFileSync(LIGHT, "latin1");
+    const fac = realAwake, owners = settlementOwners(light);
+    const here = readFactionRoster(light, fac), src = readFactionRoster(main, fac);
+    const towns = src.settlements.map((s) => s.region).filter((r) => owners[r] && owners[r].faction !== fac);
+    const names = src.characters.map((c) => c.name);
+    const placements = Object.fromEntries(names.map((n) => [n, { x: 100, y: 200 }]));
+    const r = planFactionImport({ targetText: light, sourceText: main, faction: fac, settlements: towns, characters: names, family: src.family.map((f) => f.name), placements });
+    expect(r.errors).toEqual([]);
+    const after = readFactionRoster(r.text, fac);
+    expect(after.settlements.length).toBe(here.settlements.length + towns.length);
+    const n = (xs) => xs.map((x) => x.name);
+    for (const c of here.characters) expect(n(after.characters)).toContain(c.name);
+    expect(new Set(n(after.characters)).size).toBe(after.characters.length);
+    expect(after.characters.filter((c) => c.role === "leader").length).toBeLessThanOrEqual(1);
+    expect(after.characters.filter((c) => c.role === "heir").length).toBeLessThanOrEqual(1);
+    expect(Object.keys(settlementOwners(r.text)).length).toBe(Object.keys(owners).length);
   });
 });
