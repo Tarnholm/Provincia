@@ -158,6 +158,13 @@ function resolveWikiLinks(md, target, root, ext) {
     const g = to(b); if (g) return '[' + a.trim() + '](' + g + ')';
     const w = to(a); return w ? '[' + b.trim() + '](' + w + ')' : a.trim();
   });
+  // A full wiki address, as the GitHub editor writes a pasted link. The repo moved from Tarnholm
+  // to the RTR-Imperium-Surrectum org on 2026-10-05, so both owners occur. When the
+  // page is unknown the link becomes plain text, as build-ris-wiki-site.js does for the local build (a
+  // root-absolute wiki path would lead nowhere on the site).
+  md = md.replace(/\[([^\]\n]*)\]\((?:https?:\/\/github\.com)?\/(?:Tarnholm|RTR-Imperium-Surrectum)\/ris-wiki\/wiki\/([^)\s#]+)(#[^)\s]*)?\)/g, (m, label, name, frag) => {
+    const t = to(decodeURIComponent(name)); return t ? '[' + label + '](' + t + (frag || '') + ')' : label;
+  });
   return md.replace(/\[([^\]\n]*)\]\(([A-Za-z0-9_%-][^)\s/:.#]*)(#[^)\s]*)?\)/g, (m, label, name, frag) => {
     const t = to(decodeURIComponent(name)); return t ? '[' + label + '](' + t + (frag || '') + ')' : m;
   });

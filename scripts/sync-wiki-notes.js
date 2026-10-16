@@ -93,7 +93,8 @@ function updateTeamLists() {
     const md = path.join(WIKI, p + '.md');
     return fs.existsSync(md) ? titleOf(p, fs.readFileSync(md, 'utf8')) : p.replace(/-/g, ' ');
   };
-  const list = '<ul>' + pages.map((p) => '<li><a href="team/' + encodeURIComponent(p) + '.html">' + esc(title(p)) + '</a></li>').join('') + '</ul>';
+  // %27: an apostrophe in an href reads as an inline-script template to check-ris-wiki-site.js.
+  const list = '<ul>' + pages.map((p) => '<li><a href="team/' + encodeURIComponent(p).replace(/'/g, '%27') + '.html">' + esc(title(p)) + '</a></li>').join('') + '</ul>';
   const t = fs.readFileSync(hub, 'utf8');
   const u = t.replace(/(<h1 id="team-pages">[\s\S]*?<\/p>\n?)<ul>[\s\S]*?<\/ul>/, (m, head) => head + list);
   if (u !== t) { fs.writeFileSync(hub, u); console.log('team.html list: ' + pages.length + ' pages'); }

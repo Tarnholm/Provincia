@@ -32,6 +32,13 @@ const crypto = require("crypto");
 
 const MODEL = "claude-opus-5-5";
 const CACHE_ROOT = path.join(__dirname, "..", "ai-prose");
+// A campaign variant (RIS_VARIANT, gen-ris-wiki-variants.js) whose page reads differently from the
+// main campaign's keeps its own answer next to the main one (<key>@<variant>.json), so the two
+// versions no longer overwrite each other. A variant whose input is the same as main's still hits
+// the main file; the hash decides which answer fits.
+const VARIANT = process.env.RIS_VARIANT || "";
+const cacheFile = (kind, key) => path.join(CACHE_ROOT, kind, VARIANT ? `${key}@${VARIANT}.json` : `${key}.json`);
+const cacheFiles = (kind, key) => VARIANT ? [cacheFile(kind, key), path.join(CACHE_ROOT, kind, `${key}.json`)] : [cacheFile(kind, key)];
 // Bump when the instructions below change in a way that should rewrite every page.
 const PROMPT_VERSION = 1;
 
@@ -142,7 +149,7 @@ function storeProse({ kind, key, task, facts, code, turns, schema }, prose, writ
   if (bad.length) return { ok: false, note: `numbers not in the input: ${bad.join(", ")}` };
   const missing = (schema.required || []).filter((k) => !(k in prose));
   if (missing.length) return { ok: false, note: `missing fields: ${missing.join(", ")}` };
-  const file = path.join(CACHE_ROOT, kind, `${key}.json`);
+  const file = cacheFile(kind, key);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify({ hash: hashOf(schema, input), model: writtenBy || MODEL, written: new Date().toISOString().slice(0, 10), prose }, null, 1) + "\n", "utf8");
   return { ok: true };
@@ -156,11 +163,13 @@ async function writeProse({ kind, key, task, facts, code, turns, schema }) {
     `CODE\n${code}`,
   ].join("\n\n");
   const hash = hashOf(schema, input);
-  const file = path.join(CACHE_ROOT, kind, `${key}.json`);
-  try {
-    const cached = JSON.parse(fs.readFileSync(file, "utf8"));
-    if (cached.hash === hash) return { prose: cached.prose, source: "cache" };
-  } catch { /* no cache yet */ }
+  const file = cacheFile(kind, key);
+  for (const f of cacheFiles(kind, key)) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(f, "utf8"));
+      if (cached.hash === hash) return { prose: cached.prose, source: "cache" };
+    } catch { /* no cache yet */ }
+  }
 
   if (!haveCredentials() || !getClient()) {
     return { prose: null, source: null, note: "no Anthropic credentials (set ANTHROPIC_API_KEY or run `ant auth login`) and no cached prose for this input" };

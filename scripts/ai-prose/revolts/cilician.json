@@ -1,5 +1,5 @@
 {
- "hash": "acf6e3a16a034741",
+ "hash": "3ef2e6d5270180af",
  "model": "claude-opus-5-5 (Claude Code session)",
  "written": "2026-10-16",
  "prose": {
@@ -14,7 +14,7 @@
   "what_happens": [
    "Nagidos and Korakesion both rebel, whoever owns them, unless a city already belongs to the Cilician Pirates.",
    "Both pass to the Cilician Pirates, a faction that does not exist at the start of the campaign.",
-   "Each city gets a garrison 3.5 times normal strength, drawn from Cilician Brigands, Kietaian Hillmen, Cilician Neocretan Archers, Cilician Pirates, Cilician Spearmen, Cilician Renowned Pirates and Cilician Cavalry.",
+   "Each city gets a garrison at 0.01 times normal strength, drawn from Cilician Brigands, Kietaian Hillmen, Cilician Neocretan Archers, Cilician Pirates, Cilician Spearmen, Cilician Renowned Pirates and Cilician Cavalry.",
    "The Cilician Pirates receive 10000 denarii when Nagidos joins them.",
    "The revolt happens only once per campaign."
   ],

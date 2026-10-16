@@ -280,7 +280,9 @@ function mapUrl(fromRel, raw) {
   const fromDir = path.posix.dirname(fromRel);
   let rel = path.posix.relative(fromDir === "." ? "" : fromDir, out);
   if (!rel) rel = path.posix.basename(out);
-  return encodeURI(rel) + frag;
+  // encodeURI leaves ' alone, and an attribute value with an apostrophe reads as an inline-script
+  // template to this script and to check-ris-wiki-site.js: write it as %27 (the same file).
+  return encodeURI(rel).replace(/'/g, "%27") + frag;
 }
 
 // href/src/action attributes, and url() inside the stylesheet the shell inlines.
@@ -616,7 +618,9 @@ if (TEAM.length) {
     "from the game files. Everything else on this site is rebuilt from the RIS data on every",
     "update; these pages are not, and are only ever changed by the person who writes them.",
     "",
-    ...TEAM_ONLY.map((p) => `- [${p.title}](/${p.rel})`),
+    // A page name like "Newcomers'-Guide-to-Rome-(Claudii)": brackets would end the markdown link
+    // early, and an apostrophe makes mapUrl take the link for an inline-script template and skip it.
+    ...TEAM_ONLY.map((p) => `- [${p.title}](/${p.rel.replace(/\(/g, "%28").replace(/\)/g, "%29").replace(/'/g, "%27")})`),
     "",
   ].join(LF);
   const hubToc = [];
@@ -712,10 +716,20 @@ note(`sortable views: ${n(staticHtml.length)} copied (${n(RENAMED.size)} renamed
 // and path, which is all the server had — is written out and filtered in the browser. It is
 // loaded ONLY by search.html: putting it in the shell would add its whole weight to every one
 // of the wiki's pages to serve a box most readers never type in.
-const searchRows = INDEX.map((e) => {
-  const rootRel = e.rel.replace(/^\//, "");
-  return [e.title, outNameOf(rootRel), e.section];
-});
+// The viewer's INDEX holds the main campaign's pages. A page only a campaign variant has (a
+// Light-only region, a Classic-only faction: v/variants.json "only") has no main version to
+// toggle from, so it would be unreachable from the search box: it is listed too, its title
+// tagged with the campaign. Variant pages that do have a main version are reached through
+// that page's campaign buttons and stay out, or every result would show up four times.
+const SEARCH = INDEX.map((e) => ({ title: e.title, rel: e.rel.replace(/^\//, ""), section: e.section, md: e.md }));
+if (VMAP) for (const id of VIDS) for (const base of [...V_ONLY.get(id)].sort()) {
+  const rel = `v/${id}/${base}`;
+  let md;
+  try { md = fs.readFileSync(path.join(WIKI, rel), "utf8"); } catch { continue; }
+  const title = (/^#\s+(.+)$/m.exec(md) || [, path.basename(base, ".md")])[1].replace(/<[^>]*>/g, "").trim();
+  SEARCH.push({ title: `${title} (${VMAP.names[id]})`, rel, section: base.includes("/") ? base.split("/")[0] : "overview", md });
+}
+const searchRows = SEARCH.map((e) => [e.title, outNameOf(e.rel), e.section]);
 fs.writeFileSync(wrote(path.join(SITE, "search-index.js")),
   `window.RIS_PAGES=${JSON.stringify(searchRows)};\n`);
 // The compare box's numbers (wiki.js fetches units/compare.json on the first pick). Nothing
@@ -753,8 +767,8 @@ fs.writeFileSync(wrote(path.join(SITE, "search-index.js")),
 {
   const WORD = /[a-zÀ-ɏ0-9]{3,}/g;
   const inv = new Map();
-  INDEX.forEach((e, i) => {
-    const rootRel = e.rel.replace(/^\//, "");
+  SEARCH.forEach((e, i) => {
+    const rootRel = e.rel;
     let md = e.md;
     if (md == null) { try { md = fs.readFileSync(path.join(WIKI, rootRel), "utf8"); } catch { md = ""; } }
     const text = `${e.title} ${md}`.replace(/<[^>]+>/g, " ").replace(/\]\([^)]*\)/g, "]").toLowerCase();
@@ -765,7 +779,7 @@ fs.writeFileSync(wrote(path.join(SITE, "search-index.js")),
   });
   const common = [], parts = [];
   for (const [w, list] of inv) {
-    if (list.length > INDEX.length * 0.3) { common.push(w); continue; }
+    if (list.length > SEARCH.length * 0.3) { common.push(w); continue; }
     let prev = 0;
     parts.push(`${w}:${list.map((x) => { const d = x - prev; prev = x; return d.toString(36); }).join(",")}`);
   }

@@ -47,7 +47,11 @@ const files = [];
   }
 })(SITE);
 const present = new Set(files);
-const pages = files.filter((f) => /\.html$/i.test(f));
+// wiki-notes/<page>.html are not pages: they are fragments the CI bot publishes from the GitHub
+// wiki, which wiki.js loads into <page>.html. Their links are written for that page, so they are
+// checked from it (see `host` below), and they are not orphans or search entries of their own.
+const FRAGMENT = /^wiki-notes\//;
+const pages = files.filter((f) => /\.html$/i.test(f) && !FRAGMENT.test(f));
 // The stylesheet is scanned as well as the pages, and that is not thoroughness for its own
 // sake. The shell's one CSS background-image — the mod's rule under every page title — lives
 // only in wiki.css. An earlier version of this check looked at .html alone, passed with zero
@@ -90,7 +94,8 @@ const sample = { abs: [], broken: [], frag: [], case: [] };
 const keep = (bucket, s) => { if (sample[bucket].length < 8) sample[bucket].push(s); };
 
 for (const page of scanned) {
-  const dir = path.posix.dirname(page);
+  const host = page.replace(FRAGMENT, "");
+  const dir = path.posix.dirname(host);
   const html = fs.readFileSync(path.join(SITE, page), "utf8");
   // Attribute values and stylesheet url() together — the shell's rule under the page title is
   // a url(), and it was root-absolute in the served version, so it has to be checked too.
@@ -116,7 +121,7 @@ for (const page of scanned) {
     if (!bare) {                       // same-page anchor
       if (!frag) continue;
       frags++;
-      if (!idsOf(page).has(frag.toLowerCase())) { badFrags++; keep("frag", `${page}: #${frag} — no such id on this page`); }
+      if (!idsOf(present.has(host) ? host : page).has(frag.toLowerCase())) { badFrags++; keep("frag", `${page}: #${frag} — no such id on this page`); }
       continue;
     }
     const target = path.posix.normalize(dir === "." ? decodeURIComponent(bare) : `${dir}/${decodeURIComponent(bare)}`);
@@ -169,7 +174,10 @@ if (caseBad) fail(`${caseBad} case-mismatched reference(s):\n    ` + sample.case
     }
     note(`search index:   ${n(rows.length)} titles, ${n(bad)} pointing at a page that is not there`);
     if (bad) fail(`${bad} search result(s) point at a missing page: ${badSample.join(", ")}`);
-    if (rows.length < pages.length - 10) fail(`the search index has ${rows.length} entries for ${pages.length} pages — it is stale`);
+    // A campaign variant's version of a main page is reached through that page's campaign
+    // buttons and is deliberately not searchable; every other page should be.
+    const searchable = pages.filter((p) => { const m = /^v\/[^/]+\/(.+)$/.exec(p); return !(m && present.has(m[1])); });
+    if (rows.length < searchable.length - 10) fail(`the search index has ${rows.length} entries for ${searchable.length} searchable pages — it is stale`);
   }
 }
 
@@ -178,6 +186,10 @@ if (caseBad) fail(`${caseBad} case-mismatched reference(s):\n    ` + sample.case
 // than from a link, so both are exempt.
 {
   const exempt = new Set(["index.html", "search.html"]);
+  // community-guides.html builds its list in the browser from wiki-notes/guides.json.
+  try {
+    for (const g of JSON.parse(fs.readFileSync(path.join(SITE, "wiki-notes", "guides.json"), "utf8"))) linkedTo.add(`team/${g.page}.html`);
+  } catch { /* no guides list */ }
   const orphans = pages.filter((p) => !exempt.has(p) && !linkedTo.has(p));
   note(`orphaned pages: ${n(orphans.length)}`);
   if (orphans.length) fail(`${orphans.length} page(s) nothing links to — e.g. ${orphans.slice(0, 5).join(", ")}`);

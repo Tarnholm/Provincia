@@ -1,0 +1,24 @@
+{
+ "hash": "3b156ac8760afaa5",
+ "model": "claude-opus-5-5 (Claude Code session)",
+ "written": "2026-10-16",
+ "prose": {
+  "title": "The Italic Revolt",
+  "summary": "Corfinium, Teate, Asculum, Bovianum, Venusia, Canusium and Grumentum rise up together and form a new faction, the Italics. It can happen from turn 240 (211 BC), once the Polybian reforms are in effect and at least 20 colonies stand in Italy. The Italics are at war with the Roman houses and the Roman Senate from their first turn.",
+  "breaks_away_from": "Whoever holds these towns at the time; at the campaign start, the House of Claudii, the House of Cornelii, the House of Aemilii and the Picentes",
+  "who_it_can_happen_to": "It can happen in any Four Romans campaign, whoever the player is.",
+  "what_sets_it_off": [
+   "From turn 240 (211 BC) onwards, once the Polybian reforms are in effect for the Roman factions, the game counts the Small Colony and Large Colony buildings in all settlements of the Camillan recruitment area (the 41 regions of Italy), whoever owns them; if there are at least 20, the revolt fires. The check runs at the end of every faction's turn and has no random roll."
+  ],
+  "what_happens": [
+   "Corfinium, Teate, Asculum, Bovianum, Venusia, Canusium and Grumentum all rebel at once, whoever owns them.",
+   "Each of them passes to the Italics, a faction that does not exist at the start of the campaign.",
+   "Each town gets a garrison of Italic Skirmishers, Italic Cohort and Italic Equites at 0.01 times normal strength.",
+   "When Corfinium goes over, the Italics receive 10000 denarii.",
+   "At the start of every Italics turn, if they are not at war with the House of Cornelii, the House of Claudii, the House of Aemilii or the Roman Senate, they declare war on that faction. They are therefore at war with all of them from their first turn and cannot make a lasting peace with any of them.",
+   "The revolt happens only once per campaign.",
+   "While the Italics, or any other faction that is not one of the Roman houses or the Roman Senate, hold a settlement in Italy or Sicily, the wait for the named legions and the later Roman civil war cannot start. It starts only once the Gracchan Reforms have taken place for one of the Roman factions and every settlement in Italy and Sicily belongs to the Roman houses or the Roman Senate."
+  ],
+  "playing_as_the_rebels": "No offer is made to switch to the Italics when they appear."
+ }
+}
