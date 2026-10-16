@@ -49,7 +49,7 @@ function insertSortedLookup(lkText, tokens) {
   return added ? lkLines.join("\r\n") : null; // RTW:R always CRLF
 }
 
-function registerModEditingHandlers(ipcMain, { getActiveModDataDir, getModExportDir, getModDescrStratFamilies, _writeLog, buildStartingArmiesFromMod, getVanillaDataDir, loadModCharacterData, loadPortraitMapping, resolvePortraitPool, modOut }) {
+function registerModEditingHandlers(ipcMain, { getActiveModDataDir, getModExportDir, getModDescrStratFamilies, _writeLog, buildStartingArmiesFromMod, getVanillaDataDir, loadModCharacterData, loadPortraitMapping, resolvePortraitPool, modOut, activeCampaign }) {
 // Reads remember how the bytes decoded (utf8 only when they ARE valid utf8,
 // latin1 otherwise) so the write-back is byte-exact for everything the edit
 // did not touch; writes are atomic and honour export mode (src/safeModWrite.js).
@@ -65,14 +65,7 @@ ipcMain.handle("update-character-traits", async (_event, firstName, faction, tra
   if (!getActiveModDataDir()) return { ok: false, error: "no active mod" };
   if (!firstName) return { ok: false, error: "missing firstName" };
   if (!Array.isArray(traits)) return { ok: false, error: "traits must be an array" };
-  // Try imperial_campaign first, then alex / BI fallbacks (same order as
-  // the loader).
-  const candidates = [
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "alexander", "descr_strat.txt"),
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
-  ];
-  const dsPath = candidates.find((p) => fs.existsSync(p));
+  const dsPath = findActiveDescrStratPath();
   if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
   try {
     const text = _read(dsPath);
@@ -138,12 +131,7 @@ ipcMain.handle("update-character-traits", async (_event, firstName, faction, tra
 // Used by the map drag-to-move-character feature; staged + applied on Save.
 ipcMain.handle("update-character-position", async (_event, faction, oldX, oldY, newX, newY) => {
   if (!getActiveModDataDir()) return { ok: false, error: "no active mod" };
-  const candidates = [
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "alexander", "descr_strat.txt"),
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
-  ];
-  const dsPath = candidates.find((p) => fs.existsSync(p));
+  const dsPath = findActiveDescrStratPath();
   if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
   try {
     const text = _read(dsPath);
@@ -181,12 +169,7 @@ ipcMain.handle("update-character-fields", async (_event, firstName, faction, fie
   if (!getActiveModDataDir()) return { ok: false, error: "no active mod" };
   if (!firstName) return { ok: false, error: "missing firstName" };
   if (!fields || typeof fields !== "object") return { ok: false, error: "missing fields" };
-  const candidates = [
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "alexander", "descr_strat.txt"),
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
-  ];
-  const dsPath = candidates.find((p) => fs.existsSync(p));
+  const dsPath = findActiveDescrStratPath();
   if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
   try {
     const text = _read(dsPath);
@@ -328,12 +311,7 @@ ipcMain.handle("relocate-garrison", async (_event, faction, region, newX, newY) 
   if (!getActiveModDataDir()) return { ok: false, error: "no active mod" };
   if (!region) return { ok: false, error: "missing region" };
   if (typeof newX !== "number" || typeof newY !== "number") return { ok: false, error: "missing coords" };
-  const candidates = [
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "alexander", "descr_strat.txt"),
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
-  ];
-  const dsPath = candidates.find((p) => fs.existsSync(p));
+  const dsPath = findActiveDescrStratPath();
   if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
   try {
     const text = _read(dsPath);
@@ -731,8 +709,13 @@ ipcMain.handle("update-army-units", async (_event, faction, locator, units) => {
 
 // 0.9.550: Add-General feature — read descr_strat + name lists, return per-
 // faction culture name pools + families + settlement coord index for the UI.
+// The descr_strat every edit handler reads and writes: the imported campaign's
+// own file (a submod's ris_light/descr_strat.txt — src/activeCampaign.js), else
+// imperial_campaign, then alex / BI under the active mod (the loader's order).
 function findActiveDescrStratPath() {
   if (!getActiveModDataDir()) return null;
+  const own = activeCampaign && activeCampaign.stratPath();
+  if (own) return own;
   const candidates = [
     path.join(getActiveModDataDir(), "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
     path.join(getActiveModDataDir(), "world", "maps", "campaign", "alexander", "descr_strat.txt"),
@@ -740,6 +723,31 @@ function findActiveDescrStratPath() {
   ];
   return candidates.find((p) => fs.existsSync(p)) || null;
 }
+// Save preflight: the region names (of pending building / garrison edits) that
+// the target descr_strat does not have. Any miss means the edits are aimed at a
+// different campaign than the file they would land in, so the Save stops
+// before writing anything.
+ipcMain.handle("check-strat-regions", async (_event, regionNames) => {
+  const dsPath = findActiveDescrStratPath();
+  if (!dsPath) return { ok: false, error: "descr_strat.txt not found", missing: [] };
+  try {
+    const have = new Set();
+    for (const line of _read(dsPath).split(/\r?\n/)) {
+      const m = line.split(";", 1)[0].match(/^\s*region\s+(\S+)/);
+      if (m) have.add(m[1].toLowerCase());
+    }
+    const missing = [...new Set((regionNames || []).map(String))].filter((r) => !have.has(r.toLowerCase()));
+    return { ok: true, stratPath: dsPath, missing };
+  } catch (e) { return { ok: false, error: e.message, missing: [] }; }
+});
+// The target descr_strat as it stands NOW (the exported copy in export mode), so
+// the renderer's whole-file patch builds on the edits this Save already wrote.
+ipcMain.handle("read-active-strat", async () => {
+  const dsPath = findActiveDescrStratPath();
+  if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
+  try { return { ok: true, stratPath: dsPath, text: _read(dsPath) }; }
+  catch (e) { return { ok: false, error: e.message }; }
+});
 ipcMain.handle("addgen-get-data", async () => {
   try {
     if (!getActiveModDataDir()) return { ok: false, error: "no active mod" };
@@ -913,12 +921,7 @@ ipcMain.handle("update-character-ancillaries", async (_event, firstName, faction
   if (!getActiveModDataDir()) return { ok: false, error: "no active mod" };
   if (!firstName) return { ok: false, error: "missing firstName" };
   if (!Array.isArray(ancillaries)) return { ok: false, error: "ancillaries must be an array" };
-  const candidates = [
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "alexander", "descr_strat.txt"),
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
-  ];
-  const dsPath = candidates.find((p) => fs.existsSync(p));
+  const dsPath = findActiveDescrStratPath();
   if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
   try {
     const text = _read(dsPath);
@@ -986,12 +989,7 @@ ipcMain.handle("update-region-buildings", async (_event, regionName, buildings) 
   if (!getActiveModDataDir()) return { ok: false, error: "no active mod" };
   if (!regionName) return { ok: false, error: "missing regionName" };
   if (!Array.isArray(buildings)) return { ok: false, error: "buildings must be an array" };
-  const candidates = [
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt"),
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "alexander", "descr_strat.txt"),
-    path.join(getActiveModDataDir(), "world", "maps", "campaign", "barbarian_invasion", "descr_strat.txt"),
-  ];
-  const dsPath = candidates.find((p) => fs.existsSync(p));
+  const dsPath = findActiveDescrStratPath();
   if (!dsPath) return { ok: false, error: "descr_strat.txt not found" };
   try {
     const text = _read(dsPath);

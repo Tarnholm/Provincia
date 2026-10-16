@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const { Worker } = require("worker_threads");
 const pathSafety = require("./src/pathSafety.js");
+const activeCampaign = require("./src/activeCampaign.js");
 // The main window + an optional second map window (src/appWindows.js). Live
 // broadcasts go to both; only the main window drives the watchers.
 const { createAppWindows } = require("./src/appWindows.js");
@@ -433,12 +434,18 @@ let _modExportDir = null;
 // the path is not under the active mod (so non-mod writes are never touched).
 // Creates the destination's parent dir on demand so the first write succeeds.
 function modOut(absModPath) {
-  if (!_modExportDir || !activeModDataDir) return absModPath;
-  const rel = path.relative(activeModDataDir, absModPath);
-  if (rel.startsWith("..") || path.isAbsolute(rel)) return absModPath; // not under the mod → leave as-is
-  const dest = path.join(_modExportDir, rel);
-  try { fs.mkdirSync(path.dirname(dest), { recursive: true }); } catch {}
-  return dest;
+  if (!_modExportDir) return absModPath;
+  // A submod campaign's files live under the SUBMOD's data dir, not the base
+  // mod's — map each against whichever of the two owns it (src/activeCampaign.js).
+  for (const root of [activeCampaign.dataRoot(), activeModDataDir]) {
+    if (!root) continue;
+    const rel = path.relative(root, absModPath);
+    if (rel.startsWith("..") || path.isAbsolute(rel)) continue;
+    const dest = path.join(_modExportDir, rel);
+    try { fs.mkdirSync(path.dirname(dest), { recursive: true }); } catch {}
+    return dest;
+  }
+  return absModPath; // not under the mod → leave as-is
 }
 // Ancillary names indexed by id (0-based), loaded from
 // export_descr_ancillaries.txt. ID 0 = labrys_maker, ID 1 = saffron_merchant,
@@ -2359,7 +2366,18 @@ registerModEditingHandlers(ipcMain, {
   getModDescrStratFamilies: () => modDescrStratFamilies,
   _writeLog: (s) => _writeLog(s),
   buildStartingArmiesFromMod, getVanillaDataDir, loadModCharacterData,
-  loadPortraitMapping, resolvePortraitPool, modOut,
+  loadPortraitMapping, resolvePortraitPool, modOut, activeCampaign,
+});
+
+// The imported campaign folder of the active slot (".../world/maps/campaign/
+// ris_light"), so descr_strat edits and Save writes go to THAT campaign — for
+// a submod the active mod dir is the base mod (src/activeCampaign.js). null =
+// unknown → the old imperial_campaign lookup under the active mod.
+ipcMain.handle("set-active-campaign", async (_event, folder) => {
+  const r = activeCampaign.setFolder(folder);
+  if (r.ok) console.log(`[campaign] edits target ${r.folder ? r.stratPath : "the active mod's imperial_campaign (no imported campaign)"}`);
+  else console.warn(`[campaign] set-active-campaign: ${r.error}`);
+  return r;
 });
 // Trait/ancillary/portrait icon-resolution handlers — see src/portraitHandlers.js.
 const { registerPortraitHandlers } = require("./src/portraitHandlers.js");
@@ -3852,10 +3870,13 @@ ipcMain.handle("write-active-mod-file", async (_event, relPath, content) => {
     return { ok: false, error: "bad args" };
   }
   const normalised = relPath.replace(/\\/g, "/").replace(/^\/+/, "");
-  if (!WRITE_SAFELIST.has(normalised)) {
+  if (!WRITE_SAFELIST.has(normalised) && !activeCampaign.CAMPAIGN_FILE_RE.test(normalised)) {
     return { ok: false, error: `path not in safelist: ${normalised}` };
   }
-  const full = modOut(path.join(activeModDataDir, normalised));
+  // The imported campaign's own files (a submod's ris_light/descr_strat.txt,
+  // its own descr_regions.txt), else the base mod as before.
+  const livePath = activeCampaign.resolve(activeModDataDir, normalised);
+  const full = modOut(livePath);
   try {
     // Ensure parent dir exists (it should, but be defensive)
     fs.mkdirSync(path.dirname(full), { recursive: true });
@@ -3866,7 +3887,6 @@ ipcMain.handle("write-active-mod-file", async (_event, relPath, content) => {
     // live file is ANSI with high-bit bytes, those arrived as U+FFFD and writing
     // them back would replace every accented character for good — refuse
     // rather than corrupt (RIS carries none today; other mods may).
-    const livePath = path.join(activeModDataDir, normalised);
     if (content.includes("\uFFFD") && fs.existsSync(livePath) && !fs.readFileSync(livePath).includes(Buffer.from([0xEF, 0xBF, 0xBD]))) {
       return { ok: false, error: `${normalised} holds characters that are not valid UTF-8; saving would replace them permanently. Nothing was written.` };
     }

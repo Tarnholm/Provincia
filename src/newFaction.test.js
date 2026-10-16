@@ -191,7 +191,19 @@ describe.skipIf(!haveRis)("against the installed RIS", () => {
     for (const key of Object.keys(r.edits)) {
       expect((r.edits[key].match(/parni/gi) || []).length, key).toBeGreaterThanOrEqual((f[key].match(/parni/gi) || []).length);
     }
-    // the clone adds exactly the donor's own entry (103 lines in the 239-faction RIS, 119 after)
-    expect(r.edits.smFactions.split(/\r?\n/).length - f.smFactions.split(/\r?\n/).length).toBe(smEntry(f.smFactions, "parni").lines.length);
+    // the clone adds exactly the donor's own entry (103 lines in the 239-faction RIS, 119 after), minus its
+    // shadow-faction link, which newFaction.js deliberately does not copy: the "shadow faction" line, its
+    // "shadow max provinces" line and the shadow/resurrection comment right above it (parni gained one in RIS
+    // 2026-10: ;;RESURRECTION anchor ... seleucid_rebels2, 3 lines)
+    const donor = smEntry(f.smFactions, "parni").lines;
+    let shadowLines = 0;
+    donor.forEach((l, k) => {
+      if (!/^\s*"shadow faction"\s*:/.test(l)) return;
+      shadowLines++;
+      for (let t = k + 1; t < donor.length && /^\s*"shadow max provinces"\s*:/.test(donor[t]); t++) shadowLines++;
+      for (let c = k; c > 0 && /^\s*;/.test(donor[c - 1]) && /shadow|resurrect/i.test(donor[c - 1]); c--) shadowLines++;
+    });
+    expect(r.edits.smFactions.split(/\r?\n/).length - f.smFactions.split(/\r?\n/).length).toBe(donor.length - shadowLines);
+    expect(r.edits.smFactions.match(/"shadow faction"/g).length, "the clone carries no shadow link").toBe(f.smFactions.match(/"shadow faction"/g).length);
   });
 });

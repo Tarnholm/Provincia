@@ -272,7 +272,8 @@ const realFaction = (() => {
   const main = fs.readFileSync(MAIN, "latin1"), light = fs.readFileSync(LIGHT, "latin1");
   const owners = settlementOwners(light);
   return [...light.matchAll(/^faction\s+(\w+)/gm)].map((m) => m[1]).find((f) =>
-    readFactionRoster(light, f).dormant && readFactionRoster(main, f).settlements.some((s) => owners[s.region])) || null;
+    // a Light faction main RIS does not have (e.g. roman_senate) has no main roster
+    readFactionRoster(light, f).dormant && (readFactionRoster(main, f)?.settlements || []).some((s) => owners[s.region])) || null;
 })();
 
 describe.skipIf(!realFaction)("against the installed RIS and its Light submod", () => {

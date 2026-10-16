@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
+import { patchDescrRegions } from "./descrRegionsPatch";
 import { IS_MAP_WINDOW } from "./windowRole";
 import RegionInfo, { setBuildingsGetter } from "./RegionInfo";
 import { Movable, resetAllWidgets, undoLayout, canUndo, subscribeUndo, GuideOverlay, registerFixedRect, unregisterFixedRect, subscribeWidgets, getWidgetSnapshot } from "./Movable";
@@ -1643,50 +1644,6 @@ function applyOwnershipMoves(lines, ownerChanges) {
     out.push(...block.tailLines);
   }
   return out;
-}
-
-// Patch descr_regions.txt IN PLACE from the current `regions` state — replaces
-// only the editable per-region lines (faction, culture, and the tags line that
-// holds hidden_resources / port level / climate / AOR / farm / religion) while
-// preserving the original tabs, blank-line block separators, header comments,
-// rgb, farm_level, pop_level and ethnicities. Block format per region:
-//   RegionName            (col 0, not indented)
-//   \tSettlement / \tFaction / \tCulture / \tRGB / \tTags / \tFarm / \tPop / \tEthnicities
-// then a blank line. Returns the patched text (same EOL as the original).
-function patchDescrRegions(originalText, regions) {
-  if (!originalText) return null;
-  const byName = {};
-  for (const r of Object.values(regions || {})) {
-    if (r && r.region) byName[String(r.region).trim()] = r;
-  }
-  const eol = "\r\n"; // RTW:R game text files MUST be CRLF — LF silently breaks the engine's descr_* parser, regardless of the source file's EOL
-  const lines = originalText.split(/\r?\n/);
-  const indentOf = (s) => { const m = String(s).match(/^([ \t]*)/); return m ? m[1] : "\t"; };
-  let i = 0;
-  while (i < lines.length) {
-    const line = lines[i];
-    const trimmed = line.trim();
-    // A region header is a non-blank, non-comment line with NO leading whitespace.
-    if (trimmed && !trimmed.startsWith(";") && !/^[ \t]/.test(line)) {
-      const r = byName[trimmed];
-      if (r) {
-        // Collect the consecutive indented, non-comment field lines that follow.
-        const fields = [];
-        let j = i + 1;
-        while (j < lines.length && /^[ \t]/.test(lines[j]) && lines[j].trim() && !lines[j].trim().startsWith(";")) {
-          fields.push(j); j++;
-        }
-        // fields: [0]settlement [1]faction [2]culture [3]rgb [4]tags [5]farm [6]pop [7]ethnicities
-        if (fields[1] != null && r.faction != null) lines[fields[1]] = indentOf(lines[fields[1]]) + r.faction;
-        if (fields[2] != null && r.culture != null) lines[fields[2]] = indentOf(lines[fields[2]]) + r.culture;
-        if (fields[4] != null && r.tags != null) lines[fields[4]] = indentOf(lines[fields[4]]) + r.tags;
-        i = j;
-        continue;
-      }
-    }
-    i++;
-  }
-  return lines.join(eol);
 }
 
 // Parse the playable / unlockable / nonplayable faction lists from the top of
@@ -6185,7 +6142,7 @@ function App() {
         // Update region
         for (const [rgbKey, r] of Object.entries(replayRegions)) {
           if (r.city?.toLowerCase() === settlement.toLowerCase() || r.region?.toLowerCase() === settlement.toLowerCase()) {
-            replayRegions[rgbKey] = { ...r, faction };
+            replayRegions[rgbKey] = { ...r, rebelDefault: r.rebelDefault != null ? r.rebelDefault : r.faction, faction };
             break;
           }
         }
@@ -6292,7 +6249,7 @@ function App() {
             let cityName = null;
             for (const [rgbKey, r] of Object.entries(next)) {
               if (r.city?.toLowerCase() === settlement.toLowerCase() || r.region?.toLowerCase() === settlement.toLowerCase()) {
-                next[rgbKey] = { ...r, faction };
+                next[rgbKey] = { ...r, rebelDefault: r.rebelDefault != null ? r.rebelDefault : r.faction, faction };
                 cityName = r.city || null;
                 break;
               }
@@ -12695,6 +12652,23 @@ function App() {
       return m ? m[1] : null;
     } catch { return null; }
   }, [mapCampaign]);
+  // The active slot's imported campaign FOLDER, read fresh (a re-import changes
+  // it without a slot switch). The main process is told it so descr_strat edits
+  // and Save writes go to THAT campaign: for a submod the active mod dir is the
+  // base mod, and every edit used to land in the base mod's imperial_campaign
+  // (src/activeCampaign.js — Hadrian's RIS Light farm edits, 2026-10-16).
+  const importedCampaignFolderNow = useCallback(() => {
+    try {
+      const suffix = (CAMPAIGNS[mapCampaign] && CAMPAIGNS[mapCampaign].suffix) || mapCampaign;
+      const raw = localStorage.getItem("lastImport_" + suffix);
+      const folder = raw ? (JSON.parse(raw) || {}).folder : null;
+      return folder && /[\\/]world[\\/]maps[\\/]campaign[\\/][^\\/]+[\\/]?$/i.test(String(folder)) ? String(folder).replace(/[\\/]+$/, "") : null;
+    } catch { return null; }
+  }, [mapCampaign, CAMPAIGNS]);
+  useEffect(() => {
+    const api = window.electronAPI;
+    if (api?.setActiveCampaign) api.setActiveCampaign(importedCampaignFolderNow()).catch(() => {});
+  }, [importedCampaignFolderNow, campaignLabels]);
   // Tax plan computed from the mod files (live-verified exact; the save-based
   // two-save flow was removed 2026-06-10 — the no-save model IS the planner).
   const [armyStratPlan, setArmyStratPlan] = useState(null);
@@ -13975,13 +13949,16 @@ function App() {
           });
           setFactionOwnerChanges(prev => ({ ...prev, [regionName]: value }));
         }
-        return { ...prev, [rgbKey]: { ...r, faction: value } };
+        // An ownership move is a descr_strat change: pin the descr_regions
+        // value first so the Save does not write the new owner into line 3.
+        return { ...prev, [rgbKey]: { ...r, rebelDefault: r.rebelDefault != null ? r.rebelDefault : r.faction, faction: value } };
       }
       if (field === "rebel_default") {
         // Loyalist-mode edit — change ONLY the descr_regions rebel-default
-        // faction (r.faction). Does NOT touch factionRegionsMap; the
-        // current owner stays as-is. Only descr_regions.txt is dirtied.
-        return { ...prev, [rgbKey]: { ...r, faction: value } };
+        // faction (r.rebelDefault, line 3; r.faction is the descr_strat
+        // owner). Does NOT touch factionRegionsMap; the current owner stays
+        // as-is. Only descr_regions.txt is dirtied.
+        return { ...prev, [rgbKey]: { ...r, rebelDefault: value } };
       }
       if (field === "culture") return { ...prev, [rgbKey]: { ...r, culture: value } };
       if (field === "farm") {
@@ -14003,9 +13980,9 @@ function App() {
       }
       return prev;
     });
-    // All region edits (tags, faction, culture, farm, religion) go into descr_regions.txt.
-    // Faction edits ALSO require a descr_strat.txt patch (settlement block move).
-    if (field === "faction") markDirty("descr_regions.txt", "descr_strat.txt");
+    // Region edits (tags, rebel default, culture, farm, religion) go into descr_regions.txt.
+    // An ownership (faction) edit is a descr_strat.txt patch only (settlement block move).
+    if (field === "faction") markDirty("descr_strat.txt");
     else markDirty("descr_regions.txt");
     setDevContextMenu(null);
   }
@@ -22095,17 +22072,19 @@ Click for unit card`}
             );
           }
         }
-        // Faction mode and Loyalist mode both edit the descr_regions
-        // rebel-default (= region.faction). In faction mode this also
-        // shifts ownership in factionRegionsMap; in loyalist mode we
-        // want ONLY the rebel-default change. applyDevEdit handles both
-        // via the `field` argument.
+        // Faction mode moves the descr_strat OWNER (region.faction +
+        // factionRegionsMap); Loyalist mode edits ONLY the descr_regions
+        // rebel-default (region.rebelDefault, line 3). applyDevEdit handles
+        // both via the `field` argument.
         else if (colorMode === "faction" || colorMode === "loyalist") {
           title = `${region.region} — ${colorMode === "loyalist" ? "Rebel default" : "Faction"}`;
-          const allFactions = [...new Set(Object.values(regions).map(r => r.faction))].sort();
-          const editField = colorMode === "loyalist" ? "rebel_default" : "faction";
+          const loyalist = colorMode === "loyalist";
+          const rebelOf = (r) => (r.rebelDefault != null ? r.rebelDefault : r.faction);
+          const allFactions = [...new Set(Object.values(regions).flatMap(r => [r.faction, rebelOf(r)]).filter(Boolean))].sort();
+          const editField = loyalist ? "rebel_default" : "faction";
+          const currentValue = loyalist ? rebelOf(region) : region.faction;
           items = allFactions.map(f => {
-            const isCurrent = f === region.faction;
+            const isCurrent = f === currentValue;
             const fc = factionColors[(f || "").toLowerCase()];
             const swatch = (fc && fc.primary) || null;
             return (
@@ -23501,7 +23480,20 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                       ...[...stagedPlayable].filter((f) => !factionStatusData.playable.includes(f)),
                     ];
                     const newNon = all.filter((f) => !stagedPlayable.has(f) && !factionStatusData.unlockable.includes(f));
-                    const patched = patchFactionStatus(text, orderedPlayable, newNon);
+                    // Write to the IMPORTED campaign, patching its text as it is now
+                    // (an earlier Save may have changed it since the import).
+                    let baseText = text;
+                    if (api.setActiveCampaign) {
+                      const folder = importedCampaignFolderNow();
+                      let ac;
+                      try { ac = await api.setActiveCampaign(folder); } catch (e) { ac = { ok: false, error: e.message }; }
+                      if (folder && !ac?.ok) { pushToast(`Nothing was saved: the imported campaign folder can't be used (${ac?.error || "unknown error"}). Re-import the campaign, then save again.`, "warning", 12000); return; }
+                      try {
+                        const cur = api.readActiveStrat ? await api.readActiveStrat() : null;
+                        if (cur?.ok && (!ac?.stratPath || cur.stratPath === ac.stratPath)) baseText = cur.text;
+                      } catch {}
+                    }
+                    const patched = patchFactionStatus(baseText, orderedPlayable, newNon);
                     try { if (api.backupModFiles) await api.backupModFiles(); } catch {}
                     const camp = CAMPAIGNS[mapCampaign];
                     const relPath = camp?.stratPath || "world/maps/campaign/imperial_campaign/descr_strat.txt";
@@ -23780,6 +23772,46 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                   const modPath = modDataDir || (() => { try { return localStorage.getItem("modDataDir"); } catch { return null; } })();
                   if (modPath && api.charactersInit) await api.charactersInit(modPath);
                 } catch (e) { console.warn("[apply] active-mod re-assert failed:", e); }
+                // Aim every write at the IMPORTED campaign (a submod's ris_light,
+                // not the base mod's imperial_campaign). If the slot has an import
+                // the main process cannot use, stop: writing on would land in the
+                // base mod's campaign.
+                const campaignFolder = importedCampaignFolderNow();
+                let targetStrat = null;
+                if (api.setActiveCampaign) {
+                  let ac;
+                  try { ac = await api.setActiveCampaign(campaignFolder); } catch (e) { ac = { ok: false, error: e.message }; }
+                  if (campaignFolder && !ac?.ok) {
+                    pushToast(`Nothing was saved: the imported campaign folder can't be used (${ac?.error || "unknown error"}). Re-import the campaign, then save again.`, "warning", 12000);
+                    return;
+                  }
+                  targetStrat = ac?.stratPath || null;
+                }
+                // Preflight: every region a descr_strat edit names must exist in the
+                // file it will be written to. A miss means the edits belong to a
+                // different campaign, so nothing is written at all.
+                if (api.checkStratRegions) {
+                  const names = [];
+                  for (const regionKey of pendingBuildings.keys()) {
+                    const logEntry = [...pendingLog].reverse().find(e => e.kind === "building" && e.key === regionKey);
+                    names.push(logEntry?.region || regionKey);
+                  }
+                  for (const [, gm] of pendingGarrisonMoves.entries()) if (gm.region) names.push(gm.region);
+                  if (devDirtyFiles.has("descr_strat.txt")) names.push(...Object.keys(factionOwnerChanges || {}));
+                  if (names.length) {
+                    let chk;
+                    try { chk = await api.checkStratRegions(names); } catch (e) { chk = { ok: false, error: e.message }; }
+                    if (!chk?.ok) {
+                      pushToast(`Nothing was saved: couldn't check the regions against descr_strat (${chk?.error || "unknown error"}).`, "warning", 12000);
+                      return;
+                    }
+                    if (chk.missing.length) {
+                      const list = chk.missing.slice(0, 8).join(", ") + (chk.missing.length > 8 ? ` and ${chk.missing.length - 8} more` : "");
+                      pushToast(`Nothing was saved: ${chk.missing.length} edited region${chk.missing.length === 1 ? " is" : "s are"} not in ${chk.stratPath} (${list}). The edits belong to a different campaign than that file. Re-import the campaign you edited, then save again.`, "warning", 20000);
+                      return;
+                    }
+                  }
+                }
                 // Safety net: snapshot the campaign text files before any write,
                 // so a bad edit can be rolled back via "Restore last backup".
                 // Skipped in export mode — the live mod isn't being changed, so
@@ -23888,7 +23920,15 @@ Highlighted nations appear in the campaign-select menu. Click any nation to togg
                 if (stratNeeded) {
                   if (devOrigStratRef.current && api.writeActiveModFile) {
                     try {
-                      const patched = patchDescrStrat(devOrigStratRef.current, resourcesData, populationData, devDirtyFiles, imgSize.height, factionOwnerChanges);
+                      // Patch the file as it stands NOW, not the import-time text:
+                      // the building / trait / garrison writes above already
+                      // changed it, and patching the old text threw them away.
+                      let baseText = devOrigStratRef.current;
+                      if (api.readActiveStrat) {
+                        const cur = await api.readActiveStrat();
+                        if (cur?.ok && (!targetStrat || cur.stratPath === targetStrat)) baseText = cur.text;
+                      }
+                      const patched = patchDescrStrat(baseText, resourcesData, populationData, devDirtyFiles, imgSize.height, factionOwnerChanges);
                       const camp = CAMPAIGNS[mapCampaign];
                       const relPath = camp?.stratPath || "world/maps/campaign/imperial_campaign/descr_strat.txt";
                       const res = await api.writeActiveModFile(relPath, patched);

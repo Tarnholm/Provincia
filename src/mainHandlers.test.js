@@ -226,12 +226,15 @@ const haveMod = (() => { try { return fs.existsSync(path.join(MOD_DIR, "export_d
   // the diplomacy matrix (trade-rights gating needs it). computeTradeNetwork
   // uses only settlements/diplomacy/settlementFields/ownerByCity/playerFaction/
   // turn, so those must match the full crack byte-for-byte.
-  it.runIf(saveFile)("crackSave tradeOnly matches the full crack on every field computeTradeNetwork reads", { timeout: 40000 }, () => {
+  it.runIf(saveFile)("crackSave tradeOnly matches the full crack on every field computeTradeNetwork reads", { timeout: 90000 }, () => {
     const { crackSave } = require("./saveCracker.js");
     const { risData239 } = require("./risDataSnapshot.js");
-    // the fixture saves come from the 239-faction RIS; read them against that data
-    const mod = risData239() || MOD_DIR;
     const buf = fs.readFileSync(saveFile);
+    // Read the save against the data it was made with: the 239-faction RIS
+    // snapshot, or the installed RIS (250 factions on the test branch). The
+    // diplomacy matrix only decodes against the matching faction list.
+    const sources = [risData239(), MOD_DIR].filter(Boolean);
+    const mod = sources.find((m) => crackSave(buf, m, { tradeOnly: true })?.diplomacy) || sources[0];
     const full = crackSave(buf, mod);
     const trade = crackSave(buf, mod, { tradeOnly: true });
     for (const k of ["settlements", "diplomacy", "settlementFields", "ownerByCity", "playerFaction", "turn"]) {

@@ -13,6 +13,17 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1535",
+    date: "2026-10-16",
+    items: [
+      { type: "fix", text: "**Saving a submod campaign writes to that campaign.** Edits made on a submod map such as RIS Light (buildings, characters, garrisons, armies, ownership, playable nations) were written into the main mod’s campaign instead, matched by region name — so they landed on the wrong towns and the submod’s own descr_strat was left unchanged. They now go to the campaign you imported, and Export puts them under that campaign’s own path." },
+      { type: "fix", text: "**Saving descr_regions keeps every region’s owner.** A save that changed anything in descr_regions (a hidden resource, say) also replaced each region’s rebel-default faction with its descr_strat starting owner — 352 of RIS Light’s 605 regions on one save. Only the lines you edited change now." },
+      { type: "fix", text: "**A save stops before writing if the edits don’t fit the file.** If an edited region isn’t in the descr_strat it would be written to, nothing is saved and the message names the regions and the file." },
+      { type: "fix", text: "**Ownership and playable-nation saves keep the building and character edits saved before them.** They used to rebuild descr_strat from the copy read at import, which threw those edits away." },
+      { type: "improvement", text: "**Bundled Crash Reporter v0.1.68.** When AI watch ran alongside the game, the reporter also sends that session’s AI watch rounds (what each AI faction planned every round, and why) as a follow-up message after the report." },
+    ],
+  },
+  {
     version: "0.9.1534",
     date: "2026-10-12",
     items: [

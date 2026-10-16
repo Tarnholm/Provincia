@@ -114,6 +114,14 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // writes are redirected under it (the live mod is left untouched). Pass null
   // to turn it off (back to in-place overwrite). Returns { ok, dir }.
   setModExportDir: (dir) => ipcRenderer.invoke("set-mod-export-dir", dir),
+  // The active slot's imported campaign folder, so descr_strat edits and Save
+  // writes go to that campaign (a submod's own ris_light, not the base mod's
+  // imperial_campaign). Returns { ok, folder, stratPath, dataRoot }.
+  setActiveCampaign: (folder) => ipcRenderer.invoke("set-active-campaign", folder),
+  // Save preflight: which of these region names the target descr_strat lacks.
+  checkStratRegions: (regionNames) => ipcRenderer.invoke("check-strat-regions", regionNames),
+  // The target descr_strat as it stands now (the exported copy in export mode).
+  readActiveStrat: () => ipcRenderer.invoke("read-active-strat"),
   // Scan a known path WITHOUT a dialog. Used to auto-reimport on launch
   // from the last-imported location.
   scanFolder: (dir) => ipcRenderer.invoke("scan-folder", dir),
