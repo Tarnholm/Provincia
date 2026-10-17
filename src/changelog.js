@@ -13,6 +13,15 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1540",
+    date: "2026-10-17",
+    items: [
+      { type: "fix", text: "**The Terrain map mode has its legend back.** It went missing in 0.9.1395, when the three income modes were merged." },
+      { type: "improvement", text: "**Export map as PNG saves at three times the screen's resolution.** Same view, sharper image." },
+      { type: "fix", text: "**The fertility scale follows the map.** RIS now runs Farm1 to Farm12, so the Fertility legend and the region panel's colour no longer assume 14; RIS_Light, which still reaches Farm14, keeps its 14." },
+    ],
+  },
+  {
     version: "0.9.1539",
     date: "2026-10-17",
     items: [

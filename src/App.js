@@ -2053,6 +2053,11 @@ function App() {
     });
   }, []);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+  // >1 only for the moment Export map as PNG redraws the view at that many
+  // times the screen's pixels (handleScreenshot); the canvas keeps its size on
+  // screen. Everything the draw effect paints sits under one map transform, so
+  // the export is the same picture, sharper.
+  const [exportScale, setExportScale] = useState(1);
   const [imgSize, setImgSize] = useState({ width: 800, height: 600 });
   const [rightColWidth, setRightColWidth] = useState(610);
   const [zoom, setZoom] = useState(1);
@@ -9722,7 +9727,8 @@ function App() {
           ];
         }));
       } else if (colorMode === "farm") {
-        // Farm fertility is encoded as a Farm1–Farm14 tag, not farm_level
+        // Farm fertility is encoded as a Farm1–FarmN tag, not farm_level (RIS
+        // tops out at Farm12 since 2026-10, RIS_Light at Farm14)
         const getFarm = (r) => {
           const m = String(r.tags || "").match(/\bFarm(\d+)\b/);
           return m ? parseInt(m[1], 10) : 0;
@@ -11441,7 +11447,8 @@ function App() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const { totalScale, baseOffsetX, baseOffsetY } = computeTransform();
-    ctx.setTransform(totalScale, 0, 0, totalScale, baseOffsetX + offset.x, baseOffsetY + offset.y);
+    const k = exportScale;
+    ctx.setTransform(totalScale * k, 0, 0, totalScale * k, (baseOffsetX + offset.x) * k, (baseOffsetY + offset.y) * k);
     ctx.imageSmoothingEnabled = false;
     // True while the user is actively dragging the map (v0.9.1475): heavy
     // layers drop to their cheapest form so the pan stays smooth, and the
@@ -12166,6 +12173,7 @@ function App() {
     offscreen,
     coloredOffscreen,
     canvasSize,
+    exportScale,
     imgSize,
     selectedProvinces,
     hoveredVcKey,
@@ -15079,7 +15087,18 @@ function App() {
     }
   }
 
+  // Export map as PNG: the current view at 3x the screen's pixels (was 1x,
+  // 2026-10-17). The canvas is redrawn at that size for one frame, saved by
+  // the effect below (it runs after the draw effect), then put back.
+  const SCREENSHOT_SCALE = 3;
   function handleScreenshot() {
+    if (!canvasRef.current) return;
+    // stay under Chromium's canvas limits (16384 px a side, ~268M px)
+    const k = Math.max(1, Math.min(SCREENSHOT_SCALE, Math.floor(16384 / Math.max(canvasSize.width, canvasSize.height)), Math.floor(Math.sqrt(2.6e8 / (canvasSize.width * canvasSize.height)))));
+    if (k === 1) { saveMapPng(); return; }
+    setExportScale(k);
+  }
+  function saveMapPng() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const url = canvas.toDataURL("image/png");
@@ -15090,6 +15109,10 @@ function App() {
     a.click();
     document.body.removeChild(a);
   }
+  useEffect(() => {
+    if (exportScale === 1) return;
+    try { saveMapPng(); } finally { setExportScale(1); }
+  }, [exportScale]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 0.9.x: Live map-control toggle. Extracted from its inline onClick so the
   // Live button can render up in the map-mode category pill (next to the
@@ -17317,6 +17340,8 @@ Click for unit card`}
     }
 
     if (colorMode === "farm") {
+      // the scale is the map's own top FarmN tag, as the colours are
+      const farmMax = Math.max(1, ...Object.values(regions).map((r) => { const m = String(r.tags || "").match(/\bFarm(\d+)\b/); return m ? parseInt(m[1], 10) : 0; }));
       return (
         <div style={panelStyle}>
           <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>Fertility <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span></div>
@@ -17324,8 +17349,8 @@ Click for unit card`}
             <div style={{ height: 12, borderRadius: 4, background: "linear-gradient(to right, rgb(210,0,30), rgb(210,200,30), rgb(50,200,30))" }} />
             <div style={labelRow}>
               <span>Fertility 1</span>
-              <span>Fertility 7</span>
-              <span>Fertility 14</span>
+              <span>Fertility {Math.round((1 + farmMax) / 2)}</span>
+              <span>Fertility {farmMax}</span>
             </div>
           </>}
         </div>
@@ -18543,6 +18568,12 @@ Click for unit card`}
           </>}
         </div>
       );
+    }
+    if (colorMode === "terrain") {
+      return renderDevLegend("Terrain Types",
+        (r) => getTagValue(r.tags, TERRAIN_TAGS) || "unknown",
+        { ...TERRAIN_COLORS, unknown: [100, 100, 100] },
+        { ...TERRAIN_LABELS, unknown: "Unknown" });
     }
     if (colorMode === "climate") {
       return renderDevLegend("Climates",
@@ -20465,8 +20496,8 @@ Click for unit card`}
                   onPointerLeave={(e) => { activePointersRef.current.delete(e.pointerId); if (activePointersRef.current.size < 2) pinchRef.current = null; handleMouseUp(); setHoveredResource(null); setHoveredArmy(null); setHoveredCity(null); lastInspectKeyRef.current = ""; setTileInspect(null); setHoverPos(null); }}
                   onDoubleClick={handleDoubleClick}
                   tabIndex={0}
-                  width={canvasSize.width}
-                  height={canvasSize.height}
+                  width={canvasSize.width * exportScale}
+                  height={canvasSize.height * exportScale}
                   style={{
                     display: "block",
                     background: "inherit",

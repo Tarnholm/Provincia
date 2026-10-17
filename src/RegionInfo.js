@@ -529,6 +529,23 @@ function RegionInfoSplitters({ infoColFrac, topRowFrac, buildFrac, onSetInfoColP
   );
 }
 
+// The map's top FarmN tag (RIS: Farm12 since 2026-10, RIS_Light still Farm14),
+// so a region's fertility colour sits on the same scale as the Fertility map
+// mode. Cached per regions object.
+const _farmMaxCache = new WeakMap();
+function farmMaxOf(regions) {
+  if (!regions || typeof regions !== "object") return 14;
+  if (_farmMaxCache.has(regions)) return _farmMaxCache.get(regions);
+  let max = 0;
+  for (const r of Object.values(regions)) {
+    const m = String((r && r.tags) || "").match(/\bFarm(\d+)\b/);
+    if (m) max = Math.max(max, parseInt(m[1], 10));
+  }
+  const out = max || 14;
+  _farmMaxCache.set(regions, out);
+  return out;
+}
+
 export default function RegionInfo({ info, modeExtra, devMode, buildings: buildingsProp, garrison, garrisonCommander, fieldArmies, factionDisplayNames, recruitable, recruitableAll, aorUnits, queue, saveFile, characters, liveUnits, liveOwner, ownerFactionId, factionTreasuries, factionRecordOwners, factionDiplomacy, allFactionDiplomacy, diplomacyMatrix, liveActive, treasuryHistory, factionWealth, factionRelationships, onShowInfo, startingGarrison, settlementTier, resources, resourceImages, recruitGatedBy, homelandFactions, taxLevel, happiness, orderFields, liveReligion, liveWonders, agentCensus, siegeInfo, tradeInfo, livePopulation, liveIncome, liveSize, modIconsDir, onFactionRightClick, onHighlightFactions, factionColors, recruitingNow, buildingQueue, designMode, infoColPct, topRowPct, buildRowPct, onSetInfoColPct, onSetTopRowPct, onSetBuildRowPct, onShowFamilyTree, hasFamilyTreeData, modDataDir, mineProspects, incomeExplainData, onExplainIncome, commanderInfo, factionCultures, statsCache, nonLivePortraitMap, traitData, onEditBuildings, onIconReplaced, colBox, onStageGeneral, pendingGenerals, onStageDiplomacy, pendingDiplomacy, regions, regionCentroids, victoryConditions, selectedArmyKey, onSelectArmy, onAddUnitToSelectedArmy, onRemoveUnitFromSelectedArmy, onDuplicateUnitInSelectedArmy, onReorderUnitInSelectedArmy, onMoveUnitBetweenArmies, onSetUnitUpgrade, onSetAllUnitsUpgrade, armyKeyOf, onToggleWealthPanel, wealthPanelOpen }) {
   // Faction ids (e.g. "parthia") → display name ("Persia" in Alexander
   // campaign). Parsed from the game's expanded_bi.txt.
@@ -1752,7 +1769,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           );
         })()}
         {(() => {
-          // Real fertility is encoded in the Farm## tag (Farm1..Farm14), not
+          // Real fertility is encoded in the Farm## tag (Farm1..FarmN), not
           // descr_regions field 7 — which RIS leaves at a constant 5 for every
           // region as a placeholder. Parse the tag list so we surface the
           // actual value, and colour-tint the number using the same red →
@@ -1761,7 +1778,7 @@ export default function RegionInfo({ info, modeExtra, devMode, buildings: buildi
           const m = tagBlob.match(/\bFarm(\d+)\b/);
           if (m) {
             const val = parseInt(m[1], 10);
-            const t = Math.max(0, Math.min(1, val / 14));
+            const t = Math.max(0, Math.min(1, val / farmMaxOf(regions)));
             const red   = t < 0.5 ? 210 : Math.round(210 - (t - 0.5) * 2 * 160);
             const green = t < 0.5 ? Math.round(t * 2 * 200) : 200;
             const blue  = 30;
