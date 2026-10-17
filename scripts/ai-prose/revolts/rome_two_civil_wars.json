@@ -1,5 +1,5 @@
 {
- "hash": "bf727726a7160ffa",
+ "hash": "4432acd714336d62",
  "model": "claude-opus-5-5 (Claude Code session)",
  "written": "2026-10-16",
  "prose": {
@@ -8,7 +8,7 @@
   "breaks_away_from": "Rome in the first war; in the second, whichever side won the first",
   "who_it_can_happen_to": "Any campaign, whether a human or the AI runs Rome; the offers to change sides and to accept a surrender go only to a human playing a Roman faction.",
   "what_sets_it_off": [
-   "First civil war: It is turn 242 (210 BC) or later and Rome holds more than 150 settlements at the start of its turn.",
+   "First civil war: It is turn 122 (240 BC) or later and Rome holds more than 150 settlements at the start of its turn.",
    "First civil war: The Italic revolt has happened and the Italic faction has been destroyed for two turns.",
    "First civil war: Rome holds 5 or more regions in each of at least 5 legion recruiting areas; holding the city of Rome counts as one of them.",
    "First civil war: With an AI-run Rome, the provinces rise at the end of Rome's turn. With a human Rome, a Roman family general must be out in the field at the end of a Roman turn, and the provinces rise when the 'A Divided Republic' message is answered at the start of the next Roman turn with a family general in the field.",

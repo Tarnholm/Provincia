@@ -1,14 +1,14 @@
 {
- "hash": "3b156ac8760afaa5",
+ "hash": "6f3c529452b3cf99",
  "model": "claude-opus-5-5 (Claude Code session)",
  "written": "2026-10-16",
  "prose": {
   "title": "The Italic Revolt",
-  "summary": "Corfinium, Teate, Asculum, Bovianum, Venusia, Canusium and Grumentum rise up together and form a new faction, the Italics. It can happen from turn 240 (211 BC), once the Polybian reforms are in effect and at least 20 colonies stand in Italy. The Italics are at war with the Roman houses and the Roman Senate from their first turn.",
+  "summary": "Corfinium, Teate, Asculum, Bovianum, Venusia, Canusium and Grumentum rise up together and form a new faction, the Italics. It can happen from turn 120 (241 BC), once the Polybian reforms are in effect and at least 20 colonies stand in Italy. The Italics are at war with the Roman houses and the Roman Senate from their first turn.",
   "breaks_away_from": "Whoever holds these towns at the time; at the campaign start, the House of Claudii, the House of Cornelii, the House of Aemilii and the Picentes",
   "who_it_can_happen_to": "It can happen in any Four Romans campaign, whoever the player is.",
   "what_sets_it_off": [
-   "From turn 240 (211 BC) onwards, once the Polybian reforms are in effect for the Roman factions, the game counts the Small Colony and Large Colony buildings in all settlements of the Camillan recruitment area (the 41 regions of Italy), whoever owns them; if there are at least 20, the revolt fires. The check runs at the end of every faction's turn and has no random roll."
+   "From turn 120 (241 BC) onwards, once the Polybian reforms are in effect for the Roman factions, the game counts the Small Colony and Large Colony buildings in all settlements of the Camillan recruitment area (the 41 regions of Italy), whoever owns them; if there are at least 20, the revolt fires. The check runs at the end of every faction's turn and has no random roll."
   ],
   "what_happens": [
    "Corfinium, Teate, Asculum, Bovianum, Venusia, Canusium and Grumentum all rebel at once, whoever owns them.",

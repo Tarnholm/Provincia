@@ -1,14 +1,14 @@
 {
- "hash": "7f686e6091e14052",
+ "hash": "e18f06c17a0a8dc6",
  "model": "claude-opus-5-5 (Claude Code session)",
  "written": "2026-10-16",
  "prose": {
   "title": "The Italic Revolt",
-  "summary": "Eight towns of central and southern Italy rise up and form a new faction, the Italics. It can only happen from turn 240 (211 BC), once the Gracchan reform has taken place and the Roman factions have built enough colonies. The Italics are at war with Rome and the other Roman factions from the moment they appear.",
+  "summary": "Eight towns of central and southern Italy rise up and form a new faction, the Italics. It can only happen from turn 120 (241 BC), once the Gracchan reform has taken place and the Roman factions have built enough colonies. The Italics are at war with Rome and the other Roman factions from the moment they appear.",
   "breaks_away_from": "Whoever holds the eight towns at the time; at the campaign start these are Rome, the Picentes, the Samnites and the Lucanians",
   "who_it_can_happen_to": "It can happen in any campaign, whoever the player is, once the Gracchan reform has taken place for Rome or one of the Roman factions that split from it.",
   "what_sets_it_off": [
-   "From turn 240 (211 BC) onwards, once the Gracchan reform has taken place for Rome, either of the two Roman rebel factions or the Roman Senate, the game counts the colony buildings (of either level) in every settlement held by these four factions anywhere on the map; if there are at least 20, there is a 35% chance of the revolt, rolled at the end of every faction's turn."
+   "From turn 120 (241 BC) onwards, once the Gracchan reform has taken place for Rome, either of the two Roman rebel factions or the Roman Senate, the game counts the colony buildings (of either level) in every settlement held by these four factions anywhere on the map; if there are at least 20, there is a 35% chance of the revolt, rolled at the end of every faction's turn."
   ],
   "what_happens": [
    "Corfinium, Teate, Asculum, Bovianum, Venusia, Canusium, Grumentum and Larinum all rebel, whoever owns them.",

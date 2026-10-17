@@ -1,14 +1,15 @@
 {
- "hash": "d2d2523a0dc97864",
+ "hash": "d7e0952d4c5b74f1",
  "model": "claude-opus-5-5 (Claude Code session)",
  "written": "2026-10-16",
  "prose": {
   "title": "The Chrysaorian Revolt",
-  "summary": "The Karian cities of Kaunos, Antiocheia-Alabanda and Stratonikeia break away and form the Chrysaorian League. At the start of the campaign Kaunos belongs to the Ptolemaic Empire and the other two to the Seleucid Empire. The revolt can break out early under Rhodian rule, and it happens by itself at turn 102 (245 BC) at the latest.",
+  "summary": "The Karian cities of Kaunos, Antiocheia-Alabanda and Stratonikeia break away and form the Chrysaorian League. At the start of the campaign Kaunos belongs to the Ptolemaic Empire and the other two to the Seleucid Empire. The revolt can break out early under Rhodian or foreign rule, and it happens by itself at turn 102 (245 BC) at the latest.",
   "breaks_away_from": "whoever holds Kaunos, Antiocheia-Alabanda and Stratonikeia (at the start, the Ptolemaic Empire and the Seleucid Empire)",
   "who_it_can_happen_to": "It can happen in any campaign, whether the three cities are held by a human or by the AI.",
   "what_sets_it_off": [
    "One of the three cities rebels on its own after Rhodes has held at least two of the three at the start of more than 10 turns in total (they need not be in a row).",
+   "From turn 72 (253 BC), one of the three cities rebels on its own while at least two of the three were held, at the start of that turn, by factions other than the Ptolemaic Empire, the Seleucid Empire and Rhodes (rebels included).",
    "If it has not happened before, the revolt breaks out automatically at the start of turn 102 (245 BC)."
   ],
   "what_happens": [

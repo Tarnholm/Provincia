@@ -568,6 +568,18 @@ const CSS = `
 :root[data-theme="dark"]{--bg:#12141a;--panel:#181b22;--raised:#1e222b;--side:#0e1015;--fg:#e9e6e0;--dim:#9a958c;--line:#2a2e37;
   --acc:#e8c15a;--acc-soft:rgba(232,193,90,.13);--shadow:0 1px 3px rgba(0,0,0,.4)}
 *{box-sizing:border-box}
+/* Thin gold scrollbars on no track, in both themes: the wide grey system bar was the one thing on
+   the page that did not belong to the mod, most of all inside the game's framed manual panel. Chromium
+   (Chrome, Edge, Steam's in-game browser) draws the 8px ::-webkit bar below. The standard properties
+   go only to browsers without ::-webkit-scrollbar (Firefox): where both apply, Chromium 121+ drops the
+   ::-webkit rules for its own "thin" bar, which on Windows is still the old one with arrow buttons -
+   gold but wide, as seen in the game's panel. scrollbar-width/-color are inherited, so the sidebar's
+   own scroll area takes them too. */
+@supports not selector(::-webkit-scrollbar){html{scrollbar-width:thin;scrollbar-color:rgba(232,193,90,.6) transparent}}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(232,193,90,.6);border:2px solid transparent;background-clip:padding-box;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background-color:#e8c15a}
 html{scroll-behavior:smooth}
 /* A heading jumped to lands at the top of the window, which is underneath a sticky bar — so
    every link in the jump strip put the section it named just out of sight, with the row of
