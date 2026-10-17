@@ -367,12 +367,9 @@ const cell = (s) => String(s).replace(/\|/g, "\\|");
 // recruitment gate, so their names appear all over the wiki. Printed as plain text they read
 // as broken links. They share ONE reference page, written at the foot of this file, and it is
 // never counted as playable.
-// MUST match the list in gen-ris-unit-pages.js, which links to that page.
-const NON_PLAYER = new Set([
-  "slave", "roman_senate", "dummies",
-  "roman_rebels_1", "roman_rebels_2", "hellenistic_rebels",
-  "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
-]);
+// The list is shared through lib/risVariants.js, so every generator links the same factions;
+// a campaign that makes one of them choosable (Four Romans: the two Roman houses) drops it there.
+const NON_PLAYER = new Set(require("./lib/risVariants.js").NON_PLAYER);
 const NON_PLAYABLE_FILE = "non-playable.md";
 let NON_PLAYABLE_SHOWN = 0;   // how many that page lists, for the sentence on factions.md
 const numberWord = (n) => ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"][n] || String(n);
@@ -986,7 +983,8 @@ ${require(path.join(__dirname, "lib", "wikiLinker.js")).makeLinker(OUT, { root: 
 // Egypt, the Seleucid rebels...) is not on the map on turn one, so it is not shown in another
 // faction's lists; on its OWN page every relation it will start with is shown. The two Roman
 // rebel factions sit in a corner of the map all game under a special condition and are hidden
-// everywhere.
+// everywhere, except where they are choosable (Four Romans: the Houses of Aemilii and Cornelii,
+// on the map from the first turn).
 const EMERGENT = (() => {
   const out = new Set();
   let cur = null;
@@ -1000,7 +998,8 @@ const EMERGENT = (() => {
   out.add("seleucid_rebels");
   return out;
 })();
-const DIPLO_HIDDEN = new Set(["roman_rebels_1", "roman_rebels_2", "dummies", "slave"]);
+const DIPLO_HIDDEN = new Set(["roman_rebels_1", "roman_rebels_2", "dummies", "slave"]
+  .filter((f) => !f.startsWith("roman_rebels_") || NON_PLAYER.has(f)));
 const diplomacySection = (f, display) => {
   const rel = new Map([...(DIPLO.get(f) || new Map())].filter(([t]) => EMERGENT.has(f) || !EMERGENT.has(t) || t === "slave"));
   const bySort = (x, y) => dipName(x).localeCompare(dipName(y));

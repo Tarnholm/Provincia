@@ -101,11 +101,7 @@ const FACTION_NAMES = (() => {
   return out;
 })();
 
-const NO_PAGE = new Set([
-  "slave", "roman_senate", "dummies",
-  "roman_rebels_1", "roman_rebels_2", "hellenistic_rebels",
-  "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
-]);
+const NO_PAGE = new Set(require("./lib/risVariants.js").NON_PLAYER);
 const npName = (f) => BI_NAMES[String(f).toLowerCase()] || String(f).replace(/_/g, " ");
 const facName = (f) => FACTION_NAMES[String(f).toLowerCase()] || npName(f);
 

@@ -92,11 +92,7 @@ const regionName = (r) => REGION_NAMES[r] || String(r).replace(/_/g, " ");
 
 // ── factions (same naming and linking as gen-ris-unit-pages.js) ──────────────
 const factionPages = new Set(listDir("factions", ".md"));
-const NON_PLAYABLE = new Set([
-  "slave", "roman_senate", "dummies",
-  "roman_rebels_1", "roman_rebels_2", "hellenistic_rebels",
-  "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
-]);
+const NON_PLAYABLE = new Set(require("./lib/risVariants.js").NON_PLAYER);
 const FACTION_NAMES = (() => {
   const out = {};
   const lower = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k.toLowerCase(), v]));

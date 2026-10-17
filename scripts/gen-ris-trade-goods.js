@@ -296,13 +296,9 @@ for (const g of GOODS) {
 const STRAT = gv.parseStrat(path.join(RIS, "world", "maps", "campaign", "imperial_campaign", "descr_strat.txt")) || {};
 const OWNER_OF = new Map();
 for (const [fac, v] of Object.entries(STRAT)) for (const s of (v.settlements || [])) OWNER_OF.set(s.region, fac);
-// Must match the exclusion set in gen-ris-faction-pages.js: these have no page, and ~1,000
+// The exclusion set every generator shares (lib/risVariants.js): these have no page, and ~1,000
 // regions are held by `slave` at the campaign start.
-const NO_PAGE = new Set([
-  "slave", "roman_senate", "dummies",
-  "roman_rebels_1", "roman_rebels_2", "hellenistic_rebels",
-  "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
-]);
+const NO_PAGE = new Set(require("./lib/risVariants.js").NON_PLAYER);
 // The non-playable factions take the name text/expanded_bi.txt gives them (`slave` is "Free
 // Peoples") and link the shared non-playable page — the same label and target every other
 // generator uses. The old "Rebels" came from shared.txt and appeared nowhere else in the wiki.

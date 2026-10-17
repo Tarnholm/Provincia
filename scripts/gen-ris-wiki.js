@@ -95,11 +95,7 @@ const M = (value) => ({ value });
 // Factions that are not real players: the rebel/slave pool, the Roman senate, the `dummies`
 // test faction, and the six rebel-style factions that exist to hold breakaway territory
 // rather than to be chosen. Everything else is playable in RIS.
-const NON_PLAYER_FACTIONS = [
-  "slave", "roman_senate", "dummies",
-  "roman_rebels_1", "roman_rebels_2", "hellenistic_rebels",
-  "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
-];
+const NON_PLAYER_FACTIONS = require("./lib/risVariants.js").NON_PLAYER;
 
 function measure(dir) {
   const o = {};

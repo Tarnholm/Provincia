@@ -755,13 +755,9 @@ try {
 // The faction generator skips the three non-player factions, so they have no page and
 // must not be linked. ~1,000 regions are held by `slave` at the campaign start, which is
 // where the 1,006 broken links came from.
-// Must match the exclusion set in gen-ris-faction-pages.js: linking a faction with no page
+// The exclusion set every generator shares (lib/risVariants.js): linking a faction with no page
 // was 1,006 broken links once already.
-const NO_PAGE = new Set([
-  "slave", "roman_senate", "dummies",
-  "roman_rebels_1", "roman_rebels_2", "hellenistic_rebels",
-  "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
-]);
+const NO_PAGE = new Set(require("./lib/risVariants.js").NON_PLAYER);
 const hasPage = (f) => !NO_PAGE.has(String(f).toLowerCase());
 // `slave` holds 502 of the 1,311 regions at the campaign start, and campaign_descriptions has
 // no title for it — so `facName` fell back to the raw token and the commonest owner on the map

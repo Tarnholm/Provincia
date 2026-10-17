@@ -625,12 +625,8 @@ const factionPages = (() => {
 // The nine factions that are not choosable. They still appear in recruitment gates — 74 unit
 // types name one — and dropping them silently made a unit recruitable only by the senate read
 // as recruitable by nobody. They share one reference page instead of having pages of their own.
-// MUST match the list in gen-ris-faction-pages.js, which writes that page.
-const NON_PLAYABLE = new Set([
-  "slave", "roman_senate", "dummies",
-  "roman_rebels_1", "roman_rebels_2", "hellenistic_rebels",
-  "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
-]);
+// One list for every generator (lib/risVariants.js); gen-ris-faction-pages.js writes that page.
+const NON_PLAYABLE = new Set(require("./lib/risVariants.js").NON_PLAYER);
 // Written by gen-ris-faction-pages.js, which the documented build order runs after this one.
 const NON_PLAYABLE_PAGE = "../factions/non-playable.md";
 

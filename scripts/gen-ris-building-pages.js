@@ -865,8 +865,9 @@ const NOT_PLAYED = new Set(["dummies", "slave", "non-playable"]);
 const CULTURE_MEMBERS = {};
 // The `*_rebels` splinters (Roman civil-war sides, Hellenistic/Ptolemaic/Seleucid rebels) only
 // ever appear mid-campaign under the AI, so a list that leaves them out still covers the culture
-// for anyone playing it.
-for (const [f, c] of Object.entries(FACTION_CULTURE)) if (!NOT_PLAYED.has(f) && !/_rebels/.test(f)) (CULTURE_MEMBERS[c] = CULTURE_MEMBERS[c] || []).push(f);
+// for anyone playing it. Not where one is choosable (Four Romans: the two Roman houses).
+const NON_PLAYER = new Set(require("./lib/risVariants.js").NON_PLAYER);
+for (const [f, c] of Object.entries(FACTION_CULTURE)) if (!NOT_PLAYED.has(f) && !(/_rebels/.test(f) && NON_PLAYER.has(f))) (CULTURE_MEMBERS[c] = CULTURE_MEMBERS[c] || []).push(f);
 const factionLabel = (tok) => {
   const t = String(tok).toLowerCase();
   const n = pageTitle("factions", `${t}.md`);

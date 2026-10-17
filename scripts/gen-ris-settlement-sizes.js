@@ -131,13 +131,9 @@ const sizeName = (tok) => {
   return String(tok);
 };
 
-// Same exclusion set as gen-ris-faction-pages.js and gen-ris-region-pages.js: linking a faction
+// The exclusion set every generator shares (lib/risVariants.js): linking a faction
 // with no page was 1,006 broken links once already.
-const NO_PAGE = new Set([
-  "slave", "roman_senate", "dummies",
-  "roman_rebels_1", "roman_rebels_2", "hellenistic_rebels",
-  "ptolemaic_rebels", "seleucid_rebels", "seleucid_rebels2",
-]);
+const NO_PAGE = new Set(require("./lib/risVariants.js").NON_PLAYER);
 const npName = (f) => BI_NAMES[String(f).toLowerCase()] || String(f).replace(/_/g, " ");
 const facName = (f) => FACTION_NAMES[String(f).toLowerCase()] || npName(f);
 const facLink = (f) => (NO_PAGE.has(String(f).toLowerCase())
