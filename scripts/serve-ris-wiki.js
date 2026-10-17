@@ -833,6 +833,9 @@ h1::after{content:"";display:block;height:15px;margin:.55rem 0 1rem;
 /* The home page's title and rule sit centred over the centred logo. */
 h1#welcome-to-ris-wiki{text-align:center}
 h1#welcome-to-ris-wiki::after{background-position:center center}
+/* The logo paragraph right under it spans the whole column too: the 104ch cap on lede paragraphs
+   made its box narrower than the title's, so the "centred" logo sat left of the title and rule. */
+h1#welcome-to-ris-wiki+p{max-width:none}
 h2{font-size:1.28rem;margin:2.1rem 0 .6rem;padding-bottom:.3rem;border-bottom:1px solid var(--line)}
 /* An h3 divides a list into runs — the faction index uses one per culture — so it carries a
    rule and a gold tick to be findable when scrolling, without becoming a card of its own. */
