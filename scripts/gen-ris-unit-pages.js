@@ -731,7 +731,11 @@ for (const b of blocks) {
     if (!s) return null;
     if (isPlaceholder(s)) { return null; }
     // The text files encode paragraph breaks as the literal two chars \ and n.
-    return s.replace(/\\n/g, "\n").split("\n").map((l) => l.trim()).filter(Boolean).join("\n\n").trim() || null;
+    const paras = s.replace(/\\n/g, "\n").split("\n").map((l) => l.trim()).filter(Boolean);
+    // RIS opens every long description with the unit's name in bold (ris_emphasis.py house style);
+    // the page's title already says it.
+    if (name && paras[0] === `<strong>${name.trim()}</strong>`) paras.shift();
+    return paras.join("\n\n").trim() || null;
   };
   const isPh = (s) => !!s && isPlaceholder(s);
   if (isPh(longD) || isPh(shortD)) placeholder++;
