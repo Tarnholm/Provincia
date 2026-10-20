@@ -245,6 +245,44 @@ resource aqueduct,       1,    102,  52   ; Etruria
       { type: "aqueduct", category: "ambience" },
     ]);
   });
+
+  // 4x2 map: left half "West" (10,20,30), right half "East" (40,50,60).
+  // Bottom-left origin, so storage row 0 is the map's bottom row.
+  const W = 4, H = 2;
+  const pixelAt = (col) => (col < 2 ? [10, 20, 30] : [40, 50, 60]);
+  const regionsMap = { "10,20,30": { region: "West" }, "40,50,60": { region: "East" } };
+  const header = (type, bpp) => {
+    const h = new Uint8Array(18);
+    h[2] = type; h[12] = W; h[14] = H; h[16] = bpp; h[17] = bpp === 32 ? 8 : 0;
+    return h;
+  };
+  const uncompressed24 = () => {
+    const px = [];
+    for (let i = 0; i < W * H; i++) { const [r, g, b] = pixelAt(i % W); px.push(b, g, r); }
+    return new Uint8Array([...header(2, 24), ...px]);
+  };
+  // RLE 32bpp, the RIS Light map_regions.tga format: per row one run of
+  // West, then a 2-pixel literal packet of East.
+  const rle32 = () => {
+    const out = [...header(10, 32)];
+    for (let row = 0; row < H; row++) {
+      out.push(0x80 | 1, 30, 20, 10, 255);
+      out.push(1, 60, 50, 40, 255, 60, 50, 40, 255);
+    }
+    return new Uint8Array(out);
+  };
+  const text = `
+resource wine,  1,  0, 0   ; Wrong
+resource iron,  1,  3, 1   ; Wrong
+`;
+
+  test.each([["uncompressed 24bpp", uncompressed24], ["RLE 32bpp", rle32]])("assigns regions by pixel from a %s TGA", (_, make) => {
+    const result = parseDescrStratResources(text, H, make(), regionsMap);
+    expect(result).toEqual({
+      West: [{ type: "wine", amount: 1, x: 0, y: 1, category: "trade" }],
+      East: [{ type: "iron", amount: 1, x: 3, y: 0, category: "trade" }],
+    });
+  });
 });
 
 describe("parseDescrStratArmies", () => {

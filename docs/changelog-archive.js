@@ -5,6 +5,34 @@
 // greppable in the working tree. Full authoritative history is in git.
 const CHANGELOG_ARCHIVE = [
   {
+    version: "0.9.1536",
+    date: "2026-10-16",
+    items: [
+      { type: "feature", text: "**Bring In a Faction also adds to factions already on the map.** Under the dormant factions there is now an “On the map” list. Pick one and it works as before: towns from this map (suggested from what it holds in the main mod), and characters, armies and family copied from the main mod. The faction keeps everything it already has. Its own towns and anyone already on the map are shown but can’t be picked twice. A faction has one leader and one heir, so a main-mod leader or heir arriving where the faction already has one comes as a plain family member, and the list says so. Characters can be added without taking a town." },
+      { type: "improvement", text: "**Characters brought in stand near their own towns.** Each one goes to the town nearest where they stand in the main mod, when the faction holds that town on this map. Before, everyone gathered at the first town chosen. The preview now says once per town when it ran out of free tiles, instead of a line for every character." },
+    ],
+  },
+  {
+    version: "0.9.1535",
+    date: "2026-10-16",
+    items: [
+      { type: "fix", text: "**Saving a submod campaign writes to that campaign.** Edits made on a submod map such as RIS Light (buildings, characters, garrisons, armies, ownership, playable nations) were written into the main mod’s campaign instead, matched by region name — so they landed on the wrong towns and the submod’s own descr_strat was left unchanged. They now go to the campaign you imported, and Export puts them under that campaign’s own path." },
+      { type: "fix", text: "**Saving descr_regions keeps every region’s owner.** A save that changed anything in descr_regions (a hidden resource, say) also replaced each region’s rebel-default faction with its descr_strat starting owner — 352 of RIS Light’s 605 regions on one save. Only the lines you edited change now." },
+      { type: "fix", text: "**A save stops before writing if the edits don’t fit the file.** If an edited region isn’t in the descr_strat it would be written to, nothing is saved and the message names the regions and the file." },
+      { type: "fix", text: "**Ownership and playable-nation saves keep the building and character edits saved before them.** They used to rebuild descr_strat from the copy read at import, which threw those edits away." },
+      { type: "improvement", text: "**Bundled Crash Reporter v0.1.68.** When AI watch ran alongside the game, the reporter also sends that session’s AI watch rounds (what each AI faction planned every round, and why) as a follow-up message after the report." },
+    ],
+  },
+  {
+    version: "0.9.1534",
+    date: "2026-10-12",
+    items: [
+      { type: "improvement", text: "**Loading a save no longer freezes the app.** The heavy read-and-decode of a 30–45 MB save now runs off the main thread, so the window stays responsive while it works. It is also decoded once and shared between the panels that need it (economy, tax plans, the settlement read) instead of being redone three to five times on every load." },
+      { type: "improvement", text: "**Switching map modes is instant.** Each mode’s coloured map is kept and reused until the underlying data changes, so flipping between, say, Faction, Population and Economy no longer rebuilds the whole map each time. The recolour itself is faster too, and the Culture map’s striped overlay is now prepared once rather than re-scaled on every repaint." },
+      { type: "improvement", text: "**Lighter and quicker to start.** The start-up sound is about 10 MB smaller, and the tool panels now load the moment you open one rather than all at once up front — so the app starts from a smaller download and a smaller first load." },
+    ],
+  },
+  {
     version: "0.9.1533",
     date: "2026-10-12",
     items: [

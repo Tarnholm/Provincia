@@ -308,27 +308,68 @@ function formatStratResourceLine(regionName, res, mapHeight) {
   return `resource        ${type}${amount}      ${x},${y}      ; ${regionName}`;
 }
 
+// Decode a truecolour TGA (type 2 uncompressed or type 10 RLE, 24/32bpp) to
+// top-down BGR rows: { w, h, bgr } with bgr[(row*w + col)*3]. Browser-safe
+// (Uint8Array, no Buffer) because the import flow runs in the renderer.
+// The RIS Light map_regions.tga is 32bpp RLE; reading it as raw pixels put
+// almost every resource on a garbage colour, so Light showed 3 resources.
+function decodeTgaBgr(tgaBuf) {
+  const bytes = tgaBuf instanceof Uint8Array ? tgaBuf
+    : new Uint8Array(tgaBuf instanceof ArrayBuffer ? tgaBuf : (tgaBuf.buffer || tgaBuf));
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const type = bytes[2];
+  const w = view.getUint16(12, true);
+  const h = view.getUint16(14, true);
+  const bpp = bytes[16] >> 3;
+  const topDown = (bytes[17] & 0x20) !== 0;
+  const cmapLen = bytes[1] === 1 ? view.getUint16(5, true) * (bytes[7] >> 3) : 0;
+  const dataOff = 18 + bytes[0] + cmapLen;
+  if ((type !== 2 && type !== 10) || (bpp !== 3 && bpp !== 4)) return null;
+  const total = w * h;
+  const stored = new Uint8Array(total * 3); // storage order
+  if (type === 2) {
+    for (let i = 0; i < total; i++) {
+      const s = dataOff + i * bpp, o = i * 3;
+      stored[o] = bytes[s]; stored[o + 1] = bytes[s + 1]; stored[o + 2] = bytes[s + 2];
+    }
+  } else {
+    let p = dataOff, count = 0;
+    while (count < total && p < bytes.length) {
+      const hdr = bytes[p++], n = Math.min((hdr & 0x7f) + 1, total - count);
+      if (hdr & 0x80) {
+        const b = bytes[p], g = bytes[p + 1], r = bytes[p + 2];
+        for (let i = 0; i < n; i++) { const o = (count + i) * 3; stored[o] = b; stored[o + 1] = g; stored[o + 2] = r; }
+        p += bpp;
+      } else {
+        for (let i = 0; i < n; i++) {
+          const o = (count + i) * 3;
+          stored[o] = bytes[p]; stored[o + 1] = bytes[p + 1]; stored[o + 2] = bytes[p + 2];
+          p += bpp;
+        }
+      }
+      count += n;
+    }
+  }
+  if (topDown) return { w, h, bgr: stored };
+  const bgr = new Uint8Array(total * 3);
+  const rowLen = w * 3;
+  for (let row = 0; row < h; row++) bgr.set(stored.subarray((h - 1 - row) * rowLen, (h - row) * rowLen), row * rowLen);
+  return { w, h, bgr };
+}
+
 function parseDescrStratResources(text, mapHeight, tgaBuf, regionsMap) {
   let pixelLookup = null;
-  if (tgaBuf && regionsMap) {
-    const ab = tgaBuf instanceof ArrayBuffer ? tgaBuf : (tgaBuf.buffer || tgaBuf);
-    const view = new DataView(ab);
-    const idLen = view.getUint8(0);
-    const w = view.getUint16(12, true);
-    const h = view.getUint16(14, true);
-    const bpp = view.getUint8(16);
-    const bytesPerPx = bpp / 8;
-    const dataOff = 18 + idLen;
-    const bytes = new Uint8Array(ab);
+  const decoded = tgaBuf && regionsMap ? decodeTgaBgr(tgaBuf) : null;
+  if (decoded) {
+    const { w, h, bgr } = decoded;
     const rgbToRegion = {};
     for (const [rgb, r] of Object.entries(regionsMap)) {
       if (r.region) rgbToRegion[rgb] = r.region;
     }
     pixelLookup = (mx, my) => {
       if (mx < 0 || mx >= w || my < 0 || my >= h) return null;
-      const fy = h - 1 - my;
-      const idx = dataOff + (fy * w + mx) * bytesPerPx;
-      const key = bytes[idx + 2] + "," + bytes[idx + 1] + "," + bytes[idx];
+      const idx = (my * w + mx) * 3;
+      const key = bgr[idx + 2] + "," + bgr[idx + 1] + "," + bgr[idx];
       return rgbToRegion[key] || null;
     };
   }
@@ -583,6 +624,7 @@ export {
   parseDescrStratFactions,
   parseDescrStratBuildings,
   parseDescrStratResources,
+  decodeTgaBgr,
   detectResourceOrientation,
   parseDescrStratArmies,
   parseDescrStratFactionWealth,

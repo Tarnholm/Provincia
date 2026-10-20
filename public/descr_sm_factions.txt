@@ -180,7 +180,7 @@
 			"defeat": "data/fmv/lose/brutii_eliminated.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "italic",
 		"default battle ai personality": "default_personality",
@@ -267,7 +267,7 @@
 			"defeat": "data/fmv/lose/scipii_eliminated.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "italic",
 		"default battle ai personality": "default_personality",
@@ -1674,7 +1674,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "dorian",
 		"default battle ai personality": "default_personality",
@@ -2200,7 +2200,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "caucasian",
 		"default battle ai personality": "default_personality",
@@ -2293,7 +2293,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -2386,7 +2386,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -2479,7 +2479,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -2603,7 +2603,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "scythian",
 		"default battle ai personality": "default_personality",
@@ -2696,7 +2696,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -2789,7 +2789,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": true,
 		"default religion": "phoenician",
 		"default battle ai personality": "default_personality",
@@ -3110,7 +3110,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "dorian",
 		"default battle ai personality": "default_personality",
@@ -3203,7 +3203,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "armenian",
 		"default battle ai personality": "default_personality",
@@ -3296,7 +3296,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "iberian",
 		"default battle ai personality": "default_personality",
@@ -3420,7 +3420,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "scythian",
 		"default battle ai personality": "default_personality",
@@ -3606,7 +3606,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "iberian",
 		"default battle ai personality": "default_personality",
@@ -3721,7 +3721,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "thracian",
 		"default battle ai personality": "default_personality",
@@ -3814,7 +3814,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -4020,7 +4020,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "iranian",
 		"default battle ai personality": "default_personality",
@@ -4113,7 +4113,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -4206,7 +4206,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": true,
 		"default religion": "ethiopian",
 		"default battle ai personality": "default_personality",
@@ -4299,7 +4299,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "germanic",
 		"default battle ai personality": "default_personality",
@@ -4392,7 +4392,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "iberian",
 		"default battle ai personality": "default_personality",
@@ -4578,7 +4578,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -4900,7 +4900,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -5108,7 +5108,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -5314,7 +5314,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -5407,7 +5407,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -5612,7 +5612,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "thracian",
 		"default battle ai personality": "default_personality",
@@ -5842,7 +5842,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "thracian",
 		"default battle ai personality": "default_personality",
@@ -5935,7 +5935,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -6028,7 +6028,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -6121,7 +6121,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -6214,7 +6214,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -6531,7 +6531,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "iberian",
 		"default battle ai personality": "default_personality",
@@ -6624,7 +6624,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -6717,7 +6717,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -6810,7 +6810,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -6903,7 +6903,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -6996,7 +6996,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": true,
 		"default religion": "mesopotamian",
 		"default battle ai personality": "default_personality",
@@ -7089,7 +7089,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "germanic",
 		"default battle ai personality": "default_personality",
@@ -7182,7 +7182,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "germanic",
 		"default battle ai personality": "default_personality",
@@ -7295,7 +7295,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "dorian",
 		"default battle ai personality": "default_personality",
@@ -7388,7 +7388,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "germanic",
 		"default battle ai personality": "default_personality",
@@ -7501,7 +7501,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "ionian",
 		"default battle ai personality": "default_personality",
@@ -7625,7 +7625,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "scythian",
 		"default battle ai personality": "default_personality",
@@ -7906,7 +7906,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "germanic",
 		"default battle ai personality": "default_personality",
@@ -7999,7 +7999,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -8112,7 +8112,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "ionian",
 		"default battle ai personality": "default_personality",
@@ -8205,7 +8205,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "caucasian",
 		"default battle ai personality": "default_personality",
@@ -8278,7 +8278,7 @@
 			"defeat": "data/fmv/lose/armenia.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "armenian",
 		"default battle ai personality": "default_personality",
@@ -8371,7 +8371,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -8464,7 +8464,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "thracian",
 		"default battle ai personality": "default_personality",
@@ -8557,7 +8557,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "thracian",
 		"default battle ai personality": "default_personality",
@@ -8786,7 +8786,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "ionian",
 		"default battle ai personality": "default_personality",
@@ -8900,7 +8900,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "delmato_pannonian",
 		"default battle ai personality": "default_personality",
@@ -9013,7 +9013,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "dardanian",
 		"default battle ai personality": "default_personality",
@@ -9126,7 +9126,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "delmato_pannonian",
 		"default battle ai personality": "default_personality",
@@ -9240,7 +9240,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "thracian",
 		"default battle ai personality": "default_personality",
@@ -9333,7 +9333,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -9426,7 +9426,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -9519,7 +9519,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -9819,7 +9819,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "northwest_greek",
 		"default battle ai personality": "default_personality",
@@ -9931,7 +9931,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "ionian",
 		"default battle ai personality": "default_personality",
@@ -10141,7 +10141,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -10234,7 +10234,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": true,
 		"default religion": "germanic",
 		"default battle ai personality": "default_personality",
@@ -10327,7 +10327,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "phoenician",
 		"default battle ai personality": "default_personality",
@@ -10513,7 +10513,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": true,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -10606,7 +10606,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "libyan",
 		"default battle ai personality": "default_personality",
@@ -10699,7 +10699,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": true,
 		"default religion": "germanic",
 		"default battle ai personality": "default_personality",
@@ -10792,7 +10792,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": true,
 		"default religion": "arab",
 		"default battle ai personality": "default_personality",
@@ -10999,7 +10999,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "arab",
 		"default battle ai personality": "default_personality",
@@ -11072,7 +11072,7 @@
 			"defeat": "data/fmv/lose/nabataea.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "judaean",
 		"default battle ai personality": "default_personality",
@@ -11165,7 +11165,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -11258,7 +11258,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "caucasian",
 		"default battle ai personality": "default_personality",
@@ -11465,7 +11465,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "germanic",
 		"default battle ai personality": "default_personality",
@@ -11558,7 +11558,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": true,
 		"default religion": "arab",
 		"default battle ai personality": "default_personality",
@@ -11672,7 +11672,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "venetic",
 		"default battle ai personality": "default_personality",
@@ -11899,7 +11899,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "delmato_pannonian",
 		"default battle ai personality": "default_personality",
@@ -12023,7 +12023,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "scythian",
 		"default battle ai personality": "default_personality",
@@ -12116,7 +12116,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "caucasian",
 		"default battle ai personality": "default_personality",
@@ -12209,7 +12209,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "iberian",
 		"default battle ai personality": "default_personality",
@@ -12302,7 +12302,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "iberian",
 		"default battle ai personality": "default_personality",
@@ -12416,7 +12416,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "illyrian",
 		"default battle ai personality": "default_personality",
@@ -12509,7 +12509,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "indian",
 		"default battle ai personality": "default_personality",
@@ -12602,7 +12602,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -12695,7 +12695,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -12809,7 +12809,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "dorian",
 		"default battle ai personality": "default_personality",
@@ -12990,7 +12990,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -13228,7 +13228,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "scythian",
 		"default battle ai personality": "default_personality",
@@ -13549,7 +13549,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "illyrian",
 		"default battle ai personality": "default_personality",
@@ -13642,7 +13642,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "iberian",
 		"default battle ai personality": "default_personality",
@@ -13735,7 +13735,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "germanic",
 		"default battle ai personality": "default_personality",
@@ -13849,7 +13849,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "liburnian",
 		"default battle ai personality": "default_personality",
@@ -13926,7 +13926,7 @@
 		"shadow faction": "timbuktu",
 		"shadow max provinces": 0,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "libyan",
 		"default battle ai personality": "default_personality",
@@ -14019,7 +14019,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": true,
 		"default religion": "arab",
 		"default battle ai personality": "default_personality",
@@ -14224,7 +14224,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "germanic",
 		"default battle ai personality": "default_personality",
@@ -14317,7 +14317,7 @@
 			"defeat": "data/fmv/lose/lycia.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "lycian",
 		"default battle ai personality": "default_personality",
@@ -14433,7 +14433,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "macedonian",
 		"default battle ai personality": "default_personality",
@@ -14547,7 +14547,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "dorian",
 		"default battle ai personality": "default_personality",
@@ -14661,7 +14661,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "thracian",
 		"default battle ai personality": "default_personality",
@@ -14847,7 +14847,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "germanic",
 		"default battle ai personality": "default_personality",
@@ -14940,7 +14940,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "libyan",
 		"default battle ai personality": "default_personality",
@@ -15240,7 +15240,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "libyan",
 		"default battle ai personality": "default_personality",
@@ -15446,7 +15446,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "arcadian",
 		"default battle ai personality": "default_personality",
@@ -15652,7 +15652,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "dorian",
 		"default battle ai personality": "default_personality",
@@ -15839,7 +15839,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "arab",
 		"default battle ai personality": "default_personality",
@@ -15932,7 +15932,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "caucasian",
 		"default battle ai personality": "default_personality",
@@ -16025,7 +16025,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "libyan",
 		"default battle ai personality": "default_personality",
@@ -16211,7 +16211,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "libyan",
 		"default battle ai personality": "default_personality",
@@ -16304,7 +16304,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -16397,7 +16397,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -16626,7 +16626,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "ionian",
 		"default battle ai personality": "default_personality",
@@ -16719,7 +16719,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -16812,7 +16812,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "iberian",
 		"default battle ai personality": "default_personality",
@@ -16905,7 +16905,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -16978,7 +16978,7 @@
 			"defeat": "data/fmv/lose/atropatene.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "assyrian",
 		"default battle ai personality": "default_personality",
@@ -17187,7 +17187,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "arab",
 		"default battle ai personality": "default_personality",
@@ -17618,7 +17618,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "iranian",
 		"default battle ai personality": "default_personality",
@@ -17919,7 +17919,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "arab",
 		"default battle ai personality": "default_personality",
@@ -18012,7 +18012,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "germanic",
 		"default battle ai personality": "default_personality",
@@ -18249,7 +18249,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "scythian",
 		"default battle ai personality": "default_personality",
@@ -18373,7 +18373,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "scythian",
 		"default battle ai personality": "default_personality",
@@ -18684,7 +18684,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -18777,7 +18777,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -18982,7 +18982,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "iberian",
 		"default battle ai personality": "default_personality",
@@ -19168,7 +19168,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -19375,7 +19375,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -19468,7 +19468,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -19561,7 +19561,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "phoenician",
 		"default battle ai personality": "default_personality",
@@ -19654,7 +19654,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -19768,7 +19768,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "ionian",
 		"default battle ai personality": "default_personality",
@@ -19985,7 +19985,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "armenian",
 		"default battle ai personality": "default_personality",
@@ -20078,7 +20078,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -20377,7 +20377,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "germanic",
 		"default battle ai personality": "default_personality",
@@ -20604,7 +20604,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "dorian",
 		"default battle ai personality": "default_personality",
@@ -20697,7 +20697,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -20790,7 +20790,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -20883,7 +20883,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -20976,7 +20976,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "arab",
 		"default battle ai personality": "default_personality",
@@ -21071,7 +21071,7 @@
 			"defeat": "data/fmv/lose/thessaly.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "aeolian",
 		"default battle ai personality": "default_personality",
@@ -21160,7 +21160,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "ethiopian",
 		"default battle ai personality": "default_personality",
@@ -21272,7 +21272,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "ionian",
 		"default battle ai personality": "default_personality",
@@ -21365,7 +21365,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -21480,7 +21480,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "triballian",
 		"default battle ai personality": "default_personality",
@@ -21666,7 +21666,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -21759,7 +21759,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "thracian",
 		"default battle ai personality": "default_personality",
@@ -21852,7 +21852,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "phoenician",
 		"default battle ai personality": "default_personality",
@@ -21945,7 +21945,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -22038,7 +22038,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -22131,7 +22131,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -22224,7 +22224,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -22315,7 +22315,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "germanic",
 		"default battle ai personality": "default_personality",
@@ -22408,7 +22408,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "venetic",
 		"default battle ai personality": "default_personality",
@@ -22501,7 +22501,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -22594,7 +22594,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -22687,7 +22687,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -22780,7 +22780,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -22873,7 +22873,7 @@
 		;;RESURRECTION no switch-back (generated): when its anchor dies, do not hand the anchor's towns to this faction
 		"allow shadow switchback": false,
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "celtic",
 		"default battle ai personality": "default_personality",
@@ -23065,7 +23065,7 @@
 			"defeat": "data/fmv/lose/egyptians_eliminated.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "macedonian",
 		"default battle ai personality": "default_personality",
@@ -23158,7 +23158,7 @@
 			"defeat": "data/fmv/lose/seleucid_rebels.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "macedonian",
 		"default battle ai personality": "default_personality",
@@ -23251,7 +23251,7 @@
 			"defeat": "data/fmv/lose/seleucid_rebels2.wmv",
 		},
 
-		"available in custom battles": false,
+		"available in custom battles": true,
 		"prefer naval invasions": false,
 		"default religion": "macedonian",
 		"default battle ai personality": "default_personality",
