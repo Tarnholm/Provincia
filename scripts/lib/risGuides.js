@@ -9,6 +9,7 @@
 //   g.byFaction -> Map(faction -> { key, title, body })  the one "Faction mechanics" pop-up
 //   g.toMarkdown(body, headingLevel) -> the text as markdown
 const fs = require("fs");
+require("./risEmphasis"); // styled runs in text/*.txt -> <em>/<strong>/<ins>
 const path = require("path");
 
 function loadText(RIS) {

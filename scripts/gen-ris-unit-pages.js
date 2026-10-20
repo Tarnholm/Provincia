@@ -32,6 +32,7 @@
  * of them into web-usable PNGs is a separate job - see the note at the foot of units.md.
  */
 const fs = require("fs");
+require("./lib/risEmphasis"); // styled runs in text/*.txt -> <em>/<strong>/<ins>
 const path = require("path");
 
 const argv = process.argv.slice(2);

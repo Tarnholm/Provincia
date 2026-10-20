@@ -92,6 +92,7 @@
  * throughout: no inline styles, no CSS, so GitHub Pages renders the same pages correctly.
  */
 const fs = require("fs");
+require("./lib/risEmphasis"); // styled runs in text/*.txt -> <em>/<strong>/<ins>
 const BUILDINGS = require("./ris-wiki-buildings.js");
 const path = require("path");
 

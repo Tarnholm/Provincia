@@ -21,6 +21,7 @@
  * gen-ris-unit-pages.js (unit pages and their titles, and the cards folder).
  */
 const fs = require("fs");
+require("./lib/risEmphasis"); // styled runs in text/*.txt -> <em>/<strong>/<ins>
 const path = require("path");
 const { parseMercPools, poolNames, poolFile } = require("./lib/mercPools.js");
 

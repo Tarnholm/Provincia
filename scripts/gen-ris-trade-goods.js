@@ -54,6 +54,7 @@
  * paragraph exists to stop, one already made once in a commit message for this generator.
  */
 const fs = require("fs");
+require("./lib/risEmphasis"); // styled runs in text/*.txt -> <em>/<strong>/<ins>
 const path = require("path");
 
 const argv = process.argv.slice(2);

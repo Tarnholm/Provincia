@@ -57,6 +57,7 @@
  * `Combat_V_<x>` resolves <x> against the mod's faction and culture names where it can.
  */
 const fs = require("fs");
+require("./lib/risEmphasis"); // styled runs in text/*.txt -> <em>/<strong>/<ins>
 const path = require("path");
 const { makeConditionReader } = require("./lib/risTriggerConditions.js");
 

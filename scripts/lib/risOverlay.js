@@ -12,6 +12,7 @@
 // campaign instead, with NO fallback to the base mod: a campaign file the submod does not have
 // (RIS Classic has no campaign script) does not exist for that campaign.
 const fs = require("fs");
+require("./risEmphasis"); // styled runs in text/*.txt -> <em>/<strong>/<ins>
 const path = require("path");
 
 const OVER = process.env.RIS_OVERLAY_DATA;

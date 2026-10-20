@@ -83,4 +83,9 @@ describe("parseTextDictionary", () => {
   test("empty input → empty object", () => {
     expect(parseTextDictionary("")).toEqual({});
   });
+  test("RIS emphasis markers are deleted, as the game does", () => {
+    const LS = String.fromCharCode(0x2028), ON = String.fromCharCode(0x2029);
+    const d = parseTextDictionary(`{a}x\n{b}${LS}\t${ON}\tStrategy${LS}\t\t\t\\nbody\n{c}y`);
+    expect(d).toEqual({ a: "x", b: "Strategy\nbody", c: "y" });
+  });
 });

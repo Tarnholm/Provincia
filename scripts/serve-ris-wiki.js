@@ -83,7 +83,7 @@ function inline(s) {
   // that wraps a unit's roster card so a click shows its info card.
   t = t.replace(/&lt;img([^&]*?)&gt;/g, "<img$1>");
   t = t.replace(/&lt;a\s([^&]*?)&gt;/g, "<a $1>").replace(/&lt;\/a&gt;/g, "</a>");
-  t = t.replace(/&lt;(\/?)(strong|em|code|br|sub|sup)&gt;/g, "<$1$2>");
+  t = t.replace(/&lt;(\/?)(strong|em|ins|code|br|sub|sup)&gt;/g, "<$1$2>");
   t = t.replace(/`([^`]+)`/g, (_, c) => `<code>${c}</code>`);
   t = t.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, a, src) => `<img src="${src}" alt="${a}">`);
   t = t.replace(/\[([^\]]*)\]\(([^)\s]+)\)/g, (_, txt, href) => `<a href="${href}">${txt}</a>`);

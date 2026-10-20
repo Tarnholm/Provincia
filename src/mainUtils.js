@@ -52,6 +52,11 @@ function makeLRU(limit) {
 // { key: text }. A key line is `{KEY}rest`; subsequent non-key lines continue
 // the previous value. `\n` escapes become real newlines; values are trimmed.
 // Pure — the file read + BOM/utf16 decode + caching stay in the caller.
+// RIS marks italic/bold/underline runs with invisible markers (U+2028 + three of U+2029/TAB, see
+// RIS _tools/_Tarnholm-tools/emphasis/ris_emphasis.py) that the game deletes; they are deleted here
+// too. Left in, `.` cannot cross U+2028, so a styled line failed the key match and was glued onto
+// the previous entry.
+const EMPHASIS_MARKER = new RegExp(String.fromCharCode(0x2028) + "[\\t" + String.fromCharCode(0x2029) + "]{3}", "g");
 function parseTextDictionary(text) {
   const entries = {};
   let curKey = null, curBuf = "";
@@ -59,7 +64,7 @@ function parseTextDictionary(text) {
     if (curKey != null) entries[curKey] = curBuf.replace(/\\n/g, "\n").trim();
     curKey = null; curBuf = "";
   };
-  for (const line of String(text).split(/\r?\n/)) {
+  for (const line of String(text).replace(EMPHASIS_MARKER, "").split(/\r?\n/)) {
     const m = line.match(/^\s*\{([^}]+)\}(.*)$/);
     if (m) { flush(); curKey = m[1].trim(); curBuf = m[2]; }
     else if (curKey != null) curBuf += "\n" + line;

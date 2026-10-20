@@ -50,6 +50,7 @@
  * no entry prints its token.
  */
 const fs = require("fs");
+require("./lib/risEmphasis"); // styled runs in text/*.txt -> <em>/<strong>/<ins>
 const path = require("path");
 
 const argv = process.argv.slice(2);

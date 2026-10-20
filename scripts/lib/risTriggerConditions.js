@@ -26,6 +26,7 @@
  * text behind a fold.
  */
 const fs = require("fs");
+require("./risEmphasis"); // styled runs in text/*.txt -> <em>/<strong>/<ins>
 const path = require("path");
 
 function makeConditionReader({ RIS, OUT, traitRef, ancRef }) {

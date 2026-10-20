@@ -43,6 +43,7 @@
  * wiki/ancillary-icons/, which this generator owns.
  */
 const fs = require("fs");
+require("./lib/risEmphasis"); // styled runs in text/*.txt -> <em>/<strong>/<ins>
 const path = require("path");
 const { makeConditionReader } = require("./lib/risTriggerConditions.js");
 

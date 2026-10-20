@@ -26,6 +26,7 @@
  */
 "use strict";
 const fs = require("fs");
+require("./lib/risEmphasis"); // styled runs in text/*.txt -> <em>/<strong>/<ins>
 const path = require("path");
 const { writeProse, storeProse, buildInput, SYSTEM, haveCredentials, MODEL } = require("./lib/aiProse.js");
 
