@@ -1330,6 +1330,22 @@ function legionUnitsFromEdb(buildingRecruits) {
   }
   return byTag;
 }
+// A legion's cohort and its 1st Cohort are ONE unit (user, 2026-10-21): pair
+// them into [{ unit, first }]. Paired by EDU dictionary (`<dict>_first`) since
+// the types can differ ("legio viiii hispaniensis early" / "legio ix hispanica
+// early first"), else by type + " first". Unpaired units stand alone.
+function pairLegionCohorts(units, dictMap) {
+  const dicts = new Map(units.map((u) => [String(dictMap[u] || "").toLowerCase(), u]));
+  const firstOf = new Map();
+  for (const u of units) {
+    const d = String(dictMap[u] || "").toLowerCase();
+    const base = (d && d.endsWith("_first") && dicts.get(d.slice(0, -6)))
+      || (/\sfirst$/i.test(u) && units.find((b) => b.toLowerCase() === u.toLowerCase().replace(/\s+first$/, "")));
+    if (base && base !== u) firstOf.set(base, u);
+  }
+  const firsts = new Set(firstOf.values());
+  return units.filter((u) => !firsts.has(u)).map((u) => ({ unit: u, first: firstOf.get(u) || null }));
+}
 // Fallback when the EDB isn't parsed: EDU unit types of a LEGACY zone tag.
 // Anchored on the `<stem> early`
 // unit: its name minus " early" is the legion's exact base ("legio xiii
@@ -18055,6 +18071,7 @@ Click for unit card`}
                 const isActive = activeSet && activeSet.has(tag);
                 const dimmed = activeSet && !isActive;
                 const units = legionUnitsByTag[tag] || legionUnitsFor(tag, unitNames);
+                const cohorts = pairLegionCohorts(units, dictMap);
                 const open = legionUnitsOpen === tag;
                 return (
                   <React.Fragment key={tag}>
@@ -18100,17 +18117,19 @@ Click for unit card`}
                             }
                           }
                         }}
-                        title={open ? "Hide units" : `Show this legion's ${units.length} unit${units.length === 1 ? "" : "s"}`}
+                        title={open ? "Hide units" : `Show this legion's ${cohorts.length} unit${cohorts.length === 1 ? "" : "s"}`}
                         style={{ color: "#aaa", fontSize: "0.68rem", padding: "0 2px", userSelect: "none" }}
                       >{open ? "▾" : "▸"}</span>
                     )}
                   </div>
                   {open && (
                     <div style={{ margin: "0 0 3px 20px", display: "flex", flexDirection: "column", gap: 1 }}>
-                      {units.map((u) => {
+                      {cohorts.map(({ unit: u, first }) => {
                         const fac = (unitOwnership[u] || [])[0] || "romans_julii";
                         const ic = getCachedUnitIcon(activeDataDir, fac, u);
                         const label = legionUnitLabels[`${modDataDir || ""}|${u}`] || prettyLegionUnit(u);
+                        const firstFac = first ? ((unitOwnership[first] || [])[0] || fac) : null;
+                        const firstLabel = first ? (legionUnitLabels[`${modDataDir || ""}|${first}`] || prettyLegionUnit(first)) : null;
                         return (
                           <div
                             key={u}
@@ -18123,7 +18142,16 @@ Click for unit card`}
                             {ic
                               ? <img src={ic} alt="" style={{ width: 16, height: 21, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} />
                               : <span style={{ width: 16, height: 21, background: "rgba(255,255,255,0.06)", borderRadius: 2, flexShrink: 0 }} />}
-                            <span>{label}</span>
+                            <span style={{ flex: 1 }}>{label}</span>
+                            {first && (
+                              <span
+                                onClick={(e) => { e.stopPropagation(); setInfoPopup({ type: "unit", name: first, faction: firstFac, label: firstLabel }); }}
+                                title={`${firstLabel} — open its unit card`}
+                                onMouseEnter={(e) => { e.currentTarget.style.color = "#eee"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.35)"; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.color = "#999"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; }}
+                                style={{ fontSize: "0.62rem", color: "#999", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 3, padding: "0 4px", flexShrink: 0 }}
+                              >1st Cohort</span>
+                            )}
                           </div>
                         );
                       })}
@@ -18134,7 +18162,7 @@ Click for unit card`}
               })}
               <div style={{ marginTop: 6, fontSize: "0.66rem", color: "#888", lineHeight: 1.4 }}>
                 Where each named legion can be recruited (legion hidden resources); striped regions hold two.
-                <br />Click an entry to isolate · Shift-click to add · ▸ lists the legion's units — click one for its unit card.
+                <br />Click an entry to isolate · Shift-click to add · ▸ lists the legion's units (with its 1st Cohort) — click one for its unit card.
               </div>
             </div>
           )}
