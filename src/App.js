@@ -1228,44 +1228,126 @@ const PRIMARY_AOR_TAGS = new Set(Object.keys(PRIMARY_AOR_TO_FACTION));
 // excluded from BOTH the Primary and Secondary map layers + the legend.
 // Keep in sync with RegionInfo.SPECIALTY_AOR_TAGS (which uses full aor_ tags).
 const SPECIALTY_AOR_BARE = new Set(["camillan", "euzonoi", "deuteroi", "oscan_southern", "thracian_hillmen"]);
-// Named-legion recruitment zones (RIS): the `aor_*_early` (+ aor_praetorian)
-// hidden resources gate WHERE each historical legion can be raised. The RIS
-// data has at most ONE legion tag per region (verified: 854 regions, zero
-// overlaps), so the Legions map mode is a solid-fill zone map. These tags are
-// excluded from the regular AOR layers/legend — they have their own map mode.
-// Names resolved against EDU unit types (legio i germanica early, …).
+// Named-legion recruitment zones (RIS): hidden resources that gate WHERE each
+// historical legion can be raised. Keyed by the FULL tag. Alternate map
+// (2026-10-21, 492d12668d) renamed them `legio_<numeral>[_<name>]_early` and
+// grew the set to 20; test/Light/Classic still carry the old `aor_<name>_early`
+// ten, kept below so those campaigns keep their map. Names are the in-game
+// names of the zone's "early" unit (export_units.txt) — the tag stem no longer
+// matches the unit (legio_ix_early → "legio viiii hispaniensis early"), so the
+// units come from the EDB gates (legionUnitsFromEdb). Colours: Kelly's
+// max-contrast set (XIIII + V lifted off the muted base); each legacy tag reuses its legion's colour. A region can
+// hold two zones (Rome: I Senatoria + Praetorians) → striped.
 const LEGION_AORS = {
-  germanica_early: { name: "Legio I Germanica",   col: [178, 44, 52] },
-  gallica_early:   { name: "Legio II Gallica",    col: [214, 121, 36] },
-  cyrenaica_early: { name: "Legio III Cyrenaica", col: [206, 178, 62] },
-  parthica_early:  { name: "Legio IIII Parthica", col: [92, 128, 186] },
-  alaudae_early:   { name: "Legio V Alaudae",     col: [122, 76, 158] },
-  ferrata_early:   { name: "Legio VI Ferrata",    col: [88, 138, 90] },
-  paterna_early:   { name: "Legio VII Paterna",   col: [146, 96, 60] },
-  hispana_early:   { name: "Legio IX Hispana",    col: [188, 96, 132] },
-  equestris_early: { name: "Legio X Equestris",   col: [66, 155, 162] },
-  gemina_early:    { name: "Legio XIII Gemina",   col: [148, 162, 74] },
-  praetorian:      { name: "Praetorian Guard",    col: [232, 202, 94] },
+  legio_i_early:                             { name: "Legio I",                            col: [190, 0, 50] },
+  legio_i_senatoria_early:                   { name: "Legio I Senatoria",                  col: [135, 86, 146] },
+  legio_iii_cyrenaica_early:                 { name: "Legio III Cyrenaica",                col: [206, 178, 62] },
+  legio_iii_gallica_early:                   { name: "Legio III Gallica",                  col: [243, 132, 0] },
+  legio_iiii_parthica_early:                 { name: "Legio IIII",                         col: [0, 103, 165] },
+  legio_iiii_macedonica_early:               { name: "Legio IIII Macedonica",              col: [161, 202, 241] },
+  legio_v_early:                             { name: "Legio V",                            col: [210, 60, 200] },
+  legio_v_alaudae_early:                     { name: "Legio V Alaudae",                    col: [96, 78, 151] },
+  legio_vi_ferrata_early:                    { name: "Legio VI Ferrata",                   col: [0, 136, 86] },
+  legio_vii_paterna_macedonica_early:        { name: "Legio VII Paterna Macedonica",       col: [101, 69, 34] },
+  legio_viii_gallica_early:                  { name: "Legio VIII Gallica",                 col: [249, 147, 121] },
+  legio_ix_early:                            { name: "Legio IX",                           col: [179, 68, 108] },
+  legio_x_equestris_early:                   { name: "Legio X Equestris",                  col: [66, 155, 162] },
+  legio_x_fretensis_early:                   { name: "Legio X Fretensis",                  col: [220, 211, 0] },
+  legio_xi_early:                            { name: "Legio XI",                           col: [136, 45, 23] },
+  legio_xii_antiqua_paterna_fulminata_early: { name: "Legio XII Antiqua Paterna Fulminata", col: [141, 182, 0] },
+  legio_xiii_gemina_early:                   { name: "Legio XIII Gemina",                  col: [226, 88, 34] },
+  legio_xiiii_early:                         { name: "Legio XIIII",                        col: [150, 230, 170] },
+  legio_xv_early:                            { name: "Legio XV",                           col: [194, 178, 128] },
+  legio_xv_apollinaris_early:                { name: "Legio XV Apollinaris",               col: [70, 70, 200] },
+  aor_praetorian:                            { name: "Praetorian Guard",                   col: [243, 195, 0] },
+  // Legacy tags (pre-2026-10-21 RIS, still on test / Light / Classic).
+  aor_germanica_early: { name: "Legio I Germanica",   col: [190, 0, 50] },
+  aor_gallica_early:   { name: "Legio II Gallica",    col: [243, 132, 0] },
+  aor_cyrenaica_early: { name: "Legio III Cyrenaica", col: [206, 178, 62] },
+  aor_parthica_early:  { name: "Legio IIII Parthica", col: [0, 103, 165] },
+  aor_alaudae_early:   { name: "Legio V Alaudae",     col: [96, 78, 151] },
+  aor_ferrata_early:   { name: "Legio VI Ferrata",    col: [0, 136, 86] },
+  aor_paterna_early:   { name: "Legio VII Paterna",   col: [101, 69, 34] },
+  aor_hispana_early:   { name: "Legio IX Hispana",    col: [179, 68, 108] },
+  aor_equestris_early: { name: "Legio X Equestris",   col: [66, 155, 162] },
+  aor_gemina_early:    { name: "Legio XIII Gemina",   col: [226, 88, 34] },
 };
-const LEGION_AOR_TAGS = new Set(Object.keys(LEGION_AORS));
+// Any `legio_*` hidden resource counts, so a legion added to the data later
+// still shows (name from the tag, stable palette colour) before it gets a row.
+function isLegionTag(t) {
+  return Object.prototype.hasOwnProperty.call(LEGION_AORS, t) || /^legio_\w+$/.test(t);
+}
+function legionInfo(tag) {
+  const known = LEGION_AORS[tag];
+  if (known) return known;
+  const name = prettyLegionUnit(tag.replace(/_early$/, "").replace(/_/g, " "));
+  return { name, col: CULTURE_PALETTE[stableAorColorIndex(tag, CULTURE_PALETTE.length)] };
+}
+// A region's legion zone tags, in descr_regions order.
+function getLegionTags(tags) {
+  const out = [];
+  for (const raw of String(tags || "").split(",")) {
+    const t = raw.trim().toLowerCase();
+    if (t && isLegionTag(t) && !out.includes(t)) out.push(t);
+  }
+  return out;
+}
+// Legacy zones are `aor_` tags, so the AOR layers see them as bare names.
+const isLegionAorBare = (a) => isLegionTag(`aor_${a}`);
 // Title-case an EDU legion unit type for display ("legio v alaudae early" →
 // "Legio V Alaudae Early"); roman-numeral tokens go fully uppercase.
-const ROMAN_NUMERALS = new Set(["i","ii","iii","iiii","iv","v","vi","vii","viii","ix","x","xi","xii","xiii","xiv","xv","xvi","xvii","xviii","xix","xx","xxi","xxii"]);
+const ROMAN_NUMERALS = new Set(["i","ii","iii","iiii","iv","v","vi","vii","viii","viiii","ix","x","xi","xii","xiii","xiiii","xiv","xv","xvi","xvii","xviii","xix","xx","xxi","xxii"]);
 function prettyLegionUnit(n) {
   return String(n).split(/\s+/).map((w) => ROMAN_NUMERALS.has(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 }
-// EDU unit types belonging to a legion zone tag. Anchored on the `<stem> early`
+// Units each legion zone recruits, read from the EDB recruit gates
+// (`hidden_resource <tag>` on a player-recruitable line) → { tag: [unit…] },
+// early before late, cohort before first cohort.
+function legionUnitsFromEdb(buildingRecruits) {
+  const byTag = {};
+  if (!buildingRecruits) return byTag;
+  for (const chain of Object.keys(buildingRecruits)) {
+    if (chain.startsWith("__")) continue;
+    const lvls = buildingRecruits[chain];
+    if (!lvls || typeof lvls !== "object") continue;
+    for (const recs of Object.values(lvls)) {
+      if (!Array.isArray(recs)) continue;
+      for (const rec of recs) {
+        const reqs = rec.requires || "";
+        if (!reqs || /\bnot\s+is_player\b/.test(reqs)) continue;
+        const positives = reqs.replace(/\bnot\s+hidden_resource\s+\S+/g, "");
+        for (const m of positives.matchAll(/\bhidden_resource\s+(\w+)/g)) {
+          const tag = m[1].toLowerCase();
+          if (!isLegionTag(tag)) continue;
+          (byTag[tag] || (byTag[tag] = new Set())).add(rec.unit);
+        }
+      }
+    }
+  }
+  const rank = (u) => (/\bearly\b/i.test(u) ? 0 : 2) + (/\bfirst\b/i.test(u) ? 1 : 0);
+  for (const tag of Object.keys(byTag)) {
+    byTag[tag] = [...byTag[tag]].sort((a, b) => (rank(a) - rank(b)) || a.localeCompare(b));
+  }
+  return byTag;
+}
+// Fallback when the EDB isn't parsed: EDU unit types of a LEGACY zone tag.
+// Anchored on the `<stem> early`
 // unit: its name minus " early" is the legion's exact base ("legio xiii
 // gemina"), which cleanly excludes similarly-named other legions (X Gemina Pia,
 // XIV Gemina Martia Victrix). Returns early/late × cohort/first-cohort rows.
 function legionUnitsFor(tag, unitNames) {
   if (!unitNames || !unitNames.length) return [];
-  if (tag === "praetorian") return unitNames.filter((n) => /\bpraetorian\b/i.test(n)).sort();
-  const stem = tag.replace(/_early$/, "");
+  if (tag === "aor_praetorian") return unitNames.filter((n) => /\bpraetorian\b/i.test(n)).sort();
+  const lower = new Map(unitNames.map((n) => [n.toLowerCase(), n]));
+  if (tag.startsWith("legio_")) {
+    // New-style tags mostly spell the early unit's type (legio_x_fretensis_early).
+    const early = tag.replace(/_/g, " ");
+    return [early, early + " first"].map((n) => lower.get(n)).filter(Boolean);
+  }
+  const stem = tag.replace(/^aor_/, "").replace(/_early$/, "");
   const early = unitNames.find((n) => new RegExp(`^legio\\s+\\S+\\s+${stem}\\s+early$`, "i").test(n));
   if (!early) return unitNames.filter((n) => n.toLowerCase().includes(stem)).sort();
   const base = early.replace(/\s+early$/i, "");
-  const lower = new Map(unitNames.map((n) => [n.toLowerCase(), n]));
   return [base + " early", base + " early first", base, base + " first"]
     .map((n) => lower.get(n.toLowerCase())).filter(Boolean);
 }
@@ -1355,7 +1437,7 @@ function splitAorsByLayer(tags, cityName) {
   // First pass: bucket by membership in PRIMARY_AOR_TAGS. Specialty AORs are
   // skipped entirely — they never colour the map (Specialty tab only).
   for (const a of all) {
-    if (SPECIALTY_AOR_BARE.has(a) || LEGION_AOR_TAGS.has(a)) continue; // legions have their own map mode
+    if (SPECIALTY_AOR_BARE.has(a) || isLegionAorBare(a)) continue; // legions have their own map mode
     if (PRIMARY_AOR_TAGS.has(a)) primary.push(a);
     else secondary.push(a);
   }
@@ -1850,6 +1932,44 @@ function regionsNumericLUT(regions) {
   }
   _regionsNumLut.set(regions, m);
   return m;
+}
+
+// Diagonal-stripe overlay at 8x map resolution (smooth lines) for regions that
+// carry a second colour. stripeColor(rgbKey) → [r,g,b] or null (no stripes).
+function buildStripeCanvas(pxData, W, H, stripeColor) {
+  const S = 8; // high-res scale for smooth stripes
+  const sW = W * S, sH = H * S;
+  const PERIOD = 48; // stripe spacing in hi-res pixels
+  const HALF = 4;    // half-width of stripe
+  const stripeCanvas = document.createElement("canvas");
+  stripeCanvas.width = sW; stripeCanvas.height = sH;
+  const sCtx = stripeCanvas.getContext("2d");
+  const sImg = sCtx.createImageData(sW, sH);
+  const sd = sImg.data;
+  // For each map pixel with stripes, fill the SxS hi-res block
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      const col = stripeColor(`${pxData[i]},${pxData[i+1]},${pxData[i+2]}`);
+      if (!col) continue;
+      for (let sy = 0; sy < S; sy++) {
+        for (let sx = 0; sx < S; sx++) {
+          const hx = x * S + sx, hy = y * S + sy;
+          const diag = (hx * 2 + hy) / Math.sqrt(5);
+          const pos = ((diag % PERIOD) + PERIOD) % PERIOD;
+          const dist = Math.abs(pos - PERIOD / 2);
+          if (dist < HALF) {
+            const oi = (hy * sW + hx) * 4;
+            const edge = HALF - dist;
+            const alpha = edge < 1.5 ? Math.round((edge / 1.5) * 255) : 255;
+            sd[oi] = col[0]; sd[oi+1] = col[1]; sd[oi+2] = col[2]; sd[oi+3] = alpha;
+          }
+        }
+      }
+    }
+  }
+  sCtx.putImageData(sImg, 0, 0);
+  return stripeCanvas;
 }
 
 // getColor receives (region, origR, origG, origB) so callers can add per-province variation
@@ -3062,6 +3182,8 @@ function App() {
   const [aorLegendFilter, setAorLegendFilter] = useState("");
   // Legions legend: which legion's unit list is expanded (tag or null).
   const [legionUnitsOpen, setLegionUnitsOpen] = useState(null);
+  // In-game unit names for the expanded legion's units ("<dataDir>|<type>" → name).
+  const [legionUnitLabels, setLegionUnitLabels] = useState({});
   // Mercenaries legend: which pool's unit list is expanded (name or null).
   const [mercUnitsOpen, setMercUnitsOpen] = useState(null);
 
@@ -4616,6 +4738,7 @@ function App() {
 
   const [buildingLevelsLookup, setBuildingLevelsLookup] = useState(null); // { chain: [level0Name, level1Name, ...] }
   const [buildingRecruits, setBuildingRecruits] = useState(null); // { chain: { level: [{unit, factions?}, ...] } }
+  const legionUnitsByTag = useMemo(() => legionUnitsFromEdb(buildingRecruits), [buildingRecruits]);
   // { region: { settlement, qtyVal, minerals:[{name,qty,tradeValue}], currentIncome,
   //   levels:[{chain, level, built, income}] } } — cracked mining formula readout
   // for the region panel (src/incomeModel.js mineProspects, 2026-07-17).
@@ -8779,7 +8902,7 @@ function App() {
             const reqs = rec.requires || "";
             if (!reqs || /\bnot\s+is_player\b/.test(reqs)) continue;
             const positives = reqs.replace(/\bnot\s+hidden_resource\s+\S+/g, "").replace(/\bnot\s+resource\s+\S+/g, "");
-            for (const m of positives.matchAll(/\bhidden_resource\s+(aor_\w+)/g)) {
+            for (const m of positives.matchAll(/\bhidden_resource\s+((?:aor|legio)_\w+)/g)) {
               const k = m[1].toLowerCase();
               if (!unitsByGate.has(k)) unitsByGate.set(k, new Set());
               unitsByGate.get(k).add(rec.unit);
@@ -8799,7 +8922,7 @@ function App() {
           if (!owner) continue;
           for (const t of String(rd.tags || "").split(",")) {
             const tag = t.trim().toLowerCase();
-            const set = tag.startsWith("aor_") ? unitsByGate.get(tag) : null;
+            const set = (tag.startsWith("aor_") || tag.startsWith("legio_")) ? unitsByGate.get(tag) : null;
             if (set) for (const u of set) addTo(recruitTriples, owner, u);
           }
           const resList = (resourcesData && (resourcesData[rd.region] || resourcesData[rd.city])) || [];
@@ -9621,20 +9744,20 @@ function App() {
         setStripeOverlay(null);
       } else if (colorMode === "legions") {
         // Legionary recruitment map: colour each region by its named-legion
-        // recruitment zone (aor_*_early / aor_praetorian hidden resource).
-        // RIS data has at most ONE legion tag per region → solid fill, no
-        // layers/stripes. Regions outside every legion zone stay muted.
-        const legionByRegionKey = {};
+        // recruitment zone (legio_*_early / legacy aor_*_early / aor_praetorian
+        // hidden resource). Fill = the region's first zone; a second zone
+        // (alt map: Rome = I Senatoria + Praetorians) is drawn as stripes.
+        // Regions outside every legion zone stay muted.
+        const legionsByRegionKey = {};
         for (const [key, r] of Object.entries(regions)) {
-          for (const a of getAors(r.tags)) {
-            if (LEGION_AOR_TAGS.has(a)) { legionByRegionKey[key] = a; break; }
-          }
+          const tags = getLegionTags(r.tags);
+          if (tags.length) legionsByRegionKey[key] = tags;
         }
-        console.log(`[legions] ${Object.keys(legionByRegionKey).length} regions in a legion recruitment zone`);
+        console.log(`[legions] ${Object.keys(legionsByRegionKey).length} regions in a legion recruitment zone`);
         setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions,
           (r, pr, pg, pb) => {
-            const tag = legionByRegionKey[`${pr},${pg},${pb}`];
-            const base = tag ? LEGION_AORS[tag].col : [80, 75, 70];
+            const tags = legionsByRegionKey[`${pr},${pg},${pb}`];
+            const base = tags ? legionInfo(tags[0]).col : [80, 75, 70];
             if (devFlatColors) return base;
             const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.6;
             return [
@@ -9643,7 +9766,11 @@ function App() {
               Math.max(0, Math.min(255, base[2] + v)),
             ];
           }));
-        setStripeOverlay(null);
+        const striped = Object.values(legionsByRegionKey).some((t) => t.length > 1);
+        setStripeOverlay(striped ? buildStripeCanvas(pxData, W, H, (key) => {
+          const tags = legionsByRegionKey[key];
+          return tags && tags.length > 1 ? legionInfo(tags[1]).col : null;
+        }) : null);
       } else if (colorMode === "culture") {
         const cultureColors = {};
         let ci = 0;
@@ -9674,45 +9801,10 @@ function App() {
           }));
         // Stripe overlay at high resolution (smooth diagonal lines)
         const hasStripes = Object.keys(ethCache).length > 0;
-        if (hasStripes) {
-          const S = 8; // high-res scale for smooth stripes
-          const sW = W * S, sH = H * S;
-          const PERIOD = 48; // stripe spacing in hi-res pixels
-          const HALF = 4;    // half-width of stripe
-          const stripeCanvas = document.createElement("canvas");
-          stripeCanvas.width = sW; stripeCanvas.height = sH;
-          const sCtx = stripeCanvas.getContext("2d");
-          const sImg = sCtx.createImageData(sW, sH);
-          const sd = sImg.data;
-          // For each map pixel with stripes, fill the SxS hi-res block
-          for (let y = 0; y < H; y++) {
-            for (let x = 0; x < W; x++) {
-              const i = (y * W + x) * 4;
-              const key = `${pxData[i]},${pxData[i+1]},${pxData[i+2]}`;
-              const eth = ethCache[key];
-              if (!eth || eth.length < 2) continue;
-              const col = getEthnicityColor(eth[1].name);
-              for (let sy = 0; sy < S; sy++) {
-                for (let sx = 0; sx < S; sx++) {
-                  const hx = x * S + sx, hy = y * S + sy;
-                  const diag = (hx * 2 + hy) / Math.sqrt(5);
-                  const pos = ((diag % PERIOD) + PERIOD) % PERIOD;
-                  const dist = Math.abs(pos - PERIOD / 2);
-                  if (dist < HALF) {
-                    const oi = (hy * sW + hx) * 4;
-                    const edge = HALF - dist;
-                    const alpha = edge < 1.5 ? Math.round((edge / 1.5) * 255) : 255;
-                    sd[oi] = col[0]; sd[oi+1] = col[1]; sd[oi+2] = col[2]; sd[oi+3] = alpha;
-                  }
-                }
-              }
-            }
-          }
-          sCtx.putImageData(sImg, 0, 0);
-          setStripeOverlay(stripeCanvas);
-        } else {
-          setStripeOverlay(null);
-        }
+        setStripeOverlay(hasStripes ? buildStripeCanvas(pxData, W, H, (key) => {
+          const eth = ethCache[key];
+          return eth && eth.length >= 2 ? getEthnicityColor(eth[1].name) : null;
+        }) : null);
       } else if (colorMode === "population") {
         const getPop = (r) => populationData[r.region] || populationData[r.region?.split("-")[0]] || populationData[r.city] || 0;
         const max = Math.max(1, ...Object.values(regions).map(getPop));
@@ -17051,8 +17143,8 @@ function App() {
     }
 
     if (colorMode === "legions") {
-      const tag = getAors(info.tags).find((a) => LEGION_AOR_TAGS.has(a));
-      return { label: "Legion", value: tag ? LEGION_AORS[tag].name : "None — outside every legion recruitment zone" };
+      const tags = getLegionTags(info.tags);
+      return { label: tags.length > 1 ? "Legions" : "Legion", value: tags.length ? tags.map((t) => legionInfo(t).name).join(" + ") : "None — outside every legion recruitment zone" };
     }
     if (colorMode === "aor") {
       const aors = getAors(info.tags);
@@ -17775,7 +17867,7 @@ Click for unit card`}
         }
       }
       const entries = Object.entries(seen)
-        .filter(([n]) => !SPECIALTY_AOR_BARE.has(n) && !LEGION_AOR_TAGS.has(n)) // specialty + legion AORs aren't AOR-map zones (legions have their own mode)
+        .filter(([n]) => !SPECIALTY_AOR_BARE.has(n) && !isLegionAorBare(n)) // specialty + legion AORs aren't AOR-map zones (legions have their own mode)
         .sort((a, b) => (counts[b[0]] - counts[a[0]]) || a[0].localeCompare(b[0]));
       if (entries.length === 0) {
         return (
@@ -17905,21 +17997,21 @@ Click for unit card`}
       );
     }
     if (colorMode === "legions") {
-      // Legionary recruitment legend: one row per named legion (fixed
-      // LEGION_AORS palette — same colours as the map render), sorted by
-      // zone size. Click to isolate the zone, shift-click to add.
+      // Legionary recruitment legend: one row per named legion (legionInfo
+      // palette — same colours as the map render), sorted by zone size.
+      // Click to isolate the zone, shift-click to add.
       const counts = {};
       for (const r of Object.values(regions)) {
-        for (const a of getAors(r.tags)) if (LEGION_AOR_TAGS.has(a)) counts[a] = (counts[a] || 0) + 1;
+        for (const t of getLegionTags(r.tags)) counts[t] = (counts[t] || 0) + 1;
       }
-      const entries = Object.keys(LEGION_AORS).filter((t) => counts[t])
-        .sort((a, b) => (counts[b] - counts[a]) || a.localeCompare(b));
+      const entries = Object.keys(counts)
+        .sort((a, b) => (counts[b] - counts[a]) || legionInfo(a).name.localeCompare(legionInfo(b).name));
       if (entries.length === 0) {
         return (
           <div style={panelStyle}>
             <div style={{ fontWeight: 700, marginBottom: 4 }}>Legionary Recruitment</div>
             <div style={{ fontSize: "0.72rem", color: "#aaa", fontStyle: "italic" }}>
-              No legion recruitment tags (aor_*_early / aor_praetorian) found in this campaign's descr_regions.txt.
+              No legion recruitment tags (legio_* / aor_*_early / aor_praetorian) found in this campaign's descr_regions.txt.
             </div>
           </div>
         );
@@ -17928,10 +18020,12 @@ Click for unit card`}
       const getMatchingKeys = (tag) => {
         const out = [];
         for (const [rgbKey, r] of Object.entries(regions)) {
-          if (getAors(r.tags).includes(tag)) out.push(rgbKey);
+          if (getLegionTags(r.tags).includes(tag)) out.push(rgbKey);
         }
         return out;
       };
+      const unitNames = unitOwnership ? Object.keys(unitOwnership).filter((n) => n !== "__dictionary") : [];
+      const dictMap = (unitOwnership && unitOwnership.__dictionary) || {};
       const handleLegendClick = (tag, isShift) => {
         setLegendFilter(prev => {
           const current = prev instanceof Set ? new Set(prev) : new Set();
@@ -17957,18 +18051,16 @@ Click for unit card`}
           {!legendCollapsed && (
             <div style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: "40vh", overflowY: "auto" }}>
               {entries.map((tag) => {
-                const { name, col } = LEGION_AORS[tag];
+                const { name, col } = legionInfo(tag);
                 const isActive = activeSet && activeSet.has(tag);
                 const dimmed = activeSet && !isActive;
-                const unitNames = unitOwnership ? Object.keys(unitOwnership).filter((n) => n !== "__dictionary") : [];
-                const units = legionUnitsFor(tag, unitNames);
+                const units = legionUnitsByTag[tag] || legionUnitsFor(tag, unitNames);
                 const open = legionUnitsOpen === tag;
-                const dictMap = (unitOwnership && unitOwnership.__dictionary) || {};
                 return (
                   <React.Fragment key={tag}>
                   <div
                     onClick={(e) => handleLegendClick(tag, e.shiftKey)}
-                    title={`${counts[tag]} region(s) tagged with aor_${tag}\nClick to isolate · Shift-click to add`}
+                    title={`${counts[tag]} region(s) tagged with ${tag}\nClick to isolate · Shift-click to add`}
                     style={{
                       display: "flex", alignItems: "center", gap: 6,
                       padding: "2px 4px", fontSize: "0.72rem",
@@ -17996,6 +18088,16 @@ Click for unit card`}
                           if (next) {
                             // warm the icons for the expanded legion's units
                             prefetchUnitIcons(activeDataDir, units.map((u) => [((unitOwnership[u] || [])[0] || "romans_julii"), u, dictMap[u]]), bumpIconCacheVersionCoalesced);
+                            const api = window.electronAPI;
+                            if (api?.getUnitDescription) {
+                              for (const u of units) {
+                                const k = `${modDataDir || ""}|${u}`;
+                                if (legionUnitLabels[k]) continue;
+                                api.getUnitDescription(modDataDir || null, u).then((d) => {
+                                  if (d && d.displayName) setLegionUnitLabels((prev) => ({ ...prev, [k]: d.displayName }));
+                                }).catch(() => {});
+                              }
+                            }
                           }
                         }}
                         title={open ? "Hide units" : `Show this legion's ${units.length} unit${units.length === 1 ? "" : "s"}`}
@@ -18008,10 +18110,11 @@ Click for unit card`}
                       {units.map((u) => {
                         const fac = (unitOwnership[u] || [])[0] || "romans_julii";
                         const ic = getCachedUnitIcon(activeDataDir, fac, u);
+                        const label = legionUnitLabels[`${modDataDir || ""}|${u}`] || prettyLegionUnit(u);
                         return (
                           <div
                             key={u}
-                            onClick={(e) => { e.stopPropagation(); setInfoPopup({ type: "unit", name: u, faction: fac, label: prettyLegionUnit(u) }); }}
+                            onClick={(e) => { e.stopPropagation(); setInfoPopup({ type: "unit", name: u, faction: fac, label }); }}
                             title="Open unit info"
                             onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
                             onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
@@ -18020,7 +18123,7 @@ Click for unit card`}
                             {ic
                               ? <img src={ic} alt="" style={{ width: 16, height: 21, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} />
                               : <span style={{ width: 16, height: 21, background: "rgba(255,255,255,0.06)", borderRadius: 2, flexShrink: 0 }} />}
-                            <span>{prettyLegionUnit(u)}</span>
+                            <span>{label}</span>
                           </div>
                         );
                       })}
@@ -18030,7 +18133,7 @@ Click for unit card`}
                 );
               })}
               <div style={{ marginTop: 6, fontSize: "0.66rem", color: "#888", lineHeight: 1.4 }}>
-                Where each named legion can be recruited (aor_*_early hidden resources).
+                Where each named legion can be recruited (legion hidden resources); striped regions hold two.
                 <br />Click an entry to isolate · Shift-click to add · ▸ lists the legion's units — click one for its unit card.
               </div>
             </div>
