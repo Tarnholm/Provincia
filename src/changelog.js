@@ -13,6 +13,16 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1542",
+    date: "2026-10-21",
+    items: [
+      { type: "fix", text: "**The Legions map shows RIS's new named legions.** RIS renamed its legion recruitment zones and added ten more, so the mode was blank. All 20 legions and the Praetorian Guard now show under their in-game names (Legio IIII, Legio IX, Legio VII Paterna Macedonica…), and campaigns that still use the old ten keep their map." },
+      { type: "improvement", text: "**Each legion lists the units it really recruits.** The list comes from the buildings file, and a legion's cohort and its 1st Cohort show as one unit: click the name for the cohort's card, or the 1st Cohort tag for that card." },
+      { type: "improvement", text: "**Regions in two legion zones are striped.** Rome, for example, raises both Legio I Senatoria and the Praetorians, and its hover names both." },
+      { type: "fix", text: "**Unit and building descriptions with RIS's bold or italic text read in full.** The hidden style markers cut a description off at its first styled word; Provincia now removes them, as the game does." },
+    ],
+  },
+  {
     version: "0.9.1541",
     date: "2026-10-20",
     items: [
