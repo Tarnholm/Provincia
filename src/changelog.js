@@ -13,6 +13,14 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1543",
+    date: "2026-10-23",
+    items: [
+      { type: "feature", text: "**Roman Provinces map mode.** Under Political, the map now shows RIS's 17 Roman provinces, from Hispania to Syria, each in its own colour with a strong border between provinces. Hover a region to see its province." },
+      { type: "improvement", text: "**See who holds each province.** The legend lists the provinces by size, and the bar under each one shows which factions hold its regions, at the start or in your live game. Click a province to zoom to it and select its regions." },
+    ],
+  },
+  {
     version: "0.9.1542",
     date: "2026-10-21",
     items: [
