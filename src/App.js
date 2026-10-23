@@ -290,6 +290,8 @@ const MAP_BTN_ORDER = [
   "layout.undo", "layout.reset", "layout.copy",
   // Live-only buttons (Live mode active).
   "live.stats", "live.reset", "live.picksave", "live.unpin",
+  // Roman Provinces (appended so no earlier letter shifts).
+  "mode.provinces",
 ];
 
 // Index → letter: 0→A … 25→Z, 26→AA, 27→AB, … (bijective base-26).
@@ -1294,6 +1296,45 @@ function getLegionTags(tags) {
 }
 // Legacy zones are `aor_` tags, so the AOR layers see them as bare names.
 const isLegionAorBare = (a) => isLegionTag(`aor_${a}`);
+// Roman provinces (RIS, 2026-10-22/23, ahowl): one `provincia_<name>` hidden
+// resource per region (main map, Four Romans, Light; 17 provinces), read by the
+// civil war scripts. Colours: Kelly's max-contrast set, picked so bordering
+// provinces differ. A provincia_* tag without a row still shows (name from the
+// tag, stable palette colour).
+const ROMAN_PROVINCE_COLORS = {
+  provincia_italia:              [193, 0, 32],
+  provincia_gallia_cisalpina:    [0, 83, 138],
+  provincia_gallia_transalpina:  [244, 200, 0],
+  provincia_hispania_citerior:   [128, 62, 117],
+  provincia_hispania_ulterior:   [255, 104, 0],
+  provincia_sardinia_et_corsica: [166, 189, 215],
+  provincia_sicilia:             [0, 125, 52],
+  provincia_africa:              [206, 162, 98],
+  provincia_cyrenaica:           [83, 55, 122],
+  provincia_illyricum:           [246, 118, 142],
+  provincia_macedonia:           [147, 170, 0],
+  provincia_achaia:              [66, 155, 162],
+  provincia_creta:               [150, 230, 170],
+  provincia_asia:                [255, 179, 0],
+  provincia_bithynia_et_pontus:  [0, 103, 165],
+  provincia_cilicia:             [179, 40, 81],
+  provincia_syria:               [255, 122, 92],
+};
+// The region's province tag (first provincia_* token), or null.
+function getRomanProvinceTag(tags) {
+  for (const raw of String(tags || "").split(",")) {
+    const t = raw.trim().toLowerCase();
+    if (/^provincia_\w+$/.test(t)) return t;
+  }
+  return null;
+}
+// "provincia_bithynia_et_pontus" → "Bithynia et Pontus".
+function romanProvinceName(tag) {
+  return tag.replace(/^provincia_/, "").split("_").map((w) => w === "et" ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+function romanProvinceColor(tag) {
+  return ROMAN_PROVINCE_COLORS[tag] || CULTURE_PALETTE[stableAorColorIndex(tag, CULTURE_PALETTE.length)];
+}
 // Title-case an EDU legion unit type for display ("legio v alaudae early" →
 // "Legio V Alaudae Early"); roman-numeral tokens go fully uppercase.
 const ROMAN_NUMERALS = new Set(["i","ii","iii","iiii","iv","v","vi","vii","viii","viiii","ix","x","xi","xii","xiii","xiiii","xiv","xv","xvi","xvii","xviii","xix","xx","xxi","xxii"]);
@@ -1485,7 +1526,7 @@ function splitAorsByLayer(tags, cityName) {
   return { primary, secondary, all };
 }
 
-const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource", "aor", "legions", "public_order", "mercenaries"]);
+const DEV_COLOR_MODES = new Set(["terrain", "climate", "port_level", "irrigation", "earthquakes", "rivertrade", "hidden_resource", "aor", "legions", "provinces", "public_order", "mercenaries"]);
 
 // Dev-toggle tracer (2026-07-16 "dev button does nothing" hunt). Every step of
 // the toggle logs to provincia.log so a dead click is attributable: handler
@@ -9323,7 +9364,7 @@ function App() {
           const next = !prev;
           devTraceClick("Ctrl+Shift+D", prev);
           // If turning off dev mode while a dev color mode is active, reset to faction
-          if (!next) setColorMode(cm => (DEV_COLOR_MODES.has(cm) && cm !== "legions" && cm !== "mercenaries" && cm !== "public_order") ? "faction" : cm); // legions/mercenaries/public_order are regular modes
+          if (!next) setColorMode(cm => (DEV_COLOR_MODES.has(cm) && cm !== "legions" && cm !== "provinces" && cm !== "mercenaries" && cm !== "public_order") ? "faction" : cm); // legions/provinces/mercenaries/public_order are regular modes
           return next;
         });
       }
@@ -9787,6 +9828,28 @@ function App() {
           const tags = legionsByRegionKey[key];
           return tags && tags.length > 1 ? legionInfo(tags[1]).col : null;
         }) : null);
+      } else if (colorMode === "provinces") {
+        // Roman provinces: each region coloured by its provincia_* hidden
+        // resource (one per region); regions outside every province stay muted.
+        const provByRegionKey = {};
+        for (const [key, r] of Object.entries(regions)) {
+          const t = getRomanProvinceTag(r.tags);
+          if (t) provByRegionKey[key] = t;
+        }
+        console.log(`[provinces] ${Object.keys(provByRegionKey).length} regions in a Roman province`);
+        setColoredOffscreen(buildColoredCanvas(pxData, W, H, regions,
+          (r, pr, pg, pb) => {
+            const t = provByRegionKey[`${pr},${pg},${pb}`];
+            const base = t ? romanProvinceColor(t) : [80, 75, 70];
+            if (devFlatColors) return base;
+            const v = (((pr * 31 + pg * 17 + pb * 7) & 0x3F) - 32) * 0.6;
+            return [
+              Math.max(0, Math.min(255, base[0] + v)),
+              Math.max(0, Math.min(255, base[1] + v)),
+              Math.max(0, Math.min(255, base[2] + v)),
+            ];
+          }));
+        setStripeOverlay(null);
       } else if (colorMode === "culture") {
         const cultureColors = {};
         let ci = 0;
@@ -12966,6 +13029,7 @@ function App() {
       irrigation: (r) => getTagValue(r.tags, IRRIGATION_TAGS) || "none",
       earthquakes:(r) => hasTag(r.tags, "earthquake") ? "yes" : "no",
       rivertrade: (r) => hasTag(r.tags, "rivertrade") ? "yes" : "no",
+      provinces:  (r) => getRomanProvinceTag(r.tags) || "none",
     };
     const classify = classifiers[colorMode];
     if (!classify) return;
@@ -15532,6 +15596,9 @@ function App() {
         { key: "faction", label: "Faction", badge: "mode.faction" },
         { key: "region", label: "Region", badge: "mode.region" },
         { key: "homeland", label: "Homeland", badge: "mode.homeland" },
+        // Roman Provinces: regular mode, in DEV_COLOR_MODES for the render /
+        // border / legend machinery like Legions.
+        { key: "provinces", label: "Roman Provinces", badge: "mode.provinces" },
         { key: "victory", label: "Victory", badge: "mode.victory" },
         { key: "diplomacy", label: "Diplomacy", badge: "mode.diplomacy" },
         { key: "explored", label: "Explored", badge: "mode.explored", live: true },
@@ -16695,7 +16762,7 @@ function App() {
             onClick={() => setDevMode(prev => {
               const next = !prev;
               devTraceClick("Dev button", prev);
-              if (!next) setColorMode(cm => (DEV_COLOR_MODES.has(cm) && cm !== "legions" && cm !== "mercenaries" && cm !== "public_order") ? "faction" : cm); // legions/mercenaries/public_order are regular modes
+              if (!next) setColorMode(cm => (DEV_COLOR_MODES.has(cm) && cm !== "legions" && cm !== "provinces" && cm !== "mercenaries" && cm !== "public_order") ? "faction" : cm); // legions/provinces/mercenaries/public_order are regular modes
               return next;
             })}
             style={{
@@ -17161,6 +17228,10 @@ function App() {
     if (colorMode === "legions") {
       const tags = getLegionTags(info.tags);
       return { label: tags.length > 1 ? "Legions" : "Legion", value: tags.length ? tags.map((t) => legionInfo(t).name).join(" + ") : "None — outside every legion recruitment zone" };
+    }
+    if (colorMode === "provinces") {
+      const t = getRomanProvinceTag(info.tags);
+      return { label: "Roman Province", value: t ? romanProvinceName(t) : "None — outside every Roman province" };
     }
     if (colorMode === "aor") {
       const aors = getAors(info.tags);
@@ -18006,6 +18077,105 @@ Click for unit card`}
                 Stripes = regions with multiple AORs (each AOR's color appears in rotation).
                 <br />Click an entry to isolate · Shift-click to add · Click again to clear.
               </div>
+            </div>
+            </>
+          )}
+        </div>
+      );
+    }
+    if (colorMode === "provinces") {
+      // Roman provinces legend: one row per province (map colours), biggest
+      // first, with a bar of who holds its regions (campaign start, or now
+      // when a live save is loaded). Click to isolate, shift-click to add.
+      const keysByTag = {};
+      for (const [rgbKey, r] of Object.entries(regions)) {
+        const t = getRomanProvinceTag(r.tags);
+        if (t) (keysByTag[t] || (keysByTag[t] = [])).push(rgbKey);
+      }
+      const entries = Object.keys(keysByTag)
+        .sort((a, b) => (keysByTag[b].length - keysByTag[a].length) || romanProvinceName(a).localeCompare(romanProvinceName(b)));
+      if (entries.length === 0) {
+        return (
+          <div style={panelStyle}>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>Roman Provinces</div>
+            <div style={{ fontSize: "0.72rem", color: "#aaa", fontStyle: "italic" }}>
+              No provincia_* hidden resources found in this campaign's descr_regions.txt.
+            </div>
+          </div>
+        );
+      }
+      const activeSet = legendFilter instanceof Set ? legendFilter : null;
+      const handleLegendClick = (tag, isShift) => {
+        setLegendFilter(prev => {
+          const current = prev instanceof Set ? new Set(prev) : new Set();
+          if (isShift) {
+            if (current.has(tag)) current.delete(tag);
+            else current.add(tag);
+          } else {
+            if (current.size === 1 && current.has(tag)) current.clear();
+            else { current.clear(); current.add(tag); }
+          }
+          const unique = [...new Set([...current].flatMap(t => keysByTag[t] || []))];
+          setSelectedProvinces(unique);
+          if (unique.length > 0 && !isShift) zoomToProvinces(unique);
+          return current.size === 0 ? null : current;
+        });
+      };
+      const facName = (f) => f === "slave" ? "Rebels" : ((factionDisplayNames && factionDisplayNames[f]) || String(f).replace(/_/g, " "));
+      const facCol = (f) => {
+        const fc = factionColors[String(f).toLowerCase()];
+        return (fc && fc.primary) ? `rgb(${fc.primary[0]},${fc.primary[1]},${fc.primary[2]})` : "#777";
+      };
+      const total = entries.reduce((n, t) => n + keysByTag[t].length, 0);
+      return (
+        <div style={panelStyle}>
+          <div style={{ fontWeight: 700, marginBottom: legendCollapsed ? 0 : 4, ...collapseToggle }} onClick={onCollapseClick}>
+            Roman Provinces ({entries.length}) <span style={{ fontSize: "0.7rem", color: "#888" }}>{collapseArrow}</span>
+          </div>
+          {!legendCollapsed && (
+            <>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: "40vh", overflowY: "auto" }}>
+              {entries.map((tag) => {
+                const col = romanProvinceColor(tag);
+                const keys = keysByTag[tag];
+                const isActive = activeSet && activeSet.has(tag);
+                const dimmed = activeSet && !isActive;
+                const held = {};
+                for (const k of keys) { const f = rgbToOwnerMap[k] || "slave"; held[f] = (held[f] || 0) + 1; }
+                const holders = Object.entries(held).sort((a, b) => (b[1] - a[1]) || facName(a[0]).localeCompare(facName(b[0])));
+                return (
+                  <div
+                    key={tag}
+                    onClick={(e) => handleLegendClick(tag, e.shiftKey)}
+                    title={`${romanProvinceName(tag)} — ${keys.length} region${keys.length === 1 ? "" : "s"} (${tag})\nHeld by: ${holders.map(([f, n]) => `${facName(f)} ${n}`).join(", ")}\nClick to isolate · Shift-click to add`}
+                    style={{
+                      padding: "2px 4px", borderRadius: 3, cursor: "pointer",
+                      background: isActive ? "rgba(255,255,255,0.10)" : "transparent",
+                      opacity: dimmed ? 0.42 : 1,
+                      transition: "opacity 0.12s, background 0.12s",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem" }}>
+                      <span style={{
+                        width: 12, height: 12, borderRadius: 2, flexShrink: 0,
+                        background: `rgb(${col[0]}, ${col[1]}, ${col[2]})`,
+                        border: "1px solid rgba(0,0,0,0.35)",
+                      }} />
+                      <span style={{ flex: 1, color: "#eee" }}>{romanProvinceName(tag)}</span>
+                      <span style={{ color: "#888", fontVariantNumeric: "tabular-nums", fontSize: "0.68rem" }}>{keys.length}</span>
+                    </div>
+                    <div style={{ display: "flex", height: 3, margin: "2px 0 1px 18px", borderRadius: 2, overflow: "hidden", background: "rgba(255,255,255,0.06)" }}>
+                      {holders.map(([f, n]) => (
+                        <span key={f} style={{ flex: n, background: facCol(f) }} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ marginTop: 6, fontSize: "0.66rem", color: "#888", lineHeight: 1.4 }}>
+              {total} regions in {entries.length} provinces. The bar under each province shows who holds its regions{currentOwnerByCity ? " now" : " at the start"}.
+              <br />Click a province to isolate it · Shift-click to add.
             </div>
             </>
           )}
