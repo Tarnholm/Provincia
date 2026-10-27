@@ -13,8 +13,9 @@
 //     last release came out after it (0.5 up to release-0.5.5, 0.6 up to release-0.6.7, 0.7
 //     after that). By date, not ancestry: 0.5.2 onward sit on a squashed release branch.
 //   - the release notes' team lists ("The team!", "The Team (as of this version)!", "New members
-//     to the team"), for every version that has them: 0.1-0.3, 0.5 and 0.6. 0.4's notes name no
-//     one and it predates the repo, so 0.4 has no section rather than an invented one.
+//     to the team"), for every version that has them: 0.1-0.3, 0.5 and 0.6.
+//   - for 0.4, whose notes name no one and which predates the repo's history: the game's own
+//     credits screen (data/credits.txt) as the 0.4 files had it, i.e. the repo's first import.
 // Names are the ones the team uses; a person with no known handle shows their git name's first
 // name only, never the full real name.
 const { execFileSync } = require("child_process");
@@ -212,6 +213,59 @@ for (const f of noteFiles.slice().reverse()) {
       const said = /\b(\d+\.\d+)\.\d+\b/.exec(p);
       const tv = (said && VERSIONS.find((x) => x.title === "v" + said[1])) || v;
       for (const c of hit) credit(tv, c, name);
+    }
+  }
+}
+
+// ── 0.4: the in-game credits screen ─────────────────────────────────────────
+// data/credits.txt from the repo's first import (2022-03-25, the 0.4.2 files), UTF-16, one
+// "_Heading" per area and names one or two to a line ("tone|Swagger"). Only the RIS team's part:
+// it ends where the Bugbusters (the same people again, as jokes) and Feral's own credits begin.
+// The Music block names the composers of the RS, RTR and 0 A.D. soundtracks the mod reuses; of
+// those only the ones the release notes credit as team (Apple, Tyler Cunningham, Saxon) count.
+const CREDITS_04 = { commit: "825012d1f0", file: "RIS/data/credits.txt" };
+const CREDIT_AREAS = {
+  "lead": "Leadership and organisation", "git repository administration": "Leadership and organisation",
+  "3d modelling": "Unit models, textures and animations", "textures": "Unit models, textures and animations",
+  "mapping": "Campaign map", "historical research": "History and research", "coding": "Coding and gameplay",
+  "balancing": "Coding and gameplay", "scripting": "Campaign scripts and events", "traits and ancillaries": "Traits and ancillaries",
+  "unit cards": "Interface, unit cards, banners and menus", "2d art": "Interface, unit cards, banners and menus",
+  "skies and environments": "Battle maps, terrain, weather and vegetation", "vegetation": "Battle maps, terrain, weather and vegetation",
+  "writing and text editing": "Texts and descriptions", "tools and programming": "Tools",
+  "discord and steam workshop administration": "Community and public relations", "public relations": "Community and public relations",
+  "testers (for this version)": "Testing", "music": "Music and sound",
+};
+const NOTE_ALIAS = { "rex basilicus": "rex basiliscus", "rex basiliscus": "rex basiliscus" }; // the credits screen's typo
+{
+  let text = "";
+  try { text = execFileSync("git", ["-C", REPO, "show", `${CREDITS_04.commit}:${CREDITS_04.file}`], { maxBuffer: 1 << 24 }).toString("utf16le"); } catch { /* not in this repo */ }
+  const v04 = VERSIONS.find((x) => x.title === "v0.4");
+  const musicTeam = new Set(["apple", "tyler cunningham", "saxon"]);
+  let area = null;
+  for (const raw of text.replace(/^﻿/, "").split(/\r?\n/)) {
+    const l = raw.trim();
+    if (/^_The Bugbusters/i.test(l)) break;
+    if (l.startsWith("_")) {
+      // Music has sub-headings of its own (_Roma Surrectum, _Rome: Total Realism, _0 A.D.).
+      const h = l.slice(1).trim().toLowerCase();
+      area = CREDIT_AREAS[h] || (area === "Music and sound" && !/thanks/.test(h) ? area : null);
+      continue;
+    }
+    if (!area || !l) continue;
+    const music = area === "Music and sound";
+    for (let n of (music && /^additional music by /i.test(l) ? [l.replace(/^additional music by /i, "")] : l.split("|"))) {
+      n = n.trim();
+      if (!n || /^and many more/i.test(n)) continue;
+      const note = (/\(([^)]*)\)\s*$/.exec(n) || [])[1] || "";
+      n = n.replace(/\s*\([^)]*\)\s*$/, "").trim();
+      const k = NOTE_ALIAS[key(n)] || key(n);
+      if (music && !musicTeam.has(k)) continue;
+      const said = /for (\d+\.\d+)/.exec(note);
+      const tv = (said && VERSIONS.find((x) => x.title === "v" + said[1])) || v04;
+      const cat = /music/i.test(note) ? "Music and sound" : /text files/i.test(note) ? "Texts and descriptions" : area;
+      if (!DISPLAY.has(k)) DISPLAY.set(k, n);
+      if (!tv.notes_.has(cat)) tv.notes_.set(cat, []);
+      if (!tv.notes_.get(cat).includes(k)) tv.notes_.get(cat).push(k);
     }
   }
 }
