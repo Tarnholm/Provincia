@@ -280,8 +280,8 @@ The [game guides](guides.md) document the new systems, and our [community guides
 
 Pointers for first time players:
 
-- Optimised for Hard/Hard difficulty
-- [Re-load every 8 turns](guides.md#optimizing-campaign-ai-performance)
+- RIS gameplay is optimised for Hard/Hard difficulty
+- To ensure optimal AI behavior and maintain a dynamic campaign experience, it is advisable to save and reload your game frequently. This action addresses a known issue where the AI may become passive. For best results, reload your saved game every 8 turns.
 - Settings changed to remastered
 
 ## Sortable tables

@@ -1356,11 +1356,11 @@ const cultureJump = cultureGroups
   .map((g) => `[${g.name || "Culture not determined"}](#${headingSlug(cultureHead(g))}) ${g.list.length}`)
   .join(" · ");
 
+// The opening paragraphs are the team's wording (wizzam on the GitHub wiki, 2026-10-24), kept as
+// written; only the counts are filled from the data.
 const idx = `# All factions
 
 [← wiki index](README.md) · [cultures](cultures.md) · [beliefs](religions.md)
-
-<div class="ptabs"><span>All factions</span><a href="remastered.md">Remastered</a></div>
 
 ${index.length} playable factions in ${cultureGroups.filter((g) => g.tok).length} cultures. **${index.filter((e) => REMASTERED.get(e.f) && REMASTERED.get(e.f).remastered).length}** of them have been [remastered](remastered.md) by the mod team and carry a red **(R)** after their name.
 
@@ -1369,15 +1369,13 @@ No faction page lists victory conditions: RIS sets them only to steer the comput
 ${numberWord(NON_PLAYABLE_SHOWN)} more factions appear in a campaign but are not playable. They are listed on
 [factions you cannot play](factions/${NON_PLAYABLE_FILE}).
 
-Culture is the game's own grouping, and it is not cosmetic: it settles which architecture a
-settlement is drawn with, which government levels the faction can install, and much of what
-the roster looks like. Factions in the same culture play more like each other than two
-neighbours in different ones do. Largest first within each.
+A faction's culture guides which architecture a settlement is drawn with, which government levels the faction can install, and much of what the roster looks like. Factions in the same culture play more like each other than two neighbours in different ones do. 
 
-**Units** is the faction's own roster: what it can raise from its own buildings anywhere it
-holds a settlement. It does not count regional units, which are gated on holding the right
-province rather than on being anyone in particular: every faction has between 424 and 443 of
-those, so the number tells you nothing about the faction. Each faction's page lists its own.
+In the below lists, largest factions appear first within each culture.
+
+Factional **Units** are also listed below, which can be recruited alongside AOR units. 
+
+<div class="ptabs"><span>All factions</span><a href="remastered.md">Remastered</a></div>
 
 **Jump to:** ${cultureJump}
 
