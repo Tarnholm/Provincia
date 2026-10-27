@@ -349,8 +349,10 @@ const EXTRA_JS = `
 
 // ── team menu, fetched at view time ──────────────────────────────────────────
 // wiki-notes/menu.json is written by the CI sync from the wiki page "Site-Menu": sections
-// and links the team adds without a rebuild. A section whose heading matches one already in
-// the menu gets the links appended; any other heading becomes a new section at the end.
+// and links the team adds without a rebuild. A heading that names a menu section ("Start
+// here") adds its links to that section; one that names a system in the menu ("Economy")
+// adds them under it, as child links; any other heading becomes a new section at the end.
+// A link the menu already has is not added twice.
 (function () {
   try {
     if (location.protocol === "file:" || typeof fetch !== "function") return;
@@ -358,34 +360,65 @@ const EXTRA_JS = `
     if (!nav) return;
     var base = window.RIS_BASE || "";
     var here = decodeURIComponent(location.pathname);
+    var same = function (a, b) { return String(a).trim().toLowerCase() === String(b).trim().toLowerCase(); };
     fetch(base + "wiki-notes/menu.json", { cache: "no-cache" })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (menu) {
         if (!menu || !menu.length) return;
-        var heads = Array.prototype.slice.call(nav.querySelectorAll("h4"));
+        var have = {};
+        Array.prototype.forEach.call(nav.querySelectorAll("a"), function (a) { have[a.href] = 1; });
         menu.forEach(function (sec) {
-          var items = (sec.items || []).filter(function (it) { return it && it.href && it.label; });
-          var h = null;
-          heads.forEach(function (x) { if (x.textContent.trim().toLowerCase() === String(sec.heading).trim().toLowerCase()) h = x; });
-          var anchor = null;
-          if (!h) {
-            h = document.createElement("h4");
-            h.textContent = sec.heading;
-            nav.appendChild(h);
-            heads.push(h);
-          } else {
-            anchor = h.nextElementSibling;
-            while (anchor && anchor.tagName === "A") anchor = anchor.nextElementSibling;
-          }
-          items.forEach(function (it) {
+          var links = (sec.items || []).filter(function (it) { return it && it.href && it.label; }).map(function (it) {
             var a = document.createElement("a");
             var ext = String(it.href).toLowerCase().indexOf("http") === 0 && String(it.href).indexOf("://") > 0;
             a.href = ext ? it.href : base + it.href.split("/").map(encodeURIComponent).join("/") + ".html";
             a.textContent = it.label;
             if (ext) { a.target = "_blank"; a.rel = "noopener"; }
             else if (here.slice(-(it.href.length + 5)) === it.href + ".html") a.className = "on";
-            nav.insertBefore(a, anchor);
-          });
+            return a;
+          }).filter(function (a) { if (have[a.href]) return false; have[a.href] = 1; return true; });
+          if (!links.length) return;
+          var heads = Array.prototype.slice.call(nav.querySelectorAll("h4"));
+          var h = heads.filter(function (x) { return same(x.textContent, sec.heading); })[0];
+          if (h) {
+            var next = heads[heads.indexOf(h) + 1] || null;
+            links.forEach(function (a) { nav.insertBefore(a, next); });
+            return;
+          }
+          var grp = Array.prototype.filter.call(nav.querySelectorAll(".grp"), function (g) {
+            return g.firstElementChild && same(g.firstElementChild.textContent, sec.heading);
+          })[0];
+          if (!grp) {
+            grp = Array.prototype.filter.call(nav.querySelectorAll(":scope > a"), function (a) { return same(a.textContent, sec.heading); })[0];
+            if (grp) {
+              // A plain link in the menu that now gets children of its own.
+              var g = document.createElement("div");
+              g.className = "grp";
+              nav.insertBefore(g, grp);
+              g.appendChild(grp);
+              var tw = document.createElement("button");
+              tw.type = "button"; tw.className = "fold"; tw.setAttribute("aria-expanded", "false");
+              tw.setAttribute("aria-label", grp.textContent + ": show or hide its pages");
+              g.appendChild(tw);
+              var k = document.createElement("div");
+              k.className = "kids";
+              g.appendChild(k);
+              grp = g;
+            }
+          }
+          if (grp) {
+            var kids = grp.querySelector(".kids");
+            links.forEach(function (a) { kids.appendChild(a); });
+            if (kids.querySelector("a.on")) {
+              grp.classList.add("open");
+              grp.querySelector(".fold").setAttribute("aria-expanded", "true");
+            }
+            return;
+          }
+          var nh = document.createElement("h4");
+          nh.textContent = sec.heading;
+          nav.appendChild(nh);
+          links.forEach(function (a) { nav.appendChild(a); });
         });
       })
       .catch(function () {});

@@ -259,8 +259,8 @@ With 0.7, RIS greatly expands and revamps the whole base game:
 
 On top of this, RIS 0.7 adds major new systems for:
 
-- [Recruitment](guides.md#recruitment-system)
-- [Economy](guides.md#buildings)
+- [Recruitment](recruitment.md)
+- [Economy](economy.md)
 - [Traits](traits.md) and [retinue](ancillaries.md)
 - [Reforms](reforms.md) and [revolts](revolts.md)
 

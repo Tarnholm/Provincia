@@ -8,6 +8,7 @@
 //   g.general   -> [{ key, title, body }]  shown to every player, in the order the game shows them
 //   g.byFaction -> Map(faction -> { key, title, body })  the one "Faction mechanics" pop-up
 //   g.toMarkdown(body, headingLevel) -> the text as markdown
+//   guideParts(body) -> the text split at the game's own part titles
 const fs = require("fs");
 require("./risEmphasis"); // styled runs in text/*.txt -> <em>/<strong>/<ins>
 const path = require("path");
@@ -98,4 +99,19 @@ function toMarkdown(body, level = 3) {
   return out.join("\n\n");
 }
 
-module.exports = { loadGuides, toMarkdown };
+// A guide's text in parts. The game marks a part with a short line of its own ("Unit
+// Categories", "Farms", "Treasury") rather than a heading, so a part starts at any paragraph of
+// one short line with no closing punctuation; toMarkdown's own headings count as well.
+//   -> [{ heading, md }]  heading null for the opening before the first part
+function guideParts(body) {
+  const parts = [{ heading: null, paras: [] }];
+  for (const p of toMarkdown(body, 3).split(/\n{2}/)) {
+    const t = p.trim();
+    const h = /^#+\s+(.+)$/.exec(t);
+    if (h || (!/\n/.test(t) && t.length <= 60 && !/[.:!?]$/.test(t) && !/^(\*\*|- )/.test(t))) parts.push({ heading: h ? h[1] : t, paras: [] });
+    else parts[parts.length - 1].paras.push(p);
+  }
+  return parts.filter((x) => x.heading || x.paras.length).map((x) => ({ heading: x.heading, md: x.paras.join("\n\n") }));
+}
+
+module.exports = { loadGuides, toMarkdown, guideParts };

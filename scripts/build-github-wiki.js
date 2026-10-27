@@ -168,22 +168,25 @@ fs.writeFileSync(path.join(OUT, '.import-stamp.json'), JSON.stringify({
   source: SRC,
 }, null, 2) + LF);
 
-// Sidebar — the flat page list is unusable at this scale without one
+// Sidebar — the flat page list is unusable at this scale without one. Its menu is the site's
+// (lib/wikiNav.js), a system's pages nested under it; the site's views go to the site.
+const { NAV } = require('./lib/wikiNav.js');
+const sbLink = ([href, label]) => {
+  const p = href.replace(/^\//, '').replace(/\.(md|html)$/, '');
+  if (/\.html$/.test(href)) return `[${label}](${SITE}${pageSet.has(p) ? p + '-sortable' : p}.html)`;
+  if (!pageSet.has(p)) return null;
+  return `[${label}](${WIKI}${p === 'README' ? 'Home' : pageName(p)})`;
+};
+const sbNav = NAV.flatMap(([heading, items]) => {
+  const lines = items.flatMap(([href, label, kids]) => {
+    const l = sbLink([href, label]);
+    if (!l) return [];
+    return ['- ' + l, ...(kids || []).map(sbLink).filter(Boolean).map((k) => '  - ' + k)];
+  });
+  return lines.length ? ['### ' + heading, '', ...lines, ''] : [];
+});
 const SB = [
-  '### Start here', '',
-  '- [Wiki index](' + WIKI + 'Home)',
-  '- [All factions](' + WIKI + 'factions)',
-  '- [All regions and settlements](' + WIKI + 'regions)',
-  '- [All units](' + WIKI + 'units)',
-  '- [All buildings](' + WIKI + 'buildings)',
-  '- [Trade goods](' + WIKI + 'trade-goods)',
-  '- [Cultures](' + WIKI + 'cultures)',
-  '- [Beliefs](' + WIKI + 'religions)',
-  '- [Character traits](' + WIKI + 'traits)',
-  '- [Retinue](' + WIKI + 'ancillaries)',
-  '- [Reforms](' + WIKI + 'reforms)',
-  ...(fs.existsSync(path.join(SRC, 'revolts.md')) ? ['- [Revolts](' + WIKI + 'revolts)'] : []),
-  '- [Settlement sizes](' + WIKI + 'sizes)', '',
+  ...sbNav,
   '### Overviews', '',
   '- [Factions vs vanilla](' + WIKI + 'factions-overview)',
   '- [The map](' + WIKI + 'map-and-regions)',

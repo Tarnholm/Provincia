@@ -188,7 +188,10 @@ function sectionise(html, rel) {
   };
   // A pane is half the content column, less the gap and the two cards' padding.
   const PANE_PX = 660;
-  const isWide = (s) => tableMinPx(s) > PANE_PX;
+  // A btab table (the buildings index) has fixed columns that already take ~32rem before its
+  // prose column, so it is meant for the whole row; measured, it went into a pane and the
+  // "What it is" column was left one word wide.
+  const isWide = (s) => /class="btab[ "]/.test(s) || tableMinPx(s) > PANE_PX;
   const secWrap = (s, wide) => `<section class="sec${wide ? " wide" : ""}">${s}</section>`;
 
   // Stacked, in the order they were written, each card the full width. `wide` is what the
@@ -704,6 +707,21 @@ nav.side a{display:block;color:var(--fg);text-decoration:none;padding:.2rem .45r
   border-radius:6px;line-height:1.4}
 nav.side a:hover{background:var(--acc-soft);color:var(--acc)}
 nav.side a.on{background:var(--acc-soft);color:var(--acc);font-weight:600}
+/* A system's pages fold under it (lib/wikiNav.js); the arrow sits over the right end of the
+   system's own link, which keeps its full width as a target. Child links keep the full text
+   colour: the muted tone fails AA on the sidebar surface. */
+nav.side a.in{color:var(--acc)}
+nav.side .grp{position:relative}
+nav.side .grp>a{padding-right:1.8rem}
+nav.side .fold{position:absolute;right:0;top:0;width:1.7rem;height:calc(1.4em + .4rem);padding:0;border:0;
+  border-radius:6px;background:none;color:var(--dim);cursor:pointer;display:flex;align-items:center;justify-content:center}
+nav.side .fold::before{content:"";width:.36rem;height:.36rem;border:solid currentColor;border-width:0 2px 2px 0;
+  transform:rotate(-45deg);transition:transform .12s}
+nav.side .fold:hover{background:var(--acc-soft);color:var(--acc)}
+nav.side .grp.open>.fold::before{transform:translateY(-.1rem) rotate(45deg)}
+nav.side .kids{display:none;margin:.1rem 0 .35rem .6rem;padding-left:.4rem;border-left:1px solid var(--line)}
+nav.side .grp.open>.kids{display:block}
+nav.side .kids a{font-size:.8rem;padding:.14rem .45rem}
 /* Every page uses the full width of the window. No max-width: a cap here left the right-hand
    side of a wide monitor empty, which is the thing being fixed. Readability is handled by
    splitting content into columns below rather than by throwing the space away. */
@@ -971,24 +989,7 @@ hr{border:none;border-top:1px solid var(--line);margin:2rem 0}
 }
 `;
 
-const NAV = [
-  ["Start here", [["/README.md", "Wiki index"], ["/guides.md", "Game guides"], ["/community-guides.html", "Community guides"], ["/factions.md", "Factions"],
-    ["/regions.md", "Regions and settlements"], ["/world-map.html", "World map"],
-    ["/units.md", "All units"], ["/mercenaries.md", "Mercenary pools"], ["/buildings.md", "Buildings"], ["/trade-goods.md", "Trade goods"], ["/wonders.md", "Wonders"],
-    ["/cultures.md", "Cultures"], ["/religions.md", "Beliefs"], ["/traits.md", "Traits"],
-    ["/ancillaries.md", "Retinue"], ["/reforms.md", "Reforms"], ["/revolts.md", "Revolts"], ["/sizes.md", "Settlement sizes"],
-    ["/diaries.md", "Developer diaries"], ["/community-videos.md", "Community videos"], ["/changelog.md", "Changelog"]]],
-  ["Region tags", [["/tags/terrain.md", "Terrain"],
-    ["/tags/climate.md", "Climate"], ["/tags/irrigation.md", "Water sources"],
-    ["/tags/ports.md", "Ports"], ["/aor.md", "Areas of recruitment"], ["/tags/recruitment-zones.md", "Recruitment zones"],
-    ["/tags/specialty-recruitment.md", "Specialty recruitment"],
-    ["/tags/recruitment-other.md", "Other recruitment tags"],
-    ["/tags/cultural-homeland.md", "Cultural homelands"],
-    ["/tags/hazards-and-river-trade.md", "River trade"],
-    ["/tags/fertility.md", "Fertility"]]],
-  ["Sortable views", [["/units.html", "Unit roster"], ["/regions.html", "Regions"],
-    ["/factions.html", "Factions"]]],
-];
+const { NAV, ALWAYS: NAV_ALWAYS, match: navMatch } = require("./lib/wikiNav.js");
 
 // "edit" opens the page's own editor on the GitHub wiki (GitHub lets only collaborators save).
 // A generated page's wiki name comes from page-map.json (flat names: "regions-Akarnania"); a
@@ -1010,17 +1011,24 @@ function editHref(rel) {
   return name ? `${WIKI_URL}/${encodeURIComponent(name)}/_edit` : WIKI_URL;
 }
 function navHtml(rel) {
-  const parts = [];
-  for (const [heading, items] of NAV) {
-    // Community guides is made by the site build (build-ris-wiki-site.js), not a generator, so
-    // it is never in the wiki folder; it is always listed.
-    const links = items.filter(([href]) => href === "/community-guides.html" || fs.existsSync(path.join(ROOT, href.slice(1))));
-    if (!links.length) continue;
-    parts.push(`<h4>${esc(heading)}</h4>` + links
-      .map(([href, label]) => `<a href="${href}"${href === rel ? ' class="on"' : ""}>${esc(label)}</a>`)
-      .join(""));
-  }
-  return parts.join("");
+  const there = (href) => NAV_ALWAYS.has(href) || fs.existsSync(path.join(ROOT, href.slice(1)));
+  const sections = NAV.map(([heading, items]) => [heading, items.filter(([href]) => there(href))
+    .map(([href, label, kids]) => [href, label, (kids || []).filter(([k]) => there(k))])]);
+  // A group opens when the reader is on one of its pages. Being ON a listed page beats being in
+  // a listed family, so a government's building page opens Government and not Buildings too.
+  const score = (href, kids) => Math.max(navMatch(href, rel), ...kids.map(([k]) => navMatch(k, rel)));
+  const best = Math.max(0, ...sections.flatMap(([, items]) => items.map(([href, , kids]) => score(href, kids))));
+  const link = (href, label) => {
+    const m = navMatch(href, rel);
+    return `<a href="${href}"${m === 2 ? ' class="on"' : m === 1 ? ' class="in"' : ""}>${esc(label)}</a>`;
+  };
+  return sections.filter(([, items]) => items.length).map(([heading, items]) => `<h4>${esc(heading)}</h4>` + items.map(([href, label, kids]) => {
+    if (!kids.length) return link(href, label);
+    const open = best > 0 && score(href, kids) === best;
+    return `<div class="grp${open ? " open" : ""}">${link(href, label)}`
+      + `<button type="button" class="fold" aria-expanded="${open}" aria-label="${esc(label)}: show or hide its pages"></button>`
+      + `<div class="kids">${kids.map(([k, l]) => link(k, l)).join("")}</div></div>`;
+  }).join("")).join("");
 }
 
 // A page deep in factions/ or units/ gets a trail back up, which the flat "Index ·" bar
@@ -1122,6 +1130,15 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
     var next = cur === "dark" ? "light" : "dark";
     document.documentElement.setAttribute("data-theme", next);
     localStorage.setItem(k, next);
+  });
+  // The menu's arrows fold a system's pages in or out. Listened for on the menu itself, so the
+  // groups the team's own menu adds later (wiki-notes/menu.json) fold too.
+  var side = document.querySelector("nav.side");
+  if(side) side.addEventListener("click", function(e){
+    var b = e.target;
+    if(!b.classList || !b.classList.contains("fold")) return;
+    var open = b.parentNode.classList.toggle("open");
+    b.setAttribute("aria-expanded", open ? "true" : "false");
   });
   // "/" focuses search, as on every docs site.
   document.addEventListener("keydown", function(e){

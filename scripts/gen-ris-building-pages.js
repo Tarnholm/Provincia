@@ -1680,9 +1680,7 @@ const subOrder = BUILDINGS.SUBSECTIONS.filter((x) => bySub.has(x))
 // and the rows too tight to scan. Nothing sets the row height; the icon is what sets it,
 // so doubling the icon doubles the row.
 const chainRow = (e) => `| ${e.firstIcon ? `<img src="${e.firstIcon}" alt="" width="48">` : ""} | [${e.name}](buildings/${e.slug}.md) | ${e.levels} | ${e.exclusions || ""} | ${e.blurb || "—"} |`;
-const chainSections = subOrder.map((sub) => [
-  `## ${sub}`,
-  "",
+const chainTable = (sub) => [
   // One layout for every category (btab: full width, fixed columns, never dealt into copies),
   // so a one-row section like Walls lines up with the rest instead of stretching oddly.
   '<div class="btab nodeal">',
@@ -1693,21 +1691,76 @@ const chainSections = subOrder.map((sub) => [
   "",
   "</div>",
   "",
+].join("\n");
+
+// The game's own Buildings guide (the advisor's "?", lib/risGuides.js), merged in (the team,
+// 2026-10-27): its opening heads the page and each of its parts sits above the table of the
+// category it describes. The governments and the treasury go on government.md instead.
+const { loadGuides, guideParts } = require("./lib/risGuides.js");
+const GUIDES = loadGuides(RIS).general;
+const econGuide = GUIDES.find((x) => x.key === "NEW_ECONOMY_BODY");
+const hasExportGuide = GUIDES.some((x) => x.key === "SPECIAL_LEVELS_BODY");
+// The guide's part titles that are not the category's own name.
+const PART_OF = { governments: "Government", treasury: "Government", walls: "Defences", farms: "Farming",
+  "grain imports & exports": "Food trade", markets: "Traders", "river ports": "Ports", sanitation: "Health", civic: "Civics" };
+const subOfPart = (h) => PART_OF[h.toLowerCase()] || BUILDINGS.SUBSECTIONS.find((x) => x.toLowerCase() === h.toLowerCase()) || null;
+const guideOpening = [], guideBySub = new Map(), guideStray = [];
+if (econGuide) for (const pt of guideParts(econGuide.body)) {
+  if (!pt.heading) { guideOpening.push(pt.md); continue; }
+  const sub = subOfPart(pt.heading);
+  if (!sub || !bySub.has(sub)) { guideStray.push(pt); continue; }
+  if (!guideBySub.has(sub)) guideBySub.set(sub, []);
+  guideBySub.get(sub).push(pt);
+}
+if (guideStray.length) console.warn(`buildings guide: ${guideStray.length} part(s) match no category, put at the end: ${guideStray.map((pt) => pt.heading).join(", ")}`);
+const guideText = (sub, link) => {
+  const parts = guideBySub.get(sub) || [];
+  // A category the guide covers in two parts (Ports, River Ports) titles the second.
+  return parts.map((pt) => (parts.length > 1 && pt.heading.toLowerCase() !== sub.toLowerCase() ? `### ${pt.heading}\n\n` : "") + link(pt.md) + "\n").join("\n");
+};
+const { makeLinker } = require("./lib/wikiLinker.js");
+const LINK_IDX = makeLinker(OUT, { root: "", self: "buildings.md" });
+const hasGov = guideBySub.has("Government");
+
+const chainSections = subOrder.map((sub) => [
+  `## ${sub}`,
+  "",
+  sub === "Government" && hasGov ? "What each government allows and costs: [Government](government.md).\n"
+    : sub === "Special Exports" && hasExportGuide ? `${guideText(sub, LINK_IDX)}What each export gives: [Economy](economy.md).\n`
+    : guideText(sub, LINK_IDX),
+  chainTable(sub),
 ].join("\n")).join("\n");
 
 const idx = `# Buildings
 
 [← wiki index](README.md)
 
-${index.length} building chains, ${totalLevels.toLocaleString("en-US")} levels in all.
+${guideOpening.length ? LINK_IDX(guideOpening.join("\n\n")) + "\n\n" : ""}${index.length} building chains, ${totalLevels.toLocaleString("en-US")} levels in all.
 
 ${totalExclusions ? `**Some buildings rule others out:** once one is built, the other cannot be built in
 that settlement. The *Excl.* column counts the levels in a chain that do this, and each page
 marks them.
 ` : ""}
 ${chainSections}
-`;
+${guideStray.map((pt) => `## ${pt.heading}\n\n${LINK_IDX(pt.md)}\n`).join("\n")}`;
 fs.writeFileSync(path.join(OUT, "buildings.md"), idx, "utf8");
+
+// government.md: the guide's governments and treasury, then the government buildings.
+if (hasGov) {
+  const LINK_GOV = makeLinker(OUT, { root: "", self: "government.md" });
+  const [first, ...rest] = guideBySub.get("Government");
+  const gov = `# Government
+
+[← wiki index](README.md) · [all buildings](buildings.md)
+
+${/^governments$/i.test(first.heading) ? "" : `## ${first.heading}\n\n`}${LINK_GOV(first.md)}
+
+${rest.map((pt) => `## ${pt.heading}\n\n${LINK_GOV(pt.md)}\n`).join("\n")}
+## Government buildings
+
+${chainTable("Government")}`;
+  fs.writeFileSync(path.join(OUT, "government.md"), gov, "utf8");
+}
 
 console.log(`${list.length} building pages written`);
 console.log(`  levels described:      ${totalLevels.toLocaleString("en-US")}`);
