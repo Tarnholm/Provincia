@@ -120,11 +120,11 @@ const CATS = [
 const ROLES = [
   ["Leadership and organisation", /\bleader\b|founder|face of the mod|gitlab|repository|mod file management|artist workflow admin|manager of testers/],
   ["Testing", /test|quality assurance|feedback/],
-  ["History and research", /histor|research|advisor|(celtic|germanic|seleucid|latin|armenian) specialist/],
+  ["History and research", /histor|research|advisor|(celtic|germanic|seleucid|latin|armenian) specialist|assyrians/],
   ["Texts and descriptions", /descri|\btexts?\b|text editing|\beditor\b|names data|\.txt|dev diaries/],
   ["Community and public relations", /public relations|\bpr support|discord|workshop|moddb|moderation/],
   ["Music and sound", /music|soundtrack|main menu theme/],
-  ["Interface, unit cards, banners and menus", /unit cards|\bui\b|loading screens|faction symbols|banners|faction icons|faction maps|splash screen|menu video|2d art/],
+  ["Interface, unit cards, banners and menus", /unit cards|\bui\b|loading screens|symbols|banners|faction icons|faction maps|splash screen|menu video|2d art/],
   ["Unit models, textures and animations", /3d|model|\blods?\b|textur|assembly|clothing|helmet|linothorax|greaves|upscal|shields/],
   ["Battle maps, terrain, weather and vegetation", /environments|vegetation|weather|lighting|graphics/],
   ["Campaign map", /mapping|resource coding|campaign graphics|geography/],
@@ -133,7 +133,7 @@ const ROLES = [
   ["Campaign AI", /ai balancing/],
   ["Coding and gameplay", /gameplay balancing/],
   ["Traits and ancillaries", /^traits$|ancillar/],
-  ["Factions and campaign setup", /characters|religions|cultures/],
+  ["Factions and campaign setup", /characters|religions|cultures|victory conditions/],
   ["Campaign scripts and events", /\bscript(?!.*tool)/],  // \b: "description writer" holds "script"
   ["Tools", /\btool/],
 ];
@@ -172,7 +172,10 @@ for (const c of commits) {
 }
 
 // ── release notes ───────────────────────────────────────────────────────────
-const key = (n) => String(n).toLowerCase().replace(/[-_\s]+/g, " ").trim();
+// Slips in the lists, so one person is listed once: "Rex Basilicus" (0.4 credits screen),
+// "Caligula Caesae" (0.4.0 Workshop page), "The. Shark" (0.6.0 notes).
+const ALIAS = { "rex basilicus": "rex basiliscus", "caligula caesae": "caligula caesar", "the. shark": "the shark" };
+const key = (n) => { const k = String(n).toLowerCase().replace(/[-_\s]+/g, " ").trim(); return ALIAS[k] || k; };
 const DISPLAY = new Map(); // key -> name as shown: the git name, else the newest notes' spelling
 const vnum = (f) => f.replace(/\.md$/, "").split(".").map(Number);
 const noteFiles = fs.existsSync(NOTES) ? fs.readdirSync(NOTES).filter((f) => /^\d+\.\d+\.\d+\.md$/.test(f))
@@ -184,13 +187,35 @@ const credit = (v, cat, name) => {
   if (!v.notes_.has(cat)) v.notes_.set(cat, []);
   if (!v.notes_.get(cat).includes(k)) v.notes_.get(cat).push(k);
 };
-// Newest release of a version first, so its own order (the lead first) is the one kept.
-for (const f of noteFiles.slice().reverse()) {
-  const ver = f.replace(/\.md$/, "");
+// The Steam Workshop descriptions (_resources/steam, one per release) carry the same team lists,
+// sometimes fuller than the notes (0.4.0's is the only 0.4 list with roles; Apple's "victory
+// conditions and some UI"). BBCode: the list follows an "[h1]The Team ...[/h1]" heading as
+// "[*]name: roles" items up to "[/list]". Read as the notes' markdown, so one parser takes both.
+const STEAM = opt("--steam", path.join(REPO, "_resources", "steam"));
+const steamFiles = fs.existsSync(STEAM) ? fs.readdirSync(STEAM).filter((f) => /\d+\.\d+\.\d+\.txt$/.test(f)) : [];
+const asMarkdown = (text) => {
+  const out = [];
+  let on = false;
+  for (const raw of text.split(/\r?\n/)) {
+    if (/\[h\d\][^\n]*team/i.test(raw)) { on = true; out.push("## The team"); continue; }
+    if (!on) continue;
+    if (/\[\/list\]/i.test(raw)) { const last = raw.replace(/\[\/list\][\s\S]*$/i, ""); if (/\[\*\]/.test(last)) out.push("- " + last.replace(/^.*?\[\*\]/, "").replace(/\[\/?[a-z]+\]/gi, "").trim()); on = false; out.push("## end"); continue; }
+    if (/\[\*\]/.test(raw)) out.push("- " + raw.replace(/^.*?\[\*\]/, "").replace(/\[\/?[a-z]+\]/gi, "").trim());
+  }
+  return out;
+};
+const sources = [
+  ...noteFiles.map((f) => ({ ver: f.replace(/\.md$/, ""), lines: fs.readFileSync(path.join(NOTES, f), "utf8").split(/\r?\n/) })),
+  ...steamFiles.map((f) => ({ ver: /(\d+\.\d+\.\d+)\.txt$/.exec(f)[1], steam: true, lines: asMarkdown(fs.readFileSync(path.join(STEAM, f), "utf8")) })),
+].sort((a, b) => { const x = a.ver.split(".").map(Number), y = b.ver.split(".").map(Number); return y[0] - x[0] || y[1] - x[1] || y[2] - x[2] || (a.steam ? 1 : 0) - (b.steam ? 1 : 0); });
+// Newest release of a version first, so its own order (the lead first) is the one kept; for one
+// release the notes before its Workshop page.
+for (const src of sources) {
+  const ver = src.ver;
   const v = VERSIONS.find((x) => x.notes.test(ver + "."));
   if (!v) continue;
   let sec = null;
-  for (const l of fs.readFileSync(path.join(NOTES, f), "utf8").split(/\r?\n/)) {
+  for (const l of src.lines) {
     if (/^## /.test(l)) { sec = /new members/i.test(l) ? "new" : /team/i.test(l) ? "team" : null; continue; }
     if (!sec) continue;
     const m = /^- ([^:]{1,60}?):\s*(.+)$/.exec(l);
@@ -235,7 +260,6 @@ const CREDIT_AREAS = {
   "discord and steam workshop administration": "Community and public relations", "public relations": "Community and public relations",
   "testers (for this version)": "Testing", "music": "Music and sound",
 };
-const NOTE_ALIAS = { "rex basilicus": "rex basiliscus", "rex basiliscus": "rex basiliscus" }; // the credits screen's typo
 {
   let text = "";
   try { text = execFileSync("git", ["-C", REPO, "show", `${CREDITS_04.commit}:${CREDITS_04.file}`], { maxBuffer: 1 << 24 }).toString("utf16le"); } catch { /* not in this repo */ }
@@ -258,7 +282,7 @@ const NOTE_ALIAS = { "rex basilicus": "rex basiliscus", "rex basiliscus": "rex b
       if (!n || /^and many more/i.test(n)) continue;
       const note = (/\(([^)]*)\)\s*$/.exec(n) || [])[1] || "";
       n = n.replace(/\s*\([^)]*\)\s*$/, "").trim();
-      const k = NOTE_ALIAS[key(n)] || key(n);
+      const k = key(n);
       if (music && !musicTeam.has(k)) continue;
       const said = /for (\d+\.\d+)/.exec(note);
       const tv = (said && VERSIONS.find((x) => x.title === "v" + said[1])) || v04;
@@ -270,6 +294,7 @@ const NOTE_ALIAS = { "rex basilicus": "rex basiliscus", "rex basiliscus": "rex b
   }
 }
 for (const n of new Set(Object.values(WHO))) DISPLAY.set(key(n), n);
+DISPLAY.set("the shark", "The Shark"); // the newest list's spelling is the slip ("The. Shark")
 
 // ── the page ────────────────────────────────────────────────────────────────
 function section(v) {
