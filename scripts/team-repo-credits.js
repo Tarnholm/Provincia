@@ -1,17 +1,21 @@
 #!/usr/bin/env node
-// The RIS Team page's "Work in the repository" section: who worked on what in the RIS repo, by
+// The RIS Team page's "v0.7" section: who worked on what in the RIS repo since the 0.6.7 release, by
 // category (asked for 2026-10-27; the team wanted categories, each folded, not files per person).
 //
-//   node scripts/team-repo-credits.js [C:/RIS] [report|md]
+//   node scripts/team-repo-credits.js [C:/RIS] [report|md] [--after release-0.6.7] [--title v0.7]
 //
 // report (default) lists every category with its people and the paths no category takes;
-// md prints the section to paste into RIS-Team.md on the GitHub wiki, replacing the old one.
+// md prints the section to paste into RIS-Team.md on the GitHub wiki, replacing the old one. Only
+// commits that are not part of the --after release count (every branch), under the heading --title.
 // Names are the ones the team page uses; a person with no known handle shows their git name's
 // first name only, never the full real name.
 const { execFileSync } = require("child_process");
 const fs = require("fs");
 const REPO = process.argv[2] || "C:/RIS";
-const MODE = process.argv[3] || "report";
+const MODE = process.argv[3] && !process.argv[3].startsWith("--") ? process.argv[3] : "report";
+const opt = (f, d) => { const i = process.argv.indexOf(f); return i >= 0 ? process.argv[i + 1] : d; };
+const AFTER = opt("--after", "release-0.6.7");
+const TITLE = opt("--title", "v0.7");
 
 // One person per email (several machines and spellings each); names as the team page writes them.
 const WHO = {
@@ -85,15 +89,14 @@ const add = (cat, who, date) => {
   m.set(who, e);
 };
 let cur = null;
-const span = new Map(); // person -> first and last commit anywhere: their years on the mod
+// Old feature branches never merged into the release are not part of it either, so a commit
+// must also be dated after the release to count.
+const SINCE = execFileSync("git", ["-C", REPO, "log", "-1", "--format=%ad", "--date=short", AFTER], { encoding: "utf8" }).trim();
 const flush = () => {
-  if (!cur) return;
+  if (!cur || cur.date <= SINCE) return;
   for (const c of cur.cats) add(c, cur.who, cur.date);
-  const s = span.get(cur.who) || { first: cur.date, last: cur.date };
-  if (cur.date < s.first) s.first = cur.date; if (cur.date > s.last) s.last = cur.date;
-  span.set(cur.who, s);
 };
-for (const line of execFileSync("git", ["-C", REPO, "log", "--all", "--no-merges", "--no-renames", "--format=@%H|%ae|%an|%ad", "--date=short", "--name-only"], { encoding: "utf8", maxBuffer: 1 << 30 }).split("\n")) {
+for (const line of execFileSync("git", ["-C", REPO, "log", "--all", `^${AFTER}`, "--no-merges", "--no-renames", "--format=@%H|%ae|%an|%ad", "--date=short", "--name-only"], { encoding: "utf8", maxBuffer: 1 << 30 }).split("\n")) {
   if (line.startsWith("@")) {
     flush();
     const [, email, name, date] = line.slice(1).split("|");
@@ -123,18 +126,17 @@ if (MODE === "md") {
     "Unit models, textures and animations", "Buildings and settlements", "Traits and ancillaries", "Texts and descriptions",
     "Interface, unit cards, banners and menus", "Battle maps, terrain, weather and vegetation", "Music and sound",
     "Campaign variants (Four Romans, Light, Classic)", "Tools", "Wiki"];
-  const yrs = (e) => (e.first.slice(0, 4) === e.last.slice(0, 4) ? e.first.slice(0, 4) : `${e.first.slice(0, 4)}–${e.last.slice(0, 4)}`);
   const mainArea = new Map(); // person -> the category with most of their commits
   for (const [cat, m] of per) for (const [w, e] of m) if (!mainArea.has(w) || e.n > per.get(mainArea.get(w)).get(w).n) mainArea.set(w, cat);
-  const out = ["## Work in the repository", ""];
+  const out = [`## ${TITLE}`, ""];
   for (const cat of ORDER) {
     const m = per.get(cat); if (!m) continue;
-    // Names and their years on the mod, no commit counts (as the team asked), most active first. A single commit in an area
+    // Names only (no commit counts or years, as the team asked), most active first. A single commit in an area
     // is a passing touch, not work there, unless it is the area that person worked in most.
     const people = [...m].filter(([w, e]) => e.n > 1 || mainArea.get(w) === cat).sort((a, b) => b[1].n - a[1].n || a[0].localeCompare(b[0]));
     if (!people.length) continue;
     out.push(`<details><summary>${cat}</summary>`, "");
-    for (const [w] of people) out.push(`- ${w} _(${yrs(span.get(w))})_`);
+    for (const [w] of people) out.push(`- ${w}`);
     out.push("", "</details>", "");
   }
   process.stdout.write(out.join("\n"));
