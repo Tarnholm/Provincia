@@ -138,8 +138,9 @@ function slugId(s) {
 // chain it put levels 1, 4 and 5 down the left pane and 2 and 3 down the right, so the page
 // read t1, t2 / t4, t3 / t5. Nothing inside the balancer can fix that, because any two-column
 // layout reads down-then-across and here the order IS the content. So these pages stack: one
-// card per level, each the full width of the page.
-const SINGLE_COLUMN = /(^|\/)buildings\/[^/]+\.md$/i;
+// card per level, each the full width of the page. The community videos are the same case: one
+// section per year, newest first, and dealing them into panes put 2023 beside 2026.
+const SINGLE_COLUMN = /(^|\/)buildings\/[^/]+\.md$|(^|\/)community-videos\.md$/i;
 
 function sectionise(html, rel) {
   const parts = html.split(/(?=<h2 )/);

@@ -47,7 +47,9 @@ if (!fs.existsSync(path.join(CACHE, "channels.json"))) {
   say(`no diary cache at ${CACHE} - run fetch-discord-diaries.js first. Nothing written.`);
   process.exit(0);
 }
-const CHANNELS = JSON.parse(fs.readFileSync(path.join(CACHE, "channels.json"), "utf8"));
+// Every channel fetched; the ones marked "videos" feed the Community videos page only.
+const ALL_CHANNELS = JSON.parse(fs.readFileSync(path.join(CACHE, "channels.json"), "utf8"));
+const CHANNELS = ALL_CHANNELS.filter((c) => c.use !== "videos");
 const CHANNEL_NAME = Object.fromEntries(CHANNELS.map((c) => [c.id, c.name]));
 
 // ── Discord markup -> markdown ──────────────────────────────────────────────
@@ -314,7 +316,7 @@ async function buildVideoPage() {
   try { known = JSON.parse(fs.readFileSync(CACHE_FILE, "utf8")); } catch {}
   const idOf = (u) => (/(?:[?&]v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/.exec(u || "") || [])[1];
   const shared = new Map(); // id -> first time it was shared
-  for (const c of CHANNELS) {
+  for (const c of ALL_CHANNELS) {
     const f = path.join(CACHE, `${c.id}.json`);
     if (!fs.existsSync(f)) continue;
     for (const m of JSON.parse(fs.readFileSync(f, "utf8"))) {
@@ -360,7 +362,7 @@ ${list.filter((v) => new Date(v.t).getUTCFullYear() === y).map((v) => {
 
 [← developer diaries](diaries.md) · [wiki index](README.md)
 
-${list.length} videos about RIS by ${creators.size} channels, as shared on the RIS Discord's developer-diaries channel, newest first: roster previews, faction guides, deep dives, rankings and campaigns. The videos are their makers' own work; each one opens on YouTube.
+${list.length} videos about RIS by ${creators.size} channels, as shared on the RIS Discord, newest first: roster previews, faction guides, deep dives, rankings and campaigns. The videos are their makers' own work; each one opens on YouTube.
 
 ${body}
 `, "utf8");

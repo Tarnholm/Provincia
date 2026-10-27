@@ -24,18 +24,23 @@ if (!TOKEN) { console.error("No token: set DISCORD_TOKEN or pass --token-file <p
 const DIARY_CHANNELS = [
   ["894286297802362931", "developer-diaries"],
 ];
+// Read for their YouTube links only (the Community videos page), never made into diaries: the
+// room where the community's videos are shared (the user, 2026-10-27).
+const VIDEO_CHANNELS = [
+  ["817331572175798293", "community-videos"],
+];
 // --channel <id or link> (repeatable): read other rooms instead, e.g. an old drafting room, to
 // recover pictures whose post in the diary channel was deleted. They are saved under <out>/extra/
 // and never become diary pages.
 const EXTRA = argv.flatMap((a, i) => (a === "--channel" ? [String(argv[i + 1] || "").split("/").filter(Boolean).pop()] : [])).filter((id) => /^\d+$/.test(id));
-const CHANNELS = EXTRA.length ? EXTRA.map((id) => [id, `extra-${id}`]) : DIARY_CHANNELS;
+const CHANNELS = EXTRA.length ? EXTRA.map((id) => [id, `extra-${id}`]) : [...DIARY_CHANNELS, ...VIDEO_CHANNELS.map(([id, name]) => [id, name, "videos"])];
 const DEST = EXTRA.length ? path.join(OUT, "extra") : OUT;
 const H = { Authorization: `Bot ${TOKEN}`, "User-Agent": "RIS-wiki/1.0" };
 
 (async () => {
   fs.mkdirSync(DEST, { recursive: true });
   const index = [];
-  for (const [id, name] of CHANNELS) {
+  for (const [id, name, use] of CHANNELS) {
     const all = [];
     let before = null, status = "ok";
     for (;;) {
@@ -53,7 +58,7 @@ const H = { Authorization: `Bot ${TOKEN}`, "User-Agent": "RIS-wiki/1.0" };
     console.log(`${name.padEnd(20)} ${status.padEnd(9)} ${String(all.length).padStart(4)} messages, ${withText} with text, ${all.reduce((n, m) => n + m.attachments.length, 0)} attachments`);
     if (all.length && !withText) console.log("   (every message has empty text: switch on the bot's Message Content intent)");
     if (all.length) fs.writeFileSync(path.join(DEST, `${id}.json`), JSON.stringify(all, null, 1));
-    index.push({ id, name, status, messages: all.length });
+    index.push({ id, name, status, messages: all.length, ...(use ? { use } : {}) });
   }
   if (!EXTRA.length) fs.writeFileSync(path.join(OUT, "channels.json"), JSON.stringify(index, null, 1));
   console.log(`\nsaved to ${DEST}.${EXTRA.length ? "" : " next: node scripts/gen-ris-diary-pages.js"}`);
