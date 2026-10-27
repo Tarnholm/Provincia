@@ -102,7 +102,7 @@ function inline(s) {
 // The third form is `<details><summary>…</summary>` all on ONE line. Without it that line is
 // not a block, so it goes through the paragraph path, gets escaped, and the reader sees the tags
 // as text — which is exactly what happened on 60 region pages before anyone noticed.
-// `<a class="vid" ...>...</a>` is one card of the community-videos grid, one per line.
+// `<a class="vid" ...>...</a>` is one card of the community-videos or diaries grid, one per line.
 // `<div class="ptabs">…</div>` is a tab strip on one line (All factions | Remastered).
 const RAW_BLOCK = /^\s*(<a class="vid"[^>]*>.*<\/a>|<div class="(?:ptabs|ctabs)">.*<\/div>|<\/?(?:details|summary|div|p|br|hr)\b[^>]*>|<summary[^>]*>.*<\/summary>|<details\b[^>]*><summary[^>]*>.*<\/summary>)\s*$/i;
 
@@ -139,8 +139,8 @@ function slugId(s) {
 // read t1, t2 / t4, t3 / t5. Nothing inside the balancer can fix that, because any two-column
 // layout reads down-then-across and here the order IS the content. So these pages stack: one
 // card per level, each the full width of the page. The community videos are the same case: one
-// section per year, newest first, and dealing them into panes put 2023 beside 2026.
-const SINGLE_COLUMN = /(^|\/)buildings\/[^/]+\.md$|(^|\/)community-videos\.md$/i;
+// section per year, newest first, and dealing them into panes put 2023 beside 2026 (the diaries too).
+const SINGLE_COLUMN = /(^|\/)buildings\/[^/]+\.md$|(^|\/)(community-videos|diaries)\.md$/i;
 
 function sectionise(html, rel) {
   const parts = html.split(/(?=<h2 )/);

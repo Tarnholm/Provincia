@@ -199,6 +199,35 @@ for n in open(lst, encoding="utf-8").read().split("\\n"):
   execFileSync("python", ["-c", py, ORIG, IMG_DIR, list, String(MAX_WIDTH)], { stdio: "inherit" });
 }
 
+// The card picture on diaries.md: the diary's first real picture, cropped to 16:9 at 480 px.
+// Most diaries open with the RIS divider (a gold rule, 4.5:1) and some with a small portrait or
+// icon, so a picture wider than 3:1 or under 400 px is passed over; a diary with nothing else
+// keeps its first picture. Remade on every run (a moved boundary changes the pick).
+const THUMB_DIR = path.join(OUT, "diary-thumbs");
+function makeThumbs(rows) {
+  fs.rmSync(THUMB_DIR, { recursive: true, force: true });
+  fs.mkdirSync(THUMB_DIR, { recursive: true });
+  const list = path.join(require("os").tmpdir(), "ris-diary-thumbs.txt");
+  fs.writeFileSync(list, rows.filter((r) => r.pics.length).map((r) => [r.key, ...r.pics].join("\t")).join("\n"));
+  const py = `
+import sys, os
+from PIL import Image, ImageOps
+src, dst, lst = sys.argv[1], sys.argv[2], sys.argv[3]
+for line in open(lst, encoding="utf-8").read().split("\\n"):
+    if not line: continue
+    key, *pics = line.split("\\t")
+    ims = []
+    for n in pics:
+        try: ims.append(Image.open(os.path.join(src, n)))
+        except Exception: pass
+    if not ims: continue
+    im = next((i for i in ims if i.width >= 400 and i.width <= 3 * i.height), ims[0])
+    im = ImageOps.fit(im.convert("RGB"), (480, 270), Image.LANCZOS, centering=(0.5, 0.4))
+    im.save(os.path.join(dst, key + ".webp"), "WEBP", quality=78, method=4)
+`;
+  execFileSync("python", ["-c", py, IMG_DIR, THUMB_DIR, list], { stdio: "inherit" });
+}
+
 // Some diaries paste links to images uploaded in another channel instead of attaching them.
 // The bare link 404s (Discord wants a signed URL), but the message's embed carries a signed
 // copy, valid for about a day after the fetch - so those are downloaded here and shown inline.
@@ -278,7 +307,7 @@ function externalImages(m) {
     used.add(key);
     const bodyNoTitle = text.replace(/^\*\*(developer|dev) diary\s*#?\d+\*\*\n+/i, "");
     fs.writeFileSync(path.join(OUT, "diaries", `${key}.md`), `# ${title}\n\n_${date} · ${d.author}_\n\n${bodyNoTitle}\n`, "utf8");
-    rows.push({ key, title, date, author: d.author });
+    rows.push({ key, title, date, author: d.author, pics: [...bodyNoTitle.matchAll(/diary-images\/([^)\s]+)/g)].map((m) => m[1]) });
   }
   // Pages from an earlier run whose diary is no longer produced (a boundary moved) go, and so do
   // pictures no page shows any more (e.g. the ones named before a rename). Both are this
@@ -289,16 +318,22 @@ function externalImages(m) {
   let pruned = 0;
   for (const f of fs.readdirSync(IMG_DIR)) if (!shown.has(f)) { fs.unlinkSync(path.join(IMG_DIR, f)); pruned++; }
   if (pruned) say(`  removed ${pruned} picture(s) no diary shows any more`);
-  const cell = (s) => String(s).replace(/\|/g, "\\|");
+  makeThumbs(rows);
   const videoCount = await buildVideoPage();
+  // One card per diary (picture, title, author, date), the same grid as the community videos.
+  const html = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const newest = rows.slice().reverse();
+  const years = [...new Set(newest.map((r) => r.date.slice(0, 4)))];
   fs.writeFileSync(path.join(OUT, "diaries.md"), `# Developer diaries
 
-The RIS team's developer diaries, as posted on the RIS Discord, newest first.${videoCount ? `
-For videos about the mod made by players and YouTubers, see [community videos](community-videos.md).` : ""}
+${years.map((y) => `## ${y}
 
-| Diary | Date | By |
-|---|---|---|
-${rows.slice().reverse().map((r) => `| [${cell(r.title)}](diaries/${r.key}.md) | ${r.date} | ${cell(r.author)} |`).join("\n")}
+<div class="vids">
+${newest.filter((r) => r.date.startsWith(y)).map((r) => {
+    const thumb = fs.existsSync(path.join(THUMB_DIR, `${r.key}.webp`)) ? `<img src="diary-thumbs/${r.key}.webp" alt="" width="480" height="270" loading="lazy">` : "";
+    return `<a class="vid" href="diaries/${r.key}.md">${thumb}<span class="vt">${html(r.title)}</span><span class="vm">${html(r.author)} · ${r.date}</span></a>`;
+  }).join("\n")}
+</div>`).join("\n\n")}
 `, "utf8");
   say(`diaries: ${rows.length} pages from ${diaries.length} groups (${empty} empty skipped) · ${images} images${fails ? ` · ${fails} downloads FAILED` : ""}`);
   say(`community videos: ${videoCount}`);
@@ -349,7 +384,6 @@ async function buildVideoPage() {
   // CSS. Each card is a single line of HTML so the page renderer passes it through whole.
   const html = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   const years = [...new Set(list.map((v) => new Date(v.t).getUTCFullYear()))];
-  const creators = new Set(list.map((v) => v.author));
   const body = years.map((y) => `## ${y}
 
 <div class="vids">
@@ -359,10 +393,6 @@ ${list.filter((v) => new Date(v.t).getUTCFullYear() === y).map((v) => {
   }).join("\n")}
 </div>`).join("\n\n");
   fs.writeFileSync(path.join(OUT, "community-videos.md"), `# Community videos
-
-[← developer diaries](diaries.md) · [wiki index](README.md)
-
-${list.length} videos about RIS by ${creators.size} channels, as shared on the RIS Discord, newest first: roster previews, faction guides, deep dives, rankings and campaigns. The videos are their makers' own work; each one opens on YouTube.
 
 ${body}
 `, "utf8");
