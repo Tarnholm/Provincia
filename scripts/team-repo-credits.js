@@ -85,9 +85,13 @@ const add = (cat, who, date) => {
   m.set(who, e);
 };
 let cur = null;
+const span = new Map(); // person -> first and last commit anywhere: their years on the mod
 const flush = () => {
   if (!cur) return;
   for (const c of cur.cats) add(c, cur.who, cur.date);
+  const s = span.get(cur.who) || { first: cur.date, last: cur.date };
+  if (cur.date < s.first) s.first = cur.date; if (cur.date > s.last) s.last = cur.date;
+  span.set(cur.who, s);
 };
 for (const line of execFileSync("git", ["-C", REPO, "log", "--all", "--no-merges", "--no-renames", "--format=@%H|%ae|%an|%ad", "--date=short", "--name-only"], { encoding: "utf8", maxBuffer: 1 << 30 }).split("\n")) {
   if (line.startsWith("@")) {
@@ -119,17 +123,18 @@ if (MODE === "md") {
     "Unit models, textures and animations", "Buildings and settlements", "Traits and ancillaries", "Texts and descriptions",
     "Interface, unit cards, banners and menus", "Battle maps, terrain, weather and vegetation", "Music and sound",
     "Campaign variants (Four Romans, Light, Classic)", "Tools", "Wiki"];
+  const yrs = (e) => (e.first.slice(0, 4) === e.last.slice(0, 4) ? e.first.slice(0, 4) : `${e.first.slice(0, 4)}–${e.last.slice(0, 4)}`);
   const mainArea = new Map(); // person -> the category with most of their commits
   for (const [cat, m] of per) for (const [w, e] of m) if (!mainArea.has(w) || e.n > per.get(mainArea.get(w)).get(w).n) mainArea.set(w, cat);
   const out = ["## Work in the repository", ""];
   for (const cat of ORDER) {
     const m = per.get(cat); if (!m) continue;
-    // Names only (the team asked for no numbers), most active first. A single commit in an area
+    // Names and their years on the mod, no commit counts (as the team asked), most active first. A single commit in an area
     // is a passing touch, not work there, unless it is the area that person worked in most.
     const people = [...m].filter(([w, e]) => e.n > 1 || mainArea.get(w) === cat).sort((a, b) => b[1].n - a[1].n || a[0].localeCompare(b[0]));
     if (!people.length) continue;
     out.push(`<details><summary>${cat}</summary>`, "");
-    for (const [w] of people) out.push(`- ${w}`);
+    for (const [w] of people) out.push(`- ${w} _(${yrs(span.get(w))})_`);
     out.push("", "</details>", "");
   }
   process.stdout.write(out.join("\n"));
