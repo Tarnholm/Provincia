@@ -88,14 +88,17 @@ function jumpFor(out, html) {
     .map((m) => [m[1], m[2].replace(/<[^>]*>/g, '').split('·')[0].trim()]);
   const items = heads(2).length ? heads(2) : heads(3);
   const strip = items.length >= 2 ? '<div class="jump">' + items.map(([id, t]) => '<a href="#' + id + '">' + t + '</a>').join('') + '</div>' : '';
+  // The strip is the bar's second row: the last thing inside .top, before the page's columns.
+  // The bar's closing tag is indented on pages the old strip-deleting code went through.
+  let placed = false;
+  if (strip) out = out.replace(/(\r?\n)[ \t]*<\/div>(\r?\n)<div class="wrap">/, (m, a, b) => { placed = true; return a + '  ' + strip + a + '</div>' + b + '<div class="wrap">'; });
+  // has-jump only when the strip is really there: set without one, it is the moving menu again.
   out = out.replace(/<body([^>]*)>/, (m, attrs) => {
-    let cls = ((/class="([^"]*)"/.exec(attrs) || [])[1] || '').split(/\s+/).filter((x) => x && x !== 'has-jump');
-    if (strip) cls.push('has-jump');
+    const cls = ((/class="([^"]*)"/.exec(attrs) || [])[1] || '').split(/\s+/).filter((x) => x && x !== 'has-jump');
+    if (placed) cls.push('has-jump');
     const rest = attrs.replace(/\s*class="[^"]*"/, '');
     return '<body' + rest + (cls.length ? ' class="' + cls.join(' ') + '"' : '') + '>';
   });
-  // The strip is the bar's second row: the last thing inside .top, before the page's columns.
-  if (strip) out = out.replace(/(\r?\n)<\/div>(\r?\n)<div class="wrap">/, (m, a, b) => a + '  ' + strip + a + '</div>' + b + '<div class="wrap">');
   return out;
 }
 function updateTeamLists() {
