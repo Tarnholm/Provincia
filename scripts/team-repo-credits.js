@@ -119,13 +119,17 @@ if (MODE === "md") {
     "Unit models, textures and animations", "Buildings and settlements", "Traits and ancillaries", "Texts and descriptions",
     "Interface, unit cards, banners and menus", "Battle maps, terrain, weather and vegetation", "Music and sound",
     "Campaign variants (Four Romans, Light, Classic)", "Tools", "Wiki"];
-  const yrs = (e) => (e.first.slice(0, 4) === e.last.slice(0, 4) ? e.first.slice(0, 4) : `${e.first.slice(0, 4)}–${e.last.slice(0, 4)}`);
+  const mainArea = new Map(); // person -> the category with most of their commits
+  for (const [cat, m] of per) for (const [w, e] of m) if (!mainArea.has(w) || e.n > per.get(mainArea.get(w)).get(w).n) mainArea.set(w, cat);
   const out = ["## Work in the repository", ""];
   for (const cat of ORDER) {
     const m = per.get(cat); if (!m) continue;
-    const people = [...m].sort((a, b) => b[1].n - a[1].n || a[0].localeCompare(b[0]));
-    out.push(`<details><summary>${cat} (${people.length})</summary>`, "");
-    for (const [w, e] of people) out.push(`- **${w}**: ${e.n} commit${e.n === 1 ? "" : "s"}, ${yrs(e)}`);
+    // Names only (the team asked for no numbers), most active first. A single commit in an area
+    // is a passing touch, not work there, unless it is the area that person worked in most.
+    const people = [...m].filter(([w, e]) => e.n > 1 || mainArea.get(w) === cat).sort((a, b) => b[1].n - a[1].n || a[0].localeCompare(b[0]));
+    if (!people.length) continue;
+    out.push(`<details><summary>${cat}</summary>`, "");
+    for (const [w] of people) out.push(`- ${w}`);
     out.push("", "</details>", "");
   }
   process.stdout.write(out.join("\n"));
