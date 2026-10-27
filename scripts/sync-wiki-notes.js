@@ -71,9 +71,32 @@ function writeTeamPage(page, body, html) {
   let out = tpl.replace(main[0], '<main>' + main[1] + '<div class="lede">' + html + '</div></main>');
   out = out.replace(/<title>[\s\S]*?<\/title>/, () => '<title>' + esc(title) + ' — RTR: Imperium Surrectum</title>');
   out = out.replace(/href="https:\/\/github\.com\/(?:Tarnholm|RTR-Imperium-Surrectum)\/ris-wiki\/wiki\/[^"]*\/_edit"/, () => 'href="https://github.com/RTR-Imperium-Surrectum/ris-wiki/wiki/' + encodeURIComponent(page) + '/_edit"');
-  out = out.replace(/<div class="jump">[\s\S]*?<\/div>\n?/, '');   // the template's section links are not this page's
+  out = jumpFor(out, html);
   fs.writeFileSync(file, out);
   return isNew ? 'page created' : 'page rewritten';
+}
+// The template's section links are not this page's: they are made again from this page's own
+// headings, as the site build makes them (serve-ris-wiki.js jumpStrip: its H2s, else its H3s,
+// and only if there are two or more). Deleting the strip and keeping it out cost the guides
+// their Overview / Getting started / Tips links on every edit. The body's has-jump class goes
+// with the strip: it makes --topbar a strip taller, and with no strip the sticky menu sat at
+// the bar's foot until the page grew past it, then dropped by the strip's height (reported on
+// RIS Team 2026-10-28: the menu moved when a section was opened).
+function jumpFor(out, html) {
+  out = out.replace(/\n?\s*<div class="jump">[\s\S]*?<\/div>/, '');
+  const heads = (lv) => [...html.matchAll(new RegExp('<h' + lv + ' id="([^"]+)"[^>]*>([\\s\\S]*?)</h' + lv + '>', 'g'))]
+    .map((m) => [m[1], m[2].replace(/<[^>]*>/g, '').split('·')[0].trim()]);
+  const items = heads(2).length ? heads(2) : heads(3);
+  const strip = items.length >= 2 ? '<div class="jump">' + items.map(([id, t]) => '<a href="#' + id + '">' + t + '</a>').join('') + '</div>' : '';
+  out = out.replace(/<body([^>]*)>/, (m, attrs) => {
+    let cls = ((/class="([^"]*)"/.exec(attrs) || [])[1] || '').split(/\s+/).filter((x) => x && x !== 'has-jump');
+    if (strip) cls.push('has-jump');
+    const rest = attrs.replace(/\s*class="[^"]*"/, '');
+    return '<body' + rest + (cls.length ? ' class="' + cls.join(' ') + '"' : '') + '>';
+  });
+  // The strip is the bar's second row: the last thing inside .top, before the page's columns.
+  if (strip) out = out.replace(/(\r?\n)<\/div>(\r?\n)<div class="wrap">/, (m, a, b) => a + '  ' + strip + a + '</div>' + b + '<div class="wrap">');
+  return out;
 }
 function updateTeamLists() {
   const hub = path.join(SITE, 'team.html');
@@ -188,6 +211,15 @@ fs.writeFileSync(path.join(OUT, 'index.json'), JSON.stringify(index));
   if (!fs.existsSync(gf) || fs.readFileSync(gf, 'utf8') !== next) { fs.writeFileSync(gf, next); console.log('guides: ' + guides.length); }
 }
 updateTeamLists();
+// Every team page's section links checked against its own text, not only the pages edited in
+// this run: a page published before jumpFor existed kept the template's has-jump with no strip.
+if (fs.existsSync(TEAM_DIR)) for (const f of fs.readdirSync(TEAM_DIR).filter((x) => x.endsWith('.html'))) {
+  const frag = path.join(OUT, 'team', f);
+  if (!fs.existsSync(frag)) continue;
+  const file = path.join(TEAM_DIR, f), was = fs.readFileSync(file, 'utf8');
+  const now = jumpFor(was, fs.readFileSync(frag, 'utf8'));
+  if (now !== was) { fs.writeFileSync(file, now); console.log('section links: team/' + f); }
+}
 writeMenu();
 
 /**
