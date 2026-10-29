@@ -61,15 +61,15 @@ const WHO = {
   "jojo.exterminator@web.de": "exi",
   "balbor.valis@gmail.com": "Balbor",
   "boo_themighty@hotmail.com": "GIR",
-  "luis_mitridates@hotmail.com": "Luis",
-  "philliparnvig@gmail.com": "philliparnvig",
+  "luis_mitridates@hotmail.com": "BiggusDickus",
+  "philliparnvig@gmail.com": "Wopper",
   "sloot.patrick@gmail.com": "Patrick",
   "whalsema@hotmail.com": "Logis0550",
   "knorrskorpan@hotmail.com": "knorr",
   "eduardo_martins_carvalho@hotmail.com": "Eduardo",
   "mitchell_27@live.ca": "Mitchell",
   "lpetitto036@alumnos.frh.utn.edu.ar": "Luis G.",
-  "navnet_mitt88@hotmail.com": "Hans Erik",
+  "navnet_mitt88@hotmail.com": "Lollygagging",
   "carlos_mogege@hotmail.com": "Lusitanio",
   "mauritsthedutchman@gmail.com": "Maurits",
   "m.den.hollander@outlook.com": "Maurits",
@@ -174,7 +174,7 @@ for (const c of commits) {
 // ── release notes ───────────────────────────────────────────────────────────
 // Slips in the lists, so one person is listed once: "Rex Basilicus" (0.4 credits screen),
 // "Caligula Caesae" (0.4.0 Workshop page), "The. Shark" (0.6.0 notes).
-const ALIAS = { "rex basilicus": "rex basiliscus", "caligula caesae": "caligula caesar", "the. shark": "the shark" };
+const ALIAS = { "biggusdickus": "biggus dickus", "rex basilicus": "rex basiliscus", "caligula caesae": "caligula caesar", "the. shark": "the shark" };
 const key = (n) => { const k = String(n).toLowerCase().replace(/[-_\s]+/g, " ").trim(); return ALIAS[k] || k; };
 const DISPLAY = new Map(); // key -> name as shown: the git name, else the newest notes' spelling
 const vnum = (f) => f.replace(/\.md$/, "").split(".").map(Number);
