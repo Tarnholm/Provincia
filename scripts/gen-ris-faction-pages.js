@@ -575,7 +575,9 @@ function recruitableBy(rows, faction) {
     sets.sort((a, b) => a.c.length - b.c.length);
     out.set(unit, { conds: sets[0].c, where: sets[0], aor: e.aor });
   }
-  const all = [...out.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  // By the name the table shows (asked for 2026-10-30), not by the EDB type: sorted by type,
+  // "Ambacti" (arvernian_ambacti) came before "Ballistas" and "Celtic Spearmen".
+  const all = [...out.entries()].sort((a, b) => unitShown(a[0]).localeCompare(unitShown(b[0])) || a[0].localeCompare(b[0]));
   // Counts are of units that can actually be raised; the not-available rows stay listed.
   const ok = all.filter(([, v]) => v.conds != null);
   return {
@@ -821,6 +823,12 @@ const settlementAndRegion = (region) => {
   if (!s) return regionLink(region);
   return placeName(s) === placeName(region)
     ? settlementLink(region) : `${settlementLink(region)}, in ${regionLink(region)}`;
+};
+/** The unit's name as unitLink shows it. */
+const unitShown = (type) => {
+  const s = unitSlug.get(String(type).toLowerCase());
+  if (!s || !unitPages.has(s)) return UNIT_NAMES[String(type).toLowerCase()] || type;
+  return UNIT_NAMES[s] || type;
 };
 const unitLink = (type) => {
   const s = unitSlug.get(String(type).toLowerCase());
@@ -1285,7 +1293,9 @@ const cultureGroups = [...byCulture.entries()]
   .map(([tok, list]) => ({
     tok,
     name: cultureName(tok),
-    list: list.slice().sort((a, b) => b.setts - a.setts || a.display.localeCompare(b.display)),
+    // Alphabetical (asked for 2026-10-30): a reader looking for a faction looks it up by name;
+    // the provinces column still shows who is big.
+    list: list.slice().sort((a, b) => a.display.localeCompare(b.display)),
   }))
   .sort((a, b) => b.list.length - a.list.length || String(a.name || a.tok).localeCompare(String(b.name || b.tok)));
 // 24px, not 34. The emblem is the widest thing in the Faction column and the column is what

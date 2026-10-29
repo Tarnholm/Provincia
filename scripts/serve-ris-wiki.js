@@ -77,6 +77,14 @@ function search(q) {
 
 // ── markdown ─────────────────────────────────────────────────────────────────
 // Inline spans. Images before links, since ![]() also matches []().
+// Where row r of group g comes from when n entries are dealt UP groups across, filled down each
+// group: the first n % UP groups take one entry more. -1 for an empty slot. The browser's
+// re-deal below does the same sum.
+function dealDown(n, up) {
+  const base = Math.floor(n / up), extra = n % up;
+  return (r, g) => (r < base + (g < extra ? 1 : 0) ? g * base + Math.min(g, extra) + r : -1);
+}
+
 function inline(s) {
   let t = esc(s);
   // Restore the raw HTML the generators embed: <img> on region and unit pages, and the <a>
@@ -440,12 +448,16 @@ function renderMarkdown(md, toc) {
         // one-row list dealt three across was printing "Belief · Regions · Majority · …" three
         // times with rows under only the first, which reads as two sections that failed to load.
         // The cells still have to be THERE, or the columns stop lining up — they are just empty.
-        // Group g holds a row only when g < body.length, since row r takes index r*UP+g.
+        // Dealt DOWN each group, not across (2026-10-30): an alphabetical list read down a group
+        // otherwise skips two names in three. The first body.length % UP groups take one row
+        // more, so the groups end within a row of each other and none is empty while another
+        // has two; group g holds a row only when g < body.length, as before.
+        const at = dealDown(body.length, UP);
         th = Array.from({ length: UP }, (_, g) =>
           (g < body.length ? thOne(g > 0) : head.map((_, k) => `<th${cls(k, g > 0 && k === 0)}></th>`).join(""))).join("");
         rowCount = Math.ceil(body.length / UP);
         tr = Array.from({ length: rowCount }, (_, r) => "<tr>"
-          + Array.from({ length: UP }, (_, g) => tdOf(body[r * UP + g], g > 0)).join("") + "</tr>").join("");
+          + Array.from({ length: UP }, (_, g) => tdOf(at(r, g) < 0 ? null : body[at(r, g)], g > 0)).join("") + "</tr>").join("");
       } else {
         th = thOne(false);
         rowCount = body.length;
@@ -1190,7 +1202,10 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
         // drop "grp", which marks where a GROUP starts and is re-applied when dealing.
         klass.push(hc[k] ? hc[k].className.replace(/\bgrp\b/, "").trim() : "");
       }
-      var rows = [];
+      // Groups are dealt DOWN (see dealDown on the server): read each group's column of rows,
+      // then put the groups back end to end, and the list is in its own order again.
+      var groups = [];
+      for (var g0 = 0; g0 < up; g0++) groups.push([]);
       [].forEach.call(t.tBodies[0].rows, function(r){
         for (var g = 0; g < up; g++) {
           var cells = [], any = false;
@@ -1200,9 +1215,10 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
             if (c && c.innerHTML.replace(/\s|&nbsp;/g, "")) any = true;
           }
           // Padding cells from the previous deal are dropped rather than kept as blank rows.
-          if (any) rows.push(cells);
+          if (any) groups[g].push(cells);
         }
       });
+      var rows = [].concat.apply([], groups);
       return { t: t, cols: cols, head: head, klass: klass, rows: rows };
     }
 
@@ -1217,10 +1233,12 @@ const SHELL = (title, body, rel, toc) => `<!doctype html>
         th += cell("th", g < d.rows.length ? d.head[k] : "", k, g > 0);
       }
       var body = "", n = Math.ceil(d.rows.length / up);
+      var base = Math.floor(d.rows.length / up), extra = d.rows.length % up;
       for (r = 0; r < n; r++) {
         body += "<tr>";
         for (g = 0; g < up; g++) {
-          var row = d.rows[r * up + g];
+          // Down each group, the first "extra" groups one row longer: dealDown on the server.
+          var row = r < base + (g < extra ? 1 : 0) ? d.rows[g * base + Math.min(g, extra) + r] : null;
           for (k = 0; k < d.cols; k++) body += cell("td", row ? row[k] : "", k, g > 0);
         }
         body += "</tr>";
