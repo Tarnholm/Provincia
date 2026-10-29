@@ -68,7 +68,7 @@ const WHO = {
   "knorrskorpan@hotmail.com": "knorr",
   "eduardo_martins_carvalho@hotmail.com": "Eduardo",
   "mitchell_27@live.ca": "Mitchell",
-  "lpetitto036@alumnos.frh.utn.edu.ar": "Luis G.",
+  "lpetitto036@alumnos.frh.utn.edu.ar": "BiggusDickus",
   "navnet_mitt88@hotmail.com": "Lollygagging",
   "carlos_mogege@hotmail.com": "Lusitanio",
   "mauritsthedutchman@gmail.com": "Maurits",
