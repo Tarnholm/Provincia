@@ -1073,13 +1073,13 @@ for (const f of factions) {
   const cultureCell = cultureRef(cultureTok, "../") || (cultureTok ? `\`${cultureTok}\`` : null);
   const religionCell = religionRef(religionTok, "../") || (religionTok ? `\`${religionTok}\`` : null);
   const glance = [
-    DIFFICULTY_WORD[DIFFICULTY[f]] ? `difficulty **${DIFFICULTY_WORD[DIFFICULTY[f]]}**` : null,
-    cultureCell ? `**${cultureCell}** culture` : "culture _not determined_",
-    religionCell ? `believes ${religionCell}` : "belief _not determined_",
+    DIFFICULTY_WORD[DIFFICULTY[f]] ? `Difficulty **${DIFFICULTY_WORD[DIFFICULTY[f]]}**` : null,
+    cultureCell ? `**${cultureCell}** culture` : "Culture _not determined_",
+    religionCell ? `Believes ${religionCell}` : "Belief _not determined_",
     // Each count leads to the section that lists what it counts.
     setts.length ? `**[${setts.length} settlement${setts.length === 1 ? "" : "s"}](#starting-settlements)**` : "**0** settlements",
     // The capital is a city, so name the city — "capital Stratos", not "capital Akarnania".
-    capital ? `capital **${settlementLink(capital.region)}**` : null,
+    capital ? `Capital **${settlementLink(capital.region)}**` : null,
     totalPop ? `**${totalPop.toLocaleString("en-US")}** manpower` : null,
     cs.length ? `**[${cs.length} character${cs.length === 1 ? "" : "s"}](#starting-characters)**` : "**0** characters",
     units.coreN ? `**[${units.coreN} faction unit${units.coreN === 1 ? "" : "s"}](#faction-units)**` : "**0** faction units",
