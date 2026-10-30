@@ -13,6 +13,13 @@
  */
 const CHANGELOG = [
   {
+    version: "0.9.1544",
+    date: "2026-10-30",
+    items: [
+      { type: "fix", text: "**The crash reporter no longer calls a clean exit unstable for a few harmless asserts.** Nearly every RIS session has some, so nearly every clean session was reported as unstable. A clean exit now counts as unstable only for an assert that goes with crashes, 5 or more errors, asset failures or an assert storm. (Crash reporter 0.1.69.)" },
+    ],
+  },
+  {
     version: "0.9.1543",
     date: "2026-10-23",
     items: [
